@@ -186,7 +186,6 @@
 				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels.proto",
 				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/hidio.proto",
 				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/clipboard.proto",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/general.proto",
 				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/projection.proto",
 				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/winman.proto",
 			);
