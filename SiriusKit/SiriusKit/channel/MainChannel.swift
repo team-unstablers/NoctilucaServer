@@ -8,6 +8,7 @@
 import Foundation
 
 public protocol MainChannelDelegate: AnyObject {
+    func mainChannelDidReceiveClientHello(_ channel: MainChannel, message: ClientHello)
 }
 
 public class MainChannel: Channel {
