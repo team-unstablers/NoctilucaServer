@@ -6,6 +6,36 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXAggregateTarget section */
+		F6EEA0E42ECF29B300D8E961 /* msgdef_swift */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = F6EEA0E52ECF29B300D8E961 /* Build configuration list for PBXAggregateTarget "msgdef_swift" */;
+			buildPhases = (
+				F6EEA0E82ECF29B700D8E961 /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = msgdef_swift;
+			packageProductDependencies = (
+			);
+			productName = msgdef_swift;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F6EEA5DE2ECF2CFD00D8E961 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F66965202ECF26FD0032EF4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F6EEA0E42ECF29B300D8E961;
+			remoteInfo = msgdef_swift;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		F66965292ECF26FD0032EF4E /* SiriusKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiriusKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -16,6 +46,11 @@
 			path = SiriusKit;
 			sourceTree = "<group>";
 		};
+		F669656B2ECF28AC0032EF4E /* dependencies */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = dependencies;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -23,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,6 +68,7 @@
 		F669651F2ECF26FD0032EF4E = {
 			isa = PBXGroup;
 			children = (
+				F669656B2ECF28AC0032EF4E /* dependencies */,
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
 				F669652A2ECF26FD0032EF4E /* Products */,
 			);
@@ -70,12 +107,14 @@
 			buildRules = (
 			);
 			dependencies = (
+				F6EEA5DF2ECF2CFD00D8E961 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
 			);
 			name = SiriusKit;
 			packageProductDependencies = (
+				F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */,
 			);
 			productName = SiriusKit;
 			productReference = F66965292ECF26FD0032EF4E /* SiriusKit.framework */;
@@ -94,6 +133,9 @@
 					F66965282ECF26FD0032EF4E = {
 						CreatedOnToolsVersion = 26.1;
 					};
+					F6EEA0E42ECF29B300D8E961 = {
+						CreatedOnToolsVersion = 26.1;
+					};
 				};
 			};
 			buildConfigurationList = F66965232ECF26FD0032EF4E /* Build configuration list for PBXProject "SiriusKit" */;
@@ -105,12 +147,16 @@
 			);
 			mainGroup = F669651F2ECF26FD0032EF4E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669652A2ECF26FD0032EF4E /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				F66965282ECF26FD0032EF4E /* SiriusKit */,
+				F6EEA0E42ECF29B300D8E961 /* msgdef_swift */,
 			);
 		};
 /* End PBXProject section */
@@ -125,6 +171,35 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		F6EEA0E82ECF29B700D8E961 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/dependencies/libsirius/msgdef/CMakeLists.txt",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/general.proto",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/session.proto",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels.proto",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/hidio.proto",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/clipboard.proto",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/general.proto",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/projection.proto",
+				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/winman.proto",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin\n\nLIBSIRIUS_ROOT=$SRCROOT/dependencies/libsirius\nMSGDEF_SWIFT_PREFIX=$SRCROOT/SiriusKit/autogen/\n\ncd $LIBSIRIUS_ROOT\n\ncmake -B cmake-build-debug -S . -DSIRIUS_MSGDEF_SWIFT_INSTALL_PREFIX=\"$MSGDEF_SWIFT_PREFIX\"\n\nmkdir -p $LIBSIRIUS_ROOT/cmake-build-debug/msgdef/swift\n\ncmake --build cmake-build-debug --target sirius_msgdef_swift\ncmake --build cmake-build-debug --target install_msgdef_swift\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		F66965252ECF26FD0032EF4E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -134,6 +209,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F6EEA5DF2ECF2CFD00D8E961 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F6EEA0E42ECF29B300D8E961 /* msgdef_swift */;
+			targetProxy = F6EEA5DE2ECF2CFD00D8E961 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		F66965302ECF26FD0032EF4E /* Debug */ = {
@@ -334,6 +417,26 @@
 			};
 			name = Release;
 		};
+		F6EEA0E62ECF29B300D8E961 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		F6EEA0E72ECF29B300D8E961 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -355,7 +458,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F6EEA0E52ECF29B300D8E961 /* Build configuration list for PBXAggregateTarget "msgdef_swift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F6EEA0E62ECF29B300D8E961 /* Debug */,
+				F6EEA0E72ECF29B300D8E961 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-protobuf.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.33.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
+			productName = SwiftProtobuf;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F66965202ECF26FD0032EF4E /* Project object */;
 }
