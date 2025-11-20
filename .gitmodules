@@ -1,0 +1,3 @@
+[submodule "SiriusKit/dependencies/libsirius"]
+	path = SiriusKit/dependencies/libsirius
+	url = git@github.com:team-unstablers/libsirius.git

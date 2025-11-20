@@ -282,7 +282,6 @@ playground.xcworkspace
 
 
 # Accio dependency management
-Dependencies/
 .accio/
 
 # fastlane
