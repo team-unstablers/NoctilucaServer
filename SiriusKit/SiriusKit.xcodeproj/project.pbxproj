@@ -51,6 +51,11 @@
 			path = dependencies;
 			sourceTree = "<group>";
 		};
+		F69147952ED1E6B000A320E2 /* llm-tasks */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "llm-tasks";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +73,7 @@
 		F669651F2ECF26FD0032EF4E = {
 			isa = PBXGroup;
 			children = (
+				F69147952ED1E6B000A320E2 /* llm-tasks */,
 				F669656B2ECF28AC0032EF4E /* dependencies */,
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
 				F669652A2ECF26FD0032EF4E /* Products */,
@@ -111,6 +117,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
+				F69147952ED1E6B000A320E2 /* llm-tasks */,
 			);
 			name = SiriusKit;
 			packageProductDependencies = (
@@ -195,7 +202,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin\n\nLIBSIRIUS_ROOT=$SRCROOT/dependencies/libsirius\nMSGDEF_SWIFT_PREFIX=$SRCROOT/SiriusKit/autogen/\n\ncd $LIBSIRIUS_ROOT\n\ncmake -B cmake-build-debug -S . -DSIRIUS_MSGDEF_SWIFT_INSTALL_PREFIX=\"$MSGDEF_SWIFT_PREFIX\"\n\nmkdir -p $LIBSIRIUS_ROOT/cmake-build-debug/msgdef/swift\n\ncmake --build cmake-build-debug --target sirius_msgdef_swift\ncmake --build cmake-build-debug --target install_msgdef_swift\n";
+			shellScript = "export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin\n\nLIBSIRIUS_ROOT=$SRCROOT/dependencies/libsirius\nMSGDEF_SWIFT_PREFIX=$SRCROOT/SiriusKit/autogen/\n\ncd $LIBSIRIUS_ROOT\n\ncmake -B cmake-build-debug -S . -DSIRIUS_MSGDEF_SWIFT_INSTALL_PREFIX=\"$MSGDEF_SWIFT_PREFIX\" -DSIRIUS_PROTOC_SIRIUSKIT_PLUGIN=\"/Users/cheesekun/works/noctiluca/protoc-gen-siriuskit/.build/arm64-apple-macosx/debug/protoc-gen-siriuskit\"\n\nmkdir -p $LIBSIRIUS_ROOT/cmake-build-debug/msgdef/swift/siriuskit\n\ncmake --build cmake-build-debug --target sirius_msgdef_swift\ncmake --build cmake-build-debug --target install_msgdef_swift\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

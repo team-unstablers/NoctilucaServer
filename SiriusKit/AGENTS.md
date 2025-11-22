@@ -64,6 +64,9 @@ extension Concept: ProjectionChannelDelegate {
 }
 ```
 
+## Updates
+- `channel/messages` 디렉터리에 msgdef v1 전반(핸드셰이크, 세션 인증, 채널 제어, HIDIO, 프로젝션/윈도우, 프로젝션 데이터, 클립보드)의 Swift 래퍼와 opcode 매핑이 추가되었습니다. SwiftProtobuf로 생성된 코드와 상호 변환할 수 있는 타입들이 포함되어 있습니다.
+
 </section>
 
 <section id="agent-rules">

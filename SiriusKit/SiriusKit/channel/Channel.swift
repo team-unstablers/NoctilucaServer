@@ -25,10 +25,6 @@ public class Channel {
     func send(opcode: MessageOpcode, message: (any SiriusMessage)) async throws {
         let protobufMessage = message.toProtobufMessage()
         
-        try await self.send(opcode: opcode, message: protobufMessage)
-    }
-    
-    func send(opcode: MessageOpcode, message: (any SwiftProtobuf.Message)) async throws {
         var data = Data()
         
         var opcodeRaw = opcode.rawValue.bigEndian
@@ -36,7 +32,7 @@ public class Channel {
             data.append(contentsOf: opcodeBytes)
         }
         
-        let messageData = try message.serializedData()
+        let messageData = try protobufMessage.serializedData()
         data.append(messageData)
         
         _ = await self.stream.write(data)
