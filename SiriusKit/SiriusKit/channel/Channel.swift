@@ -11,9 +11,13 @@ import SwiftProtobuf
 
 
 public class Channel {
+    public protocol HasFeature {
+        var feature: SiriusFeature { get }
+    }
+    
     private let stream: Stream
     
-    init(stream: Stream) {
+    required init(stream: Stream) {
         self.stream = stream
         self.stream.delegate = self
     }
@@ -54,5 +58,13 @@ extension Channel: StreamDelegate {
     
     func streamDidClose(_ stream: Stream, error: (any Error)?) {
         self.handleStreamClose(error: error)
+    }
+}
+
+internal extension Channel {
+    
+    // helper method
+    func blockUntilReceiveData() async throws -> (MessageOpcode, Data) {
+        // FIXME: implement me
     }
 }
