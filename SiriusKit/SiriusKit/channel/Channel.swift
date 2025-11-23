@@ -19,6 +19,10 @@ internal protocol ChannelLifecycleDelegate: AnyObject {
     func channelDidClose(_ channel: Channel, error: (any Error)?)
 }
 
+enum ChannelError: Error {
+    case invalidFrame
+}
+
 public class Channel: ChannelLike {
     public protocol HasFeature {
         var feature: SiriusFeature { get }
@@ -33,38 +37,41 @@ public class Channel: ChannelLike {
 
     required init(stream: Stream, identifier: ChannelIdentifier, direction: ChannelDirection) {
         self.stream = stream
-        self.stream.delegate = self
-        
         self.identifier = identifier
+        self.direction = direction
     }
     
     public func close() async throws {
         try await self.stream.close()
     }
     
-    func handleData(opcode: MessageOpcode, data: Data) {
+    private func streamEventLoop() async throws {
+        for await event in self.stream.events {
+            switch event {
+            case .data(let data):
+                try await self.handleData(data: data)
+            case .closed:
+                self.handleStreamClose()
+                return
+            case .error(let error):
+                self.handleStreamError(error: error)
+                return
+            }
+            
+        }
+    }
+    
+    func handleData(data: Data) async throws {
         // to be overridden by subclasses
     }
     
-    func handleStreamClose(error: (any Error)?) {
-        self.lifecycleDelegate?.channelDidClose(self, error: error)
-    }
-}
-
-extension Channel: StreamDelegate {
-    func streamDidReceiveData(_ stream: Stream, data: Data) {
-        self.handleData(opcode: .init(rawValue: 0x00), data: data) // FIXME
+    func handleStreamClose() {
+        // default implementation
+        
     }
     
-    func streamDidClose(_ stream: Stream, error: (any Error)?) {
-        self.handleStreamClose(error: error)
-    }
-}
-
-internal extension Channel {
-    // helper method
-    func blockUntilReceiveData() async throws -> (MessageOpcode, Data) {
-        // FIXME: implement me
+    func handleStreamError(error: (any Error)) {
+        // to be overridden by subclasses
     }
 }
 

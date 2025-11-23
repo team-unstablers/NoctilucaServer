@@ -14,8 +14,6 @@ class QUICStream: Stream {
     
     private var receiveTask: Task<Void, Error>?
     
-    private(set) var error: Error?
-    
     override var id: StreamIdentifier {
         return connection.quicStreamIdentifier!
     }
@@ -32,13 +30,13 @@ class QUICStream: Stream {
         transport.unregisterStream(self)
     }
     
-    override func write(_ data: Data) async -> Result<UInt64, StreamError> {
+    override func write(_ data: Data) async -> Result<UInt32, StreamError> {
         return await withCheckedContinuation { continuation in
             connection.send(content: data, completion: .contentProcessed { error in
                 if let error = error {
                     continuation.resume(returning: .failure(.notImplemented)) // Map error appropriately
                 } else {
-                    continuation.resume(returning: .success(UInt64(data.count)))
+                    continuation.resume(returning: .success(UInt32(data.count)))
                 }
             })
         }
@@ -48,10 +46,11 @@ class QUICStream: Stream {
         self.connection.stateUpdateHandler = { state in
             switch (state) {
             case .cancelled:
-                self.delegate?.streamDidClose(self, error: self.error)
+                self.continuation.yield(with: .success(.closed))
+                self.continuation.finish()
                 break
             case .failed(let error):
-                self.error = error
+                self.continuation.yield(with: .success(.error(error)))
                 Task {
                     try! await self.close()
                 }
@@ -67,7 +66,7 @@ class QUICStream: Stream {
             do {
                 try await self.receiveLoop()
             } catch {
-                self.error = error
+                self.continuation.yield(with: .success(.error(error)))
                 try! await self.close()
             }
         }
@@ -81,7 +80,9 @@ class QUICStream: Stream {
             
             switch result {
             case .success(let data):
-                self.delegate?.streamDidReceiveData(self, data: data)
+                if let data = data {
+                    self.continuation.yield(with: .success(.data(data)))
+                }
                 break
             case .failure(let error):
                 throw error
@@ -90,11 +91,20 @@ class QUICStream: Stream {
         
     }
     
-    private func receiveNext() async -> Result<Data, StreamError> {
+    private func receiveNext() async -> Result<Data?, Error> {
+        // FIXME: isComplete 붙어있는거 보면 데이터 분명 프레그멘테이션 처리 필요할듯
         return await withCheckedContinuation { cont in
-            // TODO: let length = connection.receive(2)
-            //       let opcode = connection.receive(2)
-            // ...
+            self.connection.receiveMessage { content, contentContext, isComplete, error in
+                if let error = error {
+                    cont.resume(returning: .failure(error)) // Map error appropriately
+                } else if let content = content {
+                    assert(isComplete, "아직 fragmentation 처리 안됨")
+                    cont.resume(returning: .success(content))
+                } else {
+                    // FIXME: 로직 개선
+                    cont.resume(returning: .success(nil)) // No data received
+                }
+            }
         }
     }
 }

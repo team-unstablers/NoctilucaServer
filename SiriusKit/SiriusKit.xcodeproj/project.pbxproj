@@ -26,16 +26,6 @@
 		F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		F6EEA5DE2ECF2CFD00D8E961 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F66965202ECF26FD0032EF4E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F6EEA0E42ECF29B300D8E961;
-			remoteInfo = msgdef_swift;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
 		F66965292ECF26FD0032EF4E /* SiriusKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiriusKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -113,7 +103,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				F6EEA5DF2ECF2CFD00D8E961 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
@@ -215,14 +204,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		F6EEA5DF2ECF2CFD00D8E961 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F6EEA0E42ECF29B300D8E961 /* msgdef_swift */;
-			targetProxy = F6EEA5DE2ECF2CFD00D8E961 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		F66965302ECF26FD0032EF4E /* Debug */ = {

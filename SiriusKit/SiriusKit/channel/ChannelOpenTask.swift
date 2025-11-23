@@ -13,22 +13,39 @@ internal class ChannelOpenTask: ChannelLike {
     
     init(stream: Stream) {
         self.stream = stream
-        
-        stream.delegate = self
     }
     
-    func blockUntilReceiveData() async throws -> (MessageOpcode, Data) {
+    func blockUntilReceiveData() async throws -> SiriusFrame {
+        for await event in stream.events {
+            switch (event) {
+            case .data(let data):
+                guard let frame = data.toSiriusFrame() else {
+                    throw ChannelManagerError.channelOpenFailed
+                }
+                
+                return frame
+                
+            case .error(let error):
+                // FIXME: error handling
+                fallthrough
+            case .closed:
+                fallthrough
+            default:
+                throw ChannelManagerError.channelOpenFailed
+            }
+        }
         
+        throw ChannelManagerError.channelOpenFailed
     }
 }
 
 internal class RemoteChannelOpenTask: ChannelOpenTask {
     func perform(_ channelCreationBlock: ((ChannelStartRequest) async throws -> Bool)) async throws {
-        let (opcode, data) = try await self.blockUntilReceiveData()
-        // FIXME: EPILOGUE: 최대한 빨리 stream의 delegate / event subscription을 해제해야 한다
-
-        guard opcode == .channelStartRequest,
-              let request = try? ChannelStartRequest.fromProtobufBytes(data)
+        let frame = try await self.blockUntilReceiveData()
+        
+        guard frame.isValid(),
+              frame.opcode == .channelStartRequest,
+              let request = try? ChannelStartRequest.fromProtobufBytes(frame.data)
         else {
             throw ChannelManagerError.channelOpenFailed
         }
@@ -72,11 +89,12 @@ internal class LocalChannelOpenTask: ChannelOpenTask {
         )
         
         try await self.send(opcode: .channelStartRequest, message: request)
-        let (opcode, data) = try await self.blockUntilReceiveData()
-        // FIXME: EPILOGUE: 최대한 빨리 stream의 delegate / event subscription을 해제해야 한다
+        
+        let frame = try await self.blockUntilReceiveData()
 
-        guard opcode == .channelStartResponse,
-              let response = try? ChannelStartResponse.fromProtobufBytes(data)
+        guard frame.isValid(),
+              frame.opcode == .channelStartResponse,
+              let response = try? ChannelStartResponse.fromProtobufBytes(frame.data)
         else {
             throw ChannelManagerError.channelOpenFailed
         }

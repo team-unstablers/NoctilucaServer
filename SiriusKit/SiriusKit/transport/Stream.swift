@@ -13,13 +13,25 @@ enum StreamError: Error {
     case notImplemented
 }
 
-protocol StreamDelegate: AnyObject {
-    func streamDidReceiveData(_ stream: Stream, data: Data)
-    func streamDidClose(_ stream: Stream, error: Error?)
+enum StreamEvent {
+    case data(Data)
+    case closed
+    case error(Error)
 }
 
 class Stream {
-    weak var delegate: StreamDelegate?
+    let events: AsyncStream<StreamEvent>
+    let continuation: AsyncStream<StreamEvent>.Continuation
+    
+    init() {
+        var continuationLocal: AsyncStream<StreamEvent>.Continuation!
+        
+        self.events = AsyncStream<StreamEvent>(StreamEvent.self, bufferingPolicy: .unbounded) { continuation in
+            continuationLocal = continuation
+        }
+        
+        self.continuation = continuationLocal
+    }
     
     open var id: StreamIdentifier {
         return 0
@@ -48,6 +60,7 @@ class Stream {
     
     open func write(_ data: Data) async -> Result<UInt32, StreamError> {
         // To be implemented by subclasses
+        return .failure(.notImplemented)
     }
     
     open func close() async throws {

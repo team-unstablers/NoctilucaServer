@@ -11,20 +11,15 @@ public class ClientSession {
     let transport: ClientTransport
     let featureProvider: (any FeatureProvider)
     
-    public let channelManager: ChannelManager
+    public var channelManager: ChannelManager!
     
     init(transport: ClientTransport, featureProvider: (any FeatureProvider)) {
         self.transport = transport
-        self.transport.delegate = self
-        
         self.featureProvider = featureProvider
-        
         self.channelManager = ChannelManager(session: self)
+
+        self.transport.delegate = self
     }
-    
-    
-    
-    
 }
 
 extension ClientSession: ClientTransportDelegate {

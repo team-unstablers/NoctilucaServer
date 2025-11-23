@@ -11,6 +11,7 @@ typealias ClientTransportIdentifier = UUID
 
 enum ClientTransportError: Error {
     case notImplemented
+    case openStreamFailed(error: Error?)
 }
 
 protocol ClientTransportDelegate: AnyObject {

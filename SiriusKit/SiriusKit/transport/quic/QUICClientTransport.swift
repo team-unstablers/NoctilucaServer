@@ -8,6 +8,9 @@
 import Foundation
 import Network
 
+enum QUICClientTransportError: Error {
+}
+
 class QUICClientTransport: ClientTransport {
     let connectionGroup: NWConnectionGroup
     let serverTransport: QUICServerTransport
@@ -38,7 +41,7 @@ class QUICClientTransport: ClientTransport {
     
     override func openStream() async -> Result<Stream, ClientTransportError> {
         guard let connection = NWConnection(from: self.connectionGroup) else {
-            return .failure(...)
+            return .failure(.openStreamFailed(error: nil))
         }
         
         let stream = QUICStream(connection, transport: self)
@@ -56,7 +59,9 @@ class QUICClientTransport: ClientTransport {
                     try! await self.disconnect()
                 }
             case .cancelled:
-                self.delegate?.clientTransportDidClose(self, error: self.error)
+                Task {
+                    await self.delegate?.clientTransportDidClose(self, error: self.error)
+                }
                 break
             default:
                 break
@@ -81,7 +86,10 @@ class QUICClientTransport: ClientTransport {
     }
     
     internal func registerStream(_ stream: QUICStream) {
-        delegate?.clientTransportDidOpenStream(self, stream: stream)
+        Task {
+            // FIXME: 에러 핸들링
+            try! await delegate?.clientTransportDidOpenStream(self, stream: stream)
+        }
         
         stream.setup()
         stream.start()

@@ -9,46 +9,65 @@ import Foundation
 
 import SwiftProtobuf
 
-public protocol MainChannelDelegate: AnyObject {
-    func mainChannelDidReceiveServerNotice(_ channel: MainChannel, message: ServerNotice)
-    func mainChannelDidReceiveClientHello(_ channel: MainChannel, message: ClientHello)
-    func mainChannelDidReceiveServerHello(_ channel: MainChannel, message: ServerHello)
+enum MainChannelEvent {
+    case receivedServerNotice(ServerNotice)
+    case receivedClientHello(ClientHello)
+    case receivedServerHello(ServerHello)
     
-    func mainChannelDidReceiveAuthChallenge(_ channel: MainChannel, message: AuthChallenge)
-    func mainChannelDidReceiveAuthRequest(_ channel: MainChannel, message: AuthRequest)
-    func mainChannelDidReceiveAuthResponse(_ channel: MainChannel, message: AuthResponse)
+    case receivedAuthChallenge(AuthChallenge)
+    case receivedAuthRequest(AuthRequest)
+    case receivedAuthResponse(AuthResponse)
 }
 
 public class MainChannel: Channel {
-    public weak var delegate: MainChannelDelegate?
+    let events: AsyncStream<MainChannelEvent>
+    let continuation: AsyncStream<MainChannelEvent>.Continuation
     
-    override func handleData(opcode: MessageOpcode, data: Data) {
+    required init(stream: Stream, identifier: ChannelIdentifier, direction: ChannelDirection) {
+        var continuationLocal: AsyncStream<MainChannelEvent>.Continuation!
+        
+        self.events = AsyncStream<MainChannelEvent>(MainChannelEvent.self, bufferingPolicy: .unbounded) { continuation in
+            continuationLocal = continuation
+        }
+        
+        self.continuation = continuationLocal
+
+        super.init(stream: stream, identifier: identifier, direction: direction)
+    }
+
+    override func handleData(data: Data) async throws {
+        guard let frame = data.toSiriusFrame(),
+              frame.isValid()
+        else {
+            throw ChannelError.invalidFrame
+        }
+            
         do {
-            switch opcode {
+            switch frame.opcode {
             case .serverNotice:
-                let message = try ServerNotice.fromProtobufBytes(data)
-                self.delegate?.mainChannelDidReceiveServerNotice(self, message: message)
+                let message = try ServerNotice.fromProtobufBytes(frame.data)
+                self.continuation.yield(.receivedServerNotice(message))
                 break
             case .clientHello:
                 let message = try ClientHello.fromProtobufBytes(data)
-                self.delegate?.mainChannelDidReceiveClientHello(self, message: message)
+                self.continuation.yield(.receivedClientHello(message))
                 break
             case .serverHello:
                 let message = try ServerHello.fromProtobufBytes(data)
-                self.delegate?.mainChannelDidReceiveServerHello(self, message: message)
+                self.continuation.yield(.receivedServerHello(message))
                 break
             
             case .authChallenge:
                 let message = try AuthChallenge.fromProtobufBytes(data)
-                self.delegate?.mainChannelDidReceiveAuthChallenge(self, message: message)
+                self.continuation.yield(.receivedAuthChallenge(message))
                 break
             case .authRequest:
                 let message = try AuthRequest.fromProtobufBytes(data)
-                self.delegate?.mainChannelDidReceiveAuthRequest(self, message: message)
+                self.continuation.yield(.receivedAuthRequest(message))
                 break
             case .authResponse:
                 let message = try AuthResponse.fromProtobufBytes(data)
-                self.delegate?.mainChannelDidReceiveAuthResponse(self, message: message)
+                continuation.yield(.receivedAuthResponse(message))
                 break
                 
             default:
@@ -66,9 +85,10 @@ public class MainChannel: Channel {
         }
     }
     
-    override func handleStreamClose(error: (any Error)?) {
-        
+    override func handleStreamClose() {
+        self.continuation.finish()
     }
+    
 }
 
 public extension MainChannel {

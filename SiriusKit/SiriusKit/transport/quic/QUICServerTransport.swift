@@ -16,7 +16,11 @@ struct SiriusQUICAlpn: RawRepresentable, Equatable, Hashable {
         self.rawValue = rawValue
     }
     
-    static let siriusV1 = SiriusQUICAlpn(rawValue: "pl.unstabler.sirius.v1")
+    static let siriusV1 = SiriusQUICAlpn(rawValue: "pl.unstabler.sirius")
+}
+
+enum QUICServerTransportError: Error {
+    case quicParametersCreationFailed
 }
 
 class QUICServerTransport: ServerTransport {
@@ -35,7 +39,7 @@ class QUICServerTransport: ServerTransport {
     override func startup() async throws {
         return try await withCheckedThrowingContinuation { continuation in
             guard let parameters = createQuicParameters() else {
-                continuation.resume(throwing: ...)
+                continuation.resume(throwing: QUICServerTransportError.quicParametersCreationFailed)
                 return
             }
             
@@ -60,7 +64,7 @@ class QUICServerTransport: ServerTransport {
                 }
                 
                 listener.newConnectionGroupHandler = { [weak self] connectionGroup in
-                    print("New connection received from: \(String(describing: connectionGroup.endpoint))")
+                    print("New connection received from: \(connectionGroup.debugDescription))")
                     self?.handleNewConnectionGroup(connectionGroup: connectionGroup)
                 }
                 
@@ -68,7 +72,7 @@ class QUICServerTransport: ServerTransport {
                 listener.start(queue: .main)
                 self.listener = listener
             } catch {
-                continuation.resume(throwing: ...)
+                continuation.resume(throwing: error)
                 return
             }
             
