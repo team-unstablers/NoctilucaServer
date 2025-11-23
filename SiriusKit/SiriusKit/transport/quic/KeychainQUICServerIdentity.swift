@@ -15,19 +15,17 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
     }
     
     public static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self {
-        /*
         // 충돌 여부 확인
         if identityExists(label: args.identityLabel) {
             throw QUICServerIdentityCreationError.identityAlreadyExists
         }
         
-        // 키체인에 보관되는 self-signed 인증서 생성
-        let (_, certificate) = try SelfSignedCertificateBuilder.createIdentity(args: args, storePrivateKeyInKeychain: true)
+        let (_, secCertificate) = try SelfSignedCertificateBuilder.createSecIdentity(args: args, storePrivateKeyInKeychain: true)
         
         // 인증서를 키체인에 저장 (키는 isPermanent로 생성)
         let addQuery: [String: Any] = [
             kSecClass as String: kSecClassCertificate,
-            kSecValueRef as String: certificate,
+            kSecValueRef as String: secCertificate,
             kSecAttrLabel as String: args.identityLabel
         ]
         let status = SecItemAdd(addQuery as CFDictionary, nil)
@@ -41,10 +39,8 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
             throw QUICServerIdentityCreationError.keychainWriteFailed(status)
         }
         
+        // identity already in keychain (via permanent key); return wrapper
         return Self(args.identityLabel)
-         */
-        
-        throw QUICServerIdentityCreationError.notImplemented
     }
     
     public func getServerIdentity() async throws -> sec_identity_t {
