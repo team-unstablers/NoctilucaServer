@@ -25,6 +25,7 @@
 /* Begin PBXBuildFile section */
 		F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */; };
 		F6F8A6ED2ED3129F0073B591 /* SiriusKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F66965292ECF26FD0032EF4E /* SiriusKit.framework */; platformFilters = (macos, ); };
+		F6F8A7022ED31E250073B591 /* X509 in Frameworks */ = {isa = PBXBuildFile; productRef = F6F8A7012ED31E250073B591 /* X509 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6F8A7022ED31E250073B591 /* X509 in Frameworks */,
 				F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -138,6 +140,7 @@
 			name = SiriusKit;
 			packageProductDependencies = (
 				F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */,
+				F6F8A7012ED31E250073B591 /* X509 */,
 			);
 			productName = SiriusKit;
 			productReference = F66965292ECF26FD0032EF4E /* SiriusKit.framework */;
@@ -198,6 +201,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
+				F6F8A7002ED31E250073B591 /* XCRemoteSwiftPackageReference "swift-certificates" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669652A2ECF26FD0032EF4E /* Products */;
@@ -601,6 +605,14 @@
 				minimumVersion = 1.33.3;
 			};
 		};
+		F6F8A7002ED31E250073B591 /* XCRemoteSwiftPackageReference "swift-certificates" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-certificates.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.15.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -608,6 +620,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
 			productName = SwiftProtobuf;
+		};
+		F6F8A7012ED31E250073B591 /* X509 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6F8A7002ED31E250073B591 /* XCRemoteSwiftPackageReference "swift-certificates" */;
+			productName = X509;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
