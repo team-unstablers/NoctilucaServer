@@ -18,13 +18,8 @@ internal class ChannelOpenTask: ChannelLike {
     func blockUntilReceiveData() async throws -> SiriusFrame {
         for await event in stream.events {
             switch (event) {
-            case .data(let data):
-                guard let frame = data.toSiriusFrame() else {
-                    throw ChannelManagerError.channelOpenFailed
-                }
-                
+            case .frame(let frame):
                 return frame
-                
             case .error(let error):
                 // FIXME: error handling
                 fallthrough

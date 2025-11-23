@@ -35,10 +35,8 @@ public class MainChannel: Channel {
         super.init(stream: stream, identifier: identifier, direction: direction)
     }
 
-    override func handleData(data: Data) async throws {
-        guard let frame = data.toSiriusFrame(),
-              frame.isValid()
-        else {
+    override func handleFrame(frame: SiriusFrame) async throws {
+        guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
             
@@ -49,24 +47,24 @@ public class MainChannel: Channel {
                 self.continuation.yield(.receivedServerNotice(message))
                 break
             case .clientHello:
-                let message = try ClientHello.fromProtobufBytes(data)
+                let message = try ClientHello.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedClientHello(message))
                 break
             case .serverHello:
-                let message = try ServerHello.fromProtobufBytes(data)
+                let message = try ServerHello.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedServerHello(message))
                 break
             
             case .authChallenge:
-                let message = try AuthChallenge.fromProtobufBytes(data)
+                let message = try AuthChallenge.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedAuthChallenge(message))
                 break
             case .authRequest:
-                let message = try AuthRequest.fromProtobufBytes(data)
+                let message = try AuthRequest.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedAuthRequest(message))
                 break
             case .authResponse:
-                let message = try AuthResponse.fromProtobufBytes(data)
+                let message = try AuthResponse.fromProtobufBytes(frame.data)
                 continuation.yield(.receivedAuthResponse(message))
                 break
                 

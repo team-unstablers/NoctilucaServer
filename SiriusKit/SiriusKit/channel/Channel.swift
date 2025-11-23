@@ -48,8 +48,8 @@ public class Channel: ChannelLike {
     private func streamEventLoop() async throws {
         for await event in self.stream.events {
             switch event {
-            case .data(let data):
-                try await self.handleData(data: data)
+            case .frame(let frame):
+                try await self.handleFrame(frame: frame)
             case .closed:
                 self.handleStreamClose()
                 return
@@ -61,7 +61,7 @@ public class Channel: ChannelLike {
         }
     }
     
-    func handleData(data: Data) async throws {
+    func handleFrame(frame: SiriusFrame) async throws {
         // to be overridden by subclasses
     }
     

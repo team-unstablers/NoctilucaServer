@@ -15,6 +15,9 @@ struct MessageOpcode: RawRepresentable, Equatable, Hashable {
     init(rawValue: UInt16) {
         self.rawValue = rawValue
     }
+    
+    // 업그레이드된 프로토콜 메시지 (encapsulated)
+    static let encapsulatedProtocolMessage = MessageOpcode(rawValue: 0xFFFE)
 }
 
 protocol SiriusEnum<ProtobufEnum>: RawRepresentable, Equatable, Hashable where RawValue: SignedInteger {

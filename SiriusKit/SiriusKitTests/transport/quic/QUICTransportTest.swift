@@ -114,8 +114,8 @@ final class QUICTransportTest {
                 streamListenerTask = Task {
                     for await event in stream.events {
                         switch event {
-                        case .data(let data):
-                            if let frame = data.toSiriusFrame(), frame.isValid() {
+                        case .frame(let frame):
+                            if frame.isValid() {
                                 self.receivedFrameFromClient = frame
                                 self.didReceiveFrameFromClient = true
                             }

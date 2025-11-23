@@ -14,7 +14,7 @@ enum StreamError: Error {
 }
 
 enum StreamEvent {
-    case data(Data)
+    case frame(SiriusFrame)
     case closed
     case error(Error)
 }

@@ -79,33 +79,36 @@ class QUICStream: Stream {
     
     private func receiveLoop() async throws {
         while true {
-            let result = await receiveNext()
+            // read header
+            let rawHeader = try (await self.read(minSize: 6, maxSize: 6)).get()
             
-            switch result {
-            case .success(let data):
-                if let data = data {
-                    self.continuation.yield(with: .success(.data(data)))
-                }
-                break
-            case .failure(let error):
-                throw error
-            }
+            let opcode = rawHeader.subdata(in: 0..<2).withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
+            let length = rawHeader.subdata(in: 2..<6).withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+            
+            // TODO: fragmented read
+            let payload = (length > 0) ?
+                try (await self.read(minSize: Int(length), maxSize: Int(length))).get() :
+                Data()
+            
+            let frame = SiriusFrame(opcode: MessageOpcode(rawValue: opcode),
+                                    length: length,
+                                    data: payload)
+            
+            self.continuation.yield(with: .success(.frame(frame)))
         }
         
     }
     
-    private func receiveNext() async -> Result<Data?, Error> {
+    private func read(minSize: Int, maxSize: Int) async -> Result<Data, Error> {
         return await withCheckedContinuation { cont in
-            //                      vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv: 이거 fragmentation이나 그런거 걱정 안 해도 되나...? 아 괜히 쫄리네 ㅠ_ㅠ
-            self.connection.receive(minimumIncompleteLength: 6, maximumLength: Int(Int32.max)) { content, contentContext, eos, error in
+            self.connection.receive(minimumIncompleteLength: minSize, maximumLength: maxSize) { content, contentContext, eos, error in
                 if let error = error {
                     cont.resume(returning: .failure(error)) // Map error appropriately
                 } else if let content = content {
                     print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
                     cont.resume(returning: .success(content))
                 } else {
-                    // FIXME: 로직 개선
-                    cont.resume(returning: .success(nil)) // No data received
+                    fatalError("???")
                 }
             }
         }
