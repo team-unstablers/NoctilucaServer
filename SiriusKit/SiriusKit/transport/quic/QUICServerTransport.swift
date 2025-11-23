@@ -20,28 +20,30 @@ struct SiriusQUICAlpn: RawRepresentable, Equatable, Hashable {
 }
 
 enum QUICServerTransportError: Error {
+    case identityLoadFailed
+    case identitySanityCheckFailed
     case quicParametersCreationFailed
 }
 
 class QUICServerTransport: ServerTransport {
     private let port: NWEndpoint.Port
+    private let identity: QUICServerIdentity
+    
     private var listener: NWListener?
     
     private(set) var clients: [QUICClientTransport] = []
     
-    init(port: NWEndpoint.Port) {
+    init(port: NWEndpoint.Port, using identity: QUICServerIdentity) {
         self.port = port
-        
+        self.identity = identity
         
         super.init()
     }
     
     override func startup() async throws {
+        let parameters = try await self.createQuicParameters()
         return try await withCheckedThrowingContinuation { continuation in
-            guard let parameters = createQuicParameters() else {
-                continuation.resume(throwing: QUICServerTransportError.quicParametersCreationFailed)
-                return
-            }
+            
             
             do {
                 let listener = try NWListener(using: parameters, on: port)
@@ -149,7 +151,7 @@ class QUICServerTransport: ServerTransport {
     }
     
     // QUIC 파라미터 및 TLS 설정 (가장 중요한 부분)
-    private func createQuicParameters() -> NWParameters? {
+    private func createQuicParameters() async throws -> NWParameters {
         // QUIC 보안 옵션 생성
         let options = NWProtocolQUIC.Options()
         
@@ -158,27 +160,21 @@ class QUICServerTransport: ServerTransport {
         options.direction = .bidirectional
         
         // 보안 신원(Identity) 로드 - 실제 구현 시 .p12 파일 등에서 로드해야 함
-        guard let identity = loadIdentity() else {
-            print("Identity(Certificate) not found.")
-            return nil
+        guard try await self.identity.sanityCheck() else {
+            throw QUICServerTransportError.identitySanityCheckFailed
         }
         
-        // TLS 옵션에 Identity 추가
-        sec_protocol_options_set_local_identity(options.securityProtocolOptions, identity)
+        do {
+            let secIdentity = try await self.identity.getServerIdentity()
+            
+            // TLS 옵션에 Identity 추가
+            sec_protocol_options_set_local_identity(options.securityProtocolOptions, secIdentity)
+        } catch {
+            throw QUICServerTransportError.identityLoadFailed
+        }
         
         // QUIC 파라미터 생성
         return NWParameters(quic: options)
-    }
-    
-    // MARK: - 인증서 로드 헬퍼 (더미 함수)
-    // 실제로는 Keychain이나 Bundle에 있는 .p12 파일을 읽어와야 합니다.
-    private func loadIdentity() -> sec_identity_t? {
-        // 주의: 실제 인증서 로딩 코드는 복잡하며 Keychain 접근이 필요할 수 있습니다.
-        // 테스트를 위해 간단히 nil을 반환하지 않도록 구현해야 합니다.
-        // 여기서는 예시를 위해 nil을 반환하지만, 실제로는 유효한 Identity가 있어야 서버가 시작됩니다.
-        
-        // 예: P12 파일에서 로드하는 로직 구현 필요
-        return nil // 실제 사용시에는 유효한 sec_identity_t 객체를 리턴하세요.
     }
 }
 
