@@ -91,38 +91,37 @@ final class QUICTransportTest {
     
     /// SCENARIO:
     ///   1. QUIC 서버 트랜스포트를 기동한다.
-    ///   2. 클라이언트가 서버에 연결을 시도한다.
-    ///   3. 서버가 연결을 수락한다.
-    ///   4. 클라이언트가 스트림을 연다.
-    ///   5. 서버가 스트림을 수락한다.
-    ///   6. 클라이언트가 ClientHello 메시지를 보낸다.
-    ///   7. 서버가 ClientHello 메시지를 수신하고, ServerHello 메시지를 보낸다.
-    ///   8. 서로의 메시지 수신을 assert() 한다.
-    ///
+    ///   2. 심플 QUIC 클라이언트가 서버에 연결을 시도한다.
+    ///   3. 서버가 연결을 수락하고, 클라이언트는 메인 스트림 준비 이벤트를 수신한다.
+    ///   4. 클라이언트가 프레임을 전송하면 서버(ClientTransportDelegate)가 수신한다.
+    ///   5. 서버가 프레임을 전송하면 클라이언트가 수신한다.
     @Test("E2E 테스트 케이스 #1")
     func e2eTestCase_1() async throws {
         class TestClientTransportDelegate: ClientTransportDelegate {
-            var error: (any Error)? = nil
-            
             var didOpenStream = false
-            var didReceiveData = false
+            var didReceiveFrameFromClient = false
+            var receivedFrameFromClient: SiriusFrame?
+            var error: (any Error)?
             
-            var streamListenerTask: Task<Void, any Error>? = nil
-            var receivedData: Data? = nil
+            var openedStream: SiriusKit.Stream?
+            var streamListenerTask: Task<Void, Never>?
             
             func clientTransportDidOpenStream(_ transport: SiriusKit.ClientTransport, stream: SiriusKit.Stream) async throws {
                 didOpenStream = true
+                openedStream = stream
                 
                 streamListenerTask = Task {
                     for await event in stream.events {
                         switch event {
                         case .data(let data):
-                            self.didReceiveData = true
-                            self.receivedData = data
-                        case .closed:
-                            break
+                            if let frame = data.toSiriusFrame(), frame.isValid() {
+                                self.receivedFrameFromClient = frame
+                                self.didReceiveFrameFromClient = true
+                            }
                         case .error(let error):
                             self.error = error
+                        case .closed:
+                            break
                         }
                     }
                 }
@@ -137,10 +136,8 @@ final class QUICTransportTest {
         
         class TestServerDelegate: ServerTransportDelegate {
             let transportDelegate: TestClientTransportDelegate
-            
             var didStartListening = false
             var didAcceptConnection = false
-            
             
             init(transportDelegate: TestClientTransportDelegate) {
                 self.transportDelegate = transportDelegate
@@ -179,15 +176,83 @@ final class QUICTransportTest {
             }
         }
         
-        // condvar같은거 없나?
+        // 서버가 준비될 때까지 대기
+        try await Task.sleep(for: .seconds(1))
+        #expect(serverDelegate.didStartListening, "QUIC 서버가 정상적으로 기동되어야 합니다.")
+        
+        // 클라이언트가 서버에 연결 시도
+        let client = SimpleQUICClient(host: "127.0.0.1", port: self.port.rawValue)
+        await client.connect()
+        
+        // 클라이언트 이벤트를 일부 소비하여 연결 상태를 확인
+        var didReceiveConnectedEvent = false
+        var didReceiveMainStreamOpenEvent = false
+        var clientError: (any Error)?
+        
+        var iterator = client.events.makeAsyncIterator()
+        for _ in 0..<4 {
+            guard let event = await iterator.next() else { break }
+            
+            switch event {
+            case .connected:
+                didReceiveConnectedEvent = true
+            case .mainStreamOpen:
+                didReceiveMainStreamOpenEvent = true
+            case .error(let error):
+                clientError = error
+            default:
+                break
+            }
+            
+            if didReceiveConnectedEvent && didReceiveMainStreamOpenEvent {
+                break
+            }
+        }
+        
+        // 서버가 연결을 인지할 시간을 잠시 준다.
         try await Task.sleep(for: .seconds(1))
         
-        #expect(serverDelegate.didStartListening, "QUIC 서버가 정상적으로 기동되어야 합니다.")
-        #expect(serverDelegate.didAcceptConnection, "QUIC 서버가 클라이언트의 연결을 수락해야 합니다.")
+        #expect(clientError == nil, "클라이언트는 오류 없이 연결되어야 합니다.")
+        #expect(didReceiveConnectedEvent == true, "클라이언트 연결 이벤트가 발생해야 합니다.")
+        #expect(didReceiveMainStreamOpenEvent == true, "클라이언트는 메인 스트림 오픈 이벤트를 수신해야 합니다.")
+        #expect(serverDelegate.didAcceptConnection == true, "서버가 클라이언트의 연결을 수락해야 합니다.")
         
-        #expect(transportDelegate.didOpenStream, "클라이언트가 스트림을 열어야 합니다.")
-        #expect(transportDelegate.didReceiveData, "클라이언트가 서버로부터 데이터를 수신해야 합니다.")
+        // 4. 클라이언트 -> 서버로 프레임 전송
+        let clientPayload = Data("hello-from-client".utf8)
+        let clientOpcode = MessageOpcode(rawValue: 0xAA01)
+        let clientFrame = SiriusFrame(opcode: clientOpcode, length: UInt32(clientPayload.count), data: clientPayload)
         
+        await client.send(clientFrame)
+        try await Task.sleep(for: .milliseconds(500))
+        
+        #expect(transportDelegate.didOpenStream == true, "서버 측 클라이언트 트랜스포트가 스트림을 열어야 합니다.")
+        #expect(transportDelegate.error == nil, "서버 측 스트림에서 에러가 발생하지 않아야 합니다.")
+        #expect(transportDelegate.didReceiveFrameFromClient == true, "서버는 클라이언트가 보낸 프레임을 수신해야 합니다.")
+        if let received = transportDelegate.receivedFrameFromClient {
+            #expect(received.opcode == clientOpcode, "서버에서 수신한 opcode가 전송한 opcode와 일치해야 합니다.")
+            #expect(received.data == clientPayload, "서버에서 수신한 페이로드가 전송한 페이로드와 일치해야 합니다.")
+        }
+        
+        // 5. 서버 -> 클라이언트로 프레임 전송
+        let serverPayload = Data("hello-from-server".utf8)
+        let serverOpcode = MessageOpcode(rawValue: 0xBB01)
+        if let stream = transportDelegate.openedStream {
+            let writeResult = await stream.write(frame: serverPayload, opcode: serverOpcode)
+            if case .failure(let error) = writeResult {
+                #expect(Bool(false), "서버가 프레임을 전송할 수 있어야 합니다. 에러: \(error)")
+            }
+        } else {
+            #expect(Bool(false), "서버가 전송할 스트림을 확보해야 합니다.")
+        }
+        
+        let receivedByClient = await client.recv()
+        #expect(receivedByClient != nil, "클라이언트는 서버가 보낸 프레임을 수신해야 합니다.")
+        if let frame = receivedByClient {
+            #expect(frame.opcode == serverOpcode, "클라이언트가 수신한 opcode가 서버가 전송한 opcode와 일치해야 합니다.")
+            #expect(frame.data == serverPayload, "클라이언트가 수신한 페이로드가 서버가 전송한 페이로드와 일치해야 합니다.")
+        }
+        
+        // 정리: 스트림 리스너 태스크 중단
         if let streamListenerTask = transportDelegate.streamListenerTask {
             streamListenerTask.cancel()
         }
