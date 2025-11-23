@@ -16,6 +16,8 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
     private let certPath: String
     private let keyPath: String
     
+    private var __HACK__trust: SecTrust? = nil
+    
     // Set this to protect the private key; currently only unencrypted PEM is emitted.
     // private static let keyPassphrase: String? = "changeit"
     private static let keyPassphrase: String? = nil
@@ -99,6 +101,9 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
         } else {
             secPrivateKey = nil
         }
+        
+        // FIXME: 신뢰 여부를 확인할 수 있었으면 좋겠는데..
+        try SRSecurity.shared.trustCertificate(secCertificate, scope: .user).get()
         
         guard let secPrivateKey else {
             throw QUICServerIdentityCreationError.keychainLookupFailed(error?.takeRetainedValue().asOSStatus() ?? errSecInternalError)
