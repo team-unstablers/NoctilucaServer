@@ -83,11 +83,24 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
         let keyAttributes: [String: Any] = [
             kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
             kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-            kSecAttrKeySizeInBits as String: 256,
-            kSecAttrIsPermanent as String: false
+            kSecAttrKeySizeInBits as String: 256
         ]
         var error: Unmanaged<CFError>?
-        guard let secPrivateKey = SecKeyCreateWithData(keyData as CFData, keyAttributes as CFDictionary, &error) else {
+        
+        // SecKeyCreateWithData는 PKCS#8 DER을 직접 받지 못하므로, 우선 X9.63 형식으로 시도하고
+        // 실패 시 PKCS#8을 CryptoKit으로 파싱해 X9.63으로 변환한 뒤 재시도한다.
+        let secPrivateKey: SecKey?
+        if let directKey = SecKeyCreateWithData(keyData as CFData, keyAttributes as CFDictionary, &error) {
+            secPrivateKey = directKey
+        } else if let parsed = try? P256.Signing.PrivateKey(derRepresentation: keyData) {
+            error = nil
+            let x963 = parsed.x963Representation
+            secPrivateKey = SecKeyCreateWithData(x963 as CFData, keyAttributes as CFDictionary, &error)
+        } else {
+            secPrivateKey = nil
+        }
+        
+        guard let secPrivateKey else {
             throw QUICServerIdentityCreationError.keychainLookupFailed(error?.takeRetainedValue().asOSStatus() ?? errSecInternalError)
         }
         
@@ -101,19 +114,19 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
 
 // MARK: - PEM helpers
 
-private func pemEncode(type: String, data: Data) -> String {
+func pemEncode(type: String, data: Data) -> String {
     let base64 = data.base64EncodedString(options: [.lineLength64Characters, .endLineWithLineFeed])
     return "-----BEGIN \(type)-----\n\(base64)\n-----END \(type)-----\n"
 }
 
-private func pemEncode(type: String, serializer: (inout DER.Serializer) throws -> Void) throws -> String {
+func pemEncode(type: String, serializer: (inout DER.Serializer) throws -> Void) throws -> String {
     var serializerInstance = DER.Serializer()
     try serializer(&serializerInstance)
     let der = Data(serializerInstance.serializedBytes)
     return pemEncode(type: type, data: der)
 }
 
-private func loadPEMData(atPath path: String, type: String) throws -> Data {
+func loadPEMData(atPath path: String, type: String) throws -> Data {
     let pemString = try String(contentsOfFile: path, encoding: .utf8)
     guard let beginRange = pemString.range(of: "-----BEGIN \(type)-----"),
           let endRange = pemString.range(of: "-----END \(type)-----")

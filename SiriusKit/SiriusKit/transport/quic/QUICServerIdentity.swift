@@ -104,57 +104,7 @@ enum SelfSignedCertificateBuilder {
         
         return (certificate, key)
     }
-    
-    static func createSecIdentity(args: QUICServerIdentityCreationArgs, storePrivateKeyInKeychain: Bool) throws -> (SecIdentity, SecCertificate) {
-        let (certificate, key) = try createCertificateAndKey(args: args)
-        return try convertToSecIdentity(
-            certificate: certificate,
-            privateKey: key,
-            label: args.identityLabel,
-            storeInKeychain: storePrivateKeyInKeychain
-        )
-    }
-    
-    // Swift Crypto 키와 인증서를 SecIdentity로 변환하는 헬퍼
-    static func convertToSecIdentity(
-        certificate: Certificate,
-        privateKey: P256.Signing.PrivateKey,
-        label: String,
-        storeInKeychain: Bool
-    ) throws -> (SecIdentity, SecCertificate) {
-        
-        // 4-1. SecCertificate 생성
-        var derSerializer = DER.Serializer()
-        
-        try certificate.serialize(into: &derSerializer)
-        
-        let derData = derSerializer.serializedBytes
-        let certData = Data(derData)
-        guard let secCertificate = SecCertificateCreateWithData(nil, certData as CFData) else {
-            throw QUICServerIdentityCreationError.certificateCreationFailed
-        }
-        
-        // 4-2. SecKey (Private Key) 생성
-        let privateKeyData = privateKey.derRepresentation
-        let keyAttributes: [String: Any] = [
-            kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-            kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-            kSecAttrKeySizeInBits as String: 256,
-            kSecAttrLabel as String: label,
-            kSecAttrIsPermanent as String: storeInKeychain // 키체인 저장 여부
-        ]
-        
-        var error: Unmanaged<CFError>?
-        guard let secPrivateKey = SecKeyCreateWithData(privateKeyData as CFData, keyAttributes as CFDictionary, &error) else {
-            throw QUICServerIdentityCreationError.keychainWriteFailed(error?.takeRetainedValue().asOSStatus() ?? errSecInternalError)
-        }
-        
-        guard let identity = SecIdentityCreate(nil, secCertificate, secPrivateKey) else {
-             throw QUICServerIdentityCreationError.identityCreationFailed
-        }
-        
-        return (identity, secCertificate)
-    }
+   
 }
 
 public extension QUICServerIdentity {
@@ -202,7 +152,14 @@ public extension QUICServerIdentity {
         }
         
         if #available(macOS 10.15, *) {
-            return SecTrustEvaluateWithError(trust, nil)
+            var error: CFError?
+            let isTrusted = SecTrustEvaluateWithError(trust, &error)
+            
+            if let error {
+                throw error
+            }
+            
+            return isTrusted
         } else {
             var result = SecTrustResultType.invalid
             let status = SecTrustEvaluate(trust, &result)

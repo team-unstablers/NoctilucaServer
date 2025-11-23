@@ -29,6 +29,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		F6BD3B162ED335C4000011DF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F66965202ECF26FD0032EF4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F6BD3B072ED335B4000011DF;
+			remoteInfo = SiriusKitTestsHelper;
+		};
 		F6F8A6EE2ED3129F0073B591 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F66965202ECF26FD0032EF4E /* Project object */;
@@ -40,6 +47,7 @@
 
 /* Begin PBXFileReference section */
 		F66965292ECF26FD0032EF4E /* SiriusKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiriusKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6BD3B082ED335B4000011DF /* SiriusKitTestsHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SiriusKitTestsHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6F8A6E92ED3129F0073B591 /* SiriusKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SiriusKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -59,6 +67,16 @@
 			path = "llm-tasks";
 			sourceTree = "<group>";
 		};
+		F6BD3AF72ED33516000011DF /* SiriusKitTestsHelper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SiriusKitTestsHelper;
+			sourceTree = "<group>";
+		};
+		F6BD3B092ED335B4000011DF /* SiriusKitTestsHelper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SiriusKitTestsHelper;
+			sourceTree = "<group>";
+		};
 		F6F8A6EA2ED3129F0073B591 /* SiriusKitTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SiriusKitTests;
@@ -73,6 +91,13 @@
 			files = (
 				F6F8A7022ED31E250073B591 /* X509 in Frameworks */,
 				F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6BD3B052ED335B4000011DF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -94,6 +119,8 @@
 				F669656B2ECF28AC0032EF4E /* dependencies */,
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
 				F6F8A6EA2ED3129F0073B591 /* SiriusKitTests */,
+				F6BD3AF72ED33516000011DF /* SiriusKitTestsHelper */,
+				F6BD3B092ED335B4000011DF /* SiriusKitTestsHelper */,
 				F669652A2ECF26FD0032EF4E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,6 +130,7 @@
 			children = (
 				F66965292ECF26FD0032EF4E /* SiriusKit.framework */,
 				F6F8A6E92ED3129F0073B591 /* SiriusKitTests.xctest */,
+				F6BD3B082ED335B4000011DF /* SiriusKitTestsHelper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -146,6 +174,28 @@
 			productReference = F66965292ECF26FD0032EF4E /* SiriusKit.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		F6BD3B072ED335B4000011DF /* SiriusKitTestsHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F6BD3B102ED335B5000011DF /* Build configuration list for PBXNativeTarget "SiriusKitTestsHelper" */;
+			buildPhases = (
+				F6BD3B042ED335B4000011DF /* Sources */,
+				F6BD3B052ED335B4000011DF /* Frameworks */,
+				F6BD3B062ED335B4000011DF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F6BD3B092ED335B4000011DF /* SiriusKitTestsHelper */,
+			);
+			name = SiriusKitTestsHelper;
+			packageProductDependencies = (
+			);
+			productName = SiriusKitTestsHelper;
+			productReference = F6BD3B082ED335B4000011DF /* SiriusKitTestsHelper.app */;
+			productType = "com.apple.product-type.application";
+		};
 		F6F8A6E82ED3129F0073B591 /* SiriusKitTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F6F8A6F02ED3129F0073B591 /* Build configuration list for PBXNativeTarget "SiriusKitTests" */;
@@ -158,6 +208,7 @@
 			);
 			dependencies = (
 				F6F8A6EF2ED3129F0073B591 /* PBXTargetDependency */,
+				F6BD3B172ED335C4000011DF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F6F8A6EA2ED3129F0073B591 /* SiriusKitTests */,
@@ -182,11 +233,15 @@
 					F66965282ECF26FD0032EF4E = {
 						CreatedOnToolsVersion = 26.1;
 					};
+					F6BD3B072ED335B4000011DF = {
+						CreatedOnToolsVersion = 26.1;
+					};
 					F6EEA0E42ECF29B300D8E961 = {
 						CreatedOnToolsVersion = 26.1;
 					};
 					F6F8A6E82ED3129F0073B591 = {
 						CreatedOnToolsVersion = 26.1;
+						TestTargetID = F6BD3B072ED335B4000011DF;
 					};
 				};
 			};
@@ -211,12 +266,20 @@
 				F66965282ECF26FD0032EF4E /* SiriusKit */,
 				F6EEA0E42ECF29B300D8E961 /* msgdef_swift */,
 				F6F8A6E82ED3129F0073B591 /* SiriusKitTests */,
+				F6BD3B072ED335B4000011DF /* SiriusKitTestsHelper */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		F66965272ECF26FD0032EF4E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6BD3B062ED335B4000011DF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -268,6 +331,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F6BD3B042ED335B4000011DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6F8A6E52ED3129F0073B591 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -278,6 +348,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F6BD3B172ED335C4000011DF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F6BD3B072ED335B4000011DF /* SiriusKitTestsHelper */;
+			targetProxy = F6BD3B162ED335C4000011DF /* PBXContainerItemProxy */;
+		};
 		F6F8A6EF2ED3129F0073B591 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			platformFilters = (
@@ -487,6 +562,75 @@
 			};
 			name = Release;
 		};
+		F6BD3B112ED335B5000011DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.Sirius.SiriusKitTestsHelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F6BD3B122ED335B5000011DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.Sirius.SiriusKitTestsHelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		F6EEA0E62ECF29B300D8E961 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -510,6 +654,7 @@
 		F6F8A6F12ED3129F0073B591 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = XHA76UVA95;
@@ -527,6 +672,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SiriusKitTestsHelper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SiriusKitTestsHelper";
 				XROS_DEPLOYMENT_TARGET = 26.1;
 			};
 			name = Debug;
@@ -534,6 +680,7 @@
 		F6F8A6F22ED3129F0073B591 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = XHA76UVA95;
@@ -551,6 +698,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SiriusKitTestsHelper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SiriusKitTestsHelper";
 				XROS_DEPLOYMENT_TARGET = 26.1;
 			};
 			name = Release;
@@ -572,6 +720,15 @@
 			buildConfigurations = (
 				F66965332ECF26FD0032EF4E /* Debug */,
 				F66965342ECF26FD0032EF4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F6BD3B102ED335B5000011DF /* Build configuration list for PBXNativeTarget "SiriusKitTestsHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F6BD3B112ED335B5000011DF /* Debug */,
+				F6BD3B122ED335B5000011DF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
