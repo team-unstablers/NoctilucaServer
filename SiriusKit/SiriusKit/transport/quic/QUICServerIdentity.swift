@@ -58,6 +58,11 @@ public struct QUICServerIdentityCreationArgs {
     }
 }
 
+enum QUICServerIdentitySource {
+    case keychain(label: String)
+    case certFile(pemPath: String, keyPath: String)
+}
+
 public protocol QUICServerIdentity {
     static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self
     

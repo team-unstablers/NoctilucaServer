@@ -12,6 +12,8 @@ import Testing
 struct KeychainQUICServerIdentityTests {
     @Test
     func createsKeychainEntry() async throws {
+        let keychain = SRKeychain.shared
+        
         let commonName = "pl.unstabler.sirius.SiriusKitTests.QUICServerIdentityTest.\(UUID().uuidString)"
         
         let args = QUICServerIdentityCreationArgs(
@@ -23,10 +25,13 @@ struct KeychainQUICServerIdentityTests {
             validityPeriodInDays: 1
         )
         
+        defer {
+            try? keychain.deleteItem(by: commonName, clazz: .certificate).get()
+            try? keychain.deleteItem(by: commonName, clazz: .privateKey).get()
+        }
+        
         let identity = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)
         
         #expect(try await identity.sanityCheck())
-        
-        // identity.deleteIdentity()
     }
 }
