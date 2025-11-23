@@ -1,0 +1,169 @@
+//
+//  SimpleQUICClient.swift
+//  SiriusKit
+//
+//  Created by Gyuhwan Park on 11/23/25.
+//
+
+import Foundation
+import Network
+
+@testable import SiriusKit
+
+enum SimpleQUICClientEvent {
+    case connected
+    case disconnected
+    
+    case mainStreamOpen
+    
+    case messageSent(opcode: MessageOpcode)
+    
+    case error(error: (any Error))
+}
+
+// 단일 스트림을 열고 간단한 메시지를 주고받는 QUIC 클라이언트.
+class SimpleQUICClient {
+    let events: AsyncStream<SimpleQUICClientEvent>
+    let continuation: AsyncStream<SimpleQUICClientEvent>.Continuation
+    
+    private let queue = DispatchQueue(label: "pl.unstabler.sirius.simplequicclient")
+    private var connection: NWConnection?
+    
+    let host: String
+    let port: UInt16
+    
+    init(host: String, port: UInt16) {
+        self.host = host
+        self.port = port
+        
+        var continuationLocal: AsyncStream<SimpleQUICClientEvent>.Continuation!
+        
+        self.events = AsyncStream<SimpleQUICClientEvent>(SimpleQUICClientEvent.self, bufferingPolicy: .unbounded) { continuation in
+            continuationLocal = continuation
+        }
+        
+        self.continuation = continuationLocal
+    }
+    
+    func connect() async {
+        let parameters = self.makeParameters()
+        let endpoint = NWEndpoint.hostPort(host: .init(self.host), port: .init(integerLiteral: self.port))
+        let connection = NWConnection(to: endpoint, using: parameters)
+        
+        self.connection = connection
+        
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            var resumed = false
+            let resumeOnce: () -> Void = {
+                guard resumed == false else { return }
+                resumed = true
+                cont.resume()
+            }
+            
+            connection.stateUpdateHandler = { [weak self] state in
+                guard let self else { return }
+                
+                switch state {
+                case .ready:
+                    self.continuation.yield(.connected)
+                    self.continuation.yield(.mainStreamOpen)
+                    resumeOnce()
+                case .failed(let error):
+                    self.continuation.yield(.error(error: error))
+                    self.continuation.yield(.disconnected)
+                    resumeOnce()
+                case .cancelled:
+                    self.continuation.yield(.disconnected)
+                    resumeOnce()
+                default:
+                    break
+                }
+            }
+            
+            connection.start(queue: self.queue)
+        }
+    }
+    
+    func send(_ frame: SiriusFrame) async {
+        guard let connection else {
+            self.continuation.yield(.error(error: SimpleQUICClientError.connectionNotReady))
+            return
+        }
+        
+        let data = self.encode(frame: frame)
+        
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            connection.send(content: data, completion: .contentProcessed { [weak self] error in
+                if let error {
+                    self?.continuation.yield(.error(error: error))
+                } else {
+                    self?.continuation.yield(.messageSent(opcode: frame.opcode))
+                }
+                
+                cont.resume()
+            })
+        }
+    }
+    
+    func recv() async -> SiriusFrame? {
+        guard let connection else {
+            self.continuation.yield(.error(error: SimpleQUICClientError.connectionNotReady))
+            return nil
+        }
+        
+        return await withCheckedContinuation { cont in
+            connection.receiveMessage { [weak self] data, _, isComplete, error in
+                if let error {
+                    self?.continuation.yield(.error(error: error))
+                    cont.resume(returning: nil)
+                    return
+                }
+                
+                guard let data, isComplete else {
+                    cont.resume(returning: nil)
+                    return
+                }
+                
+                guard let frame = data.toSiriusFrame(),
+                      frame.isValid()
+                else {
+                    cont.resume(returning: nil)
+                    return
+                }
+                
+                cont.resume(returning: frame)
+            }
+        }
+    }
+    
+    // MARK: - Helpers
+    
+    private func encode(frame: SiriusFrame) -> Data {
+        var payload = Data(capacity: 6 + frame.data.count)
+        
+        var opcode = frame.opcode.rawValue.bigEndian
+        var length = (frame.length == 0 ? UInt32(frame.data.count) : frame.length).bigEndian
+        
+        withUnsafeBytes(of: &opcode) { payload.append(contentsOf: $0) }
+        withUnsafeBytes(of: &length) { payload.append(contentsOf: $0) }
+        payload.append(frame.data)
+        
+        return payload
+    }
+    
+    private func makeParameters() -> NWParameters {
+        let options = NWProtocolQUIC.Options()
+        options.alpn = [SiriusQUICAlpn.siriusV1.rawValue]
+        options.direction = .bidirectional
+        
+        sec_protocol_options_set_verify_block(options.securityProtocolOptions, { _, _, completion in
+            completion(true)
+        }, self.queue)
+        
+        return NWParameters(quic: options)
+    }
+}
+
+private enum SimpleQUICClientError: Error {
+    case connectionNotReady
+}
