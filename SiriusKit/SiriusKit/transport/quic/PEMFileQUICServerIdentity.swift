@@ -1,5 +1,5 @@
 //
-//  P12FileQUICServerIdentity.swift
+//  PEMFileQUICServerIdentity.swift
 //  SiriusKit
 //
 //  Created by Gyuhwan Park on 11/23/25.
@@ -7,11 +7,12 @@
 
 import Foundation
 import Security
+import CryptoKit
 
 import SwiftASN1
 import X509
 
-public class P12FileQUICServerIdentity: QUICServerIdentity {
+public class PEMFileQUICServerIdentity: QUICServerIdentity {
     private let certPath: String
     private let keyPath: String
     
