@@ -8,13 +8,13 @@
 import Foundation
 import SwiftProtobuf
 
-struct SiriusFrame {
-    let opcode: MessageOpcode
-    let length: UInt32
+public struct SiriusFrame {
+    public let opcode: MessageOpcode
+    public let length: UInt32
     
-    let data: Data
+    public let data: Data
     
-    func isValid() -> Bool {
+    public func isValid() -> Bool {
         return data.count == Int(length)
     }
 }

@@ -23,7 +23,7 @@ public class MainChannel: Channel {
     let events: AsyncStream<MainChannelEvent>
     let continuation: AsyncStream<MainChannelEvent>.Continuation
     
-    required init(stream: Stream, identifier: ChannelIdentifier, direction: ChannelDirection) {
+    required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         var continuationLocal: AsyncStream<MainChannelEvent>.Continuation!
         
         self.events = AsyncStream<MainChannelEvent>(MainChannelEvent.self, bufferingPolicy: .unbounded) { continuation in
@@ -32,10 +32,10 @@ public class MainChannel: Channel {
         
         self.continuation = continuationLocal
 
-        super.init(stream: stream, identifier: identifier, direction: direction)
+        super.init(using: streamHolder, identifier: identifier, direction: direction)
     }
 
-    override func handleFrame(frame: SiriusFrame) async throws {
+    public override func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
@@ -83,7 +83,7 @@ public class MainChannel: Channel {
         }
     }
     
-    override func handleStreamClose() {
+    override public func handleStreamClose() {
         self.continuation.finish()
     }
     

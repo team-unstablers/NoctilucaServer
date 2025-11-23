@@ -9,7 +9,7 @@ import Foundation
 import SwiftProtobuf
 
 extension MessageOpcode {
-    static let hIDIOPacket: MessageOpcode = MessageOpcode(rawValue: 0x8001)
+    public static let hidioPacket: MessageOpcode = MessageOpcode(rawValue: 0x8001)
 }
 
 public struct HIDIOPacket: SiriusMessage {

@@ -8,16 +8,16 @@
 import Foundation
 import SwiftProtobuf
 
-struct MessageOpcode: RawRepresentable, Equatable, Hashable {
-    typealias RawValue = UInt16
-    let rawValue: UInt16
+public struct MessageOpcode: RawRepresentable, Equatable, Hashable {
+    public typealias RawValue = UInt16
+    public let rawValue: UInt16
     
-    init(rawValue: UInt16) {
+    public init(rawValue: UInt16) {
         self.rawValue = rawValue
     }
     
     // 업그레이드된 프로토콜 메시지 (encapsulated)
-    static let encapsulatedProtocolMessage = MessageOpcode(rawValue: 0xFFFE)
+    public static let encapsulatedProtocolMessage = MessageOpcode(rawValue: 0xFFFE)
 }
 
 protocol SiriusEnum<ProtobufEnum>: RawRepresentable, Equatable, Hashable where RawValue: SignedInteger {
@@ -37,7 +37,11 @@ protocol SiriusStruct<ProtobufMessage> {
     init(from protobufMessage: ProtobufMessage) throws
 }
 
-protocol SiriusMessage<ProtobufMessage> {
+public protocol DecodableSiriusMessage {
+    static func fromProtobufBytes(_ bytes: Data) throws -> Self
+}
+
+protocol SiriusMessage<ProtobufMessage>: DecodableSiriusMessage {
     associatedtype ProtobufMessage: SwiftProtobuf.Message
     
     func toProtobufMessage() -> ProtobufMessage
@@ -45,8 +49,9 @@ protocol SiriusMessage<ProtobufMessage> {
     init(from protobufMessage: ProtobufMessage) throws
 }
 
+
 extension SiriusMessage {
-    static func fromProtobufBytes(_ bytes: Data) throws -> Self {
+    public static func fromProtobufBytes(_ bytes: Data) throws -> Self {
         let protobufMessage = try ProtobufMessage(serializedBytes: bytes)
         return try Self(from: protobufMessage)
     }

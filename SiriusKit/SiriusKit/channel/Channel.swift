@@ -19,11 +19,11 @@ internal protocol ChannelLifecycleDelegate: AnyObject {
     func channelDidClose(_ channel: Channel, error: (any Error)?)
 }
 
-enum ChannelError: Error {
+public enum ChannelError: Error {
     case invalidFrame
 }
 
-public class Channel: ChannelLike {
+open class Channel: ChannelLike {
     public protocol HasFeature {
         var feature: SiriusFeature { get }
     }
@@ -35,12 +35,12 @@ public class Channel: ChannelLike {
     
     internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
 
-    required init(stream: Stream, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        self.stream = stream
+    required public init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
+        self.stream = streamHolder.stream
         self.identifier = identifier
         self.direction = direction
     }
-    
+
     public func close() async throws {
         try await self.stream.close()
     }
@@ -61,22 +61,22 @@ public class Channel: ChannelLike {
         }
     }
     
-    func handleFrame(frame: SiriusFrame) async throws {
+    open func handleFrame(frame: SiriusFrame) async throws {
         // to be overridden by subclasses
     }
     
-    func handleStreamClose() {
+    open func handleStreamClose() {
         // default implementation
         
     }
     
-    func handleStreamError(error: (any Error)) {
+    open func handleStreamError(error: (any Error)) {
         // to be overridden by subclasses
     }
 }
 
-public extension Channel {
-    convenience init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        self.init(stream: streamHolder.stream, identifier: identifier, direction: direction)
+extension Channel {
+    convenience init(stream: Stream, identifier: ChannelIdentifier, direction: ChannelDirection) {
+        self.init(using: StreamHolder(stream: stream), identifier: identifier, direction: direction)
     }
 }

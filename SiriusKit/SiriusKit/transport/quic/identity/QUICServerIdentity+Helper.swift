@@ -9,11 +9,9 @@
 public enum QUICServerIdentitySource {
     case keychain(label: String)
     case certFile(pemPath: String, keyPath: String)
-}
-
-extension QUICServerIdentity {
-    static func create(from source: QUICServerIdentitySource) -> QUICServerIdentity {
-        switch source {
+    
+    func build() -> QUICServerIdentity {
+        switch self {
         case .keychain(let label):
             return KeychainQUICServerIdentity(label)
         case .certFile(let pemPath, let keyPath):
