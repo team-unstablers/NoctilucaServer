@@ -82,6 +82,12 @@ public class ChannelManager {
             return
         }
         
+        guard session.shouldAcceptChannelCreation else {
+            // 채널 생성을 허용하지 않음 (인증 전 등)
+            try await stream.close()
+            return
+        }
+        
         // 그럼 나머지는?
         let openTask = RemoteChannelOpenTask(stream: stream)
         try await openTask.perform { request in

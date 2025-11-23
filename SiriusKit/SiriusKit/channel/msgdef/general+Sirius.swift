@@ -101,7 +101,7 @@ public struct ServerHello: SiriusMessage {
     public let motd: String?
 
 
-    init(protocolVersion: SiriusProtocolVersion, supportedFeatures: [UUID], serverName: String?, motd: String?) {
+    public init(protocolVersion: SiriusProtocolVersion, supportedFeatures: [UUID], serverName: String?, motd: String?) {
         self.protocolVersion = protocolVersion
         self.supportedFeatures = supportedFeatures
         self.serverName = serverName

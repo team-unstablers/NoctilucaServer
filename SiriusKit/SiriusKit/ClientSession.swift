@@ -7,11 +7,16 @@
 
 import Foundation
 
+public protocol ClientSessionDelegate: AnyObject {
+    func clientSessionDidCreateMainChannel(_ session: ClientSession, mainChannel: MainChannel)
+}
+
 public class ClientSession {
     let transport: ClientTransport
     let featureProvider: (any FeatureProvider)
     
     public var channelManager: ChannelManager!
+    public var shouldAcceptChannelCreation: Bool = false
     
     init(transport: ClientTransport, featureProvider: (any FeatureProvider)) {
         self.transport = transport

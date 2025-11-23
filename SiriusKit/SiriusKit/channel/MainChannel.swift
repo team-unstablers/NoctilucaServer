@@ -9,7 +9,7 @@ import Foundation
 
 import SwiftProtobuf
 
-enum MainChannelEvent {
+public enum MainChannelEvent {
     case receivedServerNotice(ServerNotice)
     case receivedClientHello(ClientHello)
     case receivedServerHello(ServerHello)
@@ -20,7 +20,7 @@ enum MainChannelEvent {
 }
 
 public class MainChannel: Channel {
-    let events: AsyncStream<MainChannelEvent>
+    public let events: AsyncStream<MainChannelEvent>
     let continuation: AsyncStream<MainChannelEvent>.Continuation
     
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {

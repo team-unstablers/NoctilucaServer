@@ -10,6 +10,8 @@ import SiriusKit
 class HIDIOChannel: Channel {
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
+        
+        assert(direction == .remote, "HIDIOChannel must be opened from remote side")
     }
     
     override func handleFrame(frame: SiriusFrame) async throws {

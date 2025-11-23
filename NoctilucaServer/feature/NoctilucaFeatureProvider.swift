@@ -9,6 +9,12 @@ import SiriusKit
 
 class NoctilucaFeatureProvider: FeatureProvider {
     func supports(_ feature: SiriusKit.SiriusFeature) -> Bool {
+        switch feature {
+        case .hidio:
+            return true
+        default:
+            return false
+        }
     }
     
     func createChannel(for feature: SiriusKit.SiriusFeature,

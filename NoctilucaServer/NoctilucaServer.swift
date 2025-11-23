@@ -38,18 +38,14 @@ class NoctilucaServer {
 
 extension NoctilucaServer: SiriusServerDelegate {
     func siriusServerDidStart(_ server: SiriusKit.SiriusServer) {
-        <#code#>
     }
     
     func siriusServerDidStop(_ server: SiriusKit.SiriusServer) {
-        <#code#>
     }
     
     func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
-        <#code#>
     }
     
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {
-        <#code#>
     }
 }

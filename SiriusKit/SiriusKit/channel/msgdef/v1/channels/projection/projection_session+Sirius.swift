@@ -8,7 +8,7 @@
 import Foundation
 import SwiftProtobuf
 
-extension MessageOpcode {
+public extension MessageOpcode {
     static let projectionRequest: MessageOpcode = MessageOpcode(rawValue: 0x8011)
     static let stopProjectionRequest: MessageOpcode = MessageOpcode(rawValue: 0x8012)
     static let projectionPerformanceReport: MessageOpcode = MessageOpcode(rawValue: 0x8013)

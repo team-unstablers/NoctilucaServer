@@ -37,7 +37,7 @@ public struct AuthChallenge: SiriusMessage {
     public let message: String?
 
 
-    init(acceptedMethods: [AuthMethod], message: String?) {
+    public init(acceptedMethods: [AuthMethod], message: String?) {
         self.acceptedMethods = acceptedMethods
         self.message = message
     }
@@ -66,7 +66,7 @@ public struct AuthRequest: SiriusMessage {
     public let payload: Data?
 
 
-    init(method: AuthMethod, payload: Data?) {
+    public init(method: AuthMethod, payload: Data?) {
         self.method = method
         self.payload = payload
     }
@@ -94,7 +94,7 @@ public struct AuthResponse: SiriusMessage {
     public let sessionID: UUID?
 
 
-    init(sessionID: UUID?) {
+    public init(sessionID: UUID?) {
         self.sessionID = sessionID
     }
 

@@ -8,7 +8,7 @@
 import Foundation
 import SwiftProtobuf
 
-extension MessageOpcode {
+public extension MessageOpcode {
     static let frameDataHeader: MessageOpcode = MessageOpcode(rawValue: 0x8001)
 }
 

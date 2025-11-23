@@ -8,7 +8,7 @@
 import Foundation
 import SwiftProtobuf
 
-extension MessageOpcode {
+public extension MessageOpcode {
     static let windowListRequest: MessageOpcode = MessageOpcode(rawValue: 0x8041)
     static let windowListResponse: MessageOpcode = MessageOpcode(rawValue: 0x8042)
     static let windowFocusRequest: MessageOpcode = MessageOpcode(rawValue: 0x8043)
