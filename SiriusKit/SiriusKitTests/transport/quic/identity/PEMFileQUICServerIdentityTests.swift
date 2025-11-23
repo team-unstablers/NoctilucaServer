@@ -14,7 +14,7 @@ struct PEMFileQUICServerIdentityTests {
     /// 자가 서명 인증서를 trust 처리하는 과정에서 사용자 인증 다이얼로그가 뜨므로 테스트를 건너뛸 수 있도록 합니다
     static let skipTest = true
 
-    @Test(".pem / .key 페어의 인증서를 생성할 수 있는가", .disabled(if: skipTest))
+    @Test(".pem / .key 페어의 인증서를 생성할 수 있는가")
     func createsCertificate() async throws {
         let basePath = temporaryBasePath()
         

@@ -13,6 +13,7 @@ import CryptoKit
 import SwiftASN1
 import X509 // swift-certificates
 
+// TODO: LLM이 생성한 사용하지 않는 케이스 제거 검토
 enum QUICServerIdentitySanityCheckError: Error {
     case identityCastFailed
     case certificateCopyFailed(OSStatus)
@@ -20,6 +21,7 @@ enum QUICServerIdentitySanityCheckError: Error {
     case trustCreationFailed(OSStatus)
 }
 
+// TODO: LLM이 생성한 사용하지 않는 케이스 제거 검토
 enum QUICServerIdentityCreationError: Error {
     case notImplemented
     
@@ -58,10 +60,6 @@ public struct QUICServerIdentityCreationArgs {
     }
 }
 
-enum QUICServerIdentitySource {
-    case keychain(label: String)
-    case certFile(pemPath: String, keyPath: String)
-}
 
 public protocol QUICServerIdentity {
     static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self

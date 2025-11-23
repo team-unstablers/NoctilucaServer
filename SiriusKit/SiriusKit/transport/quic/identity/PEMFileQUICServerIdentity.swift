@@ -16,8 +16,6 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
     private let certPath: String
     private let keyPath: String
     
-    private var __HACK__trust: SecTrust? = nil
-    
     // Set this to protect the private key; currently only unencrypted PEM is emitted.
     // private static let keyPassphrase: String? = "changeit"
     private static let keyPassphrase: String? = nil

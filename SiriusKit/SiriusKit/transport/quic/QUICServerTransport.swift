@@ -109,47 +109,6 @@ class QUICServerTransport: ServerTransport {
     }
     
     
-    // 개별 클라이언트 연결 처리
-    private func startConnection(connection: NWConnection) {
-        connection.start(queue: .main)
-        receive(on: connection)
-    }
-    
-    // 데이터 수신 및 에코(Echo) 전송
-    private func receive(on connection: NWConnection) {
-        // QUIC은 스트림 기반이지만, 여기서는 간단한 메시지 수신으로 처리
-        connection.receiveMessage { [weak self] (data, context, isComplete, error) in
-            if let error = error {
-                print("Connection error: \(error)")
-                connection.cancel()
-                return
-            }
-            
-            if let data = data, !data.isEmpty, let message = String(data: data, encoding: .utf8) {
-                print("Received: \(message)")
-                
-                // 클라이언트에게 그대로 다시 전송 (Echo)
-                self?.send(data: data, on: connection)
-            }
-            
-            // 계속해서 다음 데이터를 수신 대기
-            if isComplete {
-                connection.cancel()
-            } else {
-                self?.receive(on: connection)
-            }
-        }
-    }
-    
-    // 데이터 전송
-    private func send(data: Data, on connection: NWConnection) {
-        connection.send(content: data, completion: .contentProcessed { error in
-            if let error = error {
-                print("Send error: \(error)")
-            }
-        })
-    }
-    
     // QUIC 파라미터 및 TLS 설정 (가장 중요한 부분)
     private func createQuicParameters() async throws -> NWParameters {
         // QUIC 보안 옵션 생성
