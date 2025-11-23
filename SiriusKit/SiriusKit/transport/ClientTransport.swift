@@ -15,10 +15,10 @@ enum ClientTransportError: Error {
 
 protocol ClientTransportDelegate: AnyObject {
     /// - NOTE: 리모트에서 스트림을 열었을 때에만 호출됩니다.
-    func clientTransportDidOpenStream(_ transport: ClientTransport, stream: Stream)
-    func clientTransportDidCloseStream(_ transport: ClientTransport, stream: Stream)
+    func clientTransportDidOpenStream(_ transport: ClientTransport, stream: Stream) async throws
+    func clientTransportDidCloseStream(_ transport: ClientTransport, stream: Stream) async
     
-    func clientTransportDidClose(_ transport: ClientTransport, error: Error?)
+    func clientTransportDidClose(_ transport: ClientTransport, error: Error?) async
 }
 
 class ClientTransport {

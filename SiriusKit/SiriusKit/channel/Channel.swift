@@ -8,38 +8,38 @@
 import Foundation
 import SwiftProtobuf
 
+public typealias ChannelIdentifier = UUID
 
+public enum ChannelDirection {
+    case local
+    case remote
+}
 
-public class Channel {
+internal protocol ChannelLifecycleDelegate: AnyObject {
+    func channelDidClose(_ channel: Channel, error: (any Error)?)
+}
+
+public class Channel: ChannelLike {
     public protocol HasFeature {
         var feature: SiriusFeature { get }
     }
     
-    private let stream: Stream
+    let stream: Stream
     
-    required init(stream: Stream) {
+    public let identifier: ChannelIdentifier
+    public let direction: ChannelDirection
+    
+    internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
+
+    required init(stream: Stream, identifier: ChannelIdentifier, direction: ChannelDirection) {
         self.stream = stream
         self.stream.delegate = self
+        
+        self.identifier = identifier
     }
     
     public func close() async throws {
         try await self.stream.close()
-    }
-    
-    func send(opcode: MessageOpcode, message: (any SiriusMessage)) async throws {
-        let protobufMessage = message.toProtobufMessage()
-        
-        var data = Data()
-        
-        var opcodeRaw = opcode.rawValue.bigEndian
-        withUnsafeBytes(of: &opcodeRaw) { opcodeBytes in
-            data.append(contentsOf: opcodeBytes)
-        }
-        
-        let messageData = try protobufMessage.serializedData()
-        data.append(messageData)
-        
-        _ = await self.stream.write(data)
     }
     
     func handleData(opcode: MessageOpcode, data: Data) {
@@ -47,7 +47,7 @@ public class Channel {
     }
     
     func handleStreamClose(error: (any Error)?) {
-        // to be overridden by subclasses
+        self.lifecycleDelegate?.channelDidClose(self, error: error)
     }
 }
 
@@ -62,9 +62,14 @@ extension Channel: StreamDelegate {
 }
 
 internal extension Channel {
-    
     // helper method
     func blockUntilReceiveData() async throws -> (MessageOpcode, Data) {
         // FIXME: implement me
+    }
+}
+
+public extension Channel {
+    convenience init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
+        self.init(stream: streamHolder.stream, identifier: identifier, direction: direction)
     }
 }
