@@ -42,7 +42,7 @@ class QUICStream: Stream {
         }
     }
     
-    internal func setup() {
+    internal func setup(_ readyHandler: (() -> Void)?) {
         self.connection.stateUpdateHandler = { state in
             switch (state) {
             case .cancelled:
@@ -54,6 +54,9 @@ class QUICStream: Stream {
                 Task {
                     try! await self.close()
                 }
+                break
+            case .ready:
+                readyHandler?()
                 break
             default:
                 break
@@ -92,13 +95,13 @@ class QUICStream: Stream {
     }
     
     private func receiveNext() async -> Result<Data?, Error> {
-        // FIXME: isComplete 붙어있는거 보면 데이터 분명 프레그멘테이션 처리 필요할듯
         return await withCheckedContinuation { cont in
-            self.connection.receiveMessage { content, contentContext, isComplete, error in
+            //                      vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv: 이거 fragmentation이나 그런거 걱정 안 해도 되나...? 아 괜히 쫄리네 ㅠ_ㅠ
+            self.connection.receive(minimumIncompleteLength: 6, maximumLength: Int(Int32.max)) { content, contentContext, eos, error in
                 if let error = error {
                     cont.resume(returning: .failure(error)) // Map error appropriately
                 } else if let content = content {
-                    assert(isComplete, "아직 fragmentation 처리 안됨")
+                    print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
                     cont.resume(returning: .success(content))
                 } else {
                     // FIXME: 로직 개선

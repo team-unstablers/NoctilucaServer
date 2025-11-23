@@ -9,7 +9,13 @@ import Foundation
 import Security
 
 extension SecIdentity {
-    func castAsCHandle() -> sec_identity_t {
-        return unsafeBitCast(self, to: sec_identity_t.self)
+    func asCHandle() -> sec_identity_t {
+        let handle = sec_identity_create(self)
+        
+        guard handle != nil else {
+            fatalError("FIXME: handle != nil을 보장하던가 그렇지 않던가 하십시오")
+        }
+        
+        return handle!
     }
 }

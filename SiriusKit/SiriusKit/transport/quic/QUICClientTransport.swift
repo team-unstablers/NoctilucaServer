@@ -50,7 +50,7 @@ class QUICClientTransport: ClientTransport {
         return .success(stream)
     }
     
-    internal func start() {
+    internal func setup() {
         self.connectionGroup.stateUpdateHandler = { state in
             switch state {
             case .failed(let error):
@@ -70,31 +70,39 @@ class QUICClientTransport: ClientTransport {
         self.connectionGroup.newConnectionHandler = { [weak self] connection in
             self?.handleNewConnection(connection)
         }
-        
+    }
+    
+    internal func start() {
         self.connectionGroup.start(queue: .main)
     }
     
     private func handleNewConnection(_ connection: NWConnection) {
-        guard let streamId = connection.quicStreamIdentifier,
-              !self.streams.keys.contains(streamId)
-        else {
-            return
-        }
-        
         let stream = QUICStream(connection, transport: self)
-        self.registerStream(stream)
+        
+        stream.setup { [weak self] in
+            guard let _self = self else { return }
+            
+            _self.registerStream(stream)
+            
+            Task {
+                // FIXME: 에러 핸들링
+                try! await _self.delegate?.clientTransportDidOpenStream(_self, stream: stream)
+            }
+        }
+        stream.start()
     }
     
     internal func registerStream(_ stream: QUICStream) {
-        Task {
-            // FIXME: 에러 핸들링
-            try! await delegate?.clientTransportDidOpenStream(self, stream: stream)
+        // FIXME: ready가 아닌 상태에서 stream.id 액세스하면 맛감
+        assert(stream.connection.state == .ready)
+        
+        let streamId = stream.id
+        guard !self.streams.keys.contains(streamId) else {
+            return
         }
-        
-        stream.setup()
-        stream.start()
-        
-        self.streams.updateValue(stream, forKey: stream.id)
+
+                
+        self.streams.updateValue(stream, forKey: streamId)
     }
     
     internal func unregisterStream(_ stream: QUICStream) {

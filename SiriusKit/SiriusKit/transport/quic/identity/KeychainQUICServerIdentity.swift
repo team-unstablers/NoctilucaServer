@@ -70,7 +70,7 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
         }
     }
     
-    public func getServerIdentity() async throws -> sec_identity_t {
+    public func getServerIdentity() async throws -> SecIdentity {
         let keychain = SRKeychain.shared
         let identityResult = keychain.queryIdentity(by: self.identityLabel)
         
@@ -80,6 +80,6 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
         
         let identity = try identityResult.get()
         
-        return identity.castAsCHandle()
+        return identity
     }
 }

@@ -68,7 +68,7 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
         return Self(using: certPath, key: keyPath)
     }
     
-    public func getServerIdentity() async throws -> sec_identity_t {
+    public func getServerIdentity() async throws -> SecIdentity {
         guard FileManager.default.fileExists(atPath: certPath), FileManager.default.fileExists(atPath: keyPath) else {
             throw QUICServerIdentityCreationError.identityNotFound
         }
@@ -111,7 +111,7 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
             throw QUICServerIdentityCreationError.identityCreationFailed
         }
         
-        return unsafeBitCast(identity, to: sec_identity_t.self)
+        return identity
     }
 }
 

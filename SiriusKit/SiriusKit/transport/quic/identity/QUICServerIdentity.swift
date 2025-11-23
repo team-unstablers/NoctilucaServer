@@ -64,7 +64,7 @@ public struct QUICServerIdentityCreationArgs {
 public protocol QUICServerIdentity {
     static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self
     
-    func getServerIdentity() async throws -> sec_identity_t
+    func getServerIdentity() async throws -> SecIdentity
 }
 
 // MARK: - Internal helpers
@@ -97,10 +97,9 @@ enum SelfSignedCertificateBuilder {
             subject: subjectName,
             signatureAlgorithm: .ecdsaWithSHA256,
             extensions: Certificate.Extensions {
-                Critical(
-                    BasicConstraints.isCertificateAuthority(maxPathLength: 0)
-                )
-                KeyUsage(digitalSignature: true, keyCertSign: true)
+                Critical(BasicConstraints.notCertificateAuthority)
+                KeyUsage(digitalSignature: true, keyEncipherment: true, keyAgreement: true)
+                try ExtendedKeyUsage([.serverAuth])
             },
             issuerPrivateKey: Certificate.PrivateKey(key)
         )
@@ -120,6 +119,7 @@ public extension QUICServerIdentity {
     ///
     func sanityCheck(strict: Bool = false) async throws -> Bool {
         let identityRef = try await getServerIdentity()
+        
         let identityCF = identityRef as CFTypeRef
         guard CFGetTypeID(identityCF) == SecIdentityGetTypeID() else {
             throw QUICServerIdentitySanityCheckError.identityCastFailed

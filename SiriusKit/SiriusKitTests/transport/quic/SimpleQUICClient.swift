@@ -60,6 +60,16 @@ class SimpleQUICClient {
                 cont.resume()
             }
             
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(5))
+                guard resumed == false else { return }
+                
+                self?.continuation.yield(.error(error: SimpleQUICClientError.connectTimeout))
+                self?.continuation.yield(.disconnected)
+                connection.cancel()
+                resumeOnce()
+            }
+            
             connection.stateUpdateHandler = { [weak self] state in
                 guard let self else { return }
                 
@@ -68,6 +78,8 @@ class SimpleQUICClient {
                     self.continuation.yield(.connected)
                     self.continuation.yield(.mainStreamOpen)
                     resumeOnce()
+                case .waiting(let error):
+                    self.continuation.yield(.error(error: error))
                 case .failed(let error):
                     self.continuation.yield(.error(error: error))
                     self.continuation.yield(.disconnected)
@@ -112,19 +124,19 @@ class SimpleQUICClient {
         }
         
         return await withCheckedContinuation { cont in
-            connection.receiveMessage { [weak self] data, _, isComplete, error in
+            connection.receive(minimumIncompleteLength: 6, maximumLength: Int(Int32.max)) { [weak self] content, _, isComplete, error in
                 if let error {
                     self?.continuation.yield(.error(error: error))
                     cont.resume(returning: nil)
                     return
                 }
                 
-                guard let data, isComplete else {
+                guard let content else {
                     cont.resume(returning: nil)
                     return
                 }
                 
-                guard let frame = data.toSiriusFrame(),
+                guard let frame = content.toSiriusFrame(),
                       frame.isValid()
                 else {
                     cont.resume(returning: nil)
@@ -166,4 +178,5 @@ class SimpleQUICClient {
 
 private enum SimpleQUICClientError: Error {
     case connectionNotReady
+    case connectTimeout
 }

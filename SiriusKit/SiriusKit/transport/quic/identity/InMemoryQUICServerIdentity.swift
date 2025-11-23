@@ -71,8 +71,8 @@ internal class InMemoryQUICServerIdentity: QUICServerIdentity {
         }
     }
     
-    public func getServerIdentity() async throws -> sec_identity_t {
-        return identity.castAsCHandle()
+    public func getServerIdentity() async throws -> SecIdentity {
+        return identity
     }
 }
 

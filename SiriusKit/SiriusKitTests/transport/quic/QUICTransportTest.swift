@@ -35,7 +35,7 @@ final class QUICTransportTest {
             validityPeriodInDays: 1
         )
         
-        self.serverIdentity = try InMemoryQUICServerIdentity.createSelfSignedIdentity(args: identityArgs)
+        self.serverIdentity = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: identityArgs)
         
         // ASSERTION: 호스트 자신이 신뢰 가능한 인증서를 사용해야만 함
         let sanityCheckResult = try await self.serverIdentity.sanityCheck()
@@ -107,6 +107,7 @@ final class QUICTransportTest {
             var streamListenerTask: Task<Void, Never>?
             
             func clientTransportDidOpenStream(_ transport: SiriusKit.ClientTransport, stream: SiriusKit.Stream) async throws {
+                print("didOpenStream called")
                 didOpenStream = true
                 openedStream = stream
                 
@@ -190,8 +191,24 @@ final class QUICTransportTest {
         var clientError: (any Error)?
         
         var iterator = client.events.makeAsyncIterator()
+        func nextClientEvent(timeout: Duration = .seconds(3)) async -> SimpleQUICClientEvent? {
+            await withTaskGroup(of: SimpleQUICClientEvent?.self) { group in
+                group.addTask {
+                    await iterator.next()
+                }
+                group.addTask {
+                    try? await Task.sleep(for: timeout)
+                    return nil
+                }
+                
+                let event = await group.next()!
+                group.cancelAll()
+                return event
+            }
+        }
+        
         for _ in 0..<4 {
-            guard let event = await iterator.next() else { break }
+            guard let event = await nextClientEvent() else { break }
             
             switch event {
             case .connected:
@@ -245,7 +262,23 @@ final class QUICTransportTest {
             #expect(Bool(false), "서버가 전송할 스트림을 확보해야 합니다.")
         }
         
-        let receivedByClient = await client.recv()
+        func recvWithTimeout(timeout: Duration = .seconds(3)) async -> SiriusFrame? {
+            await withTaskGroup(of: SiriusFrame?.self) { group in
+                group.addTask {
+                    await client.recv()
+                }
+                group.addTask {
+                    try? await Task.sleep(for: timeout)
+                    return nil
+                }
+                
+                let frame = await group.next()!
+                group.cancelAll()
+                return frame
+            }
+        }
+        
+        let receivedByClient = await recvWithTimeout()
         #expect(receivedByClient != nil, "클라이언트는 서버가 보낸 프레임을 수신해야 합니다.")
         if let frame = receivedByClient {
             #expect(frame.opcode == serverOpcode, "클라이언트가 수신한 opcode가 서버가 전송한 opcode와 일치해야 합니다.")

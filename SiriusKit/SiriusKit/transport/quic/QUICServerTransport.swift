@@ -29,6 +29,8 @@ class QUICServerTransport: ServerTransport {
     private let port: NWEndpoint.Port
     private let identity: QUICServerIdentity
     
+    private var _identity: SecIdentity?
+    
     private var listener: NWListener?
     
     private(set) var clients: [QUICClientTransport] = []
@@ -98,10 +100,14 @@ class QUICServerTransport: ServerTransport {
     }
     
     internal func registerClientTransport(_ transport: QUICClientTransport) {
+        transport.setup()
+        
+        // HACK: QUICClientTransportDelegate를 설정할 타이밍을 제공하기 위해 여기서 델리게이트 콜백을 호출
+        self.delegate?.serverTransportDidAcceptConnection(self, clientTransport: transport)
+
         transport.start()
         
         self.clients.append(transport)
-        self.delegate?.serverTransportDidAcceptConnection(self, clientTransport: transport)
     }
     
     internal func unregisterClientTransport(_ transport: QUICClientTransport) {
@@ -127,7 +133,7 @@ class QUICServerTransport: ServerTransport {
             let secIdentity = try await self.identity.getServerIdentity()
             
             // TLS 옵션에 Identity 추가
-            sec_protocol_options_set_local_identity(options.securityProtocolOptions, secIdentity)
+            sec_protocol_options_set_local_identity(options.securityProtocolOptions, secIdentity.asCHandle())
         } catch {
             throw QUICServerTransportError.identityLoadFailed
         }
