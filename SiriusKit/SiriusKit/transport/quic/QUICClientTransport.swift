@@ -23,8 +23,6 @@ class QUICClientTransport: ClientTransport {
         _id
     }
     
-    private(set) var error: Error?
-
     
     init(_ connectionGroup: NWConnectionGroup, serverTransport: QUICServerTransport, id: ClientTransportIdentifier) {
         self._id = id
@@ -54,15 +52,14 @@ class QUICClientTransport: ClientTransport {
         self.connectionGroup.stateUpdateHandler = { state in
             switch state {
             case .failed(let error):
-                self.error = error
                 Task {
-                    try! await self.disconnect()
+                    await self.delegate?.clientTransport(self, didEncounterError: error)
+                    try? await self.disconnect()
                 }
             case .cancelled:
                 Task {
-                    await self.delegate?.clientTransportDidClose(self, error: self.error)
+                    await self.delegate?.clientTransportDidClose(self)
                 }
-                break
             default:
                 break
             }

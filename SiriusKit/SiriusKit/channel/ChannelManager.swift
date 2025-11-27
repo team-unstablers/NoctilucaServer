@@ -113,7 +113,11 @@ public class ChannelManager {
 }
 
 extension ChannelManager: ChannelLifecycleDelegate {
-    func channelDidClose(_ channel: Channel, error: (any Error)?) {
+    func channelDidClose(_ channel: Channel) {
+        self.unregisterChannel(identifier: channel.identifier)
+    }
+    
+    func channel(_ channel: Channel, didEncounterError error: any Error) {
         self.unregisterChannel(identifier: channel.identifier)
     }
 }

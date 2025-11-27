@@ -16,7 +16,8 @@ public enum ChannelDirection {
 }
 
 internal protocol ChannelLifecycleDelegate: AnyObject {
-    func channelDidClose(_ channel: Channel, error: (any Error)?)
+    func channelDidClose(_ channel: Channel)
+    func channel(_ channel: Channel, didEncounterError error: any Error)
 }
 
 public enum ChannelError: Error {

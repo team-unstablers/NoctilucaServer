@@ -56,6 +56,7 @@ class QUICServerTransport: ServerTransport {
                         self.delegate?.serverTransportDidStartListening(self)
                         return
                     case .failed(let error):
+                        self.delegate?.serverTransport(self, didEncounterError: error)
                         continuation.resume(throwing: error)
                         self.listener?.cancel()
                         return
@@ -142,4 +143,3 @@ class QUICServerTransport: ServerTransport {
         return NWParameters(quic: options)
     }
 }
-

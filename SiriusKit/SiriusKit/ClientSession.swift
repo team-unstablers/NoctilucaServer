@@ -32,10 +32,13 @@ extension ClientSession: ClientTransportDelegate {
         try await channelManager.handleStreamOpen(stream: stream)
     }
     
-    func clientTransportDidCloseStream(_ transport: ClientTransport, stream: Stream) {
+    func clientTransportDidCloseStream(_ transport: ClientTransport, stream: Stream) async {
         //
     }
     
-    func clientTransportDidClose(_ transport: ClientTransport, error: (any Error)?) {
+    func clientTransportDidClose(_ transport: ClientTransport) async {
+    }
+    
+    func clientTransport(_ transport: ClientTransport, didEncounterError error: any Error) async {
     }
 }

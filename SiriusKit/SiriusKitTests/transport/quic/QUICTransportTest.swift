@@ -131,7 +131,11 @@ final class QUICTransportTest {
             func clientTransportDidCloseStream(_ transport: SiriusKit.ClientTransport, stream: SiriusKit.Stream) async {
             }
             
-            func clientTransportDidClose(_ transport: SiriusKit.ClientTransport, error: (any Error)?) async {
+            func clientTransportDidClose(_ transport: SiriusKit.ClientTransport) async {
+            }
+            
+            func clientTransport(_ transport: SiriusKit.ClientTransport, didEncounterError error: any Error) async {
+                self.error = error
             }
         }
         
@@ -149,6 +153,9 @@ final class QUICTransportTest {
             }
             
             func serverTransportDidStopListening(_ serverTransport: SiriusKit.ServerTransport) {
+            }
+            
+            func serverTransport(_ serverTransport: SiriusKit.ServerTransport, didEncounterError error: any Error) {
             }
             
             func serverTransportDidAcceptConnection(_ serverTransport: SiriusKit.ServerTransport, clientTransport: SiriusKit.ClientTransport) {

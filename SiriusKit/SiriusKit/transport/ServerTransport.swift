@@ -11,6 +11,7 @@ protocol ServerTransportDelegate: AnyObject {
     /// TODO: Add parameters for listening info
     func serverTransportDidStartListening(_ serverTransport: ServerTransport)
     func serverTransportDidStopListening(_ serverTransport: ServerTransport)
+    func serverTransport(_ serverTransport: ServerTransport, didEncounterError error: any Error)
     
     func serverTransportDidAcceptConnection(_ serverTransport: ServerTransport, clientTransport: ClientTransport)
     func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerTransport, error: Error)

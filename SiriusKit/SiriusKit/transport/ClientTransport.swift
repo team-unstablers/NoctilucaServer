@@ -19,7 +19,8 @@ protocol ClientTransportDelegate: AnyObject {
     func clientTransportDidOpenStream(_ transport: ClientTransport, stream: Stream) async throws
     func clientTransportDidCloseStream(_ transport: ClientTransport, stream: Stream) async
     
-    func clientTransportDidClose(_ transport: ClientTransport, error: Error?) async
+    func clientTransportDidClose(_ transport: ClientTransport) async
+    func clientTransport(_ transport: ClientTransport, didEncounterError error: any Error) async
 }
 
 class ClientTransport {
@@ -38,4 +39,3 @@ class ClientTransport {
         return .failure(.notImplemented)
     }
 }
-

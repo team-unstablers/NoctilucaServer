@@ -51,6 +51,9 @@ extension SiriusServer: ServerTransportDelegate {
     
     func serverTransportDidStopListening(_ serverTransport: ServerTransport) {
     }
+
+    func serverTransport(_ serverTransport: ServerTransport, didEncounterError error: any Error) {
+    }
     
     func serverTransportDidAcceptConnection(_ serverTransport: ServerTransport, clientTransport: ClientTransport) {
     }
