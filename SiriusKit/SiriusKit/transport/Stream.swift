@@ -33,11 +33,11 @@ class Stream {
         self.continuation = continuationLocal
     }
     
-    open var id: StreamIdentifier {
+    var id: StreamIdentifier {
         return 0
     }
     
-    open func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
+    func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
         let opcodeRaw = opcode.rawValue.bigEndian
         let length = (length ?? UInt32(data.count)).bigEndian
         
@@ -58,12 +58,12 @@ class Stream {
         return await write(frameData)
     }
     
-    open func write(_ data: Data) async -> Result<UInt32, StreamError> {
+    func write(_ data: Data) async -> Result<UInt32, StreamError> {
         // To be implemented by subclasses
         return .failure(.notImplemented)
     }
     
-    open func close() async throws {
+    func close() async throws {
         // To be implemented by subclasses
     }
 }

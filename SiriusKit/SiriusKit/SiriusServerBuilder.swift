@@ -17,13 +17,13 @@ public struct SiriusServerBuilder {
         case quic(port: UInt16,
                   identitySource: QUICServerIdentitySource)
         
-        func buildServerTransport() -> ServerTransport {
+        func buildServerTransport() -> ServerRoleRootTransport {
             switch self {
             case .quic(let port, let identitySource):
                 let port = NWEndpoint.Port(rawValue: port)!
                 let identity = identitySource.build()
                 
-                return QUICServerTransport(port: port, using: identity)
+                return ServerRoleQUICRootTransport(port: port, using: identity)
             }
         }
     }

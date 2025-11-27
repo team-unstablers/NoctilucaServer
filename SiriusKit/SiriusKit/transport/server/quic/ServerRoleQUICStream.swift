@@ -1,0 +1,126 @@
+//
+//  ServerRoleQUICStream.swift
+//  SiriusKit
+//
+//  Created by Gyuhwan Park on 11/20/25.
+//
+
+import Foundation
+import Network
+
+class ServerRoleQUICStream: Stream {
+    let connection: NWConnection
+    let transport: ServerRoleQUICClientTransport
+    
+    private var receiveTask: Task<Void, Error>?
+    
+    override var id: StreamIdentifier {
+        return connection.quicStreamIdentifier!
+    }
+    
+    init(_ connection: NWConnection, transport: ServerRoleQUICClientTransport) {
+        self.connection = connection
+        self.transport = transport
+    }
+    
+    override func close() async throws {
+        receiveTask?.cancel()
+        connection.cancel()
+        
+        transport.unregisterStream(self)
+    }
+    
+    override func write(_ data: Data) async -> Result<UInt32, StreamError> {
+        return await withCheckedContinuation { continuation in
+            connection.send(content: data, completion: .contentProcessed { error in
+                if let error = error {
+                    continuation.resume(returning: .failure(.notImplemented)) // Map error appropriately
+                } else {
+                    continuation.resume(returning: .success(UInt32(data.count)))
+                }
+            })
+        }
+    }
+    
+    internal func setup(_ readyHandler: (() -> Void)?) {
+        self.connection.stateUpdateHandler = { state in
+            switch (state) {
+            case .cancelled:
+                self.continuation.yield(with: .success(.closed))
+                self.continuation.finish()
+                break
+            case .failed(let error):
+                self.continuation.yield(with: .success(.error(error)))
+                Task {
+                    try! await self.close()
+                }
+                break
+            case .ready:
+                readyHandler?()
+                break
+            default:
+                break
+            }
+        }
+    }
+    
+    internal func start() {
+        self.receiveTask = Task {
+            do {
+                try await self.receiveLoop()
+            } catch {
+                self.continuation.yield(with: .success(.error(error)))
+                try! await self.close()
+            }
+        }
+        
+        self.connection.start(queue: .main)
+    }
+    
+    private func receiveLoop() async throws {
+        while true {
+            // read header
+            let rawHeader = try (await self.read(minSize: 6, maxSize: 6)).get()
+            
+            let opcode = rawHeader.subdata(in: 0..<2).withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
+            let length = rawHeader.subdata(in: 2..<6).withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+            
+            // TODO: fragmented read
+            let payload = (length > 0) ?
+                try (await self.read(minSize: Int(length), maxSize: Int(length))).get() :
+                Data()
+            
+            let frame = SiriusFrame(opcode: MessageOpcode(rawValue: opcode),
+                                    length: length,
+                                    data: payload)
+            
+            self.continuation.yield(with: .success(.frame(frame)))
+        }
+        
+    }
+    
+    private func read(minSize: Int, maxSize: Int) async -> Result<Data, Error> {
+        return await withCheckedContinuation { cont in
+            self.connection.receive(minimumIncompleteLength: minSize, maximumLength: maxSize) { content, contentContext, eos, error in
+                if let error = error {
+                    cont.resume(returning: .failure(error)) // Map error appropriately
+                } else if let content = content {
+                    print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
+                    cont.resume(returning: .success(content))
+                } else {
+                    fatalError("???")
+                }
+            }
+        }
+    }
+}
+
+extension ServerRoleQUICStream: Hashable, Equatable {
+    static func == (lhs: ServerRoleQUICStream, rhs: ServerRoleQUICStream) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}

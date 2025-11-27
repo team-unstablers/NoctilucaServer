@@ -1,16 +1,16 @@
 //
-//  QUICStream.swift
+//  ClientRoleQUICStream.swift
 //  SiriusKit
 //
-//  Created by Gyuhwan Park on 11/20/25.
+//  Created by Coding Assistant on 03/01/25.
 //
 
 import Foundation
 import Network
 
-class QUICStream: Stream {
+class ClientRoleQUICStream: Stream {
     let connection: NWConnection
-    let transport: QUICClientTransport
+    let transport: ClientRoleQUICTransport
     
     private var receiveTask: Task<Void, Error>?
     
@@ -18,7 +18,7 @@ class QUICStream: Stream {
         return connection.quicStreamIdentifier!
     }
     
-    init(_ connection: NWConnection, transport: QUICClientTransport) {
+    init(_ connection: NWConnection, transport: ClientRoleQUICTransport) {
         self.connection = connection
         self.transport = transport
     }
@@ -48,10 +48,14 @@ class QUICStream: Stream {
             case .cancelled:
                 self.continuation.yield(with: .success(.closed))
                 self.continuation.finish()
+                Task {
+                    await self.transport.delegate?.clientTransportDidClose(self.transport)
+                }
                 break
             case .failed(let error):
                 self.continuation.yield(with: .success(.error(error)))
                 Task {
+                    await self.transport.delegate?.clientTransport(self.transport, didEncounterError: error)
                     try! await self.close()
                 }
                 break
@@ -105,18 +109,18 @@ class QUICStream: Stream {
                 if let error = error {
                     cont.resume(returning: .failure(error)) // Map error appropriately
                 } else if let content = content {
-                    print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
+                    print("ClientRoleQUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
                     cont.resume(returning: .success(content))
                 } else {
-                    fatalError("???")
+                    fatalError("unexpected nil content")
                 }
             }
         }
     }
 }
 
-extension QUICStream: Hashable, Equatable {
-    static func == (lhs: QUICStream, rhs: QUICStream) -> Bool {
+extension ClientRoleQUICStream: Hashable, Equatable {
+    static func == (lhs: ClientRoleQUICStream, rhs: ClientRoleQUICStream) -> Bool {
         return lhs.id == rhs.id
     }
     

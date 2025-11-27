@@ -8,24 +8,13 @@
 import Foundation
 import Network
 
-struct SiriusQUICAlpn: RawRepresentable, Equatable, Hashable {
-    typealias RawValue = String
-    var rawValue: String
-    
-    init(rawValue: String) {
-        self.rawValue = rawValue
-    }
-    
-    static let siriusV1 = SiriusQUICAlpn(rawValue: "pl.unstabler.sirius")
-}
-
-enum QUICServerTransportError: Error {
+enum ServerRoleQUICRootTransportError: Error {
     case identityLoadFailed
     case identitySanityCheckFailed
     case quicParametersCreationFailed
 }
 
-class QUICServerTransport: ServerTransport {
+class ServerRoleQUICRootTransport: ServerRoleRootTransport {
     private let port: NWEndpoint.Port
     private let identity: QUICServerIdentity
     
@@ -33,7 +22,7 @@ class QUICServerTransport: ServerTransport {
     
     private var listener: NWListener?
     
-    private(set) var clients: [QUICClientTransport] = []
+    private(set) var clients: [ServerRoleQUICClientTransport] = []
     
     init(port: NWEndpoint.Port, using identity: QUICServerIdentity) {
         self.port = port
@@ -95,12 +84,12 @@ class QUICServerTransport: ServerTransport {
     }
     
     private func handleNewConnectionGroup(connectionGroup: NWConnectionGroup) {
-        let transport = QUICClientTransport(connectionGroup, serverTransport: self, id: ClientTransportIdentifier())
+        let transport = ServerRoleQUICClientTransport(connectionGroup, serverTransport: self, id: ServerRoleClientTransportIdentifier())
         
         self.registerClientTransport(transport)
     }
     
-    internal func registerClientTransport(_ transport: QUICClientTransport) {
+    internal func registerClientTransport(_ transport: ServerRoleQUICClientTransport) {
         transport.setup()
         
         // HACK: QUICClientTransportDelegate를 설정할 타이밍을 제공하기 위해 여기서 델리게이트 콜백을 호출
@@ -111,7 +100,7 @@ class QUICServerTransport: ServerTransport {
         self.clients.append(transport)
     }
     
-    internal func unregisterClientTransport(_ transport: QUICClientTransport) {
+    internal func unregisterClientTransport(_ transport: ServerRoleQUICClientTransport) {
         self.clients.removeAll { $0.id == transport.id }
     }
     
@@ -127,7 +116,7 @@ class QUICServerTransport: ServerTransport {
         
         // 보안 신원(Identity) 로드 - 실제 구현 시 .p12 파일 등에서 로드해야 함
         guard try await self.identity.sanityCheck() else {
-            throw QUICServerTransportError.identitySanityCheckFailed
+            throw ServerRoleQUICRootTransportError.identitySanityCheckFailed
         }
         
         do {
@@ -136,7 +125,7 @@ class QUICServerTransport: ServerTransport {
             // TLS 옵션에 Identity 추가
             sec_protocol_options_set_local_identity(options.securityProtocolOptions, secIdentity.asCHandle())
         } catch {
-            throw QUICServerTransportError.identityLoadFailed
+            throw ServerRoleQUICRootTransportError.identityLoadFailed
         }
         
         // QUIC 파라미터 생성

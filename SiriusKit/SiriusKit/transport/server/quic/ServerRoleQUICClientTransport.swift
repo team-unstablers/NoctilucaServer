@@ -1,5 +1,5 @@
 //
-//  QUICClientTransport.swift
+//  ServerRoleQUICClientTransport.swift
 //  SiriusKit
 //
 //  Created by Gyuhwan Park on 11/20/25.
@@ -8,23 +8,23 @@
 import Foundation
 import Network
 
-enum QUICClientTransportError: Error {
+enum ServerRoleQUICClientTransportError: Error {
 }
 
-class QUICClientTransport: ClientTransport {
+class ServerRoleQUICClientTransport: ServerRoleClientTransport {
     let connectionGroup: NWConnectionGroup
-    let serverTransport: QUICServerTransport
+    let serverTransport: ServerRoleQUICRootTransport
     
-    private(set) var streams: [StreamIdentifier: QUICStream] = [:]
+    private(set) var streams: [StreamIdentifier: ServerRoleQUICStream] = [:]
     
-    private let _id: ClientTransportIdentifier
+    private let _id: ServerRoleClientTransportIdentifier
     
-    override var id: ClientTransportIdentifier {
+    override var id: ServerRoleClientTransportIdentifier {
         _id
     }
     
     
-    init(_ connectionGroup: NWConnectionGroup, serverTransport: QUICServerTransport, id: ClientTransportIdentifier) {
+    init(_ connectionGroup: NWConnectionGroup, serverTransport: ServerRoleQUICRootTransport, id: ServerRoleClientTransportIdentifier) {
         self._id = id
         
         self.serverTransport = serverTransport
@@ -37,12 +37,12 @@ class QUICClientTransport: ClientTransport {
         self.serverTransport.unregisterClientTransport(self)
     }
     
-    override func openStream() async -> Result<Stream, ClientTransportError> {
+    override func openStream() async -> Result<Stream, ServerRoleClientTransportError> {
         guard let connection = NWConnection(from: self.connectionGroup) else {
             return .failure(.openStreamFailed(error: nil))
         }
         
-        let stream = QUICStream(connection, transport: self)
+        let stream = ServerRoleQUICStream(connection, transport: self)
         self.registerStream(stream)
         
         return .success(stream)
@@ -74,7 +74,7 @@ class QUICClientTransport: ClientTransport {
     }
     
     private func handleNewConnection(_ connection: NWConnection) {
-        let stream = QUICStream(connection, transport: self)
+        let stream = ServerRoleQUICStream(connection, transport: self)
         
         stream.setup { [weak self] in
             guard let _self = self else { return }
@@ -82,14 +82,17 @@ class QUICClientTransport: ClientTransport {
             _self.registerStream(stream)
             
             Task {
-                // FIXME: 에러 핸들링
-                try! await _self.delegate?.clientTransportDidOpenStream(_self, stream: stream)
+                do {
+                    try await _self.delegate?.clientTransportDidOpenStream(_self, stream: stream)
+                } catch {
+                    await _self.delegate?.clientTransport(_self, didEncounterError: error)
+                }
             }
         }
         stream.start()
     }
     
-    internal func registerStream(_ stream: QUICStream) {
+    internal func registerStream(_ stream: ServerRoleQUICStream) {
         // FIXME: ready가 아닌 상태에서 stream.id 액세스하면 맛감
         assert(stream.connection.state == .ready)
         
@@ -102,13 +105,13 @@ class QUICClientTransport: ClientTransport {
         self.streams.updateValue(stream, forKey: streamId)
     }
     
-    internal func unregisterStream(_ stream: QUICStream) {
+    internal func unregisterStream(_ stream: ServerRoleQUICStream) {
         self.streams.removeValue(forKey: stream.id)
     }
 }
 
-extension QUICClientTransport: Hashable, Equatable, Identifiable {
-    static func == (lhs: QUICClientTransport, rhs: QUICClientTransport) -> Bool {
+extension ServerRoleQUICClientTransport: Hashable, Equatable, Identifiable {
+    static func == (lhs: ServerRoleQUICClientTransport, rhs: ServerRoleQUICClientTransport) -> Bool {
         return lhs.id == rhs.id
     }
     

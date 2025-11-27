@@ -50,26 +50,26 @@ final class QUICTransportTest {
     // 심플 테스트 케이스
     @Test("QUIC 프로토콜의 서버가 정상적으로 기동되는가")
     func serverStartsSuccessfully() async throws {
-        class TestServerDelegate: ServerTransportDelegate {
+        class TestServerDelegate: ServerRoleRootTransportDelegate {
             var didStartListening = false
             
-            func serverTransportDidStartListening(_ serverTransport: SiriusKit.ServerTransport) {
+            func serverTransportDidStartListening(_ serverTransport: SiriusKit.ServerRoleRootTransport) {
                 didStartListening = true
             }
             
-            func serverTransportDidStopListening(_ serverTransport: SiriusKit.ServerTransport) {
+            func serverTransportDidStopListening(_ serverTransport: SiriusKit.ServerRoleRootTransport) {
             }
             
-            func serverTransportDidAcceptConnection(_ serverTransport: SiriusKit.ServerTransport, clientTransport: SiriusKit.ClientTransport) {
+            func serverTransportDidAcceptConnection(_ serverTransport: SiriusKit.ServerRoleRootTransport, clientTransport: SiriusKit.ServerRoleClientTransport) {
             }
             
-            func serverTransportDidFailToAcceptConnection(_ serverTransport: SiriusKit.ServerTransport, error: any Error) {
+            func serverTransportDidFailToAcceptConnection(_ serverTransport: SiriusKit.ServerRoleRootTransport, error: any Error) {
             }
         }
         
         let delegate = TestServerDelegate()
         
-        let server = QUICServerTransport(port: self.port, using: self.serverIdentity)
+        let server = ServerRoleQUICRootTransport(port: self.port, using: self.serverIdentity)
         server.delegate = delegate
         
         try await server.startup()
@@ -97,7 +97,7 @@ final class QUICTransportTest {
     ///   5. 서버가 프레임을 전송하면 클라이언트가 수신한다.
     @Test("E2E 테스트 케이스 #1")
     func e2eTestCase_1() async throws {
-        class TestClientTransportDelegate: ClientTransportDelegate {
+        class TestClientTransportDelegate: ServerRoleClientTransportDelegate {
             var didOpenStream = false
             var didReceiveFrameFromClient = false
             var receivedFrameFromClient: SiriusFrame?
@@ -106,7 +106,7 @@ final class QUICTransportTest {
             var openedStream: SiriusKit.Stream?
             var streamListenerTask: Task<Void, Never>?
             
-            func clientTransportDidOpenStream(_ transport: SiriusKit.ClientTransport, stream: SiriusKit.Stream) async throws {
+            func clientTransportDidOpenStream(_ transport: SiriusKit.ServerRoleClientTransport, stream: SiriusKit.Stream) async throws {
                 print("didOpenStream called")
                 didOpenStream = true
                 openedStream = stream
@@ -128,18 +128,18 @@ final class QUICTransportTest {
                 }
             }
             
-            func clientTransportDidCloseStream(_ transport: SiriusKit.ClientTransport, stream: SiriusKit.Stream) async {
+            func clientTransportDidCloseStream(_ transport: SiriusKit.ServerRoleClientTransport, stream: SiriusKit.Stream) async {
             }
             
-            func clientTransportDidClose(_ transport: SiriusKit.ClientTransport) async {
+            func clientTransportDidClose(_ transport: SiriusKit.ServerRoleClientTransport) async {
             }
             
-            func clientTransport(_ transport: SiriusKit.ClientTransport, didEncounterError error: any Error) async {
+            func clientTransport(_ transport: SiriusKit.ServerRoleClientTransport, didEncounterError error: any Error) async {
                 self.error = error
             }
         }
         
-        class TestServerDelegate: ServerTransportDelegate {
+        class TestServerDelegate: ServerRoleRootTransportDelegate {
             let transportDelegate: TestClientTransportDelegate
             var didStartListening = false
             var didAcceptConnection = false
@@ -148,29 +148,29 @@ final class QUICTransportTest {
                 self.transportDelegate = transportDelegate
             }
             
-            func serverTransportDidStartListening(_ serverTransport: SiriusKit.ServerTransport) {
+            func serverTransportDidStartListening(_ serverTransport: SiriusKit.ServerRoleRootTransport) {
                 didStartListening = true
             }
             
-            func serverTransportDidStopListening(_ serverTransport: SiriusKit.ServerTransport) {
+            func serverTransportDidStopListening(_ serverTransport: SiriusKit.ServerRoleRootTransport) {
             }
             
-            func serverTransport(_ serverTransport: SiriusKit.ServerTransport, didEncounterError error: any Error) {
+            func serverTransport(_ serverTransport: SiriusKit.ServerRoleRootTransport, didEncounterError error: any Error) {
             }
             
-            func serverTransportDidAcceptConnection(_ serverTransport: SiriusKit.ServerTransport, clientTransport: SiriusKit.ClientTransport) {
+            func serverTransportDidAcceptConnection(_ serverTransport: SiriusKit.ServerRoleRootTransport, clientTransport: SiriusKit.ServerRoleClientTransport) {
                 didAcceptConnection = true
                 clientTransport.delegate = transportDelegate
             }
             
-            func serverTransportDidFailToAcceptConnection(_ serverTransport: SiriusKit.ServerTransport, error: any Error) {
+            func serverTransportDidFailToAcceptConnection(_ serverTransport: SiriusKit.ServerRoleRootTransport, error: any Error) {
             }
         }
         
         let transportDelegate = TestClientTransportDelegate()
         let serverDelegate = TestServerDelegate(transportDelegate: transportDelegate)
         
-        let server = QUICServerTransport(port: self.port, using: self.serverIdentity)
+        let server = ServerRoleQUICRootTransport(port: self.port, using: self.serverIdentity)
         server.delegate = serverDelegate
         
         try await server.startup()

@@ -12,13 +12,13 @@ public protocol ClientSessionDelegate: AnyObject {
 }
 
 public class ClientSession {
-    let transport: ClientTransport
+    let transport: ServerRoleClientTransport
     let featureProvider: (any FeatureProvider)
     
     public var channelManager: ChannelManager!
     public var shouldAcceptChannelCreation: Bool = false
     
-    init(transport: ClientTransport, featureProvider: (any FeatureProvider)) {
+    init(transport: ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
         self.transport = transport
         self.featureProvider = featureProvider
         self.channelManager = ChannelManager(session: self)
@@ -27,18 +27,18 @@ public class ClientSession {
     }
 }
 
-extension ClientSession: ClientTransportDelegate {
-    func clientTransportDidOpenStream(_ transport: ClientTransport, stream: Stream) async throws {
+extension ClientSession: ServerRoleClientTransportDelegate {
+    func clientTransportDidOpenStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws {
         try await channelManager.handleStreamOpen(stream: stream)
     }
     
-    func clientTransportDidCloseStream(_ transport: ClientTransport, stream: Stream) async {
+    func clientTransportDidCloseStream(_ transport: ServerRoleClientTransport, stream: Stream) async {
         //
     }
     
-    func clientTransportDidClose(_ transport: ClientTransport) async {
+    func clientTransportDidClose(_ transport: ServerRoleClientTransport) async {
     }
     
-    func clientTransport(_ transport: ClientTransport, didEncounterError error: any Error) async {
+    func clientTransport(_ transport: ServerRoleClientTransport, didEncounterError error: any Error) async {
     }
 }
