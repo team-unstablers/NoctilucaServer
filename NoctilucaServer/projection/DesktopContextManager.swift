@@ -1,122 +1,566 @@
 //
-//  WindowManager.swift
+//  DesktopContextManager.swift
 //  NoctilucaServer
 //
-//  Created by Gyuhwan Park on 11/28/25.
-//
-
-/*
-<prompt>
- 
-1. 이 클래스들의 정의를 보고 살을 채워줄 수 있어? (실제 구현체 말고 프로토콜과 기본 클래스 정의)
- - AppSubscription: 특정 앱을 감시하는 구독
- - WindowManagerOrSpy: 시스템에서 실행중인 앱들을 감시하는 매니저 또는 스파이
-2. 네이밍 추천좀 해줘
- - 일단은 `WindowManager`이나 `WindowSpy`같은걸 생각하고 있음
- 
-# 무슨 용도냐면...
-- macOS용 원격 제어 소프트웨어를 만들고 있는데, App / Window 단위의 원격 제어를 구상하고 있음. (like RemoteApp in Microsoft RDP)
-- 접근성 API나 CGWindow API를 이용해서 특정 앱의 윈도우들을 감시하고 제어하는 기능이 필요함.
-</prompt>
- */
-
-import Darwin
 
 import Foundation
+import CoreGraphics
+import ApplicationServices // For AXUIElement
+import AppKit
 
-enum AppIdentifier {
-    case bundleID(bundleName: String)
-    case processID(pid: pid_t, processName: String?)
-}
+// MARK: - Core Types
 
-struct WindowInfo {
-    let windowID: Int
+/// winman.proto의 WindowInfo와 매핑되기 쉽도록 구조화
+struct WindowInfo: Identifiable, Equatable, Hashable {
+    typealias ID = CGWindowID // UInt32
+    
+    let id: ID
     let title: String
-    let isMain: Bool
-    let isOnScreen: Bool
-    let bounds: CGRect
-    let position: CGPoint
-    // TODO: 모니터 ID
+    let frame: CGRect
+    let isVisible: Bool
+    let isActive: Bool // 현재 포커스 된 윈도우인지
     
+    // CGWindowList API 등을 통해 가져온 추가 메타데이터
+    let layer: Int32
+    let ownerPID: pid_t
+}
+
+enum AppIdentifier: Hashable, CustomStringConvertible {
+    case bundleID(String)
+    case processID(pid_t)
+    
+    var description: String {
+        switch self {
+        case .bundleID(let id): return "Bundle(\(id))"
+        case .processID(let pid): return "PID(\(pid))"
+        }
+    }
+}
+
+// 메뉴 구조는 재귀적이므로 간결하게 정의
+struct AppMenuNode {
+    let title: String
+    let isEnabled: Bool
+    let shortcut: String?
+    let children: [AppMenuNode]? // nil이면 Leaf node (Action)
+    
+    // 실행을 위한 식별자 (AXUIElement 등)
+    let actionIdentifier: Any?
+}
+
+// MARK: - Errors
+
+enum DesktopContextError: Error {
+    case accessibilityPermissionMissing
+    case cannotCreateAXObserver(AXError)
+    case windowNotFound(WindowInfo.ID)
+    case appNotRunning
+    case invalidWindowFrame
+    case failedToSetFocusedWindow(AXError)
+    case failedToPerformAction(String, AXError)
+    case failedToUpdateWindowFrame(AXError)
+    case failedToReadAttribute(String, AXError)
+}
+
+// MARK: - Protocols
+
+/// 특정 앱(AppSession)에서 발생하는 이벤트를 수신
+protocol AppSessionDelegate: AnyObject {
+    // Lifecycle
+    func appSessionDidTerminate(_ session: AppSession)
+    func appSession(_ session: AppSession, didEncounterError error: Error)
+    
+    // App Focus
+    func appSessionDidBecomeActive(_ session: AppSession)
+    func appSessionDidResignActive(_ session: AppSession)
+    
+    // Menu
+    func appSessionDidUpdateMenu(_ session: AppSession, menu: AppMenuNode)
+    
+    // Window Events (winman.proto의 Window...Event 메시지들과 대응)
+    /// 윈도우가 생성되었거나, 감시 대상에 포함됨
+    func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo)
+    
+    /// 윈도우 정보 변경 (이동, 리사이즈, 타이틀 변경 통합 - 최적화 위함)
+    /// 개별 이벤트가 필요하면 didMove, didResize 등으로 분리 가능
+    func appSession(_ session: AppSession, didUpdateWindow window: WindowInfo)
+    
+    /// 윈도우가 닫힘 (winman.proto: WindowClosedEvent)
+    func appSession(_ session: AppSession, didCloseWindow windowID: WindowInfo.ID)
+    
+    /// 앱 내에서 윈도우 포커스가 변경됨 (winman.proto: WindowFocusChangedEvent)
+    func appSession(_ session: AppSession, didChangeWindowFocusTo windowID: WindowInfo.ID?)
+}
+
+/// 시스템 전체(DesktopContextManager)에서 발생하는 이벤트를 수신
+protocol DesktopContextManagerDelegate: AnyObject {
+    /// 새로운 앱이 실행됨 (감시 시작 가능 시점)
+    func desktopManager(_ manager: DesktopContextManager, didDetectAppLaunch app: NSRunningApplication)
+    
+    /// 앱이 종료됨
+    func desktopManager(_ manager: DesktopContextManager, didDetectAppTermination pid: pid_t)
+    
+    /// 시스템 전체에서 포커스된 앱이 변경됨
+    func desktopManager(_ manager: DesktopContextManager, didChangeFrontmostApp app: NSRunningApplication?)
+}
+
+// MARK: - Classes
+
+/// 단일 애플리케이션의 상태를 감시하고 제어하는 세션
+/// (기존 AppSubscription)
+final class AppSession {
+    // 식별 및 상태
     let appIdentifier: AppIdentifier
-    let metadata: [String: Any]
-}
-
-enum AppMenuItem {
-    case action(title: String, shortcut: String?, identifier: Int)
-    case submenu(title: String, submenu: AppMenuRoot)
-    case separator
-}
-
-struct AppMenuRoot {
-    let items: [AppMenuItem]
-}
-
-protocol AppSubscriptionDelegate: AnyObject {
-    /// 앱이 종료되었음을 감지했을 때 호출됩니다.
-    func appSubscriptionDidDetectTermination(_ subscription: AppSubscription)
+    let pid: pid_t
+    private let runningApplication: NSRunningApplication
     
-    /// 앱 감시 중 오류가 발생했을 때 호출됩니다.
-    func appSubscription(_ subscription: AppSubscription, didEncounterError error: any Error)
+    // 내부 캐시 (WindowID -> Info)
+    private(set) var monitoredWindows: [WindowInfo.ID: WindowInfo] = [:]
     
-    /// 앱이 포커스를 가졌음을 감지했을 때 호출됩니다.
-    func appSubscriptionDidDetectGotFocus(_ subscription: AppSubscription)
+    weak var delegate: AppSessionDelegate?
     
-    /// 앱이 포커스를 잃었음을 감지했을 때 호출됩니다.
-    func appSubscriptionDidDetectLostFocus(_ subscription: AppSubscription)
+    // AXUIElement 등 내부 구현체
+    private let appElement: AXUIElement
+    private var axObserver: AXObserver?
     
-    func appSubscriptionDidDetectMenuChange(_ subscription: AppSubscription, newMenu: AppMenuRoot)
+    private let observedNotifications: [CFString] = [
+        kAXWindowCreatedNotification,
+        kAXUIElementDestroyedNotification,
+        kAXFocusedWindowChangedNotification,
+        kAXMainWindowChangedNotification,
+        kAXWindowMovedNotification,
+        kAXWindowResizedNotification,
+        kAXTitleChangedNotification
+    ]
     
-    // 이것들 WindowSubscription으로 옮겨야 하나?
-    func appSubscriptionDidDetectWindowMove(_ subscription: AppSubscription, windowID: Int, newPosition: CGPoint)
-    func appSubscriptionDidDetectWindowResize(_ subscription: AppSubscription, windowID: Int, newSize: CGSize)
-    func appSubscriptionDidDetectWindowTitleChange(_ subscription: AppSubscription, windowID: Int, newTitle: String)
-    
-    /// 앱이 새 윈도우를 열었음을 감지했을 때 호출됩니다.
-    func appSubscription(_ subscription: AppSubscription, didDetectNewWindow windowID: Int)
-    
-    /// 앱이 윈도우를 닫았음을 감지했을 때 호출됩니다.
-    func appSubscription(_ subscription: AppSubscription, didDetectClosedWindow windowID: Int)
-}
-
-/** 앱을 감시하는 subscription */
-final class AppSubscription {
-    private(set) var windowInfos: [Int: WindowInfo] = [:]
-    var activeWindowID: Int? {
-        nil
+    init(runningApp: NSRunningApplication) throws {
+        if let bundleID = runningApp.bundleIdentifier, bundleID.isEmpty == false {
+            self.appIdentifier = .bundleID(bundleID)
+        } else {
+            self.appIdentifier = .processID(runningApp.processIdentifier)
+        }
+        self.pid = runningApp.processIdentifier
+        self.runningApplication = runningApp
+        self.appElement = AXUIElementCreateApplication(self.pid)
+        
+        guard AXIsProcessTrusted() else {
+            throw DesktopContextError.accessibilityPermissionMissing
+        }
+        
+        try self.setupObserver()
+        self.monitoredWindows = self.fetchWindowList()
     }
     
-    weak var delegate: AppSubscriptionDelegate?
-    
-    let identifier: AppIdentifier
-    
-    init(identifier: AppIdentifier) {
-        self.identifier = identifier
+    deinit {
+        guard let observer = axObserver else { return }
+        observedNotifications.forEach { notification in
+            AXObserverRemoveNotification(observer, appElement, notification)
+        }
+        CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
     }
     
-    func focusApp() throws {}
-
-    func refreshWindowInfos() throws {}
+    // MARK: - Control Actions (Async 권장: AX API는 IPC이므로 블로킹 가능성 있음)
     
-    func focusWindow(windowID: Int) throws {}
-    func closeWindow(windowID: Int) throws {}
-    func bringAllWindowsToFront() throws {}
-    
-    func terminate() throws { }
-    func updateMenu() throws {}
-}
-
-protocol WindowManagerDelegate {
-    /// 앱이 실행되었음을 감지했을 때 호출됩니다.
-    func windowManagerDidDetectAppLaunch(_ manager: WindowManagerOrSpy, identifier: AppIdentifier)
-    
-    /// 현재 포커스된 앱이 변경되었을 때 호출됩니다.
-    func windowManagerDidDetectFocusChange(_ manager: WindowManagerOrSpy, identifier: AppIdentifier)
-}
-
-class WindowManagerOrSpy {
-    init() {
+    /// 앱 자체를 활성화 (Bring to front)
+    func activate() async throws {
+        try ensureAppIsRunning()
+        await MainActor.run {
+            _ = self.runningApplication.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        }
     }
+    
+    /// 앱 종료 요청
+    func terminate() async throws {
+        try ensureAppIsRunning()
+        let terminated = await MainActor.run { self.runningApplication.terminate() }
+        if terminated == false {
+            throw DesktopContextError.appNotRunning
+        }
+    }
+    
+    /// 전체 윈도우 정보 강제 갱신 (Polling 방식이 필요할 때 사용)
+    func refreshWindows() async throws -> [WindowInfo] {
+        try await Task(priority: .utility) { () -> [WindowInfo] in
+            let previousWindows = self.monitoredWindows
+            let previousFocusID = previousWindows.values.first(where: { $0.isActive })?.id
+            
+            let windows = self.fetchWindowList()
+            let newWindowMap = Dictionary(uniqueKeysWithValues: windows.map { ($0.id, $0) })
+            let newFocusID = windows.first(where: { $0.isActive })?.id
+            
+            self.monitoredWindows = newWindowMap
+            
+            if let delegate = self.delegate {
+                DispatchQueue.main.async {
+                    let added = newWindowMap.keys.subtracting(previousWindows.keys)
+                    let removed = previousWindows.keys.subtracting(newWindowMap.keys)
+                    let candidates = newWindowMap.keys.intersection(previousWindows.keys)
+                    
+                    for id in added {
+                        if let window = newWindowMap[id] {
+                            delegate.appSession(self, didDiscoverWindow: window)
+                        }
+                    }
+                    
+                    for id in removed {
+                        delegate.appSession(self, didCloseWindow: id)
+                    }
+                    
+                    for id in candidates {
+                        guard let oldValue = previousWindows[id], let newValue = newWindowMap[id] else { continue }
+                        if oldValue != newValue {
+                            delegate.appSession(self, didUpdateWindow: newValue)
+                        }
+                    }
+                    
+                    if previousFocusID != newFocusID {
+                        delegate.appSession(self, didChangeWindowFocusTo: newFocusID)
+                    }
+                }
+            }
+            
+            return windows
+        }.value
+    }
+    
+    /// 특정 윈도우로 포커스 이동 (winman.proto: WindowFocusRequest)
+    func focusWindow(id: WindowInfo.ID) async throws {
+        try ensureAppIsRunning()
+        let windowElement = try self.windowElement(for: id)
+        
+        let setMainResult = AXUIElementSetAttributeValue(windowElement, kAXMainAttribute as CFString, kCFBooleanTrue)
+        if setMainResult != .success {
+            throw DesktopContextError.failedToSetFocusedWindow(setMainResult)
+        }
+        
+        let focusResult = AXUIElementSetAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, windowElement)
+        if focusResult != .success {
+            throw DesktopContextError.failedToSetFocusedWindow(focusResult)
+        }
+        
+        _ = AXUIElementPerformAction(windowElement, kAXRaiseAction as CFString)
+        _ = try await refreshWindows()
+    }
+    
+    /// 윈도우 닫기
+    func closeWindow(id: WindowInfo.ID) async throws {
+        try ensureAppIsRunning()
+        let windowElement = try self.windowElement(for: id)
+        let result = AXUIElementPerformAction(windowElement, kAXCloseAction as CFString)
+        if result != .success {
+            throw DesktopContextError.failedToPerformAction("close", result)
+        }
+        _ = try await refreshWindows()
+    }
+    
+    /// 윈도우 이동/크기 조절 (Noctiluca 기능 확장 시 필요)
+    func setWindowFrame(id: WindowInfo.ID, frame: CGRect) async throws {
+        try ensureAppIsRunning()
+        let windowElement = try self.windowElement(for: id)
+        
+        var origin = frame.origin
+        var size = frame.size
+        
+        guard let positionValue = AXValueCreate(.cgPoint, &origin),
+              let sizeValue = AXValueCreate(.cgSize, &size) else {
+            throw DesktopContextError.invalidWindowFrame
+        }
+        
+        let positionResult = AXUIElementSetAttributeValue(windowElement, kAXPositionAttribute as CFString, positionValue)
+        if positionResult != .success {
+            throw DesktopContextError.failedToUpdateWindowFrame(positionResult)
+        }
+        
+        let sizeResult = AXUIElementSetAttributeValue(windowElement, kAXSizeAttribute as CFString, sizeValue)
+        if sizeResult != .success {
+            throw DesktopContextError.failedToUpdateWindowFrame(sizeResult)
+        }
+        
+        _ = try await refreshWindows()
+    }
+    
+    // MARK: - Internal Logic
+    
+    /// AXObserver 콜백 등에서 호출되어 Delegate에게 알림
+    private func handleAXNotification(_ notification: CFString) {
+        _ = notification // 현재는 이벤트 유형별 분기를 하지 않지만, 구분을 위해 보존
+        Task { [weak self] in
+            guard let self = self else { return }
+            do {
+                _ = try await self.refreshWindows()
+            } catch {
+                DispatchQueue.main.async {
+                    self.delegate?.appSession(self, didEncounterError: error)
+                }
+            }
+        }
+    }
+    
+    private func setupObserver() throws {
+        var observer: AXObserver?
+        let result = AXObserverCreate(self.pid, { _, _, notification, context in
+            guard let context else { return }
+            let session = Unmanaged<AppSession>.fromOpaque(context).takeUnretainedValue()
+            session.handleAXNotification(notification)
+        }, &observer)
+        
+        guard result == .success, let observer else {
+            throw DesktopContextError.cannotCreateAXObserver(result)
+        }
+        
+        self.axObserver = observer
+        for notification in observedNotifications {
+            _ = AXObserverAddNotification(observer, appElement, notification, Unmanaged.passUnretained(self).toOpaque())
+        }
+        
+        CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
+    }
+    
+    private func ensureAppIsRunning() throws {
+        if self.runningApplication.isTerminated {
+            throw DesktopContextError.appNotRunning
+        }
+    }
+    
+    private func windowElement(for id: WindowInfo.ID) throws -> AXUIElement {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
+        guard result == .success else {
+            throw DesktopContextError.failedToReadAttribute(kAXWindowsAttribute as String, result)
+        }
+        
+        guard let windows = value as? [AXUIElement] else {
+            throw DesktopContextError.failedToReadAttribute(kAXWindowsAttribute as String, .cannotComplete)
+        }
+        
+        for element in windows {
+            var windowNumberValue: CFTypeRef?
+            let numberResult = AXUIElementCopyAttributeValue(element, kAXWindowNumberAttribute as CFString, &windowNumberValue)
+            if numberResult != .success {
+                continue
+            }
+            
+            if let number = windowNumberValue as? NSNumber, WindowInfo.ID(number.uint32Value) == id {
+                return element
+            }
+        }
+        
+        throw DesktopContextError.windowNotFound(id)
+    }
+    
+    private func axFocusedWindowID() -> WindowInfo.ID? {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &value)
+        guard result == .success, let focusedWindow = value as? AXUIElement else {
+            return nil
+        }
+        
+        var windowNumberValue: CFTypeRef?
+        let numberResult = AXUIElementCopyAttributeValue(focusedWindow, kAXWindowNumberAttribute as CFString, &windowNumberValue)
+        guard numberResult == .success, let number = windowNumberValue as? NSNumber else {
+            return nil
+        }
+        
+        return WindowInfo.ID(number.uint32Value)
+    }
+    
+    private func fetchWindowList() -> [WindowInfo] {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+            return []
+        }
+        
+        let appWindows = infoList.filter { info in
+            guard let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t else { return false }
+            return ownerPID == self.pid
+        }
+        
+        let focusedID = self.axFocusedWindowID() ?? appWindows.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
+        
+        return appWindows.compactMap { info in
+            guard let boundsDictionary = info[kCGWindowBounds as String] as? CFDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
+                return nil
+            }
+            
+            let windowID = info[kCGWindowNumber as String] as? CGWindowID ?? 0
+            let layer = Int32(info[kCGWindowLayer as String] as? Int ?? 0)
+            let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t ?? 0
+            let title = info[kCGWindowName as String] as? String ?? ""
+            let isOnscreen = info[kCGWindowIsOnscreen as String] as? Bool ?? false
+            let alpha = info[kCGWindowAlpha as String] as? Double ?? 0.0
+            let isVisible = isOnscreen && alpha > 0.01
+            let isActive = focusedID == windowID
+            
+            return WindowInfo(
+                id: windowID,
+                title: title,
+                frame: bounds,
+                isVisible: isVisible,
+                isActive: isActive,
+                layer: layer,
+                ownerPID: ownerPID
+            )
+        }
+    }
+}
 
-    // ...
+/// 시스템 전체의 앱 실행 상태와 포커스를 관장하는 매니저
+/// (기존 WindowManagerOrSpy)
+final class DesktopContextManager {
+    
+    weak var delegate: DesktopContextManagerDelegate?
+    
+    /// 현재 감시 중인 앱 세션들 (PID: Session)
+    private(set) var activeSessions: [pid_t: AppSession] = [:]
+    
+    private let workspace: NSWorkspace
+    private var workspaceObservers: [Any] = []
+    
+    init(workspace: NSWorkspace = .shared) {
+        self.workspace = workspace
+        self.registerWorkspaceNotifications()
+    }
+    
+    deinit {
+        workspaceObservers.forEach { observer in
+            workspace.notificationCenter.removeObserver(observer)
+        }
+    }
+    
+    // MARK: - Public Methods
+    
+    /// 권한 확인 (Screen Recording, Accessibility)
+    func checkPermissions() -> Bool {
+        let accessibilityOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        let accessibilityGranted = AXIsProcessTrustedWithOptions(accessibilityOptions)
+        
+        let screenRecordingGranted: Bool
+        if #available(macOS 10.15, *) {
+            screenRecordingGranted = CGPreflightScreenCaptureAccess()
+        } else {
+            screenRecordingGranted = true
+        }
+        
+        return accessibilityGranted && screenRecordingGranted
+    }
+    
+    /// 현재 실행 중인 모든 앱 스캔 (초기화 용)
+    func scanRunningApplications() {
+        workspace.runningApplications
+            .filter(shouldMonitor)
+            .forEach { app in
+                delegate?.desktopManager(self, didDetectAppLaunch: app)
+            }
+        
+        delegate?.desktopManager(self, didChangeFrontmostApp: workspace.frontmostApplication)
+    }
+    
+    /// 특정 앱을 감시 시작
+    /// - Returns: 생성된 AppSession 객체
+    func startMonitoring(app: NSRunningApplication) throws -> AppSession {
+        if let existing = activeSessions[app.processIdentifier] {
+            return existing
+        }
+        
+        let session = try AppSession(runningApp: app)
+        activeSessions[app.processIdentifier] = session
+        return session
+    }
+    
+    /// 감시 중단
+    func stopMonitoring(pid: pid_t) {
+        activeSessions.removeValue(forKey: pid)
+    }
+    
+    // MARK: - Global Window Queries
+    // winman.proto의 WindowListRequest 처리를 위해 필요할 수 있음
+    
+    /// 현재 화면에 있는 모든 윈도우 리스트 조회 (CGWindowList 활용)
+    func globalWindowList() async -> [WindowInfo] {
+        await Task(priority: .utility) { () -> [WindowInfo] in
+            let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+            guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+                return []
+            }
+            
+            let frontmostWindowID = infoList.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
+            
+            return infoList.compactMap { info in
+                guard let boundsDictionary = info[kCGWindowBounds as String] as? CFDictionary,
+                      let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
+                    return nil
+                }
+                
+                let windowID = info[kCGWindowNumber as String] as? CGWindowID ?? 0
+                let layer = Int32(info[kCGWindowLayer as String] as? Int ?? 0)
+                let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t ?? 0
+                let title = info[kCGWindowName as String] as? String ?? ""
+                let isOnscreen = info[kCGWindowIsOnscreen as String] as? Bool ?? false
+                let alpha = info[kCGWindowAlpha as String] as? Double ?? 0.0
+                let isVisible = isOnscreen && alpha > 0.01
+                let isActive = frontmostWindowID == windowID
+                
+                return WindowInfo(
+                    id: windowID,
+                    title: title,
+                    frame: bounds,
+                    isVisible: isVisible,
+                    isActive: isActive,
+                    layer: layer,
+                    ownerPID: ownerPID
+                )
+            }
+        }.value
+    }
+    
+    // MARK: - Private
+    
+    private func registerWorkspaceNotifications() {
+        let center = workspace.notificationCenter
+        let queue = OperationQueue.main
+        
+        let launchObserver = center.addObserver(
+            forName: NSWorkspace.didLaunchApplicationNotification,
+            object: nil,
+            queue: queue
+        ) { [weak self] notification in
+            guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+                return
+            }
+            self.delegate?.desktopManager(self, didDetectAppLaunch: app)
+        }
+        
+        let terminationObserver = center.addObserver(
+            forName: NSWorkspace.didTerminateApplicationNotification,
+            object: nil,
+            queue: queue
+        ) { [weak self] notification in
+            guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+                return
+            }
+            if let session = self.activeSessions[app.processIdentifier] {
+                session.delegate?.appSessionDidTerminate(session)
+            }
+            self.stopMonitoring(pid: app.processIdentifier)
+            self.delegate?.desktopManager(self, didDetectAppTermination: app.processIdentifier)
+        }
+        
+        let activationObserver = center.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: queue
+        ) { [weak self] notification in
+            guard let self else { return }
+            let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            self.delegate?.desktopManager(self, didChangeFrontmostApp: app ?? self.workspace.frontmostApplication)
+        }
+        
+        self.workspaceObservers.append(contentsOf: [launchObserver, terminationObserver, activationObserver])
+    }
+    
+    private func shouldMonitor(_ app: NSRunningApplication) -> Bool {
+        guard app.isTerminated == false else { return false }
+        return app.activationPolicy != .prohibited
+    }
 }
