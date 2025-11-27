@@ -16,7 +16,7 @@ enum ServerRoleClientTransportError: Error {
 
 protocol ServerRoleClientTransportDelegate: AnyObject {
     /// - NOTE: 리모트에서 스트림을 열었을 때에만 호출됩니다.
-    func clientTransportDidOpenStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws
+    func clientTransportDidOpenRemoteStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws
     func clientTransportDidCloseStream(_ transport: ServerRoleClientTransport, stream: Stream) async
     
     func clientTransportDidClose(_ transport: ServerRoleClientTransport) async

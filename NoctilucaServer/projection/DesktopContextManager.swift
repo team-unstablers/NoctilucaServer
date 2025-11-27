@@ -7,6 +7,7 @@ import Foundation
 import CoreGraphics
 import ApplicationServices // For AXUIElement
 import AppKit
+import Combine
 
 // MARK: - Core Types
 
@@ -134,7 +135,8 @@ final class AppSession {
     ]
     
     // 디바운스+병합: 잦은 AX 노티를 100~200ms 간격으로 묶고, 실행 중 중복을 한 번으로 합친다.
-    private var refreshWorkItem: DispatchWorkItem?
+    private let refreshSubject = PassthroughSubject<Void, Never>()
+    private var cancellables = Set<AnyCancellable>()
     private let refreshDelay: TimeInterval = 0.15
     private var isRefreshing = false
     private var pendingRefresh = false
@@ -154,11 +156,12 @@ final class AppSession {
         }
         
         try self.setupObserver()
+        self.setupRefreshPipeline()
         self.monitoredWindows = self.fetchWindowList()
     }
     
     deinit {
-        refreshWorkItem?.cancel()
+        cancellables.removeAll()
         guard let observer = axObserver else { return }
         observedNotifications.forEach { notification in
             AXObserverRemoveNotification(observer, appElement, notification)
@@ -291,7 +294,7 @@ final class AppSession {
     /// AXObserver 콜백 등에서 호출되어 Delegate에게 알림
     private func handleAXNotification(_ notification: CFString) {
         _ = notification // 현재는 이벤트 유형별 분기를 하지 않지만, 구분을 위해 보존
-        scheduleRefresh()
+        refreshSubject.send(())
     }
     
     private func setupObserver() throws {
@@ -314,14 +317,15 @@ final class AppSession {
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
     }
     
-    /// AX 노티 폭주를 막기 위한 디바운스 엔트리 포인트
-    private func scheduleRefresh() {
-        refreshWorkItem?.cancel()
-        let item = DispatchWorkItem { [weak self] in
-            self?.enqueueRefresh()
-        }
-        refreshWorkItem = item
-        DispatchQueue.main.asyncAfter(deadline: .now() + refreshDelay, execute: item)
+    /// AX 노티 폭주를 막기 위한 디바운스 엔트리 포인트 (Combine 기반)
+    private func setupRefreshPipeline() {
+        let delay = DispatchQueue.SchedulerTimeType.Stride.milliseconds(Int(refreshDelay * 1000))
+        refreshSubject
+            .debounce(for: delay, scheduler: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.enqueueRefresh()
+            }
+            .store(in: &cancellables)
     }
     
     /// 실제 refresh 실행을 직렬화하고, 실행 중 추가 요청은 한 번 더 실행하도록 병합

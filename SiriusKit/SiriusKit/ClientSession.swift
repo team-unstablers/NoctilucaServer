@@ -28,7 +28,7 @@ public class ClientSession {
 }
 
 extension ClientSession: ServerRoleClientTransportDelegate {
-    func clientTransportDidOpenStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws {
+    func clientTransportDidOpenRemoteStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws {
         try await channelManager.handleStreamOpen(stream: stream)
     }
     

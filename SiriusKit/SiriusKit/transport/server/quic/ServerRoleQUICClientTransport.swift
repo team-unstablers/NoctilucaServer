@@ -83,7 +83,7 @@ class ServerRoleQUICClientTransport: ServerRoleClientTransport {
             
             Task {
                 do {
-                    try await _self.delegate?.clientTransportDidOpenStream(_self, stream: stream)
+                    try await _self.delegate?.clientTransportDidOpenRemoteStream(_self, stream: stream)
                 } catch {
                     await _self.delegate?.clientTransport(_self, didEncounterError: error)
                 }

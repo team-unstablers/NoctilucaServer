@@ -14,8 +14,11 @@ class ClientRoleQUICTransport: ClientRoleTransport {
     private let port: NWEndpoint.Port
     private let alpn: SiriusQUICAlpn
     
-    private var connection: NWConnection?
+    private var connectionGroup: NWConnectionGroup?
     private(set) var streams: [StreamIdentifier: ClientRoleQUICStream] = [:]
+    
+    private let queue = DispatchQueue(label: "io.siriuskit.quic.client")
+    private var mainStreamOpened = false
     
     private let verifyQueue = DispatchQueue(label: "io.siriuskit.quic.client.verify")
     
@@ -30,41 +33,64 @@ class ClientRoleQUICTransport: ClientRoleTransport {
     override func connect() async throws {
         let parameters = try await self.createQuicParameters()
         
-        let connection = NWConnection(host: host, port: port, using: parameters)
-        self.connection = connection
+        let endpoint = NWEndpoint.hostPort(host: self.host, port: self.port)
+        let descriptor = NWMultiplexGroup(to: endpoint)
+        let connectionGroup = NWConnectionGroup(with: descriptor, using: parameters)
+        self.connectionGroup = connectionGroup
         
-        let stream = ClientRoleQUICStream(connection, transport: self)
-        stream.setup { [weak self, weak stream] in
-            guard let self, let stream else { return }
+        connectionGroup.stateUpdateHandler = { [weak self] state in
+            guard let self else { return }
             
-            self.registerStream(stream)
-            
-            Task {
-                do {
-                    try await self.delegate?.clientTransportDidOpenMainStream(self, stream: stream)
-                } catch {
-                    await self.delegate?.clientTransport(self, didEncounterError: error)
-                }
+            switch state {
+            case .ready:
+                Task { await self.openMainStreamIfNeeded() }
+            case .failed(let error):
+                Task { await self.delegate?.clientTransport(self, didEncounterError: error) }
+            case .cancelled:
+                Task { await self.delegate?.clientTransportDidClose(self) }
+            default:
+                break
             }
         }
-        stream.start()
+        
+        connectionGroup.newConnectionHandler = { [weak self] connection in
+            self?.handleIncomingConnection(connection)
+        }
+        
+        connectionGroup.start(queue: self.queue)
     }
     
     override func disconnect() async throws {
-        self.connection?.cancel()
-        self.connection = nil
+        if let connectionGroup {
+            connectionGroup.cancel()
+            self.connectionGroup = nil
+        }
+        
         self.streams.removeAll()
         
         await self.delegate?.clientTransportDidClose(self)
     }
     
     override func openStream() async -> Result<Stream, ClientRoleTransportError> {
-        // TODO: QUIC 멀티 스트림 지원 추가
-        guard let mainStream = self.streams.values.first else {
-            return .failure(.openStreamFailed(error: nil))
+        guard let connectionGroup = self.connectionGroup else {
+            return .failure(.connectionFailed(error: nil))
         }
         
-        return .success(mainStream)
+        return await withCheckedContinuation { continuation in
+            guard let connection = NWConnection(from: connectionGroup) else {
+                continuation.resume(returning: .failure(.openStreamFailed(error: nil)))
+                return
+            }
+            
+            let stream = ClientRoleQUICStream(connection, transport: self)
+            stream.setup { [weak self, weak stream] in
+                guard let self, let stream else { return }
+                
+                self.registerStream(stream)
+                continuation.resume(returning: .success(stream))
+            }
+            stream.start()
+        }
     }
     
     internal func registerStream(_ stream: ClientRoleQUICStream) {
@@ -78,6 +104,43 @@ class ClientRoleQUICTransport: ClientRoleTransport {
     
     internal func unregisterStream(_ stream: ClientRoleQUICStream) {
         self.streams.removeValue(forKey: stream.id)
+    }
+    
+    private func handleIncomingConnection(_ connection: NWConnection) {
+        let stream = ClientRoleQUICStream(connection, transport: self)
+        
+        stream.setup { [weak self] in
+            guard let self else { return }
+            self.registerStream(stream)
+            
+            Task {
+                do {
+                    try await self.delegate?.clientTransportDidOpenRemoteStream(self, stream: stream)
+                } catch {
+                    await self.delegate?.clientTransport(self, didEncounterError: error)
+                }
+            }
+        }
+        stream.start()
+    }
+    
+    private func openMainStreamIfNeeded() async {
+        guard self.mainStreamOpened == false else { return }
+        self.mainStreamOpened = true
+        
+        let result = await self.openStream()
+        switch result {
+        case .success(let stream):
+            do {
+                try await self.delegate?.clientTransportDidOpenMainStream(self, stream: stream)
+            } catch {
+                self.mainStreamOpened = false
+                await self.delegate?.clientTransport(self, didEncounterError: error)
+            }
+        case .failure(let error):
+            self.mainStreamOpened = false
+            await self.delegate?.clientTransport(self, didEncounterError: error)
+        }
     }
     
     private func createQuicParameters() async throws -> NWParameters {

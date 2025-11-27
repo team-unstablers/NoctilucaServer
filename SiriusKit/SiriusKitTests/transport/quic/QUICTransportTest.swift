@@ -106,7 +106,7 @@ final class QUICTransportTest {
             var openedStream: SiriusKit.Stream?
             var streamListenerTask: Task<Void, Never>?
             
-            func clientTransportDidOpenStream(_ transport: SiriusKit.ServerRoleClientTransport, stream: SiriusKit.Stream) async throws {
+            func clientTransportDidOpenRemoteStream(_ transport: SiriusKit.ServerRoleClientTransport, stream: SiriusKit.Stream) async throws {
                 print("didOpenStream called")
                 didOpenStream = true
                 openedStream = stream

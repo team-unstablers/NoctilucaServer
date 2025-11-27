@@ -45,6 +45,7 @@ struct NegotiationResponse {
 
 protocol ClientRoleTransportDelegate: AnyObject {
     func clientTransportDidOpenMainStream(_ transport: ClientRoleTransport, stream: Stream) async throws
+    func clientTransportDidOpenRemoteStream(_ transport: ClientRoleTransport, stream: Stream) async throws
     func clientTransportDidClose(_ transport: ClientRoleTransport) async
     func clientTransport(_ transport: ClientRoleTransport, didEncounterError error: any Error) async
     
