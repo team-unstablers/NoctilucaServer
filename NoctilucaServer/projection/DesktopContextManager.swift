@@ -133,6 +133,12 @@ final class AppSession {
         kAXTitleChangedNotification
     ]
     
+    // 디바운스+병합: 잦은 AX 노티를 100~200ms 간격으로 묶고, 실행 중 중복을 한 번으로 합친다.
+    private var refreshWorkItem: DispatchWorkItem?
+    private let refreshDelay: TimeInterval = 0.15
+    private var isRefreshing = false
+    private var pendingRefresh = false
+    
     init(runningApp: NSRunningApplication) throws {
         if let bundleID = runningApp.bundleIdentifier, bundleID.isEmpty == false {
             self.appIdentifier = .bundleID(bundleID)
@@ -152,6 +158,7 @@ final class AppSession {
     }
     
     deinit {
+        refreshWorkItem?.cancel()
         guard let observer = axObserver else { return }
         observedNotifications.forEach { notification in
             AXObserverRemoveNotification(observer, appElement, notification)
@@ -284,16 +291,7 @@ final class AppSession {
     /// AXObserver 콜백 등에서 호출되어 Delegate에게 알림
     private func handleAXNotification(_ notification: CFString) {
         _ = notification // 현재는 이벤트 유형별 분기를 하지 않지만, 구분을 위해 보존
-        Task { [weak self] in
-            guard let self = self else { return }
-            do {
-                _ = try await self.refreshWindows()
-            } catch {
-                DispatchQueue.main.async {
-                    self.delegate?.appSession(self, didEncounterError: error)
-                }
-            }
-        }
+        scheduleRefresh()
     }
     
     private func setupObserver() throws {
@@ -314,6 +312,43 @@ final class AppSession {
         }
         
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
+    }
+    
+    /// AX 노티 폭주를 막기 위한 디바운스 엔트리 포인트
+    private func scheduleRefresh() {
+        refreshWorkItem?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            self?.enqueueRefresh()
+        }
+        refreshWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + refreshDelay, execute: item)
+    }
+    
+    /// 실제 refresh 실행을 직렬화하고, 실행 중 추가 요청은 한 번 더 실행하도록 병합
+    private func enqueueRefresh() {
+        if isRefreshing {
+            pendingRefresh = true
+            return
+        }
+        isRefreshing = true
+        
+        Task(priority: .utility) { [weak self] in
+            guard let self else { return }
+            defer {
+                self.isRefreshing = false
+                if self.pendingRefresh {
+                    self.pendingRefresh = false
+                    self.scheduleRefresh()
+                }
+            }
+            do {
+                _ = try await self.refreshWindows()
+            } catch {
+                DispatchQueue.main.async {
+                    self.delegate?.appSession(self, didEncounterError: error)
+                }
+            }
+        }
     }
     
     private func ensureAppIsRunning() throws {
