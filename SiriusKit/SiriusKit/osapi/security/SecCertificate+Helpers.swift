@@ -29,4 +29,14 @@ extension SecCertificate {
         
         return applicationLabel
     }
+    
+    func extractNotBefore() -> Date? {
+        let notBefore = SecCertificateCopyNotValidBeforeDate(self) as? Date
+        return notBefore
+    }
+    
+    func extractNotAfter() -> Date? {
+        let notAfter = SecCertificateCopyNotValidAfterDate(self) as? Date
+        return notAfter
+    }
 }

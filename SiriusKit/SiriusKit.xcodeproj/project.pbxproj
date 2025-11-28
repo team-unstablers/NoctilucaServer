@@ -93,7 +93,7 @@
 				"channel/msgdef/v1/session+Sirius.swift",
 				ClientSession.swift,
 				feature/FeatureProvider.swift,
-				"osapi/security/SecCertificate+extractApplicationLabel.swift",
+				"osapi/security/SecCertificate+Helpers.swift",
 				"osapi/security/SecIdentity+castAsCHandle.swift",
 				osapi/security/SRKeychain.swift,
 				osapi/security/SRSecurity.swift,

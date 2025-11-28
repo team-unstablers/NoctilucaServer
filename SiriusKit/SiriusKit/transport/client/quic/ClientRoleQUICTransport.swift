@@ -161,7 +161,10 @@ class ClientRoleQUICTransport: ClientRoleTransport {
                     return
                 }
                 
-                let identity = self.makeIdentityInfo(metadata: metadata)
+                guard let identity = self.makeIdentityInfo(metadata: metadata) else {
+                    completion(false)
+                    return
+                }
                 
                 DispatchQueue.main.async {
                     guard let delegate = self.delegate else {
@@ -187,10 +190,23 @@ class ClientRoleQUICTransport: ClientRoleTransport {
         return NWParameters(quic: options)
     }
     
-    private func makeIdentityInfo(metadata: sec_protocol_metadata_t) -> ServerIdentityInfo {
-        sec_protocol_metadata_access_peer_certificate_chain(<#T##metadata: sec_protocol_metadata_t##sec_protocol_metadata_t#>, <#T##handler: (sec_certificate_t) -> Void##(sec_certificate_t) -> Void#>)
-        let certificateChain = (sec_protocol_metadata_copy_peer_certificate_chain(metadata) as? [SecCertificate]) ?? []
-        let applicationLabel = try? certificateChain.first?.extractApplicationLabel()
+    private func makeIdentityInfo(metadata: sec_protocol_metadata_t) -> ServerIdentityInfo? {
+        var certificateChain: [SecCertificate] = []
+        let result = sec_protocol_metadata_access_peer_certificate_chain(metadata) { certificateHandle in
+            let secCertificate = sec_certificate_copy_ref(certificateHandle)
+            certificateChain.append(secCertificate.takeRetainedValue())
+        }
+        
+        guard result, !certificateChain.isEmpty else {
+            return nil
+        }
+        
+        let serverCertificate = certificateChain.first!
+        
+        let applicationLabel = try? serverCertificate.extractApplicationLabel()
+        
+        let notBefore = serverCertificate.extractNotBefore()
+        let notAfter  = serverCertificate.extractNotAfter()
         
         return ServerIdentityInfo(
             host: self.host.debugDescription,
@@ -198,8 +214,8 @@ class ClientRoleQUICTransport: ClientRoleTransport {
             alpn: self.alpn.rawValue,
             certificates: certificateChain,
             leafApplicationLabel: applicationLabel,
-            notBefore: nil,
-            notAfter: nil
+            notBefore: notBefore,
+            notAfter: notAfter
         )
     }
 }
