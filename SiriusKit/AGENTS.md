@@ -65,6 +65,7 @@ extension Concept: ProjectionChannelDelegate {
 ```
 
 ## Updates
+- `logging/SiriusLogger`가 추가되어 OSLog 또는 콘솔 대상으로 로깅을 보낼 수 있습니다. `SiriusLogVerbosity`/`configure`로 전역 최소 레벨과 대상 팩토리를 조정할 수 있습니다.
 - `channel/messages` 디렉터리에 msgdef v1 전반(핸드셰이크, 세션 인증, 채널 제어, HIDIO, 프로젝션/윈도우, 프로젝션 데이터, 클립보드)의 Swift 래퍼와 opcode 매핑이 추가되었습니다. SwiftProtobuf로 생성된 코드와 상호 변환할 수 있는 타입들이 포함되어 있습니다.
 - 트랜스포트 레이어가 역할별 디렉터리로 분리되었습니다. 서버 역할(`transport/server/**`)은 `ServerRoleRootTransport`, `ServerRoleClientTransport`, `ServerRoleQUICRootTransport`/`ServerRoleQUICClientTransport`로 네이밍을 명확히 했고, 공통 ALPN 정의는 `transport/quic/QUICConstants.swift`에 위치합니다.
 - 클라이언트 역할 트랜스포트 뼈대가 `transport/client/**`에 추가되었습니다. `ClientRoleTransport`/`ClientRoleQUICTransport`가 서버 인증서 검증(TrustDecision 콜백)과 메인 채널 스트림 오픈 이벤트를 델리게이트로 노출합니다.

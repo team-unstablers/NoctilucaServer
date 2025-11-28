@@ -22,6 +22,13 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
         self.identityLabel = identityLabel
     }
     
+    public static func checkIdentityExistance(label: String) throws -> Bool {
+        let keychain = SRKeychain.shared
+        let existsResult = keychain.queryIdentityExistance(by: label)
+        
+        return try existsResult.get()
+    }
+    
     public static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self {
         let security = SRSecurity.shared
         let keychain = SRKeychain.shared

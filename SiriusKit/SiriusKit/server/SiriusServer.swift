@@ -10,6 +10,7 @@ import Foundation
 public protocol SiriusServerDelegate: AnyObject {
     func siriusServerDidStart(_ server: SiriusServer)
     func siriusServerDidStop(_ server: SiriusServer)
+    func siriusServer(_ server: SiriusServer, didEncounterError error: any Error)
     
     func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession)
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusServer, error: any Error)
@@ -19,9 +20,9 @@ public class SiriusServer {
     let serverTransport: ServerRoleRootTransport
     let featureProvider: (any FeatureProvider)
     
-    let sessions: [ClientSession] = []
+    public let sessions: [ClientSession] = []
     
-    weak var delegate: (any SiriusServerDelegate)?
+    public weak var delegate: (any SiriusServerDelegate)?
     
     required init(
         serverTransport: ServerRoleRootTransport,
@@ -47,12 +48,15 @@ public class SiriusServer {
 
 extension SiriusServer: ServerRoleRootTransportDelegate {
     func serverTransportDidStartListening(_ serverTransport: ServerRoleRootTransport) {
+        delegate?.siriusServerDidStart(self)
     }
     
     func serverTransportDidStopListening(_ serverTransport: ServerRoleRootTransport) {
+        delegate?.siriusServerDidStop(self)
     }
 
     func serverTransport(_ serverTransport: ServerRoleRootTransport, didEncounterError error: any Error) {
+        delegate?.siriusServer(self, didEncounterError: error)
     }
     
     func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: ServerRoleClientTransport) {

@@ -50,7 +50,7 @@ public struct SiriusServerBuilder {
         var _self = self
         _self.transportProtocol = transportProtocol
         
-        return self
+        return _self
     }
     
     // TODO: maximum connections, idle timeout, etc.
