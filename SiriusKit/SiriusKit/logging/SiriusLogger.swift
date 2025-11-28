@@ -13,7 +13,8 @@ import OSLog
 
 /// Log levels ordered by severity.
 public enum SiriusLogLevel: Int, Comparable, CaseIterable {
-    case debug = 0
+    case trace = 0
+    case debug
     case info
     case warning
     case error
@@ -26,6 +27,8 @@ public enum SiriusLogLevel: Int, Comparable, CaseIterable {
 
     var label: String {
         switch self {
+        case .trace:
+            return "TRACE"
         case .debug:
             return "DEBUG"
         case .info:
@@ -45,6 +48,8 @@ public enum SiriusLogLevel: Int, Comparable, CaseIterable {
     @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
     var osLogType: OSLogType {
         switch self {
+        case .trace:
+            return .debug
         case .debug:
             return .debug
         case .info:
@@ -71,7 +76,8 @@ public enum SiriusLogVerbosity {
     var minimumLevel: SiriusLogLevel {
         switch self {
         case .verbose:
-            return .debug
+            // FIXME: vverbose같은거 만들까?
+            return .trace
         case .normal:
             return .info
         case .quiet:
@@ -234,7 +240,23 @@ public final class SiriusLogger {
 
         return true
     }
+    
+    @inlinable
+    @discardableResult
+    public func trace(
+        _ message: @autoclosure @escaping () -> String,
+        file: String = #fileID,
+        function: String = #function,
+        line: UInt = #line
+    ) -> Bool {
+#if DEBUG
+        // 릴리즈 빌드에서는 trace 로그를 컴파일하지 않도록 한다
+        log(.trace, message: message(), file: file, function: function, line: line)
+#endif
+    }
 
+
+    @inlinable
     @discardableResult
     public func debug(
         _ message: @autoclosure @escaping () -> String,
@@ -242,9 +264,13 @@ public final class SiriusLogger {
         function: String = #function,
         line: UInt = #line
     ) -> Bool {
+#if DEBUG
+        // 릴리즈 빌드에서는 debug 로그를 컴파일하지 않도록 한다
         log(.debug, message: message(), file: file, function: function, line: line)
+#endif
     }
 
+    @inlinable
     @discardableResult
     public func info(
         _ message: @autoclosure @escaping () -> String,
@@ -255,6 +281,7 @@ public final class SiriusLogger {
         log(.info, message: message(), file: file, function: function, line: line)
     }
 
+    @inlinable
     @discardableResult
     public func warning(
         _ message: @autoclosure @escaping () -> String,
@@ -265,6 +292,7 @@ public final class SiriusLogger {
         log(.warning, message: message(), file: file, function: function, line: line)
     }
 
+    @inlinable
     @discardableResult
     public func error(
         _ message: @autoclosure @escaping () -> String,
@@ -275,6 +303,7 @@ public final class SiriusLogger {
         log(.error, message: message(), file: file, function: function, line: line)
     }
 
+    @inlinable
     @discardableResult
     public func fatal(
         _ message: @autoclosure @escaping () -> String,

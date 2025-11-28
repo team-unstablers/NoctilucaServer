@@ -13,12 +13,12 @@ enum ChannelManagerError: Error {
 }
 
 public class ChannelManager {
-    internal let session: ClientSession
+    internal let session: (any SiriusSession)
     
     private(set) public var mainChannel: MainChannel?
     private(set) public var channels: [UUID: Channel] = [:]
     
-    init(session: ClientSession) {
+    init(session: (any SiriusSession)) {
         self.session = session
     }
     
@@ -42,8 +42,22 @@ public class ChannelManager {
         }
     }
     
-    public func openChannel(for feature: SiriusFeature, identifier: ChannelIdentifier, args: [String] = []) async throws -> Channel {
+    /// Main Channel을 엽니다. (client role 전용)
+    internal func clientOpenMainChannel() async throws {
+        let result = await session.transport.openStream()
         
+        switch result {
+        case .failure(let error):
+            throw error
+        case .success(let stream):
+            let mainChannel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
+            self.mainChannel = mainChannel
+            
+            return
+        }
+    }
+    
+    public func openChannel(for feature: SiriusFeature, identifier: ChannelIdentifier, args: [String] = []) async throws -> Channel {
         guard session.featureProvider.supports(feature) else {
             // 이거 에러가 너무 제너릭하지 않아?
             throw ChannelManagerError.channelOpenFailed

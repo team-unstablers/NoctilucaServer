@@ -8,14 +8,7 @@
 import Foundation
 import Security
 
-typealias ClientRoleTransportIdentifier = UUID
-
-enum ClientRoleTransportError: Error {
-    case notImplemented
-    case connectionFailed(error: Error?)
-    case openStreamFailed(error: Error?)
-    case mainChannelOpenFailed
-}
+typealias ClientRoleTransportIdentifier = TransportLayerIdentifier
 
 enum TrustDecision {
     case allow
@@ -44,7 +37,7 @@ struct NegotiationResponse {
 }
 
 protocol ClientRoleTransportDelegate: AnyObject {
-    func clientTransportDidOpenMainStream(_ transport: ClientRoleTransport, stream: Stream) async throws
+    func clientTransportDidEstablishConnection(_ transport: ClientRoleTransport) async
     func clientTransportDidOpenRemoteStream(_ transport: ClientRoleTransport, stream: Stream) async throws
     func clientTransportDidClose(_ transport: ClientRoleTransport) async
     func clientTransport(_ transport: ClientRoleTransport, didEncounterError error: any Error) async
@@ -53,7 +46,7 @@ protocol ClientRoleTransportDelegate: AnyObject {
     func clientTransport(_ transport: ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void)
 }
 
-class ClientRoleTransport {
+class ClientRoleTransport: TransportLayer {
     weak var delegate: ClientRoleTransportDelegate?
     
     var id: ClientRoleTransportIdentifier {
@@ -68,8 +61,18 @@ class ClientRoleTransport {
         // To be implemented by subclasses
     }
     
-    func openStream() async -> Result<Stream, ClientRoleTransportError> {
+    func openStream() async -> Result<Stream, TransportLayerError> {
         // To be implemented by subclasses
         return .failure(.notImplemented)
+    }
+}
+
+extension ClientRoleTransport: Hashable, Equatable {
+    static func == (lhs: ClientRoleTransport, rhs: ClientRoleTransport) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }

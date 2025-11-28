@@ -72,7 +72,7 @@ public struct ClientHello: SiriusMessage {
     public let agentName: String
 
 
-    init(protocolVersion: SiriusProtocolVersion, agentName: String) {
+    public init(protocolVersion: SiriusProtocolVersion, agentName: String) {
         self.protocolVersion = protocolVersion
         self.agentName = agentName
     }

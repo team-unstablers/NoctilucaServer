@@ -18,7 +18,6 @@ class ClientRoleQUICTransport: ClientRoleTransport {
     private(set) var streams: [StreamIdentifier: ClientRoleQUICStream] = [:]
     
     private let queue = DispatchQueue(label: "io.siriuskit.quic.client")
-    private var mainStreamOpened = false
     
     private let verifyQueue = DispatchQueue(label: "io.siriuskit.quic.client.verify")
     
@@ -43,7 +42,7 @@ class ClientRoleQUICTransport: ClientRoleTransport {
             
             switch state {
             case .ready:
-                Task { await self.openMainStreamIfNeeded() }
+                Task { await self.delegate?.clientTransportDidEstablishConnection(self) }
             case .failed(let error):
                 Task { await self.delegate?.clientTransport(self, didEncounterError: error) }
             case .cancelled:
@@ -71,7 +70,7 @@ class ClientRoleQUICTransport: ClientRoleTransport {
         await self.delegate?.clientTransportDidClose(self)
     }
     
-    override func openStream() async -> Result<Stream, ClientRoleTransportError> {
+    override func openStream() async -> Result<Stream, TransportLayerError> {
         guard let connectionGroup = self.connectionGroup else {
             return .failure(.connectionFailed(error: nil))
         }
@@ -103,6 +102,10 @@ class ClientRoleQUICTransport: ClientRoleTransport {
     }
     
     internal func unregisterStream(_ stream: ClientRoleQUICStream) {
+        guard self.streams.keys.contains(stream.id) else {
+            return
+        }
+        
         self.streams.removeValue(forKey: stream.id)
     }
     
@@ -122,25 +125,6 @@ class ClientRoleQUICTransport: ClientRoleTransport {
             }
         }
         stream.start()
-    }
-    
-    private func openMainStreamIfNeeded() async {
-        guard self.mainStreamOpened == false else { return }
-        self.mainStreamOpened = true
-        
-        let result = await self.openStream()
-        switch result {
-        case .success(let stream):
-            do {
-                try await self.delegate?.clientTransportDidOpenMainStream(self, stream: stream)
-            } catch {
-                self.mainStreamOpened = false
-                await self.delegate?.clientTransport(self, didEncounterError: error)
-            }
-        case .failure(let error):
-            self.mainStreamOpened = false
-            await self.delegate?.clientTransport(self, didEncounterError: error)
-        }
     }
     
     private func createQuicParameters() async throws -> NWParameters {

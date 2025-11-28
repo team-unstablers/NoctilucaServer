@@ -1,0 +1,32 @@
+//
+//  NoctilucaFeatureProvider.swift
+//  NoctilucaServer
+//
+//  Created by Gyuhwan Park on 11/24/25.
+//
+
+import SiriusKitClient
+
+class NoctilucaFeatureProvider: FeatureProvider {
+    func supports(_ feature: SiriusKitClient.SiriusFeature) -> Bool {
+        switch feature {
+        case .hidio:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    func createChannel(for feature: SiriusFeature,
+                       using streamHolder: StreamHolder,
+                       identifier: ChannelIdentifier,
+                       direction: ChannelDirection,
+                       args: [String]) -> Channel {
+        
+        switch feature {
+        default:
+            fatalError("Unsupported feature: \(feature)")
+        }
+    }
+    
+}

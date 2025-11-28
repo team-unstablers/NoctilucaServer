@@ -12,6 +12,8 @@ public protocol ClientSessionDelegate: AnyObject {
 }
 
 public class ClientSession: SiriusSession {
+    private let logger = SiriusLogger(category: "ClientSession")
+    
     public let id: UUID
     
     let transport: ServerRoleClientTransport
@@ -35,6 +37,16 @@ public class ClientSession: SiriusSession {
 
 extension ClientSession: ServerRoleClientTransportDelegate {
     func clientTransportDidOpenRemoteStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws {
+        logger.info("ClientSession \(self.id) received remote stream open.")
+        
+        if channelManager.mainChannel == nil {
+            // 첫번째 스트림은 반드시 메인 채널로 사용한다
+            try await channelManager.handleStreamOpen(stream: stream)
+            self.delegate?.clientSessionDidCreateMainChannel(self, mainChannel: channelManager.mainChannel!)
+            
+            return
+        }
+        
         try await channelManager.handleStreamOpen(stream: stream)
     }
     

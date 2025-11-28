@@ -7,12 +7,7 @@
 
 import Foundation
 
-typealias ServerRoleClientTransportIdentifier = UUID
-
-enum ServerRoleClientTransportError: Error {
-    case notImplemented
-    case openStreamFailed(error: Error?)
-}
+typealias ServerRoleClientTransportIdentifier = TransportLayerIdentifier
 
 protocol ServerRoleClientTransportDelegate: AnyObject {
     /// - NOTE: 리모트에서 스트림을 열었을 때에만 호출됩니다.
@@ -23,7 +18,7 @@ protocol ServerRoleClientTransportDelegate: AnyObject {
     func clientTransport(_ transport: ServerRoleClientTransport, didEncounterError error: any Error) async
 }
 
-class ServerRoleClientTransport {
+class ServerRoleClientTransport: TransportLayer {
     weak var delegate: ServerRoleClientTransportDelegate?
     
     var id: ServerRoleClientTransportIdentifier {
@@ -34,7 +29,7 @@ class ServerRoleClientTransport {
         // To be implemented by subclasses
     }
     
-    func openStream() async -> Result<Stream, ServerRoleClientTransportError> {
+    func openStream() async -> Result<Stream, TransportLayerError> {
         // To be implemented by subclasses
         return .failure(.notImplemented)
     }

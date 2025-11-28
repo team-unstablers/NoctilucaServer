@@ -37,15 +37,22 @@ class ServerRoleQUICClientTransport: ServerRoleClientTransport {
         self.serverTransport.unregisterClientTransport(self)
     }
     
-    override func openStream() async -> Result<Stream, ServerRoleClientTransportError> {
-        guard let connection = NWConnection(from: self.connectionGroup) else {
-            return .failure(.openStreamFailed(error: nil))
+    override func openStream() async -> Result<Stream, TransportLayerError> {
+        return await withCheckedContinuation { continuation in
+            guard let connection = NWConnection(from: self.connectionGroup) else {
+                continuation.resume(returning: .failure(.openStreamFailed(error: nil)))
+                return
+            }
+            
+            let stream = ServerRoleQUICStream(connection, transport: self)
+            
+            stream.setup {
+                self.registerStream(stream)
+                continuation.resume(returning: .success(stream))
+            }
+            
+            stream.start()
         }
-        
-        let stream = ServerRoleQUICStream(connection, transport: self)
-        self.registerStream(stream)
-        
-        return .success(stream)
     }
     
     internal func setup() {
@@ -106,11 +113,15 @@ class ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
     
     internal func unregisterStream(_ stream: ServerRoleQUICStream) {
+        guard self.streams.keys.contains(stream.id) else {
+            return
+        }
+        
         self.streams.removeValue(forKey: stream.id)
     }
 }
 
-extension ServerRoleQUICClientTransport: Hashable, Equatable, Identifiable {
+extension ServerRoleQUICClientTransport: Hashable, Equatable {
     static func == (lhs: ServerRoleQUICClientTransport, rhs: ServerRoleQUICClientTransport) -> Bool {
         return lhs.id == rhs.id
     }

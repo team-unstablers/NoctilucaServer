@@ -8,24 +8,41 @@
 import Foundation
 import SwiftProtobuf
 
-internal class ChannelOpenTask: ChannelLike {
+internal class ChannelOpenTask {
+    var logger: SiriusLogger?
+    
     let stream: Stream
     
     init(stream: Stream) {
         self.stream = stream
     }
     
+    func send(opcode: MessageOpcode, message: (any SiriusMessage)) async throws {
+        let protobufMessage = message.toProtobufMessage()
+        let messageData = try protobufMessage.serializedData()
+        
+        self.logger?.trace("frame SEND - opcode \(opcode.rawValue), length \(messageData.count)")
+
+        let result = await self.stream.write(frame: messageData, opcode: opcode)
+        
+        if case .failure(let error) = result {
+            throw error
+        }
+    }
+
     func blockUntilReceiveData() async throws -> SiriusFrame {
+        self.logger?.warning("FIXME: blockUntilReceiveData() should have timeout parameter")
+        
         for await event in stream.events {
             switch (event) {
             case .frame(let frame):
+                self.logger?.trace("frame RECV - opcode \(frame.opcode.rawValue), length \(frame.length)")
                 return frame
             case .error(let error):
-                // FIXME: error handling
-                fallthrough
+                self.logger?.error("caught error while waiting for data: \(error)")
+                throw ChannelManagerError.channelOpenFailed
             case .closed:
-                fallthrough
-            default:
+                self.logger?.error("stream closed while waiting for data")
                 throw ChannelManagerError.channelOpenFailed
             }
         }
@@ -35,7 +52,16 @@ internal class ChannelOpenTask: ChannelLike {
 }
 
 internal class RemoteChannelOpenTask: ChannelOpenTask {
+    
+    override init(stream: Stream) {
+        super.init(stream: stream)
+        
+        self.logger = SiriusLogger(category: "RemoteChannelOpenTask")
+    }
+    
     func perform(_ channelCreationBlock: ((ChannelStartRequest) async throws -> Bool)) async throws {
+        self.logger?.info("performing remote channel open task - waiting for channel start request")
+        
         let frame = try await self.blockUntilReceiveData()
         
         guard frame.isValid(),
@@ -74,9 +100,13 @@ internal class LocalChannelOpenTask: ChannelOpenTask {
         self.args = args
         
         super.init(stream: stream)
+        
+        self.logger = SiriusLogger(category: "LocalChannelOpenTask")
     }
     
     func perform() async throws {
+        self.logger?.info("performing local channel open task - feature \(self.feature.rawValue), channel \(self.identifier)")
+        
         let request = ChannelStartRequest(
             featureID: feature.rawValue,
             channelID: identifier,

@@ -14,6 +14,8 @@ struct ClientInfo {
 }
 
 class NoctilucaClientSession: Identifiable {
+    private let logger = SiriusLogger(category: "NoctilucaClientSession", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
+    
     var id: UUID { session.id }
     
     let session: ClientSession
@@ -49,6 +51,8 @@ class NoctilucaClientSession: Identifiable {
     }
     
     private func handleClientHello(_ message: ClientHello) async throws {
+        logger.info("Received ClientHello from agent: \(message.agentName), protocol version: \(message.protocolVersion)")
+        
         // negotiate protocol version, features, etc.
         let clientInfo = ClientInfo(
             agentName: message.agentName,

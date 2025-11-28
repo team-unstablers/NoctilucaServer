@@ -20,7 +20,7 @@ public class SiriusServer {
     let serverTransport: ServerRoleRootTransport
     let featureProvider: (any FeatureProvider)
     
-    public let sessions: [ClientSession] = []
+    public var sessions: [ClientSession] = []
     
     public weak var delegate: (any SiriusServerDelegate)?
     
@@ -44,6 +44,13 @@ public class SiriusServer {
     public func shutdown() async throws {
         try await serverTransport.shutdown()
     }
+    
+    private func createClientSession(_ transport: ServerRoleClientTransport) {
+        let session = ClientSession(id: UUID(), transport: transport, featureProvider: featureProvider)
+        
+        self.sessions.append(session)
+        self.delegate?.siriusServerDidAcceptClientSession(self, session: session)
+    }
 }
 
 extension SiriusServer: ServerRoleRootTransportDelegate {
@@ -60,6 +67,7 @@ extension SiriusServer: ServerRoleRootTransportDelegate {
     }
     
     func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: ServerRoleClientTransport) {
+        self.createClientSession(clientTransport)
     }
     
     func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: any Error) {
