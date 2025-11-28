@@ -160,7 +160,7 @@ public struct SiriusOSLogDestination: SiriusLogDestination {
         guard level != .off else { return }
         logger.log(
             level: level.osLogType,
-            "[\(level.label)] [\(file):\(line)] [\(function)] \(message, privacy: .public)"
+            "[\(level.label)] \(message, privacy: .public)"
         )
     }
 }

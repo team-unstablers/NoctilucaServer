@@ -21,7 +21,7 @@ internal class ChannelOpenTask {
         let protobufMessage = message.toProtobufMessage()
         let messageData = try protobufMessage.serializedData()
         
-        self.logger?.trace("frame SEND - opcode \(opcode.rawValue), length \(messageData.count)")
+        self.logger?.trace("frame SEND - opcode \(opcode.hexString), length \(messageData.count)")
 
         let result = await self.stream.write(frame: messageData, opcode: opcode)
         
@@ -36,7 +36,7 @@ internal class ChannelOpenTask {
         for await event in stream.events {
             switch (event) {
             case .frame(let frame):
-                self.logger?.trace("frame RECV - opcode \(frame.opcode.rawValue), length \(frame.length)")
+                self.logger?.trace("frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
                 return frame
             case .error(let error):
                 self.logger?.error("caught error while waiting for data: \(error)")

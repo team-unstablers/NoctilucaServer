@@ -49,6 +49,12 @@ protocol SiriusMessage<ProtobufMessage>: DecodableSiriusMessage {
     init(from protobufMessage: ProtobufMessage) throws
 }
 
+extension MessageOpcode {
+    var hexString: String {
+        String(format: "0x%04X", self.rawValue)
+    }
+}
+
 
 extension SiriusMessage {
     public static func fromProtobufBytes(_ bytes: Data) throws -> Self {
@@ -71,3 +77,4 @@ extension SiriusEnum {
         return Self(rawValue: RawValue(protobufEnum.rawValue))
     }
 }
+

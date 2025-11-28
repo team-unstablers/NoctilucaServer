@@ -65,7 +65,7 @@ open class Channel {
         let messageData = try protobufMessage.serializedData()
         
 #if DEBUG
-        self.logger.trace("[\(self.identifier)] frame SEND - opcode \(opcode.rawValue), length \(messageData.count)")
+        self.logger.trace("[\(self.identifier)] frame SEND - opcode \(opcode.hexString), length \(messageData.count)")
 #endif
 
         let result = await self.stream.write(frame: messageData, opcode: opcode)
@@ -81,7 +81,7 @@ open class Channel {
             case .frame(let frame):
                 // 아, 이거 매크로로 하면 개편할텐데 ㅠ
 #if DEBUG
-                self.logger.trace("[\(self.identifier)] frame RECV - opcode \(frame.opcode.rawValue), length \(frame.length)")
+                self.logger.trace("[\(self.identifier)] frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
 #endif
                 
                 try await self.handleFrame(frame: frame)
