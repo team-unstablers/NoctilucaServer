@@ -125,13 +125,13 @@ final class AppSession {
     private var axObserver: AXObserver?
     
     private let observedNotifications: [CFString] = [
-        kAXWindowCreatedNotification,
-        kAXUIElementDestroyedNotification,
-        kAXFocusedWindowChangedNotification,
-        kAXMainWindowChangedNotification,
-        kAXWindowMovedNotification,
-        kAXWindowResizedNotification,
-        kAXTitleChangedNotification
+        kAXWindowCreatedNotification as CFString,
+        kAXUIElementDestroyedNotification as CFString,
+        kAXFocusedWindowChangedNotification as CFString,
+        kAXMainWindowChangedNotification as CFString,
+        kAXWindowMovedNotification as CFString,
+        kAXWindowResizedNotification as CFString,
+        kAXTitleChangedNotification as CFString
     ]
     
     // 디바운스+병합: 잦은 AX 노티를 100~200ms 간격으로 묶고, 실행 중 중복을 한 번으로 합친다.
