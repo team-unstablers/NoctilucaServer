@@ -23,10 +23,12 @@ class NoctilucaServer: ObservableObject {
     private static let defaultKeychainIdentity = "pl.unstabler.noctiluca.server.testIdentity"
     private static let defaultPort: UInt16 = 12345
     
-    
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
     let featureProvider = NoctilucaFeatureProvider()
+    
+    @Published
+    var clients: [UUID: NoctilucaClientSession] = [:]
     
     @Published
     var state: NoctilucaServerState = .idle
@@ -117,6 +119,7 @@ extension NoctilucaServer: SiriusServerDelegate {
     }
     
     func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
+        self.clients[session.id] = NoctilucaClientSession(session: session)
     }
     
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {

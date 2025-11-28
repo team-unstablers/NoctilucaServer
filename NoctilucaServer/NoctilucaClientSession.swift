@@ -13,7 +13,9 @@ struct ClientInfo {
     let protocolVersion: SiriusProtocolVersion
 }
 
-class NoctilucaClientSession {
+class NoctilucaClientSession: Identifiable {
+    var id: UUID { session.id }
+    
     let session: ClientSession
     var mainChannel: MainChannel!
     
@@ -23,6 +25,8 @@ class NoctilucaClientSession {
     
     init(session: ClientSession) {
         self.session = session
+        
+        self.session.delegate = self
     }
     
     private func mainChannelEventLoop() async {

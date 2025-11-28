@@ -58,55 +58,31 @@
 		F6BD3BA22ED8AF93000011DF /* Exceptions for "SiriusKit" folder in "SiriusKitClient" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				autogen/msgdef/general.pb.swift,
-				autogen/msgdef/v1/channels/channels.pb.swift,
-				autogen/msgdef/v1/channels/clipboard.pb.swift,
-				autogen/msgdef/v1/channels/hidio/hid_keyboard.pb.swift,
-				autogen/msgdef/v1/channels/hidio/hid_mouse.pb.swift,
-				autogen/msgdef/v1/channels/hidio/hid_raw.pb.swift,
-				autogen/msgdef/v1/channels/hidio/hidio.pb.swift,
-				autogen/msgdef/v1/channels/projection_data/projection_data.pb.swift,
-				autogen/msgdef/v1/channels/projection/projection_codec.pb.swift,
-				autogen/msgdef/v1/channels/projection/projection_session.pb.swift,
-				autogen/msgdef/v1/channels/projection/projection_source.pb.swift,
-				autogen/msgdef/v1/channels/projection/winman.pb.swift,
-				autogen/msgdef/v1/session.pb.swift,
-				channel/Channel.swift,
-				channel/ChannelLike.swift,
-				channel/ChannelManager.swift,
-				channel/ChannelOpenTask.swift,
-				channel/MainChannel.swift,
-				channel/messages/SiriusFrame.swift,
-				channel/messages/SiriusMessage.swift,
-				"channel/msgdef/general+Sirius.swift",
-				"channel/msgdef/v1/channels/channels+Sirius.swift",
-				"channel/msgdef/v1/channels/clipboard+Sirius.swift",
-				"channel/msgdef/v1/channels/hidio/hid_keyboard+Sirius.swift",
-				"channel/msgdef/v1/channels/hidio/hid_mouse+Sirius.swift",
-				"channel/msgdef/v1/channels/hidio/hid_raw+Sirius.swift",
-				"channel/msgdef/v1/channels/hidio/hidio+Sirius.swift",
-				"channel/msgdef/v1/channels/projection_data/projection_data+Sirius.swift",
-				"channel/msgdef/v1/channels/projection/projection_codec+Sirius.swift",
-				"channel/msgdef/v1/channels/projection/projection_session+Sirius.swift",
-				"channel/msgdef/v1/channels/projection/projection_source+Sirius.swift",
-				"channel/msgdef/v1/channels/projection/winman+Sirius.swift",
-				"channel/msgdef/v1/session+Sirius.swift",
-				feature/FeatureProvider.swift,
-				"osapi/security/SecCertificate+Helpers.swift",
-				"osapi/security/SecIdentity+castAsCHandle.swift",
-				osapi/security/SRKeychain.swift,
-				osapi/security/SRSecurity.swift,
 				server/ClientSession.swift,
 				server/SiriusServer.swift,
 				server/SiriusServerBuilder.swift,
 				SiriusKit.docc,
-				SiriusKit.swift,
-				SiriusProtocol.swift,
-				"transport/quic/NWConnection+QUIC.swift",
-				transport/Stream.swift,
-				"UUID+msgdef.swift",
+				transport/server/quic/identity/InMemoryQUICServerIdentity.swift,
+				transport/server/quic/identity/KeychainQUICServerIdentity.swift,
+				transport/server/quic/identity/PEMFileQUICServerIdentity.swift,
+				transport/server/quic/identity/QUICServerIdentity.swift,
+				"transport/server/quic/identity/QUICServerIdentity+Helper.swift",
+				transport/server/quic/ServerRoleQUICClientTransport.swift,
+				transport/server/quic/ServerRoleQUICRootTransport.swift,
+				transport/server/quic/ServerRoleQUICStream.swift,
+				transport/server/ServerRoleClientTransport.swift,
+				transport/server/ServerRoleRootTransport.swift,
 			);
 			target = F6BD3B932ED8AF93000011DF /* SiriusKitClient */;
+		};
+		F6BD3E8C2EDA1A7D000011DF /* Exceptions for "SiriusKit" folder in "SiriusKit" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				transport/client/ClientRoleTransport.swift,
+				transport/client/quic/ClientRoleQUICStream.swift,
+				transport/client/quic/ClientRoleQUICTransport.swift,
+			);
+			target = F66965282ECF26FD0032EF4E /* SiriusKit */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -114,6 +90,7 @@
 		F669652B2ECF26FD0032EF4E /* SiriusKit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				F6BD3E8C2EDA1A7D000011DF /* Exceptions for "SiriusKit" folder in "SiriusKit" target */,
 				F6BD3BA22ED8AF93000011DF /* Exceptions for "SiriusKit" folder in "SiriusKitClient" target */,
 			);
 			path = SiriusKit;

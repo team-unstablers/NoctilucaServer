@@ -11,14 +11,20 @@ public protocol ClientSessionDelegate: AnyObject {
     func clientSessionDidCreateMainChannel(_ session: ClientSession, mainChannel: MainChannel)
 }
 
-public class ClientSession {
+public class ClientSession: SiriusSession {
+    public let id: UUID
+    
     let transport: ServerRoleClientTransport
     let featureProvider: (any FeatureProvider)
     
     public var channelManager: ChannelManager!
     public var shouldAcceptChannelCreation: Bool = false
     
-    init(transport: ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
+    public weak var delegate: (any ClientSessionDelegate)?
+    
+    init(id: UUID, transport: ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
+        self.id = id
+        
         self.transport = transport
         self.featureProvider = featureProvider
         self.channelManager = ChannelManager(session: self)
