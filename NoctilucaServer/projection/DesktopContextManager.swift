@@ -11,6 +11,8 @@ import Combine
 
 // MARK: - Core Types
 
+let kAXWindowNumberAttribute = "AXWindowNumber"
+
 /// winman.proto의 WindowInfo와 매핑되기 쉽도록 구조화
 struct WindowInfo: Identifiable, Equatable, Hashable {
     typealias ID = CGWindowID // UInt32
@@ -189,48 +191,43 @@ final class AppSession {
     }
     
     /// 전체 윈도우 정보 강제 갱신 (Polling 방식이 필요할 때 사용)
-    func refreshWindows() async throws -> [WindowInfo] {
-        try await Task(priority: .utility) { () -> [WindowInfo] in
-            let previousWindows = self.monitoredWindows
-            let previousFocusID = previousWindows.values.first(where: { $0.isActive })?.id
-            
-            let windows = self.fetchWindowList()
-            let newWindowMap = Dictionary(uniqueKeysWithValues: windows.map { ($0.id, $0) })
-            let newFocusID = windows.first(where: { $0.isActive })?.id
-            
-            self.monitoredWindows = newWindowMap
-            
-            if let delegate = self.delegate {
-                DispatchQueue.main.async {
-                    let added = newWindowMap.keys.subtracting(previousWindows.keys)
-                    let removed = previousWindows.keys.subtracting(newWindowMap.keys)
-                    let candidates = newWindowMap.keys.intersection(previousWindows.keys)
-                    
-                    for id in added {
-                        if let window = newWindowMap[id] {
-                            delegate.appSession(self, didDiscoverWindow: window)
-                        }
-                    }
-                    
-                    for id in removed {
-                        delegate.appSession(self, didCloseWindow: id)
-                    }
-                    
-                    for id in candidates {
-                        guard let oldValue = previousWindows[id], let newValue = newWindowMap[id] else { continue }
-                        if oldValue != newValue {
-                            delegate.appSession(self, didUpdateWindow: newValue)
-                        }
-                    }
-                    
-                    if previousFocusID != newFocusID {
-                        delegate.appSession(self, didChangeWindowFocusTo: newFocusID)
+    func refreshWindows() {
+        let previousWindows = self.monitoredWindows
+        let previousFocusID = previousWindows.values.first(where: { $0.isActive })?.id
+        
+        let windows = self.fetchWindowList()
+        let newFocusID = windows.values.first(where: { $0.isActive })?.id
+        
+        self.monitoredWindows = windows
+        
+        if let delegate = self.delegate {
+            DispatchQueue.main.async {
+                let added = Set(windows.keys).subtracting(previousWindows.keys)
+                let removed = Set(previousWindows.keys).subtracting(windows.keys)
+                let candidates = Set(windows.keys).intersection(previousWindows.keys)
+                
+                for id in added {
+                    if let window = windows[id] {
+                        delegate.appSession(self, didDiscoverWindow: window)
                     }
                 }
+                
+                for id in removed {
+                    delegate.appSession(self, didCloseWindow: id)
+                }
+                
+                for id in candidates {
+                    guard let oldValue = previousWindows[id], let newValue = windows[id] else { continue }
+                    if oldValue != newValue {
+                        delegate.appSession(self, didUpdateWindow: newValue)
+                    }
+                }
+                
+                if previousFocusID != newFocusID {
+                    delegate.appSession(self, didChangeWindowFocusTo: newFocusID)
+                }
             }
-            
-            return windows
-        }.value
+        }
     }
     
     /// 특정 윈도우로 포커스 이동 (winman.proto: WindowFocusRequest)
@@ -249,18 +246,31 @@ final class AppSession {
         }
         
         _ = AXUIElementPerformAction(windowElement, kAXRaiseAction as CFString)
-        _ = try await refreshWindows()
+        
+        refreshWindows()
     }
     
     /// 윈도우 닫기
     func closeWindow(id: WindowInfo.ID) async throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
-        let result = AXUIElementPerformAction(windowElement, kAXCloseAction as CFString)
+        
+        var closeButtonValue: CFTypeRef?
+        let closeButtonResult = AXUIElementCopyAttributeValue(windowElement, kAXCloseButtonAttribute as CFString, &closeButtonValue)
+        guard closeButtonResult == .success else {
+            throw DesktopContextError.failedToReadAttribute(kAXCloseButtonAttribute as String, closeButtonResult)
+        }
+        guard closeButtonValue != nil else {
+            throw DesktopContextError.failedToReadAttribute(kAXCloseButtonAttribute as String, .cannotComplete)
+        }
+        
+        let closeButtonElement = closeButtonValue as! AXUIElement
+        
+        let result = AXUIElementPerformAction(closeButtonElement, kAXPressAction as CFString)
         if result != .success {
             throw DesktopContextError.failedToPerformAction("close", result)
         }
-        _ = try await refreshWindows()
+        refreshWindows()
     }
     
     /// 윈도우 이동/크기 조절 (Noctiluca 기능 확장 시 필요)
@@ -286,7 +296,7 @@ final class AppSession {
             throw DesktopContextError.failedToUpdateWindowFrame(sizeResult)
         }
         
-        _ = try await refreshWindows()
+        refreshWindows()
     }
     
     // MARK: - Internal Logic
@@ -342,16 +352,13 @@ final class AppSession {
                 self.isRefreshing = false
                 if self.pendingRefresh {
                     self.pendingRefresh = false
-                    self.scheduleRefresh()
+                    DispatchQueue.main.async { [weak self] in
+                        self?.enqueueRefresh()
+                    }
                 }
             }
-            do {
-                _ = try await self.refreshWindows()
-            } catch {
-                DispatchQueue.main.async {
-                    self.delegate?.appSession(self, didEncounterError: error)
-                }
-            }
+            
+            self.refreshWindows()
         }
     }
     
@@ -390,9 +397,11 @@ final class AppSession {
     private func axFocusedWindowID() -> WindowInfo.ID? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &value)
-        guard result == .success, let focusedWindow = value as? AXUIElement else {
+        guard result == .success, value != nil else {
             return nil
         }
+        
+        let focusedWindow = value as! AXUIElement
         
         var windowNumberValue: CFTypeRef?
         let numberResult = AXUIElementCopyAttributeValue(focusedWindow, kAXWindowNumberAttribute as CFString, &windowNumberValue)
@@ -403,10 +412,10 @@ final class AppSession {
         return WindowInfo.ID(number.uint32Value)
     }
     
-    private func fetchWindowList() -> [WindowInfo] {
+    private func fetchWindowList() -> [WindowInfo.ID: WindowInfo] {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
-            return []
+            return [:]
         }
         
         let appWindows = infoList.filter { info in
@@ -416,9 +425,14 @@ final class AppSession {
         
         let focusedID = self.axFocusedWindowID() ?? appWindows.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
         
-        return appWindows.compactMap { info in
-            guard let boundsDictionary = info[kCGWindowBounds as String] as? CFDictionary,
-                  let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
+        return Dictionary(uniqueKeysWithValues: appWindows.compactMap { info in
+            guard info.keys.contains(kCGWindowBounds as String) else {
+                return nil
+            }
+            
+            let boundsDictionary = info[kCGWindowBounds as String] as! CFDictionary
+            
+            guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
                 return nil
             }
             
@@ -431,7 +445,7 @@ final class AppSession {
             let isVisible = isOnscreen && alpha > 0.01
             let isActive = focusedID == windowID
             
-            return WindowInfo(
+            return (windowID, WindowInfo(
                 id: windowID,
                 title: title,
                 frame: bounds,
@@ -439,8 +453,8 @@ final class AppSession {
                 isActive: isActive,
                 layer: layer,
                 ownerPID: ownerPID
-            )
-        }
+            ))
+        })
     }
 }
 
@@ -526,8 +540,12 @@ final class DesktopContextManager {
             let frontmostWindowID = infoList.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
             
             return infoList.compactMap { info in
-                guard let boundsDictionary = info[kCGWindowBounds as String] as? CFDictionary,
-                      let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
+                guard info.keys.contains(kCGWindowBounds as String) else {
+                    return nil
+                }
+                
+                let boundsDictionary = info[kCGWindowBounds as String] as! CFDictionary
+                guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
                     return nil
                 }
                 
