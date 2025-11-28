@@ -188,6 +188,7 @@ class ClientRoleQUICTransport: ClientRoleTransport {
     }
     
     private func makeIdentityInfo(metadata: sec_protocol_metadata_t) -> ServerIdentityInfo {
+        sec_protocol_metadata_access_peer_certificate_chain(<#T##metadata: sec_protocol_metadata_t##sec_protocol_metadata_t#>, <#T##handler: (sec_certificate_t) -> Void##(sec_certificate_t) -> Void#>)
         let certificateChain = (sec_protocol_metadata_copy_peer_certificate_chain(metadata) as? [SecCertificate]) ?? []
         let applicationLabel = try? certificateChain.first?.extractApplicationLabel()
         
