@@ -50,7 +50,7 @@ open class Channel {
             do {
                 try await self.streamEventLoop()
             } catch {
-                self.logger.error("[\(self.identifier)] encountered error in stream event loop: \(error)")
+                self.logger.fatal("[\(self.identifier)] encountered error in stream event loop: \(error)")
                 self.lifecycleDelegate?.channel(self, didEncounterError: error)
             }
         }

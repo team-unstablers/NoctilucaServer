@@ -1,4 +1,5 @@
 # DesktopContextManager debouncing notes
+# Status: DONE — 150ms debounce + merge implemented in `AppSession.setupRefreshPipeline`/`enqueueRefresh`
 
 Goal: avoid AX notification storms while not missing window changes in `AppSession.handleAXNotification`.
 
