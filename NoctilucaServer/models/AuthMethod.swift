@@ -8,7 +8,7 @@
 import Foundation
 import SiriusKit
 
-enum PAMAuthAllowlistItem: Codable {
+enum PAMAuthAllowlistItem: Codable, Hashable {
     case group(name: String)
     case user(name: String)
     
@@ -46,7 +46,7 @@ enum PAMAuthAllowlistItem: Codable {
     }
 }
 
-enum AuthMethod: Codable {
+enum AuthMethod: Codable, Hashable {
 #if DEBUG
     case none
 #endif

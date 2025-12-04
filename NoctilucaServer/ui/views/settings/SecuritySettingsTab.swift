@@ -7,53 +7,7 @@ struct SecuritySettingsTab: View {
     var body: some View {
         Form {
             Section {
-                VStack(alignment: .leading) {
-                    VStack(alignment: .leading) {
-                        Text("구성된 인증 수단")
-                        Text("드래그-드롭으로 우선 순위를 변경할 수 있습니다.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    VStack(alignment: .leading) {
-                        VStack(alignment: .leading) {
-                            Text("스마트카드 인증")
-                                .font(.headline)
-                            Text("cardid: 1234567890abcdef1234567890abcdef12345678")
-                                .font(.subheadline.monospaced())
-                                .lineLimit(1)
-                        }
-                        Divider()
-                        VStack(alignment: .leading) {
-                            Text("SSH 키")
-                                .font(.headline)
-                            Text("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINGHpezMcBEmby7zNaxPmj4cFPZ/P6zi3wcO5xC1LPZz cheesekun@cheese-mbpr14.local")
-                                .font(.subheadline.monospaced())
-                                .lineLimit(1)
-                        }
-                        Divider()
-                        VStack(alignment: .leading) {
-                            Text("PAM 인증 (사용자명-비밀번호)")
-                                .font(.headline)
-                            Text("`staff` 그룹의 Mac 사용자에게 사용자명-비밀번호 인증을 허용합니다.")
-                                .font(.subheadline)
-                                .lineLimit(1)
-                        }
-                        Divider()
-                    }
-                    .padding(8)
-                    .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
-                    .background(.white)
-                    HStack() {
-                        Spacer()
-                        Button("삭제") {
-
-                        }
-                        .disabled(true)
-                        Button("추가") {
-
-                        }
-                    }
-                }
+                AuthMethodContainer(authMethods: $settings.security.authMethods)
             } header: {
                 Text("인증 수단")
                 Text("이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. [더 알아보기…](http://google.com)")
