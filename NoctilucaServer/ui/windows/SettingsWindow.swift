@@ -15,13 +15,17 @@ struct SettingsWindow: View {
         case misc
         case about
     }
+    
+    @State
+    private var settings: AppSettings = .init()
 
-    @State private var selectedTab: SettingsTab = .general
+    @State
+    private var selectedTab: SettingsTab = .general
 
     var body: some View {
         NavigationStack {
             TabView(selection: $selectedTab) {
-                SettingsGeneralTab()
+                SettingsGeneralTab(settings: $settings)
                     .tabItem {
                         Text("일반")
                     }
@@ -33,13 +37,13 @@ struct SettingsWindow: View {
                     }
                     .tag(SettingsTab.display)
                     .id(SettingsTab.display)
-                SecuritySettingsTab()
+                SecuritySettingsTab(settings: $settings)
                     .tabItem {
                         Text("보안")
                     }
                     .tag(SettingsTab.security)
                     .id(SettingsTab.security)
-                MiscSettingsTab()
+                MiscSettingsTab(settings: $settings)
                     .tabItem {
                         Text("기타")
                     }
