@@ -6,8 +6,10 @@
 //
 
 import Foundation
+import AppKit
+#if canImport(Collaboration)
 import Collaboration
-
+#endif
 import SwiftUI
 
 struct AuthMethodContainer: View {
@@ -68,11 +70,16 @@ private struct AuthMethodSelectionSheet: View {
     @Binding var isPresented: Bool
     var onSelect: (AuthMethod) -> Void
     
-    @State private var selectedTemplate: TemplateKind = TemplateKind.available.first ?? .pam
-    @State private var pamAllowMode: PAMAllowMode = .user
-    @State private var pamPrincipal: String = NSUserName()
-    @State private var simplePasswordHash: String = ""
-    @State private var sshPublicKey: String = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINGHpezMcBEmby7zNaxPmj4cFPZ/P6zi3wcO5xC1LPZz cheesekun@cheese-mbpr14.local"
+    @State
+    private var selectedTemplate: TemplateKind = TemplateKind.available.first ?? .pam
+    @State
+    private var pamAllowMode: PAMAllowMode = .user
+    @State
+    private var pamPrincipal: String = NSUserName()
+    @State 
+    private var simplePasswordHash: String = ""
+    @State 
+    private var sshPublicKey: String = ""
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -103,8 +110,7 @@ private struct AuthMethodSelectionSheet: View {
                     isPresented = false
                 }
                 Button("추가") {
-                    // @codex, pam 인증 사용 시 CBIdentityPicker()를 사용하도록 해주세요
-                    testCBIdentityPicker()
+                    handleSubmit()
                 }
                 .disabled(!canCommitSelection)
             }
@@ -140,8 +146,16 @@ private struct AuthMethodSelectionSheet: View {
                     Text("그룹").tag(PAMAllowMode.group)
                 }
                 .pickerStyle(.segmented)
-                TextField(pamAllowMode == .user ? "허용 사용자 이름" : "허용 그룹 이름", text: $pamPrincipal)
-                    .textFieldStyle(.roundedBorder)
+                HStack(spacing: 8) {
+                    TextField(pamAllowMode == .user ? "허용 사용자 이름" : "허용 그룹 이름", text: $pamPrincipal)
+                        .textFieldStyle(.roundedBorder)
+                    #if os(macOS) && canImport(Collaboration)
+                    Button("사용자/그룹 선택…") {
+                        presentIdentityPicker()
+                    }
+                    .focusable(true)
+                    #endif
+                }
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
@@ -181,38 +195,6 @@ private struct AuthMethodSelectionSheet: View {
         isPresented = false
     }
     
-    private func testCBIdentityPicker() {
-        let picker = CBIdentityPicker()
-        
-        // 제목 설정
-        picker.title = "원격 접속을 허용할 사용자를 선택하세요"
-        
-        // 여러 명 선택 가능 여부
-        picker.allowsMultipleSelection = true
-        
-        // 윈도우 모달로 띄우기 (completionHandler로 결과 받음)
-        picker.runModal()
-        /*
-        picker.runModal { (response) in
-            if response == .OK {
-                // 사용자가 선택한 목록 (CBIdentity 배열)
-                let identities = picker.identities
-                
-                for identity in identities {
-                    print("선택된 이름: \(identity.fullName ?? "이름 없음")")
-                    print("계정명(ShortName): \(identity.posixName ?? "N/A")")
-                    print("고유 ID(UUID): \(identity.uuidString)") // ★ 저장할 땐 이걸로!
-                    
-                    // 그룹인지 사용자인지 구분
-                    if identity.type == .groupIdentity {
-                        print("-> 이건 그룹입니다.")
-                    }
-                }
-            }
-        }
-         */
-    }
-    
     private func selectedAuthMethod() -> AuthMethod {
         switch selectedTemplate {
         case .pam:
@@ -229,6 +211,47 @@ private struct AuthMethodSelectionSheet: View {
         #endif
         }
     }
+    
+    #if os(macOS) && canImport(Collaboration)
+    @MainActor
+    private func presentIdentityPicker() {
+        guard let window = NSApp.keyWindow ?? NSApplication.shared.windows.first else { return }
+        let picker = CBIdentityPicker()
+        picker.allowsMultipleSelection = false
+        picker.title = "인증 허용 대상 선택"
+        picker.runModal(for: window) { response in
+            guard response == .OK else { return }
+            applyPickedIdentity(picker.identities.first)
+        }
+    }
+    
+    @MainActor
+    private func applyPickedIdentity(_ identity: CBIdentity?) {
+        guard let identity else { return }
+        if identity is CBGroupIdentity {
+            pamAllowMode = .group
+        } else {
+            pamAllowMode = .user
+        }
+        
+        guard !identity.posixName.isEmpty else {
+            return
+        }
+        
+        pamPrincipal = identity.posixName
+
+        /*
+        if !identity.posixName.isEmpty {
+        } else if !identity.fullName.isEmpty {
+            fatalError("FIXME")
+            pamPrincipal = identity.fullName
+        } else if !identity.uuidString.isEmpty {
+            fatalError("FIXME")
+            pamPrincipal = identity.uuidString
+        }
+         */
+    }
+    #endif
 }
 
 private struct AuthMethodTemplateRow: View {
