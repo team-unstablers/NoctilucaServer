@@ -25,12 +25,23 @@ struct AuthMethodContainer: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             List(selection: $selection) {
-                ForEach(authMethods, id: \.self) { method in
-                    AuthMethodEntry(method: method)
-                        .tag(method)
-                        .focusable(true)
+                if authMethods.isEmpty {
+                    VStack(alignment: .leading) {
+                        Text("(구성된 인증 방법이 없습니다)")
+                            .font(.headline)
+                        Text("현재 상태로는 아무도 로그인할 수 없습니다. 인증 방법을 추가하려면 아래 '추가' 버튼을 클릭하세요.")
+                            .font(.subheadline.monospaced())
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(.secondary)
+                } else {
+                    ForEach(authMethods, id: \.self) { method in
+                        AuthMethodEntry(method: method)
+                            .tag(method)
+                            .focusable(true)
+                    }
+                    .onMove(perform: moveAuthMethods)
                 }
-                .onMove(perform: moveAuthMethods)
             }
             .listStyle(.inset)
             .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)

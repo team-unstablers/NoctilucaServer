@@ -10,7 +10,7 @@ struct SecuritySettingsTab: View {
                 AuthMethodContainer(authMethods: $settings.security.authMethods)
             } header: {
                 Text("인증 수단")
-                Text("이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. [더 알아보기…](http://google.com)")
+                Text("이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. 드래그-드롭으로 우선 순위를 변경할 수 있습니다. [더 알아보기…](http://google.com)")
             }
 
             Section {
