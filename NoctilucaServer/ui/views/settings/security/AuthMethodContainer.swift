@@ -14,11 +14,11 @@ import SwiftUI
 
 struct AuthMethodContainer: View {
     @Binding
-    var authMethods: [AuthMethod]
-    @State private var selection = Set<AuthMethod>()
+    var authMethods: [AllowedAuthMethod]
+    @State private var selection = Set<AllowedAuthMethod>()
     @State private var isAddSheetPresented = false
     
-    init(authMethods: Binding<[AuthMethod]>) {
+    init(authMethods: Binding<[AllowedAuthMethod]>) {
         self._authMethods = authMethods
     }
     
@@ -79,7 +79,7 @@ struct AuthMethodContainer: View {
 
 private struct AuthMethodSelectionSheet: View {
     @Binding var isPresented: Bool
-    var onSelect: (AuthMethod) -> Void
+    var onSelect: (AllowedAuthMethod) -> Void
     
     @State
     private var selectedTemplate: TemplateKind = TemplateKind.available.first ?? .pam
@@ -206,7 +206,7 @@ private struct AuthMethodSelectionSheet: View {
         isPresented = false
     }
     
-    private func selectedAuthMethod() -> AuthMethod {
+    private func selectedAuthMethod() -> AllowedAuthMethod {
         switch selectedTemplate {
         case .pam:
             let principal = pamPrincipal.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -46,7 +46,8 @@ enum PAMAuthAllowlistItem: Codable, Hashable {
     }
 }
 
-enum AuthMethod: Codable, Hashable {
+/// FIXME: AuthEntry로 이름 바꿔야 함
+enum AllowedAuthMethod: Codable, Hashable {
 #if DEBUG
     case none
 #endif
@@ -58,6 +59,21 @@ enum AuthMethod: Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case type
         case args
+    }
+    
+    var method: AuthMethod {
+        switch self {
+#if DEBUG
+        case .none:
+            return .none
+#endif
+        case .password(_):
+            return .password
+        case .simplePassword(_):
+            return .simplePassword
+        case .sshKey(_):
+            return .key
+        }
     }
     
     init(from decoder: any Decoder) throws {

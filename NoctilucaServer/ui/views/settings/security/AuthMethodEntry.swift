@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct AuthMethodEntry: View {
-    let method: AuthMethod
+    let method: AllowedAuthMethod
     
     /// FIXME: i18n
     var methodTypeLabel: String {

@@ -28,4 +28,12 @@ extension AppSettings {
     protocol Category: Codable, Sendable {
         
     }
+    
+    func save() throws {
+        
+    }
+    
+    func load() throws {
+        
+    }
 }

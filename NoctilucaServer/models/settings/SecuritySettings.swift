@@ -10,7 +10,7 @@ import SiriusKit
 
 extension AppSettings {
     struct Security: Category {
-        var authMethods: [AuthMethod] = []
+        var authMethods: [AllowedAuthMethod] = []
     }
     
     /// 트랜스포트 레이어
