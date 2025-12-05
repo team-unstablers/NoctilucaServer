@@ -6,11 +6,13 @@
 //
 
 import Foundation
+
 import SiriusKit
+import NoctilucaPluginKit
 
 extension AppSettings {
     struct Security: Category {
-        var authMethods: [AllowedAuthMethod] = []
+        var allowedEntries: [AuthEntry] = []
     }
     
     /// 트랜스포트 레이어

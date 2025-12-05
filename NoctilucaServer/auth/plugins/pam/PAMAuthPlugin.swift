@@ -6,67 +6,62 @@
 //
 
 import Foundation
-import SiriusKit
 
-final class PAMAuthPlugin: AuthPlugin {
+import SiriusKit
+import NoctilucaPluginKit
+
+final class PAMAuthPlugin: AuthPluginV1 {
     static let id = "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.pam"
     static let name = "PAMAuthPlugin"
     static let description = "Provides UNIX PAM-based username-password authentication."
-    static let author = "Gyuhwan Park <unstabler@unstabler.pl>"
-    static let license = ""
+    static let authors = [
+        "Gyuhwan Park <unstabler@unstabler.pl>"
+    ]
+    static let license: SoftwareLicense = NoctilucaMeta.license
     static let version: UInt32 = 1
     static let displayVersion = NoctilucaMeta.version
     
-    static let supportedMethods: Set<AuthMethod> = [.password]
+    static let supportedMethods: Set<NoctilucaPluginKit.AuthMethod> = [.password]
     
     private let logger = NoctilucaLogger(category: "PAMAuthPlugin")
     
     private var allowedUsers: Set<String> = []
     private var allowedGroups: Set<String> = []
     
-    func initialize() async throws {
-        allowedUsers = []
-        allowedGroups = []
-        
-        logger.trace("initialize(): PAMAuthPlugin initialized")
-    }
     
-    func deinitialize() throws {
-        allowedUsers = []
-        allowedGroups = []
-        
-        logger.trace("deinitialize(): PAMAuthPlugin deinitialized")
-    }
-    
-    func allow(_ entry: AllowedAuthMethod) async throws {
-        guard case .password(let item) = entry else {
-            logger.warning("allow(): Unsupported AllowedAuthMethod entry: \(entry)")
+    func allow(_ entry: AuthEntry) async throws {
+        guard entry.method == .password else {
+            logger.warning("allow(): Unsupported entry: \(entry)")
             return
         }
         
-        switch item {
-        case .group(let name):
-            logger.trace("allow(): Allowed PAM authentication for group: \(name)")
-            allowedGroups.insert(name)
-        case .user(let name):
-            logger.trace("allow(): Allowed PAM authentication for user: \(name)")
-            allowedUsers.insert(name)
+        if entry.identifier.hasPrefix("group:") {
+            let groupName = String(entry.identifier.dropFirst("group:".count))
+            allowedGroups.insert(groupName)
+        } else if entry.identifier.hasPrefix("user:") {
+            let userName = String(entry.identifier.dropFirst("user:".count))
+            allowedUsers.insert(userName)
+        } else {
+            logger.warning("allow(): Invalid entry identifier: \(entry.identifier)")
+            return
         }
     }
     
-    func deny(_ entry: AllowedAuthMethod) async throws {
-        guard case .password(let item) = entry else {
-            logger.warning("deny(): Unsupported AllowedAuthMethod entry: \(entry)")
+    func deny(_ entry: AuthEntry) async throws {
+        guard entry.method == .password else {
+            logger.warning("deny(): Unsupported entry: \(entry)")
             return
         }
         
-        switch item {
-        case .group(let name):
-            logger.trace("deny(): Denied PAM authentication for group: \(name)")
-            allowedGroups.remove(name)
-        case .user(let name):
-            logger.trace("deny(): Denied PAM authentication for user: \(name)")
-            allowedUsers.remove(name)
+        if entry.identifier.hasPrefix("group:") {
+            let groupName = String(entry.identifier.dropFirst("group:".count))
+            allowedGroups.remove(groupName)
+        } else if entry.identifier.hasPrefix("user:") {
+            let userName = String(entry.identifier.dropFirst("user:".count))
+            allowedUsers.remove(userName)
+        } else {
+            logger.warning("deny(): Invalid entry identifier: \(entry.identifier)")
+            return
         }
     }
     
@@ -81,7 +76,7 @@ final class PAMAuthPlugin: AuthPlugin {
         return self.allowedUsers.contains(entry.username)
     }
     
-    func authenticate(using method: SiriusKit.AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError> {
+    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError> {
         guard method == .password else {
             return .failure(.unsupportedMethod)
         }

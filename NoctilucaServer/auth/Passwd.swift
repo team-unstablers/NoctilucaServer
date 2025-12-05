@@ -45,5 +45,4 @@ struct Passwd {
         
         return String(cString: group.pointee.gr_name)
     }
-    
 }

@@ -67,7 +67,7 @@ class NoctilucaClientSession: Identifiable {
             supportedFeatures: [
                 // ...
             ],
-            serverName: "\(NoctilucaServer.ProductName)/\(NoctilucaServer.ProductVersion)",
+            serverName: "\(NoctilucaMeta.productName)/\(NoctilucaMeta.version)",
             motd: "FIXME"
         )
         

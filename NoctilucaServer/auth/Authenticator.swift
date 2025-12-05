@@ -6,13 +6,17 @@
 //
 
 import Foundation
+
 import SiriusKit
+import NoctilucaPluginKit
 
 class Authenticator {
     private let logger = NoctilucaLogger(category: "Authenticator")
     
     private let registry: AuthPluginRegistry
-    private var plugins: [any AuthPlugin] = []
+    private var plugins: [AuthPluginV1] {
+        registry.plugins
+    }
     
     init(registry: AuthPluginRegistry) {
         self.registry = registry
@@ -20,42 +24,13 @@ class Authenticator {
         logger.debug("init(): Authenticator initialized with \(registry.plugins.count) plugins")
     }
     
-    deinit{
-        self.demolish()
-    }
-    
-    func demolish() {
-        for plugin in self.plugins {
-            do {
-                try plugin.deinitialize()
-            } catch {
-                logger.error("demolish(): Failed to deinitialize plugin: \(type(of: plugin)) - \(error)")
-            }
-        }
-        
-        self.plugins.removeAll()
-    }
-    
-    func setup() async {
-        for pluginType in self.registry.plugins {
-            let plugin = pluginType.init()
-            do {
-                try await plugin.initialize()
-                self.plugins.append(plugin)
-                logger.info("setup(): Initialized auth plugin: \(type(of: plugin))")
-            } catch {
-                logger.error("setup(): Failed to initialize auth plugin: \(type(of: plugin)) - \(error)")
-            }
+    func supportedMethods() -> Set<NoctilucaPluginKit.AuthMethod> {
+        self.registry.plugins.reduce(into: Set<NoctilucaPluginKit.AuthMethod>()) { result, plugin in
+            result.formUnion(type(of: plugin).supportedMethods)
         }
     }
     
-    func supportedMethods() -> Set<AuthMethod> {
-        self.registry.plugins.reduce(into: Set<AuthMethod>()) { result, plugin in
-            result.formUnion(plugin.supportedMethods)
-        }
-    }
-    
-    func authenticate(using method: AuthMethod, payload: consuming Data) async -> Result<uid_t, AuthError> {
+    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: consuming Data) async -> Result<uid_t, AuthError> {
         let LOG_TAG = "authenticate(using: \(method))"
         let supportedPlugins = self.plugins.filter { type(of: $0).supportedMethods.contains(method) }
         
@@ -78,7 +53,7 @@ class Authenticator {
             }
         }
 
-        return .failure(.authenticationFailed)
+        return .failure(.authenticationFailed(nil))
     }
 }
 

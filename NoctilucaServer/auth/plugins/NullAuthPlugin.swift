@@ -8,14 +8,17 @@
 #if DEBUG
 
 import Foundation
-import SiriusKit
 
-final class NullAuthPlugin: AuthPlugin {
+import NoctilucaPluginKit
+
+final class NullAuthPlugin: AuthPluginV1 {
     static let id = "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.null"
     static let name = "NullAuthPlugin"
     static let description = "Provides 'NULL' authentication that always succeeds."
-    static let author = "Gyuhwan Park <unstabler@unstabler.pl>"
-    static let license = "CC0 1.0"
+    static let authors = [
+        "Gyuhwan Park <unstabler@unstabler.pl>"
+    ]
+    static let license: SoftwareLicense = NoctilucaMeta.license
     static let version: UInt32 = 1
     static let displayVersion = NoctilucaMeta.version
     
@@ -23,23 +26,15 @@ final class NullAuthPlugin: AuthPlugin {
     
     private let logger = NoctilucaLogger(category: "NullAuthPlugin")
     
-    func initialize() async throws {
+    func allow(_ entry: AuthEntry) async throws {
         // do nothing
     }
     
-    func deinitialize() throws {
+    func deny(_ entry: AuthEntry) async throws {
         // do nothing
     }
     
-    func allow(_ entry: AllowedAuthMethod) async throws {
-        // do nothing
-    }
-    
-    func deny(_ entry: AllowedAuthMethod) async throws {
-        // do nothing
-    }
-    
-    func authenticate(using method: SiriusKit.AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError> {
+    func authenticate(using method: AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError> {
         guard method == .none else {
             return .failure(.unsupportedMethod)
         }

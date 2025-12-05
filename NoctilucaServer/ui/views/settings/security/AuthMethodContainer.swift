@@ -12,13 +12,15 @@ import Collaboration
 #endif
 import SwiftUI
 
+import NoctilucaPluginKit
+
 struct AuthMethodContainer: View {
     @Binding
-    var authMethods: [AllowedAuthMethod]
-    @State private var selection = Set<AllowedAuthMethod>()
+    var authMethods: [AuthEntry]
+    @State private var selection = Set<AuthEntry>()
     @State private var isAddSheetPresented = false
     
-    init(authMethods: Binding<[AllowedAuthMethod]>) {
+    init(authMethods: Binding<[AuthEntry]>) {
         self._authMethods = authMethods
     }
     
@@ -35,9 +37,9 @@ struct AuthMethodContainer: View {
                     }
                     .foregroundStyle(.secondary)
                 } else {
-                    ForEach(authMethods, id: \.self) { method in
-                        AuthMethodEntry(method: method)
-                            .tag(method)
+                    ForEach(authMethods, id: \.self) { entry in
+                        AuthMethodEntry(entry: entry)
+                            .tag(entry.hashValue)
                             .focusable(true)
                     }
                     .onMove(perform: moveAuthMethods)
@@ -79,7 +81,7 @@ struct AuthMethodContainer: View {
 
 private struct AuthMethodSelectionSheet: View {
     @Binding var isPresented: Bool
-    var onSelect: (AllowedAuthMethod) -> Void
+    var onSelect: (AuthEntry) -> Void
     
     @State
     private var selectedTemplate: TemplateKind = TemplateKind.available.first ?? .pam
@@ -206,19 +208,25 @@ private struct AuthMethodSelectionSheet: View {
         isPresented = false
     }
     
-    private func selectedAuthMethod() -> AllowedAuthMethod {
+    private func selectedAuthMethod() -> AuthEntry {
         switch selectedTemplate {
         case .pam:
             let principal = pamPrincipal.trimmingCharacters(in: .whitespacesAndNewlines)
-            let allowItem: PAMAuthAllowlistItem = pamAllowMode == .group ? .group(name: principal) : .user(name: principal)
-            return .password(allows: allowItem)
+            
+            if pamAllowMode == .group {
+                return AuthEntry(method: .password, identifier: "group:\(principal)")
+            } else if pamAllowMode == .user {
+                return AuthEntry(method: .password, identifier: "user:\(principal)")
+            } else {
+                fatalError("Unhandled PAM allow mode: \(pamAllowMode)")
+            }
         case .simplePassword:
-            return .simplePassword(bcryptHash: simplePasswordHash.trimmingCharacters(in: .whitespacesAndNewlines))
+            return AuthEntry(method: .simplePassword, identifier: simplePasswordHash.trimmingCharacters(in: .whitespacesAndNewlines))
         case .sshKey:
-            return .sshKey(publicKey: sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines))
+            return AuthEntry(method: .sshKey, identifier: sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines))
         #if DEBUG
         case .none:
-            return .none
+            return AuthEntry(method: .none, identifier: "")
         #endif
         }
     }
@@ -353,8 +361,6 @@ private extension AuthMethodSelectionSheet {
 #if DEBUG
 #Preview {
     AuthMethodContainer(authMethods: .constant([
-        .password(allows: .user(name: "cheesekun")),
-        .sshKey(publicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINGHpezMcBEmby7zNaxPmj4cFPZ/P6zi3wcO5xC1LPZz cheesekun@cheese-mbpr14.local")
     ]))
     .padding()
 }

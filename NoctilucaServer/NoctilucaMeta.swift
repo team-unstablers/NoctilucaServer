@@ -7,6 +7,8 @@
 
 import Foundation
 
+import NoctilucaPluginKit
+
 struct NoctilucaMeta {
     static var productName: String {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "NoctilucaServer"
@@ -19,4 +21,8 @@ struct NoctilucaMeta {
     static var version: String {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
+    
+    static var license: SoftwareLicense = .proprietary(name: "Noctiluca Server EULA",
+                                                       url: "https://FIXME")
+    
 }
