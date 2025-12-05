@@ -17,7 +17,7 @@ struct AuthMethodEntry: View {
     var methodTypeLabel: String {
         switch entry.method {
 #if DEBUG
-        case .none:
+        case .null:
             return "인증을 요구하지 않음 (권장하지 않음)"
 #endif
         case .password:
@@ -36,7 +36,7 @@ struct AuthMethodEntry: View {
     var descriptionText: String {
         switch entry.method {
 #if DEBUG
-        case .none:
+        case .null:
             return "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
 #endif
         case .password:

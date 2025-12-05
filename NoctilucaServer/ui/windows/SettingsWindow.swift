@@ -13,6 +13,7 @@ struct SettingsWindow: View {
         case display
         case security
         case misc
+        case plugins
         case about
     }
     
@@ -49,6 +50,12 @@ struct SettingsWindow: View {
                     }
                     .tag(SettingsTab.misc)
                     .id(SettingsTab.misc)
+                PluginsSettingsTab(settings: $settings)
+                    .tabItem {
+                        Text("플러그인")
+                    }
+                    .tag(SettingsTab.plugins)
+                    .id(SettingsTab.plugins)
                 AboutSettingsTab()
                     .tabItem {
                         Text("정보")

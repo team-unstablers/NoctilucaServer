@@ -12,8 +12,8 @@ import NoctilucaPluginKit
 
 final class PAMAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.pam"
-    static let name = "PAMAuthPlugin"
-    static let description = "Provides UNIX PAM-based username-password authentication."
+    static let name = NSLocalizedString("plugins.auth.PAMAuthPlugin.name", comment: "PAMAuthPlugin")
+    static let description = NSLocalizedString("plugins.auth.PAMAuthPlugin.description", comment: "Provides UNIX PAM-based username-password authentication.")
     static let authors = [
         "Gyuhwan Park <unstabler@unstabler.pl>"
     ]

@@ -141,7 +141,7 @@ private struct AuthMethodSelectionSheet: View {
         case .sshKey:
             return !sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         #if DEBUG
-        case .none:
+        case .null:
             return true
         #endif
         }
@@ -195,7 +195,7 @@ private struct AuthMethodSelectionSheet: View {
                     .lineLimit(2...4)
             }
         #if DEBUG
-        case .none:
+        case .null:
             EmptyView()
         #endif
         }
@@ -225,8 +225,8 @@ private struct AuthMethodSelectionSheet: View {
         case .sshKey:
             return AuthEntry(method: .sshKey, identifier: sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines))
         #if DEBUG
-        case .none:
-            return AuthEntry(method: .none, identifier: "")
+        case .null:
+            return AuthEntry(method: .null, identifier: "")
         #endif
         }
     }
@@ -306,7 +306,7 @@ private extension AuthMethodSelectionSheet {
         case simplePassword
         case sshKey
         #if DEBUG
-        case none
+        case null
         #endif
         
         var id: String { rawValue }
@@ -314,7 +314,7 @@ private extension AuthMethodSelectionSheet {
         static var available: [TemplateKind] {
             var values: [TemplateKind] = [.pam, .simplePassword, .sshKey]
             #if DEBUG
-            values.append(.none)
+            values.append(.null)
             #endif
             return values
         }
@@ -328,7 +328,7 @@ private extension AuthMethodSelectionSheet {
             case .sshKey:
                 return "SSH 키 인증"
             #if DEBUG
-            case .none:
+            case .null:
                 return "인증 방법 없음 (DEBUG)"
             #endif
             }
@@ -343,7 +343,7 @@ private extension AuthMethodSelectionSheet {
             case .sshKey:
                 return "SSH 키 인증을 허용합니다."
             #if DEBUG
-            case .none:
+            case .null:
                 return "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
             #endif
             }

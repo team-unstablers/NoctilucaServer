@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "F669650A2ECF26770032EF4E"
-               BuildableName = "NoctilucaServer.app"
-               BlueprintName = "NoctilucaServer"
-               ReferencedContainer = "container:NoctilucaServer.xcodeproj">
+               BlueprintIdentifier = "F624FDA72EE2D238007A68B3"
+               BuildableName = "SamplePluginBundle.nocbundle"
+               BlueprintName = "SamplePluginBundle"
+               ReferencedContainer = "container:SamplePluginBundle.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -34,23 +34,12 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      language = "ko"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F669650A2ECF26770032EF4E"
-            BuildableName = "NoctilucaServer.app"
-            BlueprintName = "NoctilucaServer"
-            ReferencedContainer = "container:NoctilucaServer.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -58,16 +47,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F669650A2ECF26770032EF4E"
-            BuildableName = "NoctilucaServer.app"
-            BlueprintName = "NoctilucaServer"
-            ReferencedContainer = "container:NoctilucaServer.xcodeproj">
+            BlueprintIdentifier = "F624FDA72EE2D238007A68B3"
+            BuildableName = "SamplePluginBundle.nocbundle"
+            BlueprintName = "SamplePluginBundle"
+            ReferencedContainer = "container:SamplePluginBundle.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

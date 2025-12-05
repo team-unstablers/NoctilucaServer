@@ -26,7 +26,8 @@ class NoctilucaServer: ObservableObject {
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
     let featureProvider = NoctilucaFeatureProvider()
-    
+    let pluginBundleRegistry = PluginBundleRegistry.shared
+
     @Published
     var clients: [UUID: NoctilucaClientSession] = [:]
     
@@ -38,6 +39,17 @@ class NoctilucaServer: ObservableObject {
         SiriusLogger.configure(minimumLevel: .trace)
         
         logger.info("NoctilucaServer initialized")
+        
+        
+        let bundlePath = "/Users/cheesekun/Library/Developer/Xcode/DerivedData/NoctilucaServer-bmvtwemvjsiisrajoyirlzkenmct/Build/Products/Debug/SamplePluginBundle.nocbundle"
+        let bundleURL = URL(fileURLWithPath: bundlePath)
+        Task {
+            do {
+                try await pluginBundleRegistry.loadBundle(from: bundleURL)
+            } catch {
+                logger.error("Failed to load plugin bundle from \(bundlePath): \(error)")
+            }
+        }
     }
     
     private func __FIXME__ensureKeychainIdentity(identityLabel: String) throws {
