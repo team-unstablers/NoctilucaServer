@@ -11,7 +11,7 @@ import Foundation
 
 import NoctilucaPluginKit
 
-final class NullAuthPlugin: AuthPluginV1 {
+final class NullAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.null"
     static let name = "NullAuthPlugin"
     static let description = "Provides 'NULL' authentication that always succeeds."

@@ -10,7 +10,7 @@ import Foundation
 import SiriusKit
 import NoctilucaPluginKit
 
-final class PAMAuthPlugin: AuthPluginV1 {
+final class PAMAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.pam"
     static let name = "PAMAuthPlugin"
     static let description = "Provides UNIX PAM-based username-password authentication."
