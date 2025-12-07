@@ -7,9 +7,6 @@
     "(%@)" : {
 
     },
-    "(com.example.SamplePlugin)" : {
-
-    },
     "(구성된 인증 방법이 없습니다)" : {
 
     },
@@ -45,9 +42,6 @@
     "1.0.0-beta1" : {
 
     },
-    "1.2.3 (10)" : {
-
-    },
     "AA:BB:CC:DD:EE:FF:DE:AD:BE:EF" : {
 
     },
@@ -72,10 +66,64 @@
     "BSD 3-Clause License" : {
 
     },
+    "builtin-bundles.auth.NoctilucaCoreAuth.description" : {
+      "comment" : "Noctiluca의 기본 인증 플러그인 번들입니다.",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca의 기본 인증 플러그인 번들입니다."
+          }
+        }
+      }
+    },
+    "builtin-bundles.auth.NoctilucaCoreAuth.name" : {
+      "comment" : "Noctiluca 기본 인증 플러그인 번들",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본 인증 플러그인 번들"
+          }
+        }
+      }
+    },
     "ConcurrentSession" : {
 
     },
+    "core.plugin.PluginBundleRegistryError.duplicateBundle(id: %@)" : {
+      "comment" : "플러그인 번들이 중복 등록되었습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.initializationFailed(error: %@)" : {
+      "comment" : "플러그인 번들의 초기화에 실패했습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.invalidBundle" : {
+      "comment" : "플러그인 번들이 파손되었습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.metadataValidationFailed" : {
+      "comment" : "플러그인 번들의 메타데이터 검증에 실패했습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.metadataValidationFailed(reason: %@)" : {
+      "comment" : "플러그인 번들의 메타데이터 검증에 실패했습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.rejectedBySystem" : {
+      "comment" : "플러그인 번들이 시스템에서 거부되었습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.securityPolicyViolation(currentPolicy: %@, requiredPolicy: %@)" : {
+      "comment" : "플러그인 번들이 보안 정책을 위반했습니다.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "core.plugin.PluginBundleRegistryError.securityPolicyViolation(currentPolicy: %1$@, requiredPolicy: %2$@)"
+          }
+        }
+      }
+    },
     "Creative Commons Zero v1.0 Universal" : {
+
+    },
+    "Files" : {
 
     },
     "Finder로 열기" : {
@@ -91,6 +139,9 @@
 
     },
     "HIDIO" : {
+
+    },
+    "Info" : {
 
     },
     "Keychain에서 불러오기…" : {
@@ -209,9 +260,6 @@
     "QUIC (SiriusKit + Apple)" : {
 
     },
-    "SamplePlugin.bundle" : {
-
-    },
     "Settings" : {
 
     },
@@ -231,6 +279,9 @@
 
     },
     "test" : {
+
+    },
+    "test2" : {
 
     },
     "간단 비밀번호 인증" : {
@@ -469,9 +520,6 @@
 
     },
     "클라이언트에게 인증 요청 시 표시할 메시지를 설정합니다." : {
-
-    },
-    "테스트를 위한 샘플 플러그인 모음집" : {
 
     },
     "텔레메트리 및 진단 정보" : {

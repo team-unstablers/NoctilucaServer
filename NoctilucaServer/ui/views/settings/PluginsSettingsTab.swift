@@ -8,6 +8,7 @@ enum PluginSecurityPolicy: Hashable {
 }
 
 struct PluginsSettingsTab: View {
+
     @Binding
     var settings: AppSettings
     

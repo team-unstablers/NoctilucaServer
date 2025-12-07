@@ -23,6 +23,6 @@ struct NoctilucaMeta {
     }
     
     static var license: SoftwareLicense = .proprietary(name: "Noctiluca Server EULA",
-                                                       url: "https://FIXME")
+                                                       url: URL(string: "https://unstabler.pl")!)
     
 }

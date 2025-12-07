@@ -40,7 +40,12 @@ class NoctilucaServer: ObservableObject {
         
         logger.info("NoctilucaServer initialized")
         
+        Task {
+            // FIXME
+            try await initialize()
+        }
         
+        /*
         let bundlePath = "/Users/cheesekun/Library/Developer/Xcode/DerivedData/NoctilucaServer-bmvtwemvjsiisrajoyirlzkenmct/Build/Products/Debug/SamplePluginBundle.nocbundle"
         let bundleURL = URL(fileURLWithPath: bundlePath)
         Task {
@@ -50,6 +55,7 @@ class NoctilucaServer: ObservableObject {
                 logger.error("Failed to load plugin bundle from \(bundlePath): \(error)")
             }
         }
+         */
     }
     
     private func __FIXME__ensureKeychainIdentity(identityLabel: String) throws {
@@ -69,6 +75,10 @@ class NoctilucaServer: ObservableObject {
         )
         
         _ = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)
+    }
+    
+    func initialize() async throws {
+        try await pluginBundleRegistry.registerBuiltinBundles()
     }
     
     func startup() async throws {

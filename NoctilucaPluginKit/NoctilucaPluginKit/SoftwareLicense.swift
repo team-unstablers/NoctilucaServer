@@ -5,16 +5,18 @@
 //  Created by Gyuhwan Park on 12/5/25.
 //
 
+import Foundation
+
 // 확정된 후 @frozen 하고, 바꾸지 마십시오
 public indirect enum SoftwareLicense {
     /// Custom License
-    case custom(name: String, url: String, isOpenSource: Bool)
+    case custom(name: String, url: URL?, isOpenSource: Bool)
     
     /// dual (conditional) license
     case dual(SoftwareLicense, SoftwareLicense)
     
     /// Proprietary License
-    case proprietary(name: String, url: String)
+    case proprietary(name: String, url: URL?)
     
     /// MIT License
     case mit

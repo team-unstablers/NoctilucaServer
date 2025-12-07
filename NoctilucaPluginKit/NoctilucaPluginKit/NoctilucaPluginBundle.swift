@@ -8,13 +8,6 @@
 import Foundation
 
 public protocol NoctilucaPluginBundle: AnyObject {
-    /// The unique identifier of the plugin bundle.
-    /// It is recommended to use reverse domain name notation (e.g., "com.example.pluginbundle").
-    static var id: String { get }
-    
-    /// The version of the NoctilucaPluginKit that the plugin bundle is compatible with.
-    static var pluginKitVersion: NoctilucaPluginKitVersion { get }
-    
     /// The name of the plugin bundle.
     /// This should be a human-readable name.
     static var name: String { get }
@@ -22,21 +15,7 @@ public protocol NoctilucaPluginBundle: AnyObject {
     /// A brief description of the plugin's functionality.
     /// This helps users understand what the plugin does.
     static var description: String { get }
-    
-    /// The authors of the plugin.
-    /// 각 Author entry는 "{NAME} <{EMAIL}>" 형식을 따릅니다.
-    ///
-    /// (e.g., ["Kirino Kousaka <kiritan@contoso.com>"]
-    static var authors: [String] { get }
-    
-    /// The license under which the plugin is distributed.
-    static var license: SoftwareLicense { get }
 
-    /// The version of the plugin as a UInt32.
-    static var version: UInt32 { get }
-    /// The display version of the plugin as a String.
-    static var displayVersion: String { get }
-    
     /// 플러그인 번들을 초기화합니다.
     /// 이 메서드는 플러그인이 로드될 때 호출됩니다.
     static func initialize() async throws
