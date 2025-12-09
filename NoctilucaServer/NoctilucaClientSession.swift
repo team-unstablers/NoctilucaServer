@@ -13,20 +13,27 @@ struct ClientInfo {
     let protocolVersion: SiriusProtocolVersion
 }
 
+enum NoctilucaClientSessionError: LocalizedError {
+    case unsupportedProtocolVersion
+}
+
 class NoctilucaClientSession: Identifiable {
     private let logger = SiriusLogger(category: "NoctilucaClientSession", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
     var id: UUID { session.id }
     
     let session: ClientSession
+    let server: ServerContext
+    
     var mainChannel: MainChannel!
     
     var clientInfo: ClientInfo? = nil
     
     private var eventLoopTask: Task<Void, Never>?
     
-    init(session: ClientSession) {
+    init(session: ClientSession, server: ServerContext) {
         self.session = session
+        self.server = server
         
         self.session.delegate = self
     }
@@ -61,6 +68,10 @@ class NoctilucaClientSession: Identifiable {
         
         self.clientInfo = clientInfo
         
+        guard clientInfo.protocolVersion == .v1_0 else {
+            throw NoctilucaClientSessionError.unsupportedProtocolVersion
+        }
+        
         // respond with ServerHello
         let response = ServerHello(
             protocolVersion: .v1_0,
@@ -73,14 +84,14 @@ class NoctilucaClientSession: Identifiable {
         
         try await self.mainChannel.sendServerHello(response)
         
+        /*
         let challenge = AuthChallenge(
-            acceptedMethods: [
-                .simplePassword
-            ],
+            acceptedMethods: server.authenticator.supportedMethods(),
             message: nil
         )
         
         try await self.mainChannel.sendAuthChallenge(challenge)
+         */
     }
     
     private func handleAuthRequest(_ message: AuthRequest) async throws {

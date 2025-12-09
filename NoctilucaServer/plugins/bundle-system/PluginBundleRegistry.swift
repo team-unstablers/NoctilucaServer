@@ -178,6 +178,17 @@ class PluginBundleRegistry {
         let handle = PluginBundleHandle(bundleClass: bundleClass, metadata: metadata)
         self.bundles[metadata.id] = handle
         
+        for export in bundleClass.exports {
+            switch export {
+            case .auth(let plugin):
+                AuthPluginRegistry.shared.register(plugin: plugin)
+                logger.info("Registered auth plugin: \(plugin.id) from bundle: \(metadata.id)")
+                break
+            @unknown default:
+                break
+            }
+        }
+        
         logger.info("Successfully registered plugin bundle: \(metadata.id)")
         
         return .success(metadata)

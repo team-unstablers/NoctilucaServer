@@ -31,7 +31,7 @@ public struct AuthMethod: RawRepresentable, Equatable, Hashable, Sendable, Codab
         try container.encode(rawValue)
     }
     
-    /// UNIX PAM 기반의 username-password 인증.`
+    /// UNIX PAM 기반의 username-password 인증.
     public static let password = AuthMethod(rawValue: "password")
     
     /// SSH 키 기반 인증.

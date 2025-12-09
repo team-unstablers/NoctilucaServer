@@ -16,6 +16,14 @@ enum NoctilucaServerState {
     case running(server: SiriusServer)
 }
 
+class NoctilucaServerContext: ServerContext {
+    let authenticator: Authenticator
+    
+    init(authPluginRegistry: AuthPluginRegistry) {
+        self.authenticator = Authenticator(registry: authPluginRegistry)
+    }
+}
+
 @MainActor
 class NoctilucaServer: ObservableObject {
     static let shared = NoctilucaServer()
@@ -26,7 +34,11 @@ class NoctilucaServer: ObservableObject {
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
     let featureProvider = NoctilucaFeatureProvider()
+    
+    let authPluginRegistry = AuthPluginRegistry.shared
     let pluginBundleRegistry = PluginBundleRegistry.shared
+    
+    let context: NoctilucaServerContext
 
     @Published
     var clients: [UUID: NoctilucaClientSession] = [:]
@@ -35,6 +47,7 @@ class NoctilucaServer: ObservableObject {
     var state: NoctilucaServerState = .idle
 
     init() {
+        self.context = NoctilucaServerContext(authPluginRegistry: authPluginRegistry)
         // FIXME: 이건 AppDelegate에서 하세요.
         SiriusLogger.configure(minimumLevel: .trace)
         
@@ -144,7 +157,7 @@ extension NoctilucaServer: SiriusServerDelegate {
     }
     
     func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
-        self.clients[session.id] = NoctilucaClientSession(session: session)
+        self.clients[session.id] = NoctilucaClientSession(session: session, server: context)
     }
     
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {

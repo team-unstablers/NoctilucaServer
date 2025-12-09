@@ -10,21 +10,8 @@ import Foundation
 import NoctilucaPluginKit
 
 class AuthPluginRegistry {
-    static let shared = initShared()
-    
-    private static func initShared() -> AuthPluginRegistry {
-        let registry = AuthPluginRegistry()
-        
-        // Register built-in plugins
-        registry.register(plugin: PAMAuthPlugin())
-        
-#if DEBUG
-        registry.register(plugin: NullAuthPlugin())
-#endif
-        
-        return registry
-    }
-    
+    static let shared = AuthPluginRegistry()
+   
     private(set) public var plugins: [AuthPluginV1] = []
     
     func register(plugin: AuthPluginV1) {
