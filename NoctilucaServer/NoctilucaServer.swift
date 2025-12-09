@@ -17,19 +17,34 @@ enum NoctilucaServerState {
 }
 
 class NoctilucaServerContext: ServerContext {
-    let authenticator: Authenticator
+    private let server: NoctilucaServer
     
-    init(authPluginRegistry: AuthPluginRegistry) {
-        self.authenticator = Authenticator(registry: authPluginRegistry)
+    var featureProvider: NoctilucaFeatureProvider { server.featureProvider }
+    
+    var authenticator: Authenticator { server.authenticator }
+    var settings: AppSettings { server.settings }
+    
+    init(server: NoctilucaServer) {
+        self.server = server
+    }
+    
+    func serverName(withVersion: Bool) -> String {
+        let productName = NoctilucaMeta.productName
+        
+        if withVersion {
+            let productVersion = NoctilucaMeta.version
+            return "\(productName)/\(productVersion)"
+        } else {
+            return productName
+        }
     }
 }
 
-@MainActor
+// @MainActor <- 근데 과거의 나는 이걸 왜 붙였지? 인생 편하게 살고 싶었나..?
 class NoctilucaServer: ObservableObject {
     static let shared = NoctilucaServer()
     
     private static let defaultKeychainIdentity = "pl.unstabler.noctiluca.server.testIdentity"
-    private static let defaultPort: UInt16 = 12345
     
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
@@ -37,6 +52,8 @@ class NoctilucaServer: ObservableObject {
     
     let authPluginRegistry = AuthPluginRegistry.shared
     let pluginBundleRegistry = PluginBundleRegistry.shared
+    
+    let authenticator: Authenticator
     
     let context: NoctilucaServerContext
     
@@ -50,7 +67,8 @@ class NoctilucaServer: ObservableObject {
     var state: NoctilucaServerState = .idle
 
     init() {
-        self.context = NoctilucaServerContext(authPluginRegistry: authPluginRegistry)
+        self.authenticator = Authenticator(registry: authPluginRegistry)
+        self.context = NoctilucaServerContext(server: self)
         // FIXME: 이건 AppDelegate에서 하세요.
         SiriusLogger.configure(minimumLevel: .trace)
         
@@ -113,7 +131,7 @@ class NoctilucaServer: ObservableObject {
             
             let result = try SiriusServerBuilder()
                 .useFeatureProvider(featureProvider)
-                .useTransportProtocol(.quic(port: Self.defaultPort, identitySource: .keychain(label: Self.defaultKeychainIdentity)))
+                .useTransportProtocol(.quic(port: settings.quicTransport.listenPort, identitySource: .keychain(label: Self.defaultKeychainIdentity)))
                 .withExtraConfiguration("someValue", forKey: "someKey")
                 .build()
             

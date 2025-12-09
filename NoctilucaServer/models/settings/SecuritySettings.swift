@@ -15,9 +15,11 @@ extension AppSettings {
         private static let KEY_ALLOWED_ENTRIES = "pl.unstabler.noctiluca.NoctilucaServer.settings.security.allowedEntries"
         
         var allowedEntries: [AuthEntry] = []
+        var maxLoginAttempts: Int = 3
         
-        enum CodingKeys {
+        enum CodingKeys: String, CodingKey {
             // allowedEntries는 보안 항목이므로 인코딩/디코딩 시 제외
+            case maxLoginAttempts
         }
         
         init() {
@@ -25,11 +27,13 @@ extension AppSettings {
         }
         
         init(from decoder: any Decoder) throws {
-            
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            maxLoginAttempts = try container.decode(Int.self, forKey: .maxLoginAttempts)
         }
         
         func encode(to encoder: any Encoder) throws {
-            
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(maxLoginAttempts, forKey: .maxLoginAttempts)
         }
         
         func saveSecureEntries() throws {

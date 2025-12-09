@@ -14,43 +14,28 @@ extension MessageOpcode {
     static let authResponse: MessageOpcode = MessageOpcode(rawValue: 0x0013)
 }
 
-public struct AuthMethod: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_AuthMethod
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let none = Self.fromProtobufEnum(.none)
-    public static let password = Self.fromProtobufEnum(.password)
-    public static let simplePassword = Self.fromProtobufEnum(.simplePassword)
-    public static let key = Self.fromProtobufEnum(.sshKey)
-}
-
 
 public struct AuthChallenge: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_AuthChallenge
     
-    public let acceptedMethods: [AuthMethod]
+    public let acceptedMethods: [String]
     public let message: String?
 
 
-    public init(acceptedMethods: [AuthMethod], message: String?) {
+    public init(acceptedMethods: [String], message: String?) {
         self.acceptedMethods = acceptedMethods
         self.message = message
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_AuthChallenge) throws {
-        self.acceptedMethods = protobufMessage.acceptedMethods.map { AuthMethod.fromProtobufEnum($0) }
+        self.acceptedMethods = protobufMessage.acceptedMethods
         self.message = protobufMessage.hasMessage ? protobufMessage.message : nil
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        message.acceptedMethods = self.acceptedMethods.map { $0.toProtobufEnum() }
+        message.acceptedMethods = self.acceptedMethods
         if let val = self.message {
             message.message = val
         }
@@ -62,27 +47,25 @@ public struct AuthChallenge: SiriusMessage {
 public struct AuthRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_AuthRequest
     
-    public let method: AuthMethod
-    public let payload: Data?
+    public let method: String
+    public let payload: Data
 
 
-    public init(method: AuthMethod, payload: Data?) {
+    public init(method: String, payload: Data) {
         self.method = method
         self.payload = payload
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_AuthRequest) throws {
-        self.method = AuthMethod.fromProtobufEnum(protobufMessage.method)
-        self.payload = protobufMessage.hasPayload ? protobufMessage.payload : nil
+        self.method = protobufMessage.method
+        self.payload = protobufMessage.payload
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        message.method = self.method.toProtobufEnum()
-        if let val = self.payload {
-            message.payload = val
-        }
+        message.method = self.method
+        message.payload = self.payload
 
         return message
     }

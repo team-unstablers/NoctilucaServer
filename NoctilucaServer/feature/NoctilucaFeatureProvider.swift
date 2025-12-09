@@ -8,6 +8,13 @@
 import SiriusKit
 
 class NoctilucaFeatureProvider: FeatureProvider {
+    func supportedFeatures() -> [SiriusFeature] {
+        return [
+            .hidio,
+            .projection,
+        ]
+    }
+    
     func supports(_ feature: SiriusKit.SiriusFeature) -> Bool {
         switch feature {
         case .hidio:
