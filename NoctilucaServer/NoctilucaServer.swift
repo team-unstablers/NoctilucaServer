@@ -55,7 +55,7 @@ class NoctilucaServer: ObservableObject {
     
     let authenticator: Authenticator
     
-    let context: NoctilucaServerContext
+    var context: NoctilucaServerContext!
     
     @Published
     var settings: AppSettings = AppSettings()
@@ -180,7 +180,10 @@ extension NoctilucaServer: SiriusServerDelegate {
     }
     
     func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
-        self.clients[session.id] = NoctilucaClientSession(session: session, server: context)
+        let session = NoctilucaClientSession(session: session, server: context)
+        session.initialize()
+        
+        self.clients[session.id] = session
     }
     
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {

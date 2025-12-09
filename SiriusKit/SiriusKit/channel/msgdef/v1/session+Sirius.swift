@@ -19,16 +19,19 @@ public struct AuthChallenge: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_AuthChallenge
     
     public let acceptedMethods: [String]
+    public let nonce: Data
     public let message: String?
 
 
-    public init(acceptedMethods: [String], message: String?) {
+    public init(acceptedMethods: [String], nonce: Data, message: String?) {
         self.acceptedMethods = acceptedMethods
+        self.nonce = nonce
         self.message = message
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_AuthChallenge) throws {
         self.acceptedMethods = protobufMessage.acceptedMethods
+        self.nonce = protobufMessage.nonce
         self.message = protobufMessage.hasMessage ? protobufMessage.message : nil
     }
 
@@ -36,6 +39,7 @@ public struct AuthChallenge: SiriusMessage {
         var message = ProtobufMessage()
 
         message.acceptedMethods = self.acceptedMethods
+        message.nonce = self.nonce
         if let val = self.message {
             message.message = val
         }
@@ -48,16 +52,19 @@ public struct AuthRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_AuthRequest
     
     public let method: String
+    public let nonce: Data
     public let payload: Data
 
 
-    public init(method: String, payload: Data) {
+    public init(method: String, nonce: Data, payload: Data) {
         self.method = method
+        self.nonce = nonce
         self.payload = payload
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_AuthRequest) throws {
         self.method = protobufMessage.method
+        self.nonce = protobufMessage.nonce
         self.payload = protobufMessage.payload
     }
 
@@ -65,6 +72,7 @@ public struct AuthRequest: SiriusMessage {
         var message = ProtobufMessage()
 
         message.method = self.method
+        message.nonce = self.nonce
         message.payload = self.payload
 
         return message

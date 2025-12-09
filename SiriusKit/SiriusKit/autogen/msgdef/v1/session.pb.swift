@@ -31,6 +31,9 @@ struct Sirius_Msgdef_V1_AuthChallenge: Sendable {
   //// 서버가 받아들일 수 있는 인증 방식 목록.
   var acceptedMethods: [String] = []
 
+  /// 클라이언트가 인증에 사용할 수 있는 nonce 값. ~32bytes 정도가 이상적. (이지 않을까)
+  var nonce: Data = Data()
+
   //// 서버가 클라이언트에게 전달하는 추가 메시지
   var message: String {
     get {return _message ?? String()}
@@ -55,6 +58,9 @@ struct Sirius_Msgdef_V1_AuthRequest: Sendable {
   // methods supported on all messages.
 
   var method: String = String()
+
+  /// nonce 값.
+  var nonce: Data = Data()
 
   var payload: Data {
     get {return _payload ?? Data()}
@@ -100,7 +106,7 @@ fileprivate let _protobuf_package = "sirius.msgdef.v1"
 
 extension Sirius_Msgdef_V1_AuthChallenge: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".AuthChallenge"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}acceptedMethods\0\u{2}\u{2}message\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}acceptedMethods\0\u{1}nonce\0\u{1}message\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -109,6 +115,7 @@ extension Sirius_Msgdef_V1_AuthChallenge: SwiftProtobuf.Message, SwiftProtobuf._
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedStringField(value: &self.acceptedMethods) }()
+      case 2: try { try decoder.decodeSingularBytesField(value: &self.nonce) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self._message) }()
       default: break
       }
@@ -123,6 +130,9 @@ extension Sirius_Msgdef_V1_AuthChallenge: SwiftProtobuf.Message, SwiftProtobuf._
     if !self.acceptedMethods.isEmpty {
       try visitor.visitRepeatedStringField(value: self.acceptedMethods, fieldNumber: 1)
     }
+    if !self.nonce.isEmpty {
+      try visitor.visitSingularBytesField(value: self.nonce, fieldNumber: 2)
+    }
     try { if let v = self._message {
       try visitor.visitSingularStringField(value: v, fieldNumber: 3)
     } }()
@@ -131,6 +141,7 @@ extension Sirius_Msgdef_V1_AuthChallenge: SwiftProtobuf.Message, SwiftProtobuf._
 
   static func ==(lhs: Sirius_Msgdef_V1_AuthChallenge, rhs: Sirius_Msgdef_V1_AuthChallenge) -> Bool {
     if lhs.acceptedMethods != rhs.acceptedMethods {return false}
+    if lhs.nonce != rhs.nonce {return false}
     if lhs._message != rhs._message {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -139,7 +150,7 @@ extension Sirius_Msgdef_V1_AuthChallenge: SwiftProtobuf.Message, SwiftProtobuf._
 
 extension Sirius_Msgdef_V1_AuthRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".AuthRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}method\0\u{1}payload\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}method\0\u{1}nonce\0\u{1}payload\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -148,7 +159,8 @@ extension Sirius_Msgdef_V1_AuthRequest: SwiftProtobuf.Message, SwiftProtobuf._Me
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.method) }()
-      case 2: try { try decoder.decodeSingularBytesField(value: &self._payload) }()
+      case 2: try { try decoder.decodeSingularBytesField(value: &self.nonce) }()
+      case 3: try { try decoder.decodeSingularBytesField(value: &self._payload) }()
       default: break
       }
     }
@@ -162,14 +174,18 @@ extension Sirius_Msgdef_V1_AuthRequest: SwiftProtobuf.Message, SwiftProtobuf._Me
     if !self.method.isEmpty {
       try visitor.visitSingularStringField(value: self.method, fieldNumber: 1)
     }
+    if !self.nonce.isEmpty {
+      try visitor.visitSingularBytesField(value: self.nonce, fieldNumber: 2)
+    }
     try { if let v = self._payload {
-      try visitor.visitSingularBytesField(value: v, fieldNumber: 2)
+      try visitor.visitSingularBytesField(value: v, fieldNumber: 3)
     } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_AuthRequest, rhs: Sirius_Msgdef_V1_AuthRequest) -> Bool {
     if lhs.method != rhs.method {return false}
+    if lhs.nonce != rhs.nonce {return false}
     if lhs._payload != rhs._payload {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

@@ -63,15 +63,28 @@ class NoctilucaClientSession: Identifiable {
     private(set) var phase: NoctilucaClientSessionPhase = .initial
     var clientInfo: ClientInfo? = nil
     
+    var authNonce: Data? = nil
     var loginAttempts: Int = 0
     
     private var eventLoopTask: Task<Void, Never>?
+    private var phaseShiftAssertionTask: Task<Void, Never>?
     
     init(session: ClientSession, server: ServerContext) {
         self.session = session
         self.server = server
         
         self.session.delegate = self
+    }
+    
+    func initialize() {
+        guard self.phase == .initial else {
+            logger.warning("initialize() called, but phase is not initial. Current phase: \(self.phase)")
+            return
+        }
+        
+        // 우선 5초 이내에 client hello를 받아야 한다
+        // TODO: 이 값은 설정 가능하도록 한다
+        self.startPhaseShiftAssertion(expect: .awaitingAuthentication, within: 5)
     }
     
     private func mainChannelEventLoop() async {
@@ -116,6 +129,23 @@ class NoctilucaClientSession: Identifiable {
         self.phase = newPhase
     }
     
+    /// 주어진 시간 내에 Phase 전환이 이루어질 것임을 assert한다.
+    /// assert에 실패하면 접속을 끊는다.
+    ///
+    /// NOTE: 중첩된 경우, 기존 것을 취소하고 새로 시작한다.
+    func startPhaseShiftAssertion(expect phase: NoctilucaClientSessionPhase, within seconds: UInt64) {
+        self.phaseShiftAssertionTask?.cancel()
+        
+        self.phaseShiftAssertionTask = Task {
+            try? await Task.sleep(for: .seconds(seconds))
+            
+            if self.phase != phase {
+                self.logger.fatal("Phase shift assertion failed: expected phase \(phase) within \(seconds) seconds, but current phase is \(self.phase)")
+                await self.close()
+            }
+        }
+    }
+    
     /// 모든게 망했고, 당신의 꿈은 결국 이루어지지 못했습니다.
     func panic(_ reason: String) async {
         guard self.phase != .panic && self.phase != .closed else {
@@ -132,11 +162,17 @@ class NoctilucaClientSession: Identifiable {
     }
     
     func close() async {
+        guard self.phase != .closed else {
+            return
+        }
+        
+        self.phase = .closed
+        
+        self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
-#warning("아니 왜 session.close()가 없어요")
+        
+        await self.session.close()
     }
-
-    
 }
 
 extension NoctilucaClientSession: ClientSessionDelegate {

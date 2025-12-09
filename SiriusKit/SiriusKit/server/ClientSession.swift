@@ -33,6 +33,10 @@ public class ClientSession: SiriusSession {
 
         self.transport.delegate = self
     }
+    
+    public func close() async {
+        await self.transport.disconnect()
+    }
 }
 
 extension ClientSession: ServerRoleClientTransportDelegate {

@@ -31,7 +31,7 @@ class ServerRoleQUICClientTransport: ServerRoleClientTransport {
         self.connectionGroup = connectionGroup
     }
     
-    override func disconnect() async throws {
+    override func disconnect() async {
         self.connectionGroup.cancel()
         
         self.serverTransport.unregisterClientTransport(self)
@@ -61,7 +61,7 @@ class ServerRoleQUICClientTransport: ServerRoleClientTransport {
             case .failed(let error):
                 Task {
                     await self.delegate?.clientTransport(self, didEncounterError: error)
-                    try? await self.disconnect()
+                    await self.disconnect()
                 }
             case .cancelled:
                 Task {

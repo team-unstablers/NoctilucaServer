@@ -25,7 +25,7 @@ class ServerRoleClientTransport: TransportLayer {
         ServerRoleClientTransportIdentifier()
     }
     
-    func disconnect() async throws {
+    func disconnect() async {
         // To be implemented by subclasses
     }
     
