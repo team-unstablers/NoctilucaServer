@@ -11,8 +11,34 @@ import SiriusKit
 import NoctilucaPluginKit
 
 extension AppSettings {
-    struct Security: Category {
+    struct Security: SecureCategory {
+        private static let KEY_ALLOWED_ENTRIES = "pl.unstabler.noctiluca.NoctilucaServer.settings.security.allowedEntries"
+        
         var allowedEntries: [AuthEntry] = []
+        
+        enum CodingKeys {
+            // allowedEntries는 보안 항목이므로 인코딩/디코딩 시 제외
+        }
+        
+        init() {
+            
+        }
+        
+        init(from decoder: any Decoder) throws {
+            
+        }
+        
+        func encode(to encoder: any Encoder) throws {
+            
+        }
+        
+        func saveSecureEntries() throws {
+            try saveSecureEntry(allowedEntries, forKey: Self.KEY_ALLOWED_ENTRIES)
+        }
+        
+        mutating func loadSecureEntries() throws {
+            allowedEntries = (try loadSecureEntry(forKey: Self.KEY_ALLOWED_ENTRIES, as: [AuthEntry].self)) ?? []
+        }
     }
     
     /// 트랜스포트 레이어

@@ -16,7 +16,7 @@ extension AuthMethod {
     static let null = AuthMethod(rawValue: "pl.unstabler.noctiluca.NoctilucaServer.auth.dev.null")
 #endif
     
-    static let simplePassword = AuthMethod(rawValue: "pl.unstabler.noctiluca.NoctilucaServer.auth.simplePassword")
+    static let simplePassword = AuthMethod(rawValue: "pl.unstabler.noctiluca.NoctilucaServer.auth.simple-password")
 }
 
 

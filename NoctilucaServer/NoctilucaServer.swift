@@ -39,6 +39,9 @@ class NoctilucaServer: ObservableObject {
     let pluginBundleRegistry = PluginBundleRegistry.shared
     
     let context: NoctilucaServerContext
+    
+    @Published
+    var settings: AppSettings = AppSettings()
 
     @Published
     var clients: [UUID: NoctilucaClientSession] = [:]
@@ -91,6 +94,8 @@ class NoctilucaServer: ObservableObject {
     }
     
     func initialize() async throws {
+        self.settings = try AppSettings.load()
+        
         try await pluginBundleRegistry.registerBuiltinBundles()
     }
     

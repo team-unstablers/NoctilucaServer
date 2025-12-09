@@ -15,6 +15,7 @@ struct NoctilucaServerApp: App {
     var body: some Scene {
         WindowGroup {
             SettingsWindow()
+                .environmentObject(server)
         }
         
         MenuBarExtra("My App", systemImage: "star.fill") {

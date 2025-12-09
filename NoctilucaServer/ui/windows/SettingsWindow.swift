@@ -17,16 +17,16 @@ struct SettingsWindow: View {
         case about
     }
     
-    @State
-    private var settings: AppSettings = .init()
-
+    @EnvironmentObject
+    private var server: NoctilucaServer
+    
     @State
     private var selectedTab: SettingsTab = .general
 
     var body: some View {
         NavigationStack {
             TabView(selection: $selectedTab) {
-                SettingsGeneralTab(settings: $settings)
+                SettingsGeneralTab(settings: $server.settings)
                     .tabItem {
                         Text("일반")
                     }
@@ -38,19 +38,19 @@ struct SettingsWindow: View {
                     }
                     .tag(SettingsTab.display)
                     .id(SettingsTab.display)
-                SecuritySettingsTab(settings: $settings)
+                SecuritySettingsTab(settings: $server.settings)
                     .tabItem {
                         Text("보안")
                     }
                     .tag(SettingsTab.security)
                     .id(SettingsTab.security)
-                MiscSettingsTab(settings: $settings)
+                MiscSettingsTab(settings: $server.settings)
                     .tabItem {
                         Text("기타")
                     }
                     .tag(SettingsTab.misc)
                     .id(SettingsTab.misc)
-                PluginsSettingsTab(settings: $settings)
+                PluginsSettingsTab(settings: $server.settings)
                     .tabItem {
                         Text("플러그인")
                     }
@@ -70,6 +70,12 @@ struct SettingsWindow: View {
         .toolbar {
             ToolbarItem {
                 Button("설정 저장", role: .confirm) {
+                    do {
+                        try server.settings.save()
+                    } catch {
+                        // FIXME: 다이얼로그를 띄우던 뭘 하던 하십시오
+                        print(error)
+                    }
                 }
             }
         }
