@@ -28,6 +28,7 @@ struct Bcrypt {
         return consume salt
     }
     
+    /// FIXME: UI 스레드에서 호출하지 않도록 할것
     static func hash(password: consuming Data, salt: consuming Data? = nil) throws -> Data {
         let salt = try (salt ?? generateSalt())
         
@@ -46,6 +47,25 @@ struct Bcrypt {
                     
                     return bcrypt_hashpw(passwordPtr, saltPtr, hashPtr)
                 }
+            }
+        }
+        
+        guard retval == 0 else {
+            throw BcryptError.libraryError(retval: retval)
+        }
+        
+        return consume hash
+    }
+    
+    static func sha512(value: consuming Data) throws -> Data {
+        var hash = Data(count: Int(BCRYPT_512BITS_BASE64_SIZE))
+        
+        let retval = value.withUnsafeBytes { valueBytes in
+            hash.withUnsafeMutableBytes { hashBytes in
+                let valuePtr = valueBytes.bindMemory(to: UInt8.self).baseAddress!
+                let hashPtr = hashBytes.bindMemory(to: Int8.self).baseAddress!
+                
+                return bcrypt_sha512(valuePtr, hashPtr)
             }
         }
         

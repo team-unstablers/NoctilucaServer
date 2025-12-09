@@ -90,7 +90,7 @@ private struct AuthMethodSelectionSheet: View {
     @State
     private var pamPrincipal: String = NSUserName()
     @State 
-    private var simplePasswordHash: String = ""
+    private var simplePasswordValue: String = ""
     @State 
     private var sshPublicKey: String = ""
     
@@ -137,7 +137,7 @@ private struct AuthMethodSelectionSheet: View {
         case .pam:
             return !pamPrincipal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .simplePassword:
-            return !simplePasswordHash.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return !simplePasswordValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .sshKey:
             return !sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         #if DEBUG
@@ -174,10 +174,10 @@ private struct AuthMethodSelectionSheet: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("간단 비밀번호 인증")
                     .font(.headline)
-                Text("비밀번호의 bcrypt 해시를 입력하세요.")
+                Text("입력된 비밀번호는 SHA-512 + bcrypt로 이중 해시 처리되어 저장됩니다.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                TextField("bcrypt 해시", text: $simplePasswordHash, axis: .vertical)
+                TextField("비밀번호 입력", text: $simplePasswordValue, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(1...3)
@@ -221,7 +221,11 @@ private struct AuthMethodSelectionSheet: View {
                 fatalError("Unhandled PAM allow mode: \(pamAllowMode)")
             }
         case .simplePassword:
-            return AuthEntry(method: .simplePassword, identifier: simplePasswordHash.trimmingCharacters(in: .whitespacesAndNewlines))
+            let hash = try! Bcrypt.hash(
+                password: try! Bcrypt.sha512(value: simplePasswordValue.data(using: .utf8)!)
+            )
+            
+            return AuthEntry(method: .simplePassword, identifier: "bcrypt+sha512", data: hash)
         case .sshKey:
             return AuthEntry(method: .sshKey, identifier: sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines))
         #if DEBUG
