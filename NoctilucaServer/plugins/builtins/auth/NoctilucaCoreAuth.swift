@@ -26,7 +26,8 @@ class NoctilucaCoreAuth: NoctilucaPluginBundle {
         license: NoctilucaMeta.license,
         
         exports: [
-            PAMAuthPlugin.metadata
+            PAMAuthPlugin.metadata,
+            SimplePasswordAuthPlugin.metadata
         ]
     )
     
@@ -44,11 +45,13 @@ class NoctilucaCoreAuth: NoctilucaPluginBundle {
 #if DEBUG
     static var exports: [NoctilucaPluginExport] = [
         .auth(PAMAuthPlugin()),
+        .auth(SimplePasswordAuthPlugin()),
         .auth(NullAuthPlugin())
     ]
 #else
     static var exports: [NoctilucaPluginExport] = [
-        .auth(PAMAuthPlugin())
+        .auth(PAMAuthPlugin()),
+        .auth(SimplePasswordAuthPlugin()),
     ]
 #endif
 }

@@ -76,7 +76,7 @@ struct Bcrypt {
         return consume hash
     }
     
-    static func verify(password: consuming Data, hash: consuming Data) throws -> Bool {
+    static func verify(password: borrowing Data, hash: borrowing Data) throws -> Bool {
         guard hash.count == Int(BCRYPT_HASHSIZE) else {
             throw BcryptError.invalidInput
         }

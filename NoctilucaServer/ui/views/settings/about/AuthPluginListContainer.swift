@@ -62,7 +62,6 @@ struct AuthPluginDetailView: View {
             
             Text(metaType.description)
                 .font(.subheadline)
-                .lineLimit(1)
         }
         
         HStack(alignment: .top) {
