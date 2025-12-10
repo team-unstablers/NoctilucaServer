@@ -39,6 +39,8 @@ extension NoctilucaClient: SiriusClientDelegate {
                 switch event {
                 case .receivedServerHello(let message):
                     logger.info("Received ServerHello: protocolVersion=\(message.protocolVersion), serverName=\(message.serverName)")
+                case .receivedAuthChallenge(let authChallenge):
+                    logger.info("Received AuthChallenge: acceptedMethods=\(authChallenge.acceptedMethods), message=\(authChallenge.message ?? "nil")")
                 default:
                     break
                 }

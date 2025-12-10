@@ -16,6 +16,11 @@ public struct MessageOpcode: RawRepresentable, Equatable, Hashable {
         self.rawValue = rawValue
     }
     
+    // client -> server
+    public static let ping = MessageOpcode(rawValue: 0xFFFA)
+    // server -> client
+    public static let pong = MessageOpcode(rawValue: 0xFFFB)
+    
     // 업그레이드된 프로토콜 메시지 (encapsulated)
     public static let encapsulatedProtocolMessage = MessageOpcode(rawValue: 0xFFFE)
 }
