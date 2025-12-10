@@ -13,6 +13,8 @@ struct NoctilucaClientApp: App {
         WindowGroup {
             MainWindow()
         }
+        .defaultSize(width: 800, height: 600)
+        .defaultPosition(.center)
         
     }
 }

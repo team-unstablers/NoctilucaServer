@@ -29,10 +29,13 @@ enum AddressBarDegradationIndicatorState {
 }
 
 enum AddressBarActionState {
+    case connecting(progress: Double)
     case fileTransfer(progress: Double)
     
     var label: String {
         switch self {
+        case .connecting(let progress):
+            return "연결 중"
         case .fileTransfer(let progress):
             return "파일 전송 중"
         }
@@ -40,6 +43,8 @@ enum AddressBarActionState {
     
     var progress: Double {
         switch self {
+        case .connecting(let progress):
+            return progress
         case .fileTransfer(let progress):
             return progress
         }
@@ -315,18 +320,28 @@ struct AddressBarDegradationIndicator: View {
 }
 
 struct AddressBar: View {
+    let endpointURL: String
+    
     let securityIndicator: AddressBarSecurityIndicatorState?
     let qualityIndicator: AddressBarQualityIndicatorState?
     
     let action: AddressBarActionState?
     
-    init(securityIndicator: AddressBarSecurityIndicatorState? = nil,
+    let submitHandler: (String) -> Void
+    
+    init(endpointURL: String,
+         securityIndicator: AddressBarSecurityIndicatorState? = nil,
          qualityIndicator: AddressBarQualityIndicatorState? = nil,
-         action: AddressBarActionState? = nil) {
+         action: AddressBarActionState? = nil,
+         submitHandler: @escaping (String) -> Void) {
+        self.endpointURL = endpointURL
+        self._draftURL = .init(initialValue: endpointURL)
         self.securityIndicator = securityIndicator
         self.qualityIndicator = qualityIndicator
         self.action = action
+        self.submitHandler = submitHandler
     }
+    
     
     @State
     var draftURL: String = "private-resource-02.internal.contoso.com"
@@ -357,15 +372,22 @@ struct AddressBar: View {
                                 Text("\(action.label) - ")
                                     .font(.system(size: 14))
                                     .foregroundStyle(.secondary)
-                                Text(draftURL)
-                                    .font(.system(size: 10))
+                                Text(endpointURL)
+                                    .font(.system(size: 14)) // TODO: dynamic size
                                     .opacity(labelTextOpacity)
                             }
                             .opacity(labelTextOpacity)
                         } else {
-                            Text(draftURL)
-                                .font(.system(size: 14))
-                                .opacity(labelTextOpacity)
+                            if endpointURL.isEmpty {
+                                Text("호스트 주소를 입력하세요")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.secondary)
+                                    .opacity(labelTextOpacity)
+                            } else {
+                                Text(endpointURL)
+                                    .font(.system(size: 14))
+                                    .opacity(labelTextOpacity)
+                            }
                         }
                         
                         if isFocused {
@@ -375,7 +397,7 @@ struct AddressBar: View {
                     .animation(.linear(duration: 0.2), value: isFocused)
                 }
                 
-                TextField("Endpoint URL", text: $draftURL)
+                TextField("호스트 주소를 입력하세요", text: $draftURL)
                     .opacity(textFieldOpacity)
                     .font(.system(size: 14))
                     .textFieldStyle(.plain)
@@ -384,6 +406,8 @@ struct AddressBar: View {
                     .animation(.linear(duration: 0.2).delay(0.2), value: isFocused)
                     .onSubmit {
                         isFocused = false
+                        
+                        self.submitHandler(draftURL)
                     }
             }
             .padding(.vertical, 12)
@@ -457,22 +481,50 @@ struct AddressBar: View {
 #Preview {
     VStack {
         VStack {
+            AddressBar(
+                endpointURL: "",
+            ) { _ in
+                
+            }
+        }
+        .zIndex(4)
+        .padding(32)
+
+        VStack {
             Text("AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent)")
-            AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent, action: .fileTransfer(progress: 0.5))
+            AddressBar(
+                endpointURL: "internal02.contoso.com",
+                securityIndicator: .trustable,
+                qualityIndicator: .excellent,
+                action: .fileTransfer(progress: 0.5)
+            ) { _ in
+                
+            }
         }
         .zIndex(3)
         .padding(.bottom, 32)
         
         VStack {
             Text("AddressBar(securityIndicator: .dangerous, qualityIndicator: .poor)")
-            AddressBar(securityIndicator: .dangerous, qualityIndicator: .poor)
+            AddressBar(
+                endpointURL: "internal02.contoso.com",
+                securityIndicator: .dangerous,
+                qualityIndicator: .poor
+            ) { _ in
+                
+            }
         }
         .zIndex(2)
         .padding(.bottom, 32)
         
         VStack {
             Text("AddressBar(securityIndicator: .neutral, qualityIndicator: .good)")
-            AddressBar(securityIndicator: .neutral, qualityIndicator: .good)
+            AddressBar(
+                endpointURL: "internal02.contoso.com",
+                securityIndicator: .neutral,
+                qualityIndicator: .good
+            ) { _ in
+            }
         }
         .zIndex(1)
         .padding(.bottom, 32)

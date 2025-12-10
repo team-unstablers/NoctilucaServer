@@ -56,14 +56,32 @@ struct MainToolbar: NSViewRepresentable {
             
             NSWindow.__NOC__swizzleLayoutIfNeeded()
             
-            window.toolbarStyle = .unified
 
             let toolbar = NSToolbar(identifier: "pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar")
             toolbar.delegate = self
             toolbar.centeredItemIdentifiers = [.nocAddressBar]
+            
+            /*
+            toolbar.showsBaselineSeparator = false
+            window.titlebarAppearsTransparent = true
+             */
 
+            window.toolbarStyle = .unified
             window.titleVisibility = .hidden
             window.toolbar = toolbar
+            
+            window.titlebarAppearsTransparent = true
+            
+            // FIXME
+            /*
+            let visualEffect = NSVisualEffectView()
+            
+            visualEffect.blendingMode = .behindWindow
+            visualEffect.state = .active
+            visualEffect.material = .mediumLight
+             
+             window.contentView = visualEffect
+             */
         }
         
         func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
@@ -222,6 +240,13 @@ extension NSWindow {
     func __NOC__layoutIfNeeded() {
         // call original method
         self.__NOC__layoutIfNeeded()
+        
+        // FIXME: self.class = ...
+        if self.toolbar != nil {
+            toolbarStyle = .unified
+            titleVisibility = .hidden
+        }
+
         self.centerTrafficLights()
     }
     
