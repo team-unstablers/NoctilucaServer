@@ -25,38 +25,28 @@ struct NewConnectionPhaseView: View {
         String(localized: "ui.window.main.new_connection_phase.title", defaultValue: "새 연결")
     }
     
-    var body: some View {
+    @ViewBuilder
+    var toolbar: some View {
         VStack {
+            AddressBar()
+        }
+        .background(.red)
+    }
+    
+    var body: some View {
+        NavigationStack {
             VStack(spacing: 12) {
-                VStack {
-                    TextField("원격 호스트 주소", text: $endpointURL)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 16))
-                }
+                MainToolbar(addressBar: NSHostingView(rootView: AnyView(self.toolbar)))
+                    .frame(width: 0, height: 0)
+                
                 HStack {
                     Spacer()
-                    Button("접속") {
-                        
-                    }
                 }
             }
             .padding(8)
         }
         .padding(16)
         .frame(minWidth: 480)
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                if !expertMode {
-                    Button("고급 모드") {
-                        expertMode = true
-                    }
-                } else {
-                    Button("간단 모드") {
-                        expertMode = false
-                    }
-                }
-            }
-        }
         .navigationSubtitle(phaseTitle)
     }
 }
@@ -65,7 +55,4 @@ struct NewConnectionPhaseView: View {
     let viewModel = MainWindowViewModel()
     
     NewConnectionPhaseView(viewModel: viewModel)
-        .presentedWindowStyle(.titleBar)
-        .presentedWindowToolbarStyle(.unified)
-        .navigationTitle(NoctilucaMeta.productName)
 }

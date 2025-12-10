@@ -29,9 +29,21 @@ enum AddressBarDegradationIndicatorState {
 }
 
 enum AddressBarActionState {
-    case none
-    
     case fileTransfer(progress: Double)
+    
+    var label: String {
+        switch self {
+        case .fileTransfer(let progress):
+            return "파일 전송 중"
+        }
+    }
+    
+    var progress: Double {
+        switch self {
+        case .fileTransfer(let progress):
+            return progress
+        }
+    }
 }
 
 struct AddressBarSecurityIndicator: View {
@@ -303,8 +315,18 @@ struct AddressBarDegradationIndicator: View {
 }
 
 struct AddressBar: View {
-    let securityIndicator: AddressBarSecurityIndicatorState
-    let qualityIndicator: AddressBarQualityIndicatorState
+    let securityIndicator: AddressBarSecurityIndicatorState?
+    let qualityIndicator: AddressBarQualityIndicatorState?
+    
+    let action: AddressBarActionState?
+    
+    init(securityIndicator: AddressBarSecurityIndicatorState? = nil,
+         qualityIndicator: AddressBarQualityIndicatorState? = nil,
+         action: AddressBarActionState? = nil) {
+        self.securityIndicator = securityIndicator
+        self.qualityIndicator = qualityIndicator
+        self.action = action
+    }
     
     @State
     var draftURL: String = "private-resource-02.internal.contoso.com"
@@ -330,9 +352,21 @@ struct AddressBar: View {
             ZStack {
                 ZStack {
                     HStack(spacing: 0) {
-                        Text(draftURL)
-                            .font(.system(size: 14))
+                        if let action = self.action {
+                            HStack(spacing: 0) {
+                                Text("\(action.label) - ")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.secondary)
+                                Text(draftURL)
+                                    .font(.system(size: 10))
+                                    .opacity(labelTextOpacity)
+                            }
                             .opacity(labelTextOpacity)
+                        } else {
+                            Text(draftURL)
+                                .font(.system(size: 14))
+                                .opacity(labelTextOpacity)
+                        }
                         
                         if isFocused {
                             Spacer()
@@ -352,6 +386,16 @@ struct AddressBar: View {
             .padding(.vertical, 16)
             .padding(.horizontal, 24)
             .background(.white.opacity(isFocused ? 0.8 : 0.6))
+            .overlay(alignment: .bottom) {
+                if !isFocused, let action = self.action {
+                    GeometryReader { proxy in
+                        Rectangle()
+                            .fill(.tint)
+                            .frame(width: proxy.size.width * action.progress, height: 4)
+                            .offset(y: proxy.size.height - 4)
+                    }
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: radiusSize))
             .glassEffect(.regular.tint(.clear).interactive(isFocused), in: .rect(cornerRadius: radiusSize))
             .overlay {
@@ -390,10 +434,14 @@ struct AddressBar: View {
             }
             
             HStack {
-                AddressBarSecurityIndicator(state: securityIndicator)
+                if let securityIndicator = self.securityIndicator {
+                    AddressBarSecurityIndicator(state: securityIndicator)
+                }
                 Spacer()
-                AddressBarDegradationIndicator(state: .hardwareDecoderUnavailable)
-                AddressBarQualityIndicator(state: qualityIndicator)
+                // AddressBarDegradationIndicator(state: .hardwareDecoderUnavailable)
+                if let qualityIndicator = self.qualityIndicator {
+                    AddressBarQualityIndicator(state: qualityIndicator)
+                }
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 24)
@@ -407,7 +455,7 @@ struct AddressBar: View {
     VStack {
         VStack {
             Text("AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent)")
-            AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent)
+            AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent, action: .fileTransfer(progress: 0.5))
         }
         .zIndex(3)
         .padding(.bottom, 32)
