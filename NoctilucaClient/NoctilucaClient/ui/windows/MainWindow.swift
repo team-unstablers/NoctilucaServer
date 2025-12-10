@@ -27,8 +27,14 @@ class MainWindowViewModel: ObservableObject {
     @Published
     var connectionLog: [String] = []
     
-    var client: NoctilucaClient?
+    @Published
+    var authChallenge: AuthChallenge?
+    
+    @Published
+    var shouldDisplayAuthChallengeSheet: Bool = false
 
+    var client: NoctilucaClient?
+    
     func appendConnectionLog(_ log: String) {
         connectionLog.append(log)
     }
@@ -54,7 +60,9 @@ class MainWindowViewModel: ObservableObject {
         
         let session = try result.get()
         let client = NoctilucaClient(session)
+        
         client.loggable = self
+        client.delegate = self
         
         self.client = client
         
@@ -70,6 +78,15 @@ extension MainWindowViewModel: NoctilucaClientLoggable {
     func log(_ message: String) {
         DispatchQueue.main.async {
             self.appendConnectionLog(message)
+        }
+    }
+}
+
+extension MainWindowViewModel: NoctilucaClientDelegate {
+    func noctilucaClient(_ client: NoctilucaClient, didReceiveAuthChallenge authChallenge: AuthChallenge) {
+        DispatchQueue.main.async {
+            self.authChallenge = authChallenge
+            self.shouldDisplayAuthChallengeSheet = true
         }
     }
 }

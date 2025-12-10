@@ -11,12 +11,17 @@ protocol NoctilucaClientLoggable: AnyObject {
     func log(_ message: String)
 }
 
+protocol NoctilucaClientDelegate: AnyObject {
+    func noctilucaClient(_ client: NoctilucaClient, didReceiveAuthChallenge authChallenge: AuthChallenge)
+}
+
 class NoctilucaClient {
     private let logger = SiriusLogger(category: "NoctilucaClient", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     let session: SiriusClient
     
+    weak var delegate: NoctilucaClientDelegate?
     weak var loggable: NoctilucaClientLoggable?
-    
+
     init(_ session: SiriusClient) {
         self.session = session
         
@@ -52,6 +57,7 @@ extension NoctilucaClient: SiriusClientDelegate {
                 case .receivedAuthChallenge(let authChallenge):
                     logger.info("Received AuthChallenge: acceptedMethods=\(authChallenge.acceptedMethods), message=\(authChallenge.message ?? "nil")")
                     self.loggable?.log("서버로부터 인증 챌린지를 받았습니다: \(authChallenge.message ?? "(메시지 없음)")")
+                    self.delegate?.noctilucaClient(self, didReceiveAuthChallenge: authChallenge)
                 default:
                     break
                 }

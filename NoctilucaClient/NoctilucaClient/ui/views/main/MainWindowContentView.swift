@@ -10,10 +10,12 @@ import Foundation
 import SwiftUI
 import Combine
 
+import SiriusKitClient
+
 struct MainWindowNewConnectionPhaseContentView: View {
     @ObservedObject
     var viewModel: MainWindowViewModel
-
+    
     var body: some View {
         VStack(alignment: .leading) {
             HStack(spacing: 0) {
@@ -103,6 +105,11 @@ struct MainWindowConnectingPhaseContentView: View {
                 }
         }
         .padding(24)
+        .sheet(isPresented: $viewModel.shouldDisplayAuthChallengeSheet) {
+            if let authChallenge = viewModel.authChallenge {
+                AuthChallengeSheetView(authChallenge: authChallenge)
+            }
+        }
     }
 }
 
