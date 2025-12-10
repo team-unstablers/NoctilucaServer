@@ -11,7 +11,8 @@ import SwiftUI
 struct NoctilucaClientApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainWindow()
         }
+        
     }
 }
