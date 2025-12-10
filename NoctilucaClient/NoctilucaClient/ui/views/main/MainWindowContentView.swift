@@ -10,7 +10,7 @@ import Foundation
 import SwiftUI
 import Combine
 
-struct NewConnectionPhaseView: View {
+struct MainWindowContentView: View {
     @ObservedObject
     var viewModel: MainWindowViewModel
     
@@ -28,9 +28,9 @@ struct NewConnectionPhaseView: View {
     @ViewBuilder
     var toolbar: some View {
         VStack {
-            AddressBar()
+            AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent)
         }
-        .background(.red)
+        .frame(maxWidth: .infinity)
     }
     
     var body: some View {
@@ -46,7 +46,7 @@ struct NewConnectionPhaseView: View {
             .padding(8)
         }
         .padding(16)
-        .frame(minWidth: 480)
+        .frame(minWidth: 640)
         .navigationSubtitle(phaseTitle)
     }
 }
@@ -54,5 +54,5 @@ struct NewConnectionPhaseView: View {
 #Preview {
     let viewModel = MainWindowViewModel()
     
-    NewConnectionPhaseView(viewModel: viewModel)
+    MainWindowContentView(viewModel: viewModel)
 }

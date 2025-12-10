@@ -16,28 +16,16 @@ enum MainWindowPhase: Hashable {
 }
 
 class MainWindowViewModel: ObservableObject {
-    
+    @State
+    var phase: MainWindowPhase = .newConnection
 }
 
 struct MainWindow: View {
-    @State
-    var phase: MainWindowPhase = .newConnection
-    
     @StateObject
     var viewModel = MainWindowViewModel()
     
-    @ViewBuilder
-    private var _body: some View {
-        switch phase {
-        case .newConnection:
-            NewConnectionPhaseView(viewModel: viewModel)
-        default:
-            Text("준비 중...")
-        }
-    }
-    
     var body: some View {
-        _body
+        MainWindowContentView(viewModel: viewModel)
             .presentedWindowStyle(.titleBar)
             .presentedWindowToolbarStyle(.unified)
             .navigationTitle(NoctilucaMeta.productName)

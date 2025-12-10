@@ -347,7 +347,7 @@ struct AddressBar: View {
     var focusBorderScale: CGFloat = 1.5
     
     var body: some View {
-        let radiusSize: CGFloat = (14 + (16 * 2)) / 2
+        let radiusSize: CGFloat = (14 + (12 * 2)) / 2
         ZStack {
             ZStack {
                 ZStack {
@@ -382,8 +382,11 @@ struct AddressBar: View {
                     .autocorrectionDisabled(true)
                     .focused($isFocused)
                     .animation(.linear(duration: 0.2).delay(0.2), value: isFocused)
+                    .onSubmit {
+                        isFocused = false
+                    }
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, 12)
             .padding(.horizontal, 24)
             .background(.white.opacity(isFocused ? 0.8 : 0.6))
             .overlay(alignment: .bottom) {
