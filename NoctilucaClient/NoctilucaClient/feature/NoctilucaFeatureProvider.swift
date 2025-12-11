@@ -24,6 +24,8 @@ class NoctilucaFeatureProvider: FeatureProvider {
                        args: [String]) -> Channel {
         
         switch feature {
+        case .hidio:
+            return HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction)
         default:
             fatalError("Unsupported feature: \(feature)")
         }

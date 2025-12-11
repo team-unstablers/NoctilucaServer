@@ -63,5 +63,7 @@ extension NoctilucaClient {
         
         self.sessionID = message.sessionID
         try shiftPhase(to: .ready)
+        
+        try await self.startSession()
     }
 }

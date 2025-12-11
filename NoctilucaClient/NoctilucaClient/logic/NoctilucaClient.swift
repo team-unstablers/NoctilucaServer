@@ -78,9 +78,17 @@ class NoctilucaClient: ObservableObject {
     var sessionID: UUID?
     var mainChannel: MainChannel!
     
+    var hidioController: HIDIOController!
+    
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {
-        didSet { self.uiEvents.send(.phaseChanged(phase)) }
+        didSet {
+            Task {
+                await MainActor.run() {
+                    self.uiEvents.send(.phaseChanged(phase))
+                }
+            }
+        }
     }
 
     private var eventLoopTask: Task<Void, Never>?
