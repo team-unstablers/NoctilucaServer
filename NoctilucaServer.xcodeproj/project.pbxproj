@@ -51,6 +51,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F6379F9C2EEAAFD9004BC795 /* pam.d */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = pam.d;
+			sourceTree = "<group>";
+		};
 		F669650D2ECF26770032EF4E /* NoctilucaServer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -79,6 +84,7 @@
 		F66965022ECF26770032EF4E = {
 			isa = PBXGroup;
 			children = (
+				F6379F9C2EEAAFD9004BC795 /* pam.d */,
 				F669650D2ECF26770032EF4E /* NoctilucaServer */,
 				F66965352ECF27110032EF4E /* Frameworks */,
 				F669650C2ECF26770032EF4E /* Products */,
@@ -121,6 +127,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				F6379F9C2EEAAFD9004BC795 /* pam.d */,
 				F669650D2ECF26770032EF4E /* NoctilucaServer */,
 			);
 			name = NoctilucaServer;

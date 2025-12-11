@@ -71,7 +71,10 @@ struct PAMAuthChallengeForm: View {
     
     func performSubmit() {
         // TODO: 별도 authenticator 플러그인 인터페이스로 뺴야 함
-        handler(.confirm(method: "password", nonce: authChallenge.nonce, payload: Data()))
+        // TODO: username / password 메모리에 안 남도록 조치 필요
+        let payload = PAMAuthPayload.payload(username: username, password: password)
+        
+        handler(.confirm(method: "password", nonce: authChallenge.nonce, payload: consume payload))
     }
 }
 

@@ -115,6 +115,7 @@ class NoctilucaServer: ObservableObject {
         self.settings = try AppSettings.load()
         
         try await pluginBundleRegistry.registerBuiltinBundles()
+        await authenticator.setupAllowedEntires(self.settings.security.allowedEntries)
     }
     
     func startup() async throws {

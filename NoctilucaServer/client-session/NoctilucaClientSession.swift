@@ -137,7 +137,12 @@ class NoctilucaClientSession: Identifiable {
         self.phaseShiftAssertionTask?.cancel()
         
         self.phaseShiftAssertionTask = Task {
-            try? await Task.sleep(for: .seconds(seconds))
+            do {
+                try await Task.sleep(for: .seconds(seconds))
+            } catch {
+                // interrupted
+                return
+            }
             
             if self.phase != phase {
                 self.logger.fatal("Phase shift assertion failed: expected phase \(phase) within \(seconds) seconds, but current phase is \(self.phase)")

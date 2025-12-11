@@ -22,10 +22,11 @@ class MainWindowViewModel: ObservableObject {
     var connectionLog: [String] = []
     
     @Published
-    var authChallenge: AuthChallenge?
+    var errors: [NoctilucaClientError] = []
     
     @Published
-    var shouldDisplayAuthChallengeSheet: Bool = false
+    var shouldDisplayErrorAlert: Bool = false
+    
 
     var client: NoctilucaClient?
     
@@ -60,9 +61,6 @@ class MainWindowViewModel: ObservableObject {
         let session = try result.get()
         let client = NoctilucaClient(session)
         
-        client.loggable = self
-        client.delegate = self
-        
         self.client = client
         
         try await client.setup()
@@ -71,21 +69,35 @@ class MainWindowViewModel: ObservableObject {
         try await client.startup()
         self.appendConnectionLog("연결을 시작합니다")
     }
-}
-
-extension MainWindowViewModel: NoctilucaClientLoggable {
-    func log(_ message: String) {
-        DispatchQueue.main.async {
-            self.appendConnectionLog(message)
+    
+    func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {
+        switch phase {
+        case .initial:
+            self.phase = .connecting
+        case .awaitingAuthentication:
+            break
+        case .ready:
+            self.phase = .connected
+        case .panic:
+            break
+        case .closed:
+            self.client = nil
+            self.phase = .newConnection
         }
     }
-}
-
-extension MainWindowViewModel: NoctilucaClientDelegate {
-    func noctilucaClient(_ client: NoctilucaClient, didReceiveAuthChallenge authChallenge: AuthChallenge) {
-        DispatchQueue.main.async {
-            self.authChallenge = authChallenge
-            self.shouldDisplayAuthChallengeSheet = true
+    
+    func handleClientError(_ error: NoctilucaClientError) {
+        self.errors.append(error)
+        self.shouldDisplayErrorAlert = true
+    }
+    
+    func dismissLastError() {
+        if !self.errors.isEmpty {
+            self.errors.removeLast()
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.shouldDisplayErrorAlert = !self.errors.isEmpty
         }
     }
 }

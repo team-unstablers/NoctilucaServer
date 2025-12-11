@@ -15,6 +15,7 @@ import SiriusKitClient
 enum MainWindowPhase: Hashable {
     case newConnection
     case connecting
+    case connected
 }
 
 struct MainWindow: View {
@@ -32,5 +33,23 @@ struct MainWindow: View {
                 .presentedWindowToolbarStyle(.unified)
                 .navigationTitle(NoctilucaMeta.productName)
         }
+        .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {
+            let error = viewModel.errors.last
+            
+            return Alert(
+                title: Text("오류 발생"),
+                message: Text(error?.localizedDescription ?? "알 수 없는 오류가 발생했습니다."),
+                dismissButton: .default(Text("확인")) {
+                    viewModel.dismissLastError()
+                }
+            )
+        }
+        .setupClientPhaseHandler(client: viewModel.client) { phase in
+            viewModel.handleClientPhaseChanged(phase)
+        }
+        .setupClientErrorHandler(client: viewModel.client) { error in
+            viewModel.handleClientError(error)
+        }
+        .setupAuthChallengeHandler(client: viewModel.client)
     }
 }

@@ -57,7 +57,7 @@ class ClientRoleTransport: TransportLayer {
         // To be implemented by subclasses
     }
     
-    func disconnect() async throws {
+    func disconnect() async {
         // To be implemented by subclasses
     }
     

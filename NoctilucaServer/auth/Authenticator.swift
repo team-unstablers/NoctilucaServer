@@ -34,6 +34,14 @@ class Authenticator {
         self.plugins.contains { type(of: $0).supportedMethods.contains(method) }
     }
     
+    func setupAllowedEntires(_ entries: [AuthEntry]) async {
+        for plugin in self.plugins {
+            for entry in entries.filter({ type(of: plugin).supportedMethods.contains($0.method) }) {
+                try? await plugin.allow(entry)
+            }
+        }
+    }
+    
     func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: consuming Data) async -> Result<uid_t, AuthError> {
         let LOG_TAG = "authenticate(using: \(method))"
         let supportedPlugins = self.plugins.filter { type(of: $0).supportedMethods.contains(method) }

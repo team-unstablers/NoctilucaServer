@@ -9,6 +9,7 @@ import Foundation
 
 public protocol SiriusClientDelegate: AnyObject {
     func siriusClient(_ client: SiriusClient, didCreateMainChannel mainChannel: MainChannel)
+    func siriusClientDidCloseTransport(_ client: SiriusClient)
 }
 
 public class SiriusClient: SiriusSession {
@@ -45,8 +46,8 @@ public class SiriusClient: SiriusSession {
         try await transport.connect()
     }
     
-    public func shutdown() async throws {
-        try await transport.disconnect()
+    public func shutdown() async {
+        await transport.disconnect()
     }
 }
 
@@ -67,6 +68,7 @@ extension SiriusClient: ClientRoleTransportDelegate {
     
     func clientTransportDidClose(_ transport: ClientRoleTransport) async {
         logger.info("SiriusClient with ID: \(self.id.uuidString) transport closed.")
+        delegate?.siriusClientDidCloseTransport(self)
     }
     
     func clientTransport(_ transport: ClientRoleTransport, didEncounterError error: any Error) async {
