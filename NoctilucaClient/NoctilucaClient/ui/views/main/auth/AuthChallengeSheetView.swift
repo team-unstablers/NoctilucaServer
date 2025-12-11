@@ -8,8 +8,18 @@
 import SwiftUI
 import SiriusKitClient
 
+enum AuthChallengeSheetAction {
+    case confirm(method: String, nonce: Data, payload: Data)
+    case cancel
+}
+
+typealias AuthChallengeSheetActionHandler = (AuthChallengeSheetAction) -> Void
+
 // FIXME
 struct PAMAuthChallengeForm: View {
+    let authChallenge: AuthChallenge
+    let handler: AuthChallengeSheetActionHandler
+    
     @State
     var username: String = ""
     
@@ -38,6 +48,9 @@ struct PAMAuthChallengeForm: View {
                 .padding(.bottom, 6)
             SecureField("비밀번호 입력", text: $password)
                 .textFieldStyle(.roundedBorder)
+                .onSubmit {
+                    performSubmit()
+                }
         }
         .padding(12)
         .background(Color.gray.mix(with: .white, by: 0.9))
@@ -47,16 +60,24 @@ struct PAMAuthChallengeForm: View {
         HStack {
             Spacer()
             Button("취소", role: .cancel) {
+                handler(.cancel)
             }
+            .keyboardShortcut(.escape)
             Button("확인", role: .confirm) {
+                performSubmit()
             }
         }
+    }
+    
+    func performSubmit() {
+        // TODO: 별도 authenticator 플러그인 인터페이스로 뺴야 함
+        handler(.confirm(method: "password", nonce: authChallenge.nonce, payload: Data()))
     }
 }
 
 struct AuthChallengeSheetView: View {
     let authChallenge: AuthChallenge
-    
+    let handler: AuthChallengeSheetActionHandler
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -69,7 +90,10 @@ struct AuthChallengeSheetView: View {
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 12)
             
-            PAMAuthChallengeForm()
+            PAMAuthChallengeForm(
+                authChallenge: authChallenge,
+                handler: handler
+            )
         }
         .padding(24)
     }
@@ -80,5 +104,7 @@ struct AuthChallengeSheetView: View {
                                       nonce: Data(),
                                       message: "제한 구역입니다")
     
-    AuthChallengeSheetView(authChallenge: authChallenge)
+    AuthChallengeSheetView(authChallenge: authChallenge) { action in
+        print(action)
+    }
 }

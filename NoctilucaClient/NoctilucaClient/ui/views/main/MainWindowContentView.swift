@@ -39,6 +39,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -107,7 +108,17 @@ struct MainWindowConnectingPhaseContentView: View {
         .padding(24)
         .sheet(isPresented: $viewModel.shouldDisplayAuthChallengeSheet) {
             if let authChallenge = viewModel.authChallenge {
-                AuthChallengeSheetView(authChallenge: authChallenge)
+                AuthChallengeSheetView(authChallenge: authChallenge) { action in
+                    viewModel.shouldDisplayAuthChallengeSheet = false
+                    
+                    switch action {
+                    case .cancel:
+                        return
+                        
+                    case .confirm(let method, let nonce, let payload):
+                        print(method, nonce, payload)
+                    }
+                }
             }
         }
     }
