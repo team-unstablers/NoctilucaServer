@@ -6,6 +6,8 @@
 //
 import Foundation
 
+import AVFoundation
+
 import SwiftUI
 import Combine
 
@@ -27,7 +29,6 @@ class MainWindowViewModel: ObservableObject {
     @Published
     var shouldDisplayErrorAlert: Bool = false
     
-
     var client: NoctilucaClient?
     
     func appendConnectionLog(_ log: String) {

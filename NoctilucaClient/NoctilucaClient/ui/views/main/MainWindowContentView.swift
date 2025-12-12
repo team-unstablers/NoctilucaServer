@@ -10,6 +10,8 @@ import Foundation
 import SwiftUI
 import Combine
 
+import AVFoundation
+
 import SiriusKitClient
 
 struct MainWindowNewConnectionPhaseContentView: View {
@@ -109,6 +111,34 @@ struct MainWindowConnectingPhaseContentView: View {
     }
 }
 
+struct MainWindowMainPhaseContentView: View {
+    @ObservedObject
+    var viewModel: MainWindowViewModel
+    
+    @State
+    var displayLayer: AVSampleBufferDisplayLayer? = nil
+    
+    var body: some View {
+        VStack {
+            if let displayLayer = displayLayer {
+                SampleBufferDisplayView(displayLayer: displayLayer)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .if(viewModel.client != nil) {
+            $0.onReceive(viewModel.client!.uiEvents) { event in
+                guard case .FIXME_projectionStarted(let projectionSession) = event else {
+                    return
+                }
+                
+                self.displayLayer = projectionSession.displayLayer
+            }
+        }
+    }
+    
+}
+
 
 struct MainWindowContentView: View {
     @ObservedObject
@@ -126,6 +156,8 @@ struct MainWindowContentView: View {
             MainWindowNewConnectionPhaseContentView(viewModel: viewModel)
         case .connecting:
             MainWindowConnectingPhaseContentView(viewModel: viewModel)
+        case .connected:
+            MainWindowMainPhaseContentView(viewModel: viewModel)
         default:
             EmptyView()
         }

@@ -9,7 +9,8 @@ import Foundation
 import SwiftProtobuf
 
 public extension MessageOpcode {
-    static let frameDataHeader: MessageOpcode = MessageOpcode(rawValue: 0x8001)
+    static let frameData: MessageOpcode = MessageOpcode(rawValue: 0x8001)
+    static let streamDescription: MessageOpcode = MessageOpcode(rawValue: 0x8002)
 }
 
 public struct FrameDataHeader: SiriusMessage {
@@ -20,8 +21,7 @@ public struct FrameDataHeader: SiriusMessage {
     public let presentationTimestamp: UInt64
     public let isKeyFrame: Bool
 
-
-    init(frameID: UInt64, frameLength: UInt32, presentationTimestamp: UInt64, isKeyFrame: Bool) {
+    public init(frameID: UInt64, frameLength: UInt32, presentationTimestamp: UInt64, isKeyFrame: Bool) {
         self.frameID = frameID
         self.frameLength = frameLength
         self.presentationTimestamp = presentationTimestamp
@@ -47,3 +47,9 @@ public struct FrameDataHeader: SiriusMessage {
     }
 }
 
+public extension FrameDataHeader {
+    func serialize() -> Data {
+        let protobufMessage = self.toProtobufMessage()
+        return try! protobufMessage.serializedData()
+    }
+}

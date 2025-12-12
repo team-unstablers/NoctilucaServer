@@ -61,6 +61,7 @@ public class ChannelManager {
     public func openChannel(for feature: SiriusFeature, identifier: ChannelIdentifier, args: [String] = []) async throws -> Channel {
         guard session.featureProvider.supports(feature) else {
             // 이거 에러가 너무 제너릭하지 않아?
+            fatalError("Feature \(feature) is not supported by the session's feature provider")
             throw ChannelManagerError.channelOpenFailed
         }
         
@@ -81,9 +82,13 @@ public class ChannelManager {
                 args: args
             )
             channel.session = self.session
+            
+            print("Opened channel \(channel.identifier) for feature \(feature)")
 
             try self.registerChannel(channel)
             
+            print("Registered channel \(channel.identifier)")
+
             return channel
         }
     }
@@ -121,6 +126,7 @@ public class ChannelManager {
                 direction: .remote,
                 args: request.args
             )
+            channel.session = self.session
                 
             try self.registerChannel(channel)
             return true

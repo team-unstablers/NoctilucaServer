@@ -18,7 +18,7 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     
     private let logger = NoctilucaLogger(category: "VTVideoEncoder")
     private let workerQueue: DispatchQueue
-    private let callbackQueue: DispatchQueue
+    internal let callbackQueue: DispatchQueue
     
     private var configuration: VideoEncoderConfiguration?
     private var compressionSession: VTCompressionSession?
@@ -187,7 +187,7 @@ private extension VTVideoEncoder {
             let bitrate = max(Int(quality.bitrateKbps), 0) * 1000
             if bitrate > 0 {
                 setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: bitrate))
-                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: bitrate), NSNumber(value: 1)])
+                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: bitrate), NSNumber(value: 1)] as NSArray)
             }
             
         case .variableBitrate(let quality):
@@ -197,7 +197,7 @@ private extension VTVideoEncoder {
                 setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: target))
             }
             if maxRate > 0 {
-                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: maxRate), NSNumber(value: 1)])
+                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: maxRate), NSNumber(value: 1)] as NSArray)
             }
             
         case .fixedQuality(let quality):
@@ -403,7 +403,7 @@ private func compressionOutputCallback(
     
     let header = FrameDataHeader(
         frameID: context.frameID,
-        length: UInt32(data.count),
+        frameLength: UInt32(data.count),
         presentationTimestamp: encoder.microseconds(from: context.pts),
         isKeyFrame: isKeyFrame
     )

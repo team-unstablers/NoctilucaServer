@@ -41,7 +41,7 @@ public struct EntireDisplayProjectionSource: SiriusMessage {
     public let displayID: Int32
 
 
-    init(displayID: Int32) {
+    public init(displayID: Int32) {
         self.displayID = displayID
     }
 
@@ -140,9 +140,9 @@ public struct ProjectionSource: SiriusMessage {
 
     public let value: OneOf_Value
 
-    init(flags: ProjectionSourceFlags, value: OneOf_Value) {
-        self.flags = flags
+    public init(value: OneOf_Value, flags: ProjectionSourceFlags) {
         self.value = value
+        self.flags = flags
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionSource) throws {

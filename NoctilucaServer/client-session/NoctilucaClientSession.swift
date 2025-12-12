@@ -105,7 +105,7 @@ class NoctilucaClientSession: Identifiable {
             await self.close()
         } catch {
             // 예상치 못한 오류
-            await self.panic("Error in mainChannelEventLoop: \(error.localizedDescription)")
+            await self.panic("Error in mainChannelEventLoop: \(error)")
         }
     }
     
@@ -124,6 +124,11 @@ class NoctilucaClientSession: Identifiable {
         guard self.phase.allowedTransitions.contains(newPhase) else {
             logger.error("shiftPhase(): Phase transition from \(self.phase) to \(newPhase) is not allowed")
             throw NoctilucaClientSessionError.invalidPhase
+        }
+        
+        if newPhase == .ready {
+            // 인증 완료된 상태이므로 추가 채널을 만들 수 있도록 한다.
+            self.session.shouldAcceptChannelCreation = true
         }
         
         self.phase = newPhase

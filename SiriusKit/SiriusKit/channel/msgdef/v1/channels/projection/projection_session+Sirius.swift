@@ -26,7 +26,7 @@ public struct ProjectionRequest: SiriusMessage {
     public let preferredCodecs: [Codec]
 
 
-    init(identifier: UUID, viewport: ProjectionSource, preferredCodecs: [Codec]) {
+    public init(identifier: UUID, viewport: ProjectionSource, preferredCodecs: [Codec]) {
         self.identifier = identifier
         self.viewport = viewport
         self.preferredCodecs = preferredCodecs
@@ -116,35 +116,29 @@ public struct ProjectionPerformanceReport: SiriusMessage {
 public struct ProjectionSessionCreatedEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreatedEvent
     
-    public let identifier: UUID?
-    public let source: ProjectionSource?
-    public let codec: Codec?
+    public let identifier: UUID
+    public let source: ProjectionSource
+    public let codec: Codec
 
 
-    init(identifier: UUID?, source: ProjectionSource?, codec: Codec?) {
+    public init(identifier: UUID, source: ProjectionSource, codec: Codec) {
         self.identifier = identifier
         self.source = source
         self.codec = codec
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreatedEvent) throws {
-        self.identifier = protobufMessage.hasIdentifier ? UUID(msgdef: protobufMessage.identifier) : nil
-        self.source = protobufMessage.hasSource ? try ProjectionSource(from: protobufMessage.source) : nil
-        self.codec = protobufMessage.hasCodec ? try Codec(from: protobufMessage.codec) : nil
+        self.identifier = UUID(msgdef: protobufMessage.identifier)
+        self.source = try ProjectionSource(from: protobufMessage.source)
+        self.codec = try Codec(from: protobufMessage.codec)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        if let val = self.identifier {
-            message.identifier = val.asMsgDef()
-        }
-        if let val = self.source {
-            message.source = val.toProtobufMessage()
-        }
-        if let val = self.codec {
-            message.codec = val.toProtobufMessage()
-        }
+        message.identifier = self.identifier.asMsgDef()
+        message.source = self.source.toProtobufMessage()
+        message.codec = self.codec.toProtobufMessage()
 
         return message
     }
@@ -153,33 +147,29 @@ public struct ProjectionSessionCreatedEvent: SiriusMessage {
 public struct ProjectionSessionCreationFailedEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEvent
     
-    public let identifier: UUID?
+    public let identifier: UUID
     public let reason: Int32
-    public let message: String?
+    public let message: String
 
 
-    init(identifier: UUID?, reason: Int32, message: String?) {
+    public init(identifier: UUID, reason: Int32, message: String) {
         self.identifier = identifier
         self.reason = reason
         self.message = message
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEvent) throws {
-        self.identifier = protobufMessage.hasIdentifier ? UUID(msgdef: protobufMessage.identifier) : nil
+        self.identifier = UUID(msgdef: protobufMessage.identifier)
         self.reason = protobufMessage.reason
-        self.message = protobufMessage.hasMessage ? protobufMessage.message : nil
+        self.message = protobufMessage.message
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        if let val = self.identifier {
-            message.identifier = val.asMsgDef()
-        }
+        message.identifier = self.identifier.asMsgDef()
         message.reason = self.reason
-        if let val = self.message {
-            message.message = val
-        }
+        message.message = self.message
 
         return message
     }

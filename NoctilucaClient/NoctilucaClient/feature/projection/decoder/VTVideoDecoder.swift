@@ -20,11 +20,11 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
     
     private let logger = SiriusLogger(category: "VTVideoDecoder", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     private let workerQueue: DispatchQueue
-    private let callbackQueue: DispatchQueue
+    internal let callbackQueue: DispatchQueue
     
     private var configuration: VideoDecoderConfiguration?
     private var decompressionSession: VTDecompressionSession?
-    private var currentFormatDescription: CMFormatDescription?
+    internal var currentFormatDescription: CMFormatDescription?
     private var isStarted = false
     
     override init() {
@@ -130,7 +130,7 @@ private extension VTVideoDecoder {
         var specification: [CFString: Any] = [:]
         if let hw = hardwareAcceleration(from: configuration.parsedOptions) {
             specification[kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder] = hw
-            specification[kVTVideoDecoderSpecification_AllowHardwareAcceleratedVideoDecoder] = hw
+            // specification[kVTVideoDecoderSpecification_AllowHardwareAcceleratedVideoDecoder] = hw
         }
         
         var attributes: [CFString: Any] = [:]

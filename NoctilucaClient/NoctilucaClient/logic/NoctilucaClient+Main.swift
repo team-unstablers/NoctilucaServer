@@ -22,9 +22,28 @@ extension NoctilucaClient {
         self.logger.info("initializeHIDIO(): created HIDIOController")
     }
     
+    func initializeProjection() async throws {
+        guard let channel = try await session.channelManager.openChannel(for: .projection, identifier: ChannelIdentifier()) as? ProjectionChannel else {
+            // FIXME
+            return
+        }
+        
+        self.projectionChannel = channel
+        self.logger.info("initializeProjection(): created ProjectionChannel")
+        
+        let session = try await channel.createSession()
+        self.logger.info("initializeProjection(): created sample session")
+        
+        await MainActor.run {
+            self.uiEvents.send(.FIXME_projectionStarted(session))
+        }
+    }
+    
+    
     func startSession() async throws {
         try assertPhase(expected: .ready)
         
-        try await initializeHIDIO()
+        // try await initializeHIDIO()
+        try await initializeProjection()
     }
 }

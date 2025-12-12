@@ -65,6 +65,8 @@ enum NoctilucaClientUIEvent: Sendable {
     case receivedAuthResponse(AuthResponse)
     case phaseChanged(NoctilucaClientPhase)
     case errorOccurred(NoctilucaClientError)
+    
+    case FIXME_projectionStarted(ProjectionSession)
 }
 
 class NoctilucaClient: ObservableObject {
@@ -79,7 +81,8 @@ class NoctilucaClient: ObservableObject {
     var mainChannel: MainChannel!
     
     var hidioController: HIDIOController!
-    
+    var projectionChannel: ProjectionChannel!
+
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {
         didSet {
@@ -151,6 +154,11 @@ class NoctilucaClient: ObservableObject {
         guard self.phase.allowedTransitions.contains(newPhase) else {
             logger.error("shiftPhase(): Phase transition from \(self.phase) to \(newPhase) is not allowed")
             throw NoctilucaClientError.invalidPhase
+        }
+        
+        if newPhase == .ready {
+            // 인증 완료된 상태이므로 추가 채널을 만들 수 있도록 한다.
+            self.session.shouldAcceptChannelCreation = true
         }
         
         self.phase = newPhase

@@ -43,8 +43,7 @@ public struct AutoQuality: SiriusMessage {
     
     public let mode: AutoQualityMode
 
-
-    init(mode: AutoQualityMode) {
+    public init(mode: AutoQualityMode) {
         self.mode = mode
     }
 
@@ -66,8 +65,7 @@ public struct ConstantBitrateQuality: SiriusMessage {
     
     public let bitrateKbps: Int32
 
-
-    init(bitrateKbps: Int32) {
+    public init(bitrateKbps: Int32) {
         self.bitrateKbps = bitrateKbps
     }
 
@@ -177,7 +175,7 @@ public struct Codec: SiriusMessage {
 
     public let quality: OneOf_Quality
 
-    init(fourCC: UInt32, frameRate: Float?, width: UInt32?, height: UInt32?, options: String?, quality: OneOf_Quality) {
+    public init(fourCC: UInt32, frameRate: Float?, width: UInt32?, height: UInt32?, options: String?, quality: OneOf_Quality) {
         self.fourCC = fourCC
         self.frameRate = frameRate
         self.width = width
