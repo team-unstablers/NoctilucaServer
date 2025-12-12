@@ -21,32 +21,28 @@ public extension MessageOpcode {
 public struct ProjectionRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ProjectionRequest
     
-    public let identifier: UUID?
-    public let viewport: ProjectionSource?
+    public let identifier: UUID
+    public let viewport: ProjectionSource
     public let preferredCodecs: [Codec]
 
 
-    init(identifier: UUID?, viewport: ProjectionSource?, preferredCodecs: [Codec]) {
+    init(identifier: UUID, viewport: ProjectionSource, preferredCodecs: [Codec]) {
         self.identifier = identifier
         self.viewport = viewport
         self.preferredCodecs = preferredCodecs
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionRequest) throws {
-        self.identifier = protobufMessage.hasIdentifier ? UUID(msgdef: protobufMessage.identifier) : nil
-        self.viewport = protobufMessage.hasViewport ? try ProjectionSource(from: protobufMessage.viewport) : nil
+        self.identifier = UUID(msgdef: protobufMessage.identifier)
+        self.viewport = try ProjectionSource(from: protobufMessage.viewport)
         self.preferredCodecs = try protobufMessage.preferredCodecs.map { try Codec(from: $0) }
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        if let val = self.identifier {
-            message.identifier = val.asMsgDef()
-        }
-        if let val = self.viewport {
-            message.viewport = val.toProtobufMessage()
-        }
+        message.identifier = self.identifier.asMsgDef()
+        message.viewport = self.viewport.toProtobufMessage()
         message.preferredCodecs = self.preferredCodecs.map { $0.toProtobufMessage() }
 
         return message

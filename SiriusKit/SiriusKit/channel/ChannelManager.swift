@@ -51,6 +51,7 @@ public class ChannelManager {
             throw error
         case .success(let stream):
             let mainChannel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
+            mainChannel.session = self.session
             self.mainChannel = mainChannel
             
             return
@@ -79,7 +80,8 @@ public class ChannelManager {
                 direction: .local,
                 args: args
             )
-            
+            channel.session = self.session
+
             try self.registerChannel(channel)
             
             return channel
@@ -91,8 +93,9 @@ public class ChannelManager {
             // 첫번째 스트림은 반드시 메인 채널로 사용한다
             // 프로토콜 상 약속이므로 ChannelOpenTask를 사용할 필요가 없다
             let channel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
-            self.mainChannel = channel
+            channel.session = self.session
             
+            self.mainChannel = channel
             return
         }
         

@@ -32,6 +32,7 @@ open class Channel {
     private static let sharedLogger = SiriusLogger(category: "Channel")
     private var logger: SiriusLogger { Self.sharedLogger }
     
+    internal weak var session: (any SiriusSession)?
     let stream: Stream
     
     private var streamEventLoopTask: Task<Void, any Error>? = nil
