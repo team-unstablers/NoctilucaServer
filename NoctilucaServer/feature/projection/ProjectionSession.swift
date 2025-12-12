@@ -37,8 +37,8 @@ class ProjectionSession: Identifiable {
         try self.encoder.prepare(with: .init(codec: Codec(
             fourCC: UInt32(0x41564331).bigEndian, // 'AVC1',
             frameRate: 60,
-            width: 2880,
-            height: 2560,
+            width: 1920,
+            height: 1080,
             options: "hardware-acceleration: 'true'",
             quality: .auto(AutoQuality(mode: .balancedPriority))
         )))
