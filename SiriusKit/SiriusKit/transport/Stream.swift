@@ -11,6 +11,7 @@ typealias StreamIdentifier = UInt64
 
 enum StreamError: Error {
     case notImplemented
+    case endOfStream
 }
 
 enum StreamEvent {

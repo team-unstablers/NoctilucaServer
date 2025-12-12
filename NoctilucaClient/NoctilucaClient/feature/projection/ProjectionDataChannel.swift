@@ -44,7 +44,7 @@ class ProjectionDataChannel: Channel {
                 offset += (4 + Int(size))
             }
             
-            self.formatDescription = try CMFormatDescription(h264ParameterSets: parameters)
+            self.formatDescription = try CMFormatDescription(hevcParameterSets: parameters)
             return
         }
         

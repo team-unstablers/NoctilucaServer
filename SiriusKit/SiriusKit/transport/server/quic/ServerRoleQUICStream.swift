@@ -110,7 +110,7 @@ class ServerRoleQUICStream: Stream {
                     // print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
                     cont.resume(returning: .success(content))
                 } else {
-                    fatalError("???")
+                    cont.resume(returning: .failure(StreamError.endOfStream))
                 }
             }
         }

@@ -89,7 +89,7 @@ public struct VariableBitrateQuality: SiriusMessage {
     public let targetBitrateKbps: Int32
 
 
-    init(maxBitrateKbps: Int32, targetBitrateKbps: Int32) {
+    public init(maxBitrateKbps: Int32, targetBitrateKbps: Int32) {
         self.maxBitrateKbps = maxBitrateKbps
         self.targetBitrateKbps = targetBitrateKbps
     }

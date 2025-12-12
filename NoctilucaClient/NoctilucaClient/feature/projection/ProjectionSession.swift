@@ -42,12 +42,12 @@ class ProjectionSession: Identifiable {
     func prepare() async throws {
         try self.decoder.prepare(with: .init(
             codec: Codec(
-                fourCC: UInt32(0x41564331).bigEndian, // 'AVC1',
+                fourCC: UInt32(0x48564331).bigEndian, // 'HVC1',
                 frameRate: 60,
                 width: 1920,
                 height: 1080,
                 options: "hardware-acceleration: 'true'",
-                quality: .auto(AutoQuality(mode: .balancedPriority))
+                quality: .variableBitrate(VariableBitrateQuality(maxBitrateKbps: 2400, targetBitrateKbps: 1200))
             )
         ))
     }
@@ -126,7 +126,7 @@ private extension ProjectionSession {
         }
         
         let anchor = CMClockGetTime(hostClock)
-        let anchorStatus = CMTimebaseSetRateAndAnchorTime(timebase, 1.0, anchor, anchor)
+        let anchorStatus = CMTimebaseSetRateAndAnchorTime(timebase, rate: 1.0, anchorTime: anchor, immediateSourceTime: anchor)
         if anchorStatus != noErr {
             logger.error("Failed to anchor render timebase, status=\(anchorStatus)")
         }
@@ -158,7 +158,7 @@ private extension ProjectionSession {
         
         let offset = CMTimeSubtract(pts, basePTS)
         let targetTimescale: Int32 = baseRender.timescale != 0 ? baseRender.timescale : 1_000_000
-        let scaledOffset = CMTimeConvertScale(offset, targetTimescale, method: .default)
+        let scaledOffset = CMTimeConvertScale(offset, timescale: targetTimescale, method: .default)
         
         return CMTimeAdd(baseRender, scaledOffset)
     }
