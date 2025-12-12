@@ -1,79 +1,83 @@
-//
-//  VideoEncoder.swift
-//  NoctilucaServer
-//
-//  Created by Gyuhwan Park on 12/12/25.
-//
-
 import Foundation
 import AVFoundation
 import VideoToolbox
-import SiriusKit
+import SiriusKitClient
 
-struct VideoEncoderConfiguration {
-    /// Sirius codec configuration from Projection channel.
+struct VideoDecoderConfiguration {
     let codec: Codec
-    /// Optional source format description to seed the compression session.
-    let inputFormatDescription: CMFormatDescription?
-    /// Parsed options from `codec.options`.
     let parsedOptions: [String: String]
+    let preferredOutputPixelFormat: OSType?
+    let initialFormatDescription: CMFormatDescription?
     
-    init(codec: Codec, inputFormatDescription: CMFormatDescription? = nil) {
+    init(
+        codec: Codec,
+        preferredOutputPixelFormat: OSType? = nil,
+        initialFormatDescription: CMFormatDescription? = nil
+    ) {
         self.codec = codec
-        self.inputFormatDescription = inputFormatDescription
+        self.preferredOutputPixelFormat = preferredOutputPixelFormat
+        self.initialFormatDescription = initialFormatDescription
         self.parsedOptions = CodecOptionsParser.parse(optionsString: codec.options)
     }
 }
 
-struct EncodedFrame {
+struct EncodedFrameInput {
     let header: FrameDataHeader
     let data: Data
     let formatDescription: CMFormatDescription?
 }
 
-protocol VideoEncoderDelegate: AnyObject {
-    func videoEncoder(_ encoder: VideoEncoder, didEncode frame: EncodedFrame)
-    func videoEncoder(_ encoder: VideoEncoder, didFailWith error: Error)
+struct DecodedFrame {
+    let pixelBuffer: CVPixelBuffer
+    let pts: CMTime
+    let isKeyFrame: Bool
+    let formatDescription: CMFormatDescription
 }
 
-protocol VideoEncoder: AnyObject {
-    var delegate: VideoEncoderDelegate? { get set }
+protocol VideoDecoderDelegate: AnyObject {
+    func videoDecoder(_ decoder: VideoDecoder, didDecode frame: DecodedFrame)
+    func videoDecoder(_ decoder: VideoDecoder, didFailWith error: Error)
+    func videoDecoder(_ decoder: VideoDecoder, didDropFrameWithID frameID: UInt64, reason: String)
+}
+
+protocol VideoDecoder: AnyObject {
+    var delegate: VideoDecoderDelegate? { get set }
     
-    func prepare(with configuration: VideoEncoderConfiguration) throws
+    func prepare(with configuration: VideoDecoderConfiguration) throws
     func start() throws
-    func encode(frameID: UInt64, sampleBuffer: CMSampleBuffer) throws
+    func decode(_ frame: EncodedFrameInput) throws
     func flush() throws
     func stop() throws
 }
 
-enum VideoEncoderError: LocalizedError {
+enum VideoDecoderError: LocalizedError {
     case notPrepared
     case alreadyPrepared
     case notStarted
     case unsupportedCodec(String)
-    case invalidDimensions
-    case invalidSampleBuffer
-    case compressionSessionFailed(OSStatus)
-    case payloadTooLarge(Int)
+    case invalidFormatDescription
+    case invalidBitstream
+    case payloadLengthMismatch(expected: Int, actual: Int)
+    case decompressionSessionFailed(OSStatus)
     
     var errorDescription: String? {
         switch self {
         case .notPrepared:
-            return "VideoEncoder has not been prepared."
+            return "VideoDecoder has not been prepared."
         case .alreadyPrepared:
-            return "VideoEncoder has already been prepared."
+            return "VideoDecoder has already been prepared."
         case .notStarted:
-            return "VideoEncoder has not been started."
+            return "VideoDecoder has not been started."
         case .unsupportedCodec(let fourCC):
             return "Unsupported codec FourCC: \(fourCC)"
-        case .invalidDimensions:
-            return "Invalid dimensions for compression session."
-        case .invalidSampleBuffer:
-            return "Sample buffer is invalid."
-        case .compressionSessionFailed(let status):
-            return "Compression session failed with status: \(status)"
-        case .payloadTooLarge(let length):
-            return "Encoded payload too large: \(length) bytes"
+        case .invalidFormatDescription:
+            return "Invalid or missing format description."
+        case .invalidBitstream:
+            return "Invalid bitstream."
+        case .payloadLengthMismatch(let expected, let actual):
+            return "Payload length mismatch. expected=\(expected) actual=\(actual)"
+        case .decompressionSessionFailed(let status):
+            return "Decompression session failed with status: \(status)"
         }
     }
 }
