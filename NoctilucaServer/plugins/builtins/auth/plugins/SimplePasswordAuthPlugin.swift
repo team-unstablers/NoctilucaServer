@@ -5,8 +5,6 @@
 //  Created by Gyuhwan Park on 12/5/25.
 //
 
-#if DEBUG
-
 import Foundation
 
 import libbcrypt
@@ -113,4 +111,3 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
     }
 }
 
-#endif

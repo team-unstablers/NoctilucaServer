@@ -25,7 +25,7 @@ class ProjectionSession: Identifiable {
         self.id = id
         self.dataChannel = dataChannel
         
-        self.recorder = AVFoundationScreenRecorder(queue: .global(qos: .userInteractive))
+        self.recorder = ScreenCaptureKitScreenRecorder(queue: .global(qos: .userInteractive))
         self.encoder = VTVideoEncoder()
         
         self.recorder.delegate = self
