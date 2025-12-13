@@ -54,12 +54,11 @@ class ProjectionChannel: Channel {
                                        flags: .none),
             preferredCodecs: [
                 Codec(
-                    fourCC: UInt32(0x41564331).bigEndian, // 'AVC1',
-                    frameRate: 60,
-                    width: 1280,
-                    height: 720,
-                    options: "",
-                    quality: .auto(AutoQuality(mode: .balancedPriority))
+                    fourCC: .hvc1, // 'HVC1',
+                    frameRate: 30,
+                    size: CGSize(width: 1920, height: 1080),
+                    options: "hardware-acceleration: 'true'",
+                    quality: .variableBitrate(targetBitrateKbps: 1200, maxBitrateKbps: 2400)
                 )
             ]
         ))

@@ -8,6 +8,7 @@
 import Foundation
 
 public protocol ClientSessionDelegate: AnyObject {
+    func clientSessionDidCloseTransport(_ session: ClientSession)
     func clientSessionDidCreateMainChannel(_ session: ClientSession, mainChannel: MainChannel)
 }
 
@@ -59,6 +60,7 @@ extension ClientSession: ServerRoleClientTransportDelegate {
     }
     
     func clientTransportDidClose(_ transport: ServerRoleClientTransport) async {
+        self.delegate?.clientSessionDidCloseTransport(self)
     }
     
     func clientTransport(_ transport: ServerRoleClientTransport, didEncounterError error: any Error) async {

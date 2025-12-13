@@ -232,22 +232,13 @@ private extension VTVideoDecoder {
 
 private extension VTVideoDecoder {
     func codecType(for codec: Codec) throws -> (CMVideoCodecType, String) {
-        let fourCCValue = codec.fourCC.bigEndian
-        let chars: [UInt8] = [
-            UInt8((fourCCValue >> 24) & 0xFF),
-            UInt8((fourCCValue >> 16) & 0xFF),
-            UInt8((fourCCValue >> 8) & 0xFF),
-            UInt8(fourCCValue & 0xFF),
-        ]
-        
-        let fourCCString = String(bytes: chars, encoding: .ascii)?.uppercased() ?? ""
-        switch fourCCString {
-        case "AVC1":
-            return (kCMVideoCodecType_H264, fourCCString)
-        case "HVC1":
-            return (kCMVideoCodecType_HEVC, fourCCString)
+        switch codec.fourCC {
+        case .avc1:
+            return (kCMVideoCodecType_H264, "AVC1")
+        case .hvc1:
+            return (kCMVideoCodecType_HEVC, "HVC1")
         default:
-            throw VideoDecoderError.unsupportedCodec(fourCCString)
+            throw VideoDecoderError.unsupportedCodec(codec.fourCC.stringRepresentation)
         }
     }
     

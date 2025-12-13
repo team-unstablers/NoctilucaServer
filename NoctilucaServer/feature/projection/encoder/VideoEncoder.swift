@@ -88,9 +88,3 @@ enum CodecOptionKey: String {
     case level = "level"
 }
  */
-
-enum CodecColorFormat: String {
-    case yuv420 = "yuv420"
-    case yuv444 = "yuv444"
-}
-

@@ -178,6 +178,13 @@ class NoctilucaClientSession: Identifiable {
         
         self.phase = .closed
         
+        // FIXME
+        for channel in self.session.channelManager.channels.values {
+            if channel is ProjectionChannel {
+                await (channel as! ProjectionChannel).destroy()
+            }
+        }
+        
         self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
         
@@ -186,6 +193,12 @@ class NoctilucaClientSession: Identifiable {
 }
 
 extension NoctilucaClientSession: ClientSessionDelegate {
+    func clientSessionDidCloseTransport(_ session: SiriusKit.ClientSession) {
+        Task {
+            await self.close()
+        }
+    }
+    
     func clientSessionDidCreateMainChannel(_ session: SiriusKit.ClientSession, mainChannel: MainChannel) {
         self.mainChannel = mainChannel
         self.eventLoopTask = Task {

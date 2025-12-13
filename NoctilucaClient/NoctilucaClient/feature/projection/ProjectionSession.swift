@@ -42,14 +42,13 @@ class ProjectionSession: Identifiable {
     func prepare() async throws {
         try self.decoder.prepare(with: .init(
             codec: Codec(
-                fourCC: UInt32(0x48564331).bigEndian, // 'HVC1',
-                frameRate: 60,
-                width: 1920,
-                height: 1080,
+                fourCC: .hvc1, // 'HVC1',
+                frameRate: 30,
+                size: CGSize(width: 1920, height: 1080),
                 options: "hardware-acceleration: 'true'",
-                quality: .variableBitrate(VariableBitrateQuality(maxBitrateKbps: 2400, targetBitrateKbps: 1200))
+                quality: .variableBitrate(targetBitrateKbps: 1200, maxBitrateKbps: 2400))
             )
-        ))
+        )
     }
     
     func start() async throws {

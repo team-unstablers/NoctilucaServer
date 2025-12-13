@@ -111,10 +111,12 @@ private extension VTVideoEncoder {
             throw VideoEncoderError.invalidSampleBuffer
         }
         
-        let (codecType, fourCCString) = try codecType(for: configuration.codec)
-        let pixelBufferFormat = requestedPixelFormat(from: configuration.parsedOptions)
+        let codecSpecification = configuration.specification
         
-        let size = configuration.codec.size ??
+        let codecType = try codecSpecification.fourCC.codecType()
+        let pixelBufferFormat = codecSpecification.cvPixelFormat
+        
+        let size = configuration.desiredSize ??
             CGSize(width: CGFloat(CVPixelBufferGetWidth(imageBuffer)),
                    height: CGFloat(CVPixelBufferGetHeight(imageBuffer)))
         
@@ -126,15 +128,19 @@ private extension VTVideoEncoder {
         }
         
         var specification: [CFString: Any] = [:]
-        if let hwAccel = hardwareAcceleration(from: configuration.parsedOptions) {
-            specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = hwAccel
-            specification[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder] = hwAccel
+        
+        let hardwareAccelOption = codecSpecification.options[.hardwareAcceleration]
+        
+        if hardwareAccelOption == .kHardwareAccelerationTrue {
+            specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
+        } else if hardwareAccelOption == .kHardwareAccelerationForced {
+            // requirement를 건다
+            specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
+            specification[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder] = true
         }
         
         var attributes: [CFString: Any] = [:]
-        if let pixelFormat = pixelBufferFormat {
-            attributes[kCVPixelBufferPixelFormatTypeKey] = pixelFormat
-        }
+        attributes[kCVPixelBufferPixelFormatTypeKey] = pixelBufferFormat
         
         var session: VTCompressionSession?
         let status = VTCompressionSessionCreate(
@@ -154,25 +160,33 @@ private extension VTVideoEncoder {
             throw VideoEncoderError.compressionSessionFailed(status)
         }
         
-        applySessionProperties(createdSession, codec: configuration.codec, parsedOptions: configuration.parsedOptions, codecString: fourCCString)
+        try applySessionProperties(createdSession)
         compressionSession = createdSession
         VTCompressionSessionPrepareToEncodeFrames(createdSession)
         return createdSession
     }
     
-    func applySessionProperties(_ session: VTCompressionSession, codec: Codec, parsedOptions: [String: String], codecString: String) {
+    func applySessionProperties(_ session: VTCompressionSession) throws {
+        guard let configuration else { throw VideoEncoderError.notPrepared }
+        
+        let codecSpecification = configuration.specification
+
         setProperty(session, key: kVTCompressionPropertyKey_RealTime, value: kCFBooleanTrue)
         setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
         
-        if let frameRate = codec.frameRate, frameRate > 0 {
-            let rate = NSNumber(value: frameRate)
+        
+        if codecSpecification.frameRate > 0 {
+            let rate = NSNumber(value: codecSpecification.frameRate)
             setProperty(session, key: kVTCompressionPropertyKey_ExpectedFrameRate, value: rate)
         }
         
-        if let profileLevel = profileLevelString(for: codec, parsedOptions: parsedOptions) {
+        if let profileLevel = codecSpecification.profileLevelString {
             setProperty(session, key: kVTCompressionPropertyKey_ProfileLevel, value: profileLevel)
         }
         
+        // TODO: GOP 설정
+        
+        /*
         if let colorFormat = colorFormat(from: parsedOptions) {
             // Best effort: request higher chroma resolution; actual support depends on hardware.
             switch colorFormat {
@@ -182,11 +196,17 @@ private extension VTVideoEncoder {
                 break
             }
         }
+         */
         
-        applyQualitySettings(session, codec: codec, codecString: codecString)
+        try applyQualitySettings(session)
     }
     
-    func applyQualitySettings(_ session: VTCompressionSession, codec: Codec, codecString: String) {
+    func applyQualitySettings(_ session: VTCompressionSession) throws {
+        // FIXME
+        setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: 1200 * 1000))
+        setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: 2400 * 1000), NSNumber(value: 1)] as NSArray)
+
+        /*
         switch codec.quality {
         case .constantBitrate(let bitrateKbps):
             let bitrate = max(Int(bitrateKbps), 0) * 1000
@@ -218,80 +238,75 @@ private extension VTVideoEncoder {
         case .auto(_):
             logger.info("Using default quality settings for codec: \(codecString)")
         }
+         */
     }
 }
 
 // MARK: - Helpers
 
-private extension VTVideoEncoder {
-    func codecType(for codec: Codec) throws -> (CMVideoCodecType, String) {
-        switch codec.fourCC {
+private extension CodecFourCC {
+    func codecType() throws -> CMVideoCodecType {
+        switch self {
         case .avc1:
-            return (kCMVideoCodecType_H264, "AVC1")
+            return kCMVideoCodecType_H264
         case .hvc1:
-            return (kCMVideoCodecType_HEVC, "HVC1")
+            return kCMVideoCodecType_HEVC
         default:
-            throw VideoEncoderError.unsupportedCodec(codec.fourCC.stringRepresentation)
+            throw VideoEncoderError.unsupportedCodec(self.stringRepresentation)
         }
     }
-    
-    func requestedPixelFormat(from options: [String: String]) -> OSType? {
-        guard let formatValue = options[CodecOptionKey.colorFormat.rawValue]?.lowercased() else {
-            return nil
-        }
+}
+
+private extension CodecSpecification {
+    var cvPixelFormat: OSType {
+        let colorFormat = self.options[.colorFormat] ?? .kColorFormatYUV420
         
-        switch formatValue {
-        case CodecOptionValue.kColorFormatYUV444.rawValue:
+        switch colorFormat {
+        case .kColorFormatYUV444:
             return kCVPixelFormatType_444YpCbCr8BiPlanarVideoRange
-        case CodecOptionValue.kColorFormatYUV420.rawValue:
+
+            
+        case .kColorFormatAuto:
+            fallthrough
+        case .kColorFormatYUV420:
             fallthrough
         default:
             return kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
         }
     }
     
-    func colorFormat(from options: [String: String]) -> CodecColorFormat? {
-        guard let value = options[CodecOptionKey.colorFormat.rawValue]?.lowercased() else { return nil }
-        return CodecColorFormat(rawValue: value)
-    }
-    
-    func hardwareAcceleration(from options: [String: String]) -> Bool? {
-        guard let value = options[CodecOptionKey.hardwareAcceleration.rawValue]?.lowercased() else {
-            return nil
-        }
-        switch value {
-        case "true":
-            return true
-        case "false":
-            return false
+    var profileLevelString: CFString? {
+        switch self.fourCC {
+        case .avc1:
+            return h264ProfileLevelString()
+        case .hvc1:
+            return hevcProfileLevelString()
         default:
             return nil
         }
     }
     
-    func profileLevelString(for codec: Codec, parsedOptions: [String: String]) -> CFString? {
-        guard let profile = parsedOptions[CodecOptionKey.profile.rawValue]?.lowercased() else {
+    func h264ProfileLevelString() -> CFString? {
+        let level = "AutoLevel"
+        
+        let profile = options[.profile] ?? .kProfileAuto
+        
+        switch profile {
+        case .kProfileHigh:
+            return "H264_High_\(level)" as CFString
+        case .kProfileMain:
+            return "H264_Main_\(level)" as CFString
+        case .kProfileBaseline:
+            return "H264_Baseline_\(level)" as CFString
+        case .kProfileAuto:
+            fallthrough
+        default:
             return nil
         }
-        
-        let levelString = parsedOptions[CodecOptionKey.level.rawValue]
-        let normalizedLevel = levelString?.replacingOccurrences(of: ".", with: "_")
-        
-        let fourCC = codec.fourCC
-        
-        let levelComponent = normalizedLevel.map { "Level\($0)" } ?? "AutoLevel"
-        switch fourCC {
-        case .avc1:
-            let prefix: String
-            switch profile {
-            case "baseline": prefix = "H264_Baseline"
-            case "main": prefix = "H264_Main"
-            case "high": prefix = "H264_High"
-            default: return nil
-            }
-            return "\(prefix)_\(levelComponent)" as CFString
-            
-        case .hvc1:
+    }
+    
+    func hevcProfileLevelString() -> CFString? {
+        /*
             let prefix: String
             switch profile {
             case "main": prefix = "HEVC_Main"
@@ -300,12 +315,16 @@ private extension VTVideoEncoder {
             default: return nil
             }
             return "\(prefix)_\(levelComponent)" as CFString
-            
-        default:
-            return nil
-        }
+         */
+        let level = "AutoLevel"
+        
+        let profile = options[.profile] ?? .kProfileAuto
+        
+        return "HEVC_Main_\(level)" as CFString
     }
-    
+}
+
+private extension VTVideoEncoder {
     func setProperty(_ session: VTCompressionSession, key: CFString, value: CFTypeRef) {
         let status = VTSessionSetProperty(session, key: key, value: value)
         if status != noErr {
