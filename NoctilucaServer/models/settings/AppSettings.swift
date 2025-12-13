@@ -15,6 +15,9 @@ struct AppSettings: Codable, Sendable {
     var general: General = .init()
     var notifications: Notifications = .init()
     
+    // MARK: - Projection Settings
+    var projection: Projection = .init()
+    
     // MARK: - Security Settings
     
     var security: Security = .init()

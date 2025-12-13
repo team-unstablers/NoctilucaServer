@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct ProjectionSettingsTab: View {
+    
+    @Binding
+    var settings: AppSettings
+    
     var body: some View {
         Form {
             Section {
@@ -10,6 +14,7 @@ struct ProjectionSettingsTab: View {
             }
             Section {
                 CodecNegotiationPolicyPicker()
+                CodecSpecificationListContainer(codecSpecifications: $settings.projection.codecSpecifications)
             } header: {
                 Text("비디오 인코더 설정")
             }

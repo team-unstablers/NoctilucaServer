@@ -80,12 +80,14 @@ enum VideoEncoderError: LocalizedError {
     }
 }
 
+/*
 enum CodecOptionKey: String {
     case colorFormat = "color-format"
     case hardwareAcceleration = "hardware-acceleration"
     case profile = "profile"
     case level = "level"
 }
+ */
 
 enum CodecColorFormat: String {
     case yuv420 = "yuv420"

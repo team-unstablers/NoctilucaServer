@@ -32,7 +32,7 @@ struct SettingsWindow: View {
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
-                ProjectionSettingsTab()
+                ProjectionSettingsTab(settings: $server.settings)
                     .tabItem {
                         Text("프로젝션")
                     }

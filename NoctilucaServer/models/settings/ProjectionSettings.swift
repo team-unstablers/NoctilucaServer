@@ -11,14 +11,12 @@ extension AppSettings {
     struct Projection: Category {
         /// 사용자가 선호하는 화면 녹화기 구현체 순서.
         /// 잠금 화면 등에서는 AVFoundation 기반 녹화기로 폴백할 수 있습니다.
-        var recorderPreferences: [ScreenRecorderType] = [
-            .screenCaptureKit,
-            .avFoundation
-        ]
+        var preferredScreenRecorder: ScreenRecorderType = .screenCaptureKit
         
-        var codecPreferences: [CodecSpecification] = [
-            .hevc.hardwareAcceleration(),
-            .h264.hardwareAcceleration(),
+        
+        var codecSpecifications: [CodecSpecification] = [
+            .hevc,
+            .h264
         ]
     }
 }

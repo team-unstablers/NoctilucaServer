@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "F6BD3E952EDA1AF6000011DF"
-               BuildableName = "NoctilucaClient.app"
+               BuildableName = "Noctiluca Navigator.app"
                BlueprintName = "NoctilucaClient"
                ReferencedContainer = "container:NoctilucaClient.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "F6BD3E952EDA1AF6000011DF"
-            BuildableName = "NoctilucaClient.app"
+            BuildableName = "Noctiluca Navigator.app"
             BlueprintName = "NoctilucaClient"
             ReferencedContainer = "container:NoctilucaClient.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "F6BD3E952EDA1AF6000011DF"
-            BuildableName = "NoctilucaClient.app"
+            BuildableName = "Noctiluca Navigator.app"
             BlueprintName = "NoctilucaClient"
             ReferencedContainer = "container:NoctilucaClient.xcodeproj">
          </BuildableReference>

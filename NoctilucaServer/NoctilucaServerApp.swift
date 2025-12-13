@@ -27,6 +27,13 @@ struct NoctilucaServerApp: App {
         }
         .defaultLaunchBehavior(.suppressed)
         
+        /*
+        Window("test", id: "test") {
+            CodecSpecificationSheet()
+        }
+        .defaultLaunchBehavior(.presented)
+         */
+        
         MenuBarExtra("My App", systemImage: "star.fill") {
             MainTrayMenuContents { action in
                 handleMenuAction(action)
@@ -36,7 +43,7 @@ struct NoctilucaServerApp: App {
         // 스타일 지정이 핵심 (.menu 또는 .window)
         .menuBarExtraStyle(.menu)
     }
-    
+
     func handleMenuAction(_ action: MainTrayMenuAction) {
         switch action {
         case .openSettingsWindow:

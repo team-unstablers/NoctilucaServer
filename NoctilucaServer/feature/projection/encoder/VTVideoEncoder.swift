@@ -241,9 +241,9 @@ private extension VTVideoEncoder {
         }
         
         switch formatValue {
-        case CodecColorFormat.yuv444.rawValue:
+        case CodecOptionValue.kColorFormatYUV444.rawValue:
             return kCVPixelFormatType_444YpCbCr8BiPlanarVideoRange
-        case CodecColorFormat.yuv420.rawValue:
+        case CodecOptionValue.kColorFormatYUV420.rawValue:
             fallthrough
         default:
             return kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
