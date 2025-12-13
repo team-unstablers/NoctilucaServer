@@ -8,6 +8,12 @@
 import Foundation
 import SwiftProtobuf
 
+public enum SiriusMessageError: Error {
+    case protobufDecodingError(Error)
+    case protobufEncodingError(Error)
+    case invalidProtobufMessage
+}
+
 public struct MessageOpcode: RawRepresentable, Equatable, Hashable {
     public typealias RawValue = UInt16
     public let rawValue: UInt16

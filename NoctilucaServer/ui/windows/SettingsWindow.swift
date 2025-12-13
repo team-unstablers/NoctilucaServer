@@ -10,7 +10,7 @@ import SwiftUI
 struct SettingsWindow: View {
     enum SettingsTab: Hashable {
         case general
-        case display
+        case projection
         case security
         case misc
         case plugins
@@ -32,12 +32,12 @@ struct SettingsWindow: View {
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
-                DisplaySettingsTab()
+                ProjectionSettingsTab()
                     .tabItem {
-                        Text("화면")
+                        Text("프로젝션")
                     }
-                    .tag(SettingsTab.display)
-                    .id(SettingsTab.display)
+                    .tag(SettingsTab.projection)
+                    .id(SettingsTab.projection)
                 SecuritySettingsTab(settings: $server.settings)
                     .tabItem {
                         Text("보안")

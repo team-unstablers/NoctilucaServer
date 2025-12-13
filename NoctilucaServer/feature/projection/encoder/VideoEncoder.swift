@@ -10,6 +10,8 @@ import AVFoundation
 import VideoToolbox
 import SiriusKit
 
+
+
 struct VideoEncoderConfiguration {
     /// Sirius codec configuration from Projection channel.
     let codec: Codec

@@ -35,12 +35,11 @@ class ProjectionSession: Identifiable {
     func prepare() async throws {
         try await self.recorder.prepare(with: .init(source: .entireDisplay(displayID: CGMainDisplayID())))
         try self.encoder.prepare(with: .init(codec: Codec(
-            fourCC: UInt32(0x48564331).bigEndian, // 'HVC1',
+            fourCC: .hvc1, // 'HVC1',
             frameRate: 60,
-            width: 1920,
-            height: 1080,
+            size: CGSize(width: 1920, height: 1080),
             options: "hardware-acceleration: 'true'",
-            quality: .variableBitrate(VariableBitrateQuality(maxBitrateKbps: 2400, targetBitrateKbps: 1200))
+            quality: .variableBitrate(targetBitrateKbps: 1200, maxBitrateKbps: 2400)
         )))
     }
     

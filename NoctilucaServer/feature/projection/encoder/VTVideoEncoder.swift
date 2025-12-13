@@ -113,8 +113,13 @@ private extension VTVideoEncoder {
         
         let (codecType, fourCCString) = try codecType(for: configuration.codec)
         let pixelBufferFormat = requestedPixelFormat(from: configuration.parsedOptions)
-        let sourceWidth = configuration.codec.width.map { Int32($0) } ?? Int32(CVPixelBufferGetWidth(imageBuffer))
-        let sourceHeight = configuration.codec.height.map { Int32($0) } ?? Int32(CVPixelBufferGetHeight(imageBuffer))
+        
+        let size = configuration.codec.size ??
+            CGSize(width: CGFloat(CVPixelBufferGetWidth(imageBuffer)),
+                   height: CGFloat(CVPixelBufferGetHeight(imageBuffer)))
+        
+        let sourceWidth = Int32(size.width)
+        let sourceHeight = Int32(size.height)
         
         guard sourceWidth > 0, sourceHeight > 0 else {
             throw VideoEncoderError.invalidDimensions
@@ -183,16 +188,16 @@ private extension VTVideoEncoder {
     
     func applyQualitySettings(_ session: VTCompressionSession, codec: Codec, codecString: String) {
         switch codec.quality {
-        case .constantBitrate(let quality):
-            let bitrate = max(Int(quality.bitrateKbps), 0) * 1000
+        case .constantBitrate(let bitrateKbps):
+            let bitrate = max(Int(bitrateKbps), 0) * 1000
             if bitrate > 0 {
                 setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: bitrate))
                 setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: bitrate), NSNumber(value: 1)] as NSArray)
             }
             
-        case .variableBitrate(let quality):
-            let target = max(Int(quality.targetBitrateKbps), 0) * 1000
-            let maxRate = max(Int(quality.maxBitrateKbps), 0) * 1000
+        case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+            let target = max(Int(targetBitrateKbps), 0) * 1000
+            let maxRate = max(Int(maxBitrateKbps), 0) * 1000
             if target > 0 {
                 setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: target))
             }
@@ -200,8 +205,8 @@ private extension VTVideoEncoder {
                 setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: maxRate), NSNumber(value: 1)] as NSArray)
             }
             
-        case .fixedQuality(let quality):
-            let clamped = max(0, min(Int(quality.quality), 100))
+        case .fixedQuality(let factor):
+            let clamped = max(0, min(Int(factor), 100))
             let vtQuality = Float(1.0 - (Float(clamped) / 100.0))
             setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: vtQuality))
             
@@ -210,7 +215,7 @@ private extension VTVideoEncoder {
             setProperty(session, key: kVTCompressionPropertyKey_AllowOpenGOP, value: kCFBooleanFalse)
             setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: 1.0))
             
-        case .auto(_), .none:
+        case .auto(_):
             logger.info("Using default quality settings for codec: \(codecString)")
         }
     }
@@ -220,22 +225,13 @@ private extension VTVideoEncoder {
 
 private extension VTVideoEncoder {
     func codecType(for codec: Codec) throws -> (CMVideoCodecType, String) {
-        let fourCCValue = codec.fourCC.bigEndian
-        let chars: [UInt8] = [
-            UInt8((fourCCValue >> 24) & 0xFF),
-            UInt8((fourCCValue >> 16) & 0xFF),
-            UInt8((fourCCValue >> 8) & 0xFF),
-            UInt8(fourCCValue & 0xFF),
-        ]
-        
-        let fourCCString = String(bytes: chars, encoding: .ascii)?.uppercased() ?? ""
-        switch fourCCString {
-        case "AVC1":
-            return (kCMVideoCodecType_H264, fourCCString)
-        case "HVC1":
-            return (kCMVideoCodecType_HEVC, fourCCString)
+        switch codec.fourCC {
+        case .avc1:
+            return (kCMVideoCodecType_H264, "AVC1")
+        case .hvc1:
+            return (kCMVideoCodecType_HEVC, "HVC1")
         default:
-            throw VideoEncoderError.unsupportedCodec(fourCCString)
+            throw VideoEncoderError.unsupportedCodec(codec.fourCC.stringRepresentation)
         }
     }
     
@@ -281,18 +277,11 @@ private extension VTVideoEncoder {
         let levelString = parsedOptions[CodecOptionKey.level.rawValue]
         let normalizedLevel = levelString?.replacingOccurrences(of: ".", with: "_")
         
-        let fourCCValue = codec.fourCC.bigEndian
-        let chars: [UInt8] = [
-            UInt8((fourCCValue >> 24) & 0xFF),
-            UInt8((fourCCValue >> 16) & 0xFF),
-            UInt8((fourCCValue >> 8) & 0xFF),
-            UInt8(fourCCValue & 0xFF),
-        ]
-        let fourCCString = String(bytes: chars, encoding: .ascii)?.uppercased() ?? ""
+        let fourCC = codec.fourCC
         
         let levelComponent = normalizedLevel.map { "Level\($0)" } ?? "AutoLevel"
-        switch fourCCString {
-        case "AVC1":
+        switch fourCC {
+        case .avc1:
             let prefix: String
             switch profile {
             case "baseline": prefix = "H264_Baseline"
@@ -302,7 +291,7 @@ private extension VTVideoEncoder {
             }
             return "\(prefix)_\(levelComponent)" as CFString
             
-        case "HVC1":
+        case .hvc1:
             let prefix: String
             switch profile {
             case "main": prefix = "HEVC_Main"
