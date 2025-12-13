@@ -8,6 +8,12 @@
 import Foundation
 import SwiftProtobuf
 
+public enum SiriusMessageError: Error {
+    case protobufDecodingError(Error)
+    case protobufEncodingError(Error)
+    case invalidProtobufMessage
+}
+
 public struct MessageOpcode: RawRepresentable, Equatable, Hashable {
     public typealias RawValue = UInt16
     public let rawValue: UInt16
@@ -15,6 +21,11 @@ public struct MessageOpcode: RawRepresentable, Equatable, Hashable {
     public init(rawValue: UInt16) {
         self.rawValue = rawValue
     }
+    
+    // client -> server
+    public static let ping = MessageOpcode(rawValue: 0xFFFA)
+    // server -> client
+    public static let pong = MessageOpcode(rawValue: 0xFFFB)
     
     // 업그레이드된 프로토콜 메시지 (encapsulated)
     public static let encapsulatedProtocolMessage = MessageOpcode(rawValue: 0xFFFE)

@@ -1,0 +1,774 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "(%@)" : {
+
+    },
+    "(구성된 인증 방법이 없습니다)" : {
+
+    },
+    "[%@](%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "[%1$@](%2$@)"
+          }
+        }
+      }
+    },
+    "[Contoso Inc. - 관계자 외 접근을 금합니다.]" : {
+
+    },
+    "[부자가 되는 가장 빠른 지름길은, 많은 돈을 버는 것입니다.]" : {
+
+    },
+    "%@ (%u)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$u)"
+          }
+        }
+      }
+    },
+    "%@ 코덱 설정" : {
+
+    },
+    "© 2024 team unstablers Inc. All rights reserved." : {
+
+    },
+    "1.0.0-beta1" : {
+
+    },
+    "4K" : {
+
+    },
+    "60 FPS" : {
+
+    },
+    "AA:BB:CC:DD:EE:FF:DE:AD:BE:EF" : {
+
+    },
+    "Ad-hoc 서명된 플러그인을 포함하여 모든 플러그인을 허용합니다.\n**악성 플러그인에 의해 시스템이 손상될 수 있습니다.**" : {
+
+    },
+    "Apache License 2.0" : {
+
+    },
+    "App Store" : {
+
+    },
+    "Apple Development: Kirino Kousaka (ABCDE12345)" : {
+
+    },
+    "Apple로부터 신뢰받은 개발자들이 서명한 모든 플러그인을 허용합니다.\n**Apple로부터 신뢰를 받았더라도 안전하지 않은 플러그인이 있을 수 있습니다**" : {
+
+    },
+    "Baseline Profile (가장 높은 호환성, 압축률 낮음)" : {
+
+    },
+    "BSD 3-Clause License" : {
+
+    },
+    "builtin-bundles.auth.NoctilucaCoreAuth.description" : {
+      "comment" : "Noctiluca의 기본 인증 플러그인 번들입니다.",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca의 기본 인증 플러그인 번들입니다."
+          }
+        }
+      }
+    },
+    "builtin-bundles.auth.NoctilucaCoreAuth.name" : {
+      "comment" : "Noctiluca 기본 인증 플러그인 번들",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본 인증 플러그인 번들"
+          }
+        }
+      }
+    },
+    "ConcurrentSession" : {
+
+    },
+    "core.plugin.PluginBundleRegistryError.duplicateBundle(id: %@)" : {
+      "comment" : "플러그인 번들이 중복 등록되었습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.initializationFailed(error: %@)" : {
+      "comment" : "플러그인 번들의 초기화에 실패했습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.invalidBundle" : {
+      "comment" : "플러그인 번들이 파손되었습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.metadataValidationFailed" : {
+      "comment" : "플러그인 번들의 메타데이터 검증에 실패했습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.metadataValidationFailed(reason: %@)" : {
+      "comment" : "플러그인 번들의 메타데이터 검증에 실패했습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.rejectedBySystem" : {
+      "comment" : "플러그인 번들이 시스템에서 거부되었습니다."
+    },
+    "core.plugin.PluginBundleRegistryError.securityPolicyViolation(currentPolicy: %@, requiredPolicy: %@)" : {
+      "comment" : "플러그인 번들이 보안 정책을 위반했습니다.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "core.plugin.PluginBundleRegistryError.securityPolicyViolation(currentPolicy: %1$@, requiredPolicy: %2$@)"
+          }
+        }
+      }
+    },
+    "Creative Commons Zero v1.0 Universal" : {
+
+    },
+    "Finder로 열기" : {
+
+    },
+    "GNU General Public License v3.0" : {
+
+    },
+    "GNU Lesser General Public License v3.0" : {
+
+    },
+    "Hello, world!" : {
+
+    },
+    "HIDIO" : {
+
+    },
+    "High Profile (가장 낮은 호환성, 압축률 높음)" : {
+
+    },
+    "High Profile을 사용합니다.\n고급 기능을 사용하여 최고의 압축률과 화질을 제공합니다." : {
+
+    },
+    "Keychain에서 불러오기…" : {
+
+    },
+    "Keychain에서 불러온 인증서: Test Certificate" : {
+
+    },
+    "Main Profile" : {
+
+    },
+    "Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다." : {
+
+    },
+    "MIT License" : {
+
+    },
+    "My App" : {
+
+    },
+    "Noctiluca Server (Explicit Edition) 정보" : {
+
+    },
+    "Noctiluca Server 버전" : {
+
+    },
+    "Noctiluca Server 설정" : {
+
+    },
+    "Noctiluca Server에 내장된 플러그인 외에는 모두 차단합니다." : {
+
+    },
+    "Noctiluca가 수신 대기할 포트를 설정합니다." : {
+
+    },
+    "Noctiluca가 허용할 최대 동시 접속 수를 설정합니다." : {
+
+    },
+    "Noctiluca에서는 QUIC 프로토콜을 사용하여 통신합니다. [더 알아보기…](http://google.com)" : {
+
+    },
+    "Noctiluca의 개발사인 team unstablers Inc.에서 제공하는 공식 플러그인만 허용합니다." : {
+
+    },
+    "Noctiluca의 개발을 익명으로 돕기" : {
+
+    },
+    "PAM 인증 세부 설정" : {
+
+    },
+    "plugins.auth.NullAuthPlugin.description" : {
+      "comment" : "Provides 'NULL' authentication that always succeeds.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides 'NULL' authentication that always succeeds."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "항상 인증에 성공하는 'NULL' 인증을 제공합니다. 이 플러그인은 개발 용도로만 사용되어야 합니다."
+          }
+        }
+      }
+    },
+    "plugins.auth.NullAuthPlugin.name" : {
+      "comment" : "NullAuthPlugin",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NullAuthPlugin"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Null 인증 플러그인 (개발용)"
+          }
+        }
+      }
+    },
+    "plugins.auth.PAMAuthPlugin.description" : {
+      "comment" : "Provides UNIX PAM-based username-password authentication.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides UNIX PAM-based username-password authentication."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UNIX PAM 기반의 username-password 인증을 제공합니다."
+          }
+        }
+      }
+    },
+    "plugins.auth.PAMAuthPlugin.name" : {
+      "comment" : "PAMAuthPlugin",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PAMAuthPlugin"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PAM 인증 플러그인"
+          }
+        }
+      }
+    },
+    "plugins.auth.SimplePasswordAuthPlugin.description" : {
+      "comment" : "Provides password-only authentication using SHA-512 + Bcrypt.\nThis plugin is based on libbcrypt written by Ricardo Garcia (@rg3).\n@rg3's libbcrypt is distributed under the CC0-1.0 license, and the forked version by team unstablers Inc. for Noctiluca Server development can be found at https://github.com/team-unstablers/libbcrypt .",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SHA-512 + bcrypt 기반의 password-only 인증을 제공합니다.\n\n이 플러그인은 Ricardo Garcia (@rg3) 님이 작성하신 libbcrypt를 기반으로 합니다.\n@rg3 님의 libbcrypt는 CC0-1.0 라이선스 하에 배포되고 있으며, team unstablers Inc. 에서 Noctiluca Server 개발을 위해 포크한 버전은 https://github.com/team-unstablers/libbcrypt/ 에서 확인하실 수 있습니다."
+          }
+        }
+      }
+    },
+    "plugins.auth.SimplePasswordAuthPlugin.name" : {
+      "comment" : "SimplePasswordAuthPlugin",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "간단 비밀번호 인증 플러그인"
+          }
+        }
+      }
+    },
+    "Projection" : {
+
+    },
+    "projection.recorder.type.avfoundation.display_name" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AVFoundation 레코더"
+          }
+        }
+      }
+    },
+    "projection.recorder.type.null.display_name" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "NULL Recorder"
+          }
+        }
+      }
+    },
+    "projection.recorder.type.screencapturekit.display_name" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "ScreenCaptureKit 레코더"
+          }
+        }
+      }
+    },
+    "ProjectionData" : {
+
+    },
+    "QUIC (SiriusKit + Apple)" : {
+
+    },
+    "Sirius 프로토콜의 동작 방식을 설정합니다. [더 알아보기…](http://google.com)" : {
+
+    },
+    "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다." : {
+
+    },
+    "SiriusKit 버전" : {
+
+    },
+    "SSH 키 인증" : {
+
+    },
+    "ssh-ed25519 AAAA..." : {
+
+    },
+    "test" : {
+
+    },
+    "test2" : {
+
+    },
+    "YUV 4:2:0" : {
+
+    },
+    "YUV 4:2:0 색상 포맷을 사용합니다. 대부분의 기기에서 호환됩니다." : {
+
+    },
+    "YUV 4:4:4" : {
+
+    },
+    "YUV 4:4:4 색상 포맷을 사용합니다.\n더 높은 색상 정확도를 제공하지만, 호환성이 떨어질 수 있습니다." : {
+
+    },
+    "가능한 경우 하드웨어 가속을 사용합니다." : {
+
+    },
+    "간단 비밀번호 인증" : {
+
+    },
+    "강제 사용" : {
+
+    },
+    "개발자" : {
+
+    },
+    "공식 플러그인만 허용" : {
+
+    },
+    "균형 잡힌 결정 내리기 **(권장)**" : {
+
+    },
+    "그룹" : {
+
+    },
+    "기본" : {
+
+    },
+    "기타" : {
+
+    },
+    "내장 플러그인" : {
+
+    },
+    "듀얼 라이선스로 제공됨" : {
+
+    },
+    "라이선스" : {
+
+    },
+    "로드된 인증 플러그인 목록" : {
+
+    },
+    "로드된 플러그인 번들 목록" : {
+
+    },
+    "모든 플러그인 차단" : {
+
+    },
+    "모든 플러그인 허용 **(위험!)**" : {
+
+    },
+    "버전" : {
+
+    },
+    "보안" : {
+
+    },
+    "보안 정책" : {
+
+    },
+    "비디오 인코더 설정" : {
+
+    },
+    "비밀번호 입력" : {
+
+    },
+    "사용 가능한 기능 목록" : {
+
+    },
+    "사용 가능한 기능 목록을 알리지 않기" : {
+
+    },
+    "사용 안 함" : {
+
+    },
+    "사용 중인 트랜스포트 레이어 구현체" : {
+
+    },
+    "사용자" : {
+
+    },
+    "사용자 환경 및 사용 통계를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](http://google.com)" : {
+
+    },
+    "사용자/그룹 선택…" : {
+
+    },
+    "사용자가 접속을 종료했을 때" : {
+
+    },
+    "사용자가 접속했을 때" : {
+
+    },
+    "삭제" : {
+
+    },
+    "색상 포맷" : {
+
+    },
+    "색상 포맷을 설정합니다." : {
+
+    },
+    "서명" : {
+
+    },
+    "서명 정보" : {
+
+    },
+    "서명된 플러그인만 허용 **(위험!)**" : {
+
+    },
+    "서버 버전을 알리지 않기" : {
+
+    },
+    "서버 버전을 클라이언트에게 알리지 않습니다." : {
+
+    },
+    "서버 설정을 우선으로" : {
+
+    },
+    "서버 시작" : {
+
+    },
+    "서버 인증서" : {
+
+    },
+    "서버 인증서를 자동으로 구성하기" : {
+
+    },
+    "서버 중지" : {
+
+    },
+    "서버 포트" : {
+
+    },
+    "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다." : {
+
+    },
+    "서버에서 지원하는 기능 목록을 클라이언트에게 알리지 않습니다. 호환성이 떨어질 수 있습니다." : {
+
+    },
+    "설정" : {
+
+    },
+    "설정 저장" : {
+
+    },
+    "시스템 기동 시 자동으로 Noctiluca 시작하기" : {
+
+    },
+    "시스템의 트러스트 스토어를 기준으로 신뢰할 수 없는 인증서를 사용 시 경고를 표시합니다." : {
+
+    },
+    "식별자 재설정" : {
+
+    },
+    "아니오" : {
+
+    },
+    "알 수 없는 라이선스" : {
+
+    },
+    "알림" : {
+
+    },
+    "알림 표시하기" : {
+
+    },
+    "엄격한 유효성 검사 사용하기" : {
+
+    },
+    "오늘의 메시지 (MOTD)" : {
+
+    },
+    "오류가 발생했을 때" : {
+
+    },
+    "외부 접속 테스트" : {
+
+    },
+    "외부 플러그인" : {
+
+    },
+    "외부 플러그인 위치" : {
+
+    },
+    "외부 플러그인에 대한 보안 정책을 설정합니다. 이 설정을 적용하려면 Noctiluca Server를 다시 기동해야 합니다." : {
+
+    },
+    "유형" : {
+
+    },
+    "유효한 라이선스" : {
+
+    },
+    "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](http://google.com)" : {
+
+    },
+    "이 인증서는 2032-12-31까지 유효합니다." : {
+
+    },
+    "이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. 드래그-드롭으로 우선 순위를 변경할 수 있습니다. [더 알아보기…](http://google.com)" : {
+
+    },
+    "이벤트 발생 시 알림을 표시합니다." : {
+
+    },
+    "인증 방법 선택" : {
+
+    },
+    "인증 수단" : {
+
+    },
+    "인증 요청 시 표시할 메시지" : {
+
+    },
+    "인증서 불러오기" : {
+
+    },
+    "일반" : {
+
+    },
+    "입력된 비밀번호는 SHA-512 + bcrypt로 이중 해시 처리되어 저장됩니다." : {
+
+    },
+    "자가 서명 인증서를 사용하여 QUIC 통신을 암호화합니다." : {
+
+    },
+    "자동" : {
+
+    },
+    "저장" : {
+
+    },
+    "접속 테스트 요청하기" : {
+
+    },
+    "정보" : {
+
+    },
+    "정보 보기…" : {
+
+    },
+    "종료" : {
+
+    },
+    "주식회사 팀언스테이블러즈에서 제공하는 테스트 노드를 통해 외부로부터 접속이 가능한지 테스트합니다." : {
+
+    },
+    "지원하는 인증 매커니즘" : {
+
+    },
+    "진단 정보 내보내기" : {
+
+    },
+    "최대 동시 접속 수" : {
+
+    },
+    "최대 해상도" : {
+
+    },
+    "최대 해상도를 %@으로 설정합니다." : {
+
+    },
+    "최적의 색상 포맷을 자동으로 선택합니다." : {
+
+    },
+    "최적의 코덱 프로파일을 자동으로 선택합니다." : {
+
+    },
+    "추가" : {
+
+    },
+    "추가할 인증 방법을 선택하세요." : {
+
+    },
+    "추가할 코덱 유형을 선택하세요." : {
+
+    },
+    "취소" : {
+
+    },
+    "커스텀 라이선스: [%@](%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "커스텀 라이선스: [%1$@](%2$@)"
+          }
+        }
+      }
+    },
+    "코덱 선택" : {
+
+    },
+    "코덱 우선순위 설정" : {
+
+    },
+    "코덱 프로파일" : {
+
+    },
+    "코덱 프로파일을 설정합니다." : {
+
+    },
+    "코덱 협상 정책" : {
+
+    },
+    "클라이언트가 접속할 때 표시할 오늘의 메시지를 설정합니다." : {
+
+    },
+    "클라이언트에게 인증 요청 시 표시할 메시지를 설정합니다." : {
+
+    },
+    "클라이언트와의 코덱 협상 정책을 설정합니다." : {
+
+    },
+    "클라이언트의 요청을 완전히 무시하고 서버의 코덱 설정을 우선시합니다.\n클라이언트가 지원하지 않는 코덱이 설정되어 있을 경우 연결에 실패할 수 있습니다." : {
+
+    },
+    "클라이언트의 요청을 존중하면서 서버의 성능과 안정성을 해치지 않는 범위 내에서 최적의 코덱을 선택합니다.\n서버가 지원할 수 없는 명세의 코덱이 요청되었을 때에는 Noctilcua Server가 적절하다고 판단하는 코덱으로 임의 대체합니다." : {
+
+    },
+    "클라이언트의 협상 내용을 기반으로 최대 해상도를 결정합니다." : {
+
+    },
+    "클라이언트의 협상 내용을 기반으로 프레임 속도를 결정합니다." : {
+
+    },
+    "텔레메트리 및 진단 정보" : {
+
+    },
+    "텔레메트리 식별자" : {
+
+    },
+    "트랜스포트 레이어" : {
+
+    },
+    "파일 선택…" : {
+
+    },
+    "파일로 저장…" : {
+
+    },
+    "편집" : {
+
+    },
+    "프레임 속도" : {
+
+    },
+    "프레임 속도를 최대 %lld FPS로 설정합니다." : {
+
+    },
+    "프로젝션" : {
+
+    },
+    "프로토콜" : {
+
+    },
+    "프로토콜 버전 1 / 개정판 1" : {
+
+    },
+    "플러그인" : {
+
+    },
+    "플러그인 설정" : {
+
+    },
+    "하드웨어 가속" : {
+
+    },
+    "하드웨어 가속 사용 여부를 설정합니다." : {
+
+    },
+    "하드웨어 가속을 강제로 사용합니다.\n인코더 초기화에 실패하는 경우, 세션이 강제로 종료될 수 있습니다." : {
+
+    },
+    "하드웨어 가속을 사용하지 않고, 소프트웨어 압축만 사용합니다.\n컴퓨팅 자원이 부족해질 수 있습니다." : {
+
+    },
+    "허용 그룹 이름" : {
+
+    },
+    "허용 범위" : {
+
+    },
+    "허용 사용자 이름" : {
+
+    },
+    "허용할 공개 키를 입력하세요." : {
+
+    },
+    "현재 상태로는 아무도 로그인할 수 없습니다. 인증 방법을 추가하려면 아래 '추가' 버튼을 클릭하세요." : {
+
+    },
+    "현재 활성 중인 세션 없음" : {
+
+    },
+    "호환성이 높은 Baseline Profile을 사용합니다.\n코덱의 고급 기능을 사용할 수 없기 때문에 압축률과 화질이 낮습니다." : {
+
+    },
+    "화면 레코더 선택" : {
+
+    },
+    "화면 레코더 설정" : {
+
+    }
+  },
+  "version" : "1.1"
+}

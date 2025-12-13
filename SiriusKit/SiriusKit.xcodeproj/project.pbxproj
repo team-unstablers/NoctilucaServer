@@ -58,6 +58,7 @@
 		F6BD3BA22ED8AF93000011DF /* Exceptions for "SiriusKit" folder in "SiriusKitClient" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"server/Channel+getClientSession.swift",
 				server/ClientSession.swift,
 				server/SiriusServer.swift,
 				server/SiriusServerBuilder.swift,
@@ -78,6 +79,7 @@
 		F6BD3E8C2EDA1A7D000011DF /* Exceptions for "SiriusKit" folder in "SiriusKit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"client/Channel+getClientSession.swift",
 				client/SiriusClient.swift,
 				client/SiriusClientBuilder.swift,
 				transport/client/ClientRoleTransport.swift,

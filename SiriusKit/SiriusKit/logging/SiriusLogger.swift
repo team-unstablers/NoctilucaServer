@@ -253,6 +253,8 @@ public final class SiriusLogger {
         // 릴리즈 빌드에서는 trace 로그를 컴파일하지 않도록 한다
         log(.trace, message: message(), file: file, function: function, line: line)
 #endif
+        
+        return false
     }
 
 
@@ -268,6 +270,7 @@ public final class SiriusLogger {
         // 릴리즈 빌드에서는 debug 로그를 컴파일하지 않도록 한다
         log(.debug, message: message(), file: file, function: function, line: line)
 #endif
+        return false
     }
 
     @inlinable

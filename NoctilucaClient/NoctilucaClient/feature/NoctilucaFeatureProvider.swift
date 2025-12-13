@@ -12,6 +12,11 @@ class NoctilucaFeatureProvider: FeatureProvider {
         switch feature {
         case .hidio:
             return true
+        case .projection:
+            return true
+        case .projectionData:
+            return true
+            
         default:
             return false
         }
@@ -24,6 +29,12 @@ class NoctilucaFeatureProvider: FeatureProvider {
                        args: [String]) -> Channel {
         
         switch feature {
+        case .hidio:
+            return HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction)
+        case .projection:
+            return ProjectionChannel(using: streamHolder, identifier: identifier, direction: direction)
+        case .projectionData:
+            return ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction)
         default:
             fatalError("Unsupported feature: \(feature)")
         }

@@ -16,17 +16,50 @@ enum NoctilucaServerState {
     case running(server: SiriusServer)
 }
 
-@MainActor
+class NoctilucaServerContext: ServerContext {
+    private let server: NoctilucaServer
+    
+    var featureProvider: NoctilucaFeatureProvider { server.featureProvider }
+    
+    var authenticator: Authenticator { server.authenticator }
+    var settings: AppSettings { server.settings }
+    
+    init(server: NoctilucaServer) {
+        self.server = server
+    }
+    
+    func serverName(withVersion: Bool) -> String {
+        let productName = NoctilucaMeta.productName
+        
+        if withVersion {
+            let productVersion = NoctilucaMeta.version
+            return "\(productName)/\(productVersion)"
+        } else {
+            return productName
+        }
+    }
+}
+
+// @MainActor <- 근데 과거의 나는 이걸 왜 붙였지? 인생 편하게 살고 싶었나..?
 class NoctilucaServer: ObservableObject {
     static let shared = NoctilucaServer()
     
     private static let defaultKeychainIdentity = "pl.unstabler.noctiluca.server.testIdentity"
-    private static let defaultPort: UInt16 = 12345
     
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
     let featureProvider = NoctilucaFeatureProvider()
     
+    let authPluginRegistry = AuthPluginRegistry.shared
+    let pluginBundleRegistry = PluginBundleRegistry.shared
+    
+    let authenticator: Authenticator
+    
+    var context: NoctilucaServerContext!
+    
+    @Published
+    var settings: AppSettings = AppSettings()
+
     @Published
     var clients: [UUID: NoctilucaClientSession] = [:]
     
@@ -34,10 +67,29 @@ class NoctilucaServer: ObservableObject {
     var state: NoctilucaServerState = .idle
 
     init() {
+        self.authenticator = Authenticator(registry: authPluginRegistry)
+        self.context = NoctilucaServerContext(server: self)
         // FIXME: 이건 AppDelegate에서 하세요.
         SiriusLogger.configure(minimumLevel: .trace)
         
         logger.info("NoctilucaServer initialized")
+        
+        Task {
+            // FIXME
+            try await initialize()
+        }
+        
+        /*
+        let bundlePath = "/Users/cheesekun/Library/Developer/Xcode/DerivedData/NoctilucaServer-bmvtwemvjsiisrajoyirlzkenmct/Build/Products/Debug/SamplePluginBundle.nocbundle"
+        let bundleURL = URL(fileURLWithPath: bundlePath)
+        Task {
+            do {
+                try await pluginBundleRegistry.loadBundle(from: bundleURL)
+            } catch {
+                logger.error("Failed to load plugin bundle from \(bundlePath): \(error)")
+            }
+        }
+         */
     }
     
     private func __FIXME__ensureKeychainIdentity(identityLabel: String) throws {
@@ -59,6 +111,13 @@ class NoctilucaServer: ObservableObject {
         _ = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)
     }
     
+    func initialize() async throws {
+        self.settings = try AppSettings.load()
+        
+        try await pluginBundleRegistry.registerBuiltinBundles()
+        await authenticator.setupAllowedEntires(self.settings.security.allowedEntries)
+    }
+    
     func startup() async throws {
         guard case .idle = state else {
             return
@@ -73,7 +132,7 @@ class NoctilucaServer: ObservableObject {
             
             let result = try SiriusServerBuilder()
                 .useFeatureProvider(featureProvider)
-                .useTransportProtocol(.quic(port: Self.defaultPort, identitySource: .keychain(label: Self.defaultKeychainIdentity)))
+                .useTransportProtocol(.quic(port: settings.quicTransport.listenPort, identitySource: .keychain(label: Self.defaultKeychainIdentity)))
                 .withExtraConfiguration("someValue", forKey: "someKey")
                 .build()
             
@@ -122,7 +181,10 @@ extension NoctilucaServer: SiriusServerDelegate {
     }
     
     func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
-        self.clients[session.id] = NoctilucaClientSession(session: session)
+        let session = NoctilucaClientSession(session: session, server: context)
+        session.initialize()
+        
+        self.clients[session.id] = session
     }
     
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {

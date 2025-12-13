@@ -37,216 +37,120 @@ public struct LosslessQualityMode: SiriusEnum {
     public static let compressionPriority = Self.fromProtobufEnum(.compressionPriority)
 }
 
-
-public struct AutoQuality: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_AutoQuality
-    
-    public let mode: AutoQualityMode
-
-
-    init(mode: AutoQualityMode) {
-        self.mode = mode
-    }
-
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_AutoQuality) throws {
-        self.mode = AutoQualityMode.fromProtobufEnum(protobufMessage.mode)
-    }
-
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
-        message.mode = self.mode.toProtobufEnum()
-
-        return message
-    }
-}
-
-public struct ConstantBitrateQuality: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality
-    
-    public let bitrateKbps: Int32
-
-
-    init(bitrateKbps: Int32) {
-        self.bitrateKbps = bitrateKbps
-    }
-
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality) throws {
-        self.bitrateKbps = protobufMessage.bitrateKbps
-    }
-
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
-        message.bitrateKbps = self.bitrateKbps
-
-        return message
-    }
-}
-
-public struct VariableBitrateQuality: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality
-    
-    public let maxBitrateKbps: Int32
-    public let targetBitrateKbps: Int32
-
-
-    init(maxBitrateKbps: Int32, targetBitrateKbps: Int32) {
-        self.maxBitrateKbps = maxBitrateKbps
-        self.targetBitrateKbps = targetBitrateKbps
-    }
-
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality) throws {
-        self.maxBitrateKbps = protobufMessage.maxBitrateKbps
-        self.targetBitrateKbps = protobufMessage.targetBitrateKbps
-    }
-
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
-        message.maxBitrateKbps = self.maxBitrateKbps
-        message.targetBitrateKbps = self.targetBitrateKbps
-
-        return message
-    }
-}
-
-public struct FixedQuality: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_FixedQuality
-    
-    public let quality: Int32
-
-
-    init(quality: Int32) {
-        self.quality = quality
-    }
-
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_FixedQuality) throws {
-        self.quality = protobufMessage.quality
-    }
-
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
-        message.quality = self.quality
-
-        return message
-    }
-}
-
-public struct LosslessQuality: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_LosslessQuality
-    
-    public let mode: LosslessQualityMode
-
-
-    init(mode: LosslessQualityMode) {
-        self.mode = mode
-    }
-
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_LosslessQuality) throws {
-        self.mode = LosslessQualityMode.fromProtobufEnum(protobufMessage.mode)
-    }
-
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
-        message.mode = self.mode.toProtobufEnum()
-
-        return message
-    }
-}
-
 public struct Codec: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_Codec
     
-    public enum OneOf_Quality {
-        case constantBitrate(ConstantBitrateQuality)
-        case variableBitrate(VariableBitrateQuality)
-        case fixedQuality(FixedQuality)
-        case lossless(LosslessQuality)
-        case auto(AutoQuality)
-        case none
+    public enum Quality {
+        case constantBitrate(bitrateKbps: Int32)
+        case variableBitrate(targetBitrateKbps: Int32, maxBitrateKbps: Int32)
+        case fixedQuality(factor: Int32)
+        case lossless(mode: LosslessQualityMode)
+        case auto(mode: AutoQualityMode)
     }
 
-    public let fourCC: UInt32
+    public let fourCC: CodecFourCC
+    
+    /// 초당 프레임 수. 값을 -1로 설정하는 경우 소스 (모니터)의 프레임레이트를 따릅니다.
     public let frameRate: Float?
-    public let width: UInt32?
-    public let height: UInt32?
+    
+    /// 비디오 사이즈 (픽셀 단위). nil로 설정하는 경우 소스 (모니터)의 해상도를 따릅니다.
+    public let size: CGSize?
     public let options: String?
 
-    public let quality: OneOf_Quality
+    public let quality: Quality
 
-    init(fourCC: UInt32, frameRate: Float?, width: UInt32?, height: UInt32?, options: String?, quality: OneOf_Quality) {
+    public init(fourCC: CodecFourCC, frameRate: Float?, size: CGSize?, options: String?, quality: Quality) {
         self.fourCC = fourCC
         self.frameRate = frameRate
-        self.width = width
-        self.height = height
+        self.size = size
         self.options = options
         self.quality = quality
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_Codec) throws {
-        self.fourCC = protobufMessage.fourCc
+        self.fourCC = CodecFourCC(rawValue: protobufMessage.fourCc)
         self.frameRate = protobufMessage.hasFrameRate ? protobufMessage.frameRate : nil
-        self.width = protobufMessage.hasWidth ? protobufMessage.width : nil
-        self.height = protobufMessage.hasHeight ? protobufMessage.height : nil
+        
+        if protobufMessage.hasWidth,
+           protobufMessage.hasHeight
+        {
+            self.size = CGSize(width: CGFloat(protobufMessage.width), height: CGFloat(protobufMessage.height))
+        } else {
+            self.size = nil
+        }
+        
         self.options = protobufMessage.hasOptions ? protobufMessage.options : nil
+        
         switch protobufMessage.quality {
         case .constantBitrate(let val):
-            self.quality = .constantBitrate(try ConstantBitrateQuality(from: val))
+            self.quality = .constantBitrate(bitrateKbps: val.bitrateKbps)
             break
         case .variableBitrate(let val):
-            self.quality = .variableBitrate(try VariableBitrateQuality(from: val))
+            self.quality = .variableBitrate(
+                targetBitrateKbps: val.targetBitrateKbps,
+                maxBitrateKbps: val.maxBitrateKbps
+            )
             break
         case .fixedQuality(let val):
-            self.quality = .fixedQuality(try FixedQuality(from: val))
+            self.quality = .fixedQuality(
+                factor: val.quality
+            )
             break
         case .lossless(let val):
-            self.quality = .lossless(try LosslessQuality(from: val))
+            self.quality = .lossless(
+                mode: .fromProtobufEnum(val.mode)
+            )
             break
         case .auto(let val):
-            self.quality = .auto(try AutoQuality(from: val))
+            self.quality = .auto(
+                mode: .fromProtobufEnum(val.mode)
+            )
             break
         case .none:
-            self.quality = .none
-            break
+            throw SiriusMessageError.invalidProtobufMessage
         }
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        message.fourCc = self.fourCC
+        message.fourCc = self.fourCC.rawValue
         if let val = self.frameRate {
             message.frameRate = val
         }
-        if let val = self.width {
-            message.width = val
-        }
-        if let val = self.height {
-            message.height = val
+        if let val = self.size {
+            message.width  = UInt32(val.width)
+            message.height = UInt32(val.height)
         }
         if let val = self.options {
             message.options = val
         }
         switch self.quality {
-        case .constantBitrate(let val):
-            message.quality = .constantBitrate(val.toProtobufMessage())
+        case .constantBitrate(let bitrateKbps):
+            message.quality = .constantBitrate(.with {
+                $0.bitrateKbps = bitrateKbps
+            })
             break
-        case .variableBitrate(let val):
-            message.quality = .variableBitrate(val.toProtobufMessage())
+        case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+            message.quality = .variableBitrate(.with {
+                $0.targetBitrateKbps = targetBitrateKbps
+                $0.maxBitrateKbps = maxBitrateKbps
+            })
             break
-        case .fixedQuality(let val):
-            message.quality = .fixedQuality(val.toProtobufMessage())
+        case .fixedQuality(let factor):
+            message.quality = .fixedQuality(.with {
+                $0.quality = factor
+            })
             break
-        case .lossless(let val):
-            message.quality = .lossless(val.toProtobufMessage())
+        case .lossless(let mode):
+            message.quality = .lossless(.with {
+                $0.mode = mode.toProtobufEnum()
+            })
             break
-        case .auto(let val):
-            message.quality = .auto(val.toProtobufMessage())
-            break
-        case .none:
+        case .auto(let mode):
+            message.quality = .auto(.with {
+                $0.mode = mode.toProtobufEnum()
+            })
             break
         }
 

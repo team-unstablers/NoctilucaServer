@@ -7,7 +7,14 @@
 
 import SwiftUI
 
+enum MainTrayMenuAction: Sendable {
+    case openSettingsWindow
+    case quitApplication
+}
+
 struct MainTrayMenuContents: View {
+    let actionHandler: (MainTrayMenuAction) -> Void
+    
     @EnvironmentObject
     var server: NoctilucaServer
     
@@ -40,11 +47,11 @@ struct MainTrayMenuContents: View {
         }
         Divider()
         Button("설정") {
-            
+            actionHandler(.openSettingsWindow)
         }
         Divider()
         Button("종료") {
-            
+            actionHandler(.quitApplication)
         }
     }
 }

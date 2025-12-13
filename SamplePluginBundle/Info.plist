@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NoctilucaPluginBundleExports</key>
+	<array>
+		<dict>
+			<key>NoctilucaPluginBundleExportType</key>
+			<string>auth</string>
+			<key>NoctilucaPluginBundleExportIdentifier</key>
+			<string>pl.unstabler.noctiluca.NoctilucaServer.plugin.test.null</string>
+			<key>NoctilucaPluginBundleAuthPluginMethods</key>
+			<array>
+				<string>com.example.authmethod.none</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

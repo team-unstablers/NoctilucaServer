@@ -51,6 +51,7 @@ public class ChannelManager {
             throw error
         case .success(let stream):
             let mainChannel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
+            mainChannel.session = self.session
             self.mainChannel = mainChannel
             
             return
@@ -60,6 +61,7 @@ public class ChannelManager {
     public func openChannel(for feature: SiriusFeature, identifier: ChannelIdentifier, args: [String] = []) async throws -> Channel {
         guard session.featureProvider.supports(feature) else {
             // 이거 에러가 너무 제너릭하지 않아?
+            fatalError("Feature \(feature) is not supported by the session's feature provider")
             throw ChannelManagerError.channelOpenFailed
         }
         
@@ -79,9 +81,14 @@ public class ChannelManager {
                 direction: .local,
                 args: args
             )
+            channel.session = self.session
             
+            print("Opened channel \(channel.identifier) for feature \(feature)")
+
             try self.registerChannel(channel)
             
+            print("Registered channel \(channel.identifier)")
+
             return channel
         }
     }
@@ -91,8 +98,9 @@ public class ChannelManager {
             // 첫번째 스트림은 반드시 메인 채널로 사용한다
             // 프로토콜 상 약속이므로 ChannelOpenTask를 사용할 필요가 없다
             let channel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
-            self.mainChannel = channel
+            channel.session = self.session
             
+            self.mainChannel = channel
             return
         }
         
@@ -118,6 +126,7 @@ public class ChannelManager {
                 direction: .remote,
                 args: request.args
             )
+            channel.session = self.session
                 
             try self.registerChannel(channel)
             return true

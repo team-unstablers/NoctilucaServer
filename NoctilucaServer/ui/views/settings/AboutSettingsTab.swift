@@ -70,6 +70,12 @@ struct AboutSettingsTab: View {
                 Text("")
                 Text("© 2024 team unstablers Inc. All rights reserved.")
             }
+            
+            Section {
+                AuthPluginListContainer()
+            } header: {
+                Text("로드된 인증 플러그인 목록")
+            }
         }
         .formStyle(.grouped)
     }

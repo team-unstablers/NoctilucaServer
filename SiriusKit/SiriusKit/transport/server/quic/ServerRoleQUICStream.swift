@@ -107,10 +107,10 @@ class ServerRoleQUICStream: Stream {
                 if let error = error {
                     cont.resume(returning: .failure(error)) // Map error appropriately
                 } else if let content = content {
-                    print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
+                    // print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
                     cont.resume(returning: .success(content))
                 } else {
-                    fatalError("???")
+                    cont.resume(returning: .failure(StreamError.endOfStream))
                 }
             }
         }

@@ -14,6 +14,12 @@ public struct SiriusFrame {
     
     public let data: Data
     
+    public init(opcode: MessageOpcode, length: UInt32, data: Data) {
+        self.opcode = opcode
+        self.length = length
+        self.data = data
+    }
+    
     public func isValid() -> Bool {
         return data.count == Int(length)
     }

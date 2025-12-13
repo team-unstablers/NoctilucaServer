@@ -32,6 +32,7 @@ open class Channel {
     private static let sharedLogger = SiriusLogger(category: "Channel")
     private var logger: SiriusLogger { Self.sharedLogger }
     
+    internal weak var session: (any SiriusSession)?
     let stream: Stream
     
     private var streamEventLoopTask: Task<Void, any Error>? = nil
@@ -60,8 +61,20 @@ open class Channel {
         try await self.stream.close()
     }
     
-    internal func send(opcode: MessageOpcode, message: (any SiriusMessage)) async throws {
-        let protobufMessage = message.toProtobufMessage()
+    public func send(frame: consuming SiriusFrame) async throws {
+#if DEBUG
+        self.logger.trace("[\(self.identifier)] frame SEND - opcode \(frame.opcode.hexString), length \(frame.data.count)")
+#endif
+        
+        let result = await self.stream.write(frame: frame.data, opcode: frame.opcode, length: frame.length)
+        
+        if case .failure(let error) = result {
+            throw error
+        }
+    }
+
+    public func send(opcode: MessageOpcode, message: (any DecodableSiriusMessage)) async throws {
+        let protobufMessage = (message as! any SiriusMessage).toProtobufMessage()
         let messageData = try protobufMessage.serializedData()
         
 #if DEBUG
@@ -74,6 +87,7 @@ open class Channel {
             throw error
         }
     }
+    
 
     private func streamEventLoop() async throws {
         for await event in self.stream.events {

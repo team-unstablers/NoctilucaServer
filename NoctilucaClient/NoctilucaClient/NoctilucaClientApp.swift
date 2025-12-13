@@ -11,7 +11,10 @@ import SwiftUI
 struct NoctilucaClientApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainWindow()
         }
+        .defaultSize(width: 800, height: 600)
+        .defaultPosition(.center)
+        
     }
 }

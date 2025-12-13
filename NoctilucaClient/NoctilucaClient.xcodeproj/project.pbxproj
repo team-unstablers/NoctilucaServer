@@ -26,7 +26,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		F6BD3E962EDA1AF6000011DF /* NoctilucaClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoctilucaClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6BD3EB12EDA1B2A000011DF /* SiriusKitClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SiriusKitClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -62,7 +62,7 @@
 		F6BD3E972EDA1AF6000011DF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F6BD3E962EDA1AF6000011DF /* NoctilucaClient.app */,
+				F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -98,7 +98,7 @@
 			packageProductDependencies = (
 			);
 			productName = NoctilucaClient;
-			productReference = F6BD3E962EDA1AF6000011DF /* NoctilucaClient.app */;
+			productReference = F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -300,6 +300,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -307,11 +308,11 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClient;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -342,6 +343,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -349,11 +351,11 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClient;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;

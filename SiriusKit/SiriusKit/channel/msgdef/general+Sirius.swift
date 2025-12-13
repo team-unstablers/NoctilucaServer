@@ -39,7 +39,7 @@ public struct ServerNotice: SiriusMessage {
     public let timestamp: UInt64
 
 
-    init(severity: NoticeSeverity, code: UInt32, message: String, timestamp: UInt64) {
+    public init(severity: NoticeSeverity, code: UInt32, message: String, timestamp: UInt64) {
         self.severity = severity
         self.code = code
         self.message = message

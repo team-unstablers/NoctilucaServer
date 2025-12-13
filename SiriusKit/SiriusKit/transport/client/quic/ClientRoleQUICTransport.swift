@@ -59,7 +59,7 @@ class ClientRoleQUICTransport: ClientRoleTransport {
         connectionGroup.start(queue: self.queue)
     }
     
-    override func disconnect() async throws {
+    override func disconnect() async {
         if let connectionGroup {
             connectionGroup.cancel()
             self.connectionGroup = nil

@@ -2,7 +2,16 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:libbcrypt/libbcrypt.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:SamplePluginBundle/SamplePluginBundle.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:SiriusKit/SiriusKit.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:NoctilucaPluginKit/NoctilucaPluginKit.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:NoctilucaServer.xcodeproj">
