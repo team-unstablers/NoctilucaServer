@@ -9,10 +9,7 @@ import Foundation
 import SiriusKit
 
 
-enum CodecQualityPolicy: String, Hashable, Equatable, Codable {
-    /// 클라이언트의 품질 요청을 최대한 존중합니다.
-    case respectClient = "respect-client"
-    
+enum CodecNegotiationPolicy: String, Hashable, Equatable, Codable {
     /// 최대한 균형 있게 결정합니다.
     case balanced = "balanced"
     
@@ -25,6 +22,8 @@ struct CodecSpecification: Codable {
         case fourCC = "fourcc"
         case options = "options"
         case extras = "extras"
+        case frameRate = "frame_rate"
+        case maximumResolutionLevel = "maximum_resolution_level"
     }
     
     let fourCC: CodecFourCC
@@ -37,6 +36,9 @@ struct CodecSpecification: Codable {
     
     // XXX: 간단 설정을 위한 속성 - 최대 해상도 레벨
     var maximumResolutionLevel: CodecResolutionLevel = .unlimited
+    
+    // MARK: - SiriusKit-compatible fields
+    var size: CGSize?
 
     init(fourCC: CodecFourCC) {
         self.fourCC = fourCC
@@ -48,6 +50,9 @@ struct CodecSpecification: Codable {
         fourCC = try container.decode(CodecFourCC.self, forKey: .fourCC)
         options = try container.decode([CodecOptionKey: CodecOptionValue].self, forKey: .options)
         extras = try container.decodeIfPresent(String.self, forKey: .extras) ?? ""
+        
+        frameRate = try container.decodeIfPresent(Double.self, forKey: .frameRate) ?? 0.0
+        maximumResolutionLevel = try container.decodeIfPresent(CodecResolutionLevel.self, forKey: .maximumResolutionLevel) ?? .unlimited
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -56,6 +61,8 @@ struct CodecSpecification: Codable {
         try container.encode(fourCC, forKey: .fourCC)
         try container.encode(options, forKey: .options)
         try container.encode(extras, forKey: .extras)
+        try container.encode(frameRate, forKey: .frameRate)
+        try container.encode(maximumResolutionLevel, forKey: .maximumResolutionLevel)
     }
     
     func option(_ key: CodecOptionKey) -> CodecOptionValue? {
@@ -144,5 +151,20 @@ extension CodecSpecification {
         }
         
         return entries.joined(separator: ", ")
+    }
+}
+
+extension CodecSpecification {
+    /// HACK: YUV420에 대한 sanity check를 실시한다: 가로/세로가 8의 배수여야 함
+    func __sanityCheck() -> Bool {
+        guard self.options[.colorFormat] != .kColorFormatYUV444,
+              let size = self.size
+        else {
+            return true
+        }
+        
+        // YUV420 포맷은 가로/세로가 8의 배수여야 함
+        return size.width.truncatingRemainder(dividingBy: 8) == 0 &&
+        size.height.truncatingRemainder(dividingBy: 8) == 0
     }
 }
