@@ -14,16 +14,16 @@ import SiriusKit
 
 struct VideoEncoderConfiguration {
     /// Sirius codec configuration from Projection channel.
-    let codec: Codec
+    let specification: CodecSpecification
+    let desiredSize: CGSize?
+    
     /// Optional source format description to seed the compression session.
     let inputFormatDescription: CMFormatDescription?
-    /// Parsed options from `codec.options`.
-    let parsedOptions: [String: String]
     
-    init(codec: Codec, inputFormatDescription: CMFormatDescription? = nil) {
-        self.codec = codec
+    init(specification: CodecSpecification, desiredSize: CGSize?, inputFormatDescription: CMFormatDescription?) {
+        self.specification = specification
+        self.desiredSize = desiredSize
         self.inputFormatDescription = inputFormatDescription
-        self.parsedOptions = CodecOptionsParser.parse(optionsString: codec.options)
     }
 }
 
@@ -94,35 +94,3 @@ enum CodecColorFormat: String {
     case yuv444 = "yuv444"
 }
 
-struct CodecOptionsParser {
-    /// Parses an options string formatted as "key: 'value'; key2: 'value2'".
-    static func parse(optionsString: String?) -> [String: String] {
-        guard let optionsString, optionsString.isEmpty == false else { return [:] }
-        
-        let segments = optionsString.split(separator: ";")
-        var parsed: [String: String] = [:]
-        
-        for segment in segments {
-            let trimmed = segment.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard trimmed.isEmpty == false else { continue }
-            
-            let parts = trimmed.split(separator: ":", maxSplits: 1)
-            guard parts.count == 2 else { continue }
-            
-            let key = parts[0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            var value = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // Only accept key: 'value' pattern.
-            if value.hasPrefix("'"), value.hasSuffix("'"), value.count >= 2 {
-                value.removeFirst()
-                value.removeLast()
-            } else {
-                continue
-            }
-            
-            parsed[key] = value
-        }
-        
-        return parsed
-    }
-}

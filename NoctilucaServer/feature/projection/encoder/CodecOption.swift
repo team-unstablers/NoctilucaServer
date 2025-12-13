@@ -26,5 +26,7 @@ enum CodecOptionKey: String, Codable, Hashable, Equatable {
     /// 코덱의 프로파일을 설정합니다.
     case profile = "profile"
     
+    // TODO: hidpi 옵션 추가
+    
     case level = "level"
 }

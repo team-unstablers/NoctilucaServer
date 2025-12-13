@@ -37,9 +37,6 @@ struct CodecSpecification: Codable {
     // XXX: 간단 설정을 위한 속성 - 최대 해상도 레벨
     var maximumResolutionLevel: CodecResolutionLevel = .unlimited
     
-    // MARK: - SiriusKit-compatible fields
-    var size: CGSize?
-
     init(fourCC: CodecFourCC) {
         self.fourCC = fourCC
     }
@@ -154,6 +151,7 @@ extension CodecSpecification {
     }
 }
 
+/*
 extension CodecSpecification {
     /// HACK: YUV420에 대한 sanity check를 실시한다: 가로/세로가 8의 배수여야 함
     func __sanityCheck() -> Bool {
@@ -168,3 +166,4 @@ extension CodecSpecification {
         size.height.truncatingRemainder(dividingBy: 8) == 0
     }
 }
+*/

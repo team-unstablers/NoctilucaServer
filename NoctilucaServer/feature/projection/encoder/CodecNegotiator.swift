@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKit
 
 class CodecNegotiator {
     let ours: [CodecSpecification]
@@ -45,7 +46,7 @@ class BalancedCodecNegotiator: CodecNegotiator {
         // 최대한 클라이언트의 순서를 존중한다
         for theirsSpec in theirs {
             for oursSpec in ours {
-                if theirsSpec.isCompatible(with: oursSpec) {
+                if oursSpec.isCompatible(with: theirsSpec) {
                     result.append(theirsSpec)
                 }
             }
@@ -108,5 +109,12 @@ extension CodecNegotiator {
         case .overrideFromServer:
             return ServerOverridenCodecNegotiator(specifications: specifications)
         }
+    }
+}
+
+extension CodecNegotiator {
+    func negotiate(with siriusKitSpecs: [SiriusKit.Codec]) -> CodecSpecification? {
+        let theirs = siriusKitSpecs.map { CodecSpecification(siriusKit: $0) }
+        return negotiate(with: theirs)
     }
 }
