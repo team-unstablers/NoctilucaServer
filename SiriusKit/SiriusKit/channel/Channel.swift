@@ -8,6 +8,8 @@
 import Foundation
 import SwiftProtobuf
 
+import Atomics
+
 public typealias ChannelIdentifier = UUID
 
 public enum ChannelDirection {
@@ -41,6 +43,11 @@ open class Channel {
     public let direction: ChannelDirection
     
     internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
+    
+    /// 스트림의 쓰기 백프레셔.
+    public var writeBackPressure: UInt64 {
+        return stream.writeBackPressure.load(ordering: .relaxed)
+    }
 
     required public init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         self.stream = streamHolder.stream

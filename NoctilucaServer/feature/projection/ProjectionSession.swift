@@ -70,6 +70,15 @@ extension ProjectionSession: ScreenRecorderDelegate {
 extension ProjectionSession: VideoEncoderDelegate {
     func videoEncoder(_ encoder: any VideoEncoder, didEncode frame: EncodedFrame) {
         Task {
+            self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
+            
+            // FIXME: dynamic threshold
+            if (self.dataChannel.writeBackPressure > 3_072_000) {
+                self.logger.warning("High write backpressure (\(self.dataChannel.writeBackPressure) bytes) on projection session \(self.id), dropping frame")
+                return
+            }
+            
+            
             try await self.dataChannel.send(videoFrame: frame)
         }
     }

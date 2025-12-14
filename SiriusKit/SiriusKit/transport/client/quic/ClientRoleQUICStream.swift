@@ -8,6 +8,8 @@
 import Foundation
 import Network
 
+import Atomics
+
 class ClientRoleQUICStream: Stream {
     let connection: NWConnection
     let transport: ClientRoleQUICTransport
@@ -16,7 +18,7 @@ class ClientRoleQUICStream: Stream {
     
     private var _id: StreamIdentifier = StreamIdentifier.max
     override var id: StreamIdentifier { _id }
-    
+
     init(_ connection: NWConnection, transport: ClientRoleQUICTransport) {
         self.connection = connection
         self.transport = transport
@@ -30,6 +32,13 @@ class ClientRoleQUICStream: Stream {
     }
     
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
+        let byteCount = UInt64(data.count)
+        writeBackPressure.wrappingIncrement(by: byteCount, ordering: .relaxed)
+        
+        defer {
+            self.writeBackPressure.wrappingDecrement(by: UInt64(data.count), ordering: .relaxed)
+        }
+
         return await withCheckedContinuation { continuation in
             connection.send(content: data, completion: .contentProcessed { error in
                 if let error = error {

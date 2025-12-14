@@ -17,6 +17,9 @@ public enum MainChannelEvent {
     case receivedAuthChallenge(AuthChallenge)
     case receivedAuthRequest(AuthRequest)
     case receivedAuthResponse(AuthResponse)
+    
+    case receivedPing
+    case receivedPong
 }
 
 public class MainChannel: Channel {
@@ -66,6 +69,13 @@ public class MainChannel: Channel {
             case .authResponse:
                 let message = try AuthResponse.fromProtobufBytes(frame.data)
                 continuation.yield(.receivedAuthResponse(message))
+                break
+                
+            case .ping:
+                self.continuation.yield(.receivedPing)
+                break
+            case .pong:
+                self.continuation.yield(.receivedPong)
                 break
                 
             default:

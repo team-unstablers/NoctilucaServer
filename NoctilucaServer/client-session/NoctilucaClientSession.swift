@@ -95,6 +95,8 @@ class NoctilucaClientSession: Identifiable {
                     try await handleClientHello(message)
                 case .receivedAuthRequest(let message):
                     try await handleAuthRequest(message)
+                case .receivedPing:
+                    try await self.mainChannel.sendPong()
                 default:
                     // ignore other events
                     break

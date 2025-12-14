@@ -31,6 +31,9 @@ class MainWindowViewModel: ObservableObject {
     
     var client: NoctilucaClient?
     
+    @Published
+    var averagePingRTT: TimeInterval = 0.0
+    
     func appendConnectionLog(_ log: String) {
         self.connectionLog.append(log)
         

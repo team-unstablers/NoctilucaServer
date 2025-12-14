@@ -35,6 +35,24 @@ struct MainToolbarAddressBar: View {
             return nil
         }
         
+        switch viewModel.averagePingRTT {
+        // ~50ms: excellent
+        case 0..<0.050:
+            return .excellent
+            
+        // ~100ms: good
+        case 0.050..<0.100:
+            return .good
+            
+        // ~200ms: bad
+        case 0.100..<0.200:
+            return .bad
+            
+        // >200ms: poor
+        default:
+            return .poor
+        }
+            
         return .unknown
     }
     
@@ -46,6 +64,7 @@ struct MainToolbarAddressBar: View {
                 endpointURL: viewModel.endpointURL,
                 securityIndicator: securityIndicator,
                 qualityIndicator: qualityIndicator,
+                rtt: viewModel.averagePingRTT,
                 action: action
             ) { endpointURL in
                 Task {

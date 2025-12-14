@@ -143,6 +143,7 @@ struct AddressBarSecurityIndicator: View {
 
 struct AddressBarQualityIndicator: View {
     let state: AddressBarQualityIndicatorState
+    let rtt: TimeInterval = 0
     
     @State
     var shouldDisplayTooltip = false
@@ -245,7 +246,8 @@ struct AddressBarQualityIndicator: View {
                                 .multilineTextAlignment(.leading)
                                 .padding(.bottom, 4)
                             
-                            Text("ping: 4ms")
+                            // %.1fms 형식으로 표시
+                            Text("ping: \(String(format: "%.1f", rtt * 1000))ms")
                                 .font(.system(size: 11))
                         }
                         .fixedSize()
@@ -323,7 +325,9 @@ struct AddressBar: View {
     let endpointURL: String
     
     let securityIndicator: AddressBarSecurityIndicatorState?
+    
     let qualityIndicator: AddressBarQualityIndicatorState?
+    let rtt: TimeInterval
     
     let action: AddressBarActionState?
     
@@ -332,12 +336,14 @@ struct AddressBar: View {
     init(endpointURL: String,
          securityIndicator: AddressBarSecurityIndicatorState? = nil,
          qualityIndicator: AddressBarQualityIndicatorState? = nil,
+         rtt: TimeInterval = 0,
          action: AddressBarActionState? = nil,
          submitHandler: @escaping (String) -> Void) {
         self.endpointURL = endpointURL
         self._draftURL = .init(initialValue: endpointURL)
         self.securityIndicator = securityIndicator
         self.qualityIndicator = qualityIndicator
+        self.rtt = rtt
         self.action = action
         self.submitHandler = submitHandler
     }

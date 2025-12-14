@@ -7,6 +7,8 @@
 
 import Foundation
 
+import Atomics
+
 typealias StreamIdentifier = UInt64
 
 enum StreamError: Error {
@@ -24,6 +26,8 @@ class Stream {
     let events: AsyncStream<StreamEvent>
     let continuation: AsyncStream<StreamEvent>.Continuation
     
+    var writeBackPressure = ManagedAtomic<UInt64>(0)
+
     init() {
         var continuationLocal: AsyncStream<StreamEvent>.Continuation!
         

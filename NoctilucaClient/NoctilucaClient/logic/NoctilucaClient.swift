@@ -66,6 +66,8 @@ enum NoctilucaClientUIEvent: Sendable {
     case phaseChanged(NoctilucaClientPhase)
     case errorOccurred(NoctilucaClientError)
     
+    case pingRTTUpdated(TimeInterval)
+    
     case FIXME_projectionStarted(ProjectionSession)
 }
 
@@ -76,6 +78,19 @@ class NoctilucaClient: ObservableObject {
 
     let session: SiriusClient
     let uiEvents = PassthroughSubject<NoctilucaClientUIEvent, Never>()
+    
+    private var pingTask: Task<Void, Never>?
+    private var pongHandler: (() -> Void)?
+    private(set) var pingRTTSamples: [TimeInterval] = []
+    var averagePingRTT: TimeInterval {
+        guard !pingRTTSamples.isEmpty else {
+            return 0
+        }
+        
+        let total = pingRTTSamples.reduce(0, +)
+        return total / Double(pingRTTSamples.count)
+    }
+    
     
     var sessionID: UUID?
     var mainChannel: MainChannel!
@@ -126,6 +141,9 @@ class NoctilucaClient: ObservableObject {
                     try await self.handleAuthChallenge(consume message)
                 case .receivedAuthResponse(let message):
                     try await self.handleAuthResponse(consume message)
+                    
+                case .receivedPong:
+                    self.pongHandler?()
                 default:
                     break
                 }
@@ -139,6 +157,43 @@ class NoctilucaClient: ObservableObject {
         }
     }
     
+    private func pingLoop() async {
+        self.pingRTTSamples.reserveCapacity(10)
+        
+        do {
+            while !Task.isCancelled {
+                let startTime = Date()
+                try await self.mainChannel.sendPing()
+                
+                await withCheckedContinuation { continuation in
+                    self.pongHandler = {
+                        self.pongHandler = nil
+                        
+                        continuation.resume()
+                    }
+                }
+                let endTime = Date()
+                
+                let rtt = endTime.timeIntervalSince(startTime)
+                self.pingRTTSamples.append(rtt)
+                
+                await MainActor.run {
+                    self.uiEvents.send(.pingRTTUpdated(self.averagePingRTT))
+                }
+                
+                try await Task.sleep(for: .seconds(1))
+                
+                if self.pingRTTSamples.count >= 10 {
+                    let average = self.averagePingRTT
+                    self.pingRTTSamples.removeAll(keepingCapacity: true)
+                    self.pingRTTSamples.append(average)
+                }
+            }
+        } catch {
+            logger.error("pingLoop() encountered error: \(error.localizedDescription)")
+        }
+    }
+
     @inline(__always) // 이게 효과가 있을지?
     func assertPhase(expected: NoctilucaClientPhase) throws {
         guard self.phase == expected else {
@@ -208,6 +263,9 @@ extension NoctilucaClient: SiriusClientDelegate {
         self.mainChannel = mainChannel
         self.eventLoopTask = Task {
             await mainChannelEventLoop()
+        }
+        self.pingTask = Task {
+            await pingLoop()
         }
         
         Task {

@@ -8,6 +8,8 @@
 import Foundation
 import Network
 
+import Atomics
+
 class ServerRoleQUICStream: Stream {
     let connection: NWConnection
     let transport: ServerRoleQUICClientTransport
@@ -32,6 +34,13 @@ class ServerRoleQUICStream: Stream {
     }
     
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
+        let byteCount = UInt64(data.count)
+        writeBackPressure.wrappingIncrement(by: byteCount, ordering: .relaxed)
+        
+        defer {
+            self.writeBackPressure.wrappingDecrement(by: UInt64(data.count), ordering: .relaxed)
+        }
+        
         return await withCheckedContinuation { continuation in
             connection.send(content: data, completion: .contentProcessed { error in
                 if let error = error {

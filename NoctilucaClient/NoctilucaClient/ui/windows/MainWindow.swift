@@ -51,5 +51,6 @@ struct MainWindow: View {
             viewModel.handleClientError(error)
         }
         .setupAuthChallengeHandler(client: viewModel.client)
+        .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
     }
 }

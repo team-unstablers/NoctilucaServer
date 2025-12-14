@@ -25,6 +25,8 @@
 /* Begin PBXBuildFile section */
 		F6BD3B9B2ED8AF93000011DF /* X509 in Frameworks */ = {isa = PBXBuildFile; productRef = F6BD3B962ED8AF93000011DF /* X509 */; };
 		F6BD3B9C2ED8AF93000011DF /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = F6BD3B942ED8AF93000011DF /* SwiftProtobuf */; };
+		F6D090702EEE92E000D2C686 /* Atomics in Frameworks */ = {isa = PBXBuildFile; productRef = F6D0906F2EEE92E000D2C686 /* Atomics */; };
+		F6D090722EEE92E700D2C686 /* Atomics in Frameworks */ = {isa = PBXBuildFile; productRef = F6D090712EEE92E700D2C686 /* Atomics */; };
 		F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */; };
 		F6F8A6ED2ED3129F0073B591 /* SiriusKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F66965292ECF26FD0032EF4E /* SiriusKit.framework */; platformFilters = (macos, ); };
 		F6F8A7022ED31E250073B591 /* X509 in Frameworks */ = {isa = PBXBuildFile; productRef = F6F8A7012ED31E250073B591 /* X509 */; };
@@ -58,6 +60,7 @@
 		F6BD3BA22ED8AF93000011DF /* Exceptions for "SiriusKit" folder in "SiriusKitClient" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"channel/MainChannel+Server.swift",
 				"server/Channel+getClientSession.swift",
 				server/ClientSession.swift,
 				server/SiriusServer.swift,
@@ -79,6 +82,7 @@
 		F6BD3E8C2EDA1A7D000011DF /* Exceptions for "SiriusKit" folder in "SiriusKit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"channel/MainChannel+Client.swift",
 				"client/Channel+getClientSession.swift",
 				client/SiriusClient.swift,
 				client/SiriusClientBuilder.swift,
@@ -132,6 +136,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6D090702EEE92E000D2C686 /* Atomics in Frameworks */,
 				F6F8A7022ED31E250073B591 /* X509 in Frameworks */,
 				F6EEA5E22ECF2D8200D8E961 /* SwiftProtobuf in Frameworks */,
 			);
@@ -148,6 +153,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6D090722EEE92E700D2C686 /* Atomics in Frameworks */,
 				F6BD3B9B2ED8AF93000011DF /* X509 in Frameworks */,
 				F6BD3B9C2ED8AF93000011DF /* SwiftProtobuf in Frameworks */,
 			);
@@ -173,6 +179,7 @@
 				F6F8A6EA2ED3129F0073B591 /* SiriusKitTests */,
 				F6BD3AF72ED33516000011DF /* SiriusKitTestsHelper */,
 				F6BD3B092ED335B4000011DF /* SiriusKitTestsHelper */,
+				F6D0906E2EEE92E000D2C686 /* Frameworks */,
 				F669652A2ECF26FD0032EF4E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -186,6 +193,13 @@
 				F6BD3BA12ED8AF93000011DF /* SiriusKitClient.framework */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F6D0906E2EEE92E000D2C686 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -229,6 +243,7 @@
 			packageProductDependencies = (
 				F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */,
 				F6F8A7012ED31E250073B591 /* X509 */,
+				F6D0906F2EEE92E000D2C686 /* Atomics */,
 			);
 			productName = SiriusKit;
 			productReference = F66965292ECF26FD0032EF4E /* SiriusKit.framework */;
@@ -277,6 +292,7 @@
 			packageProductDependencies = (
 				F6BD3B942ED8AF93000011DF /* SwiftProtobuf */,
 				F6BD3B962ED8AF93000011DF /* X509 */,
+				F6D090712EEE92E700D2C686 /* Atomics */,
 			);
 			productName = SiriusKit;
 			productReference = F6BD3BA12ED8AF93000011DF /* SiriusKitClient.framework */;
@@ -343,6 +359,7 @@
 			packageReferences = (
 				F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
 				F6F8A7002ED31E250073B591 /* XCRemoteSwiftPackageReference "swift-certificates" */,
+				F6D0906D2EEE92C800D2C686 /* XCRemoteSwiftPackageReference "swift-atomics" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669652A2ECF26FD0032EF4E /* Products */;
@@ -952,6 +969,14 @@
 				minimumVersion = 1.15.1;
 			};
 		};
+		F6D0906D2EEE92C800D2C686 /* XCRemoteSwiftPackageReference "swift-atomics" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-atomics.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
 		F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-protobuf.git";
@@ -980,6 +1005,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F6BD3B972ED8AF93000011DF /* XCRemoteSwiftPackageReference "swift-certificates" */;
 			productName = X509;
+		};
+		F6D0906F2EEE92E000D2C686 /* Atomics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6D0906D2EEE92C800D2C686 /* XCRemoteSwiftPackageReference "swift-atomics" */;
+			productName = Atomics;
+		};
+		F6D090712EEE92E700D2C686 /* Atomics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6D0906D2EEE92C800D2C686 /* XCRemoteSwiftPackageReference "swift-atomics" */;
+			productName = Atomics;
 		};
 		F6EEA5E12ECF2D8200D8E961 /* SwiftProtobuf */ = {
 			isa = XCSwiftPackageProductDependency;
