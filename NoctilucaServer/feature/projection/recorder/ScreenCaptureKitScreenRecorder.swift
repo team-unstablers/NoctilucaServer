@@ -76,6 +76,7 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
         
         let configuration = SCStreamConfiguration()
         configuration.pixelFormat = kCVPixelFormatType_32BGRA
+        configuration.preservesAspectRatio = false
         
         configuration.queueDepth = 2
         configuration.showsCursor = true

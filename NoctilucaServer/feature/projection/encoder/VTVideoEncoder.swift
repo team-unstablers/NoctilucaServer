@@ -268,6 +268,7 @@ private extension VTVideoEncoder {
         setProperty(session, key: kVTCompressionPropertyKey_RealTime, value: kCFBooleanTrue)
         setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
         
+        setProperty(session, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Normal)
         
         if codecSpecification.frameRate > 0 {
             let rate = NSNumber(value: codecSpecification.frameRate)

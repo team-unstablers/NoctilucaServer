@@ -33,6 +33,7 @@ struct MainWindow: View {
                 .presentedWindowToolbarStyle(.unified)
                 .navigationTitle(NoctilucaMeta.productName)
         }
+        .windowToolbarFullScreenVisibility(.onHover)
         .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {
             let error = viewModel.errors.last
             

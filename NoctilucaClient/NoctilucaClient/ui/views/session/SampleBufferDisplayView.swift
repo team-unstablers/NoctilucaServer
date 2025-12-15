@@ -17,20 +17,24 @@ struct SampleBufferDisplayView: NSViewRepresentable {
         let view = NSView()
         // AppKit views need their layer set explicitly to host Core Animation layers
         view.wantsLayer = true
-        view.layer?.backgroundColor = .black
         view.layer?.addSublayer(displayLayer)
+        displayLayer.backgroundColor = .black
         displayLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         view.layer?.needsDisplayOnBoundsChange = true
         displayLayer.needsDisplayOnBoundsChange = true
         
         displayLayer.frame = view.bounds
-        displayLayer.videoGravity = .resizeAspect
+        displayLayer.bounds = view.bounds
+        displayLayer.videoGravity = .resize
         displayLayer.contentsScale = NSScreen.main?.backingScaleFactor ?? 1.0
+        
+        
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         // Update frame or other properties if needed
         displayLayer.frame = nsView.bounds
+        displayLayer.bounds = nsView.bounds
     }
 }
