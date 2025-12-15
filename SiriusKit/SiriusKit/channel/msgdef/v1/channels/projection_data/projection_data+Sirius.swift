@@ -10,7 +10,7 @@ import SwiftProtobuf
 
 public extension MessageOpcode {
     static let frameData: MessageOpcode = MessageOpcode(rawValue: 0x8001)
-    static let streamDescription: MessageOpcode = MessageOpcode(rawValue: 0x8002)
+    static let codecParameterSets: MessageOpcode = MessageOpcode(rawValue: 0x8002)
 }
 
 public struct FrameDataHeader: SiriusMessage {
@@ -51,5 +51,44 @@ public extension FrameDataHeader {
     func serialize() -> Data {
         let protobufMessage = self.toProtobufMessage()
         return try! protobufMessage.serializedData()
+    }
+}
+
+public struct CodecParameterSet {
+    public let type: CodecParameterSetType
+    public let data: Data
+    
+    public init(type: CodecParameterSetType, data: Data) {
+        self.type = type
+        self.data = data
+    }
+}
+
+public struct CodecParameterSetMessage: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage
+    
+    public let parameterSets: [CodecParameterSet]
+
+    public init(parameterSets: [CodecParameterSet]) {
+        self.parameterSets = parameterSets
+    }
+
+    init(from protobufMessage: ProtobufMessage) throws {
+        self.parameterSets = protobufMessage.parameterSets.map {
+            CodecParameterSet(type: .init(rawValue: $0.type), data: $0.data)
+        }
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+        
+        message.parameterSets = parameterSets.map { parameterSet in
+            .with {
+                $0.type = parameterSet.type.rawValue
+                $0.data = parameterSet.data
+            }
+        }
+
+        return message
     }
 }

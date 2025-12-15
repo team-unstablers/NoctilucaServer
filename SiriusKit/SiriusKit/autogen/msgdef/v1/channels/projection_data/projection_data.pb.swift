@@ -8,6 +8,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
+import Foundation
 import SwiftProtobuf
 
 // If the compiler emits an error on this type, it is because this file
@@ -37,6 +38,34 @@ struct Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: Sendable {
 
   /// 키프레임 여부 (드랍 로직에서 중요: 키프레임은 웬만하면 드랍 안 하는 게 좋음)
   var isKeyFrame: Bool = false
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+struct Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// see CodecParameterSetType.hpp
+  var type: UInt64 = 0
+
+  var data: Data = Data()
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+/// opcode = 0x8002
+struct Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var parameterSets: [Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet] = []
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -87,6 +116,71 @@ extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Me
     if lhs.frameLength != rhs.frameLength {return false}
     if lhs.presentationTimestamp != rhs.presentationTimestamp {return false}
     if lhs.isKeyFrame != rhs.isKeyFrame {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".CodecParameterSet"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}data\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.type) }()
+      case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.type != 0 {
+      try visitor.visitSingularFixed64Field(value: self.type, fieldNumber: 1)
+    }
+    if !self.data.isEmpty {
+      try visitor.visitSingularBytesField(value: self.data, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet, rhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet) -> Bool {
+    if lhs.type != rhs.type {return false}
+    if lhs.data != rhs.data {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".CodecParameterSetMessage"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}parameterSets\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.parameterSets) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.parameterSets.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.parameterSets, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage, rhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage) -> Bool {
+    if lhs.parameterSets != rhs.parameterSets {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

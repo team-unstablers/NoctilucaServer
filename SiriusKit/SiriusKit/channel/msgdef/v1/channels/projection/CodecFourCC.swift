@@ -15,7 +15,7 @@ public struct CodecFourCC: RawRepresentable, Codable, Equatable {
     }
     
     public init(_ a: Character, _ b: Character, _ c: Character, _ d: Character) {
-        self.rawValue = ((UInt32(a.asciiValue!) << 24) | (UInt32(b.asciiValue!) << 16) | (UInt32(c.asciiValue!) << 8) | UInt32(d.asciiValue!)).bigEndian
+        self.rawValue = ((UInt32(a.asciiValue!) << 24) | (UInt32(b.asciiValue!) << 16) | (UInt32(c.asciiValue!) << 8) | UInt32(d.asciiValue!))
     }
     
     public init(from decoder: any Decoder) throws {
@@ -31,10 +31,10 @@ public struct CodecFourCC: RawRepresentable, Codable, Equatable {
     }
     
     public var stringRepresentation: String {
-        let a = Character(UnicodeScalar((rawValue.bigEndian >> 24) & 0xFF)!)
-        let b = Character(UnicodeScalar((rawValue.bigEndian >> 16) & 0xFF)!)
-        let c = Character(UnicodeScalar((rawValue.bigEndian >> 8) & 0xFF)!)
-        let d = Character(UnicodeScalar(rawValue.bigEndian & 0xFF)!)
+        let a = Character(UnicodeScalar((rawValue >> 24) & 0xFF)!)
+        let b = Character(UnicodeScalar((rawValue >> 16) & 0xFF)!)
+        let c = Character(UnicodeScalar((rawValue >> 8) & 0xFF)!)
+        let d = Character(UnicodeScalar(rawValue & 0xFF)!)
         
         return String([a, b, c, d])
     }
