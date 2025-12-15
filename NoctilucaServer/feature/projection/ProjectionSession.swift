@@ -59,6 +59,8 @@ class ProjectionSession: Identifiable {
             // drop frame until backpressure is cleared
             if self.dataChannel.writeBackPressure == 0 {
                 self.flushAll = false
+                self.encoder.forceKeyframe()
+                return
             } else {
                 self.logger.info("Flushing frame due to backpressure on projection session \(self.id)")
                 return
