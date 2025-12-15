@@ -5,12 +5,13 @@
 //  Created by Gyuhwan Park on 12/12/25.
 //
 
-import AVFoundation
-
+#if canImport(AppKit)
 import AppKit
 import SwiftUI
 
-struct SampleBufferDisplayView: NSViewRepresentable {
+import AVFoundation
+
+struct AppKitSampleBufferDisplayView: NSViewRepresentable {
     let displayLayer: AVSampleBufferDisplayLayer
 
     func makeNSView(context: Context) -> NSView {
@@ -38,3 +39,5 @@ struct SampleBufferDisplayView: NSViewRepresentable {
         displayLayer.bounds = nsView.bounds
     }
 }
+
+#endif

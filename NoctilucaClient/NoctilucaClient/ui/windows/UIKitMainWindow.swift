@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 12/10/25.
 //
 
+#if os(iOS)
 import Foundation
 
 import SwiftUI
@@ -18,22 +19,17 @@ enum MainWindowPhase: Hashable {
     case connected
 }
 
-struct MainWindow: View {
+struct UIKitMainWindow: View {
     @StateObject
     var viewModel = MainWindowViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
-            MainToolbar(addressBar: NSHostingView(rootView: AnyView(MainToolbarAddressBar(viewModel: viewModel))))
-                .frame(width: 0, height: 0)
-            
             MainWindowContentView(viewModel: viewModel)
-                .frame(minWidth: 640, minHeight: 480)
-                .presentedWindowStyle(.titleBar)
-                .presentedWindowToolbarStyle(.unified)
                 .navigationTitle(NoctilucaMeta.productName)
+            MainToolbarAddressBar(viewModel: viewModel)
         }
-        .windowToolbarFullScreenVisibility(.onHover)
+        .windowToolbarFullScreenVisibility(.automatic)
         .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {
             let error = viewModel.errors.last
             
@@ -55,3 +51,7 @@ struct MainWindow: View {
         .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
     }
 }
+
+typealias MainWindow = UIKitMainWindow
+
+#endif

@@ -146,7 +146,7 @@ struct AddressBarQualityIndicator: View {
     let rtt: TimeInterval
     
     @State
-    var shouldDisplayTooltip = false
+    var shouldDisplayTooltip = true
     
     @State
     var tooltipSize: CGSize = .zero
@@ -256,7 +256,7 @@ struct AddressBarQualityIndicator: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .clipped()
                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .offset(x: offsetX, y: 26)
+                        .offset(x: offsetX, y: -50)
                         .onGeometryChange(for: CGSize.self) { proxy in
                             proxy.size
                         } action: { geom in
@@ -434,12 +434,21 @@ struct AddressBar: View {
             .overlay {
                 RoundedRectangle(cornerRadius: radiusSize)
                     .fill(.clear)
+#if os(macOS)
                     .strokeBorder(
                         // 시스템 포커스 색상 사용
                         Color(nsColor: .keyboardFocusIndicatorColor)
                             .opacity(isFocused ? 1 : 0.001), // 포커스 없으면 투명
                         lineWidth: 4 // 빛번짐 느낌을 위해 약간 두껍게
                     )
+#else
+                    .strokeBorder(
+                        // 시스템 포커스 색상 사용
+                        Color.accentColor
+                            .opacity(isFocused ? 1 : 0.001), // 포커스 없으면 투명
+                        lineWidth: 4 // 빛번짐 느낌을 위해 약간 두껍게
+                    )
+#endif
                     .scaleEffect(focusBorderScale)
                     .animation(.easeIn(duration: 0.2), value: isFocused)
             }

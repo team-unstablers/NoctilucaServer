@@ -83,10 +83,13 @@ struct MainWindowConnectingPhaseContentView: View {
                 .font(.system(size: 12).monospaced())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
+#if os(macOS)
                 .overlay {
                     LinearGradient(
                         colors: [
                             Color(NSColor.windowBackgroundColor),
+                            Color(UIColor.systemBackground),
+                            
                             Color.clear,
                         ],
                         startPoint: .top,
@@ -94,6 +97,7 @@ struct MainWindowConnectingPhaseContentView: View {
                     )
                     .opacity(isLogAreaVisible ? 0.0 : 1.0)
                 }
+#endif
                 .onHover { hoverState in
                     if hoverState {
                         withAnimation(.easeInOut(duration: 0.2)) {

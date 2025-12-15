@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 12/10/25.
 //
 
+#if canImport(AppKit)
 import Foundation
 
 import SwiftUI
@@ -279,3 +280,5 @@ extension NSWindow {
         }
     }
 }
+
+#endif
