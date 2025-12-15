@@ -10,8 +10,6 @@ import AVFoundation
 import VideoToolbox
 import SiriusKit
 
-
-
 struct VideoEncoderConfiguration {
     /// Sirius codec configuration from Projection channel.
     let specification: CodecSpecification
@@ -46,7 +44,24 @@ protocol VideoEncoder: AnyObject {
     func encode(frameID: UInt64, sampleBuffer: CMSampleBuffer) throws
     func flush() throws
     func stop() throws
+    
+    // MARK: - On-the-fly controls
+    
+    /// 다음에 입력으로 들어오는 프레임을 반드시 키프레임으로써 인코딩 해야 한다고 알립니다.
+    /// NOTE: 이 요청은 곧바로 지켜지지 않을 수도 있습니다.
+    func forceKeyframe()
+    
+    /// 인코딩 도중에 목표 비트레이트를 동적으로 변경합니다.
+    /// NOTE: 이는 구현체에 따라, 옵션에 따라 곧바로 지켜지지 않을 수 있습니다.
+    @discardableResult
+    func updateTargetBitrate(_ bitrateKbps: Int) -> Bool
+    
+    /// 인코딩 도중에 최대 비트레이트를 동적으로 변경합니다.
+    /// NOTE: 이는 구현체에 따라, 옵션에 따라 곧바로 지켜지지 않을 수 있습니다.
+    @discardableResult
+    func updateMaxBitrate(bitrateKbps: Int) -> Bool
 }
+    
 
 enum VideoEncoderError: LocalizedError {
     case notPrepared

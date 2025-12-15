@@ -19,20 +19,29 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     private let logger = NoctilucaLogger(category: "VTVideoEncoder")
     private let workerQueue: DispatchQueue
     internal let callbackQueue: DispatchQueue
+    private let defaultTargetBitrateKbps = 1200
+    private let defaultMaxBitrateKbps = 2400
     
     private var configuration: VideoEncoderConfiguration?
     private var compressionSession: VTCompressionSession?
     private var isStarted = false
+    private var pendingForceKeyframe = false
+    private var targetBitrateKbps: Int
+    private var maxBitrateKbps: Int
     
     override init() {
         self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtencoder.worker")
         self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtencoder.callback")
+        self.targetBitrateKbps = defaultTargetBitrateKbps
+        self.maxBitrateKbps = defaultMaxBitrateKbps
         super.init()
     }
     
     init(workerQueue: DispatchQueue, callbackQueue: DispatchQueue) {
         self.workerQueue = workerQueue
         self.callbackQueue = callbackQueue
+        self.targetBitrateKbps = defaultTargetBitrateKbps
+        self.maxBitrateKbps = defaultMaxBitrateKbps
         super.init()
     }
     
@@ -76,6 +85,15 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
                 throw VideoEncoderError.invalidSampleBuffer
             }
             
+            let shouldForceKeyframe = pendingForceKeyframe
+            pendingForceKeyframe = false
+            let frameProperties: CFDictionary?
+            if shouldForceKeyframe {
+                frameProperties = [kVTEncodeFrameOptionKey_ForceKeyFrame as String: true] as CFDictionary
+            } else {
+                frameProperties = nil
+            }
+            
             let context = FrameEncodeContext(frameID: frameID, pts: CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
             let unmanagedContext = Unmanaged.passRetained(context)
             
@@ -85,16 +103,65 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
                 imageBuffer: imageBuffer,
                 presentationTimeStamp: context.pts,
                 duration: .invalid,
-                frameProperties: nil,
+                frameProperties: frameProperties,
                 sourceFrameRefcon: unmanagedContext.toOpaque(),
                 infoFlagsOut: &infoFlags
             )
             
             if status != noErr {
+                if shouldForceKeyframe {
+                    pendingForceKeyframe = true
+                }
                 unmanagedContext.release()
                 throw VideoEncoderError.compressionSessionFailed(status)
             }
         }
+    }
+    
+    // MARK: - On-the-fly controls
+    
+    func forceKeyframe() {
+        workerQueue.async {
+            self.pendingForceKeyframe = true
+        }
+    }
+    
+    @discardableResult
+    func updateTargetBitrate(_ bitrateKbps: Int) -> Bool {
+        var success = false
+        workerQueue.sync {
+            guard bitrateKbps > 0 else {
+                self.logger.error("Target bitrate must be positive (kbps=\(bitrateKbps))")
+                success = false
+                return
+            }
+            self.targetBitrateKbps = bitrateKbps
+            guard let session = self.compressionSession else {
+                success = true
+                return
+            }
+            success = self.applyAverageBitrate(bitrateKbps, to: session)
+        }
+        return success
+    }
+    
+    @discardableResult
+    func updateMaxBitrate(bitrateKbps: Int) -> Bool {
+        var success = false
+        workerQueue.sync {
+            guard bitrateKbps > 0 else {
+                self.logger.error("Max bitrate must be positive (kbps=\(bitrateKbps))")
+                success = false
+                return
+            }
+            self.maxBitrateKbps = bitrateKbps
+            guard let session = self.compressionSession else {
+                success = true
+                return
+            }
+            success = self.applyMaxBitrate(bitrateKbps, to: session)
+        }
+        return success
     }
 }
 
@@ -202,9 +269,13 @@ private extension VTVideoEncoder {
     }
     
     func applyQualitySettings(_ session: VTCompressionSession) throws {
-        // FIXME
-        setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: 1200 * 1000))
-        setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: 2400 * 1000), NSNumber(value: 1)] as NSArray)
+        if targetBitrateKbps > 0 {
+            applyAverageBitrate(targetBitrateKbps, to: session)
+        }
+        
+        if maxBitrateKbps > 0 {
+            applyMaxBitrate(maxBitrateKbps, to: session)
+        }
 
         /*
         switch codec.quality {
@@ -325,11 +396,35 @@ private extension CodecSpecification {
 }
 
 private extension VTVideoEncoder {
-    func setProperty(_ session: VTCompressionSession, key: CFString, value: CFTypeRef) {
+    @discardableResult
+    func applyAverageBitrate(_ bitrateKbps: Int, to session: VTCompressionSession) -> Bool {
+        let bitsPerSecond = bitrateBitsPerSecond(fromKbps: bitrateKbps)
+        return setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: bitsPerSecond))
+    }
+    
+    @discardableResult
+    func applyMaxBitrate(_ bitrateKbps: Int, to session: VTCompressionSession) -> Bool {
+        let bytesPerSecond = bitrateBytesPerSecond(fromKbps: bitrateKbps)
+        let limits: NSArray = [NSNumber(value: bytesPerSecond), NSNumber(value: 1)]
+        return setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: limits)
+    }
+    
+    func bitrateBitsPerSecond(fromKbps bitrateKbps: Int) -> Int {
+        return max(bitrateKbps, 0) * 1000
+    }
+    
+    func bitrateBytesPerSecond(fromKbps bitrateKbps: Int) -> Int {
+        return bitrateBitsPerSecond(fromKbps: bitrateKbps) / 8
+    }
+    
+    @discardableResult
+    func setProperty(_ session: VTCompressionSession, key: CFString, value: CFTypeRef) -> Bool {
         let status = VTSessionSetProperty(session, key: key, value: value)
         if status != noErr {
             logger.error("Failed to set property \(key) status=\(status)")
+            return false
         }
+        return true
     }
     
     func microseconds(from time: CMTime) -> UInt64 {
