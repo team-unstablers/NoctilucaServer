@@ -19,20 +19,20 @@ public struct FrameDataHeader: SiriusMessage {
     public let frameID: UInt64
     public let frameLength: UInt32
     public let presentationTimestamp: UInt64
-    public let isKeyFrame: Bool
+    public let flags: ProjectionDataFlags
 
-    public init(frameID: UInt64, frameLength: UInt32, presentationTimestamp: UInt64, isKeyFrame: Bool) {
+    public init(frameID: UInt64, frameLength: UInt32, presentationTimestamp: UInt64, flags: ProjectionDataFlags = []) {
         self.frameID = frameID
         self.frameLength = frameLength
         self.presentationTimestamp = presentationTimestamp
-        self.isKeyFrame = isKeyFrame
+        self.flags = flags
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader) throws {
         self.frameID = protobufMessage.frameID
         self.frameLength = protobufMessage.frameLength
         self.presentationTimestamp = protobufMessage.presentationTimestamp
-        self.isKeyFrame = protobufMessage.isKeyFrame
+        self.flags = ProjectionDataFlags(rawValue: protobufMessage.flags)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -41,7 +41,7 @@ public struct FrameDataHeader: SiriusMessage {
         message.frameID = self.frameID
         message.frameLength = self.frameLength
         message.presentationTimestamp = self.presentationTimestamp
-        message.isKeyFrame = self.isKeyFrame
+        message.flags = self.flags.rawValue
 
         return message
     }
@@ -57,10 +57,12 @@ public extension FrameDataHeader {
 public struct CodecParameterSet {
     public let type: CodecParameterSetType
     public let data: Data
+    public let flags: UInt32
     
-    public init(type: CodecParameterSetType, data: Data) {
+    public init(type: CodecParameterSetType, data: Data, flags: UInt32 = 0) {
         self.type = type
         self.data = data
+        self.flags = flags
     }
 }
 
@@ -75,7 +77,7 @@ public struct CodecParameterSetMessage: SiriusMessage {
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.parameterSets = protobufMessage.parameterSets.map {
-            CodecParameterSet(type: .init(rawValue: $0.type), data: $0.data)
+            CodecParameterSet(type: .init(rawValue: $0.type), data: $0.data, flags: $0.flags)
         }
     }
 
@@ -86,6 +88,7 @@ public struct CodecParameterSetMessage: SiriusMessage {
             .with {
                 $0.type = parameterSet.type.rawValue
                 $0.data = parameterSet.data
+                $0.flags = parameterSet.flags
             }
         }
 

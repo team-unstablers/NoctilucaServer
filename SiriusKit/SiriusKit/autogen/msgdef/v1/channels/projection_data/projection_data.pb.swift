@@ -36,8 +36,9 @@ struct Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: Sendable {
   /// PTS (Presentation Timestamp) - 마이크로초 단위 권장
   var presentationTimestamp: UInt64 = 0
 
-  /// 키프레임 여부 (드랍 로직에서 중요: 키프레임은 웬만하면 드랍 안 하는 게 좋음)
-  var isKeyFrame: Bool = false
+  /// static const uint32_t FLAG_IS_KEYFRAME         = 0b00000001;
+  /// static const uint32_t FLAG_H264_HEVC_IS_ANNEXB = 0b;
+  var flags: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -53,6 +54,9 @@ struct Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: Sendable {
   var type: UInt64 = 0
 
   var data: Data = Data()
+
+  /// static const uint32_t FLAG_H264_HEVC_IS_ANNEXB = 0x00000001;
+  var flags: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -78,7 +82,7 @@ fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
 extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".FrameDataHeader"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}frameId\0\u{1}frameLength\0\u{1}presentationTimestamp\0\u{1}isKeyFrame\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}frameId\0\u{1}frameLength\0\u{1}presentationTimestamp\0\u{1}flags\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -89,7 +93,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Me
       case 1: try { try decoder.decodeSingularFixed64Field(value: &self.frameID) }()
       case 2: try { try decoder.decodeSingularFixed32Field(value: &self.frameLength) }()
       case 3: try { try decoder.decodeSingularUInt64Field(value: &self.presentationTimestamp) }()
-      case 4: try { try decoder.decodeSingularBoolField(value: &self.isKeyFrame) }()
+      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -105,8 +109,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Me
     if self.presentationTimestamp != 0 {
       try visitor.visitSingularUInt64Field(value: self.presentationTimestamp, fieldNumber: 3)
     }
-    if self.isKeyFrame != false {
-      try visitor.visitSingularBoolField(value: self.isKeyFrame, fieldNumber: 4)
+    if self.flags != 0 {
+      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 4)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -115,7 +119,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Me
     if lhs.frameID != rhs.frameID {return false}
     if lhs.frameLength != rhs.frameLength {return false}
     if lhs.presentationTimestamp != rhs.presentationTimestamp {return false}
-    if lhs.isKeyFrame != rhs.isKeyFrame {return false}
+    if lhs.flags != rhs.flags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -123,7 +127,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Me
 
 extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".CodecParameterSet"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}data\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}data\0\u{1}flags\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -133,6 +137,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: SwiftProtobuf.
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularFixed64Field(value: &self.type) }()
       case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
+      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -145,12 +150,16 @@ extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: SwiftProtobuf.
     if !self.data.isEmpty {
       try visitor.visitSingularBytesField(value: self.data, fieldNumber: 2)
     }
+    if self.flags != 0 {
+      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet, rhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet) -> Bool {
     if lhs.type != rhs.type {return false}
     if lhs.data != rhs.data {return false}
+    if lhs.flags != rhs.flags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
