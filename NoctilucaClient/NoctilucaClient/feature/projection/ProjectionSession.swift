@@ -5,6 +5,8 @@
 //  Created by Gyuhwan Park on 12/12/25.
 //
 
+import Darwin
+
 import Foundation
 
 import CoreGraphics
@@ -73,7 +75,10 @@ extension ProjectionSession: VideoDecoderDelegate {
     func videoDecoder(_ decoder: any VideoDecoder, didDecode frame: DecodedFrame) {
         logger.info("decoded frame: \(frame.pts)")
         
-        let presentationTime = normalizedPresentationTimestamp(for: frame.pts)
+        
+        let now = mach_absolute_time()
+        let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
+        //normalizedPresentationTimestamp(for: frame.pts)
         
         var timingInfo = CMSampleTimingInfo(duration: CMTime.invalid,
                                             presentationTimeStamp: presentationTime,
@@ -87,12 +92,17 @@ extension ProjectionSession: VideoDecoderDelegate {
             sampleTiming: timingInfo,
         )
         
+        /*
         if let timebase = renderTimebase {
             let currentRenderTime = CMTimebaseGetTime(timebase)
+            
+            self.logger.info("currentRenderTime: \(currentRenderTime.seconds), presentationTime: \(presentationTime.seconds), diff: \(CMTimeSubtract(presentationTime, currentRenderTime).seconds)")
+            
             if currentRenderTime.isValid && CMTimeCompare(presentationTime, currentRenderTime) <= 0 {
                 markSampleForImmediateDisplay(sampleBuffer)
             }
         }
+         */
         
         displayLayer.enqueue(sampleBuffer)
     }

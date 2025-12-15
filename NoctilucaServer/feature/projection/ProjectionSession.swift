@@ -20,6 +20,8 @@ class ProjectionSession: Identifiable {
     
     let recorder: any ScreenRecorder
     let encoder: any VideoEncoder
+    
+    private var flushAll: Bool = false
 
     init(id: UUID, dataChannel: ProjectionDataChannel) {
         self.id = id
@@ -72,11 +74,24 @@ extension ProjectionSession: VideoEncoderDelegate {
         Task {
             self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
             
+            if flushAll {
+                // drop frame until backpressure is cleared
+                if self.dataChannel.writeBackPressure == 0 {
+                    self.flushAll = false
+                } else {
+                    self.logger.info("Flushing frame due to backpressure on projection session \(self.id)")
+                    return
+                }
+            }
+            
             // FIXME: dynamic threshold
-            if (self.dataChannel.writeBackPressure > 3_072_000) {
+            let threshold = ((2400 / 8) * 1000)
+            if (self.dataChannel.writeBackPressure > threshold) {
                 self.logger.warning("High write backpressure (\(self.dataChannel.writeBackPressure) bytes) on projection session \(self.id), dropping frame")
+                self.flushAll = true
                 return
             }
+            
             
             
             try await self.dataChannel.send(videoFrame: frame)

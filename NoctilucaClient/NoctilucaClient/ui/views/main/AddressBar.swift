@@ -143,7 +143,7 @@ struct AddressBarSecurityIndicator: View {
 
 struct AddressBarQualityIndicator: View {
     let state: AddressBarQualityIndicatorState
-    let rtt: TimeInterval = 0
+    let rtt: TimeInterval
     
     @State
     var shouldDisplayTooltip = false
@@ -471,9 +471,9 @@ struct AddressBar: View {
                     AddressBarSecurityIndicator(state: securityIndicator)
                 }
                 Spacer()
-                // AddressBarDegradationIndicator(state: .hardwareDecoderUnavailable)
+                AddressBarDegradationIndicator(state: .hardwareDecoderUnavailable)
                 if let qualityIndicator = self.qualityIndicator {
-                    AddressBarQualityIndicator(state: qualityIndicator)
+                    AddressBarQualityIndicator(state: qualityIndicator, rtt: rtt)
                 }
             }
             .padding(.vertical, 16)

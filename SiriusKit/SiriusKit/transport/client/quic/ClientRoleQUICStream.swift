@@ -121,6 +121,7 @@ class ClientRoleQUICStream: Stream {
                     print("ClientRoleQUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
                     cont.resume(returning: .success(content))
                 } else {
+                    // EOS
                     fatalError("unexpected nil content")
                 }
             }

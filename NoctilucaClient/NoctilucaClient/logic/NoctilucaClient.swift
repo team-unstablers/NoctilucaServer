@@ -163,13 +163,15 @@ class NoctilucaClient: ObservableObject {
         do {
             while !Task.isCancelled {
                 let startTime = Date()
-                try await self.mainChannel.sendPing()
-                
                 await withCheckedContinuation { continuation in
                     self.pongHandler = {
                         self.pongHandler = nil
                         
                         continuation.resume()
+                    }
+                    
+                    Task {
+                        try await self.mainChannel.sendPing()
                     }
                 }
                 let endTime = Date()

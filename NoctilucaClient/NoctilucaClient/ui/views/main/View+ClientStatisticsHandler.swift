@@ -35,6 +35,7 @@ struct ClientStatisticsHandlerModifier: ViewModifier {
                     return
                 }
                 
+                print("RTT: \(rtt * 1000) ms")
                 viewModel.averagePingRTT = rtt
             }
     }
