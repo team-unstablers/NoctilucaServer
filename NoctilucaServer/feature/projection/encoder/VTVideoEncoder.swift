@@ -14,26 +14,44 @@ private final class FrameEncodeContext {
 }
 
 final class VTVideoEncoder: NSObject, VideoEncoder {
-    weak var delegate: VideoEncoderDelegate?
-    
     private let logger = NoctilucaLogger(category: "VTVideoEncoder")
     private let workerQueue: DispatchQueue
     internal let callbackQueue: DispatchQueue
     private let defaultTargetBitrateKbps = 1200
     private let defaultMaxBitrateKbps = 2400
     
-    private var configuration: VideoEncoderConfiguration?
-    private var compressionSession: VTCompressionSession?
+    fileprivate var configuration: VideoEncoderConfiguration?
+    private var compressionSession: VTCompressionSession? {
+        didSet {
+            // 인코더 세션이 새로 만들어지면 parameter sets를 다시 보내야 한다.
+            self.shouldEmitParameterSets = true
+        }
+    }
+    
+    fileprivate var shouldEmitParameterSets = true
+    
     private var isStarted = false
     private var pendingForceKeyframe = false
     private var targetBitrateKbps: Int
     private var maxBitrateKbps: Int
+    
+    let events: AsyncStream<VideoEncoderEvent>
+    fileprivate let continuation: AsyncStream<VideoEncoderEvent>.Continuation
     
     override init() {
         self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtencoder.worker")
         self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtencoder.callback")
         self.targetBitrateKbps = defaultTargetBitrateKbps
         self.maxBitrateKbps = defaultMaxBitrateKbps
+        
+        var continuationLocal: AsyncStream<VideoEncoderEvent>.Continuation!
+        
+        self.events = AsyncStream<VideoEncoderEvent>(VideoEncoderEvent.self, bufferingPolicy: .unbounded) { continuation in
+            continuationLocal = continuation
+        }
+        
+        self.continuation = continuationLocal
+        
         super.init()
     }
     
@@ -42,6 +60,15 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
         self.callbackQueue = callbackQueue
         self.targetBitrateKbps = defaultTargetBitrateKbps
         self.maxBitrateKbps = defaultMaxBitrateKbps
+        
+        var continuationLocal: AsyncStream<VideoEncoderEvent>.Continuation!
+        
+        self.events = AsyncStream<VideoEncoderEvent>(VideoEncoderEvent.self, bufferingPolicy: .unbounded) { continuation in
+            continuationLocal = continuation
+        }
+        
+        self.continuation = continuationLocal
+        
         super.init()
     }
     
@@ -395,6 +422,58 @@ private extension CodecSpecification {
     }
 }
 
+private extension CodecParameterSetMessage {
+    init(from formatDescription: CMFormatDescription, codec: CodecFourCC) {
+        let parameterSets: [CodecParameterSet] = switch codec {
+        case .avc1:
+            Self.extractH264ParameterSets(formatDescription)
+        case .hvc1:
+            Self.extractHEVCParameterSets(formatDescription)
+        default:
+            []
+        }
+        
+        self.init(parameterSets: consume parameterSets)
+    }
+    
+    static func extractH264ParameterSets(_ formatDescription: CMFormatDescription) -> [CodecParameterSet] {
+        formatDescription.parameterSets.compactMap { parameterSetData in
+            let naluTypeByte = parameterSetData[0] & 0x1F
+            
+            switch naluTypeByte {
+            case 7:
+                // SPS
+                return CodecParameterSet(type: .avc1SPS, data: parameterSetData)
+            case 8:
+                // PPS
+                return CodecParameterSet(type: .avc1PPS, data: parameterSetData)
+            default:
+                return nil
+            }
+        }
+    }
+    
+    static func extractHEVCParameterSets(_ formatDescription: CMFormatDescription) -> [CodecParameterSet] {
+        formatDescription.parameterSets.compactMap { parameterSetData in
+            let naluTypeByte = (parameterSetData[0] >> 1) & 0x3F
+            
+            switch naluTypeByte {
+            case 32:
+                // VPS
+                return CodecParameterSet(type: .hvc1VPS, data: parameterSetData)
+            case 33:
+                // SPS
+                return CodecParameterSet(type: .hvc1SPS, data: parameterSetData)
+            case 34:
+                // PPS
+                return CodecParameterSet(type: .hvc1PPS, data: parameterSetData)
+            default:
+                return nil
+            }
+        }
+    }
+}
+
 private extension VTVideoEncoder {
     @discardableResult
     func applyAverageBitrate(_ bitrateKbps: Int, to session: VTCompressionSession) -> Bool {
@@ -457,16 +536,16 @@ private func compressionOutputCallback(
     let context = Unmanaged<FrameEncodeContext>.fromOpaque(sourceFrameRefCon).takeRetainedValue()
     
     if status != noErr {
-        encoder.callbackQueue.async {
-            encoder.delegate?.videoEncoder(encoder, didFailWith: VideoEncoderError.compressionSessionFailed(status))
-        }
+        encoder.continuation.yield(with: .success(.errorOccurred(
+            VideoEncoderError.compressionSessionFailed(status)
+        )))
         return
     }
     
     guard let sampleBuffer = sampleBuffer, CMSampleBufferDataIsReady(sampleBuffer) else {
-        encoder.callbackQueue.async {
-            encoder.delegate?.videoEncoder(encoder, didFailWith: VideoEncoderError.invalidSampleBuffer)
-        }
+        encoder.continuation.yield(with: .success(.errorOccurred(
+            VideoEncoderError.invalidSampleBuffer
+        )))
         return
     }
     
@@ -478,9 +557,9 @@ private func compressionOutputCallback(
     }
     
     guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
-        encoder.callbackQueue.async {
-            encoder.delegate?.videoEncoder(encoder, didFailWith: VideoEncoderError.invalidSampleBuffer)
-        }
+        encoder.continuation.yield(with: .success(.errorOccurred(
+            VideoEncoderError.invalidSampleBuffer
+        )))
         return
     }
     
@@ -490,17 +569,17 @@ private func compressionOutputCallback(
     let statusCode = CMBlockBufferGetDataPointer(dataBuffer, atOffset: 0, lengthAtOffsetOut: &lengthAtOffset, totalLengthOut: &totalLength, dataPointerOut: &dataPointer)
     
     guard statusCode == kCMBlockBufferNoErr, let dataPointer else {
-        encoder.callbackQueue.async {
-            encoder.delegate?.videoEncoder(encoder, didFailWith: VideoEncoderError.invalidSampleBuffer)
-        }
+        encoder.continuation.yield(with: .success(.errorOccurred(
+            VideoEncoderError.invalidSampleBuffer
+        )))
         return
     }
     
     let data = Data(bytes: dataPointer, count: totalLength)
     guard data.count <= Int(UInt32.max) else {
-        encoder.callbackQueue.async {
-            encoder.delegate?.videoEncoder(encoder, didFailWith: VideoEncoderError.payloadTooLarge(data.count))
-        }
+        encoder.continuation.yield(with: .success(.errorOccurred(
+            VideoEncoderError.payloadTooLarge(data.count)
+        )))
         return
     }
     
@@ -508,16 +587,30 @@ private func compressionOutputCallback(
         frameID: context.frameID,
         frameLength: UInt32(data.count),
         presentationTimestamp: encoder.microseconds(from: context.pts),
-        isKeyFrame: isKeyFrame
+        flags: [.isKeyframe]
     )
     
     let encodedFrame = EncodedFrame(
         header: header,
         data: data,
-        formatDescription: CMSampleBufferGetFormatDescription(sampleBuffer)
+        formatDescription: nil
     )
     
-    encoder.callbackQueue.async {
-        encoder.delegate?.videoEncoder(encoder, didEncode: encodedFrame)
+    if encoder.shouldEmitParameterSets {
+        assert(encoder.configuration != nil, "configuration must be set if parameter sets are to be emitted")
+        
+        let configuration = encoder.configuration!
+        let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)!
+        
+        let parameterSetMessage = CodecParameterSetMessage(from: formatDescription, codec: configuration.specification.fourCC)
+        
+        encoder.continuation.yield(with: .success(.parameterSetChanged(
+            consume parameterSetMessage
+        )))
+        
+        encoder.shouldEmitParameterSets = false
     }
+    
+    encoder.continuation.yield(with: .success(.frameEncoded(consume encodedFrame)))
 }
+

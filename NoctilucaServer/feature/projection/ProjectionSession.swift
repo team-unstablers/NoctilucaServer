@@ -21,6 +21,8 @@ class ProjectionSession: Identifiable {
     let recorder: any ScreenRecorder
     let encoder: any VideoEncoder
     
+    private var encoderEventLoopTask: Task<Void, Error>?
+    
     private var flushAll: Bool = false
 
     init(id: UUID, dataChannel: ProjectionDataChannel) {
@@ -31,9 +33,56 @@ class ProjectionSession: Identifiable {
         self.encoder = VTVideoEncoder()
         
         self.recorder.delegate = self
-        self.encoder.delegate = self
     }
     
+    private func encoderEventLoopMain() async throws {
+        for await event in self.encoder.events {
+            switch event {
+            case .parameterSetChanged(let parameterSetMessage):
+                try await dataChannel.send(parameterSetMessage: parameterSetMessage)
+            case .frameEncoded(let encodedFrame):
+                try await processEncodedFrame(encodedFrame)
+            case .errorOccurred(let error):
+                // TODO: handle errors
+                self.logger.error("Encoder error occurred in projection session \(self.id): \(error)")
+                return
+            case .stopped:
+                return
+            }
+        }
+    }
+    
+    private func processEncodedFrame(_ frame: consuming EncodedFrame) async throws {
+        self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
+        
+        if flushAll {
+            // drop frame until backpressure is cleared
+            if self.dataChannel.writeBackPressure == 0 {
+                self.flushAll = false
+            } else {
+                self.logger.info("Flushing frame due to backpressure on projection session \(self.id)")
+                return
+            }
+        }
+        
+        // FIXME: dynamic threshold
+        // FIXME: 프로젝션 요청에 있는 비디오 파라미터를 참조해야 함
+        let maxBitrateKbps = 2400
+        // (bytes per second)    * MAX_FRAME_INTERVAL
+        // = ((2400 / 8) * 1000) * 1
+        
+        // 최대 1초치의 버퍼까지만 허용, 그 이상이면 프레임 드롭
+        let threshold = ((maxBitrateKbps / 8) * 1000) * 1
+        if (self.dataChannel.writeBackPressure > threshold) {
+            self.logger.warning("High write backpressure (\(self.dataChannel.writeBackPressure) bytes) on projection session \(self.id), dropping frame")
+            self.flushAll = true
+            return
+        }
+        
+        
+        try await self.dataChannel.send(videoFrame: frame)
+    }
+
     func prepare(_ specification: CodecSpecification, desiredSize: CGSize?) async throws {
         try await self.recorder.prepare(with: .init(source: .entireDisplay(displayID: CGMainDisplayID())))
         try self.encoder.prepare(with: .init(
@@ -41,6 +90,10 @@ class ProjectionSession: Identifiable {
             desiredSize: desiredSize,
             inputFormatDescription: nil
         ))
+        
+        self.encoderEventLoopTask = Task {
+            try await self.encoderEventLoopMain()
+        }
     }
     
     func start() async throws {
@@ -52,7 +105,6 @@ class ProjectionSession: Identifiable {
         try await self.recorder.stop()
         try self.encoder.stop()
     }
-    
 }
 
 extension ProjectionSession: ScreenRecorderDelegate {
@@ -69,42 +121,3 @@ extension ProjectionSession: ScreenRecorderDelegate {
     }
 }
 
-extension ProjectionSession: VideoEncoderDelegate {
-    func videoEncoder(_ encoder: any VideoEncoder, didEncode frame: EncodedFrame) {
-        Task {
-            self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
-            
-            if flushAll {
-                // drop frame until backpressure is cleared
-                if self.dataChannel.writeBackPressure == 0 {
-                    self.flushAll = false
-                } else {
-                    self.logger.info("Flushing frame due to backpressure on projection session \(self.id)")
-                    return
-                }
-            }
-            
-            // FIXME: dynamic threshold
-            // FIXME: 프로젝션 요청에 있는 비디오 파라미터를 참조해야 함
-            let maxBitrateKbps = 2400
-            // (bytes per second)    * MAX_FRAME_INTERVAL
-            // = ((2400 / 8) * 1000) * 1
-            
-            // 최대 1초치의 버퍼까지만 허용, 그 이상이면 프레임 드롭
-            let threshold = ((maxBitrateKbps / 8) * 1000) * 1
-            if (self.dataChannel.writeBackPressure > threshold) {
-                self.logger.warning("High write backpressure (\(self.dataChannel.writeBackPressure) bytes) on projection session \(self.id), dropping frame")
-                self.flushAll = true
-                return
-            }
-            
-            
-            
-            try await self.dataChannel.send(videoFrame: frame)
-        }
-    }
-    
-    func videoEncoder(_ encoder: any VideoEncoder, didFailWith error: any Error) {
-        self.logger.error("Video encoder failed for projection session \(self.id): \(error)")
-    }
-}

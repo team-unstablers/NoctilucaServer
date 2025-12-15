@@ -10,8 +10,6 @@ import SiriusKit
 import CoreMedia
 
 class ProjectionDataChannel: Channel {
-    var isFrameDescriptionSent: Bool = false
-    
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
     }
@@ -20,38 +18,13 @@ class ProjectionDataChannel: Channel {
         // 서버 사이드 구현이므로 별도 처리를 하지 않는다 (= 클라이언트로 보내기만 하는 역할.)
     }
     
+    func send(parameterSetMessage: CodecParameterSetMessage) async throws {
+        try await self.send(opcode: .codecParameterSets, message: parameterSetMessage)
+    }
+    
     func send(videoFrame frame: EncodedFrame) async throws {
         let serializedHeader = frame.header.serialize()
         let frameData = frame.data
-        
-        if !isFrameDescriptionSent {
-            if let formatDescription = frame.formatDescription {
-                var data = Data()
-                let parameterCount = UInt32(formatDescription.parameterSets.count).bigEndian
-                
-                withUnsafeBytes(of: parameterCount) { ptr in
-                    data.append(ptr.bindMemory(to: UInt32.self))
-                }
-                
-                for parameter in formatDescription.parameterSets {
-                    let size = UInt32(parameter.count).bigEndian
-                    
-                    withUnsafeBytes(of: size) { ptr in
-                        data.append(ptr.bindMemory(to: UInt32.self))
-                    }
-                    
-                    data.append(parameter)
-                }
-                
-                try await self.send(frame: SiriusFrame(opcode: .streamDescription,
-                                                       length: UInt32(data.count),
-                                                       data: consume data))
-                
-                isFrameDescriptionSent = true
-            }
-        }
-        
-        
         
         // header.count /  / frameData.count / header / frameData
         let siriusFrameSize = ((4 + 4) + serializedHeader.count + frameData.count)

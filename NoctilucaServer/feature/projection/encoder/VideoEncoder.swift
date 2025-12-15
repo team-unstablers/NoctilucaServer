@@ -8,6 +8,7 @@
 import Foundation
 import AVFoundation
 import VideoToolbox
+
 import SiriusKit
 
 struct VideoEncoderConfiguration {
@@ -31,13 +32,29 @@ struct EncodedFrame {
     let formatDescription: CMFormatDescription?
 }
 
+enum VideoEncoderEvent {
+    /// 코덱의 파라미터 세트(예: SPS, PPS 등)가 변경되었음을 알립니다.
+    case parameterSetChanged(CodecParameterSetMessage)
+    /// 프레임이 인코딩되어 준비되었음을 알립니다.
+    case frameEncoded(EncodedFrame)
+    
+    /// 인코딩 도중에 오류가 발생했음을 알립니다.
+    case errorOccurred(Error)
+    
+    /// 인코더가 정지되었음을 알립니다.
+    case stopped
+}
+
 protocol VideoEncoderDelegate: AnyObject {
     func videoEncoder(_ encoder: VideoEncoder, didEncode frame: EncodedFrame)
     func videoEncoder(_ encoder: VideoEncoder, didFailWith error: Error)
 }
 
 protocol VideoEncoder: AnyObject {
+    /*
     var delegate: VideoEncoderDelegate? { get set }
+     */
+    var events: AsyncStream<VideoEncoderEvent> { get }
     
     func prepare(with configuration: VideoEncoderConfiguration) throws
     func start() throws
