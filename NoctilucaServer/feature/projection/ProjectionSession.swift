@@ -85,7 +85,13 @@ extension ProjectionSession: VideoEncoderDelegate {
             }
             
             // FIXME: dynamic threshold
-            let threshold = ((2400 / 8) * 1000)
+            // FIXME: 프로젝션 요청에 있는 비디오 파라미터를 참조해야 함
+            let maxBitrateKbps = 2400
+            // (bytes per second)    * MAX_FRAME_INTERVAL
+            // = ((2400 / 8) * 1000) * 1
+            
+            // 최대 1초치의 버퍼까지만 허용, 그 이상이면 프레임 드롭
+            let threshold = ((maxBitrateKbps / 8) * 1000) * 1
             if (self.dataChannel.writeBackPressure > threshold) {
                 self.logger.warning("High write backpressure (\(self.dataChannel.writeBackPressure) bytes) on projection session \(self.id), dropping frame")
                 self.flushAll = true
