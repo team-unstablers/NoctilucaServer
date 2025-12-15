@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 11/23/25.
 //
 
+
 import Foundation
 import Security
 
@@ -96,6 +97,7 @@ public class SRKeychain {
         }
     }
 
+#if os(macOS)
     public func queryIdentity(by label: String) -> Result<SecIdentity, SRKeychainError> {
         let certQueryResult = self.queryItem(by: label, clazz: .certificate)
         
@@ -133,6 +135,7 @@ public class SRKeychain {
             }
         }
     }
+#endif
     
     public func deleteItem(by label: String, clazz: SRKeychainItemClass) -> Result<Void, SRKeychainError> {
         let query: [String: Any] = [

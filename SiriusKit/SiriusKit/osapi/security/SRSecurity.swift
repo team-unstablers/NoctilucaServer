@@ -21,6 +21,7 @@ enum SRSecurityError: Error {
     case operationFailed(error: (any Error)?)
 }
 
+#if os(macOS)
 enum SRCertificateTrustScope {
     case user
     case admin
@@ -34,6 +35,7 @@ enum SRCertificateTrustScope {
         }
     }
 }
+#endif
 
 /// 'S'i'R'ius Keychain - macOS Security.framework 의 Security 관련 기능을 wrap합니다.
 class SRSecurity {
@@ -97,6 +99,7 @@ class SRSecurity {
         return .success(identity)
     }
     
+#if os(macOS)
     func trustCertificate(_ certificate: SecCertificate, scope: SRCertificateTrustScope) -> Result<Void, SRSecurityError> {
         let trustSettings: [String: Any] = [
             kSecTrustSettingsResult as String: SecTrustSettingsResult.trustRoot.rawValue
@@ -114,4 +117,5 @@ class SRSecurity {
         
         return .success(())
     }
+#endif
 }
