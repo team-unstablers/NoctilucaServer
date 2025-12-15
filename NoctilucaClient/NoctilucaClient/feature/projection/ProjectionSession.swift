@@ -30,6 +30,8 @@ class ProjectionSession: Identifiable {
     private var firstRemotePTS: CMTime?
     private var firstLocalRenderTime: CMTime?
     private let hostClock = CMClockGetHostTimeClock()
+    
+    var formatDescription: CMFormatDescription?
 
     init(id: UUID, dataChannel: ProjectionDataChannel) {
         self.id = id
@@ -61,9 +63,29 @@ class ProjectionSession: Identifiable {
 
 
 extension ProjectionSession: ProjectionDataChannelDelegate {
+    func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveCodecParameterSets codecParameterSets: consuming SiriusKitClient.CodecParameterSetMessage) {
+        let codec = CodecFourCC.hvc1
+        
+        switch codec {
+        case .hvc1:
+            self.formatDescription = try! CMFormatDescription(hevcParameterSets: codecParameterSets.parameterSets.map { $0.data })
+            
+        case .avc1:
+            self.formatDescription = try! CMFormatDescription(h264ParameterSets: codecParameterSets.parameterSets.map { $0.data })
+            
+        default:
+            return
+        }
+    }
+    
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveFrame frame: consuming EncodedFrameInput) {
         do {
-            try self.decoder.decode(consume frame)
+            // FIXME
+            try self.decoder.decode(EncodedFrameInput(
+                header: frame.header,
+                data: frame.data,
+                formatDescription: self.formatDescription
+            ))
         } catch {
             print(error)
         }

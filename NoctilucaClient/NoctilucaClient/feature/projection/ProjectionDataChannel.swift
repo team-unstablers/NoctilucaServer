@@ -12,13 +12,12 @@ import CoreMedia
 import SiriusKitClient
 
 protocol ProjectionDataChannelDelegate: AnyObject {
+    func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveCodecParameterSets codecParameterSets: consuming CodecParameterSetMessage)
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveFrame frame: consuming EncodedFrameInput)
 }
 
 class ProjectionDataChannel: Channel {
     private let logger = SiriusLogger(category: "ProjectionDataChannel", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
-    
-    var formatDescription: CMFormatDescription?
     
     weak var delegate: ProjectionDataChannelDelegate?
     
@@ -27,31 +26,23 @@ class ProjectionDataChannel: Channel {
     }
     
     override func handleFrame(frame: SiriusFrame) async throws {
-        if frame.opcode == .streamDescription {
-            let data = frame.data
-            let count = data.subdata(in: 0..<4).withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-            
-            var parameters: [Data] = []
-            
-            var offset = 4
-            
-            for i in 0..<count {
-                let size = data.subdata(in: offset..<(offset + 4)).withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-                
-                let parameterData = data.subdata(in: (offset + 4)..<(offset + 4 + Int(size)))
-                parameters.append(parameterData)
-                
-                offset += (4 + Int(size))
-            }
-            
-            self.formatDescription = try CMFormatDescription(hevcParameterSets: parameters)
-            return
+        switch frame.opcode {
+        case .codecParameterSets:
+            try await handleCodecParameterSets(frame)
+        case .frameData:
+            try await handleFrameData(frame)
+        default:
+            break
         }
+    }
+    
+    func handleCodecParameterSets(_ frame: SiriusFrame) async throws {
+        let codecParameterSetMessage = try CodecParameterSetMessage.fromProtobufBytes(frame.data)
         
-        guard frame.opcode == .frameData else {
-            return
-        }
-        
+        delegate?.projectionDataChannel(self, didReceiveCodecParameterSets: consume codecParameterSetMessage)
+    }
+    
+    func handleFrameData(_ frame: SiriusFrame) async throws {
         // <header length: uint32> <frame data length: uint32> <header bytes> <frame data bytes>
         let data = frame.data
         
@@ -71,7 +62,7 @@ class ProjectionDataChannel: Channel {
         let frameInput = EncodedFrameInput(
             header: consume header,
             data: consume frameData,
-            formatDescription: formatDescription
+            formatDescription: nil
         )
         
         delegate?.projectionDataChannel(self, didReceiveFrame: consume frameInput)

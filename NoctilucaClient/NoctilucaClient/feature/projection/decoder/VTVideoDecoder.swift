@@ -318,7 +318,7 @@ private func decompressionOutputCallback(
     let decodedFrame = DecodedFrame(
         pixelBuffer: pixelBuffer,
         pts: context.pts,
-        isKeyFrame: context.header.isKeyFrame,
+        isKeyFrame: context.header.flags.contains(.isKeyframe),
         formatDescription: formatDescription
     )
     
