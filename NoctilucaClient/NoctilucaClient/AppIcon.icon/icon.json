@@ -1,0 +1,153 @@
+{
+  "fill-specializations" : [
+    {
+      "value" : {
+        "solid" : "gray:1.00000,1.00000"
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "automatic-gradient" : "display-p3:0.16471,0.19216,0.25098,1.00000",
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 0.7
+          }
+        }
+      }
+    }
+  ],
+  "groups" : [
+    {
+      "hidden" : true,
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "linear-gradient" : [
+                  "gray:0.24000,1.00000",
+                  "gray:0.18000,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0.5,
+                    "y" : 0
+                  },
+                  "stop" : {
+                    "x" : 0.5,
+                    "y" : 0.7
+                  }
+                }
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : "none"
+            }
+          ],
+          "glass-specializations" : [
+            {
+              "value" : true
+            },
+            {
+              "appearance" : "tinted",
+              "value" : false
+            }
+          ],
+          "hidden" : true,
+          "image-name" : "Navigator.svg",
+          "name" : "Navigator",
+          "opacity-specializations" : [
+            {
+              "appearance" : "tinted",
+              "value" : 0
+            }
+          ],
+          "position" : {
+            "scale" : 1.25,
+            "translation-in-points" : [
+              135.90594677704655,
+              277.2553101071601
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    },
+    {
+      "blur-material" : null,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "fill" : {
+            "solid" : "display-p3:0.34118,0.59216,1.00000,1.00000"
+          },
+          "glass" : true,
+          "image-name" : "layer4_2.svg",
+          "name" : "layer4_2",
+          "opacity" : 1
+        },
+        {
+          "blend-mode" : "screen",
+          "hidden" : true,
+          "image-name" : "layer4.svg",
+          "name" : "layer4"
+        },
+        {
+          "glass" : false,
+          "hidden" : true,
+          "image-name" : "layer3_export.png",
+          "name" : "layer3_export"
+        },
+        {
+          "glass" : false,
+          "hidden" : true,
+          "image-name" : "layer2.svg",
+          "name" : "layer2"
+        },
+        {
+          "glass" : false,
+          "hidden" : true,
+          "image-name" : "layer1 2.svg",
+          "name" : "layer1 2"
+        }
+      ],
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

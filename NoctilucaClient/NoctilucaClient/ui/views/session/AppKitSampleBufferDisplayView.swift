@@ -40,4 +40,6 @@ struct AppKitSampleBufferDisplayView: NSViewRepresentable {
     }
 }
 
+typealias SampleBufferDisplayView = AppKitSampleBufferDisplayView
+
 #endif

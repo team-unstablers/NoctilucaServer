@@ -20,4 +20,14 @@ struct NoctilucaMeta {
     static var version: String {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
+    
+    static var license: SoftwareLicense = .proprietary(name: "Noctiluca Client EULA",
+                                                       url: URL(string: "https://unstabler.pl")!)
+    
+}
+
+extension NoctilucaMeta {
+    static func scopedIdentifier(_ component: String) -> String {
+        return "\(NoctilucaMeta.bundleIdentifier).\(component)"
+    }
 }

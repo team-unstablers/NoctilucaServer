@@ -256,7 +256,7 @@ struct AddressBarQualityIndicator: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .clipped()
                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .offset(x: offsetX, y: -50)
+                        .offset(x: offsetX, y: 26)
                         .onGeometryChange(for: CGSize.self) { proxy in
                             proxy.size
                         } action: { geom in

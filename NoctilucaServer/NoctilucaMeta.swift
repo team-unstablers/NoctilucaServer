@@ -26,3 +26,10 @@ struct NoctilucaMeta {
                                                        url: URL(string: "https://unstabler.pl")!)
     
 }
+
+extension NoctilucaMeta {
+    static func scopedIdentifier(_ component: String) -> String {
+        return "\(NoctilucaMeta.bundleIdentifier).\(component)"
+    }
+}
+

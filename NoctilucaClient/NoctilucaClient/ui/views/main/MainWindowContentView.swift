@@ -88,8 +88,6 @@ struct MainWindowConnectingPhaseContentView: View {
                     LinearGradient(
                         colors: [
                             Color(NSColor.windowBackgroundColor),
-                            Color(UIColor.systemBackground),
-                            
                             Color.clear,
                         ],
                         startPoint: .top,
