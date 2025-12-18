@@ -21,8 +21,10 @@ class ProjectionSession: Identifiable {
     
     let id: UUID
     let dataChannel: ProjectionDataChannel
+    let controlChannel: ProjectionChannel
     
     let decoder: any VideoDecoder
+    private var performanceReporter: ProjectionPerformanceReporter?
     
     var displayLayer = AVSampleBufferDisplayLayer()
     
@@ -33,11 +35,13 @@ class ProjectionSession: Identifiable {
     
     var formatDescription: CMFormatDescription?
 
-    init(id: UUID, dataChannel: ProjectionDataChannel) {
+    init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
         self.id = id
         self.dataChannel = dataChannel
+        self.controlChannel = controlChannel
         
         self.decoder = VTVideoDecoder()
+        self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, controlChannel: controlChannel)
         
         self.dataChannel.delegate = self
         self.decoder.delegate = self
@@ -57,8 +61,13 @@ class ProjectionSession: Identifiable {
     
     func start() async throws {
         try self.decoder.start()
+        self.performanceReporter?.start()
     }
     
+    func stop() async throws {
+        self.performanceReporter?.stop()
+        try self.decoder.stop()
+    }
 }
 
 
@@ -79,6 +88,7 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
     }
     
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveFrame frame: consuming EncodedFrameInput) {
+        self.performanceReporter?.recordReceivedFrame()
         do {
             // FIXME
             try self.decoder.decode(EncodedFrameInput(
@@ -88,6 +98,7 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
             ))
         } catch {
             print(error)
+            self.performanceReporter?.recordDroppedFrame()
         }
     }
 }
@@ -95,7 +106,8 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
 
 extension ProjectionSession: VideoDecoderDelegate {
     func videoDecoder(_ decoder: any VideoDecoder, didDecode frame: DecodedFrame) {
-        logger.info("decoded frame: \(frame.pts)")
+        // logger.info("decoded frame: \(frame.pts)")
+        self.performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
         
         
         let now = mach_absolute_time()
@@ -135,6 +147,96 @@ extension ProjectionSession: VideoDecoderDelegate {
     
     func videoDecoder(_ decoder: any VideoDecoder, didDropFrameWithID frameID: UInt64, reason: String) {
         logger.error("dropped frame ID: \(frameID), reason: \(reason)")
+        self.performanceReporter?.recordDroppedFrame()
+    }
+}
+
+private final class ProjectionPerformanceReporter {
+    private let logger = SiriusLogger(category: "ProjectionPerformanceReporter", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let sessionID: UUID
+    private weak var controlChannel: ProjectionChannel?
+    private let syncQueue = DispatchQueue(label: "projection.performanceReporter.sync")
+    
+    private var received: UInt32 = 0
+    private var decoded: UInt32 = 0
+    private var dropped: UInt32 = 0
+    private var decodeTimeSumMs: Double = 0
+    
+    private var timerTask: Task<Void, Never>?
+    
+    init(sessionID: UUID, controlChannel: ProjectionChannel) {
+        self.sessionID = sessionID
+        self.controlChannel = controlChannel
+    }
+    
+    func start() {
+        guard timerTask == nil else { return }
+        timerTask = Task { [weak self] in
+            guard let self else { return }
+            while Task.isCancelled == false {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                await self.flush()
+            }
+        }
+    }
+    
+    func stop() {
+        timerTask?.cancel()
+        timerTask = nil
+    }
+    
+    func recordReceivedFrame() {
+        syncQueue.sync {
+            self.received &+= 1
+        }
+    }
+    
+    func recordDecodedFrame(decodeTimeMs: Double) {
+        syncQueue.sync {
+            self.decoded &+= 1
+            self.decodeTimeSumMs += decodeTimeMs
+        }
+    }
+    
+    func recordDroppedFrame() {
+        syncQueue.sync {
+            self.dropped &+= 1
+        }
+    }
+    
+    private func snapshotAndReset() -> (UInt32, UInt32, UInt32, UInt32) {
+        return syncQueue.sync {
+            let avgDecodeMs: UInt32 = decoded > 0 ? UInt32((decodeTimeSumMs / Double(decoded)).rounded()) : 0
+            let snapshot = (received, decoded, dropped, avgDecodeMs)
+            received = 0
+            decoded = 0
+            dropped = 0
+            decodeTimeSumMs = 0
+            return snapshot
+        }
+    }
+    
+    private func flush() async {
+        guard let controlChannel else { return }
+        let (received, decoded, dropped, avgDecodeMs) = snapshotAndReset()
+        if received == 0 && decoded == 0 && dropped == 0 {
+            return
+        }
+        
+        let report = ProjectionPerformanceReport(
+            identifier: sessionID,
+            receivedFrameCount: received,
+            decodedFrameCount: decoded,
+            droppedFrameCount: dropped,
+            averageDecodeTimeMs: avgDecodeMs
+        )
+        
+        do {
+            logger.info("Sending performance report for session \(self.sessionID): received=\(received), decoded=\(decoded), dropped=\(dropped), avgDecodeMs=\(avgDecodeMs)")
+            try await controlChannel.send(opcode: .projectionPerformanceReport, message: report)
+        } catch {
+            logger.warning("Failed to send performance report for session \(self.sessionID): \(error)")
+        }
     }
 }
 

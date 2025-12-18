@@ -118,7 +118,6 @@ class ClientRoleQUICStream: Stream {
                 if let error = error {
                     cont.resume(returning: .failure(error)) // Map error appropriately
                 } else if let content = content {
-                    print("ClientRoleQUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
                     cont.resume(returning: .success(content))
                 } else {
                     cont.resume(returning: .failure(StreamError.endOfStream))

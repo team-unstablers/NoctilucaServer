@@ -39,11 +39,23 @@ class ProjectionChannel: Channel {
         case .projectionRequest:
             let projectionRequest = try ProjectionRequest.fromProtobufBytes(frame.data)
             await self.handleProjectionRequest(consume projectionRequest)
+        case .projectionPerformanceReport:
+            let report = try ProjectionPerformanceReport.fromProtobufBytes(frame.data)
+            await self.handlePerformanceReport(report)
             
         default:
             print("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
             break
         }
+    }
+    
+    private func handlePerformanceReport(_ report: ProjectionPerformanceReport) async {
+        guard let session = self.sessions[report.identifier] else {
+            self.logger.warning("Received performance report for unknown session \(report.identifier)")
+            return
+        }
+        
+        session.handlePerformanceReport(report)
     }
     
     func handleProjectionRequest(_ request: ProjectionRequest) async {

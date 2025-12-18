@@ -82,21 +82,33 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport: Sendabl
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// 프로젝션 세션 식별자
+  var identifier: Sirius_Msgdef_UUID {
+    get {return _identifier ?? Sirius_Msgdef_UUID()}
+    set {_identifier = newValue}
+  }
+  /// Returns true if `identifier` has been explicitly set.
+  var hasIdentifier: Bool {return self._identifier != nil}
+  /// Clears the value of `identifier`. Subsequent reads from it will return its default value.
+  mutating func clearIdentifier() {self._identifier = nil}
+
+  //// 인터벌동안 수신된 프레임 수
   var receivedFrameCount: UInt32 = 0
 
+  //// 인터벌동안 디코드에 성공한 프레임 수
   var decodedFrameCount: UInt32 = 0
 
+  //// 인터벌동안 드롭된 프레임 수
   var droppedFrameCount: UInt32 = 0
 
-  /// 평균 디코딩 시간 (ms)
+  /// 인터벌 동안의 평균 디코딩 시간 (밀리초 단위)
   var averageDecodeTimeMs: UInt32 = 0
-
-  /// 추가 제안: 지터 버퍼가 얼마나 차있는지?
-  var currentQueueSize: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
+
+  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
 }
 
 /// opcode = 0x8021
@@ -337,7 +349,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_StopProjectionRequest: SwiftProto
 
 extension Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ProjectionPerformanceReport"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}receivedFrameCount\0\u{1}decodedFrameCount\0\u{1}droppedFrameCount\0\u{1}averageDecodeTimeMs\0\u{1}currentQueueSize\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}identifier\0\u{1}receivedFrameCount\0\u{1}decodedFrameCount\0\u{1}droppedFrameCount\0\u{1}averageDecodeTimeMs\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -345,41 +357,45 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport: Swif
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.receivedFrameCount) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.decodedFrameCount) }()
-      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.droppedFrameCount) }()
-      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.averageDecodeTimeMs) }()
-      case 5: try { try decoder.decodeSingularFixed32Field(value: &self.currentQueueSize) }()
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
+      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.receivedFrameCount) }()
+      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.decodedFrameCount) }()
+      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.droppedFrameCount) }()
+      case 5: try { try decoder.decodeSingularFixed32Field(value: &self.averageDecodeTimeMs) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._identifier {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
     if self.receivedFrameCount != 0 {
-      try visitor.visitSingularFixed32Field(value: self.receivedFrameCount, fieldNumber: 1)
+      try visitor.visitSingularFixed32Field(value: self.receivedFrameCount, fieldNumber: 2)
     }
     if self.decodedFrameCount != 0 {
-      try visitor.visitSingularFixed32Field(value: self.decodedFrameCount, fieldNumber: 2)
+      try visitor.visitSingularFixed32Field(value: self.decodedFrameCount, fieldNumber: 3)
     }
     if self.droppedFrameCount != 0 {
-      try visitor.visitSingularFixed32Field(value: self.droppedFrameCount, fieldNumber: 3)
+      try visitor.visitSingularFixed32Field(value: self.droppedFrameCount, fieldNumber: 4)
     }
     if self.averageDecodeTimeMs != 0 {
-      try visitor.visitSingularFixed32Field(value: self.averageDecodeTimeMs, fieldNumber: 4)
-    }
-    if self.currentQueueSize != 0 {
-      try visitor.visitSingularFixed32Field(value: self.currentQueueSize, fieldNumber: 5)
+      try visitor.visitSingularFixed32Field(value: self.averageDecodeTimeMs, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport, rhs: Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport) -> Bool {
+    if lhs._identifier != rhs._identifier {return false}
     if lhs.receivedFrameCount != rhs.receivedFrameCount {return false}
     if lhs.decodedFrameCount != rhs.decodedFrameCount {return false}
     if lhs.droppedFrameCount != rhs.droppedFrameCount {return false}
     if lhs.averageDecodeTimeMs != rhs.averageDecodeTimeMs {return false}
-    if lhs.currentQueueSize != rhs.currentQueueSize {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -72,7 +72,7 @@ class ProjectionChannel: Channel {
         
         let channel = clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
         
-        let session = ProjectionSession(id: identifier, dataChannel: channel)
+        let session = ProjectionSession(id: identifier, dataChannel: channel, controlChannel: self)
         
         try await session.prepare()
         try await session.start()

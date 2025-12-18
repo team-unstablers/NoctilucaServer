@@ -52,23 +52,21 @@ public struct ProjectionRequest: SiriusMessage {
 public struct StopProjectionRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_StopProjectionRequest
     
-    public let identifier: UUID?
+    public let identifier: UUID
 
 
-    init(identifier: UUID?) {
+    public init(identifier: UUID) {
         self.identifier = identifier
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_StopProjectionRequest) throws {
-        self.identifier = protobufMessage.hasIdentifier ? UUID(msgdef: protobufMessage.identifier) : nil
+        self.identifier = UUID(msgdef: protobufMessage.identifier)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        if let val = self.identifier {
-            message.identifier = val.asMsgDef()
-        }
+        message.identifier = self.identifier.asMsgDef()
 
         return message
     }
@@ -77,37 +75,38 @@ public struct StopProjectionRequest: SiriusMessage {
 public struct ProjectionPerformanceReport: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport
     
+    public let identifier: UUID
+    
     public let receivedFrameCount: UInt32
     public let decodedFrameCount: UInt32
     public let droppedFrameCount: UInt32
     public let averageDecodeTimeMs: UInt32
-    public let currentQueueSize: UInt32
 
 
-    init(receivedFrameCount: UInt32, decodedFrameCount: UInt32, droppedFrameCount: UInt32, averageDecodeTimeMs: UInt32, currentQueueSize: UInt32) {
+    public init(identifier: UUID, receivedFrameCount: UInt32, decodedFrameCount: UInt32, droppedFrameCount: UInt32, averageDecodeTimeMs: UInt32) {
+        self.identifier = identifier
         self.receivedFrameCount = receivedFrameCount
         self.decodedFrameCount = decodedFrameCount
         self.droppedFrameCount = droppedFrameCount
         self.averageDecodeTimeMs = averageDecodeTimeMs
-        self.currentQueueSize = currentQueueSize
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport) throws {
+        self.identifier = UUID(msgdef: protobufMessage.identifier)
         self.receivedFrameCount = protobufMessage.receivedFrameCount
         self.decodedFrameCount = protobufMessage.decodedFrameCount
         self.droppedFrameCount = protobufMessage.droppedFrameCount
         self.averageDecodeTimeMs = protobufMessage.averageDecodeTimeMs
-        self.currentQueueSize = protobufMessage.currentQueueSize
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
+        message.identifier = self.identifier.asMsgDef()
         message.receivedFrameCount = self.receivedFrameCount
         message.decodedFrameCount = self.decodedFrameCount
         message.droppedFrameCount = self.droppedFrameCount
         message.averageDecodeTimeMs = self.averageDecodeTimeMs
-        message.currentQueueSize = self.currentQueueSize
 
         return message
     }
@@ -250,4 +249,3 @@ public struct ProjectionSessionEndedEvent: SiriusMessage {
         return message
     }
 }
-

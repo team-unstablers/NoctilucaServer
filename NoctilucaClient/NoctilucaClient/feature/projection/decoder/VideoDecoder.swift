@@ -32,6 +32,7 @@ struct DecodedFrame {
     let pts: CMTime
     let isKeyFrame: Bool
     let formatDescription: CMFormatDescription
+    let decodeTimeMs: Double
 }
 
 protocol VideoDecoderDelegate: AnyObject {

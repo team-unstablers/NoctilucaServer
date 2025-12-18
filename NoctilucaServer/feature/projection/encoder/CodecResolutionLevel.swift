@@ -50,5 +50,27 @@ struct CodecResolutionLevel: RawRepresentable, Codable, Hashable, Equatable {
             return "알 수 없음"
         }
     }
+    
+    /// 이.. 이딴식으로 이걸 구현해도 되는건가...
+    var pixelCount: Int {
+        switch self {
+        case .unlimited:
+            // FIXME
+            return 131072 * 131072
+        case .sd480p:
+            return 720 * 720
+        case .hd720p:
+            return 1280 * 1280
+        case .hd1080p:
+            return 1920 * 1920
+        case .hd2k:
+            return 2560 * 2560
+        case .hd4k:
+            return 3840 * 3840
+        
+        default:
+            return 131072 * 131072
+        }
+    }
 }
 

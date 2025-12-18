@@ -7,11 +7,13 @@ private final class FrameDecodeContext {
     let header: FrameDataHeader
     let pts: CMTime
     let formatDescription: CMFormatDescription
+    let decodeStart: DispatchTime
     
-    init(header: FrameDataHeader, pts: CMTime, formatDescription: CMFormatDescription) {
+    init(header: FrameDataHeader, pts: CMTime, formatDescription: CMFormatDescription, decodeStart: DispatchTime) {
         self.header = header
         self.pts = pts
         self.formatDescription = formatDescription
+        self.decodeStart = decodeStart
     }
 }
 
@@ -89,7 +91,8 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
             let context = FrameDecodeContext(
                 header: frame.header,
                 pts: pts(fromMicroseconds: frame.header.presentationTimestamp),
-                formatDescription: formatDescription
+                formatDescription: formatDescription,
+                decodeStart: DispatchTime.now()
             )
             
             var infoFlags = VTDecodeInfoFlags()
@@ -315,11 +318,14 @@ private func decompressionOutputCallback(
     }
     
     let formatDescription = decoder.currentFormatDescription ?? context.formatDescription
+    let decodeEnd = DispatchTime.now()
+    let decodeMs = max(0, Double(decodeEnd.uptimeNanoseconds - context.decodeStart.uptimeNanoseconds) / 1_000_000.0)
     let decodedFrame = DecodedFrame(
         pixelBuffer: pixelBuffer,
         pts: context.pts,
         isKeyFrame: context.header.flags.contains(.isKeyframe),
-        formatDescription: formatDescription
+        formatDescription: formatDescription,
+        decodeTimeMs: decodeMs
     )
     
     decoder.callbackQueue.async {
