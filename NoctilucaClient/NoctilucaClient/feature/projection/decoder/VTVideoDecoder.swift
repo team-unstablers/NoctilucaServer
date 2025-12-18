@@ -18,7 +18,7 @@ private final class FrameDecodeContext {
 final class VTVideoDecoder: NSObject, VideoDecoder {
     weak var delegate: VideoDecoderDelegate?
     
-    private let logger = SiriusLogger(category: "VTVideoDecoder", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = NoctilucaLogger(category: "VTVideoDecoder", subsystem: "projection.decoder")
     private let workerQueue: DispatchQueue
     internal let callbackQueue: DispatchQueue
     
@@ -28,8 +28,8 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
     private var isStarted = false
     
     override init() {
-        self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtdecoder.worker")
-        self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtdecoder.callback")
+        self.workerQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.workerQueue"))
+        self.callbackQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.callbackQueue"))
         super.init()
     }
     

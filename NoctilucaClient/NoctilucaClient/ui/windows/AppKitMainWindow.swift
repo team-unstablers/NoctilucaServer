@@ -28,11 +28,12 @@ struct AppKitMainWindow: View {
             MainToolbar(addressBar: NSHostingView(rootView: AnyView(MainToolbarAddressBar(viewModel: viewModel))))
                 .frame(width: 0, height: 0)
             
-            MainWindowContentView(viewModel: viewModel)
+            MainWindowContentView()
                 .frame(minWidth: 640, minHeight: 480)
                 .presentedWindowStyle(.titleBar)
                 .presentedWindowToolbarStyle(.unified)
                 .navigationTitle(NoctilucaMeta.productName)
+                .environmentObject(viewModel)
         }
         .windowToolbarFullScreenVisibility(.onHover)
         .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {

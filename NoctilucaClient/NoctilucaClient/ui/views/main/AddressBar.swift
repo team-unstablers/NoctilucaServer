@@ -98,59 +98,29 @@ struct AddressBarSecurityIndicator: View {
     }
     
     var body: some View {
-        VStack {
+        AddressBarIndicatorView {
             iconView
+        } tooltip: {
+            Text(tooltipTitle)
+                .font(.system(size: 12))
+                .bold()
+                .padding(.bottom, 4)
+            
+            Text(tooltipText)
+                .font(.system(size: 11))
+                .multilineTextAlignment(.leading)
+                .padding(.bottom, 4)
+            
+            Text("이 아이콘을 누르면 서버의 인증서 정보를 확인할 수 있습니다.")
+                .font(.system(size: 11))
         }
-            .frame(width: 24, height: 24)
-            .overlay(alignment: .bottom) {
-                GeometryReader { proxy in
-                    // let offsetX = -(tooltipSize.width / 2) + (proxy.size.width / 2)
-                    if shouldDisplayTooltip {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(tooltipTitle)
-                                .font(.system(size: 12))
-                                .bold()
-                                .padding(.bottom, 4)
-                            
-                            Text(tooltipText)
-                                .font(.system(size: 11))
-                                .multilineTextAlignment(.leading)
-                                .padding(.bottom, 4)
-
-                            Text("이 아이콘을 누르면 서버의 인증서 정보를 확인할 수 있습니다.")
-                                .font(.system(size: 11))
-                        }
-                        .fixedSize()
-                        .padding(8)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .clipped()
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .offset(x: 0, y: 26)
-                        .onGeometryChange(for: CGSize.self) { proxy in
-                            proxy.size
-                        } action: { geom in
-                            self.tooltipSize = geom
-                        }
-                    }
-                }
-            }
-            .onHover { hoverState in
-                shouldDisplayTooltip = hoverState
-            }
     }
 }
 
 struct AddressBarQualityIndicator: View {
     let state: AddressBarQualityIndicatorState
     let rtt: TimeInterval
-    
-    @State
-    var shouldDisplayTooltip = true
-    
-    @State
-    var tooltipSize: CGSize = .zero
-    
+
     var tooltipTitle: String {
         switch state {
         case .unknown:
@@ -202,72 +172,24 @@ struct AddressBarQualityIndicator: View {
         }
     }
     
-    
-    /*
-    @ViewBuilder
-    var iconView: some View {
-        switch state {
-        case .unknown:
-            Image(systemName: "smoke.fill")
-                .foregroundColor(.black.opacity(0.7))
-        case .poor:
-            Image(systemName: "cloud.bolt.rain.fill")
-                .foregroundColor(.black.opacity(0.7))
-        case .bad:
-            Image(systemName: "cloud.fill")
-                .foregroundColor(.black.opacity(0.7))
-        case .good:
-            Image(systemName: "sun.min.fill")
-                .foregroundColor(.black.opacity(0.7))
-        case .excellent:
-            Image(systemName: "sun.max.fill")
-                .foregroundColor(.black.opacity(0.7))
-        }
-    }
-     */
-    
     var body: some View {
-        VStack {
+        AddressBarIndicatorView {
             iconView
+        } tooltip: {
+            Text(tooltipTitle)
+                .font(.system(size: 12))
+                .bold()
+                .padding(.bottom, 4)
+            
+            Text(tooltipText)
+                .font(.system(size: 11))
+                .multilineTextAlignment(.leading)
+                .padding(.bottom, 4)
+            
+            // %.1fms 형식으로 표시
+            Text("ping: \(String(format: "%.1f", rtt * 1000))ms")
+                .font(.system(size: 11))
         }
-            .frame(width: 24, height: 24)
-            .overlay(alignment: .bottom) {
-                GeometryReader { proxy in
-                    let offsetX = -(tooltipSize.width) + (proxy.size.width)
-                    if shouldDisplayTooltip {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(tooltipTitle)
-                                .font(.system(size: 12))
-                                .bold()
-                                .padding(.bottom, 4)
-                            
-                            Text(tooltipText)
-                                .font(.system(size: 11))
-                                .multilineTextAlignment(.leading)
-                                .padding(.bottom, 4)
-                            
-                            // %.1fms 형식으로 표시
-                            Text("ping: \(String(format: "%.1f", rtt * 1000))ms")
-                                .font(.system(size: 11))
-                        }
-                        .fixedSize()
-                        .padding(8)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .clipped()
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .offset(x: offsetX, y: 26)
-                        .onGeometryChange(for: CGSize.self) { proxy in
-                            proxy.size
-                        } action: { geom in
-                            self.tooltipSize = geom
-                        }
-                    }
-                }
-            }
-            .onHover { hoverState in
-                shouldDisplayTooltip = hoverState
-            }
     }
 }
 
@@ -430,7 +352,7 @@ struct AddressBar: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: radiusSize))
-            .glassEffect(.regular.tint(.clear).interactive(isFocused), in: .rect(cornerRadius: radiusSize))
+            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: radiusSize))
             .overlay {
                 RoundedRectangle(cornerRadius: radiusSize)
                     .fill(.clear)

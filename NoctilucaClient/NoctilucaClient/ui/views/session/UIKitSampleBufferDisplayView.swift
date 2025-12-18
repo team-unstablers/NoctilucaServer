@@ -18,6 +18,8 @@ final class SampleBufferHostView: UIView {
     init(displayLayer: AVSampleBufferDisplayLayer) {
         self.displayLayer = displayLayer
         super.init(frame: .zero)
+        
+        displayLayer.removeFromSuperlayer()
 
         backgroundColor = .blue
         layer.addSublayer(displayLayer)

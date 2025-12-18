@@ -75,3 +75,57 @@ struct MainToolbarAddressBar: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+#if os(iOS)
+
+struct UIKitStyledMainToolbarAddressBar: View {
+    @ObservedObject
+    var viewModel: MainWindowViewModel
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            MainToolbarAddressBar(viewModel: viewModel)
+            HStack(spacing: 16) {
+                Spacer()
+                
+                Button {
+                    
+                } label: {
+                    Image(systemName: "keyboard")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.foreground)
+                        .frame(width: 24, height: 24)
+                }
+                
+                Button {
+                    
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.foreground)
+                        .frame(width: 24, height: 24)
+                }
+            }
+        }
+        
+        .padding(16)
+        .background(.white)
+        // .safeAreaPadding(.bottom)
+    }
+}
+
+#Preview {
+    let viewModel = MainWindowViewModel()
+    
+    VStack {
+        Spacer()
+        
+        UIKitStyledMainToolbarAddressBar(viewModel: viewModel)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(.red)
+}
+
+#endif

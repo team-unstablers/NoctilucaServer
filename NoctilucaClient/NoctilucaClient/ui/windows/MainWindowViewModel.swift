@@ -34,6 +34,9 @@ class MainWindowViewModel: ObservableObject {
     @Published
     var averagePingRTT: TimeInterval = 0.0
     
+    @Published
+    var displayLayer: AVSampleBufferDisplayLayer? = nil
+
     func appendConnectionLog(_ log: String) {
         self.connectionLog.append(log)
         
@@ -72,6 +75,14 @@ class MainWindowViewModel: ObservableObject {
         
         try await client.startup()
         self.appendConnectionLog("연결을 시작합니다")
+    }
+    
+    func stopSession() async throws {
+        guard let client = self.client else {
+            return
+        }
+        
+        await client.close()
     }
     
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {

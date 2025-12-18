@@ -21,6 +21,10 @@ struct NoctilucaMeta {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
     
+    static var buildVersion: String {
+        return Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
+    }
+
     static var license: SoftwareLicense = .proprietary(name: "Noctiluca Client EULA",
                                                        url: URL(string: "https://unstabler.pl")!)
     

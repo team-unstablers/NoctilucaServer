@@ -15,9 +15,9 @@ import AVFoundation
 import SiriusKitClient
 
 struct MainWindowNewConnectionPhaseContentView: View {
-    @ObservedObject
+    @EnvironmentObject
     var viewModel: MainWindowViewModel
-    
+
     var body: some View {
         VStack(alignment: .leading) {
             HStack(spacing: 0) {
@@ -46,9 +46,9 @@ struct MainWindowNewConnectionPhaseContentView: View {
 }
 
 struct MainWindowConnectingPhaseContentView: View {
-    @ObservedObject
+    @EnvironmentObject
     var viewModel: MainWindowViewModel
-    
+
     @State
     var isLogAreaVisible: Bool = false
 
@@ -114,15 +114,12 @@ struct MainWindowConnectingPhaseContentView: View {
 }
 
 struct MainWindowMainPhaseContentView: View {
-    @ObservedObject
+    @EnvironmentObject
     var viewModel: MainWindowViewModel
-    
-    @State
-    var displayLayer: AVSampleBufferDisplayLayer? = nil
-    
+
     var body: some View {
         VStack {
-            if let displayLayer = displayLayer {
+            if let displayLayer = viewModel.displayLayer {
                 SampleBufferDisplayView(displayLayer: displayLayer)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -134,7 +131,7 @@ struct MainWindowMainPhaseContentView: View {
                     return
                 }
                 
-                self.displayLayer = projectionSession.displayLayer
+                viewModel.displayLayer = projectionSession.displayLayer
             }
         }
     }
@@ -143,23 +140,17 @@ struct MainWindowMainPhaseContentView: View {
 
 
 struct MainWindowContentView: View {
-    @ObservedObject
+    @EnvironmentObject
     var viewModel: MainWindowViewModel
-    
-    @State
-    var expertMode: Bool = false
-    
-    @State
-    var endpointURL: String = ""
     
     var body: some View {
         switch viewModel.phase {
         case .newConnection:
-            MainWindowNewConnectionPhaseContentView(viewModel: viewModel)
+            MainWindowNewConnectionPhaseContentView()
         case .connecting:
-            MainWindowConnectingPhaseContentView(viewModel: viewModel)
+            MainWindowConnectingPhaseContentView()
         case .connected:
-            MainWindowMainPhaseContentView(viewModel: viewModel)
+            MainWindowMainPhaseContentView()
         default:
             EmptyView()
         }
@@ -174,13 +165,15 @@ struct MainWindowContentView: View {
     MainWindowContentView(viewModel: viewModel)
      */
     
-    MainWindowNewConnectionPhaseContentView(viewModel: viewModel)
+    MainWindowNewConnectionPhaseContentView()
+        .environmentObject(viewModel)
         .frame(minWidth: 640, minHeight: 480)
 }
 
 #Preview("ConnectingPhase") {
     let viewModel = MainWindowViewModel()
     
-    MainWindowConnectingPhaseContentView(viewModel: viewModel)
+    MainWindowConnectingPhaseContentView()
+        .environmentObject(viewModel)
         .frame(minWidth: 640, minHeight: 480)
 }
