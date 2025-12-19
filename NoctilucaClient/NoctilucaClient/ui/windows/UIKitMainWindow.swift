@@ -166,6 +166,14 @@ struct UIKitMainWindow: View {
         }
         .setupAuthChallengeHandler(client: viewModel.client)
         .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
+        /*
+        .onChange(of: self.scenePhase) { _, newPhase in
+            if newPhase == .inactive {
+                // will closed
+                self.viewModel.stopSession()
+            }
+        }
+         */
 
     }
 }

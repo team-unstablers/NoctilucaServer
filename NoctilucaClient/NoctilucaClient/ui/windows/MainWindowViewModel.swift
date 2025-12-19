@@ -37,10 +37,6 @@ class MainWindowViewModel: ObservableObject {
     @Published
     var displayLayer: AVSampleBufferDisplayLayer? = nil
     
-    var __tmp_keyboard: HIDIOGCKeyboard?
-    
-    func testKeyboard() {
-    }
 
     func appendConnectionLog(_ log: String) {
         self.connectionLog.append(log)
@@ -82,12 +78,17 @@ class MainWindowViewModel: ObservableObject {
         self.appendConnectionLog("연결을 시작합니다")
     }
     
-    func stopSession() async throws {
-        guard let client = self.client else {
-            return
+    func stopSession() {
+        print("stopSession")
+        Task {
+            guard let client = self.client else {
+                return
+            }
+            
+            await client.close()
         }
         
-        await client.close()
+        self.endpointURL = ""
     }
     
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {

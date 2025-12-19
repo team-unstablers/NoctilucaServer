@@ -56,7 +56,6 @@ struct AppKitMainWindow: View {
         .setupAuthChallengeHandler(client: viewModel.client)
         .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
         .onAppear {
-            self.viewModel.testKeyboard()
         }
     }
 }
