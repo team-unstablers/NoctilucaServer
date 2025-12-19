@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 12/18/25.
 //
 
+#if canImport(Carbon)
 import Foundation
 import Carbon
 
@@ -174,3 +175,5 @@ public extension LinuxKeycode {
         return Self.linuxToCarbon[self]
     }
 }
+
+#endif
