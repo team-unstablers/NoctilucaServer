@@ -8,10 +8,19 @@
 import SiriusKit
 
 class HIDIOChannel: Channel {
+    let logger = NoctilucaLogger(category: "HIDIOChannel")
+    let eventInjector = EventInjector()
+    
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
         
         assert(direction == .remote, "HIDIOChannel must be opened from remote side")
+        
+        do {
+            try eventInjector.prepare()
+        } catch {
+            logger.error("failed to prepare event injector: \(error.localizedDescription)")
+        }
     }
     
     override func handleFrame(frame: SiriusFrame) async throws {
@@ -35,6 +44,7 @@ class HIDIOChannel: Channel {
                 // TODO
                 break
             case .keyboardEvent(let keyboardEvent):
+                self.inject(keyboardEvent: keyboardEvent)
                 // self.eventInjector.injectKeyboardEvent(keyboardEvent)
                 break
             case .mouseMoveEvent(let mouseMoveEvent):
@@ -51,6 +61,21 @@ class HIDIOChannel: Channel {
             @unknown default:
                 break
             }
+        }
+    }
+    
+    func inject(keyboardEvent: KeyboardEvent) {
+        guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(keyboardEvent.keyCode)).toCarbonKeycode else {
+            return
+        }
+        
+        switch keyboardEvent.eventType {
+        case .down:
+            eventInjector.performKeyDown(carbonKeyCode, modifiers: 0)
+        case .up:
+            eventInjector.performKeyUp(carbonKeyCode, modifiers: 0)
+        default:
+            break
         }
     }
 }
