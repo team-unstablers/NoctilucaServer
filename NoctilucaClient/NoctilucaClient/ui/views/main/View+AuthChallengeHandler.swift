@@ -35,6 +35,7 @@ struct AuthChallengeHandlerModifier: ViewModifier {
         content
             // HACK: 레이스 컨디션 일어나서 sheet이 표시되어도 내용이 비어있는 경우가 발생함
             .if(authChallenge != nil) {
+#if os(macOS)
                 $0
                     .sheet(isPresented: $shouldPresentAuthChallengeSheet) {
                         if let authChallenge = self.authChallenge {
@@ -45,6 +46,27 @@ struct AuthChallengeHandlerModifier: ViewModifier {
                             }
                         }
                     }
+#elseif os(iOS)
+                $0
+                    .fullScreenCover(isPresented: $shouldPresentAuthChallengeSheet) {
+                        ZStack {
+                            Color.black.opacity(0.4)
+                                .ignoresSafeArea()
+                            
+                            if let authChallenge = self.authChallenge {
+                                AuthChallengeSheetView(authChallenge: authChallenge) { action in
+                                    Task {
+                                        await handleAuthChallengeResponse(action)
+                                    }
+                                }
+                                .background(.background)
+                                .cornerRadius(12)
+                                .padding(12)
+                            }
+                        }
+                        .presentationBackground(.clear)
+                    }
+#endif
             }
             .onReceive(client.uiEvents) { event in
                 guard case .receivedAuthChallenge(let challenge) = event else {

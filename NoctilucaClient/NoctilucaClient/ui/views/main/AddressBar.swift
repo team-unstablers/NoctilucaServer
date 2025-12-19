@@ -326,6 +326,11 @@ struct AddressBar: View {
                 }
                 
                 TextField("호스트 주소를 입력하세요", text: $draftURL)
+#if os(iOS)
+                    .keyboardType(.URL)
+                    .submitLabel(.go)
+                    .textInputAutocapitalization(.never)
+#endif
                     .opacity(textFieldOpacity)
                     .font(.system(size: 14))
                     .textFieldStyle(.plain)
@@ -335,7 +340,20 @@ struct AddressBar: View {
                     .onSubmit {
                         isFocused = false
                         
+                        if draftURL == endpointURL {
+                            // FIXME: 이딴 식으로 하지 마세요
+                            self.submitHandler("")
+                            return
+                        }
+                        
                         self.submitHandler(draftURL)
+                    }
+                    .onKeyPress(.escape) {
+                        isFocused = false
+                        
+                        // FIXME: 이딴 식으로 하지 마세요
+                        self.submitHandler("")
+                        return .handled
                     }
             }
             .padding(.vertical, 12)

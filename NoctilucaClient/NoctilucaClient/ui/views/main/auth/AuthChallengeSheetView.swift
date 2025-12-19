@@ -41,6 +41,9 @@ struct PAMAuthChallengeForm: View {
             Text("사용자명")
                 .padding(.bottom, 6)
             TextField("사용자명 입력", text: $username)
+#if os(iOS)
+                .textInputAutocapitalization(.never)
+#endif
                 .textFieldStyle(.roundedBorder)
                 .padding(.bottom, 12)
             

@@ -15,7 +15,7 @@ struct AddressBarIndicatorView<Content: View, Tooltip: View>: View {
     let tooltip: () -> Tooltip
     
     @State
-    var shouldDisplayTooltip = true
+    var shouldDisplayTooltip = false
     
     @State
     var tooltipSize: CGSize = .zero

@@ -131,10 +131,14 @@ private extension VTVideoDecoder {
         let (_, fourCCString) = try codecType(for: configuration.codec)
         
         var specification: [CFString: Any] = [:]
+#if !targetEnvironment(simulator)
         if let hw = hardwareAcceleration(from: configuration.parsedOptions) {
+            // FIXME: 이거 해보고 실패하면 소프트웨어 디코드로 fallback하는거 있어야 함
+            
             specification[kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder] = hw
             // specification[kVTVideoDecoderSpecification_AllowHardwareAcceleratedVideoDecoder] = hw
         }
+#endif
         
         var attributes: [CFString: Any] = [:]
         if let pixelFormat = requestedPixelFormat(from: configuration.parsedOptions, preferred: configuration.preferredOutputPixelFormat) {
