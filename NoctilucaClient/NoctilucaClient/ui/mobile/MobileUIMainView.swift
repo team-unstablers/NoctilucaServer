@@ -8,17 +8,12 @@
 #if os(iOS)
 import SwiftUI
 
-enum NavigationItem: Hashable {
-    case settings
-    case settingsDetail(SettingsWindow.SettingsTab)
-}
-
 struct MobileUIMainView: View {
-    @State
-    var navState: [NavigationItem] = []
+    @EnvironmentObject
+    var viewModel: MobileUIMainViewModel
     
     var body: some View {
-        NavigationStack(path: $navState) {
+        NavigationStack(path: $viewModel.navState) {
             MainWindow()
             /*
                 .toolbar {

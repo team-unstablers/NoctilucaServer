@@ -11,15 +11,20 @@ import SwiftUI
 @main
 struct NoctilucaClientApp: App {
     
+    @StateObject
+    var mainUIViewModel = MobileUIMainViewModel()
+    
     /*
     @NSApplicationDelegateAdaptor
     private var appDelegate: AppDelegate
      */
 
     var body: some Scene {
+        
         WindowGroup {
             MobileUIMainView()
                 .frame(minWidth: 480)
+                .environmentObject(mainUIViewModel)
         }
         .windowResizability(.contentMinSize)
         .commands {
@@ -28,6 +33,14 @@ struct NoctilucaClientApp: App {
                     UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil, errorHandler: nil)
                 }
                 .keyboardShortcut("N", modifiers: [.command, .shift, .option])
+            }
+        }
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") {
+                    mainUIViewModel.navState = [.settings]
+                }
+                .keyboardShortcut(",", modifiers: [.command])
             }
         }
     }
