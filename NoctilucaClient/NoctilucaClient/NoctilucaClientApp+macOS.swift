@@ -13,6 +13,9 @@ struct NoctilucaClientApp: App {
     @Environment(\.openWindow)
     var openWindow
     
+    @NSApplicationDelegateAdaptor
+    private var appDelegate: AppDelegate
+
     var body: some Scene {
         WindowGroup {
             MainWindow()

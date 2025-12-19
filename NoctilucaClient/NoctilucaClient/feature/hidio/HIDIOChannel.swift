@@ -7,6 +7,7 @@
 
 import SiriusKitClient
 
+
 class HIDIOChannel: Channel {
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -21,4 +22,6 @@ class HIDIOChannel: Channel {
         
         // 클라이언트는 HIDIO 프레임을 수신하지 않는다
     }
+    
+    
 }

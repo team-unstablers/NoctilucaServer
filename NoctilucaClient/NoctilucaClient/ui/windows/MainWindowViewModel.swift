@@ -36,6 +36,11 @@ class MainWindowViewModel: ObservableObject {
     
     @Published
     var displayLayer: AVSampleBufferDisplayLayer? = nil
+    
+    var __tmp_keyboard: HIDIOGCKeyboard?
+    
+    func testKeyboard() {
+    }
 
     func appendConnectionLog(_ log: String) {
         self.connectionLog.append(log)

@@ -10,6 +10,12 @@ import SwiftUI
 
 @main
 struct NoctilucaClientApp: App {
+    
+    /*
+    @NSApplicationDelegateAdaptor
+    private var appDelegate: AppDelegate
+     */
+
     var body: some Scene {
         WindowGroup {
             MobileUIMainView()

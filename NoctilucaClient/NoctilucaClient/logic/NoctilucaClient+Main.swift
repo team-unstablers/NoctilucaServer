@@ -18,8 +18,12 @@ extension NoctilucaClient {
         }
         
         self.hidioController = HIDIOController(channel: channel)
-        
         self.logger.info("initializeHIDIO(): created HIDIOController")
+
+        if let keyboard = HIDIOGCKeyboard.coalesced() {
+            self.logger.info("initializeHIDIO(): connected GCKeyboard")
+            self.hidioController.connect(keyboard)
+        }
     }
     
     func initializeProjection() async throws {
@@ -43,7 +47,7 @@ extension NoctilucaClient {
     func startSession() async throws {
         try assertPhase(expected: .ready)
         
-        // try await initializeHIDIO()
+        try await initializeHIDIO()
         try await initializeProjection()
     }
 }
