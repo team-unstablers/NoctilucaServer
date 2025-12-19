@@ -20,7 +20,7 @@ public struct HIDIOPacket: SiriusMessage {
     public let events: [HIDEvent]
 
 
-    init(sequenceNumber: UInt64, timestamp: UInt64, events: [HIDEvent]) {
+    public init(sequenceNumber: UInt64, timestamp: UInt64, events: [HIDEvent]) {
         self.sequenceNumber = sequenceNumber
         self.timestamp = timestamp
         self.events = events
@@ -59,7 +59,7 @@ public struct HIDEvent: SiriusMessage {
 
     public let event: OneOf_Event
 
-    init(event: OneOf_Event) {
+    public init(event: OneOf_Event) {
         self.event = event
     }
 

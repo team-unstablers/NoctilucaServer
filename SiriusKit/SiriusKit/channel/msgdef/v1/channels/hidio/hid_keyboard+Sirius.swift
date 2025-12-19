@@ -161,7 +161,7 @@ public struct KeyboardEvent: SiriusMessage {
     public let flags: UInt32
 
 
-    init(eventType: KeyboardEventType, scanCode: UInt32, keyCode: UInt32, modifiers: UInt32, flags: UInt32) {
+    public init(eventType: KeyboardEventType, scanCode: UInt32, keyCode: UInt32, modifiers: UInt32, flags: UInt32) {
         self.eventType = eventType
         self.scanCode = scanCode
         self.keyCode = keyCode
