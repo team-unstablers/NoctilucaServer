@@ -20,8 +20,8 @@ enum MainWindowPhase: Hashable {
 }
 
 struct AppKitMainWindow: View {
-    @StateObject
-    var viewModel = MainWindowViewModel()
+    @EnvironmentObject
+    var viewModel: MainWindowViewModel
     
     var body: some View {
         VStack(spacing: 0) {

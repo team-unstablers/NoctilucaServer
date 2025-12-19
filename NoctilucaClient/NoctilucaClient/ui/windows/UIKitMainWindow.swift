@@ -25,8 +25,8 @@ enum MainWindowToolbarStyle {
 }
 
 struct UIKitMainWindow: View {
-    @StateObject
-    var viewModel = MainWindowViewModel()
+    @EnvironmentObject
+    var viewModel: MainWindowViewModel
     
     @State
     var principalFrame: CGRect = .init(x: 320, y: 240, width: 1, height: 1)
