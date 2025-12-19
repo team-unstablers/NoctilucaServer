@@ -153,6 +153,22 @@ extension ProjectionSession: ScreenRecorderDelegate {
     }
     
     func screenRecorder(_ recorder: any ScreenRecorder, didCaptureFrame frameData: CMSampleBuffer) {
+        let pixelBuffer = frameData.imageBuffer
+        
+        /*
+        CVBufferRemoveAttachment(pixelBuffer!, kCVImageBufferICCProfileKey)
+        let colorAttachments: [CFString: Any] = [
+            kCVImageBufferColorPrimariesKey: kCVImageBufferColorPrimaries_ITU_R_2020,
+            kCVImageBufferTransferFunctionKey: kCVImageBufferTransferFunction_ITU_R_2100_HLG, // kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ, // HLG라면
+            kCVImageBufferYCbCrMatrixKey: kCVImageBufferYCbCrMatrix_ITU_R_2020
+        ]
+        
+        // 3. PixelBuffer에 태그 주입
+        // CVBufferSetAttachments는 기존 키가 있으면 덮어씁니다.
+        CVBufferSetAttachments(pixelBuffer!, colorAttachments as CFDictionary, .shouldPropagate)
+         */
+        
+        
         try? encoder.encode(frameID: UInt64(Date().timeIntervalSince1970 * 1000), sampleBuffer: frameData)
     }
 }

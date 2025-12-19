@@ -74,9 +74,14 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
             throw ScreenRecorderPrepareError.internalError
         }
         
-        let configuration = SCStreamConfiguration()
-        configuration.pixelFormat = kCVPixelFormatType_32BGRA
-        configuration.preservesAspectRatio = false
+        let configuration = SCStreamConfiguration(preset: .captureHDRStreamCanonicalDisplay)
+        /*
+        configuration.pixelFormat = kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+        configuration.colorSpaceName = CGColorSpace.displayP3_HLG
+        configuration.colorMatrix = kCVImageBufferYCbCrMatrix_ITU_R_2020
+        configuration.captureDynamicRange = .hdrLocalDisplay
+         */
+        configuration.captureResolution = .best
         
         configuration.queueDepth = 2
         configuration.showsCursor = true

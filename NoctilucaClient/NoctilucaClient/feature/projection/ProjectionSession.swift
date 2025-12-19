@@ -112,13 +112,32 @@ extension ProjectionSession: VideoDecoderDelegate {
                                             presentationTimeStamp: presentationTime,
                                             decodeTimeStamp: CMTime.invalid)
         
+        let pixelBuffer = frame.pixelBuffer
         
+        
+        
+        // 2. 기존의 잘못된(Rec.709) 태그를 덮어씌울 HDR 태그 정의
+        // (소스가 HDR10/PQ라고 가정)
+        /*
+        let colorAttachments: [CFString: Any] = [
+            kCVImageBufferColorPrimariesKey: kCVImageBufferColorPrimaries_ITU_R_2020,
+            kCVImageBufferTransferFunctionKey: kCVImageBufferTransferFunction_ITU_R_2100_HLG, // kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ, // HLG라면
+            kCVImageBufferYCbCrMatrixKey: kCVImageBufferYCbCrMatrix_ITU_R_2020
+        ]
+        
+        // 3. PixelBuffer에 태그 주입
+        // CVBufferSetAttachments는 기존 키가 있으면 덮어씁니다.
+        CVBufferSetAttachments(pixelBuffer, colorAttachments as CFDictionary, .shouldPropagate)
+        
+         */
+
         let sampleBuffer = try! CMSampleBuffer(
             imageBuffer: frame.pixelBuffer,
             formatDescription: CMFormatDescription(imageBuffer: frame.pixelBuffer),
             // FIXME
             sampleTiming: timingInfo,
         )
+        
         
         /*
         if let timebase = renderTimebase {

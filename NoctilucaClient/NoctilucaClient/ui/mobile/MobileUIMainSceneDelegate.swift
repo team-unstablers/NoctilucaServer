@@ -19,7 +19,6 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     var mainWindowViewModel: MainWindowViewModel? = nil
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        
         let mainUIViewModel = MobileUIMainViewModel()
         let mainWindowViewModel = MainWindowViewModel()
         
@@ -27,7 +26,6 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.mainWindowViewModel = mainWindowViewModel
         
         let contentView = MobileUIMainView()
-            .frame(minWidth: 480)
             .environmentObject(mainUIViewModel)
             .environmentObject(mainWindowViewModel)
         

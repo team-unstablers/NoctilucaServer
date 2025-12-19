@@ -19,28 +19,50 @@ struct MainWindowNewConnectionPhaseContentView: View {
     var viewModel: MainWindowViewModel
 
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack(spacing: 0) {
-                Text("Noctiluca ")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading) {
+                HStack(spacing: 0) {
+                    Text("Noctiluca ")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text("Navigator")
+                        .font(.largeTitle)
+                        .fontWeight(.light)
+                    
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
                 
-                Text("Navigator")
-                    .font(.largeTitle)
-                    .fontWeight(.light)
+                Text("버전 \(NoctilucaMeta.version)")
             }
-            
-            Text("버전 \(NoctilucaMeta.version)")
-                .padding(.bottom, 32)
-            
-            
-            Text("최근 연결한 호스트 목록이 없습니다.\n주소 표시줄에 연결하고자 하는 호스트 주소를 입력해 주세요.")
-            
-            VStack {
+            .padding(.top, 24)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
+
+            Text("저장된 호스트 목록")
+                .font(.title)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+
+            ScrollView {
+                VStack {
+                    ContactItemView(item: .init(name: "집 컴퓨터", endpointURL: "localhost:8283")) { action in
+                        switch action {
+                        case .launch:
+                            Task {
+                                try? await viewModel.startSession(endpointURL: "localhost:8283")
+                            }
+                        case .edit:
+                            break
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
             }
             .frame(maxWidth: .infinity)
         }
-        .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -116,29 +138,110 @@ struct MainWindowConnectingPhaseContentView: View {
 struct MainWindowMainPhaseContentView: View {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
+    
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            if let displayLayer = viewModel.displayLayer {
-                SampleBufferDisplayView(displayLayer: displayLayer)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            
-            if let session = viewModel.client?.projectionChannel?.sessions.first?.value,
-               let codec = session.codec
-            {
-                PerformanceOverlay(codec: codec, rtt: viewModel.averagePingRTT)
-                    .padding(16)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .if(viewModel.client != nil) {
-            $0.onReceive(viewModel.client!.uiEvents) { event in
-                guard case .FIXME_projectionStarted(let projectionSession) = event else {
-                    return
+        GeometryReader { geometry in
+            ZStack(alignment: .topTrailing) {
+                if let displayLayer = viewModel.displayLayer {
+                    SampleBufferDisplayView(displayLayer: displayLayer)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .scaleEffect(scale)
+                        .offset(offset)
                 }
                 
-                viewModel.displayLayer = projectionSession.displayLayer
+                if let session = viewModel.client?.projectionChannel?.sessions.first?.value,
+                   let codec = session.codec
+                {
+                    PerformanceOverlay(codec: codec, rtt: viewModel.averagePingRTT)
+                        .padding(16)
+                }
+                
+                Rectangle()
+                    .fill(Color.black.opacity(0.001))
+                    // .ignoresSafeArea()
+                    .gesture(
+                        MagnificationGesture()
+                            .onChanged { value in
+                                withAnimation(.spring()) {
+                                    // toolbarVisible = false
+                                }
+                                
+                                let delta = value / lastScale
+                                lastScale = value
+                                scale = min(max(scale * delta, 0.25), 4)
+                            }
+                            .onEnded { _ in
+                                lastScale = 1.0
+                                withAnimation(.spring()) {
+                                    if scale < 1 {
+                                        scale = 1
+                                        offset = .zero
+                                    }
+                                }
+                            }
+                            .simultaneously(with:
+                                                DragGesture()
+                                .onChanged { value in
+                                    if scale > 1 {
+                                        withAnimation(.spring()) {
+                                            // toolbarVisible = false
+                                        }
+
+                                        offset = CGSize(
+                                            width: lastOffset.width + value.translation.width,
+                                            height: lastOffset.height + value.translation.height
+                                        )
+                                    }
+                                }
+                                .onEnded { _ in
+                                    lastOffset = offset
+                                    
+                                    // 화면 밖으로 나가지 않도록 제한
+                                    withAnimation(.spring()) {
+                                        let maxX = (geometry.size.width * (scale - 1)) / 2
+                                        let maxY = (geometry.size.height * (scale - 1)) / 2
+                                        
+                                        offset.width = min(max(offset.width, -maxX), maxX)
+                                        offset.height = min(max(offset.height, -maxY), maxY)
+                                        lastOffset = offset
+                                    }
+                                }
+                                           )
+                    )
+                    .onTapGesture(count: 1) {
+                        withAnimation(.spring()) {
+                            // toolbarVisible = !toolbarVisible
+                        }
+                    }
+                    .onTapGesture(count: 2) {
+                        withAnimation(.spring()) {
+                            // toolbarVisible = false
+                            if scale > 1 {
+                                scale = 1
+                                offset = .zero
+                                lastOffset = .zero
+                            } else {
+                                scale = 2
+                            }
+                        }
+                    }
+                
+
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .if(viewModel.client != nil) {
+                $0.onReceive(viewModel.client!.uiEvents) { event in
+                    guard case .FIXME_projectionStarted(let projectionSession) = event else {
+                        return
+                    }
+                    
+                    viewModel.displayLayer = projectionSession.displayLayer
+                }
             }
         }
     }
@@ -147,6 +250,11 @@ struct MainWindowMainPhaseContentView: View {
 
 
 struct MainWindowContentView: View {
+#if os(iOS)
+    @Environment(\.horizontalSizeClass)
+    var horizontalSizeClass
+#endif
+    
     @EnvironmentObject
     var viewModel: MainWindowViewModel
     
@@ -154,6 +262,10 @@ struct MainWindowContentView: View {
         switch viewModel.phase {
         case .newConnection:
             MainWindowNewConnectionPhaseContentView()
+#if os(iOS)
+                .safeAreaPadding(.vertical)
+                .padding(.top, horizontalSizeClass == .compact ? 0 : 32)
+#endif
         case .connecting:
             MainWindowConnectingPhaseContentView()
         case .connected:

@@ -26,7 +26,7 @@ final class SampleBufferHostView: UIView {
 
         displayLayer.backgroundColor = UIColor.black.cgColor
         displayLayer.videoGravity = .resizeAspect
-        displayLayer.contentsScale = UIScreen.main.scale
+        // displayLayer.contentsScale = UIScreen.main.scale
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

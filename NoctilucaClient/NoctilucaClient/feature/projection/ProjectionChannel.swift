@@ -57,8 +57,8 @@ class ProjectionChannel: Channel {
                 Codec(
                     fourCC: .hvc1, // 'HVC1',
                     frameRate: 30,
-                    size: CGSize(width: 1920, height: 1080),
-                    options: "hardware-acceleration: 'true'",
+                    size: CGSize(width: 1920, height: 1200),
+                    options: "hardware-acceleration: 'true'; color-format: 'yuv444';",
                     quality: .variableBitrate(targetBitrateKbps: 1200, maxBitrateKbps: 2400)
                 )
             ]

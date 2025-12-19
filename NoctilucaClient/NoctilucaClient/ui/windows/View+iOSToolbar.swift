@@ -1,0 +1,206 @@
+//
+//  View+setupAddressBar.swift
+//  NoctilucaClient
+//
+//  Created by Gyuhwan Park on 12/20/25.
+//
+
+import SwiftUI
+
+#if os(iOS)
+
+extension View {
+    @ViewBuilder
+    func setupMainToolbar(for deviceKind: DeviceKind) -> some View {
+        switch deviceKind {
+        case .iPhone:
+            self.modifier(ToolbarModifierIPhone())
+        case .iPad:
+            self.modifier(ToolbarModifierIPad())
+        default:
+            self.modifier(ToolbarModifierIPad())
+        }
+    }
+}
+
+struct ToolbarModifierIPhone: ViewModifier {
+    @Environment(\.horizontalSizeClass)
+    var horizontalSizeClass
+    
+    @EnvironmentObject
+    var viewModel: MainWindowViewModel
+
+    func body(content: Content) -> some View {
+        if horizontalSizeClass == .regular {
+            content
+                .safeAreaPadding(.horizontal)
+                .modifier(ToolbarModifierIPad())
+        } else {
+            ZStack(alignment: .bottom) {
+                content
+                MainToolbarAddressBar(viewModel: viewModel)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+            }
+            .toolbar {
+                if viewModel.phase == .newConnection {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            // navState.append(.settings)
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            
+                        } label: {
+                            Image(systemName: "plus.app")
+                        }
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            viewModel.stopSession()
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+struct ToolbarModifierIPad: ViewModifier {
+    @EnvironmentObject
+    var viewModel: MainWindowViewModel
+    
+    @State
+    var principalFrame: CGRect = .init(x: 320, y: 240, width: 1, height: 1)
+    
+    @State
+    var toolbarStyle: MainWindowToolbarStyle = .compact
+
+    @State
+    var shouldPresentAddressBar: Bool = false
+    
+    @FocusState
+    var isAddressBarFocused: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .if(shouldPresentAddressBar) {
+                $0.overlay {
+                    HStack {
+                        MainToolbarAddressBar(viewModel: viewModel)
+                            .focused($isAddressBarFocused)
+                            .onAppear {
+                                isAddressBarFocused = true
+                            }
+                            .onChange(of: isAddressBarFocused) { oldValue, newValue in
+                                if (newValue == false) {
+                                    shouldPresentAddressBar = false
+                                }
+                            }
+                    }
+                    .if(toolbarStyle == .standard) {
+                        $0
+                            .frame(maxWidth: 400)
+                            .position(x: principalFrame.midX, y: principalFrame.midY)
+                    }
+                    .if(toolbarStyle == .compact) {
+                        $0
+                            .frame(maxWidth: 400)
+                            .position(x: principalFrame.midX, y: principalFrame.midY)
+                    }
+                }
+            }
+            .if(!shouldPresentAddressBar) {
+                $0.overlay {
+                    HStack {
+                        MainToolbarAddressBar(viewModel: viewModel)
+                            .allowsHitTesting(false)
+                            .opacity(1.0)
+                    }
+                    .if(toolbarStyle == .standard) {
+                        $0
+                            .frame(maxWidth: 400)
+                            .position(x: principalFrame.midX, y: principalFrame.midY)
+                    }
+                    .if(toolbarStyle == .compact) {
+                        $0
+                            .frame(maxWidth: 400)
+                            .position(x: principalFrame.midX, y: principalFrame.midY)
+                    }
+                }
+            }
+        .ignoresSafeArea(.all)
+        .onGeometryChange(for: CGSize.self) {
+            return $0.size
+        } action: {
+            if $0.width <= 650 {
+                toolbarStyle = .compact
+            } else {
+                toolbarStyle = .standard
+            }
+        }
+        .if(!shouldPresentAddressBar) {
+            $0.toolbar {
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        shouldPresentAddressBar = true
+                    } label: {
+                        Text("...")
+                            .opacity(0.001)
+                            .frame(width: 400, height: 38)
+                            .overlay {
+                                GeometryReader { geom in
+                                    Text("test")
+                                        .opacity(0.001)
+                                        .onAppear {
+                                            principalFrame = geom.frame(in: .global)
+                                        }
+                                        .onChange(of: geom.frame(in: .global)) { _, newFrame in
+                                            principalFrame = newFrame
+                                        }
+                                }
+                            }
+                    }
+                    .frame(width: 400, height: 38)
+                }
+                
+                if viewModel.phase == .newConnection {
+                    let toolbarPlacement: ToolbarItemPlacement = (toolbarStyle == .standard) ? .topBarTrailing : .bottomBar
+                    ToolbarItem(placement: toolbarPlacement) {
+                        Button {
+                            // navState.append(.settings)
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                    }
+                    ToolbarItem(placement: toolbarPlacement) {
+                        Button {
+                            
+                        } label: {
+                            Image(systemName: "plus.app")
+                        }
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            viewModel.stopSession()
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                    }
+                }
+            }
+        }
+
+        
+    }
+}
+
+#endif

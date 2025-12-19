@@ -143,6 +143,7 @@ private extension VTVideoDecoder {
         var attributes: [CFString: Any] = [:]
         if let pixelFormat = requestedPixelFormat(from: configuration.parsedOptions, preferred: configuration.preferredOutputPixelFormat) {
             attributes[kCVPixelBufferPixelFormatTypeKey] = pixelFormat
+            print(pixelFormat)
         }
         
         var callbackRecord = VTDecompressionOutputCallbackRecord(
@@ -160,10 +161,14 @@ private extension VTVideoDecoder {
             decompressionSessionOut: &session
         )
         
+        
+        
         guard status == noErr, let createdSession = session else {
             throw VideoDecoderError.decompressionSessionFailed(status)
         }
         
+        VTSessionSetProperty(createdSession, key: kVTDecompressionPropertyKey_GeneratePerFrameHDRDisplayMetadata, value: kCFBooleanTrue)
+
         decompressionSession = createdSession
         currentFormatDescription = formatDescription
         logger.info("Created decompression session for codec: \(fourCCString)")
@@ -259,11 +264,11 @@ private extension VTVideoDecoder {
         
         switch value {
         case CodecColorFormat.yuv444.rawValue:
-            return kCVPixelFormatType_444YpCbCr8BiPlanarVideoRange
+            return kCVPixelFormatType_444YpCbCr10BiPlanarFullRange
         case CodecColorFormat.yuv420.rawValue:
             fallthrough
         default:
-            return kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            return kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
         }
     }
     

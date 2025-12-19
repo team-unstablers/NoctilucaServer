@@ -29,6 +29,8 @@ struct AppKitSampleBufferDisplayView: NSViewRepresentable {
         displayLayer.videoGravity = .resize
         displayLayer.contentsScale = NSScreen.main?.backingScaleFactor ?? 1.0
         
+        view.layer?.preferredDynamicRange = .high
+        displayLayer.preferredDynamicRange = .high
         
         return view
     }

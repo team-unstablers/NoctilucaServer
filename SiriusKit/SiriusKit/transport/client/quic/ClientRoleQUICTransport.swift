@@ -60,6 +60,10 @@ class ClientRoleQUICTransport: ClientRoleTransport {
     }
     
     override func disconnect() async {
+        for stream in self.streams.values {
+            try? await stream.close()
+        }
+        
         if let connectionGroup {
             connectionGroup.cancel()
             self.connectionGroup = nil

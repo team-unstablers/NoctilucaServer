@@ -204,7 +204,6 @@ private extension VTVideoEncoder {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             throw VideoEncoderError.invalidSampleBuffer
         }
-        
         let codecSpecification = configuration.specification
         
         let codecType = try codecSpecification.fourCC.codecType()
@@ -233,8 +232,12 @@ private extension VTVideoEncoder {
             specification[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder] = true
         }
         
+        // specification[kVTVideoEncoderSpecification_EnableLowLatencyRateControl] = true
+        
         var attributes: [CFString: Any] = [:]
         attributes[kCVPixelBufferPixelFormatTypeKey] = pixelBufferFormat
+        attributes[kCVImageBufferYCbCrMatrixKey] = kCVImageBufferYCbCrMatrix_ITU_R_2020
+        
         
         var session: VTCompressionSession?
         let status = VTCompressionSessionCreate(
@@ -268,7 +271,18 @@ private extension VTVideoEncoder {
         setProperty(session, key: kVTCompressionPropertyKey_RealTime, value: kCFBooleanTrue)
         setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
         
-        setProperty(session, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Normal)
+        // setProperty(session, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Normal)
+        
+        /*
+        setProperty(session, key: kVTCompressionPropertyKey_HDRMetadataInsertionMode, value: kVTHDRMetadataInsertionMode_Auto)
+        setProperty(session, key: kVTCompressionPropertyKey_PreserveDynamicHDRMetadata, value: kCFBooleanTrue)
+        */
+         
+        setProperty(session, key: kVTCompressionPropertyKey_ColorPrimaries, value: kCVImageBufferColorPrimaries_ITU_R_2020)
+        setProperty(session, key: kVTCompressionPropertyKey_TransferFunction, value: kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ)
+        setProperty(session, key: kVTCompressionPropertyKey_YCbCrMatrix, value: kCVImageBufferYCbCrMatrix_ITU_R_2020)
+        
+
         
         if codecSpecification.frameRate > 0 {
             let rate = NSNumber(value: codecSpecification.frameRate)
@@ -362,7 +376,7 @@ private extension CodecSpecification {
         
         switch colorFormat {
         case .kColorFormatYUV444:
-            return kCVPixelFormatType_444YpCbCr8BiPlanarVideoRange
+            return kCVPixelFormatType_444YpCbCr10BiPlanarFullRange
 
             
         case .kColorFormatAuto:
@@ -370,7 +384,7 @@ private extension CodecSpecification {
         case .kColorFormatYUV420:
             fallthrough
         default:
-            return kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            return kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
         }
     }
     
@@ -419,7 +433,8 @@ private extension CodecSpecification {
         
         let profile = options[.profile] ?? .kProfileAuto
         
-        return "HEVC_Main_\(level)" as CFString
+        // return "HEVC_Main_\(level)" as CFString
+        return kVTProfileLevel_HEVC_Main10_AutoLevel
     }
 }
 
