@@ -118,10 +118,17 @@ struct MainWindowMainPhaseContentView: View {
     var viewModel: MainWindowViewModel
 
     var body: some View {
-        VStack {
+        ZStack(alignment: .topTrailing) {
             if let displayLayer = viewModel.displayLayer {
                 SampleBufferDisplayView(displayLayer: displayLayer)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            
+            if let session = viewModel.client?.projectionChannel?.sessions.first?.value,
+               let codec = session.codec
+            {
+                PerformanceOverlay(codec: codec, rtt: viewModel.averagePingRTT)
+                    .padding(16)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

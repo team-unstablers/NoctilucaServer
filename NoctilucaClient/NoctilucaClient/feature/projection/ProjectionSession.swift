@@ -33,6 +33,7 @@ class ProjectionSession: Identifiable {
     private var firstLocalRenderTime: CMTime?
     private let hostClock = CMClockGetHostTimeClock()
     
+    private(set) var codec: Codec?
     var formatDescription: CMFormatDescription?
 
     init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
@@ -47,16 +48,9 @@ class ProjectionSession: Identifiable {
         self.decoder.delegate = self
     }
     
-    func prepare() async throws {
-        try self.decoder.prepare(with: .init(
-            codec: Codec(
-                fourCC: .hvc1, // 'HVC1',
-                frameRate: 30,
-                size: CGSize(width: 1920, height: 1080),
-                options: "hardware-acceleration: 'true'",
-                quality: .variableBitrate(targetBitrateKbps: 1200, maxBitrateKbps: 2400))
-            )
-        )
+    func prepare(codec: Codec) async throws {
+        self.codec = codec
+        try self.decoder.prepare(with: .init(codec: codec))
     }
     
     func start() async throws {

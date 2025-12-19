@@ -12,7 +12,7 @@ import SiriusKitClient
 class ProjectionChannel: Channel {
     private let logger = SiriusLogger(category: "ProjectionChannel", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     
-    private(set) var pendingSessions: [UUID: () -> Void] = [:]
+    private(set) var pendingSessions: [UUID: (ProjectionSessionCreatedEvent) -> Void] = [:]
     private(set) var sessions: [UUID: ProjectionSession] = [:]
     
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
@@ -30,8 +30,9 @@ class ProjectionChannel: Channel {
         case .projectionSessionCreatedEvent:
             let event = try ProjectionSessionCreatedEvent.fromProtobufBytes(frame.data)
             self.logger.info("Received ProjectionSessionCreatedEvent: sessionId=\(event.identifier)")
+            
             if let continuation = self.pendingSessions[event.identifier] {
-                continuation()
+                continuation(event)
             } else {
                 self.logger.warning("No pending session found for identifier: \(event.identifier)")
             }
@@ -63,10 +64,10 @@ class ProjectionChannel: Channel {
             ]
         ))
         
-        await withCheckedContinuation { cont in
-            self.pendingSessions[identifier] = {
+        let createdEvent = await withCheckedContinuation { cont in
+            self.pendingSessions[identifier] = { event in
                 self.pendingSessions.removeValue(forKey: identifier)
-                cont.resume()
+                cont.resume(returning: event)
             }
         }
         
@@ -74,7 +75,7 @@ class ProjectionChannel: Channel {
         
         let session = ProjectionSession(id: identifier, dataChannel: channel, controlChannel: self)
         
-        try await session.prepare()
+        try await session.prepare(codec: createdEvent.codec)
         try await session.start()
         
         self.sessions[identifier] = session
