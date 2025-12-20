@@ -25,7 +25,9 @@ struct PerformanceOverlay: View {
             Text("fourCC: \(codec.fourCC.stringRepresentation)")
             Text("Frame rate: \(String(format: "%.2f", codec.frameRate ?? 0.0)) fps")
             Text("Resolution: \(Int(codec.size?.width ?? -1)) x \(Int(codec.size?.height ?? -1))")
-            Text("Options: \(codec.options ?? "(none)"))")
+            
+            let optionsString = CodecOptionsParser.serialize(options: codec.options)
+            Text("Options: \(optionsString ?? "(none)"))")
         }
         .padding(8)
         .background(.ultraThinMaterial)
@@ -43,7 +45,12 @@ struct PerformanceOverlay: View {
                 fourCC: .avc1,
                 frameRate: 60.0,
                 size: CGSize(width: 1920, height: 1080),
-                options: "hardware-acceleration: 'true'",
+                options: CodecOptions(
+                    mandatory: [:],
+                    optional: [
+                        .hardwareAcceleration: .kHardwareAccelerationAuto
+                    ]
+                ),
                 quality: .auto(mode: .balancedPriority)
             ),
             rtt: 0.1231,
