@@ -274,6 +274,17 @@ struct AddressBar: View {
     @State
     var draftURL: String = "private-resource-02.internal.contoso.com"
     
+    @State
+    var candidates: [AddressBarCandidateItem] = [
+        .quickConnect(endpointURL: "internal01.contoso.com"),
+        .quickConnect(endpointURL: "internal02.contoso.com"),
+        .contactItem(item: ContactItem(name: "집 컴퓨터", endpointURL: "home.cheesekun.me")),
+        .contactItem(item: ContactItem(name: "회사 컴퓨터", endpointURL: "work.cheesekun.me")),
+    ]
+    
+    @State
+    var candidateFocusIndex: Int? = nil
+    
     @FocusState
     var isFocused: Bool
     
@@ -346,6 +357,8 @@ struct AddressBar: View {
                             return
                         }
                         
+                        // TODO: if let candidate = ...
+                        
                         self.submitHandler(draftURL)
                     }
                     .onKeyPress(.escape) {
@@ -354,6 +367,29 @@ struct AddressBar: View {
                         // FIXME: 이딴 식으로 하지 마세요
                         self.submitHandler("")
                         return .handled
+                    }
+                    .onKeyPress(.downArrow) {
+                        self.moveFocus(.down)
+                        
+                        return .handled
+                    }
+                    .onKeyPress(.upArrow) {
+                        self.moveFocus(.up)
+                        
+                        return .handled
+                    }
+                    .onChange(of: draftURL) { _, newValue in
+                        self.candidateFocusIndex = nil
+                        
+                        if !newValue.isEmpty {
+                            self.candidates = [
+                                .quickConnect(endpointURL: draftURL),
+                                .connect(endpointURL: draftURL),
+                            ]
+                        } else {
+                            // TODO
+                            self.candidates = []
+                        }
                     }
             }
             .padding(.vertical, 12)
@@ -429,22 +465,59 @@ struct AddressBar: View {
             .padding(.horizontal, 24)
             .opacity(labelAreaOpacity)
         }
+        .overlay {
+            if isFocused, !candidates.isEmpty {
+                GeometryReader { geom in
+                    AddressBarCandidateBox(candidates: self.candidates, focusedIndex: self.candidateFocusIndex)
+                        .offset(y: geom.size.height + 8)
+                }
+            }
+        }
         .zIndex(4)
+    }
+    
+    private func moveFocus(_ direction: MoveCommandDirection) {
+        guard !self.candidates.isEmpty else { return }
+
+        let currentIndex = self.candidateFocusIndex
+        let nextIndex: Int?
+        
+        switch direction {
+        case .down:
+            if currentIndex == nil {
+                nextIndex = 0
+            } else {
+                nextIndex = min(currentIndex! + 1, candidates.count - 1)
+            }
+        case .up:
+            if currentIndex == nil {
+                nextIndex = candidates.count - 1
+            } else {
+                nextIndex = currentIndex! - 1 >= 0 ? currentIndex! - 1 : nil
+            }
+        default:
+            return
+        }
+        
+        self.candidateFocusIndex = nextIndex
     }
 }
 
 #Preview {
     VStack {
-        VStack {
+        VStack() {
             AddressBar(
                 endpointURL: "",
             ) { _ in
                 
             }
+            
+            Spacer()
         }
         .zIndex(4)
         .padding(32)
 
+        /*
         VStack {
             Text("AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent)")
             AddressBar(
@@ -486,6 +559,7 @@ struct AddressBar: View {
         
         Spacer()
         Button("test") {}
+         */
     }
     .frame(minWidth: 400, minHeight: 400)
     .padding(32)
