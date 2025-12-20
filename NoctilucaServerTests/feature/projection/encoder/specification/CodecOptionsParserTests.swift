@@ -16,9 +16,9 @@ final class CodecOptionsParserTests: XCTestCase {
         XCTAssertTrue(CodecOptionsParser.parseAsDictionary(optionsString: "   ").isEmpty)
     }
     
-    func testParseAsDictionaryRequiresQuotedValuesAndNormalizesKeys() {
+    func testParseAsDictionaryStripsRequiredAndNormalizesKeys() {
         let parsed = CodecOptionsParser.parseAsDictionary(
-            optionsString: " Profile : 'High' ; hardware-acceleration:'forced'; level: 4.1; invalid ; color-format: 'yuv420'"
+            optionsString: " Profile : 'High' !required ; hardware-acceleration:'forced'!required; level: 4.1; invalid ; color-format: 'yuv420'"
         )
         
         XCTAssertEqual(parsed["profile"], "High")
@@ -28,24 +28,41 @@ final class CodecOptionsParserTests: XCTestCase {
         XCTAssertEqual(parsed.count, 3)
     }
     
-    func testParseFiltersUnsupportedKeys() {
+    func testParseReturnsCodecOptionsWithRequiredPragma() {
         let parsed = CodecOptionsParser.parse(
-            optionsString: "profile: 'main'; color-depth: '10'; dynamic-range: 'hdr'; level: '4.2'"
+            optionsString: """
+            profile: 'main' !required;
+            color-depth: '10';
+            dynamic-range: 'hdr';
+            level: '4.2';
+            hardware-acceleration:'forced'!required;
+            color-format: 'yuv420'
+            """
         )
         
-        XCTAssertEqual(parsed[.profile], CodecOptionValue(rawValue: "main"))
-        XCTAssertEqual(parsed[.level], CodecOptionValue(rawValue: "4.2"))
-        XCTAssertNil(parsed[.colorDepth])
-        XCTAssertNil(parsed[.dynamicRange])
-        XCTAssertEqual(parsed.count, 2)
+        XCTAssertEqual(parsed.mandatory[.profile], CodecOptionValue(rawValue: "main"))
+        XCTAssertEqual(parsed.mandatory[.hardwareAcceleration], CodecOptionValue(rawValue: "forced"))
+        XCTAssertNil(parsed.mandatory[.level])
+        
+        XCTAssertEqual(parsed.optional[.level], CodecOptionValue(rawValue: "4.2"))
+        XCTAssertEqual(parsed.optional[.colorFormat], CodecOptionValue(rawValue: "yuv420"))
+        XCTAssertNil(parsed.optional[.colorDepth])
+        XCTAssertNil(parsed.optional[.dynamicRange])
+        
+        XCTAssertEqual(parsed.mandatory.count, 2)
+        XCTAssertEqual(parsed.optional.count, 2)
     }
     
     func testSerializeAndParseRoundTrip() {
-        let original: [CodecOptionKey: CodecOptionValue] = [
-            .hardwareAcceleration: CodecOptionValue(rawValue: "forced"),
-            .profile: CodecOptionValue(rawValue: "high"),
-            .colorFormat: CodecOptionValue(rawValue: "yuv420p")
-        ]
+        let original = CodecOptions(
+            mandatory: [
+                .hardwareAcceleration: CodecOptionValue(rawValue: "forced")
+            ],
+            optional: [
+                .profile: CodecOptionValue(rawValue: "high"),
+                .colorFormat: CodecOptionValue(rawValue: "yuv420p")
+            ]
+        )
         
         let serialized = CodecOptionsParser.serialize(options: original)
         let reparsed = CodecOptionsParser.parse(optionsString: serialized)

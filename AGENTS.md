@@ -11,6 +11,10 @@ Noctiluca는 macOS 호스트용 원격 제어 솔루션을 제공하는 소프�
 - Google Protobuf 3
 - QUIC (via Network.framework)
 
+## Recent Notes
+
+- `CodecOptionsParser.parse(optionsString:)`가 이제 `[CodecOptionKey: CodecOptionValue]` 대신 `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다. 기존 호출부는 아직 미정리 상태입니다.
+
 </section>
 <section id="agent-rules">
 

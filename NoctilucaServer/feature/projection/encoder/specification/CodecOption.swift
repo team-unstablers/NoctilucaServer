@@ -7,6 +7,11 @@
 
 import Foundation
 
+struct CodecOptions: Codable, Equatable {
+    var mandatory: [CodecOptionKey: CodecOptionValue] = [:]
+    var `optional`: [CodecOptionKey: CodecOptionValue] = [:]
+}
+
 struct CodecOptionValue: RawRepresentable, Codable, Hashable, Equatable {
     var rawValue: String
     
