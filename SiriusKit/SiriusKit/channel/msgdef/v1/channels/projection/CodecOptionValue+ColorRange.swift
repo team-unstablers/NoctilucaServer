@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 12/20/25.
 //
 
-extension CodecOptionValue {
+public extension CodecOptionValue {
     /// Television-safe한 제한된 색상 범위를 사용합니다. (SDR: 16-235, HDR: 64-940)
     static let kColorRangeLimited = Self(rawValue: "limited")
     

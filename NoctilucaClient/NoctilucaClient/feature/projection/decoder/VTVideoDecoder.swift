@@ -128,23 +128,22 @@ private extension VTVideoDecoder {
             throw VideoDecoderError.invalidFormatDescription
         }
         
-        let (_, fourCCString) = try codecType(for: configuration.codec)
+        let codec = configuration.codec
         
         var specification: [CFString: Any] = [:]
+        
 #if !targetEnvironment(simulator)
-        if let hw = hardwareAcceleration(from: configuration.parsedOptions) {
+        let __FIXME__clientSideEnabledHardwareDecoding = true
+        
+        if __FIXME__clientSideEnabledHardwareDecoding {
             // FIXME: 이거 해보고 실패하면 소프트웨어 디코드로 fallback하는거 있어야 함
-            
-            specification[kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder] = hw
+            specification[kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder] = kCFBooleanTrue
             // specification[kVTVideoDecoderSpecification_AllowHardwareAcceleratedVideoDecoder] = hw
         }
 #endif
         
         var attributes: [CFString: Any] = [:]
-        if let pixelFormat = requestedPixelFormat(from: configuration.parsedOptions, preferred: configuration.preferredOutputPixelFormat) {
-            attributes[kCVPixelBufferPixelFormatTypeKey] = pixelFormat
-            print(pixelFormat)
-        }
+        attributes[kCVPixelBufferPixelFormatTypeKey] = codec.cvPixelFormat
         
         var callbackRecord = VTDecompressionOutputCallbackRecord(
             decompressionOutputCallback: decompressionOutputCallback,
@@ -171,7 +170,8 @@ private extension VTVideoDecoder {
 
         decompressionSession = createdSession
         currentFormatDescription = formatDescription
-        logger.info("Created decompression session for codec: \(fourCCString)")
+        logger.info("Created decompression session for codec: \(codec.fourCC.stringRepresentation)")
+        
         return createdSession
     }
     
@@ -242,6 +242,93 @@ private extension VTVideoDecoder {
 
 // MARK: - Helpers
 
+private extension CodecFourCC {
+    func codecType() throws -> CMVideoCodecType {
+        switch self {
+        case .avc1:
+            return kCMVideoCodecType_H264
+        case .hvc1:
+            return kCMVideoCodecType_HEVC
+        default:
+            throw VideoDecoderError.unsupportedCodec(self.stringRepresentation)
+        }
+    }
+}
+
+private extension SiriusKitClient.Codec {
+    var cvPixelFormat: OSType {
+        let colorFormat = self.option(.colorFormat) ?? .kColorFormatYUV420
+        let colorRange = self.option(.colorRange) ?? .kColorRangeLimited
+        let supports10Bit = self.supports10Bit
+        
+        
+        if colorFormat == .kColorFormatYUV444 {
+            if supports10Bit {
+                return colorRange == .kColorRangeFull ?
+                    kCVPixelFormatType_444YpCbCr10BiPlanarFullRange :
+                    kCVPixelFormatType_444YpCbCr10BiPlanarVideoRange
+            } else {
+                return colorRange == .kColorRangeFull ?
+                    kCVPixelFormatType_444YpCbCr8BiPlanarFullRange :
+                    kCVPixelFormatType_444YpCbCr8BiPlanarVideoRange
+            }
+        } else {
+            if supports10Bit {
+                return colorRange == .kColorRangeFull ?
+                    kCVPixelFormatType_420YpCbCr10BiPlanarFullRange :
+                    kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+            } else {
+                return colorRange == .kColorRangeFull ?
+                    kCVPixelFormatType_420YpCbCr8BiPlanarFullRange :
+                    kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+            }
+        }
+    }
+    
+    var profileLevelString: CFString? {
+        switch self.fourCC {
+        case .avc1:
+            return h264ProfileLevelString()
+        case .hvc1:
+            return hevcProfileLevelString()
+        default:
+            return nil
+        }
+    }
+    
+    func h264ProfileLevelString() -> CFString? {
+        let profile = self.option(.profile) ?? .kProfileAuto
+        
+        switch profile {
+        case .kProfileH264High:
+            return kVTProfileLevel_H264_High_AutoLevel
+        case .kProfileH264Main:
+            return kVTProfileLevel_H264_Main_AutoLevel
+        case .kProfileH264Baseline:
+            return kVTProfileLevel_H264_Baseline_AutoLevel
+        case .kProfileAuto:
+            fallthrough
+        default:
+            return nil
+        }
+    }
+    
+    func hevcProfileLevelString() -> CFString? {
+        let profile = self.option(.profile) ?? .kProfileAuto
+        
+        switch profile {
+        case .kProfileHEVCMain:
+            return kVTProfileLevel_HEVC_Main_AutoLevel
+        case .kProfileHEVCMain10:
+            return kVTProfileLevel_HEVC_Main10_AutoLevel
+        case .kProfileAuto:
+            fallthrough
+        default:
+            return nil
+        }
+    }
+}
+
 private extension VTVideoDecoder {
     func codecType(for codec: Codec) throws -> (CMVideoCodecType, String) {
         switch codec.fourCC {
@@ -269,20 +356,6 @@ private extension VTVideoDecoder {
             fallthrough
         default:
             return kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
-        }
-    }
-    
-    func hardwareAcceleration(from options: [String: String]) -> Bool? {
-        guard let value = options[CodecOptionKey.hardwareAcceleration.rawValue]?.lowercased() else {
-            return nil
-        }
-        switch value {
-        case "true":
-            return true
-        case "false":
-            return false
-        default:
-            return nil
         }
     }
     

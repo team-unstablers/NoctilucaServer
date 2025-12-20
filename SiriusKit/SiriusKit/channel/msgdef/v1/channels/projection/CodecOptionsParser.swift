@@ -6,24 +6,25 @@
 //
 
 import Foundation
-import SiriusKit
 
-struct CodecOptionsParser {
+public struct CodecOptionsParser {
     private struct ParsedOptionSegment {
         let key: String
         let value: String
         let required: Bool
     }
     
+    public init() {}
+    
     /// Parses an options string formatted as "key: 'value'; key2: 'value2'".
-    static func parseAsDictionary(optionsString: String?) -> [String: String] {
+    public static func parseAsDictionary(optionsString: String?) -> [String: String] {
         let segments = parseSegments(optionsString: optionsString)
         return segments.reduce(into: [:]) { partialResult, segment in
             partialResult[segment.key] = segment.value
         }
     }
     
-    static let supportedKeys: Set<CodecOptionKey> = [
+    public static let supportedKeys: Set<CodecOptionKey> = [
         .colorFormat,
         .hardwareAcceleration,
         .level,
@@ -31,7 +32,7 @@ struct CodecOptionsParser {
     ]
     
     /// Parses an options string into CodecOptions, splitting mandatory/optional entries with `!required`.
-    static func parse(optionsString: String?) -> CodecOptions {
+    public static func parse(optionsString: String?) -> CodecOptions {
         let segments = parseSegments(optionsString: optionsString)
         var mandatory: [CodecOptionKey: CodecOptionValue] = [:]
         var optional: [CodecOptionKey: CodecOptionValue] = [:]
@@ -51,7 +52,7 @@ struct CodecOptionsParser {
         return CodecOptions(mandatory: mandatory, optional: optional)
     }
     
-    static func serialize(options: [CodecOptionKey: CodecOptionValue]) -> String {
+    public static func serialize(options: [CodecOptionKey: CodecOptionValue]) -> String {
         var segments: [String] = []
         
         for (key, value) in options {
@@ -62,7 +63,7 @@ struct CodecOptionsParser {
         return segments.joined(separator: "; ")
     }
     
-    static func serialize(options: CodecOptions) -> String {
+    public static func serialize(options: CodecOptions) -> String {
         let requiredSegments = options.mandatory.map { "\($0.key.rawValue): '\($0.value.rawValue)' !required" }
         let optionalSegments = options.optional.map { "\($0.key.rawValue): '\($0.value.rawValue)'" }
         return (requiredSegments + optionalSegments).joined(separator: "; ")

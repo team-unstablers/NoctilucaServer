@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 12/20/25.
 //
 
-extension CodecOptionValue {
+public extension CodecOptionValue {
     /// Standard Dynamic Range
     static let kDynamicRangeSDR = Self(rawValue: "sdr")
     

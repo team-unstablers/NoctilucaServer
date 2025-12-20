@@ -13,15 +13,13 @@ import SiriusKit
 
 struct VideoEncoderConfiguration {
     /// Sirius codec configuration from Projection channel.
-    let specification: CodecSpecification
-    let desiredSize: CGSize?
+    let codec: Codec
     
     /// Optional source format description to seed the compression session.
     let inputFormatDescription: CMFormatDescription?
     
-    init(specification: CodecSpecification, desiredSize: CGSize?, inputFormatDescription: CMFormatDescription?) {
-        self.specification = specification
-        self.desiredSize = desiredSize
+    init(codec: Codec, inputFormatDescription: CMFormatDescription?) {
+        self.codec = codec
         self.inputFormatDescription = inputFormatDescription
     }
 }

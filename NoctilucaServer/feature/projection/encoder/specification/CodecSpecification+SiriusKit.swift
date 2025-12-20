@@ -9,6 +9,7 @@ import Foundation
 import SiriusKit
 
 extension CodecSpecification {
+    /*
     init(siriusKit codec: SiriusKit.Codec) {
         self.fourCC = codec.fourCC
         if let cgSize = codec.size {
@@ -16,8 +17,30 @@ extension CodecSpecification {
         } else {
             self.maximumResolutionLevel = .unlimited
         }
-        self.options = CodecOptionsParser.parse(optionsString: codec.options)
+        self.options = codec.options
         self.frameRate = Double(codec.frameRate ?? 0.0)
+    }
+     */
+    
+    fileprivate static let optionalCodecOptionPairs: [(CodecOptionKey, CodecOptionValue)] = [
+        (.colorFormat, .kColorFormatAuto),
+        (.hardwareAcceleration, .kHardwareAccelerationAuto),
+        (.profile, .kProfileAuto),
+        (.displayDensity, .kDisplayDensityAuto)
+    ]
+    
+    var siriusKitCodecOptions: CodecOptions {
+        var options = CodecOptions()
+        
+        for (key, value) in self.options {
+            if CodecSpecification.optionalCodecOptionPairs.contains(where: { $0.0 == key && $0.1 == value }) {
+                options.optional[key] = value
+            } else {
+                options.mandatory[key] = value
+            }
+        }
+        
+        return consume options
     }
     
     func toSiriusKitCodec() -> SiriusKit.Codec {
@@ -25,7 +48,7 @@ extension CodecSpecification {
             fourCC: self.fourCC,
             frameRate: Float(self.frameRate),
             size: CGSize(width: 0, height: 0),
-            options: CodecOptionsParser.serialize(options: self.options),
+            options: self.siriusKitCodecOptions,
             // FIXME - CodecSpecification에 품질 정책 없음!!
             quality: .auto(mode: .balancedPriority)
         )

@@ -55,11 +55,11 @@ public struct Codec: SiriusMessage {
     
     /// 비디오 사이즈 (픽셀 단위). nil로 설정하는 경우 소스 (모니터)의 해상도를 따릅니다.
     public let size: CGSize?
-    public let options: String?
+    public let options: CodecOptions
 
     public let quality: Quality
 
-    public init(fourCC: CodecFourCC, frameRate: Float?, size: CGSize?, options: String?, quality: Quality) {
+    public init(fourCC: CodecFourCC, frameRate: Float?, size: CGSize?, options: CodecOptions, quality: Quality) {
         self.fourCC = fourCC
         self.frameRate = frameRate
         self.size = size
@@ -79,7 +79,7 @@ public struct Codec: SiriusMessage {
             self.size = nil
         }
         
-        self.options = protobufMessage.hasOptions ? protobufMessage.options : nil
+        self.options = CodecOptionsParser.parse(optionsString: protobufMessage.options)
         
         switch protobufMessage.quality {
         case .constantBitrate(let val):
@@ -122,9 +122,9 @@ public struct Codec: SiriusMessage {
             message.width  = UInt32(val.width)
             message.height = UInt32(val.height)
         }
-        if let val = self.options {
-            message.options = val
-        }
+        
+        message.options = CodecOptionsParser.serialize(options: self.options)
+        
         switch self.quality {
         case .constantBitrate(let bitrateKbps):
             message.quality = .constantBitrate(.with {
@@ -158,3 +158,12 @@ public struct Codec: SiriusMessage {
     }
 }
 
+public extension Codec {
+    func option(_ key: CodecOptionKey, mandatory: Bool = false) -> CodecOptionValue? {
+        if mandatory {
+            return options.mandatory[key]
+        }
+        
+        return options.mandatory[key] ?? options.optional[key]
+    }
+}

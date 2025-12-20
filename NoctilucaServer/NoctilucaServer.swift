@@ -112,10 +112,15 @@ class NoctilucaServer: ObservableObject {
     }
     
     func initialize() async throws {
+        DisplayLayoutManager.shared.startMonitoring()
+        DisplayLayoutManager.shared.updateDisplayLayouts()
+        
         self.settings = try AppSettings.load()
         
         try await pluginBundleRegistry.registerBuiltinBundles()
         await authenticator.setupAllowedEntires(self.settings.security.allowedEntries)
+        
+        ScreenCaptureKitWorkaroundDummyWindow.windowManager.startup()
     }
     
     func startup() async throws {

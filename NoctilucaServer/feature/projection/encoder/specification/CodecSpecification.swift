@@ -27,7 +27,7 @@ struct CodecSpecification: Codable {
     }
     
     let fourCC: CodecFourCC
-    var options: [CodecOptionKey: CodecOptionValue] = [:]
+    var options: [CodecOptionKey: CodecOptionValue]
     var extras: String = ""
     
     
@@ -39,6 +39,7 @@ struct CodecSpecification: Codable {
     
     init(fourCC: CodecFourCC) {
         self.fourCC = fourCC
+        self.options = [:]
     }
     
     init(from decoder: any Decoder) throws {
@@ -84,15 +85,21 @@ extension CodecSpecification: Hashable {
 extension CodecSpecification {
     /// Advanced Video Coding (H.264), MPEG-4 Part 10
     static let h264 = CodecSpecification(fourCC: .avc1)
-        .option(.hardwareAcceleration, .kHardwareAccelerationTrue)
+        .option(.hardwareAcceleration, .kHardwareAccelerationAuto)
         .option(.profile, .kProfileAuto)
         .option(.colorFormat, .kColorFormatAuto)
+        .option(.dynamicRange, .kDynamicRangeSDR)
+        .option(.colorRange, .kColorRangeLimited)
+        .option(.displayDensity, .kDisplayDensityAuto)
     
     /// High Efficiency Video Coding (H.265), MPEG-H Part 2
     static let hevc = CodecSpecification(fourCC: .hvc1)
-        .option(.hardwareAcceleration, .kHardwareAccelerationTrue)
+        .option(.hardwareAcceleration, .kHardwareAccelerationAuto)
         .option(.profile, .kProfileAuto)
         .option(.colorFormat, .kColorFormatAuto)
+        .option(.dynamicRange, .kDynamicRangeSDR)
+        .option(.colorRange, .kColorRangeLimited)
+        .option(.displayDensity, .kDisplayDensityAuto)
 }
 
 extension CodecSpecification {
@@ -110,7 +117,7 @@ extension CodecSpecification {
     var description: String {
         var entries: [String] = []
         
-        let profile = options[.profile] ?? .kProfileAuto
+        let profile = self.option(.profile) ?? .kProfileAuto
         
         switch profile {
         case .kProfileH264High:
@@ -119,11 +126,18 @@ extension CodecSpecification {
             entries.append("Main 프로파일")
         case .kProfileH264Baseline:
             entries.append("Baseline 프로파일")
+            
+        case .kProfileHEVCMain:
+            entries.append("Main 프로파일")
+            
+        case .kProfileHEVCMain10:
+            entries.append("Main10 프로파일")
+            
         default:
             entries.append("자동 프로파일")
         }
         
-        let colorFormat = options[.colorFormat] ?? .kColorFormatAuto
+        let colorFormat = self.option(.colorFormat) ?? .kColorFormatAuto
         
         switch colorFormat {
         case .kColorFormatAuto:
@@ -136,15 +150,21 @@ extension CodecSpecification {
             entries.append("알 수 없는 색상 포맷")
         }
         
-        let hardwareAcceleration = options[.hardwareAcceleration] ?? .kHardwareAccelerationFalse
+        let hardwareAcceleration = self.option(.hardwareAcceleration) ?? .kHardwareAccelerationFalse
         
         switch hardwareAcceleration {
-        case .kHardwareAccelerationTrue:
+        case .kHardwareAccelerationAuto:
             entries.append("가능한 경우 하드웨어 가속 사용")
-        case .kHardwareAccelerationForced:
-            entries.append("하드웨어 가속 강제 사용")
-        default:
+        case .kHardwareAccelerationFalse:
             entries.append("하드웨어 가속 사용 안 함")
+        default:
+            entries.append("가능한 경우 하드웨어 가속 사용")
+        }
+        
+        let dynamicRange = self.option(.dynamicRange) ?? .kDynamicRangeSDR
+        
+        if dynamicRange == .kDynamicRangeHDR {
+            entries.append("HDR 지원 활성화됨")
         }
         
         return entries.joined(separator: ", ")

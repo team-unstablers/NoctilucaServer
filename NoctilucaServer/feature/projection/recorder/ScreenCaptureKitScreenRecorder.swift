@@ -45,6 +45,97 @@ fileprivate struct FrameInfo {
     var dirtyRects: [CGRect]?
 }
 
+fileprivate extension ScreenRecorderArgs {
+    /// Create a default SCStreamConfiguration based on the codec settings.
+    func createSCStreamConfiguration() -> SCStreamConfiguration {
+        if codec.isHDREnabled {
+            // Apple의 HDR용 프리셋을 반환한다
+            return SCStreamConfiguration(preset: .captureHDRStreamCanonicalDisplay)
+        }
+        
+        // 기본 설정을 반환한다
+        return SCStreamConfiguration()
+    }
+}
+
+fileprivate extension ScreenRecorderSource {
+    @MainActor
+    func createSCContentFilter() async throws -> SCContentFilter {
+        switch self {
+        case .entireDisplay:
+            return try await __entireDisplay__createSCContentFilter()
+        case .window:
+            return try await __window__createSCContentFilter()
+            
+        case .displayRegion:
+            fatalError("not implemented")
+        }
+    }
+    
+    /// 전체 디스플레이에 대한 SCContentFilter 생성
+    @MainActor
+    func __entireDisplay__createSCContentFilter() async throws -> SCContentFilter {
+        guard case .entireDisplay(let rawDisplayID) = self else {
+            fatalError("__entireDisplay__createSCContentFilter() called on non-entireDisplay source")
+        }
+        
+        let shareableContent = try await SCShareableContent.current
+
+        let displayID: CGDirectDisplayID = if self.requiresPrimaryDisplay {
+            CGMainDisplayID()
+        } else {
+            CGDirectDisplayID(rawDisplayID)
+        }
+        
+        guard let display = shareableContent.displays.first(where: { $0.displayID == displayID }) else {
+            throw ScreenRecorderPrepareError.invalidSource
+        }
+        
+        let dummyWindowManager = ScreenCaptureKitWorkaroundDummyWindow.windowManager
+        guard let dummyWindowID = dummyWindowManager.windows[displayID]?.windowNumber,
+              let dummyWindow = try await SCShareableContent.currentProcess.windows.first(where: {$0.windowID == dummyWindowID})
+        else {
+            // FIXME: 레이스 컨디션: 해당 디스플레이에 대한 더미 윈도우가 아직 생성되지 않음
+            throw ScreenRecorderPrepareError.internalError
+        }
+        
+        let filter = SCContentFilter(
+            display: display,
+            excludingApplications: [],
+            exceptingWindows: [dummyWindow]
+        )
+        
+        return filter
+    }
+    
+    /// 특정 윈도우 핸들에 SCContentFilter 생성
+    @MainActor
+    func __window__createSCContentFilter() async throws -> SCContentFilter {
+        guard case .window(let windowID) = self else {
+            fatalError("__window__createSCContentFilter() called on non-window source")
+        }
+        
+        let shareableContent = try await SCShareableContent.current
+        
+        guard let window = shareableContent.windows.first(where: { $0.windowID == windowID }) else {
+            throw ScreenRecorderPrepareError.invalidSource
+        }
+        
+        return SCContentFilter(desktopIndependentWindow: window)
+    }
+}
+
+fileprivate extension SiriusKit.Codec {
+    var minimumFrameInterval: CMTime {
+        guard let frameRate = self.frameRate, frameRate > 0.0 else {
+            return .zero
+        }
+        
+        // 1 / {frameRate} 초 간격
+        return CMTime(value: 1, timescale: CMTimeScale(frameRate))
+    }
+}
+
 class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
     private let logger = NoctilucaLogger(category: "ScreenCaptureKitScreenRecorder")
     
@@ -62,44 +153,57 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
     @MainActor
     func prepare(with args: ScreenRecorderArgs) async throws {
         let source = args.source
+        let codec = args.codec
+        let flags = args.flags
         
         guard case .entireDisplay(let displayID) = source else {
             logger.error("prepare(): AVFoundationScreenRecorder only supports entire display capture.")
             throw ScreenRecorderPrepareError.invalidSource
         }
         
-        
-        guard let screenInput = AVCaptureScreenInput(displayID: displayID) else {
-            logger.error("prepare(): Failed to create AVCaptureScreenInput for display ID: \(displayID)")
-            throw ScreenRecorderPrepareError.internalError
-        }
-        
-        let configuration = SCStreamConfiguration(preset: .captureHDRStreamCanonicalDisplay)
+        let configuration = args.createSCStreamConfiguration()
         /*
         configuration.pixelFormat = kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
         configuration.colorSpaceName = CGColorSpace.displayP3_HLG
         configuration.colorMatrix = kCVImageBufferYCbCrMatrix_ITU_R_2020
         configuration.captureDynamicRange = .hdrLocalDisplay
          */
-        configuration.captureResolution = .best
         
+        if let displayDensity = codec.option(.displayDensity) {
+            switch displayDensity {
+            case .kDisplayDensityAuto:
+                // It's automatic, そばにいるだけで…
+                configuration.captureResolution = .automatic
+            case .kDisplayDensityBest:
+                configuration.captureResolution = .best
+            case .kDisplayDensityPerformance:
+                configuration.captureResolution = .nominal
+            default:
+                break
+            }
+        }
+        
+        // XXX: 잠깐만, 이거 여기서 하면 안될거같은데?
+        // FIXME: 일단 이거 디스플레이 오리지널 사이즈 구해서 설정하는걸로 해야해요
+        /*
+        if let desiredSize = codec.size {
+            configuration.width = Int(desiredSize.width)
+            configuration.height = Int(desiredSize.height)
+        }
+         */
+        
+        configuration.minimumFrameInterval = codec.minimumFrameInterval
+        
+        // HACK: 최소 2 이상이어야 함, macOS 14쯤때부터 1로 설정하면 지랄나더라
         configuration.queueDepth = 2
-        configuration.showsCursor = true
+        configuration.showsCursor = flags.contains(.showCursor)
         
-        let display = try await SCShareableContent.current.displays.first!
-        
-        let contentFilter = SCContentFilter(
-            display: display,
-            excludingApplications: [],
-            exceptingWindows: [
-                try await SCShareableContent.currentProcess.windows.first!
-            ]
-        )
-        
-        let stream = SCStream(filter: contentFilter, configuration: configuration, delegate: self)
+        let filter = try await source.createSCContentFilter()
+        let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
         
         self.stream = stream
         
+        // FIXME: 적절한 핸들러 큐를 설정해야 함
         try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: .main)
     }
     

@@ -16,14 +16,12 @@ class ServerRoleQUICStream: Stream {
     
     private var receiveTask: Task<Void, Error>?
     
-    private var _id: StreamIdentifier = StreamIdentifier.max
-    
-    // 참 개갓네, 그치?
-    override var id: StreamIdentifier { _id }
-    
-    init(_ connection: NWConnection, transport: ServerRoleQUICClientTransport) {
+    init(_ connection: NWConnection, transport: ServerRoleQUICClientTransport, identifier: StreamIdentifier = StreamIdentifier()) {
         self.connection = connection
         self.transport = transport
+        
+        super.init()
+        self.id = identifier
     }
     
     override func close() async throws {
@@ -66,7 +64,6 @@ class ServerRoleQUICStream: Stream {
                 }
                 break
             case .ready:
-                self._id = self.connection.quicStreamIdentifier!
                 readyHandler?()
                 break
             default:

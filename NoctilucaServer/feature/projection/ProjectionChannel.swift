@@ -68,9 +68,9 @@ class ProjectionChannel: Channel {
             
             let negotiator = CodecNegotiator.create(from: .balanced, specifications: NoctilucaServer.shared.settings.projection.codecSpecifications)
             
-            let specification = negotiator.negotiate(with: request.preferredCodecs)
+            let negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs)
             
-            guard let specification else {
+            guard let negotiatedCodec else {
                 // TODO: error 던져야 함
                 self.logger.error("Failed to negotiate codec for projection session")
                 return
@@ -80,7 +80,7 @@ class ProjectionChannel: Channel {
             print("Opened ProjectionDataChannel with id: \(channel.identifier)")
             let projectionSession = ProjectionSession(id: identifier, dataChannel: channel)
             
-            try await projectionSession.prepare(specification, desiredSize: request.preferredCodecs.first?.size)
+            try await projectionSession.prepare(request, codec: negotiatedCodec)
             try await projectionSession.start()
             
             self.sessions[identifier] = projectionSession
@@ -88,7 +88,7 @@ class ProjectionChannel: Channel {
             try await self.send(opcode: .projectionSessionCreatedEvent, message: ProjectionSessionCreatedEvent(
                 identifier: identifier,
                 source: request.viewport,
-                codec: request.preferredCodecs.first!
+                codec: negotiatedCodec
             ))
         } catch {
             self.logger.error("Failed to handle projection request: \(error)")

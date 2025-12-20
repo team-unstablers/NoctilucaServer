@@ -22,6 +22,25 @@ public struct SingleWindowProjectionSourceFlags: SiriusEnum {
 }
 
 
+public struct ProjectionSourceFlagSet: OptionSet, Codable, Hashable, Equatable {
+    public var rawValue: UInt32
+    
+    public init(rawValue: UInt32) {
+        self.rawValue = rawValue
+    }
+    
+    /// 플래그가 설정되어 있지 않음을 나타냅니다.
+    public static let none = Self([])
+    
+    /// 호스트 화면의 커서를 표시합니다.
+    /// - NOTE: 이 플래그는 서버 구현체 및 정책 구성에 따라 무시될 수 있습니다.
+    public static let showCursor = Self(rawValue: 0b0000_0001)
+    
+    /// 호스트의 콘솔 화면에 커튼 (화면 가림막)을 표시합니다.
+    /// - NOTE: 이 플래그는 서버 구현체 및 정책 구성에 따라 무시될 수 있습니다.
+    public static let showCurtain = Self(rawValue: 0b0000_0010)
+}
+
 public struct ProjectionSourceFlags: SiriusEnum {
     typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags
     
@@ -136,17 +155,17 @@ public struct ProjectionSource: SiriusMessage {
         case none
     }
 
-    public let flags: ProjectionSourceFlags
+    public let flags: ProjectionSourceFlagSet
 
     public let value: OneOf_Value
 
-    public init(value: OneOf_Value, flags: ProjectionSourceFlags) {
+    public init(value: OneOf_Value, flags: ProjectionSourceFlagSet) {
         self.value = value
         self.flags = flags
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionSource) throws {
-        self.flags = ProjectionSourceFlags.fromProtobufEnum(protobufMessage.flags)
+        self.flags = ProjectionSourceFlagSet(rawValue: UInt32(protobufMessage.flags.rawValue))
         switch protobufMessage.value {
         case .entireDisplay(let val):
             self.value = .entireDisplay(try EntireDisplayProjectionSource(from: val))
@@ -166,7 +185,8 @@ public struct ProjectionSource: SiriusMessage {
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        message.flags = self.flags.toProtobufEnum()
+        message.flags = Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags(rawValue: Int(self.flags.rawValue)) ?? .displayViewportFlagNone
+        
         switch self.value {
         case .entireDisplay(let val):
             message.value = .entireDisplay(val.toProtobufMessage())

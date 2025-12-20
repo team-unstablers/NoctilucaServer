@@ -100,7 +100,6 @@ class ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
     
     internal func registerStream(_ stream: ServerRoleQUICStream) {
-        // FIXME: ready가 아닌 상태에서 stream.id 액세스하면 맛감
         assert(stream.connection.state == .ready)
         
         let streamId = stream.id

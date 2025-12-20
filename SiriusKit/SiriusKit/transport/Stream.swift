@@ -9,7 +9,7 @@ import Foundation
 
 import Atomics
 
-typealias StreamIdentifier = UInt64
+typealias StreamIdentifier = UUID
 
 enum StreamError: Error {
     case notImplemented
@@ -38,9 +38,7 @@ class Stream {
         self.continuation = continuationLocal
     }
     
-    var id: StreamIdentifier {
-        return 0
-    }
+    var id: StreamIdentifier = .zero
     
     func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
         let opcodeRaw = opcode.rawValue.bigEndian
