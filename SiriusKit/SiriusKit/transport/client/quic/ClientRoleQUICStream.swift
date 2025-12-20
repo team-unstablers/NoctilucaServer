@@ -16,12 +16,13 @@ class ClientRoleQUICStream: Stream {
     
     private var receiveTask: Task<Void, Error>?
     
-    private var _id: StreamIdentifier = StreamIdentifier.max
-    override var id: StreamIdentifier { _id }
-
-    init(_ connection: NWConnection, transport: ClientRoleQUICTransport) {
+    init(_ connection: NWConnection, transport: ClientRoleQUICTransport, identifier: StreamIdentifier = StreamIdentifier()) {
         self.connection = connection
         self.transport = transport
+        
+        super.init()
+        
+        self.id = identifier
     }
     
     override func close() async throws {
@@ -68,7 +69,6 @@ class ClientRoleQUICStream: Stream {
                 }
                 break
             case .ready:
-                self._id = self.connection.quicStreamIdentifier!
                 readyHandler?()
                 break
             default:
