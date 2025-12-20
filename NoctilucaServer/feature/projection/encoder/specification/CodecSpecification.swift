@@ -113,11 +113,11 @@ extension CodecSpecification {
         let profile = options[.profile] ?? .kProfileAuto
         
         switch profile {
-        case .kProfileHigh:
+        case .kProfileH264High:
             entries.append("High 프로파일")
-        case .kProfileMain:
+        case .kProfileH264Main:
             entries.append("Main 프로파일")
-        case .kProfileBaseline:
+        case .kProfileH264Baseline:
             entries.append("Baseline 프로파일")
         default:
             entries.append("자동 프로파일")

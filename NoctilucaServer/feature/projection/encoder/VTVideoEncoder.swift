@@ -405,11 +405,11 @@ private extension CodecSpecification {
         let profile = options[.profile] ?? .kProfileAuto
         
         switch profile {
-        case .kProfileHigh:
+        case .kProfileH264High:
             return "H264_High_\(level)" as CFString
-        case .kProfileMain:
+        case .kProfileH264Main:
             return "H264_Main_\(level)" as CFString
-        case .kProfileBaseline:
+        case .kProfileH264Baseline:
             return "H264_Baseline_\(level)" as CFString
         case .kProfileAuto:
             fallthrough

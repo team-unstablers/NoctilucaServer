@@ -72,19 +72,19 @@ extension CodecSpecification {
             return true
         }
         
-        if oursProfile == .kProfileBaseline {
+        if oursProfile == .kProfileH264Baseline {
             // Baseline은 상대편의 모든 프로파일과 호환됨
             return true
         }
         
-        if oursProfile == .kProfileMain {
+        if oursProfile == .kProfileH264Main {
             // 상대편이 Baseline만 아니면 됨
-            return theirsProfile != .kProfileBaseline
+            return theirsProfile != .kProfileH264Baseline
         }
         
-        if oursProfile == .kProfileHigh {
+        if oursProfile == .kProfileH264High {
             // High는 Main과 High만 호환됨
-            return theirsProfile == .kProfileHigh
+            return theirsProfile == .kProfileH264High
         }
         
         return false

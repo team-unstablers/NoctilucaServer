@@ -75,21 +75,21 @@ struct CodecSpecificationSheet: View {
                         Text("자동")
                             .tag(CodecOptionValue.kProfileAuto)
                         Text("Baseline Profile (가장 높은 호환성, 압축률 낮음)")
-                            .tag(CodecOptionValue.kProfileBaseline)
+                            .tag(CodecOptionValue.kProfileH264Baseline)
                         Text("Main Profile")
-                            .tag(CodecOptionValue.kProfileMain)
+                            .tag(CodecOptionValue.kProfileH264Main)
                         Text("High Profile (가장 낮은 호환성, 압축률 높음)")
-                            .tag(CodecOptionValue.kProfileHigh)
+                            .tag(CodecOptionValue.kProfileH264High)
                     } label: {
                         Text("코덱 프로파일")
                         switch specification.options[.profile] {
                         case .kProfileAuto:
                             Text("최적의 코덱 프로파일을 자동으로 선택합니다.")
-                        case .kProfileBaseline:
+                        case .kProfileH264Baseline:
                             Text("호환성이 높은 Baseline Profile을 사용합니다.\n코덱의 고급 기능을 사용할 수 없기 때문에 압축률과 화질이 낮습니다.")
-                        case .kProfileMain:
+                        case .kProfileH264Main:
                             Text("Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다.")
-                        case .kProfileHigh:
+                        case .kProfileH264High:
                             Text("High Profile을 사용합니다.\n고급 기능을 사용하여 최고의 압축률과 화질을 제공합니다.")
                         default:
                             Text("코덱 프로파일을 설정합니다.")

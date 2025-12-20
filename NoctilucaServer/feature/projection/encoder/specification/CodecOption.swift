@@ -26,7 +26,18 @@ enum CodecOptionKey: String, Codable, Hashable, Equatable {
     /// 코덱의 프로파일을 설정합니다.
     case profile = "profile"
     
-    // TODO: hidpi 옵션 추가
-    
+    /// 코덱 레벨을 설정합니다.
     case level = "level"
+    
+    /// 색상 깊이를 설정합니다.
+    case colorDepth = "color-depth"
+    
+    /// 다이내믹 레인지를 설정합니다.
+    case dynamicRange = "dynamic-range"
+    
+    /// 색상 레인지를 설정합니다.
+    case colorRange = "color-range"
+    
+    /// 디스플레이 밀도를 설정합니다.
+    case displayDensity = "display-density"
 }
