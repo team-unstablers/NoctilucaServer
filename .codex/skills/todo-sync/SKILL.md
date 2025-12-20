@@ -13,18 +13,24 @@ allowed-tools: grep gh git
 
 ## 전제 조건
 - 실행 환경에 `gh` (GitHub CLI)가 설치되어 있고 인증되어 있어야 합니다.
-- `grep` 명령어를 사용할 수 있어야 합니다.
 
 ## 작업 절차
 
 ### 1. TODO 스캔 및 분석
 먼저 코드베이스 전체에서 다음 정규식 패턴에 해당하는 주석을 재귀적으로 검색하십시오:
-`//[/]?\s*(TODO|FIXME|XXX)[:]?`
+`/(TODO|FIXME|XXX)/i`
 
-검색된 각 항목에 대해 다음 정보를 분석해야 합니다 (`grep`의 line number와 file path 포함):
+- 검색에는 당신이 가지고 있는 file search tool이나, `grep -Ri`를 사용하십시오.
+
+검색된 각 항목에 대해 다음 정보를 분석해야 합니다 (line number와 file path 포함):
 - **Path**: 파일 경로
 - **Line**: 라인 번호
 - **Context**: 주석의 내용과 주변 코드를 바탕으로 한 작업의 맥락
+
+**⚠️ 무시 조건 (Ignore Rules):**
+검색 결과에서 프로젝트 소스 코드와 직접 관련이 없는 디렉토리의 내용은 반드시 무시하도록 하십시오.
+- **필수 제외:** `.git`, `dependencies`
+- **일반적 제외 권장:** `build`, `dist` 등 시스템이나 빌드 아티팩트 폴더.
 
 ### 2. 이슈 작성 규칙 (Strict Rule)
 - 발견된 TODO 내용을 바탕으로 이슈 제목(`issue_name`)과 상세 내용(`description`)을 구성하십시오.
