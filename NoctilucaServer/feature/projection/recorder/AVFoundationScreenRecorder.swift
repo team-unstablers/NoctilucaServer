@@ -10,6 +10,17 @@ import AVFoundation
 
 import SiriusKit
 
+fileprivate extension SiriusKit.Codec {
+    var minimumFrameInterval: CMTime {
+        guard let frameRate = self.frameRate, frameRate > 0.0 else {
+            return .zero
+        }
+        
+        // 1 / {frameRate} 초 간격
+        return CMTime(value: 1, timescale: CMTimeScale(frameRate))
+    }
+}
+
 class AVFoundationScreenRecorder: NSObject, ScreenRecorder {
     private let logger = NoctilucaLogger(category: "AVFoundationScreenRecorder")
     
@@ -29,12 +40,19 @@ class AVFoundationScreenRecorder: NSObject, ScreenRecorder {
     
     func prepare(with args: ScreenRecorderArgs) async throws {
         let source = args.source
-        
-        guard case .entireDisplay(let displayID) = source else {
+        let codec = args.codec
+        let flags = args.flags
+
+        guard case .entireDisplay(let rawDisplayID) = source else {
             logger.error("prepare(): AVFoundationScreenRecorder only supports entire display capture.")
             throw ScreenRecorderPrepareError.invalidSource
         }
         
+        let displayID: CGDirectDisplayID = if source.requiresPrimaryDisplay {
+            CGMainDisplayID()
+        } else {
+            CGDirectDisplayID(rawDisplayID)
+        }
         
         guard let screenInput = AVCaptureScreenInput(displayID: displayID) else {
             logger.error("prepare(): Failed to create AVCaptureScreenInput for display ID: \(displayID)")
@@ -46,7 +64,10 @@ class AVFoundationScreenRecorder: NSObject, ScreenRecorder {
         captureSession.beginConfiguration()
         
         // TODO: 추후 커서 숨기거나 해야 함
-        screenInput.capturesCursor = true
+        
+        screenInput.minFrameDuration = codec.minimumFrameInterval
+        
+        screenInput.capturesCursor = flags.contains(.showCursor)
         screenInput.removesDuplicateFrames = true
         
         captureOutput.alwaysDiscardsLateVideoFrames = true

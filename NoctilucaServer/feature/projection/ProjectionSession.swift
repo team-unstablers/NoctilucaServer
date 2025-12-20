@@ -110,18 +110,22 @@ class ProjectionSession: Identifiable {
         }
     }
 
-    func prepare(_ specification: CodecSpecification, desiredSize: CGSize?) async throws {
-        try await self.recorder.prepare(with: .init(source: .entireDisplay(displayID: CGMainDisplayID())))
+    func prepare(_ request: ProjectionRequest, codec: Codec) async throws {
+        let recorderArgs = ScreenRecorderArgs(
+            // FIXME
+            source: .entireDisplay(displayID: -1),
+            codec: codec,
+            flags: request.viewport.flags
+        )
+        
+        try await self.recorder.prepare(with: recorderArgs)
         try self.encoder.prepare(with: .init(
-            specification: specification,
-            desiredSize: desiredSize,
+            codec: codec,
             inputFormatDescription: nil
         ))
         
-        self.qualityPlanner = Self.makeQualityPlanner(
-            specification: specification,
-            desiredSize: desiredSize
-        )
+        self.qualityPlanner = Self.makeQualityPlanner(codec: codec)
+        
         if let planner = self.qualityPlanner {
             _ = self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
             _ = self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
@@ -188,15 +192,20 @@ private extension ProjectionSession {
         }
     }
     
-    static func makeQualityPlanner(specification: CodecSpecification, desiredSize: CGSize?) -> QualityPlanner {
-        let frameRate = specification.frameRate > 0 ? Float(specification.frameRate) : 30.0
-        let resolution = desiredSize ?? CGSize(width: 1920, height: 1080)
+    static func makeQualityPlanner(codec: Codec) -> QualityPlanner {
+        // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
+        let frameRate = (codec.frameRate ?? 0.0) > 0 ? Float(codec.frameRate!) : 30.0
+        let resolution = codec.size ?? CGSize(width: 1920, height: 1080)
+        
+        // FIXME: 무조건 AutoQuality를 쓰는건 아니잖아요.
         let planner = AutoQualityPlanner(
-            codec: specification.fourCC,
+            codec: codec.fourCC,
             resolution: resolution,
             frameRate: frameRate,
-            strategy: .balanced
+            strategy: .balanced // FIXME: hard-coded strategy.
         )
+        
+        // FIXME: codec.options로부터 allow-degradation 옵션을 읽어오도록
         planner.allowDegradation = true
         return planner
     }
