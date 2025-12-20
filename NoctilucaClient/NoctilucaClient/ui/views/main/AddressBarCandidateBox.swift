@@ -23,6 +23,17 @@ enum AddressBarCandidateItem: Hashable, Equatable {
             return "연결: \(endpointURL)"
         }
     }
+
+    var endpointURL: String {
+        switch self {
+        case .contactItem(let item):
+            return item.endpointURL
+        case .quickConnect(let endpointURL):
+            return endpointURL
+        case .connect(let endpointURL):
+            return endpointURL
+        }
+    }
     
     func hash(into hasher: inout Hasher) {
         switch self {
@@ -87,6 +98,8 @@ struct AddressBarCandidateBox: View {
     let candidates: [AddressBarCandidateItem]
     
     let focusedIndex: Int?
+    let onHoverIndex: ((Int, Bool) -> Void)?
+    let onSelectIndex: ((Int) -> Void)?
     
     let query = "con"
     
@@ -100,6 +113,12 @@ struct AddressBarCandidateBox: View {
                     query: query,
                     isFocused: index == focusedIndex
                 )
+                .onHover { isHovering in
+                    onHoverIndex?(index, isHovering)
+                }
+                .onTapGesture {
+                    onSelectIndex?(index)
+                }
             }
         }
         .padding(8)
@@ -110,5 +129,7 @@ struct AddressBarCandidateBox: View {
             RoundedRectangle(cornerRadius: 20)
                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
         }
+        .compositingGroup()
+        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
     }
 }

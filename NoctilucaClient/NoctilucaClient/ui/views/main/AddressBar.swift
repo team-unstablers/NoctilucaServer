@@ -282,6 +282,7 @@ struct AddressBar: View {
         .contactItem(item: ContactItem(name: "회사 컴퓨터", endpointURL: "work.cheesekun.me")),
     ]
     
+    
     @State
     var candidateFocusIndex: Int? = nil
     
@@ -350,16 +351,13 @@ struct AddressBar: View {
                     .animation(.linear(duration: 0.2).delay(0.2), value: isFocused)
                     .onSubmit {
                         isFocused = false
-                        
-                        if draftURL == endpointURL {
-                            // FIXME: 이딴 식으로 하지 마세요
-                            self.submitHandler("")
+
+                        if let selectedEndpoint = self.selectedCandidateEndpoint() {
+                            self.submitEndpoint(selectedEndpoint)
                             return
                         }
-                        
-                        // TODO: if let candidate = ...
-                        
-                        self.submitHandler(draftURL)
+
+                        self.submitEndpoint(draftURL)
                     }
                     .onKeyPress(.escape) {
                         isFocused = false
@@ -468,7 +466,16 @@ struct AddressBar: View {
         .overlay {
             if isFocused, !candidates.isEmpty {
                 GeometryReader { geom in
-                    AddressBarCandidateBox(candidates: self.candidates, focusedIndex: self.candidateFocusIndex)
+                    AddressBarCandidateBox(
+                        candidates: self.candidates,
+                        focusedIndex: self.candidateFocusIndex,
+                        onHoverIndex: { index, isHovering in
+                            self.updateHoverIndex(index, isHovering: isHovering)
+                        },
+                        onSelectIndex: { index in
+                            self.selectCandidate(at: index)
+                        }
+                    )
                         .offset(y: geom.size.height + 8)
                 }
             }
@@ -501,6 +508,40 @@ struct AddressBar: View {
         
         self.candidateFocusIndex = nextIndex
     }
+
+    private func selectedCandidateEndpoint() -> String? {
+        guard let index = self.candidateFocusIndex,
+              self.candidates.indices.contains(index) else {
+            return nil
+        }
+
+        return self.candidates[index].endpointURL
+    }
+
+    private func submitEndpoint(_ endpoint: String) {
+        if endpoint == endpointURL {
+            // FIXME: 이딴 식으로 하지 마세요
+            self.submitHandler("")
+            return
+        }
+
+        self.submitHandler(endpoint)
+    }
+
+    private func updateHoverIndex(_ index: Int, isHovering: Bool) {
+        guard isHovering else { return }
+        guard self.candidates.indices.contains(index) else { return }
+
+        self.candidateFocusIndex = index
+    }
+
+    private func selectCandidate(at index: Int) {
+        guard self.candidates.indices.contains(index) else { return }
+
+        self.candidateFocusIndex = index
+        self.isFocused = false
+        self.submitEndpoint(self.candidates[index].endpointURL)
+    }
 }
 
 #Preview {
@@ -508,8 +549,8 @@ struct AddressBar: View {
         VStack() {
             AddressBar(
                 endpointURL: "",
-            ) { _ in
-                
+            ) { action in
+                print(action)
             }
             
             Spacer()
@@ -565,5 +606,3 @@ struct AddressBar: View {
     .padding(32)
     .background(.white.opacity(0.5))
 }
-
-
