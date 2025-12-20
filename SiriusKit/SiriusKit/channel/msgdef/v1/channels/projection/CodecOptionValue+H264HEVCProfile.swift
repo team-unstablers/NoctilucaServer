@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension CodecOptionValue {
+public extension CodecOptionValue {
     /// 자동 프로파일 선택
     static let kProfileAuto = Self(rawValue: "auto")
     

@@ -69,6 +69,7 @@ extension Concept: ProjectionChannelDelegate {
 - `channel/messages` 디렉터리에 msgdef v1 전반(핸드셰이크, 세션 인증, 채널 제어, HIDIO, 프로젝션/윈도우, 프로젝션 데이터, 클립보드)의 Swift 래퍼와 opcode 매핑이 추가되었습니다. SwiftProtobuf로 생성된 코드와 상호 변환할 수 있는 타입들이 포함되어 있습니다.
 - 트랜스포트 레이어가 역할별 디렉터리로 분리되었습니다. 서버 역할(`transport/server/**`)은 `ServerRoleRootTransport`, `ServerRoleClientTransport`, `ServerRoleQUICRootTransport`/`ServerRoleQUICClientTransport`로 네이밍을 명확히 했고, 공통 ALPN 정의는 `transport/quic/QUICConstants.swift`에 위치합니다.
 - 클라이언트 역할 트랜스포트 뼈대가 `transport/client/**`에 추가되었습니다. `ClientRoleTransport`/`ClientRoleQUICTransport`가 서버 인증서 검증(TrustDecision 콜백)과 메인 채널 스트림 오픈 이벤트를 델리게이트로 노출합니다.
+- 프로젝션 채널의 `CodecOption`/`CodecOptionsParser` 관련 타입을 SiriusKit로 옮기고 `public`으로 공개했습니다. 서버/클라이언트 공용으로 옵션 파싱과 키/값 상수를 재사용할 수 있습니다.
 
 </section>
 

@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 12/20/25.
 //
 
-extension CodecOptionValue {
+public extension CodecOptionValue {
     /// 디스플레이 밀도를 자동으로 선택합니다.
     static let kDisplayDensityAuto = Self(rawValue: "auto")
     

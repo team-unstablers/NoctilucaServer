@@ -224,9 +224,9 @@ private extension VTVideoEncoder {
         
         let hardwareAccelOption = codecSpecification.options[.hardwareAcceleration]
         
-        if hardwareAccelOption == .kHardwareAccelerationTrue {
+        if hardwareAccelOption == .kHardwareAccelerationAuto {
             specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
-        } else if hardwareAccelOption == .kHardwareAccelerationForced {
+        } else if hardwareAccelOption == .kHardwareAccelerationTrue {
             // requirement를 건다
             specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
             specification[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder] = true
