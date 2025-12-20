@@ -55,9 +55,8 @@ struct CodecOptionsParser {
             let typedKey   = CodecOptionKey(rawValue: key)
             let typedValue = CodecOptionValue(rawValue: value)
             
-            if let typedKey, supportedKeys.contains(typedKey) {
-                options[typedKey] = typedValue
-            }
+            guard supportedKeys.contains(typedKey) else { continue }
+            options[typedKey] = typedValue
         }
         
         return options
