@@ -11,6 +11,9 @@ public extension CodecOptionValue {
     /// 자동 프로파일 선택
     static let kProfileAuto = Self(rawValue: "auto")
     
+    /// H.264 High10 Profile
+    static let kProfileH264High10 = Self(rawValue: "h264_high10")
+
     /// H.264 High Profile
     static let kProfileH264High = Self(rawValue: "h264_high")
     

@@ -36,6 +36,7 @@ public struct CodecOptionKey: RawRepresentable, Codable, Hashable, Equatable {
     public static let level = Self(rawValue: "level")
     
     /// 색상 깊이를 설정합니다.
+    /// TODO: 삭제해야됨 (profile이 이를 대체함)
     public static let colorDepth = Self(rawValue: "color-depth")
     
     /// 다이내믹 레인지를 설정합니다.

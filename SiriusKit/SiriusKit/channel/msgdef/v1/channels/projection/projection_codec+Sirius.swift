@@ -158,3 +158,12 @@ public struct Codec: SiriusMessage {
     }
 }
 
+public extension Codec {
+    func option(_ key: CodecOptionKey, mandatory: Bool = false) -> CodecOptionValue? {
+        if mandatory {
+            return options.mandatory[key]
+        }
+        
+        return options.mandatory[key] ?? options.optional[key]
+    }
+}

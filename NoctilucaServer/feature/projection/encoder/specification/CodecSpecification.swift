@@ -88,12 +88,18 @@ extension CodecSpecification {
         .option(.hardwareAcceleration, .kHardwareAccelerationAuto)
         .option(.profile, .kProfileAuto)
         .option(.colorFormat, .kColorFormatAuto)
+        .option(.dynamicRange, .kDynamicRangeSDR)
+        .option(.colorRange, .kColorRangeLimited)
+        .option(.displayDensity, .kDisplayDensityAuto)
     
     /// High Efficiency Video Coding (H.265), MPEG-H Part 2
     static let hevc = CodecSpecification(fourCC: .hvc1)
         .option(.hardwareAcceleration, .kHardwareAccelerationAuto)
         .option(.profile, .kProfileAuto)
         .option(.colorFormat, .kColorFormatAuto)
+        .option(.dynamicRange, .kDynamicRangeSDR)
+        .option(.colorRange, .kColorRangeLimited)
+        .option(.displayDensity, .kDisplayDensityAuto)
 }
 
 extension CodecSpecification {
@@ -149,10 +155,16 @@ extension CodecSpecification {
         switch hardwareAcceleration {
         case .kHardwareAccelerationAuto:
             entries.append("가능한 경우 하드웨어 가속 사용")
-        case .kHardwareAccelerationTrue:
-            entries.append("하드웨어 가속 강제 사용")
-        default:
+        case .kHardwareAccelerationFalse:
             entries.append("하드웨어 가속 사용 안 함")
+        default:
+            entries.append("가능한 경우 하드웨어 가속 사용")
+        }
+        
+        let dynamicRange = self.option(.dynamicRange) ?? .kDynamicRangeSDR
+        
+        if dynamicRange == .kDynamicRangeHDR {
+            entries.append("HDR 지원 활성화됨")
         }
         
         return entries.joined(separator: ", ")
