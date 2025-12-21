@@ -43,8 +43,18 @@ class MainWindowViewModel: ObservableObject {
     @Published
     private(set) var sessionSettings: SessionSettings? = nil
 
+    @Published
+    var contacts: [ContactItem] = []
+
+    @Published
+    var isLoadingContacts: Bool = false
+
+    @Published
+    var contactsLoadError: String? = nil
+
     private var settingsStore: SettingsStore?
     private var settingsCancellable: AnyCancellable?
+    private var contactsCancellable: AnyCancellable?
     
 
     func appendConnectionLog(_ log: String) {
@@ -56,7 +66,7 @@ class MainWindowViewModel: ObservableObject {
         }
     }
     
-    func startSession(endpoint: EndpointKind) async throws {
+    func startSession(endpoint: EndpointKind, settingsOverride: SessionSettings? = nil) async throws {
         let endpointURL = endpoint.endpointURL
         let host = endpointURL.split(separator: ":").first
         let port = UInt16(endpointURL.split(separator: ":").last ?? "") ?? 8282
@@ -68,13 +78,18 @@ class MainWindowViewModel: ObservableObject {
         self.endpointURL = endpointURL
         self.phase = .connecting
 
-        switch endpoint {
-        case .contact(let item):
-            self.sessionSettings = item.settings
-        case .quickConnect:
-            self.sessionSettings = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .global)
-        case .connect:
-            fatalError("TODO: 설정 시트를 띄우도록 수정하십시오")
+        if let settingsOverride {
+            self.sessionSettings = settingsOverride
+        } else {
+            switch endpoint {
+            case .contact(let item):
+                self.sessionSettings = item.settings
+            case .quickConnect:
+                self.sessionSettings = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .global)
+            case .connect:
+                assertionFailure("connect endpoint should be handled by UI")
+                self.sessionSettings = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .global)
+            }
         }
         
         self.appendConnectionLog("\(host):\(port) 에 연결을 시도합니다")
@@ -130,6 +145,37 @@ class MainWindowViewModel: ObservableObject {
             .sink { [weak self] method in
                 self?.applyInputRedirectionMethod(method)
             }
+    }
+
+    func startContactObservation() {
+        guard contactsCancellable == nil else {
+            return
+        }
+
+        loadContacts()
+
+        contactsCancellable = NotificationCenter.default
+            .publisher(for: ContactStore.didChangeNotification)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.loadContacts()
+            }
+    }
+
+    func loadContacts() {
+        isLoadingContacts = true
+        contactsLoadError = nil
+        defer { isLoadingContacts = false }
+
+        do {
+            let loaded = try ContactStore.loadAll()
+            contacts = loaded.sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+            }
+        } catch {
+            contacts = []
+            contactsLoadError = error.localizedDescription
+        }
     }
     
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {

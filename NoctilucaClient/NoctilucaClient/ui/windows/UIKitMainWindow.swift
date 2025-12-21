@@ -13,12 +13,6 @@ import Combine
 
 import SiriusKitClient
 
-enum MainWindowPhase: Hashable {
-    case newConnection
-    case connecting
-    case connected
-}
-
 enum MainWindowToolbarStyle {
     case standard
     case compact
@@ -62,6 +56,7 @@ struct UIKitMainWindow: View {
         .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
         .onAppear {
             viewModel.bind(settingsStore: settingsStore)
+            viewModel.startContactObservation()
         }
         /*
         .onChange(of: self.scenePhase) { _, newPhase in

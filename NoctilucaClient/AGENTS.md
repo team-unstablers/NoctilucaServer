@@ -51,10 +51,10 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 # ENTRY POINTS & APP LIFECYCLE
 
 - macOS
-  - `NoctilucaClient/NoctilucaClientApp+macOS.swift`: `@main` App, 메인 창 및 설정 창 생성
-  - `NoctilucaClient/AppDelegate+macOS.swift`: 앱 시작 시 GCKeyboard lifecycle 리스너 등록
-  - 메인 창: `AppKitMainWindow` → `MainWindowContentView`
-  - 설정 창: `AppKitSettingsWindow`
+  - `NoctilucaClient/AppDelegate+macOS.swift`: `@main` AppKit(NSApplicationDelegate), 메뉴/창 관리 + GCKeyboard lifecycle 리스너 등록
+  - 메인 창: `ui/windows/AppKitMainWindow.swift` (`AppKitMainWindowController` → SwiftUI `MainWindowRootView`)
+  - 설정 창: `ui/windows/AppKitSettingsWindowController.swift` (singleton, `AppKitSettingsWindow` 호스팅)
+  - `NoctilucaClient/NoctilucaClientApp+macOS.swift`: AppKit entrypoint 안내용 placeholder
 - iOS
   - `NoctilucaClient/NoctilucaClientApp+iOS.swift`: `@main` App, EmptyView + Scene 활성화
   - `NoctilucaClient/AppDelegate+iOS.swift`: `MobileUIMainSceneDelegate` 지정
@@ -127,7 +127,7 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 - 주소창/툴바
   - `AddressBar` + `AddressBarCandidateBox` + `AddressBarIndicatorView`
   - RTT 기반 품질 표시, 보안 상태 아이콘, 후보 목록 (quick connect / contact)
-  - macOS: 커스텀 NSToolbar (`MainToolbar`)
+  - macOS: AppKit NSToolbar (`MainToolbar`) + 신호등 정렬 스위즐(`NSWindow+NoctilucaLayoutSwizzle`)
   - iOS: `View+iOSToolbar.swift`로 디바이스별 툴바 오버레이
 - 인증 UI
   - `AuthChallengeSheetView`에서 PAM 기반 username/password 입력

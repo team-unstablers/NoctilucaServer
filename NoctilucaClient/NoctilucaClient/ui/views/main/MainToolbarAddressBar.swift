@@ -10,6 +10,15 @@ import SwiftUI
 struct MainToolbarAddressBar: View {
     @ObservedObject
     var viewModel: MainWindowViewModel
+
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+
+    @State
+    private var isConnectSheetPresented: Bool = false
+
+    @State
+    private var connectDraft: ContactItem = ContactItem(name: nil, endpointURL: "", preset: SessionSettings(scope: .session))
     
     var action: AddressBarActionState? {
         switch viewModel.phase {
@@ -57,11 +66,14 @@ struct MainToolbarAddressBar: View {
     }
     
     var body: some View {
+        let canConnect = !connectDraft.endpointURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
         VStack {
             let action = self.action
             
             AddressBar(
                 endpointURL: viewModel.endpointURL,
+                contacts: viewModel.contacts,
                 securityIndicator: securityIndicator,
                 qualityIndicator: qualityIndicator,
                 rtt: viewModel.averagePingRTT,
@@ -71,12 +83,68 @@ struct MainToolbarAddressBar: View {
                     return
                 }
 
-                Task {
-                    try await self.viewModel.startSession(endpoint: endpoint)
+                switch endpoint {
+                case .connect(let endpointURL):
+                    presentConnectSheet(endpointURL: endpointURL)
+                case .contact, .quickConnect:
+                    Task {
+                        try await self.viewModel.startSession(endpoint: endpoint)
+                    }
                 }
             }
         }
         .frame(maxWidth: .infinity)
+        .sheet(isPresented: $isConnectSheetPresented) {
+            SessionSettingsSheet(
+                scope: .session,
+                sessionSettings: $connectDraft.settings,
+                contactId: connectDraft.id,
+                actions: [
+                    .init(kind: .cancel, title: "취소", role: .cancel) {
+                        isConnectSheetPresented = false
+                    },
+                    .init(kind: .secondary, title: "연락처에 저장하기", isEnabled: canConnect) {
+                        saveContactAndConnect()
+                    },
+                    .init(kind: .primary, title: "연결만 하기", isEnabled: canConnect) {
+                        connectWithoutSaving()
+                    }
+                ]
+            )
+        }
+    }
+
+    private func presentConnectSheet(endpointURL: String) {
+        connectDraft = ContactItem(
+            name: nil,
+            endpointURL: endpointURL,
+            preset: settingsStore.settings.sessionDefaults
+        )
+        isConnectSheetPresented = true
+    }
+
+    private func saveContactAndConnect() {
+        do {
+            try ContactStore.save(connectDraft)
+        } catch {
+            print("Failed to save contact: \(error.localizedDescription)")
+        }
+
+        isConnectSheetPresented = false
+        Task {
+            try? await viewModel.startSession(endpoint: .contact(item: connectDraft))
+        }
+    }
+
+    private func connectWithoutSaving() {
+        let endpointURL = connectDraft.endpointURL
+        isConnectSheetPresented = false
+        Task {
+            try? await viewModel.startSession(
+                endpoint: .quickConnect(endpointURL: endpointURL),
+                settingsOverride: connectDraft.settings
+            )
+        }
     }
 }
 
@@ -130,6 +198,7 @@ struct UIKitStyledMainToolbarAddressBar: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(.red)
+    .environmentObject(SettingsStore(loadFromDisk: false))
 }
 
 #endif
