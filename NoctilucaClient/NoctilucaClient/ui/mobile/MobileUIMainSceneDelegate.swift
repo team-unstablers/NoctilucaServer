@@ -18,24 +18,20 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     var mainUIViewModel: MobileUIMainViewModel? = nil
     var mainWindowViewModel: MainWindowViewModel? = nil
     var settingsStore: SettingsStore? = nil
-    var sessionSettingsStore: SessionSettingsStore? = nil
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         let mainUIViewModel = MobileUIMainViewModel()
         let mainWindowViewModel = MainWindowViewModel()
         let settingsStore = SettingsStore()
-        let sessionSettingsStore = SessionSettingsStore()
         
         self.mainUIViewModel = mainUIViewModel
         self.mainWindowViewModel = mainWindowViewModel
         self.settingsStore = settingsStore
-        self.sessionSettingsStore = sessionSettingsStore
         
         let contentView = MobileUIMainView()
             .environmentObject(mainUIViewModel)
             .environmentObject(mainWindowViewModel)
             .environmentObject(settingsStore)
-            .environmentObject(sessionSettingsStore)
         
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)

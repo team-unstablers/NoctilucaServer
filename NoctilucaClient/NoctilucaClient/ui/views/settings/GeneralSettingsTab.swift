@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct GeneralSettingsTab: View {
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+
     @State
     var shouldPresentDefaultConnectionSettingsSheet: Bool = false
     
@@ -23,7 +26,10 @@ struct GeneralSettingsTab: View {
                     .foregroundStyle(.secondary)
                 }
                 .sheet(isPresented: $shouldPresentDefaultConnectionSettingsSheet) {
-                    SessionSettingsSheet()
+                    SessionSettingsSheet(
+                        scope: .global,
+                        sessionSettings: $settingsStore.settings.sessionDefaults
+                    )
                 }
             }
         }

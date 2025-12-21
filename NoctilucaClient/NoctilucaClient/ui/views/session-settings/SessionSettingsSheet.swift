@@ -7,17 +7,6 @@
 
 import SwiftUI
 
-private struct SessionSettingsScopeKey: EnvironmentKey {
-    static let defaultValue = SessionSettingsScope.global
-}
-
-extension EnvironmentValues {
-    var sessionSettingsScope: SessionSettingsScope {
-        get { self[SessionSettingsScopeKey.self] }
-        set { self[SessionSettingsScopeKey.self] = newValue }
-    }
-}
-
 struct SessionSettingsSheet: View {
     enum SettingsTab: Hashable {
         case general
@@ -26,12 +15,22 @@ struct SessionSettingsSheet: View {
     }
     
     let scope: SessionSettingsScope
+    let contactId: UUID?
+
+    @Binding
+    var sessionSettings: SessionSettings
     
     @State
     private var selectedTab: SettingsTab = .general
 
-    init(scope: SessionSettingsScope = .global) {
+    init(
+        scope: SessionSettingsScope = .global,
+        sessionSettings: Binding<SessionSettings>,
+        contactId: UUID? = nil
+    ) {
         self.scope = scope
+        self._sessionSettings = sessionSettings
+        self.contactId = contactId
     }
     
     @ViewBuilder
@@ -47,13 +46,17 @@ struct SessionSettingsSheet: View {
                     .id(SettingsTab.general)
             }
              */
-            ProjectionSessionSettingsTab()
+            ProjectionSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
                 .tabItem {
                     Text("프로젝션")
                 }
                 .tag(SettingsTab.projection)
                 .id(SettingsTab.projection)
-            SecuritySessionSettingsTab()
+            SecuritySessionSettingsTab(
+                sessionSettings: $sessionSettings,
+                scope: scope,
+                contactId: contactId
+            )
                 .tabItem {
                     Text("보안")
                 }
@@ -62,7 +65,6 @@ struct SessionSettingsSheet: View {
  
         }
         .tabViewStyle(.sidebarAdaptable)
-        .environment(\.sessionSettingsScope, scope)
     }
     
 #if os(macOS)
@@ -97,7 +99,8 @@ struct SessionSettingsSheet: View {
 }
 
 #Preview {
-    SessionSettingsSheet()
+    SessionSettingsSheet(
+        sessionSettings: .constant(SessionSettings(scope: .global))
+    )
         .frame(minHeight: 720)
-        .environmentObject(SessionSettingsStore(loadFromDisk: false))
 }

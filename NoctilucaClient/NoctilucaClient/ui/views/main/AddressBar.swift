@@ -258,14 +258,14 @@ struct AddressBar: View {
     
     let action: AddressBarActionState?
     
-    let submitHandler: (String) -> Void
+    let submitHandler: (EndpointKind?) -> Void
     
     init(endpointURL: String,
          securityIndicator: AddressBarSecurityIndicatorState? = nil,
          qualityIndicator: AddressBarQualityIndicatorState? = nil,
          rtt: TimeInterval = 0,
          action: AddressBarActionState? = nil,
-         submitHandler: @escaping (String) -> Void) {
+         submitHandler: @escaping (EndpointKind?) -> Void) {
         self.endpointURL = endpointURL
         self._draftURL = .init(initialValue: endpointURL)
         self.securityIndicator = securityIndicator
@@ -280,11 +280,11 @@ struct AddressBar: View {
     var draftURL: String = "private-resource-02.internal.contoso.com"
     
     @State
-    var candidates: [AddressBarCandidateItem] = [
+    var candidates: [EndpointKind] = [
         .quickConnect(endpointURL: "internal01.contoso.com"),
         .quickConnect(endpointURL: "internal02.contoso.com"),
-        .contactItem(item: ContactItem(name: "집 컴퓨터", endpointURL: "home.cheesekun.me")),
-        .contactItem(item: ContactItem(name: "회사 컴퓨터", endpointURL: "work.cheesekun.me")),
+        .contact(item: ContactItem(name: "집 컴퓨터", endpointURL: "home.cheesekun.me")),
+        .contact(item: ContactItem(name: "회사 컴퓨터", endpointURL: "work.cheesekun.me")),
     ]
     
     
@@ -357,18 +357,24 @@ struct AddressBar: View {
                     .onSubmit {
                         isFocused = false
 
-                        if let selectedEndpoint = self.selectedCandidateEndpoint() {
-                            self.submitEndpoint(selectedEndpoint)
+                        if let selectedCandidate = self.selectedCandidate() {
+                            self.submitCandidate(selectedCandidate)
                             return
                         }
 
-                        self.submitEndpoint(draftURL)
+                        let trimmed = draftURL.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty else {
+                            self.submitHandler(nil)
+                            return
+                        }
+
+                        self.submitCandidate(.quickConnect(endpointURL: trimmed))
                     }
                     .onKeyPress(.escape) {
                         isFocused = false
                         
                         // FIXME: 이딴 식으로 하지 마세요
-                        self.submitHandler("")
+                        self.submitHandler(nil)
                         return .handled
                     }
                     .onKeyPress(.downArrow) {
@@ -514,23 +520,28 @@ struct AddressBar: View {
         self.candidateFocusIndex = nextIndex
     }
 
-    private func selectedCandidateEndpoint() -> String? {
+    private func selectedCandidate() -> EndpointKind? {
         guard let index = self.candidateFocusIndex,
               self.candidates.indices.contains(index) else {
             return nil
         }
 
-        return self.candidates[index].endpointURL
+        return self.candidates[index]
     }
 
-    private func submitEndpoint(_ endpoint: String) {
-        if endpoint == endpointURL {
+    private func submitCandidate(_ candidate: EndpointKind) {
+        if candidate.endpointURL == endpointURL {
             // FIXME: 이딴 식으로 하지 마세요
-            self.submitHandler("")
+            self.submitHandler(nil)
             return
         }
 
-        self.submitHandler(endpoint)
+        switch candidate {
+        case .connect:
+            fatalError("TODO: 설정 시트를 띄우도록 수정하십시오")
+        case .contact, .quickConnect:
+            self.submitHandler(candidate)
+        }
     }
 
     private func updateHoverIndex(_ index: Int, isHovering: Bool) {
@@ -545,7 +556,7 @@ struct AddressBar: View {
 
         self.candidateFocusIndex = index
         self.isFocused = false
-        self.submitEndpoint(self.candidates[index].endpointURL)
+        self.submitCandidate(self.candidates[index])
     }
 }
 
@@ -553,9 +564,9 @@ struct AddressBar: View {
     VStack {
         VStack() {
             AddressBar(
-                endpointURL: "",
+                endpointURL: ""
             ) { action in
-                print(action)
+                print(action as Any)
             }
             
             Spacer()

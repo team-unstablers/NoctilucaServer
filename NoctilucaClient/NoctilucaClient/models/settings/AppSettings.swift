@@ -20,6 +20,10 @@ struct AppSettings: Codable, Sendable {
 
     var general: General = .init()
 
+    // MARK: - Session Defaults
+
+    var sessionDefaults: SessionSettings = SessionSettings(scope: .global)
+
     // MARK: - Input Settings
 
     var input: Input = .init()
@@ -38,6 +42,7 @@ struct AppSettings: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case general
+        case sessionDefaults
         case input
         case security
         case misc
@@ -57,6 +62,10 @@ struct AppSettings: Codable, Sendable {
         schemaVersion = decodedSchemaVersion == 0 ? Self.currentSchemaVersion : decodedSchemaVersion
         general = container.decodeSafe(General.self, forKey: .general, default: general)
 
+        let decodedSessionDefaults = container.decodeSafeIfPresent(SessionSettings.self, forKey: .sessionDefaults)
+        let sessionDefaultsMissing = decodedSessionDefaults == nil
+        sessionDefaults = decodedSessionDefaults ?? SessionSettings(scope: .global)
+
         if let decodedInput = container.decodeSafeIfPresent(Input.self, forKey: .input) {
             input = decodedInput
         } else if let legacyInput = container.decodeSafeIfPresent(Input.self, forKey: .projection) {
@@ -67,25 +76,35 @@ struct AppSettings: Codable, Sendable {
         misc = container.decodeSafe(Misc.self, forKey: .misc, default: misc)
         plugins = container.decodeSafe(Plugins.self, forKey: .plugins, default: plugins)
 
-        migrateIfNeeded(from: decodedSchemaVersion)
+        migrateIfNeeded(from: decodedSchemaVersion, sessionDefaultsMissing: sessionDefaultsMissing)
     }
 
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(schemaVersion, forKey: .schemaVersion)
         try container.encode(general, forKey: .general)
+        try container.encode(sessionDefaults, forKey: .sessionDefaults)
         try container.encode(input, forKey: .input)
         try container.encode(security, forKey: .security)
         try container.encode(misc, forKey: .misc)
         try container.encode(plugins, forKey: .plugins)
     }
 
-    mutating func migrateIfNeeded(from legacyVersion: Int) {
-        guard legacyVersion < Self.currentSchemaVersion else {
-            return
+    mutating func migrateIfNeeded(from legacyVersion: Int, sessionDefaultsMissing: Bool = false) {
+        if sessionDefaultsMissing, let legacy = Self.loadLegacySessionDefaults() {
+            sessionDefaults = legacy
         }
 
-        schemaVersion = Self.currentSchemaVersion
+        if legacyVersion < Self.currentSchemaVersion {
+            schemaVersion = Self.currentSchemaVersion
+        }
+
+        normalizeSessionDefaults()
+    }
+
+    mutating func normalizeSessionDefaults() {
+        sessionDefaults.scope = .global
+        sessionDefaults.ensureCredentialsKey(scope: .global, contactId: nil)
     }
 }
 
@@ -135,7 +154,12 @@ extension AppSettings {
         let fileManager = FileManager.default
         let applicationSupportDirectory = try Self.applicationSupportDirectory()
         
-        let json = try Self.jsonEncoder.encode(self)
+        var sanitized = self
+        if sanitized.sessionDefaults.security.knownHost?.trust == .trustOnce {
+            sanitized.sessionDefaults.security.knownHost = nil
+        }
+
+        let json = try Self.jsonEncoder.encode(sanitized)
         
         let settingsURL = applicationSupportDirectory.appendingPathComponent("settings.json", isDirectory: false)
         
@@ -198,8 +222,40 @@ extension AppSettings {
             return consume settings
         } catch {
             logger.error("Failed to load AppSettings: \(error.localizedDescription), using default settings instead.")
-            return AppSettings()
+            var fallback = AppSettings()
+            if let legacy = loadLegacySessionDefaults() {
+                fallback.sessionDefaults = legacy
+                fallback.normalizeSessionDefaults()
+            }
+            return fallback
         }
+    }
+}
+
+private extension AppSettings {
+    static func legacySessionSettingsURL() throws -> URL {
+        let directory = try applicationSupportDirectory()
+        return directory.appendingPathComponent("session-settings.json", isDirectory: false)
+    }
+
+    static func loadLegacySessionDefaults() -> SessionSettings? {
+        let fileManager = FileManager.default
+        guard let settingsURL = try? legacySessionSettingsURL(),
+              fileManager.fileExists(atPath: settingsURL.path) else {
+            return nil
+        }
+
+        guard let data = try? Data(contentsOf: settingsURL),
+              var settings = try? jsonDecoder.decode(SessionSettings.self, from: data) else {
+            return nil
+        }
+
+        settings.scope = .global
+        if settings.security.knownHost?.trust == .trustOnce {
+            settings.security.knownHost = nil
+        }
+        settings.ensureCredentialsKey(scope: .global, contactId: nil)
+        return settings
     }
 }
 

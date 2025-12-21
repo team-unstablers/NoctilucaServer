@@ -1,22 +1,30 @@
 import SwiftUI
 
 struct ProjectionSessionSettingsTab: View {
-    @EnvironmentObject
-    private var sessionSettingsStore: SessionSettingsStore
+    @Binding
+    var sessionSettings: SessionSettings
 
-    @Environment(\.sessionSettingsScope)
-    private var scope: SessionSettingsScope
+    let scope: SessionSettingsScope
 
     private var codecSettingsMode: Binding<SessionSettings.CodecSettingsMode> {
-        sessionSettingsStore.binding(for: scope, keyPath: \.projection.codecSettingsMode)
+        Binding(
+            get: { sessionSettings.projection.codecSettingsMode },
+            set: { sessionSettings.projection.codecSettingsMode = $0 }
+        )
     }
 
     private var codecNegotiationPolicy: Binding<SessionSettings.CodecNegotiationPolicy> {
-        sessionSettingsStore.binding(for: scope, keyPath: \.projection.codecNegotiationPolicy)
+        Binding(
+            get: { sessionSettings.projection.codecNegotiationPolicy },
+            set: { sessionSettings.projection.codecNegotiationPolicy = $0 }
+        )
     }
 
     private var codecSpecifications: Binding<[CodecSpecification]> {
-        sessionSettingsStore.binding(for: scope, keyPath: \.projection.codecSpecifications)
+        Binding(
+            get: { sessionSettings.projection.codecSpecifications },
+            set: { sessionSettings.projection.codecSpecifications = $0 }
+        )
     }
     
     var body: some View {
@@ -78,6 +86,8 @@ struct ProjectionSessionSettingsTab: View {
 }
 
 #Preview {
-    ProjectionSessionSettingsTab()
-        .environmentObject(SessionSettingsStore(loadFromDisk: false))
+    ProjectionSessionSettingsTab(
+        sessionSettings: .constant(SessionSettings(scope: .global)),
+        scope: .global
+    )
 }

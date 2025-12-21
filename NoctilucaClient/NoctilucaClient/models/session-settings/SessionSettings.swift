@@ -180,3 +180,36 @@ extension SessionSettings {
         var lastUpdatedAt: Date? = nil
     }
 }
+
+extension SessionSettings {
+    mutating func ensureCredentialsKey(scope: SessionSettingsScope, contactId: UUID?) {
+        if credentials.keychainKey != nil {
+            return
+        }
+
+        credentials.keychainKey = Self.credentialsKey(for: scope, contactId: contactId)
+    }
+}
+
+extension SessionSettings.Endpoint {
+    static func parse(_ endpointURL: String) -> SessionSettings.Endpoint {
+        let parts = endpointURL.split(separator: ":")
+        let host = String(parts.first ?? "")
+        let port = UInt16(parts.dropFirst().first ?? "")
+
+        return SessionSettings.Endpoint(host: host, port: port)
+    }
+
+    var urlString: String {
+        let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let port else {
+            return trimmedHost
+        }
+
+        if trimmedHost.isEmpty {
+            return ""
+        }
+
+        return "\(trimmedHost):\(port)"
+    }
+}

@@ -66,9 +66,13 @@ struct MainToolbarAddressBar: View {
                 qualityIndicator: qualityIndicator,
                 rtt: viewModel.averagePingRTT,
                 action: action
-            ) { endpointURL in
+            ) { endpoint in
+                guard let endpoint else {
+                    return
+                }
+
                 Task {
-                    try await self.viewModel.startSession(endpointURL: endpointURL)
+                    try await self.viewModel.startSession(endpoint: endpoint)
                 }
             }
         }

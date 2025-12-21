@@ -138,12 +138,12 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 # SETTINGS & STORAGE
 
 - 앱 설정 모델: `models/settings/AppSettings.swift`
-  - 일반/입력/보안/기타/플러그인 섹션
+  - 일반/세션 기본값/입력/보안/기타/플러그인 섹션
   - JSON 저장 위치: `Application Support/<bundle id>/settings.json`
   - 보안 항목은 `SRKeychain`을 통해 Keychain 저장
 - 세션 설정 모델: `models/session-settings/SessionSettings.swift`
-  - 글로벌/세션 스코프 분리, 코덱 우선순위/협상 정책 포함
-  - JSON 저장 위치: `Application Support/<bundle id>/session-settings.json`
+  - 글로벌 프리셋(AppSettings.sessionDefaults) + 연락처별 세션 설정
+  - 연락처 저장 위치: `Application Support/<bundle id>/contacts/<id>.json`
   - 자격 증명은 `[ClientAuthEntry]`를 Keychain에 저장하고 settings에는 keychain ref만 보관
 
 # DATA MODEL / HELPERS
@@ -179,7 +179,7 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 
 - 설정 파일: `Application Support/<bundle id>/settings.json`
 - 보안 항목: `SRKeychain`을 사용해 Keychain 저장
-- 세션 설정 파일: `Application Support/<bundle id>/session-settings.json`
+- 연락처 저장소: `Application Support/<bundle id>/contacts/<id>.json`
 
 # RELATED PROJECTS
 

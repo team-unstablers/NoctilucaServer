@@ -1,31 +1,35 @@
 import SwiftUI
 
 struct SecuritySessionSettingsTab: View {
-    @Environment(\.sessionSettingsScope)
-    private var scope: SessionSettingsScope
+    @Binding
+    var sessionSettings: SessionSettings
 
-    @EnvironmentObject
-    private var sessionSettingsStore: SessionSettingsStore
+    let scope: SessionSettingsScope
+    let contactId: UUID?
 
     private var tlsValidationPolicy: Binding<AppSettings.TLSValidationPolicy> {
-        sessionSettingsStore.binding(for: scope, keyPath: \.security.tlsValidationPolicy)
+        Binding(
+            get: { sessionSettings.security.tlsValidationPolicy },
+            set: { sessionSettings.security.tlsValidationPolicy = $0 }
+        )
     }
 
     private var disableClientVersionAnnouncement: Binding<Bool> {
-        sessionSettingsStore.binding(for: scope, keyPath: \.security.disableClientVersionAnnouncement)
+        Binding(
+            get: { sessionSettings.security.disableClientVersionAnnouncement },
+            set: { sessionSettings.security.disableClientVersionAnnouncement = $0 }
+        )
     }
 
     private var certificatePinningEnabled: Binding<Bool> {
         Binding(
             get: {
-                sessionSettingsStore.settings(for: scope).security.pinning?.enabled ?? false
+                sessionSettings.security.pinning?.enabled ?? false
             },
             set: { newValue in
-                sessionSettingsStore.updateSettings(for: scope) { settings in
-                    var pinning = settings.security.pinning ?? SessionSettings.CertificatePinning()
-                    pinning.enabled = newValue
-                    settings.security.pinning = pinning
-                }
+                var pinning = sessionSettings.security.pinning ?? SessionSettings.CertificatePinning()
+                pinning.enabled = newValue
+                sessionSettings.security.pinning = pinning
             }
         )
     }
@@ -33,7 +37,11 @@ struct SecuritySessionSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                CredentialsListContainer()
+                CredentialsListContainer(
+                    sessionSettings: $sessionSettings,
+                    scope: scope,
+                    contactId: contactId
+                )
             } header: {
                 Text("자격 증명")
             }
@@ -100,6 +108,9 @@ struct SecuritySessionSettingsTab: View {
 }
 
 #Preview {
-    SecuritySessionSettingsTab()
-        .environmentObject(SessionSettingsStore(loadFromDisk: false))
+    SecuritySessionSettingsTab(
+        sessionSettings: .constant(SessionSettings(scope: .global)),
+        scope: .global,
+        contactId: nil
+    )
 }

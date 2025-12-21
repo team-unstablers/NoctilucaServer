@@ -51,11 +51,12 @@ struct MainWindowNewConnectionPhaseContentView: View {
 
             ScrollView {
                 VStack {
-                    ContactItemView(item: .init(name: "집 컴퓨터", endpointURL: "localhost:8283")) { action in
+                    let item = ContactItem(name: "집 컴퓨터", endpointURL: "localhost:8283")
+                    ContactItemView(item: item) { action in
                         switch action {
                         case .launch:
                             Task {
-                                try? await viewModel.startSession(endpointURL: "localhost:8283")
+                                try? await viewModel.startSession(endpoint: .contact(item: item))
                             }
                         case .edit:
                             break

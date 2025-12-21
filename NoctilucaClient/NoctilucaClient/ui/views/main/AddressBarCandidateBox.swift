@@ -7,56 +7,8 @@
 
 import SwiftUI
 
-enum AddressBarCandidateItem: Hashable, Equatable {
-    case contactItem(item: ContactItem)
-    // TODO: recent item
-    case quickConnect(endpointURL: String)
-    case connect(endpointURL: String)
-
-    var displayText: String {
-        switch self {
-        case .contactItem(let item):
-            return item.displayName
-        case .quickConnect(let endpointURL):
-            return "빠른 연결: \(endpointURL)"
-        case .connect(let endpointURL):
-            return "연결: \(endpointURL)"
-        }
-    }
-
-    var endpointURL: String {
-        switch self {
-        case .contactItem(let item):
-            return item.endpointURL
-        case .quickConnect(let endpointURL):
-            return endpointURL
-        case .connect(let endpointURL):
-            return endpointURL
-        }
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        switch self {
-        case .contactItem(let item):
-            hasher.combine("contactItem")
-            hasher.combine(item.displayName)
-            hasher.combine(item.endpointURL)
-        case .quickConnect(let endpointURL):
-            hasher.combine("quickConnect")
-            hasher.combine(endpointURL)
-        case .connect(let endpointURL):
-            hasher.combine("connect")
-            hasher.combine(endpointURL)
-        }
-    }
-    
-    static func ==(lhs: AddressBarCandidateItem, rhs: AddressBarCandidateItem) -> Bool {
-        return lhs.hashValue == rhs.hashValue
-    }
-}
-
 struct AddressBarCandidateItemView: View {
-    let candidate: AddressBarCandidateItem
+    let candidate: EndpointKind
     let query: String
     let isFocused: Bool
 
@@ -68,7 +20,7 @@ struct AddressBarCandidateItemView: View {
                 .padding(.bottom, 4)
             
             HStack(spacing: 4) {
-                if case .contactItem(let item) = candidate {
+                if case .contact(let item) = candidate {
                     Text(item.endpointURL)
                         .foregroundColor(isFocused ? Color.white.opacity(0.8) : Color.secondary)
                     
@@ -95,7 +47,7 @@ struct AddressBarCandidateItemView: View {
 }
 
 struct AddressBarCandidateBox: View {
-    let candidates: [AddressBarCandidateItem]
+    let candidates: [EndpointKind]
     
     let focusedIndex: Int?
     let onHoverIndex: ((Int, Bool) -> Void)?

@@ -40,6 +40,9 @@ class MainWindowViewModel: ObservableObject {
     @Published
     var inputWarning: InputWarning? = nil
 
+    @Published
+    private(set) var sessionSettings: SessionSettings? = nil
+
     private var settingsStore: SettingsStore?
     private var settingsCancellable: AnyCancellable?
     
@@ -53,7 +56,8 @@ class MainWindowViewModel: ObservableObject {
         }
     }
     
-    func startSession(endpointURL: String) async throws {
+    func startSession(endpoint: EndpointKind) async throws {
+        let endpointURL = endpoint.endpointURL
         let host = endpointURL.split(separator: ":").first
         let port = UInt16(endpointURL.split(separator: ":").last ?? "") ?? 8282
         
@@ -63,6 +67,15 @@ class MainWindowViewModel: ObservableObject {
         
         self.endpointURL = endpointURL
         self.phase = .connecting
+
+        switch endpoint {
+        case .contact(let item):
+            self.sessionSettings = item.settings
+        case .quickConnect:
+            self.sessionSettings = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .global)
+        case .connect:
+            fatalError("TODO: 설정 시트를 띄우도록 수정하십시오")
+        }
         
         self.appendConnectionLog("\(host):\(port) 에 연결을 시도합니다")
         
@@ -99,6 +112,7 @@ class MainWindowViewModel: ObservableObject {
         }
         
         self.endpointURL = ""
+        self.sessionSettings = nil
         self.inputWarning = nil
     }
 

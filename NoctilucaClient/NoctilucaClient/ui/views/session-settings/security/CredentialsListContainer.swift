@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct CredentialsListContainer: View {
-    @EnvironmentObject
-    private var sessionSettingsStore: SessionSettingsStore
+    @Binding
+    var sessionSettings: SessionSettings
 
-    @Environment(\.sessionSettingsScope)
-    private var scope: SessionSettingsScope
+    let scope: SessionSettingsScope
+    let contactId: UUID?
 
     @State
     private var entries: [ClientAuthEntry] = []
@@ -30,11 +30,7 @@ struct CredentialsListContainer: View {
         if scope == .global {
             return true
         }
-        return sessionSettingsStore.currentContactId != nil
-    }
-
-    private var currentContactId: UUID? {
-        scope == .session ? sessionSettingsStore.currentContactId : nil
+        return contactId != nil
     }
 
     var body: some View {
@@ -71,7 +67,7 @@ struct CredentialsListContainer: View {
         .onChange(of: scope) { _, _ in
             reloadEntries()
         }
-        .onChange(of: sessionSettingsStore.currentContactId) { _, _ in
+        .onChange(of: contactId) { _, _ in
             reloadEntries()
         }
         .onChange(of: entries) { _, _ in
@@ -157,17 +153,37 @@ struct CredentialsListContainer: View {
         }
 
         isLoading = true
-        entries = sessionSettingsStore.loadCredentials(for: scope, contactId: currentContactId)
+        ensureCredentialsKey()
+        entries = SessionCredentialsStore.load(
+            scope: scope,
+            contactId: contactId,
+            keyOverride: sessionSettings.credentials.keychainKey
+        )
         isLoading = false
     }
 
     private func saveEntries() {
         guard canManageEntries else { return }
-        _ = sessionSettingsStore.saveCredentials(entries, for: scope, contactId: currentContactId)
+        ensureCredentialsKey()
+        let ref = SessionCredentialsStore.save(
+            entries,
+            scope: scope,
+            contactId: contactId,
+            currentRef: sessionSettings.credentials
+        )
+        sessionSettings.credentials = ref
+    }
+
+    private func ensureCredentialsKey() {
+        guard sessionSettings.credentials.keychainKey == nil else { return }
+        sessionSettings.ensureCredentialsKey(scope: scope, contactId: contactId)
     }
 }
 
 #Preview {
-    CredentialsListContainer()
-        .environmentObject(SessionSettingsStore(loadFromDisk: false))
+    CredentialsListContainer(
+        sessionSettings: .constant(SessionSettings(scope: .global)),
+        scope: .global,
+        contactId: nil
+    )
 }
