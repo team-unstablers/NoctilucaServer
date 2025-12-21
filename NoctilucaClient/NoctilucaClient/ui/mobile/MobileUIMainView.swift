@@ -34,7 +34,11 @@ struct MobileUIMainView: View {
                             ProjectionSettingsTab()
                         case .security:
                             SecuritySettingsTab()
-                        default:
+                        case .misc:
+                            MiscSettingsTab()
+                        case .plugins:
+                            PluginsSettingsTab()
+                        case .about:
                             AboutSettingsTab()
                         }
                     }

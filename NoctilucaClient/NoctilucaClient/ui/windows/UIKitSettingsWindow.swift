@@ -27,11 +27,11 @@ struct UIKitSettingsWindow: View {
         Form {
             Section {
                 NavigationLink("일반", value: NavigationItem.settingsDetail(.general))
-                NavigationLink("프로젝션", value: NavigationItem.settingsDetail(.projection))
+                NavigationLink("입력", value: NavigationItem.settingsDetail(.projection))
                 NavigationLink("보안", value: NavigationItem.settingsDetail(.security))
-                NavigationLink("기타", value: NavigationItem.settingsDetail(.general))
-                NavigationLink("플러그인", value: NavigationItem.settingsDetail(.general))
-                NavigationLink("정보", value: NavigationItem.settingsDetail(.general))
+                NavigationLink("기타", value: NavigationItem.settingsDetail(.misc))
+                NavigationLink("플러그인", value: NavigationItem.settingsDetail(.plugins))
+                NavigationLink("정보", value: NavigationItem.settingsDetail(.about))
             }
         }
         .navigationTitle("설정")

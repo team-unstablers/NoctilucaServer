@@ -16,6 +16,17 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 - Google Protobuf 3 (Sirius msgdef 기반)
 - AppKit / UIKit 브리지(NSViewRepresentable, UIViewRepresentable)
 
+# MULTI-PLATFORM SUPPORT
+
+- 이 앱은 macOS / iOS 멀티 플랫폼을 지원합니다.
+- platform-specific 코드(AppKit / UIKit 등)를 작성할 때는 아래 규칙 중 하나를 따르세요.
+
+## `#if os(...)` 매크로 사용
+- 파일 분리까지 하기에는 너무 거창할 때 사용합니다.
+
+## `{FileName}+{iOS|macOS}.swift` 파일 분리
+- 규모가 큰 경우 이 방식으로 분리합니다.
+
 # DIRECTORY STRUCTURE
 
 - `NoctilucaClient/`

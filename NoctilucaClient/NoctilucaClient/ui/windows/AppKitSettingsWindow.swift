@@ -22,6 +22,9 @@ struct AppKitSettingsWindow: View {
     
     @State
     private var selectedTab: SettingsTab = .general
+    
+    @StateObject
+    private var settingsStore = SettingsStore()
 
     var body: some View {
         NavigationStack {
@@ -34,7 +37,7 @@ struct AppKitSettingsWindow: View {
                     .id(SettingsTab.general)
                 ProjectionSettingsTab()
                     .tabItem {
-                        Text("프로젝션")
+                        Text("입력")
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
@@ -44,13 +47,13 @@ struct AppKitSettingsWindow: View {
                     }
                     .tag(SettingsTab.security)
                     .id(SettingsTab.security)
-                AboutSettingsTab()
+                MiscSettingsTab()
                     .tabItem {
                         Text("기타")
                     }
                     .tag(SettingsTab.misc)
                     .id(SettingsTab.misc)
-                AboutSettingsTab()
+                PluginsSettingsTab()
                     .tabItem {
                         Text("플러그인")
                     }
@@ -65,6 +68,7 @@ struct AppKitSettingsWindow: View {
             }
             .frame(minWidth: 640)
         }
+        .environmentObject(settingsStore)
         .navigationTitle("test")
         .navigationSubtitle("test")
         .toolbar {

@@ -1,18 +1,21 @@
 import SwiftUI
 
 struct ProjectionSettingsTab: View {
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+
     var body: some View {
         Form {
             Section {
-                SettingsPicker(selection: .constant("GameController")) {
-                    SettingsPickerItem(value: "GameController") {
+                SettingsPicker(selection: $settingsStore.settings.input.redirectionMethod) {
+                    SettingsPickerItem(value: AppSettings.InputRedirectionMethod.gameController) {
                         Text("GameController.framework")
                         Text("Apple의 게임 컨트롤러 프레임워크를 사용합니다.\nApp 전환 (⌘Tab), 창 닫기(⌘W), App 종료(⌘Q) 등의 단축키가 동작하지 않을 수 있습니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     
-                    SettingsPickerItem(value: "CocoaEventTap") {
+                    SettingsPickerItem(value: AppSettings.InputRedirectionMethod.cocoaEventTap) {
                         Text("Cocoa Event Tap")
                         Text("macOS의 Cocoa Event Tap API를 사용하여 입력을 리디렉션합니다.\n모든 단축키가 정상적으로 동작하지만, 접근성 / 손쉬운 사용 권한을 필요로 합니다.")
                             .font(.subheadline)
@@ -39,100 +42,100 @@ struct ProjectionSettingsTab: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Picker(selection: .constant("CapsLock")) {
+                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.capsLock) {
                     Text("⇪ (Caps Lock)")
-                        .tag("CapsLock")
+                        .tag(AppSettings.ModifierKeyOverride.capsLock)
                     
                     Text("⌃ (Control)")
-                        .tag("Control")
+                        .tag(AppSettings.ModifierKeyOverride.control)
                                             
                     Text("⌥ (Option)")
-                        .tag("Option")
+                        .tag(AppSettings.ModifierKeyOverride.option)
                     
                     Text("⌘ (Command)")
-                        .tag("Command")
+                        .tag(AppSettings.ModifierKeyOverride.command)
                     
                     Text("fn (Function)")
-                        .tag("Function")
+                        .tag(AppSettings.ModifierKeyOverride.function)
 
                     Text("⎋ (Escape)")
-                        .tag("Escape")
+                        .tag(AppSettings.ModifierKeyOverride.escape)
                     
                     Text("비활성화")
-                        .tag("Disabled")
+                        .tag(AppSettings.ModifierKeyOverride.disabled)
                 } label: {
                     Text("Caps Lock(⇪) 키")
                 }
 
-                Picker(selection: .constant("Control")) {
+                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.control) {
                     Text("⇪ (Caps Lock)")
-                        .tag("CapsLock")
+                        .tag(AppSettings.ModifierKeyOverride.capsLock)
                     
                     Text("⌃ (Control)")
-                        .tag("Control")
+                        .tag(AppSettings.ModifierKeyOverride.control)
                                             
                     Text("⌥ (Option)")
-                        .tag("Option")
+                        .tag(AppSettings.ModifierKeyOverride.option)
                     
                     Text("⌘ (Command)")
-                        .tag("Command")
+                        .tag(AppSettings.ModifierKeyOverride.command)
                     
                     Text("fn (Function)")
-                        .tag("Function")
+                        .tag(AppSettings.ModifierKeyOverride.function)
 
                     Text("⎋ (Escape)")
-                        .tag("Escape")
+                        .tag(AppSettings.ModifierKeyOverride.escape)
                     
                     Text("비활성화")
-                        .tag("Disabled")
+                        .tag(AppSettings.ModifierKeyOverride.disabled)
                 } label: {
                     Text("Control(⌃) 키")
                 }
-                Picker(selection: .constant("Option")) {
+                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.option) {
                     Text("⇪ (Caps Lock)")
-                        .tag("CapsLock")
+                        .tag(AppSettings.ModifierKeyOverride.capsLock)
                     
                     Text("⌃ (Control)")
-                        .tag("Control")
+                        .tag(AppSettings.ModifierKeyOverride.control)
                                             
                     Text("⌥ (Option)")
-                        .tag("Option")
+                        .tag(AppSettings.ModifierKeyOverride.option)
                     
                     Text("⌘ (Command)")
-                        .tag("Command")
+                        .tag(AppSettings.ModifierKeyOverride.command)
                     
                     Text("fn (Function)")
-                        .tag("Functioon")
+                        .tag(AppSettings.ModifierKeyOverride.function)
 
                     Text("⎋ (Escape)")
-                        .tag("Escape")
+                        .tag(AppSettings.ModifierKeyOverride.escape)
                     
                     Text("비활성화")
-                        .tag("Disabled")
+                        .tag(AppSettings.ModifierKeyOverride.disabled)
                 } label: {
                     Text("Option(⌥) 키")
                 }
-                Picker(selection: .constant("Command")) {
+                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.command) {
                     Text("⇪ (Caps Lock)")
-                        .tag("CapsLock")
+                        .tag(AppSettings.ModifierKeyOverride.capsLock)
                     
                     Text("⌃ (Control)")
-                        .tag("Control")
+                        .tag(AppSettings.ModifierKeyOverride.control)
                                             
                     Text("⌥ (Option)")
-                        .tag("Option")
+                        .tag(AppSettings.ModifierKeyOverride.option)
                     
                     Text("⌘ (Command)")
-                        .tag("Command")
+                        .tag(AppSettings.ModifierKeyOverride.command)
                     
                     Text("fn (Function)")
-                        .tag("Function")
+                        .tag(AppSettings.ModifierKeyOverride.function)
 
                     Text("⎋ (Escape)")
-                        .tag("Escape")
+                        .tag(AppSettings.ModifierKeyOverride.escape)
                     
                     Text("비활성화")
-                        .tag("Disabled")
+                        .tag(AppSettings.ModifierKeyOverride.disabled)
                 } label: {
                     Text("Command(⌘) 키")
                 }
@@ -151,15 +154,15 @@ struct ProjectionSettingsTab: View {
              */
             
             Section {
-                SettingsPicker(selection: .constant("absolute")) {
-                    SettingsPickerItem(value: "absolute") {
+                SettingsPicker(selection: $settingsStore.settings.input.mouseMoveMode) {
+                    SettingsPickerItem(value: AppSettings.MouseMoveMode.absolute) {
                         Text("절대 좌표 모드")
                         Text("절대 좌표를 사용하여 마우스 위치를 지정합니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     
-                    SettingsPickerItem(value: "relative") {
+                    SettingsPickerItem(value: AppSettings.MouseMoveMode.relative) {
                         Text("상대 좌표 모드")
                         Text("상대 좌표를 사용하여 마우스 위치를 지정합니다.\n게임 스트리밍 등 특수한 케이스에서 도움이 될 수 있습니다.")
                             .font(.subheadline)
@@ -177,15 +180,15 @@ struct ProjectionSettingsTab: View {
             }
             
             Section {
-                Toggle(isOn: .constant(false)) {
+                Toggle(isOn: $settingsStore.settings.input.invertMouseButtons) {
                     Text("마우스 버튼 위치를 반전하기")
                     Text("2-버튼 마우스의 좌우 버튼 위치를 반전하여 사용합니다.\n왼손을 주로 사용하는 사용자에게 도움이 될 수 있습니다.")
                 }
-                Toggle(isOn: .constant(false)) {
+                Toggle(isOn: $settingsStore.settings.input.invertVerticalScroll) {
                     Text("세로↕ 스크롤 방향을 반전하기")
                     Text("세로 스크롤 시 상하 방향을 반전시킵니다.")
                 }
-                Toggle(isOn: .constant(false)) {
+                Toggle(isOn: $settingsStore.settings.input.invertHorizontalScroll) {
                     Text("가로↔ 스크롤 방향을 반전하기")
                     Text("가로 스크롤 시 좌우 방향을 반전시킵니다.")
                 }
@@ -198,7 +201,7 @@ struct ProjectionSettingsTab: View {
                 
                  */
                 SettingsEntry(title: "마우스 스크롤 배수", subtitle: "마우스 스크롤에 배수 값을 적용하여 전송합니다.\n값이 클수록 스크롤 속도가 빨라집니다.") {
-                    Slider(value: .constant(1.0), in: 0.5...1.5, step: 0.25) {
+                    Slider(value: $settingsStore.settings.input.mouseScrollMultiplier, in: 0.5...1.5, step: 0.25) {
                         
                     } minimumValueLabel: {
                         Text("0.5x")
@@ -209,7 +212,7 @@ struct ProjectionSettingsTab: View {
                 
                 SettingsEntry(title: "뭔가 잘못 건드려서 망가졌어요", subtitle: "이 버튼을 누르면 입력 관련 설정이 초기화됩니다.") {
                     Button("입력 관련 설정 초기화") {
-                        
+                        settingsStore.resetInputSettings()
                     }
                 }
             } header: {
@@ -224,4 +227,5 @@ struct ProjectionSettingsTab: View {
 #Preview {
     ProjectionSettingsTab()
         .frame(minHeight: 720)
+        .environmentObject(SettingsStore())
 }

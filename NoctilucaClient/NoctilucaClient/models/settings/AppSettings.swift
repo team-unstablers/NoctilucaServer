@@ -10,23 +10,83 @@ import Foundation
 import SiriusKitClient
 
 struct AppSettings: Codable, Sendable {
+    static let currentSchemaVersion: Int = 1
+
+    // MARK: - Meta
+
+    var schemaVersion: Int = Self.currentSchemaVersion
+
     // MARK: - General Settings
-    
+
     var general: General = .init()
-    var notifications: Notifications = .init()
-    
-    // MARK: - Projection Settings
-    var projection: Projection = .init()
-    
+
+    // MARK: - Input Settings
+
+    var input: Input = .init()
+
     // MARK: - Security Settings
-    
+
     var security: Security = .init()
-    var transport: Transport = .init()
-    var quicTransport: QUICTransport = .init()
-    
+
     // MARK: - Misc Settings
-    
-    var telemetry: Telemetry = .init()
+
+    var misc: Misc = .init()
+    var plugins: Plugins = .init()
+
+    init() {}
+
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case general
+        case input
+        case security
+        case misc
+        case plugins
+        case projection
+    }
+
+    init(from decoder: any Decoder) throws {
+        self.init()
+
+        guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+            return
+        }
+
+        let decodedSchemaVersion = container.decodeSafe(Int.self, forKey: .schemaVersion, default: 0)
+
+        schemaVersion = decodedSchemaVersion == 0 ? Self.currentSchemaVersion : decodedSchemaVersion
+        general = container.decodeSafe(General.self, forKey: .general, default: general)
+
+        if let decodedInput = container.decodeSafeIfPresent(Input.self, forKey: .input) {
+            input = decodedInput
+        } else if let legacyInput = container.decodeSafeIfPresent(Input.self, forKey: .projection) {
+            input = legacyInput
+        }
+
+        security = container.decodeSafe(Security.self, forKey: .security, default: security)
+        misc = container.decodeSafe(Misc.self, forKey: .misc, default: misc)
+        plugins = container.decodeSafe(Plugins.self, forKey: .plugins, default: plugins)
+
+        migrateIfNeeded(from: decodedSchemaVersion)
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(general, forKey: .general)
+        try container.encode(input, forKey: .input)
+        try container.encode(security, forKey: .security)
+        try container.encode(misc, forKey: .misc)
+        try container.encode(plugins, forKey: .plugins)
+    }
+
+    mutating func migrateIfNeeded(from legacyVersion: Int) {
+        guard legacyVersion < Self.currentSchemaVersion else {
+            return
+        }
+
+        schemaVersion = Self.currentSchemaVersion
+    }
 }
 
 enum AppSettingsError: LocalizedError {
@@ -165,5 +225,15 @@ extension AppSettings.SecureCategory {
         let keychain = SRKeychain.shared
         
         _ = try keychain.removeSecureData(key: key).get()
+    }
+}
+
+extension KeyedDecodingContainer {
+    func decodeSafe<T: Decodable>(_ type: T.Type, forKey key: Key, default defaultValue: @autoclosure () -> T) -> T {
+        return (try? decodeIfPresent(type, forKey: key)) ?? defaultValue()
+    }
+
+    func decodeSafeIfPresent<T: Decodable>(_ type: T.Type, forKey key: Key) -> T? {
+        return (try? decodeIfPresent(type, forKey: key)) ?? nil
     }
 }

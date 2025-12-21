@@ -43,14 +43,34 @@ struct CodecSpecification: Codable {
     }
     
     init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        fourCC = try container.decode(CodecFourCC.self, forKey: .fourCC)
-        options = try container.decode([CodecOptionKey: CodecOptionValue].self, forKey: .options)
-        extras = try container.decodeIfPresent(String.self, forKey: .extras) ?? ""
-        
-        frameRate = try container.decodeIfPresent(Double.self, forKey: .frameRate) ?? 0.0
-        maximumResolutionLevel = try container.decodeIfPresent(CodecResolutionLevel.self, forKey: .maximumResolutionLevel) ?? .unlimited
+        guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+            fourCC = .avc1
+            options = [:]
+            extras = ""
+            frameRate = 0.0
+            maximumResolutionLevel = .unlimited
+            return
+        }
+
+        if let decodedFourCC = try? container.decode(CodecFourCC.self, forKey: .fourCC) {
+            fourCC = decodedFourCC
+        } else if let rawValue = try? container.decode(UInt32.self, forKey: .fourCC) {
+            fourCC = CodecFourCC(rawValue: rawValue)
+        } else {
+            fourCC = .avc1
+        }
+
+        if let decodedOptions = try? container.decode([CodecOptionKey: CodecOptionValue].self, forKey: .options) {
+            options = decodedOptions
+        } else if let decodedOptions = try? container.decode(CodecOptions.self, forKey: .options) {
+            options = decodedOptions.optional.merging(decodedOptions.mandatory) { _, newValue in newValue }
+        } else {
+            options = [:]
+        }
+
+        extras = (try? container.decodeIfPresent(String.self, forKey: .extras)) ?? ""
+        frameRate = (try? container.decodeIfPresent(Double.self, forKey: .frameRate)) ?? 0.0
+        maximumResolutionLevel = (try? container.decodeIfPresent(CodecResolutionLevel.self, forKey: .maximumResolutionLevel)) ?? .unlimited
     }
     
     func encode(to encoder: any Encoder) throws {

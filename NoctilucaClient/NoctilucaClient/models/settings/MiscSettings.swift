@@ -8,8 +8,9 @@
 import Foundation
 
 extension AppSettings {
-    struct Telemetry: Category {
-        var enableTelemetry: Bool = false
-        var telemetryIdentifier: UUID? = nil
+    struct Misc: Category {
+    }
+
+    struct Plugins: Category {
     }
 }

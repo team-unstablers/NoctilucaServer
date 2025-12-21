@@ -11,6 +11,17 @@ enum ScreenRecorderType: String, Codable, Hashable, Equatable {
     case avFoundation = "avfoundation"
     case screenCaptureKit = "screencapturekit"
     case null = "null"
+
+    init(from decoder: any Decoder) throws {
+        let container = try? decoder.singleValueContainer()
+        let rawValue = (try? container?.decode(String.self)) ?? Self.screenCaptureKit.rawValue
+        self = ScreenRecorderType(rawValue: rawValue) ?? .screenCaptureKit
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
     
     static var allCases: [ScreenRecorderType] {
         return [.screenCaptureKit, .avFoundation, .null]

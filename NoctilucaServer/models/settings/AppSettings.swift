@@ -27,6 +27,46 @@ struct AppSettings: Codable, Sendable {
     // MARK: - Misc Settings
     
     var telemetry: Telemetry = .init()
+
+    init() {}
+
+    enum CodingKeys: String, CodingKey {
+        case general
+        case notifications
+        case projection
+        case security
+        case transport
+        case quicTransport
+        case telemetry
+    }
+
+    init(from decoder: any Decoder) throws {
+        self.init()
+
+        guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+            return
+        }
+
+        general = container.decodeSafe(General.self, forKey: .general, default: general)
+        notifications = container.decodeSafe(Notifications.self, forKey: .notifications, default: notifications)
+        projection = container.decodeSafe(Projection.self, forKey: .projection, default: projection)
+        security = container.decodeSafe(Security.self, forKey: .security, default: security)
+        transport = container.decodeSafe(Transport.self, forKey: .transport, default: transport)
+        quicTransport = container.decodeSafe(QUICTransport.self, forKey: .quicTransport, default: quicTransport)
+        telemetry = container.decodeSafe(Telemetry.self, forKey: .telemetry, default: telemetry)
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(general, forKey: .general)
+        try container.encode(notifications, forKey: .notifications)
+        try container.encode(projection, forKey: .projection)
+        try container.encode(security, forKey: .security)
+        try container.encode(transport, forKey: .transport)
+        try container.encode(quicTransport, forKey: .quicTransport)
+        try container.encode(telemetry, forKey: .telemetry)
+    }
 }
 
 enum AppSettingsError: LocalizedError {
@@ -165,5 +205,11 @@ extension AppSettings.SecureCategory {
         let keychain = SRKeychain.shared
         
         _ = try keychain.removeSecureData(key: key).get()
+    }
+}
+
+extension KeyedDecodingContainer {
+    func decodeSafe<T: Decodable>(_ type: T.Type, forKey key: Key, default defaultValue: @autoclosure () -> T) -> T {
+        return (try? decodeIfPresent(type, forKey: key)) ?? defaultValue()
     }
 }

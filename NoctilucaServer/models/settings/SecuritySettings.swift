@@ -27,8 +27,13 @@ extension AppSettings {
         }
         
         init(from decoder: any Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            maxLoginAttempts = try container.decode(Int.self, forKey: .maxLoginAttempts)
+            self.init()
+
+            guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+                return
+            }
+
+            maxLoginAttempts = container.decodeSafe(Int.self, forKey: .maxLoginAttempts, default: maxLoginAttempts)
         }
         
         func encode(to encoder: any Encoder) throws {
@@ -59,6 +64,44 @@ extension AppSettings {
         
         var motd: String = ""
         var authChallengeMessage: String = ""
+
+        init() {}
+
+        enum CodingKeys: String, CodingKey {
+            case disableServerVersionAnnouncement
+            case disableSupportedFeaturesAnnouncement
+            case motd
+            case authChallengeMessage
+        }
+
+        init(from decoder: any Decoder) throws {
+            self.init()
+
+            guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+                return
+            }
+
+            disableServerVersionAnnouncement = container.decodeSafe(
+                Bool.self,
+                forKey: .disableServerVersionAnnouncement,
+                default: disableServerVersionAnnouncement
+            )
+            disableSupportedFeaturesAnnouncement = container.decodeSafe(
+                Bool.self,
+                forKey: .disableSupportedFeaturesAnnouncement,
+                default: disableSupportedFeaturesAnnouncement
+            )
+            motd = container.decodeSafe(String.self, forKey: .motd, default: motd)
+            authChallengeMessage = container.decodeSafe(String.self, forKey: .authChallengeMessage, default: authChallengeMessage)
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(disableServerVersionAnnouncement, forKey: .disableServerVersionAnnouncement)
+            try container.encode(disableSupportedFeaturesAnnouncement, forKey: .disableSupportedFeaturesAnnouncement)
+            try container.encode(motd, forKey: .motd)
+            try container.encode(authChallengeMessage, forKey: .authChallengeMessage)
+        }
     }
     
     struct QUICTransport: Category {
@@ -82,5 +125,35 @@ extension AppSettings {
         /// 서버 TLS 인증서 및 개인 키 설정
         /// - TODO: assert(tlsUseAutoconf && identity.type != .pemFile)
         var identity: TLSIdentity? = nil
+
+        init() {}
+
+        enum CodingKeys: String, CodingKey {
+            case listenPort
+            case tlsUseAutoconf
+            case tlsStrictValidation
+            case identity
+        }
+
+        init(from decoder: any Decoder) throws {
+            self.init()
+
+            guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+                return
+            }
+
+            listenPort = container.decodeSafe(UInt16.self, forKey: .listenPort, default: listenPort)
+            tlsUseAutoconf = container.decodeSafe(Bool.self, forKey: .tlsUseAutoconf, default: tlsUseAutoconf)
+            tlsStrictValidation = container.decodeSafe(Bool.self, forKey: .tlsStrictValidation, default: tlsStrictValidation)
+            identity = (try? container.decodeIfPresent(TLSIdentity.self, forKey: .identity)) ?? identity
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(listenPort, forKey: .listenPort)
+            try container.encode(tlsUseAutoconf, forKey: .tlsUseAutoconf)
+            try container.encode(tlsStrictValidation, forKey: .tlsStrictValidation)
+            try container.encodeIfPresent(identity, forKey: .identity)
+        }
     }
 }

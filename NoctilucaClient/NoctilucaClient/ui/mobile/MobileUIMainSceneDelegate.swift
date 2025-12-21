@@ -17,17 +17,21 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     /// FIXME: 둘이 합치던가 하세요
     var mainUIViewModel: MobileUIMainViewModel? = nil
     var mainWindowViewModel: MainWindowViewModel? = nil
+    var settingsStore: SettingsStore? = nil
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         let mainUIViewModel = MobileUIMainViewModel()
         let mainWindowViewModel = MainWindowViewModel()
+        let settingsStore = SettingsStore()
         
         self.mainUIViewModel = mainUIViewModel
         self.mainWindowViewModel = mainWindowViewModel
+        self.settingsStore = settingsStore
         
         let contentView = MobileUIMainView()
             .environmentObject(mainUIViewModel)
             .environmentObject(mainWindowViewModel)
+            .environmentObject(settingsStore)
         
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
