@@ -330,35 +330,6 @@ private extension SiriusKitClient.Codec {
 }
 
 private extension VTVideoDecoder {
-    func codecType(for codec: Codec) throws -> (CMVideoCodecType, String) {
-        switch codec.fourCC {
-        case .avc1:
-            return (kCMVideoCodecType_H264, "AVC1")
-        case .hvc1:
-            return (kCMVideoCodecType_HEVC, "HVC1")
-        default:
-            throw VideoDecoderError.unsupportedCodec(codec.fourCC.stringRepresentation)
-        }
-    }
-    
-    func requestedPixelFormat(from options: [String: String], preferred: OSType?) -> OSType? {
-        if let preferred {
-            return preferred
-        }
-        guard let value = options[CodecOptionKey.colorFormat.rawValue]?.lowercased() else {
-            return nil
-        }
-        
-        switch value {
-        case CodecColorFormat.yuv444.rawValue:
-            return kCVPixelFormatType_444YpCbCr10BiPlanarFullRange
-        case CodecColorFormat.yuv420.rawValue:
-            fallthrough
-        default:
-            return kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
-        }
-    }
-    
     func pts(fromMicroseconds value: UInt64) -> CMTime {
         CMTime(value: CMTimeValue(value), timescale: 1_000_000)
     }

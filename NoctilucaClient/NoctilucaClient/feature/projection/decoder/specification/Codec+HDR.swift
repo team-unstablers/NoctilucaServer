@@ -45,6 +45,45 @@ enum CodecHDREligibility {
     }
 }
 
+extension CodecSpecification {
+    /// 코덱 구성이 HDR(High Dynamic Range)에 적합한지 판정합니다.
+    var isEligibleForHDR: CodecHDREligibility {
+        if self.fourCC == .avc1 {
+            return __H264__isEligibleForHDR
+        }
+        
+        if self.fourCC == .hvc1 {
+            return __HEVC__isEligibleForHDR
+        }
+        
+        return .ineligible(reason: .unsupportedCodec)
+    }
+    
+    /// 이 코덱 구성이 HDR 모드를 활성화했는지 여부를 반환합니다.
+    var isHDREnabled: Bool {
+        return self.isEligibleForHDR.isEligible && self.option(.dynamicRange) == .kDynamicRangeHDR
+    }
+    
+    fileprivate var __H264__isEligibleForHDR: CodecHDREligibility {
+        // H.264 코덱의 경우, High10 프로파일만 HDR을 지원합니다.
+        guard self.option(.profile) == .kProfileH264High10 else {
+            return .ineligible(reason: .unsupportedProfile)
+        }
+        
+        /// H.264 High10은 HDR 전송에 적합하지만, 하드웨어 가속을 지원하는 기기가 극히 제한적입니다.
+        return .eligibleWithWarnings(warnings: [.performanceIssue])
+    }
+    
+    fileprivate var __HEVC__isEligibleForHDR: CodecHDREligibility {
+        /// 1. HEVC 코덱의 경우, Main10 프로파일만 HDR을 지원합니다.
+        guard self.option(.profile) == .kProfileHEVCMain10 else {
+            return .ineligible(reason: .unsupportedProfile)
+        }
+        
+        return .eligible
+    }
+}
+
 extension Codec {
     /// 코덱 구성이 HDR(High Dynamic Range)에 적합한지 판정합니다.
     var isEligibleForHDR: CodecHDREligibility {

@@ -26,19 +26,19 @@ struct AppKitSettingsWindow: View {
     var body: some View {
         NavigationStack {
             TabView(selection: $selectedTab) {
-                AboutSettingsTab()
+                GeneralSettingsTab()
                     .tabItem {
                         Text("일반")
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
-                AboutSettingsTab()
+                ProjectionSettingsTab()
                     .tabItem {
                         Text("프로젝션")
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
-                AboutSettingsTab()
+                SecuritySettingsTab()
                     .tabItem {
                         Text("보안")
                     }

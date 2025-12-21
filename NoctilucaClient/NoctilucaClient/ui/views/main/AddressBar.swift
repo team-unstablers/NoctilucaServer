@@ -244,6 +244,11 @@ struct AddressBarDegradationIndicator: View {
 }
 
 struct AddressBar: View {
+    enum MoveCommandDirection {
+        case up
+        case down
+    }
+    
     let endpointURL: String
     
     let securityIndicator: AddressBarSecurityIndicatorState?

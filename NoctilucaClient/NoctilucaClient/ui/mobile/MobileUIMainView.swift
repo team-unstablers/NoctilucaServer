@@ -14,7 +14,9 @@ struct MobileUIMainView: View {
     
     var body: some View {
         NavigationStack(path: $viewModel.navState) {
-            MainWindow()
+            SettingsWindow()
+            
+            // MainWindow()
             /*
                 .toolbar {
 
@@ -25,7 +27,16 @@ struct MobileUIMainView: View {
                     case .settings:
                         SettingsWindow()
                     case .settingsDetail(let tab):
-                        AboutSettingsTab()
+                        switch tab {
+                        case .general:
+                            GeneralSettingsTab()
+                        case .projection:
+                            ProjectionSettingsTab()
+                        case .security:
+                            SecuritySettingsTab()
+                        default:
+                            AboutSettingsTab()
+                        }
                     }
                 }
         }
