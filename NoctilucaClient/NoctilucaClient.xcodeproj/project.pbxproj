@@ -11,6 +11,16 @@
 		F61DD5B32EF0271300AC9B35 /* SiriusKitClient.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		F65FDE1B2EF868720014239E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F6BD3E8E2EDA1AF6000011DF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F6BD3E952EDA1AF6000011DF;
+			remoteInfo = NoctilucaClient;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		F6D2D1352EF026F0002596D1 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -27,6 +37,7 @@
 
 /* Begin PBXFileReference section */
 		F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SiriusKitClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaClientTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -41,6 +52,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F65FDE182EF868720014239E /* NoctilucaClientTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NoctilucaClientTests;
+			sourceTree = "<group>";
+		};
 		F6BD3E982EDA1AF6000011DF /* NoctilucaClient */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -52,6 +68,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		F65FDE142EF868720014239E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6BD3E932EDA1AF6000011DF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -67,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				F6BD3E982EDA1AF6000011DF /* NoctilucaClient */,
+				F65FDE182EF868720014239E /* NoctilucaClientTests */,
 				F6BD3EB02EDA1B2A000011DF /* Frameworks */,
 				F6BD3E972EDA1AF6000011DF /* Products */,
 			);
@@ -76,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */,
+				F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -91,6 +116,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		F65FDE162EF868720014239E /* NoctilucaClientTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F65FDE1D2EF868720014239E /* Build configuration list for PBXNativeTarget "NoctilucaClientTests" */;
+			buildPhases = (
+				F65FDE132EF868720014239E /* Sources */,
+				F65FDE142EF868720014239E /* Frameworks */,
+				F65FDE152EF868720014239E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F65FDE1C2EF868720014239E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F65FDE182EF868720014239E /* NoctilucaClientTests */,
+			);
+			name = NoctilucaClientTests;
+			packageProductDependencies = (
+			);
+			productName = NoctilucaClientTests;
+			productReference = F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		F6BD3E952EDA1AF6000011DF /* NoctilucaClient */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F6BD3EA12EDA1AF8000011DF /* Build configuration list for PBXNativeTarget "NoctilucaClient" */;
@@ -124,6 +172,10 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					F65FDE162EF868720014239E = {
+						CreatedOnToolsVersion = 26.1;
+						TestTargetID = F6BD3E952EDA1AF6000011DF;
+					};
 					F6BD3E952EDA1AF6000011DF = {
 						CreatedOnToolsVersion = 26.1;
 					};
@@ -144,11 +196,19 @@
 			projectRoot = "";
 			targets = (
 				F6BD3E952EDA1AF6000011DF /* NoctilucaClient */,
+				F65FDE162EF868720014239E /* NoctilucaClientTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		F65FDE152EF868720014239E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6BD3E942EDA1AF6000011DF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -159,6 +219,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		F65FDE132EF868720014239E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6BD3E922EDA1AF6000011DF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -168,7 +235,55 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		F65FDE1C2EF868720014239E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F6BD3E952EDA1AF6000011DF /* NoctilucaClient */;
+			targetProxy = F65FDE1B2EF868720014239E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		F65FDE1E2EF868720014239E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClientTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Noctiluca Navigator.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Noctiluca Navigator";
+			};
+			name = Debug;
+		};
+		F65FDE1F2EF868720014239E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClientTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Noctiluca Navigator.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Noctiluca Navigator";
+			};
+			name = Release;
+		};
 		F6BD3E9F2EDA1AF8000011DF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -394,6 +509,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		F65FDE1D2EF868720014239E /* Build configuration list for PBXNativeTarget "NoctilucaClientTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F65FDE1E2EF868720014239E /* Debug */,
+				F65FDE1F2EF868720014239E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F6BD3E912EDA1AF6000011DF /* Build configuration list for PBXProject "NoctilucaClient" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
