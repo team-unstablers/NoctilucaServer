@@ -8,13 +8,17 @@
 #if os(macOS)
 import SwiftUI
 import AppKit
+import Combine
 
 final class MainToolbar: NSObject, NSToolbarDelegate {
+    private let viewModel: MainWindowViewModel
     private let addressBarView: NSHostingView<MainToolbarAddressBar>
     private let minWidth: CGFloat
     private let maxWidth: CGFloat
     private weak var attachedWindow: NSWindow?
     private var focusDismissMonitor: Any?
+    private var toolbar: NSToolbar?
+    private var phaseCancellable: AnyCancellable?
     private var addressBarHeight: CGFloat {
         max(32, addressBarView.fittingSize.height)
     }
@@ -26,6 +30,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
     init(viewModel: MainWindowViewModel, settingsStore: SettingsStore, minWidth: CGFloat = 480, maxWidth: CGFloat = 640) {
         let rootView = Self.makeAddressBarView(viewModel: viewModel, settingsStore: settingsStore)
         
+        self.viewModel = viewModel
         self.addressBarView = NSHostingView(
             rootView: MainToolbarAddressBar(viewModel: viewModel, settingsStore: settingsStore)
                     // .environmentObject(settingsStore)
@@ -38,6 +43,12 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         addressBarView.translatesAutoresizingMaskIntoConstraints = true
         addressBarView.autoresizingMask = [.width]
         addressBarView.frame = NSRect(x: 0, y: 0, width: maxWidth, height: 32)
+
+        phaseCancellable = viewModel.$phase
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateToolbarItems()
+            }
     }
 
     deinit {
@@ -47,9 +58,8 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
     }
     
     func attach(to window: NSWindow) {
-        NSWindow.__NOC__swizzleLayoutIfNeeded()
-
         addressBarView.frame.size = NSSize(width: maxWidth, height: addressBarHeight)
+        
         attachedWindow = window
         installFocusDismissMonitor()
         
@@ -58,13 +68,14 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         toolbar.centeredItemIdentifiers = [.nocAddressBar]
         toolbar.allowsUserCustomization = false
         toolbar.autosavesConfiguration = false
+        self.toolbar = toolbar
         
         window.toolbarStyle = .unified
         window.titleVisibility = .hidden
         window.toolbar = toolbar
         window.titlebarAppearsTransparent = true
         
-        window.centerTrafficLights()
+        updateToolbarItems()
     }
 
     private func installFocusDismissMonitor() {
@@ -100,33 +111,113 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
     }
     
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
-        guard itemIdentifier == .nocAddressBar else {
+        switch itemIdentifier {
+        case .nocAddressBar:
+            let toolbarItem = NSToolbarItem(itemIdentifier: .nocAddressBar)
+            toolbarItem.view = addressBarView
+            toolbarItem.minSize = NSSize(width: minWidth, height: addressBarHeight)
+            toolbarItem.maxSize = NSSize(width: maxWidth, height: addressBarHeight)
+            toolbarItem.isBordered = false
+            return toolbarItem
+        case .nocSettings:
+            return makeSymbolItem(
+                identifier: .nocSettings,
+                systemSymbolName: "gearshape",
+                label: "Settings"
+            )
+        case .nocAddSession:
+            return makeSymbolItem(
+                identifier: .nocAddSession,
+                systemSymbolName: "plus.app",
+                label: "New Connection"
+            )
+        case .nocStopSession:
+            return makeSymbolItem(
+                identifier: .nocStopSession,
+                systemSymbolName: "xmark",
+                label: "Stop Session"
+            )
+        default:
             return nil
         }
-        
-        let toolbarItem = NSToolbarItem(itemIdentifier: .nocAddressBar)
-        toolbarItem.view = addressBarView
-        toolbarItem.minSize = NSSize(width: minWidth, height: addressBarHeight)
-        toolbarItem.maxSize = NSSize(width: maxWidth, height: addressBarHeight)
-        toolbarItem.isBordered = false
-        
-        return toolbarItem
     }
     
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [
-            .nocAddressBar
-        ]
+        return defaultItemIdentifiers(for: viewModel.phase)
     }
     
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         return [
-            .nocAddressBar
+            .nocAddressBar,
+            .nocSettings,
+            .nocAddSession,
+            .nocStopSession,
+            .flexibleSpace,
         ]
+    }
+
+    private func defaultItemIdentifiers(for phase: MainWindowPhase) -> [NSToolbarItem.Identifier] {
+        switch phase {
+        case .newConnection:
+            return [
+                .flexibleSpace,
+                .nocAddressBar,
+                .flexibleSpace,
+                .nocSettings,
+                .nocAddSession
+            ]
+        case .connecting, .connected:
+            return [
+                .nocStopSession,
+                .nocAddressBar
+            ]
+        }
+    }
+
+    private func updateToolbarItems() {
+        guard let toolbar else {
+            return
+        }
+
+        let desiredIdentifiers = defaultItemIdentifiers(for: viewModel.phase)
+        let currentIdentifiers = toolbar.items.map(\.itemIdentifier)
+        if currentIdentifiers == desiredIdentifiers {
+            return
+        }
+
+        while toolbar.items.count > 0 {
+            toolbar.removeItem(at: 0)
+        }
+
+        for (index, identifier) in desiredIdentifiers.enumerated() {
+            toolbar.insertItem(withItemIdentifier: identifier, at: index)
+        }
+    }
+
+    private func makeSymbolItem(
+        identifier: NSToolbarItem.Identifier,
+        systemSymbolName: String,
+        label: String
+    ) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: identifier)
+        // item.label = label
+        item.toolTip = label
+        item.target = self
+        item.action = #selector(handleToolbarAction(_:))
+        item.image = NSImage(systemSymbolName: systemSymbolName, accessibilityDescription: label)
+        return item
+    }
+
+    @objc
+    private func handleToolbarAction(_ sender: Any?) {
+        // Intentionally empty (parity with iOS placeholder actions).
     }
 }
 
 extension NSToolbarItem.Identifier {
     static let nocAddressBar = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.AddressBar")
+    static let nocSettings = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.Settings")
+    static let nocAddSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.AddSession")
+    static let nocStopSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.StopSession")
 }
 #endif

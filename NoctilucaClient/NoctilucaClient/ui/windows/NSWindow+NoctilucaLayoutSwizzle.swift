@@ -46,8 +46,29 @@ extension NSWindow {
             toolbarStyle = .unified
             titleVisibility = .hidden
         }
+        
+        print("\(Date.now) - layoutIfNeeded swizzled called")
 
-        self.centerTrafficLights()
+        // self.centerTrafficLights()
+        
+        /*
+        if let item = self.toolbar?.items.first(where: { $0.itemIdentifier == .nocAddressBar }) {
+            if let titlebarContainerHeight = standardWindowButton(.closeButton)?.superview?.bounds.height,
+               let view = item.view
+            {
+                let addressBarHeight = view.fittingSize.height
+                let centeredY = (titlebarContainerHeight - addressBarHeight) / 2
+                
+                print(centeredY)
+                DispatchQueue.main.async {
+                    print(item.view?.frame.origin.y ?? -1)
+                    if (item.view?.frame.origin.y ?? -1) != centeredY {
+                        item.view?.frame.origin.y = 24
+                    }
+                }
+            }
+        }
+         */
     }
     
     @objc
