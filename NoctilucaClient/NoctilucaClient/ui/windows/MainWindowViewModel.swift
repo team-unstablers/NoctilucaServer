@@ -140,7 +140,7 @@ class MainWindowViewModel: ObservableObject {
         settingsCancellable?.cancel()
 
         settingsCancellable = settingsStore.$settings
-            .map { $0.input.redirectionMethod }
+            .map { $0!.input.redirectionMethod }
             .removeDuplicates()
             .sink { [weak self] method in
                 self?.applyInputRedirectionMethod(method)

@@ -113,7 +113,7 @@ struct SessionSettingsSheet: View {
                 Button(action.title, role: action.role) {
                     action.handler()
                 }
-                .buttonStyle(action.kind == .primary ? .borderedProminent : .bordered)
+                // .buttonStyle(action.kind == .primary ? .borderedProminent : .bordered)
                 .disabled(!action.isEnabled)
             }
         }

@@ -130,13 +130,13 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice {
                 | (1 << CGEventType.tapDisabledByUserInput.rawValue)
         )
 
-        let eventTap = CGEventTapCreate(
-            .cgSessionEventTap,
-            .headInsertEventTap,
-            .defaultTap,
-            eventMask,
-            HIDIOCocoaEventTapKeyboard.eventTapCallback,
-            Unmanaged.passUnretained(self).toOpaque()
+        let eventTap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: eventMask,
+            callback: HIDIOCocoaEventTapKeyboard.eventTapCallback,
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
         )
 
         guard let eventTap else {
@@ -150,7 +150,7 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice {
 
         if let runLoopSource, let runLoop {
             CFRunLoopAddSource(runLoop, runLoopSource, .commonModes)
-            CGEventTapEnable(eventTap, true)
+            CGEvent.tapEnable(tap: eventTap, enable: true)
             CFRunLoopRun()
             CFRunLoopRemoveSource(runLoop, runLoopSource, .commonModes)
         }
@@ -173,7 +173,7 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice {
         switch type {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
             if let eventTap {
-                CGEventTapEnable(eventTap, true)
+                CGEvent.tapEnable(tap: eventTap, enable: true)
             }
             return Unmanaged.passUnretained(event)
         case .keyDown, .keyUp, .flagsChanged:

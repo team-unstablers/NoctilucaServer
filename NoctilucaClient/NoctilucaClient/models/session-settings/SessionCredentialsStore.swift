@@ -22,11 +22,11 @@ struct SessionCredentialsStore {
         }
 
         let keychain = SRKeychain.shared
-        guard let stored = try? keychain.getSecureData(key: key).get(),
-              let data = stored else {
+        guard let stored = try? keychain.getSecureData(key: key).get() else {
             return []
         }
-
+        
+        let data = stored
         return (try? jsonDecoder.decode([ClientAuthEntry].self, from: data)) ?? []
     }
 

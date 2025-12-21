@@ -11,8 +11,8 @@ struct MainToolbarAddressBar: View {
     @ObservedObject
     var viewModel: MainWindowViewModel
 
-    @EnvironmentObject
-    private var settingsStore: SettingsStore
+    @ObservedObject
+    var settingsStore: SettingsStore
 
     @State
     private var isConnectSheetPresented: Bool = false
@@ -73,11 +73,11 @@ struct MainToolbarAddressBar: View {
             
             AddressBar(
                 endpointURL: viewModel.endpointURL,
-                contacts: viewModel.contacts,
                 securityIndicator: securityIndicator,
                 qualityIndicator: qualityIndicator,
                 rtt: viewModel.averagePingRTT,
-                action: action
+                action: action,
+                contacts: viewModel.contacts
             ) { endpoint in
                 guard let endpoint else {
                     return

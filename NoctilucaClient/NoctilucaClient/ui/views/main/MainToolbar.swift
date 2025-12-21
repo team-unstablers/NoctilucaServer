@@ -17,10 +17,16 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         max(32, addressBarView.fittingSize.height)
     }
     
+    @ViewBuilder
+    static func makeAddressBarView(viewModel: MainWindowViewModel, settingsStore: SettingsStore) -> some View {
+    }
+    
     init(viewModel: MainWindowViewModel, settingsStore: SettingsStore, minWidth: CGFloat = 480, maxWidth: CGFloat = 640) {
+        let rootView = Self.makeAddressBarView(viewModel: viewModel, settingsStore: settingsStore)
+        
         self.addressBarView = NSHostingView(
-            rootView: MainToolbarAddressBar(viewModel: viewModel)
-                .environmentObject(settingsStore)
+            rootView: MainToolbarAddressBar(viewModel: viewModel, settingsStore: settingsStore)
+                    // .environmentObject(settingsStore)
         )
         self.minWidth = minWidth
         self.maxWidth = maxWidth

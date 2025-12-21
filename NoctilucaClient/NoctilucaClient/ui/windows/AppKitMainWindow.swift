@@ -33,12 +33,13 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
         window.title = NoctilucaMeta.productName
         window.minSize = NSSize(width: 640, height: 480)
         window.isReleasedWhenClosed = false
-        window.delegate = self
         window.setFrameAutosaveName("NoctilucaClient.MainWindow")
         window.center()
         
         super.init(window: window)
         
+        window.delegate = self
+
         toolbarController.attach(to: window)
     }
 

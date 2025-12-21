@@ -195,51 +195,21 @@ struct AddressBarQualityIndicator: View {
 
 struct AddressBarDegradationIndicator: View {
     let state: AddressBarDegradationIndicatorState
-    
-    @State
-    var shouldDisplayTooltip = false
-    
-    @State
-    var tooltipSize: CGSize = .zero
-    
+
     var body: some View {
-        VStack {
+        AddressBarIndicatorView {
             Image(systemName: "cloud.bolt.rain.fill")
                 .foregroundColor(.black.opacity(0.7))
+        } tooltip: {
+            Text("하드웨어 가속을 사용할 수 없다고 보고받음")
+                .font(.system(size: 12))
+                .bold()
+                .padding(.bottom, 4)
+            
+            Text("서버로부터 화면 데이터 압축에 하드웨어 가속을 사용할 수 없다고 보고받았습니다.\n동영상 인코딩 세션이 동시에 너무 많이 열려있는 경우 이 문제가 발생할 수 있습니다.\n\n소프트웨어 방식으로 압축을 시도하고 있기 때문에, 서버의 컴퓨팅 성능이 상당히 저하될 수 있습니다.")
+                .font(.system(size: 11))
+                .multilineTextAlignment(.leading)
         }
-            .frame(width: 24, height: 24)
-            .overlay(alignment: .bottom) {
-                GeometryReader { proxy in
-                    let offsetX = -(tooltipSize.width) + (proxy.size.width)
-                    if shouldDisplayTooltip {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("하드웨어 가속을 사용할 수 없다고 보고받음")
-                                .font(.system(size: 12))
-                                .bold()
-                                .padding(.bottom, 4)
-                            
-                            Text("서버로부터 화면 데이터 압축에 하드웨어 가속을 사용할 수 없다고 보고받았습니다.\n동영상 인코딩 세션이 동시에 너무 많이 열려있는 경우 이 문제가 발생할 수 있습니다.\n\n소프트웨어 방식으로 압축을 시도하고 있기 때문에, 서버의 컴퓨팅 성능이 상당히 저하될 수 있습니다.")
-                                .font(.system(size: 11))
-                                .multilineTextAlignment(.leading)
-                        }
-                        .fixedSize()
-                        .padding(8)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .clipped()
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .offset(x: offsetX, y: 26)
-                        .onGeometryChange(for: CGSize.self) { proxy in
-                            proxy.size
-                        } action: { geom in
-                            self.tooltipSize = geom
-                        }
-                    }
-                }
-            }
-            .onHover { hoverState in
-                shouldDisplayTooltip = hoverState
-            }
     }
 }
 
@@ -470,21 +440,18 @@ struct AddressBar: View {
             .padding(.horizontal, 24)
             .opacity(labelAreaOpacity)
         }
-        .overlay {
+        .detachedOverlay(role: .normalWindow(attachTo: .down)) {
             if isFocused, !candidates.isEmpty {
-                GeometryReader { geom in
-                    AddressBarCandidateBox(
-                        candidates: self.candidates,
-                        focusedIndex: self.candidateFocusIndex,
-                        onHoverIndex: { index, isHovering in
-                            self.updateHoverIndex(index, isHovering: isHovering)
-                        },
-                        onSelectIndex: { index in
-                            self.selectCandidate(at: index)
-                        }
-                    )
-                        .offset(y: geom.size.height + 8)
-                }
+                AddressBarCandidateBox(
+                    candidates: self.candidates,
+                    focusedIndex: self.candidateFocusIndex,
+                    onHoverIndex: { index, isHovering in
+                        self.updateHoverIndex(index, isHovering: isHovering)
+                    },
+                    onSelectIndex: { index in
+                        self.selectCandidate(at: index)
+                    }
+                )
             }
         }
         .zIndex(4)

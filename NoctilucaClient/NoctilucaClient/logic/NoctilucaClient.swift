@@ -111,7 +111,7 @@ class NoctilucaClient: ObservableObject {
     var hidioController: HIDIOController!
     var projectionChannel: ProjectionChannel!
 
-    private var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
+    var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {

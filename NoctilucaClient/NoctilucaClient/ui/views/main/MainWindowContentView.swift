@@ -84,7 +84,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 16)
-                    } else if contacts.isEmpty {
+                    } else if viewModel.contacts.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("(저장된 호스트가 없습니다)")
                                 .font(.headline)

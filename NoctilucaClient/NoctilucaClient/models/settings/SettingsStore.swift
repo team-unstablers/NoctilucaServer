@@ -8,22 +8,25 @@
 import SwiftUI
 import Combine
 
-@MainActor
+import SiriusKitClient
+
 final class SettingsStore: ObservableObject {
     private static let logger = NoctilucaLogger(category: "SettingsStore")
 
     @Published
-    var settings: AppSettings
+    var settings: AppSettings!
     
     private var cancellables: Set<AnyCancellable> = []
 
     init(settings: AppSettings = AppSettings(), loadFromDisk: Bool = true) {
+        // TODO: ensure this runs on main thread
+        
         if loadFromDisk {
             self.settings = (try? AppSettings.load()) ?? settings
         } else {
             self.settings = settings
         }
-
+        
         setupAutosave()
     }
 
@@ -32,15 +35,19 @@ final class SettingsStore: ObservableObject {
     }
 
     func save() {
-        do {
-            try settings.save()
-        } catch {
-            Self.logger.error("Failed to save settings: \(error.localizedDescription)")
+        DispatchQueue.main.sync {
+            do {
+                try settings.save()
+            } catch {
+                Self.logger.error("Failed to save settings: \(error.localizedDescription)")
+            }
         }
     }
 
     func reload() {
-        settings = (try? AppSettings.load()) ?? AppSettings()
+        DispatchQueue.main.sync {
+            settings = (try? AppSettings.load()) ?? AppSettings()
+        }
     }
 
     private func setupAutosave() {

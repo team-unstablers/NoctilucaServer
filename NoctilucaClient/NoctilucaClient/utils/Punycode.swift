@@ -11,13 +11,13 @@ public struct Punycode {
     public init() {}
 
     public func isPunycode(_ hostname: String) -> Bool {
-        return splitLabels(hostname).contains { $0.hasPunycodePrefix }
+        return Punycode.splitLabels(hostname).contains { $0.hasPunycodePrefix }
     }
 
     public func encode(_ hostname: String) -> String {
         guard hostname.isEmpty == false else { return hostname }
 
-        let labels = splitLabels(hostname)
+        let labels = Punycode.splitLabels(hostname)
         var encodedLabels: [String] = []
         encodedLabels.reserveCapacity(labels.count)
 
@@ -48,7 +48,7 @@ public struct Punycode {
     public func decode(_ hostname: String) -> String {
         guard hostname.isEmpty == false else { return hostname }
 
-        let labels = splitLabels(hostname)
+        let labels = Punycode.splitLabels(hostname)
         var decodedLabels: [String] = []
         decodedLabels.reserveCapacity(labels.count)
 

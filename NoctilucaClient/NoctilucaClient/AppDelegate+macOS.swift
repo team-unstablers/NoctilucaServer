@@ -14,6 +14,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var mainWindowControllers: [AppKitMainWindowController] = []
     private var settingsWindowController: AppKitSettingsWindowController?
     
+    static func main() {
+        let app = NSApplication.shared
+        
+        let delegate = AppDelegate()
+        app.delegate = delegate
+        
+        // 2. 앱 실행 (Run Loop 시작)
+        _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+    }
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         setupMainMenu()
@@ -117,10 +127,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let closeWindowItem = NSMenuItem(title: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         fileMenu.addItem(closeWindowItem)
         
+        /*
         let closeAllItem = NSMenuItem(title: "Close All", action: #selector(NSApplication.closeAllWindows(_:)), keyEquivalent: "w")
         closeAllItem.keyEquivalentModifierMask = [.command, .option]
         fileMenu.addItem(closeAllItem)
+         */
         
+        /*
         let editMenuItem = NSMenuItem()
         mainMenu.addItem(editMenuItem)
         
@@ -149,6 +162,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let selectAllItem = NSMenuItem(title: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editMenu.addItem(selectAllItem)
+         */
         
         let viewMenuItem = NSMenuItem()
         mainMenu.addItem(viewMenuItem)
