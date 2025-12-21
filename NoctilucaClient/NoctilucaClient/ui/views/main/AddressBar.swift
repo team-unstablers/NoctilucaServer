@@ -230,6 +230,8 @@ struct AddressBar: View {
     let action: AddressBarActionState?
     
     let submitHandler: (EndpointKind?) -> Void
+    @FocusState.Binding
+    var isFocused: Bool
     
     init(endpointURL: String,
          securityIndicator: AddressBarSecurityIndicatorState? = nil,
@@ -237,6 +239,7 @@ struct AddressBar: View {
          rtt: TimeInterval = 0,
          action: AddressBarActionState? = nil,
          contacts: [ContactItem] = [],
+         isFocused: FocusState<Bool>.Binding,
          submitHandler: @escaping (EndpointKind?) -> Void) {
         self.endpointURL = endpointURL
         self._draftURL = .init(initialValue: endpointURL)
@@ -246,6 +249,7 @@ struct AddressBar: View {
         self.rtt = rtt
         self.action = action
         self.submitHandler = submitHandler
+        self._isFocused = isFocused
     }
     
     
@@ -258,9 +262,6 @@ struct AddressBar: View {
     
     @State
     var candidateFocusIndex: Int? = nil
-    
-    @FocusState
-    var isFocused: Bool
     
     @State
     var labelAreaOpacity: CGFloat = 1.0
@@ -552,15 +553,41 @@ struct AddressBar: View {
     }
 }
 
+private struct AddressBarPreviewContainer: View {
+    @FocusState
+    private var isFocused: Bool
+
+    let endpointURL: String
+    let securityIndicator: AddressBarSecurityIndicatorState?
+    let qualityIndicator: AddressBarQualityIndicatorState?
+    let action: AddressBarActionState?
+    let contacts: [ContactItem]
+
+    var body: some View {
+        AddressBar(
+            endpointURL: endpointURL,
+            securityIndicator: securityIndicator,
+            qualityIndicator: qualityIndicator,
+            rtt: 0,
+            action: action,
+            contacts: contacts,
+            isFocused: $isFocused
+        ) { action in
+            print(action as Any)
+        }
+    }
+}
+
 #Preview {
     VStack {
         VStack() {
-            AddressBar(
+            AddressBarPreviewContainer(
                 endpointURL: "",
+                securityIndicator: nil,
+                qualityIndicator: nil,
+                action: nil,
                 contacts: []
-            ) { action in
-                print(action as Any)
-            }
+            )
             
             Spacer()
         }
@@ -570,39 +597,39 @@ struct AddressBar: View {
         /*
         VStack {
             Text("AddressBar(securityIndicator: .trustable, qualityIndicator: .excellent)")
-            AddressBar(
+            AddressBarPreviewContainer(
                 endpointURL: "internal02.contoso.com",
                 securityIndicator: .trustable,
                 qualityIndicator: .excellent,
-                action: .fileTransfer(progress: 0.5)
-            ) { _ in
-                
-            }
+                action: .fileTransfer(progress: 0.5),
+                contacts: []
+            )
         }
         .zIndex(3)
         .padding(.bottom, 32)
         
         VStack {
             Text("AddressBar(securityIndicator: .dangerous, qualityIndicator: .poor)")
-            AddressBar(
+            AddressBarPreviewContainer(
                 endpointURL: "internal02.contoso.com",
                 securityIndicator: .dangerous,
-                qualityIndicator: .poor
-            ) { _ in
-                
-            }
+                qualityIndicator: .poor,
+                action: nil,
+                contacts: []
+            )
         }
         .zIndex(2)
         .padding(.bottom, 32)
         
         VStack {
             Text("AddressBar(securityIndicator: .neutral, qualityIndicator: .good)")
-            AddressBar(
+            AddressBarPreviewContainer(
                 endpointURL: "internal02.contoso.com",
                 securityIndicator: .neutral,
-                qualityIndicator: .good
-            ) { _ in
-            }
+                qualityIndicator: .good,
+                action: nil,
+                contacts: []
+            )
         }
         .zIndex(1)
         .padding(.bottom, 32)

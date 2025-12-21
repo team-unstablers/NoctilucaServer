@@ -79,9 +79,15 @@ struct AddressBarCandidateBox: View {
         .clipShape(.rect(cornerRadius: 20))
         .overlay {
             RoundedRectangle(cornerRadius: 20)
+#if os(iOS)
+            // macOS의 경우 View+detachedOverlay에서 NSWindow를 만들면서 자동으로 테두리 생기
                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+#elseif os(macOS)
+            
+            // 머지...? 이거 없으면 고장나요
+                .stroke(Color.gray.opacity(0.001), lineWidth: 1)
+#endif
         }
         .compositingGroup()
-        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
     }
 }

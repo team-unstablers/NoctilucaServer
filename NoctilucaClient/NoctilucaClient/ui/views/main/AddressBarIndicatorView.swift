@@ -33,7 +33,6 @@ struct AddressBarIndicatorView<Content: View, Tooltip: View>: View {
                     .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .clipped()
-                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                 }
             }
 #if os(macOS)

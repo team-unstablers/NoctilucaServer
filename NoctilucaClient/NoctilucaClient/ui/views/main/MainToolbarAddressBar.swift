@@ -13,12 +13,29 @@ struct MainToolbarAddressBar: View {
 
     @ObservedObject
     var settingsStore: SettingsStore
+    
+    private let focusBinding: FocusState<Bool>.Binding?
+    
+    @FocusState
+    private var internalFocus: Bool
 
     @State
     private var isConnectSheetPresented: Bool = false
 
     @State
     private var connectDraft: ContactItem = ContactItem(name: nil, endpointURL: "", preset: SessionSettings(scope: .session))
+    
+    init(viewModel: MainWindowViewModel,
+         settingsStore: SettingsStore,
+         focusBinding: FocusState<Bool>.Binding? = nil) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+        self._settingsStore = ObservedObject(wrappedValue: settingsStore)
+        self.focusBinding = focusBinding
+    }
+    
+    private var resolvedFocusBinding: FocusState<Bool>.Binding {
+        focusBinding ?? $internalFocus
+    }
     
     var action: AddressBarActionState? {
         switch viewModel.phase {
@@ -77,7 +94,8 @@ struct MainToolbarAddressBar: View {
                 qualityIndicator: qualityIndicator,
                 rtt: viewModel.averagePingRTT,
                 action: action,
-                contacts: viewModel.contacts
+                contacts: viewModel.contacts,
+                isFocused: resolvedFocusBinding
             ) { endpoint in
                 guard let endpoint else {
                     return
@@ -154,9 +172,12 @@ struct UIKitStyledMainToolbarAddressBar: View {
     @ObservedObject
     var viewModel: MainWindowViewModel
     
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+    
     var body: some View {
         VStack(spacing: 8) {
-            MainToolbarAddressBar(viewModel: viewModel)
+            MainToolbarAddressBar(viewModel: viewModel, settingsStore: settingsStore)
             HStack(spacing: 16) {
                 Spacer()
                 

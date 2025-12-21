@@ -29,6 +29,12 @@ struct ToolbarModifierIPhone: ViewModifier {
     
     @EnvironmentObject
     var viewModel: MainWindowViewModel
+    
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+    
+    @FocusState
+    private var isAddressBarFocused: Bool
 
     func body(content: Content) -> some View {
         if horizontalSizeClass == .regular {
@@ -38,7 +44,14 @@ struct ToolbarModifierIPhone: ViewModifier {
         } else {
             ZStack(alignment: .bottom) {
                 content
-                MainToolbarAddressBar(viewModel: viewModel)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        isAddressBarFocused = false
+                    })
+                MainToolbarAddressBar(
+                    viewModel: viewModel,
+                    settingsStore: settingsStore,
+                    focusBinding: $isAddressBarFocused
+                )
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             }
@@ -77,6 +90,9 @@ struct ToolbarModifierIPad: ViewModifier {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
     
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+    
     @State
     var principalFrame: CGRect = .init(x: 320, y: 240, width: 1, height: 1)
     
@@ -93,9 +109,19 @@ struct ToolbarModifierIPad: ViewModifier {
         content
             .if(shouldPresentAddressBar) {
                 $0.overlay {
-                    HStack {
-                        MainToolbarAddressBar(viewModel: viewModel)
-                            .focused($isAddressBarFocused)
+                    ZStack {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                isAddressBarFocused = false
+                            }
+                        
+                        HStack {
+                            MainToolbarAddressBar(
+                                viewModel: viewModel,
+                                settingsStore: settingsStore,
+                                focusBinding: $isAddressBarFocused
+                            )
                             .onAppear {
                                 isAddressBarFocused = true
                             }
@@ -104,23 +130,28 @@ struct ToolbarModifierIPad: ViewModifier {
                                     shouldPresentAddressBar = false
                                 }
                             }
-                    }
-                    .if(toolbarStyle == .standard) {
-                        $0
-                            .frame(maxWidth: 400)
-                            .position(x: principalFrame.midX, y: principalFrame.midY)
-                    }
-                    .if(toolbarStyle == .compact) {
-                        $0
-                            .frame(maxWidth: 400)
-                            .position(x: principalFrame.midX, y: principalFrame.midY)
+                        }
+                        .if(toolbarStyle == .standard) {
+                            $0
+                                .frame(maxWidth: 400)
+                                .position(x: principalFrame.midX, y: principalFrame.midY)
+                        }
+                        .if(toolbarStyle == .compact) {
+                            $0
+                                .frame(maxWidth: 400)
+                                .position(x: principalFrame.midX, y: principalFrame.midY)
+                        }
                     }
                 }
             }
             .if(!shouldPresentAddressBar) {
                 $0.overlay {
                     HStack {
-                        MainToolbarAddressBar(viewModel: viewModel)
+                        MainToolbarAddressBar(
+                            viewModel: viewModel,
+                            settingsStore: settingsStore,
+                            focusBinding: $isAddressBarFocused
+                        )
                             .allowsHitTesting(false)
                             .opacity(1.0)
                     }

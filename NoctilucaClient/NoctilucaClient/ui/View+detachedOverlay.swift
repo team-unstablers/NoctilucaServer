@@ -86,11 +86,7 @@ struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
 
 #if os(macOS)
 
-fileprivate let DetachedOverlayContentPadding: CGFloat = 32
-
 struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
-    /// shadow 등이 잘리는 문제가 있어 padding을 임의로 추가한다
-    
     let role: DetachedOverlayRole
     let overlayContent: () -> OverlayContent
     
@@ -129,7 +125,6 @@ struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
             return AnyView(
                 overlayContent()
                     .frame(width: anchorState.frame.width)
-                    .padding(DetachedOverlayContentPadding)
             )
         case .tooltip:
             return AnyView(overlayContent())
@@ -137,14 +132,7 @@ struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
     }
     
     private func updateAnchorState(_ state: DetachedOverlayAnchorState) {
-        var adjustedState = state
-        // dx는 건드릴 필요 없고 dy만 건들면 됨
-        adjustedState.frame = state.frame.offsetBy(
-            dx: 0,
-            // 아니 ㅅㅂ macOS 좌표계 왜이래, +가 위로 가는거야????
-            dy: DetachedOverlayContentPadding
-        )
-        anchorState = adjustedState
+        anchorState = state
     }
 }
 
@@ -408,8 +396,7 @@ private final class DetachedOverlayController: ObservableObject {
         panel.contentView = hostingView
         panel.backgroundColor = .clear
         panel.isOpaque = false
-        // @codex, view.shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)를 이식해 주세요
-        panel.hasShadow = false
+        panel.hasShadow = true
         panel.hidesOnDeactivate = false
         panel.isMovable = false
         panel.isMovableByWindowBackground = false
@@ -429,9 +416,12 @@ private final class DetachedOverlayController: ObservableObject {
         panel.level = role.isTooltip ? .statusBar : .floating
         
         if role.isTooltip, anchorState.shouldDisplayOverlay {
-            startMouseTracking()
+            mouseLocation = NSEvent.mouseLocation
+            updateWindowFrame()
+            // startMouseTracking()
         } else {
-            stopMouseTracking()
+            updateWindowFrame()
+            // stopMouseTracking()
         }
     }
     
@@ -493,6 +483,7 @@ private final class DetachedOverlayController: ObservableObject {
     }
     
     private func startMouseTracking() {
+        /*
         guard mouseTimer == nil else { return }
         
         mouseLocation = NSEvent.mouseLocation
@@ -504,11 +495,14 @@ private final class DetachedOverlayController: ObservableObject {
         if let mouseTimer {
             RunLoop.main.add(mouseTimer, forMode: .common)
         }
+         */
     }
     
     private func stopMouseTracking() {
+        /*
         mouseTimer?.invalidate()
         mouseTimer = nil
+         */
     }
 }
 #endif

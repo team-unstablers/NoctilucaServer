@@ -13,6 +13,8 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
     private let addressBarView: NSHostingView<MainToolbarAddressBar>
     private let minWidth: CGFloat
     private let maxWidth: CGFloat
+    private weak var attachedWindow: NSWindow?
+    private var focusDismissMonitor: Any?
     private var addressBarHeight: CGFloat {
         max(32, addressBarView.fittingSize.height)
     }
@@ -37,11 +39,19 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         addressBarView.autoresizingMask = [.width]
         addressBarView.frame = NSRect(x: 0, y: 0, width: maxWidth, height: 32)
     }
+
+    deinit {
+        if let focusDismissMonitor {
+            NSEvent.removeMonitor(focusDismissMonitor)
+        }
+    }
     
     func attach(to window: NSWindow) {
         NSWindow.__NOC__swizzleLayoutIfNeeded()
 
         addressBarView.frame.size = NSSize(width: maxWidth, height: addressBarHeight)
+        attachedWindow = window
+        installFocusDismissMonitor()
         
         let toolbar = NSToolbar(identifier: "pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar")
         toolbar.delegate = self
@@ -55,6 +65,38 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         window.titlebarAppearsTransparent = true
         
         window.centerTrafficLights()
+    }
+
+    private func installFocusDismissMonitor() {
+        guard focusDismissMonitor == nil else { return }
+
+        focusDismissMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] event in
+            self?.handleFocusDismissEvent(event) ?? event
+        }
+    }
+
+    private func handleFocusDismissEvent(_ event: NSEvent) -> NSEvent? {
+        guard let window = attachedWindow, event.window === window else {
+            return event
+        }
+        guard let responderView = window.firstResponder as? NSView,
+              responderView.isDescendant(of: addressBarView) else {
+            return event
+        }
+        guard let addressBarWindow = addressBarView.window, addressBarWindow === window else {
+            return event
+        }
+
+        let addressBarFrame = addressBarView.convert(addressBarView.bounds, to: nil)
+        let location = event.locationInWindow
+        guard !addressBarFrame.contains(location) else {
+            return event
+        }
+
+        window.makeFirstResponder(nil)
+        return event
     }
     
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
