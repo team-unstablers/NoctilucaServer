@@ -69,6 +69,19 @@ enum NoctilucaClientUIEvent: Sendable {
     case pingRTTUpdated(TimeInterval)
     
     case FIXME_projectionStarted(ProjectionSession)
+
+    case inputWarningUpdated(InputWarning?)
+}
+
+struct InputWarning: Sendable, Equatable {
+    enum Kind: String, Sendable {
+        case inputMonitoringRequired
+        case eventTapUnavailable
+    }
+
+    let kind: Kind
+    let title: String
+    let message: String
 }
 
 class NoctilucaClient: ObservableObject {
@@ -97,6 +110,8 @@ class NoctilucaClient: ObservableObject {
     
     var hidioController: HIDIOController!
     var projectionChannel: ProjectionChannel!
+
+    private var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {
@@ -242,6 +257,8 @@ class NoctilucaClient: ObservableObject {
         }
         
         self.phase = .closed
+
+        self.hidioController?.disconnect(kind: .keyboard)
         
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()

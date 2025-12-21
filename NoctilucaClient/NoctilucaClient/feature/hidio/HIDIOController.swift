@@ -25,6 +25,10 @@ class HIDIOController {
         
         self.devices[kind] = device
     }
+
+    func device(for kind: HIDIOVirtualDeviceKind) -> HIDIOVirtualDevice? {
+        return devices[kind]
+    }
     
     func disconnect(kind: HIDIOVirtualDeviceKind) {
         guard let device = self.devices[kind] else {

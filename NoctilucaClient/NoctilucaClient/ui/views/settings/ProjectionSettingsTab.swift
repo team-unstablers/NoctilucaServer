@@ -17,7 +17,7 @@ struct ProjectionSettingsTab: View {
                     
                     SettingsPickerItem(value: AppSettings.InputRedirectionMethod.cocoaEventTap) {
                         Text("Cocoa Event Tap")
-                        Text("macOS의 Cocoa Event Tap API를 사용하여 입력을 리디렉션합니다.\n모든 단축키가 정상적으로 동작하지만, 접근성 / 손쉬운 사용 권한을 필요로 합니다.")
+                        Text("macOS의 Cocoa Event Tap API를 사용하여 입력을 리디렉션합니다.\n모든 단축키가 정상적으로 동작하지만, 입력 모니터링 권한을 필요로 합니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -33,6 +33,33 @@ struct ProjectionSettingsTab: View {
             } header: {
                 Text("기본 입력 설정")
             }
+
+#if os(macOS)
+            if settingsStore.settings.input.redirectionMethod == .cocoaEventTap {
+                Section {
+                    let isInputMonitoringGranted = TCCUtil.shared.isAccessGranted(for: .inputMonitoring)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(isInputMonitoringGranted ? "Input Monitoring 권한이 허용되었습니다." : "Input Monitoring 권한이 필요합니다.")
+                            .font(.headline)
+                        Text("권한이 없으면 Cocoa Event Tap을 사용할 수 없어 GameController 방식으로 자동 폴백됩니다.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack(spacing: 8) {
+                        Button("설정 열기") {
+                            TCCUtil.shared.openSystemPreferences(for: .inputMonitoring)
+                        }
+                        Button("다시 시도") {
+                            TCCUtil.shared.requestAccess(for: .inputMonitoring)
+                        }
+                    }
+                } header: {
+                    Text("입력 권한 상태")
+                }
+            }
+#endif
             
             Section {
                 VStack(alignment: .leading) {

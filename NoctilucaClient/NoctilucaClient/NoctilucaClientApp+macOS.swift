@@ -16,9 +16,13 @@ struct NoctilucaClientApp: App {
     @NSApplicationDelegateAdaptor
     private var appDelegate: AppDelegate
 
+    @StateObject
+    private var settingsStore = SettingsStore()
+
     var body: some Scene {
         WindowGroup {
             MainWindow()
+                .environmentObject(settingsStore)
         }
         .commands {
             CommandGroup(replacing: .appSettings) {
@@ -33,6 +37,7 @@ struct NoctilucaClientApp: App {
         
         Window("Settings", id: NoctilucaMeta.scopedIdentifier("ui.window.settings")) {
             SettingsWindow()
+                .environmentObject(settingsStore)
         }
         .defaultLaunchBehavior(.suppressed)
 

@@ -23,8 +23,8 @@ struct AppKitSettingsWindow: View {
     @State
     private var selectedTab: SettingsTab = .general
     
-    @StateObject
-    private var settingsStore = SettingsStore()
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
     
     @StateObject
     private var sessionSettingsStore = SessionSettingsStore()
@@ -96,6 +96,7 @@ typealias SettingsWindow = AppKitSettingsWindow
 
 #Preview {
     SettingsWindow()
+        .environmentObject(SettingsStore())
 }
 
 #endif

@@ -22,6 +22,9 @@ enum MainWindowPhase: Hashable {
 struct AppKitMainWindow: View {
     @StateObject
     var viewModel = MainWindowViewModel()
+
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
     
     var body: some View {
         VStack(spacing: 0) {
@@ -56,6 +59,7 @@ struct AppKitMainWindow: View {
         .setupAuthChallengeHandler(client: viewModel.client)
         .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
         .onAppear {
+            viewModel.bind(settingsStore: settingsStore)
         }
     }
 }

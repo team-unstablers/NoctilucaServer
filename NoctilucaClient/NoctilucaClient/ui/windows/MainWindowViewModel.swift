@@ -36,6 +36,12 @@ class MainWindowViewModel: ObservableObject {
     
     @Published
     var displayLayer: AVSampleBufferDisplayLayer? = nil
+
+    @Published
+    var inputWarning: InputWarning? = nil
+
+    private var settingsStore: SettingsStore?
+    private var settingsCancellable: AnyCancellable?
     
 
     func appendConnectionLog(_ log: String) {
@@ -70,6 +76,10 @@ class MainWindowViewModel: ObservableObject {
         let client = NoctilucaClient(session)
         
         self.client = client
+
+        if let settingsStore {
+            client.applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
+        }
         
         try await client.setup()
         self.appendConnectionLog("Sirius 프로토콜 클라이언트를 초기화했습니다")
@@ -89,6 +99,23 @@ class MainWindowViewModel: ObservableObject {
         }
         
         self.endpointURL = ""
+        self.inputWarning = nil
+    }
+
+    func bind(settingsStore: SettingsStore) {
+        if self.settingsStore === settingsStore {
+            return
+        }
+
+        self.settingsStore = settingsStore
+        settingsCancellable?.cancel()
+
+        settingsCancellable = settingsStore.$settings
+            .map { $0.input.redirectionMethod }
+            .removeDuplicates()
+            .sink { [weak self] method in
+                self?.applyInputRedirectionMethod(method)
+            }
     }
     
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {
@@ -104,12 +131,33 @@ class MainWindowViewModel: ObservableObject {
         case .closed:
             self.client = nil
             self.phase = .newConnection
+            self.inputWarning = nil
         }
     }
     
     func handleClientError(_ error: NoctilucaClientError) {
         self.errors.append(error)
         self.shouldDisplayErrorAlert = true
+    }
+
+    func handleInputWarningUpdated(_ warning: InputWarning?) {
+        self.inputWarning = warning
+    }
+
+    func retryInputRedirection() {
+        guard let settingsStore else {
+            return
+        }
+
+        applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
+    }
+
+    private func applyInputRedirectionMethod(_ method: AppSettings.InputRedirectionMethod) {
+        guard let client else {
+            return
+        }
+
+        client.applyInputRedirectionMethod(method)
     }
     
     func dismissLastError() {

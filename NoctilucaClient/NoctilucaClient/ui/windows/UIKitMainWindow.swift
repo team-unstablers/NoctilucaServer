@@ -27,6 +27,9 @@ enum MainWindowToolbarStyle {
 struct UIKitMainWindow: View {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
+
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
     
     var body: some View {
         VStack {
@@ -57,6 +60,9 @@ struct UIKitMainWindow: View {
         }
         .setupAuthChallengeHandler(client: viewModel.client)
         .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
+        .onAppear {
+            viewModel.bind(settingsStore: settingsStore)
+        }
         /*
         .onChange(of: self.scenePhase) { _, newPhase in
             if newPhase == .inactive {
@@ -73,6 +79,8 @@ typealias MainWindow = UIKitMainWindow
 
 #Preview {
     UIKitMainWindow()
+        .environmentObject(MainWindowViewModel())
+        .environmentObject(SettingsStore())
 }
 
 #endif

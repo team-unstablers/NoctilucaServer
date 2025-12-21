@@ -31,12 +31,15 @@ struct ClientStatisticsHandlerModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onReceive(client.uiEvents) { event in
-                guard case .pingRTTUpdated(let rtt) = event else {
-                    return
+                switch event {
+                case .pingRTTUpdated(let rtt):
+                    print("RTT: \(rtt * 1000) ms")
+                    viewModel.averagePingRTT = rtt
+                case .inputWarningUpdated(let warning):
+                    viewModel.handleInputWarningUpdated(warning)
+                default:
+                    break
                 }
-                
-                print("RTT: \(rtt * 1000) ms")
-                viewModel.averagePingRTT = rtt
             }
     }
 }
