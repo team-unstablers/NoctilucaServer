@@ -1,0 +1,224 @@
+//
+//  CredentialAddSheet.swift
+//  NoctilucaClient
+//
+//  Created by Gyuhwan Park on 12/21/25.
+//
+
+import SwiftUI
+
+struct CredentialAddSheet: View {
+    let scope: SessionSettingsScope
+    let handler: (ClientAuthEntry) -> Void
+
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State
+    private var selectedTemplate: TemplateKind
+
+    @State
+    private var displayName: String = ""
+
+    @State
+    private var username: String = ""
+
+    @State
+    private var password: String = ""
+
+    @State
+    private var publicKey: String = ""
+
+    @State
+    private var privateKey: String = ""
+
+    init(scope: SessionSettingsScope, handler: @escaping (ClientAuthEntry) -> Void) {
+        self.scope = scope
+        self.handler = handler
+        self._selectedTemplate = State(initialValue: TemplateKind.available(for: scope).first ?? .sshKey)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading) {
+                Text("자격 증명 추가")
+                    .font(.title2.bold())
+                Text("추가할 자격 증명 유형을 선택하세요.")
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(TemplateKind.available(for: scope)) { template in
+                    Button {
+                        selectedTemplate = template
+                    } label: {
+                        CredentialTemplateRow(template: template, isSelected: selectedTemplate == template)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                TextField("표시 이름 (선택 사항)", text: $displayName)
+                    .textFieldStyle(.roundedBorder)
+
+                templateDetailInputs
+            }
+
+            Spacer()
+
+            HStack {
+                Spacer()
+                Button("취소") {
+                    dismiss()
+                }
+                Button("추가") {
+                    handleSubmit()
+                }
+                .disabled(!canCommitSelection)
+            }
+        }
+        .padding()
+#if os(macOS)
+        .frame(minWidth: 520, minHeight: 420, alignment: .topLeading)
+#endif
+    }
+
+    private var canCommitSelection: Bool {
+        switch selectedTemplate {
+        case .password:
+            return !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .sshKey:
+            return !publicKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && !privateKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
+    @ViewBuilder
+    private var templateDetailInputs: some View {
+        switch selectedTemplate {
+        case .password:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("사용자명-비밀번호")
+                    .font(.headline)
+                TextField("사용자명", text: $username)
+                    .textFieldStyle(.roundedBorder)
+                SecureField("비밀번호", text: $password)
+                    .textFieldStyle(.roundedBorder)
+            }
+        case .sshKey:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("SSH 키")
+                    .font(.headline)
+                TextField("공개 키", text: $publicKey, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+                    .lineLimit(2...4)
+                TextField("개인 키 (PEM)", text: $privateKey, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+                    .lineLimit(3...6)
+            }
+        }
+    }
+
+    private func handleSubmit() {
+        guard canCommitSelection else { return }
+
+        let trimmedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name: String? = trimmedDisplayName.isEmpty ? nil : trimmedDisplayName
+
+        switch selectedTemplate {
+        case .password:
+            let entry = ClientAuthEntry(
+                method: .password,
+                displayName: name,
+                payload: .password(
+                    username: username.trimmingCharacters(in: .whitespacesAndNewlines),
+                    password: password
+                )
+            )
+            handler(entry)
+        case .sshKey:
+            let trimmedPublicKey = publicKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedPrivateKey = privateKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            let entry = ClientAuthEntry(
+                method: .sshKey,
+                displayName: name,
+                payload: .sshKey(
+                    publicKey: trimmedPublicKey,
+                    privateKey: Data(trimmedPrivateKey.utf8)
+                )
+            )
+            handler(entry)
+        }
+
+        dismiss()
+    }
+}
+
+private struct CredentialTemplateRow: View {
+    let template: CredentialAddSheet.TemplateKind
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(template.title)
+                    .font(.headline)
+                Text(template.description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isSelected ? Color.accentColor.opacity(0.1) : Color.secondary.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+extension CredentialAddSheet {
+    enum TemplateKind: String, Identifiable {
+        case password
+        case sshKey
+
+        var id: String { rawValue }
+
+        static func available(for scope: SessionSettingsScope) -> [TemplateKind] {
+            switch scope {
+            case .global:
+                return [.sshKey]
+            case .session:
+                return [.password, .sshKey]
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .password:
+                return "사용자명-비밀번호 인증"
+            case .sshKey:
+                return "SSH 키 인증"
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .password:
+                return "사용자명과 비밀번호를 사용한 인증을 수행합니다."
+            case .sshKey:
+                return "SSH 공개 키/개인 키 기반 인증을 수행합니다."
+            }
+        }
+    }
+}
+
+#Preview {
+    CredentialAddSheet(scope: .session) { _ in }
+}

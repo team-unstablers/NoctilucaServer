@@ -33,10 +33,7 @@ struct SecuritySessionSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                VStack(alignment: .leading) {
-                    Text("자격 증명 관리 UI는 준비 중입니다.")
-                        .foregroundStyle(.secondary)
-                }
+                CredentialsListContainer()
             } header: {
                 Text("자격 증명")
             }

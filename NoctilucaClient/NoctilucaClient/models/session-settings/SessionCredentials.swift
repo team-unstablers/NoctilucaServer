@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ClientAuthEntry: Codable, Sendable, Hashable {
+struct ClientAuthEntry: Codable, Sendable, Hashable, Identifiable {
     var id: UUID = UUID()
     var method: ClientAuthMethod
     var displayName: String? = nil
