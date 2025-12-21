@@ -71,6 +71,7 @@ struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
                     : -overlaySize.height - DetachedOverlayConstants.normalSpacing
                 
                 overlayContent()
+                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
                     .onGeometryChange(for: CGSize.self) { proxy in
                         proxy.size
                     } action: { geom in
@@ -84,12 +85,17 @@ struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
 #endif
 
 #if os(macOS)
+
+fileprivate let DetachedOverlayContentPadding: CGFloat = 32
+
 struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
+    /// shadow 등이 잘리는 문제가 있어 padding을 임의로 추가한다
+    
     let role: DetachedOverlayRole
     let overlayContent: () -> OverlayContent
     
     @State
-    private var anchorFrame: CGRect = .zero
+    private var anchorState: DetachedOverlayAnchorState = .hidden
     
     @StateObject
     private var controller = DetachedOverlayController()
@@ -97,14 +103,17 @@ struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(
-                DetachedOverlayAnchorView { frame in
-                    anchorFrame = frame
+                DetachedOverlayAnchorView { state in
+                    // HACK: prevent 'Modifying state during view update, this will cause undefined behavior.'
+                    DispatchQueue.main.async {
+                        self.updateAnchorState(state)
+                    }
                 }
             )
             .background(
                 DetachedOverlayUpdater(
                     role: role,
-                    anchorFrame: anchorFrame,
+                    anchorState: anchorState,
                     content: overlayAnyView(),
                     controller: controller
                 )
@@ -119,17 +128,29 @@ struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
         case .normalWindow:
             return AnyView(
                 overlayContent()
-                    .frame(width: anchorFrame.width)
+                    .frame(width: anchorState.frame.width)
+                    .padding(DetachedOverlayContentPadding)
             )
         case .tooltip:
             return AnyView(overlayContent())
         }
     }
+    
+    private func updateAnchorState(_ state: DetachedOverlayAnchorState) {
+        var adjustedState = state
+        // dx는 건드릴 필요 없고 dy만 건들면 됨
+        adjustedState.frame = state.frame.offsetBy(
+            dx: 0,
+            // 아니 ㅅㅂ macOS 좌표계 왜이래, +가 위로 가는거야????
+            dy: DetachedOverlayContentPadding
+        )
+        anchorState = adjustedState
+    }
 }
 
 private struct DetachedOverlayUpdater: NSViewRepresentable {
     let role: DetachedOverlayRole
-    let anchorFrame: CGRect
+    let anchorState: DetachedOverlayAnchorState
     let content: AnyView
     let controller: DetachedOverlayController
     
@@ -138,37 +159,63 @@ private struct DetachedOverlayUpdater: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSView, context: Context) {
-        controller.update(role: role, anchorFrame: anchorFrame, content: content)
+        controller.update(role: role, anchorState: anchorState, content: content)
+    }
+}
+
+private struct DetachedOverlayAnchorState: Equatable {
+    var frame: CGRect
+    var isKey: Bool
+    var isMiniaturized: Bool
+    var isVisible: Bool
+    var isAppActive: Bool
+    
+    static let hidden = DetachedOverlayAnchorState(
+        frame: .zero,
+        isKey: false,
+        isMiniaturized: false,
+        isVisible: false,
+        isAppActive: false
+    )
+    
+    var shouldDisplayOverlay: Bool {
+        guard isAppActive else { return false }
+        guard isKey else { return false }
+        guard !isMiniaturized else { return false }
+        return isVisible
     }
 }
 
 private struct DetachedOverlayAnchorView: NSViewRepresentable {
-    let onFrameChange: (CGRect) -> Void
+    let onStateChange: (DetachedOverlayAnchorState) -> Void
     
     func makeNSView(context: Context) -> AnchorNSView {
         let view = AnchorNSView()
-        view.onFrameChange = onFrameChange
+        view.onStateChange = onStateChange
         return view
     }
     
     func updateNSView(_ nsView: AnchorNSView, context: Context) {
-        nsView.onFrameChange = onFrameChange
+        nsView.onStateChange = onStateChange
         nsView.reportFrame()
     }
     
     final class AnchorNSView: NSView {
-        var onFrameChange: ((CGRect) -> Void)?
+        var onStateChange: ((DetachedOverlayAnchorState) -> Void)?
         private var windowObservers: [NSObjectProtocol] = []
+        private var appObservers: [NSObjectProtocol] = []
         
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             attachWindowObservers()
+            attachAppObservers()
             reportFrame()
         }
         
         override func viewWillMove(toWindow newWindow: NSWindow?) {
             if window !== newWindow {
                 detachWindowObservers()
+                detachAppObservers()
             }
             super.viewWillMove(toWindow: newWindow)
         }
@@ -185,13 +232,26 @@ private struct DetachedOverlayAnchorView: NSViewRepresentable {
         
         deinit {
             detachWindowObservers()
+            detachAppObservers()
         }
         
         func reportFrame() {
-            guard let window else { return }
+            guard let window else {
+                onStateChange?(.hidden)
+                return
+            }
+            
             let frameInWindow = convert(bounds, to: nil)
             let frameInScreen = window.convertToScreen(frameInWindow)
-            onFrameChange?(frameInScreen)
+            let isVisible = window.isVisible && window.occlusionState.contains(.visible)
+            let state = DetachedOverlayAnchorState(
+                frame: frameInScreen,
+                isKey: window.isKeyWindow,
+                isMiniaturized: window.isMiniaturized,
+                isVisible: isVisible,
+                isAppActive: NSApp.isActive
+            )
+            onStateChange?(state)
         }
         
         private func attachWindowObservers() {
@@ -217,6 +277,51 @@ private struct DetachedOverlayAnchorView: NSViewRepresentable {
                     self?.reportFrame()
                 }
             )
+            windowObservers.append(
+                center.addObserver(
+                    forName: NSWindow.didBecomeKeyNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.reportFrame()
+                }
+            )
+            windowObservers.append(
+                center.addObserver(
+                    forName: NSWindow.didResignKeyNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.reportFrame()
+                }
+            )
+            windowObservers.append(
+                center.addObserver(
+                    forName: NSWindow.didMiniaturizeNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.reportFrame()
+                }
+            )
+            windowObservers.append(
+                center.addObserver(
+                    forName: NSWindow.didDeminiaturizeNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.reportFrame()
+                }
+            )
+            windowObservers.append(
+                center.addObserver(
+                    forName: NSWindow.didChangeOcclusionStateNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.reportFrame()
+                }
+            )
         }
         
         private func detachWindowObservers() {
@@ -225,6 +330,36 @@ private struct DetachedOverlayAnchorView: NSViewRepresentable {
             windowObservers.forEach { center.removeObserver($0) }
             windowObservers.removeAll()
         }
+        
+        private func attachAppObservers() {
+            detachAppObservers()
+            let center = NotificationCenter.default
+            appObservers.append(
+                center.addObserver(
+                    forName: NSApplication.didBecomeActiveNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.reportFrame()
+                }
+            )
+            appObservers.append(
+                center.addObserver(
+                    forName: NSApplication.didResignActiveNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.reportFrame()
+                }
+            )
+        }
+        
+        private func detachAppObservers() {
+            guard !appObservers.isEmpty else { return }
+            let center = NotificationCenter.default
+            appObservers.forEach { center.removeObserver($0) }
+            appObservers.removeAll()
+        }
     }
 }
 
@@ -232,14 +367,14 @@ private final class DetachedOverlayController: ObservableObject {
     private var panel: NSPanel?
     private var hostingView: NSHostingView<AnyView>?
     private var role: DetachedOverlayRole = .normalWindow(attachTo: .down)
-    private var anchorFrame: CGRect = .zero
+    private var anchorState: DetachedOverlayAnchorState = .hidden
     private var contentSize: CGSize = .zero
     private var mouseLocation: NSPoint = .zero
     private var mouseTimer: Timer?
     
-    func update(role: DetachedOverlayRole, anchorFrame: CGRect, content: AnyView) {
+    func update(role: DetachedOverlayRole, anchorState: DetachedOverlayAnchorState, content: AnyView) {
         self.role = role
-        self.anchorFrame = anchorFrame
+        self.anchorState = anchorState
         
         ensurePanel()
         hostingView?.rootView = content
@@ -273,6 +408,7 @@ private final class DetachedOverlayController: ObservableObject {
         panel.contentView = hostingView
         panel.backgroundColor = .clear
         panel.isOpaque = false
+        // @codex, view.shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)를 이식해 주세요
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.isMovable = false
@@ -292,7 +428,7 @@ private final class DetachedOverlayController: ObservableObject {
         panel.acceptsMouseMovedEvents = !role.isTooltip
         panel.level = role.isTooltip ? .statusBar : .floating
         
-        if role.isTooltip {
+        if role.isTooltip, anchorState.shouldDisplayOverlay {
             startMouseTracking()
         } else {
             stopMouseTracking()
@@ -322,6 +458,10 @@ private final class DetachedOverlayController: ObservableObject {
     private func updateWindowFrame() {
         guard let panel else { return }
         guard contentSize.width > 1, contentSize.height > 1 else { return }
+        guard anchorState.shouldDisplayOverlay else {
+            panel.orderOut(nil)
+            return
+        }
         
         let origin: CGPoint
         
@@ -333,6 +473,7 @@ private final class DetachedOverlayController: ObservableObject {
                 y: location.y - DetachedOverlayConstants.tooltipOffset.y - contentSize.height
             )
         case .normalWindow(let attachTo):
+            let anchorFrame = anchorState.frame
             guard anchorFrame.width > 1, anchorFrame.height > 1 else {
                 panel.orderOut(nil)
                 return
