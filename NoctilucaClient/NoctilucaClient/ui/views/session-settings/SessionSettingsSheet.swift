@@ -13,9 +13,36 @@ struct SessionSettingsSheet: View {
         case projection
         case security
     }
+
+    struct Action: Identifiable {
+        enum Kind: Int {
+            case cancel = 0
+            case secondary = 1
+            case primary = 2
+        }
+
+        let kind: Kind
+        let title: String
+        let role: ButtonRole?
+        let isEnabled: Bool
+        let handler: () -> Void
+
+        init(kind: Kind, title: String, role: ButtonRole? = nil, isEnabled: Bool = true, handler: @escaping () -> Void) {
+            self.kind = kind
+            self.title = title
+            self.role = role
+            self.isEnabled = isEnabled
+            self.handler = handler
+        }
+
+        var id: String {
+            "\(kind.rawValue)-\(title)"
+        }
+    }
     
     let scope: SessionSettingsScope
     let contactId: UUID?
+    let actions: [Action]
 
     @Binding
     var sessionSettings: SessionSettings
@@ -26,26 +53,27 @@ struct SessionSettingsSheet: View {
     init(
         scope: SessionSettingsScope = .global,
         sessionSettings: Binding<SessionSettings>,
-        contactId: UUID? = nil
+        contactId: UUID? = nil,
+        actions: [Action] = []
     ) {
         self.scope = scope
         self._sessionSettings = sessionSettings
         self.contactId = contactId
+        self.actions = actions
+        self._selectedTab = State(initialValue: scope == .session ? .general : .projection)
     }
     
     @ViewBuilder
     var _body: some View {
         TabView(selection: $selectedTab) {
-            /*
             if scope == .session {
-                GeneralSettingsTab()
+                GeneralSessionSettingsTab(sessionSettings: $sessionSettings)
                     .tabItem {
                         Text("일반")
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
             }
-             */
             ProjectionSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
                 .tabItem {
                     Text("프로젝션")
@@ -66,34 +94,47 @@ struct SessionSettingsSheet: View {
         }
         .tabViewStyle(.sidebarAdaptable)
     }
+
+    @ViewBuilder
+    private var content: some View {
+        if actions.isEmpty {
+            _body
+        } else {
+            _body
+                .safeAreaInset(edge: .bottom) {
+                    actionBar
+                }
+        }
+    }
+
+    private var actionBar: some View {
+        HStack(spacing: 12) {
+            ForEach(actions.sorted { $0.kind.rawValue < $1.kind.rawValue }) { action in
+                Button(action.title, role: action.role) {
+                    action.handler()
+                }
+                .buttonStyle(action.kind == .primary ? .borderedProminent : .bordered)
+                .disabled(!action.isEnabled)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
+    }
     
 #if os(macOS)
     var body: some View {
-        _body
+        content
     }
 #else
     var body: some View {
         NavigationStack {
-            _body
+            content
                 .navigationTitle("세션 설정")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button {
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                    }
-                    
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(role: .confirm) {
-                        } label: {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
         }
-        .interactiveDismissDisabled()
+        .interactiveDismissDisabled(!actions.isEmpty)
     }
 #endif
 }

@@ -22,6 +22,21 @@ struct MainWindowNewConnectionPhaseContentView: View {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
 
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+
+    @State
+    private var isContactEditorPresented: Bool = false
+
+    @State
+    private var contactDraft: ContactItem = ContactItem(name: nil, endpointURL: "", preset: SessionSettings(scope: .session))
+
+    @State
+    private var isEditingContact: Bool = false
+
+    @State
+    private var isDeleteConfirmationPresented: Bool = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading) {
@@ -44,22 +59,52 @@ struct MainWindowNewConnectionPhaseContentView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
 
-            Text("저장된 호스트 목록")
-                .font(.title)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 16)
+            HStack {
+                Text("저장된 호스트 목록")
+                    .font(.title)
+                Spacer()
+                Button("추가") {
+                    presentContactEditor(for: nil)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
 
             ScrollView {
                 VStack {
-                    let item = ContactItem(name: "집 컴퓨터", endpointURL: "localhost:8283")
-                    ContactItemView(item: item) { action in
-                        switch action {
-                        case .launch:
-                            Task {
-                                try? await viewModel.startSession(endpoint: .contact(item: item))
+                    if viewModel.isLoadingContacts {
+                        ProgressView()
+                            .padding(.vertical, 32)
+                    } else if let contactsLoadError = viewModel.contactsLoadError {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("연락처 목록을 불러오지 못했습니다.")
+                                .font(.headline)
+                            Text(contactsLoadError)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 16)
+                    } else if contacts.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("(저장된 호스트가 없습니다)")
+                                .font(.headline)
+                            Text("우측 상단의 주소창에서 연결할 호스트를 입력하거나 연락처를 추가하세요.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 16)
+                    } else {
+                        ForEach(viewModel.contacts) { item in
+                            ContactItemView(item: item) { action in
+                                switch action {
+                                case .launch:
+                                    Task {
+                                        try? await viewModel.startSession(endpoint: .contact(item: item))
+                                    }
+                                case .edit:
+                                    presentContactEditor(for: item)
+                                }
                             }
-                        case .edit:
-                            break
                         }
                     }
                 }
@@ -69,6 +114,71 @@ struct MainWindowNewConnectionPhaseContentView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(isPresented: $isContactEditorPresented) {
+            SessionSettingsSheet(
+                scope: .session,
+                sessionSettings: $contactDraft.settings,
+                contactId: contactDraft.id,
+                actions: [
+                    .init(kind: .cancel, title: "취소", role: .cancel) {
+                        isContactEditorPresented = false
+                    },
+                    isEditingContact
+                        ? .init(kind: .secondary, title: "삭제", role: .destructive) {
+                            isDeleteConfirmationPresented = true
+                        }
+                        : nil,
+                    .init(kind: .primary, title: isEditingContact ? "저장" : "추가") {
+                        saveContact()
+                    }
+                ].compactMap { $0 }
+            )
+        }
+        .alert("연락처 삭제", isPresented: $isDeleteConfirmationPresented) {
+            Button("삭제", role: .destructive) {
+                deleteContact()
+            }
+            Button("취소", role: .cancel) {
+                isDeleteConfirmationPresented = false
+            }
+        } message: {
+            Text("이 연락처를 삭제하면 복구할 수 없습니다.")
+        }
+    }
+
+    private func presentContactEditor(for item: ContactItem?) {
+        if let item {
+            contactDraft = item
+            isEditingContact = true
+        } else {
+            contactDraft = ContactItem(
+                name: nil,
+                endpointURL: "",
+                preset: settingsStore.settings.sessionDefaults
+            )
+            isEditingContact = false
+        }
+
+        isContactEditorPresented = true
+    }
+
+    private func saveContact() {
+        do {
+            try ContactStore.save(contactDraft)
+            isContactEditorPresented = false
+        } catch {
+            print("Failed to save contact: \(error.localizedDescription)")
+        }
+    }
+
+    private func deleteContact() {
+        do {
+            try ContactStore.remove(id: contactDraft.id)
+            isDeleteConfirmationPresented = false
+            isContactEditorPresented = false
+        } catch {
+            print("Failed to delete contact: \(error.localizedDescription)")
+        }
     }
 }
 
@@ -348,6 +458,7 @@ struct MainWindowContentView: View {
     
     MainWindowNewConnectionPhaseContentView()
         .environmentObject(viewModel)
+        .environmentObject(SettingsStore(loadFromDisk: false))
         .frame(minWidth: 640, minHeight: 480)
 }
 

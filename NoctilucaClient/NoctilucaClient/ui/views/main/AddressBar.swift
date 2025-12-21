@@ -250,6 +250,7 @@ struct AddressBar: View {
     }
     
     let endpointURL: String
+    let contacts: [ContactItem]
     
     let securityIndicator: AddressBarSecurityIndicatorState?
     
@@ -265,9 +266,11 @@ struct AddressBar: View {
          qualityIndicator: AddressBarQualityIndicatorState? = nil,
          rtt: TimeInterval = 0,
          action: AddressBarActionState? = nil,
+         contacts: [ContactItem] = [],
          submitHandler: @escaping (EndpointKind?) -> Void) {
         self.endpointURL = endpointURL
         self._draftURL = .init(initialValue: endpointURL)
+        self.contacts = contacts
         self.securityIndicator = securityIndicator
         self.qualityIndicator = qualityIndicator
         self.rtt = rtt
@@ -280,12 +283,7 @@ struct AddressBar: View {
     var draftURL: String = "private-resource-02.internal.contoso.com"
     
     @State
-    var candidates: [EndpointKind] = [
-        .quickConnect(endpointURL: "internal01.contoso.com"),
-        .quickConnect(endpointURL: "internal02.contoso.com"),
-        .contact(item: ContactItem(name: "집 컴퓨터", endpointURL: "home.cheesekun.me")),
-        .contact(item: ContactItem(name: "회사 컴퓨터", endpointURL: "work.cheesekun.me")),
-    ]
+    var candidates: [EndpointKind] = []
     
     
     @State
@@ -389,16 +387,7 @@ struct AddressBar: View {
                     }
                     .onChange(of: draftURL) { _, newValue in
                         self.candidateFocusIndex = nil
-                        
-                        if !newValue.isEmpty {
-                            self.candidates = [
-                                .quickConnect(endpointURL: draftURL),
-                                .connect(endpointURL: draftURL),
-                            ]
-                        } else {
-                            // TODO
-                            self.candidates = []
-                        }
+                        updateCandidates(for: newValue)
                     }
             }
             .padding(.vertical, 12)
@@ -458,6 +447,13 @@ struct AddressBar: View {
                     } completion: {
                     }
                 }
+            }
+            .onChange(of: contactSignature) { _, _ in
+                candidateFocusIndex = nil
+                updateCandidates(for: draftURL)
+            }
+            .onAppear {
+                updateCandidates(for: draftURL)
             }
             
             HStack {
@@ -536,12 +532,7 @@ struct AddressBar: View {
             return
         }
 
-        switch candidate {
-        case .connect:
-            fatalError("TODO: 설정 시트를 띄우도록 수정하십시오")
-        case .contact, .quickConnect:
-            self.submitHandler(candidate)
-        }
+        self.submitHandler(candidate)
     }
 
     private func updateHoverIndex(_ index: Int, isHovering: Bool) {
@@ -558,13 +549,48 @@ struct AddressBar: View {
         self.isFocused = false
         self.submitCandidate(self.candidates[index])
     }
+
+    private func updateCandidates(for query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        var updated: [EndpointKind] = []
+
+        if !trimmed.isEmpty {
+            updated.append(.quickConnect(endpointURL: trimmed))
+            updated.append(.connect(endpointURL: trimmed))
+        }
+
+        let matches = filterContacts(for: trimmed)
+        updated.append(contentsOf: matches.map { .contact(item: $0) })
+
+        self.candidates = updated
+    }
+
+    private func filterContacts(for query: String) -> [ContactItem] {
+        guard !contacts.isEmpty else { return [] }
+
+        if query.isEmpty {
+            return contacts
+        }
+
+        return contacts.filter { item in
+            item.displayName.localizedCaseInsensitiveContains(query)
+                || item.endpointURL.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    private var contactSignature: [String] {
+        contacts.map { item in
+            "\(item.id.uuidString):\(item.displayName):\(item.endpointURL)"
+        }
+    }
 }
 
 #Preview {
     VStack {
         VStack() {
             AddressBar(
-                endpointURL: ""
+                endpointURL: "",
+                contacts: []
             ) { action in
                 print(action as Any)
             }

@@ -13,6 +13,7 @@ enum ContactStoreError: LocalizedError {
 
 struct ContactStore {
     private static let contactsDirectoryName = "contacts"
+    static let didChangeNotification = Notification.Name("NoctilucaClient.ContactStoreDidChange")
 
     static func save(_ contact: ContactItem) throws {
         let fileManager = FileManager.default
@@ -29,6 +30,7 @@ struct ContactStore {
         let json = try jsonEncoder.encode(contact)
         try json.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        notifyChange()
     }
 
     static func load(id: UUID) throws -> ContactItem {
@@ -74,6 +76,7 @@ struct ContactStore {
         }
 
         try fileManager.removeItem(at: url)
+        notifyChange()
     }
 
     static func contactURL(for id: UUID) throws -> URL {
@@ -87,6 +90,10 @@ struct ContactStore {
 }
 
 private extension ContactStore {
+    static func notifyChange() {
+        NotificationCenter.default.post(name: didChangeNotification, object: nil)
+    }
+
     static let jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .useDefaultKeys
