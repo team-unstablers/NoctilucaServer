@@ -8,10 +8,12 @@
 import Foundation
 
 struct ContactItem {
+    let id: UUID
     let name: String
     let endpointURL: String
     
-    init(name: String?, endpointURL: String) {
+    init(id: UUID = UUID(), name: String?, endpointURL: String) {
+        self.id = id
         self.name = name ?? ""
         self.endpointURL = endpointURL
     }

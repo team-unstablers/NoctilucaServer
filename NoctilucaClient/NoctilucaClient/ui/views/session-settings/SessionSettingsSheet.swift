@@ -7,11 +7,6 @@
 
 import SwiftUI
 
-enum SessionSettingsScope {
-    case global
-    case session
-}
-
 private struct SessionSettingsScopeKey: EnvironmentKey {
     static let defaultValue = SessionSettingsScope.global
 }
@@ -30,11 +25,14 @@ struct SessionSettingsSheet: View {
         case security
     }
     
-    let scope: SessionSettingsScope = .global
+    let scope: SessionSettingsScope
     
     @State
     private var selectedTab: SettingsTab = .general
 
+    init(scope: SessionSettingsScope = .global) {
+        self.scope = scope
+    }
     
     @ViewBuilder
     var _body: some View {
@@ -101,4 +99,5 @@ struct SessionSettingsSheet: View {
 #Preview {
     SessionSettingsSheet()
         .frame(minHeight: 720)
+        .environmentObject(SessionSettingsStore(loadFromDisk: false))
 }

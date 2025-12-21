@@ -25,6 +25,9 @@ struct AppKitSettingsWindow: View {
     
     @StateObject
     private var settingsStore = SettingsStore()
+    
+    @StateObject
+    private var sessionSettingsStore = SessionSettingsStore()
 
     var body: some View {
         NavigationStack {
@@ -69,6 +72,7 @@ struct AppKitSettingsWindow: View {
             .frame(minWidth: 640)
         }
         .environmentObject(settingsStore)
+        .environmentObject(sessionSettingsStore)
         .navigationTitle("test")
         .navigationSubtitle("test")
         .toolbar {
