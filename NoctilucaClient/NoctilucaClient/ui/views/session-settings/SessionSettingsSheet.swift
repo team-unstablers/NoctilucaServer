@@ -97,13 +97,46 @@ struct SessionSettingsSheet: View {
 
     @ViewBuilder
     private var content: some View {
-        if actions.isEmpty {
-            _body
-        } else {
-            _body
-                .safeAreaInset(edge: .bottom) {
-                    actionBar
+        _body
+#if os(macOS)
+            .frame(height: 600)
+#endif
+            .toolbar {
+                toolbarItems
+            }
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarItems: some ToolbarContent {
+#if os(iOS)
+        #error("TODO: 분기해야 합니다!!")
+#endif
+        ToolbarItemGroup(placement: .destructiveAction) {
+            ForEach(actions.filter { $0.kind == .cancel }) { action in
+                Button(action.title, role: action.role) {
+                    action.handler()
                 }
+                .disabled(!action.isEnabled)
+            }
+        }
+        
+        ToolbarItemGroup(placement: .cancellationAction) {
+            ForEach(actions.filter { $0.kind == .secondary }) { action in
+                Button(action.title, role: action.role) {
+                    action.handler()
+                }
+                .disabled(!action.isEnabled)
+            }
+        }
+
+        
+        ToolbarItemGroup(placement: .confirmationAction) {
+            ForEach(actions.filter { $0.kind == .primary }) { action in
+                Button(action.title, role: action.role) {
+                    action.handler()
+                }
+                .disabled(!action.isEnabled)
+            }
         }
     }
 
