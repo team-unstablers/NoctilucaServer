@@ -1,15 +1,63 @@
 <section id="project-info">
 
-# Noctiluca 
+# Noctiluca (Monorepo)
 
-Noctiluca는 macOS 호스트용 원격 제어 솔루션을 제공하는 소프트웨어입니다.
+Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는 서버/클라이언트 앱과
+핵심 프로토콜 라이브러리를 함께 관리하는 **monorepo**입니다.
 
-# TECHNOLOGIES USED
+# REPOSITORY LAYOUT (TOP-LEVEL)
 
-- SwiftUI
-- AVCaptureSession / ScreenCaptureKit 혼합 사용
-- Google Protobuf 3
-- QUIC (via Network.framework)
+- `SiriusKit/` - Sirius 프로토콜/채널/트랜스포트 코어 라이브러리 (server/client 공용)
+- `NoctilucaServer/` - macOS 호스트 앱 (세션 수락, 인증, 입력 인젝션, 화면 전송)
+- `NoctilucaClient/` - macOS/iOS 클라이언트 앱 (연결/인증, 입력 전송, 화면 수신/디코딩)
+- `NoctilucaPluginKit/` - 플러그인 번들 계약/메타데이터 스펙
+- `SamplePluginBundle/` - 샘플 플러그인 번들
+- `docs/`, `NoctilucaServer.xcworkspace`, `NoctilucaServerTests/` 등
+
+# TECHNOLOGIES USED (CROSS-CUTTING)
+
+- Swift / SwiftUI
+- Network.framework (QUIC)
+- SwiftProtobuf 3 (Sirius msgdef)
+- ScreenCaptureKit + AVFoundation(AVCaptureSession)
+- VideoToolbox (H.264/H.265 encode/decode)
+- CoreGraphics / CoreMedia
+- Security.framework / Keychain
+- GameController (클라이언트 입력 디바이스)
+- OSLog/콘솔 로깅
+
+# ARCHITECTURE OVERVIEW (CROSS-MODULE)
+
+## 1) Sirius Protocol / Session
+- 세션/채널/메시지/트랜스포트 규격은 SiriusKit이 정의합니다.
+- MainChannel에서 handshake + 인증을 처리하고, 인증 완료 후 기능 채널을 엽니다.
+- 기능 채널은 UUID 기반 feature로 식별됩니다 (예: HIDIO, Projection).
+
+## 2) Transport (QUIC)
+- QUIC는 Network.framework 기반 구현이며, ALPN은 `pl.unstabler.sirius`를 사용합니다.
+- 기본 포트는 8282입니다 (`SiriusQUICDefaultPort`).
+
+## 3) Projection (Video)
+- 서버: ScreenCaptureKit/AVCaptureSession 캡처 → VideoToolbox 인코딩 → ProjectionDataChannel 전송
+- 클라이언트: ProjectionDataChannel 수신 → VTDecompressionSession 디코딩 → AVSampleBufferDisplayLayer 렌더링
+- 코덱 협상은 Sirius msgdef 기반 옵션을 사용합니다.
+
+## 4) Input (HIDIO)
+- 클라이언트에서 HIDIO 채널로 키보드/마우스 이벤트를 전송합니다.
+- 서버는 HID 이벤트를 호스트 시스템에 인젝션합니다.
+
+## 5) Auth / Plugin
+- 서버는 인증을 플러그인 번들로 확장할 수 있습니다. 기본 인증 번들이 포함되어 있습니다.
+- 플러그인 메타데이터는 NoctilucaPluginKit 스펙을 따릅니다.
+
+# COORDINATION & SOURCE OF TRUTH
+
+- 프로토콜/메시지/코덱 옵션과 같은 공용 규격은 SiriusKit이 기준입니다.
+- 서버/클라이언트 동시 변경이 필요한 경우, 두 앱의 흐름(핸드셰이크/채널)을 함께 확인하세요.
+- 세부 구조는 각 서브프로젝트의 `AGENTS.md`를 우선 참조합니다:
+  - `SiriusKit/AGENTS.md`
+  - `NoctilucaServer/AGENTS.md`
+  - `NoctilucaClient/AGENTS.md`
 
 ## Recent Notes
 
