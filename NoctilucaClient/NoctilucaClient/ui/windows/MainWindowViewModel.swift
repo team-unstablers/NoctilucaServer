@@ -152,11 +152,19 @@ class MainWindowViewModel: ObservableObject {
             }
             
             await client.close()
+            self.client = nil
         }
         
         self.endpointURL = ""
         self.sessionSettings = nil
         self.inputWarning = nil
+        
+        if let displayLayer = self.displayLayer {
+            displayLayer.flushAndRemoveImage()
+            self.displayLayer = nil
+        }
+        
+        self.phase = .newConnection
     }
 
     func bind(settingsStore: SettingsStore) {
@@ -313,9 +321,7 @@ class MainWindowViewModel: ObservableObject {
         case .panic:
             break
         case .closed:
-            self.client = nil
-            self.phase = .newConnection
-            self.inputWarning = nil
+            self.stopSession()
         }
     }
     
