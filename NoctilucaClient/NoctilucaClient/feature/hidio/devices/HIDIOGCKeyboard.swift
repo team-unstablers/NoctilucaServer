@@ -14,11 +14,14 @@ import SiriusKitClient
 @objc
 class HIDIOGCKeyboardLifecycleListener: NSObject {
     @objc
-    public func keyboardConnected() {
+    public func keyboardConnected(_ notification: NSNotification) {
+        let keyboard = notification.object as! GCKeyboard
+        print("HIDIOGCKeyboard connected, \(keyboard.vendorName)")
     }
     
     @objc
     public func keyboardDisconnected() {
+        print("HIDIOGCKeyboard disconnected")
     }
 }
 
@@ -69,12 +72,16 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
     
     func connect(to controller: HIDIOController) {
         self.controller = controller
-        
+      
         self.keyboardInput.keyChangedHandler = { [weak self] keyboard, key, keyCode, pressed in
             // print(keyboard, key, keyCode, pressed)
             Task {
                 let keyCode = LinuxKeycode.from(gameController: keyCode)
-                try? await self?.controller?.keyDown(keyCode: keyCode)
+                if pressed {
+                    try? await self?.controller?.keyDown(keyCode: keyCode)
+                } else {
+                    try? await self?.controller?.keyUp(keyCode: keyCode)
+                }
             }
         }
     }

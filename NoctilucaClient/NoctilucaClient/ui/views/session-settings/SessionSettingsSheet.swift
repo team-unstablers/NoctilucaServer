@@ -109,8 +109,29 @@ struct SessionSettingsSheet: View {
     @ToolbarContentBuilder
     private var toolbarItems: some ToolbarContent {
 #if os(iOS)
-        #error("TODO: 분기해야 합니다!!")
-#endif
+        #warning("FIXME: 이거 너무 난잡해요 ㅠㅠ")
+        ToolbarItemGroup(placement: .topBarLeading) {
+            ForEach(actions.filter { $0.kind == .cancel }) { action in
+                Button(action.title, role: action.role) {
+                    action.handler()
+                }
+                .disabled(!action.isEnabled)
+            }
+        }
+        
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                ForEach(actions.filter { $0.kind == .secondary || $0.kind == .primary }.sorted { $0.kind.rawValue < $1.kind.rawValue }) { action in
+                    Button(action.title, role: action.role) {
+                        action.handler()
+                    }
+                    .disabled(!action.isEnabled)
+                }
+            } label: {
+                Image(systemName: "checkmark")
+            }
+        }
+#else
         ToolbarItemGroup(placement: .destructiveAction) {
             ForEach(actions.filter { $0.kind == .cancel }) { action in
                 Button(action.title, role: action.role) {
@@ -138,6 +159,7 @@ struct SessionSettingsSheet: View {
                 .disabled(!action.isEnabled)
             }
         }
+#endif
     }
 
     private var actionBar: some View {

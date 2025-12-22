@@ -14,9 +14,7 @@ struct MobileUIMainView: View {
     
     var body: some View {
         NavigationStack(path: $viewModel.navState) {
-            SettingsWindow()
-            
-            // MainWindow()
+            MainWindow()
             /*
                 .toolbar {
 
