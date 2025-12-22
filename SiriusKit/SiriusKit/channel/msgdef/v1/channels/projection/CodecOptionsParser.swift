@@ -24,12 +24,14 @@ public struct CodecOptionsParser {
         }
     }
     
+    /*
     public static let supportedKeys: Set<CodecOptionKey> = [
         .colorFormat,
         .hardwareAcceleration,
         .level,
         .profile
     ]
+     */
     
     /// Parses an options string into CodecOptions, splitting mandatory/optional entries with `!required`.
     public static func parse(optionsString: String?) -> CodecOptions {
@@ -39,7 +41,7 @@ public struct CodecOptionsParser {
         
         for segment in segments {
             let typedKey = CodecOptionKey(rawValue: segment.key)
-            guard supportedKeys.contains(typedKey) else { continue }
+            // guard supportedKeys.contains(typedKey) else { continue }
             
             let typedValue = CodecOptionValue(rawValue: segment.value)
             if segment.required {

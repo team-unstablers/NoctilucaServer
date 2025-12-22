@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AddressBarCandidateItemView: View {
+private struct AddressBarCandidateItemView: View {
     let candidate: EndpointKind
     let query: String
     let isFocused: Bool

@@ -21,7 +21,7 @@ enum AddressBarQualityIndicatorState {
     case excellent
 }
 
-enum AddressBarDegradationIndicatorState {
+private enum AddressBarDegradationIndicatorState {
     case none
     
     case hardwareEncoderUnavailable
@@ -51,7 +51,7 @@ enum AddressBarActionState {
     }
 }
 
-struct AddressBarSecurityIndicator: View {
+private struct AddressBarSecurityIndicator: View {
     let state: AddressBarSecurityIndicatorState
     
     @State
@@ -117,7 +117,7 @@ struct AddressBarSecurityIndicator: View {
     }
 }
 
-struct AddressBarQualityIndicator: View {
+private struct AddressBarQualityIndicator: View {
     let state: AddressBarQualityIndicatorState
     let rtt: TimeInterval
 
@@ -193,7 +193,7 @@ struct AddressBarQualityIndicator: View {
     }
 }
 
-struct AddressBarDegradationIndicator: View {
+private struct AddressBarDegradationIndicator: View {
     let state: AddressBarDegradationIndicatorState
 
     var body: some View {
@@ -214,7 +214,7 @@ struct AddressBarDegradationIndicator: View {
 }
 
 struct AddressBar: View {
-    enum MoveCommandDirection {
+    private enum MoveCommandDirection {
         case up
         case down
     }

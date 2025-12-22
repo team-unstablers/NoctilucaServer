@@ -57,9 +57,14 @@ class ProjectionChannel: Channel {
                 Codec(
                     fourCC: .hvc1, // 'HVC1',
                     frameRate: 30,
-                    size: CGSize(width: 1920, height: 1200),
+                    size: CGSize(width: 1920, height: 1080),
                     options: CodecOptions(
-                        mandatory: [:],
+                        mandatory: [
+                            .profile: .kProfileHEVCMain10,
+                            .colorFormat: .kColorFormatYUV444,
+                            .colorRange: .kColorRangeFull,
+                            .dynamicRange: .kDynamicRangeHDR,
+                        ],
                         optional: [
                             .hardwareAcceleration: .kHardwareAccelerationAuto
                         ]

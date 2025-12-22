@@ -29,6 +29,7 @@ struct PerformanceOverlay: View {
             let optionsString = CodecOptionsParser.serialize(options: codec.options)
             Text("Options: \(optionsString ?? "(none)"))")
         }
+        .font(.caption)
         .padding(8)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 8))

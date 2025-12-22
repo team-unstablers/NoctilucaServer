@@ -113,6 +113,7 @@ extension ProjectionSession: VideoDecoderDelegate {
                                             decodeTimeStamp: CMTime.invalid)
         
         let pixelBuffer = frame.pixelBuffer
+        self.logger.info("\(pixelBuffer)")
         
         
         
