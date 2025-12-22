@@ -58,6 +58,10 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
     
     private var allowedHashes: [Data] = []
     
+    var hasAllowedEntries: Bool {
+        return !allowedHashes.isEmpty
+    }
+    
     func allow(_ entry: AuthEntry) async throws {
         guard entry.identifier == "bcrypt+sha512" else {
             logger.error("allow(): expected identifier 'bcrypt+sha512', got '\(entry.identifier)'")
@@ -96,7 +100,7 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
         }
         
         do {
-            let digest = try Bcrypt.sha512(value: Data(payload))
+            let digest = try Bcrypt.sha512(value: payload)
             for hash in allowedHashes {
                 if try Bcrypt.verify(password: digest, hash: hash) {
                     return .success(getuid())

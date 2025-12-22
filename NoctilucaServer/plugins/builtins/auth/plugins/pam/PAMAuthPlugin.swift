@@ -35,6 +35,9 @@ final class PAMAuthPlugin: BuiltInAuthPluginV1 {
     private var allowedUsers: Set<String> = []
     private var allowedGroups: Set<String> = []
     
+    var hasAllowedEntries: Bool {
+        return !allowedUsers.isEmpty || !allowedGroups.isEmpty
+    }
     
     func allow(_ entry: AuthEntry) async throws {
         guard entry.method == .password else {

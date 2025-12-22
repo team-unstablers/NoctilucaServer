@@ -27,6 +27,10 @@ final class NullAuthPlugin: BuiltInAuthPluginV1 {
     
     private let logger = NoctilucaLogger(category: "NullAuthPlugin")
     
+    var hasAllowedEntries: Bool {
+        return true
+    }
+    
     func allow(_ entry: AuthEntry) async throws {
         // do nothing
     }

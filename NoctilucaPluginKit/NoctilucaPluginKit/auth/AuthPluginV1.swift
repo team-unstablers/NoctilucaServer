@@ -22,6 +22,9 @@ public protocol AuthPluginV1: AnyObject {
     static var supportedMethods: Set<AuthMethod> { get }
     
     init()
+    
+    /// 플러그인이 현재 하나 이상의 인증 허용 항목을 가지고 있는지 여부를 나타냅니다.
+    var hasAllowedEntries: Bool { get }
 
     /// 플러그인에게 인증 허용 항목을 추가하도록 요청합니다.
     func allow(_ entry: AuthEntry) async throws

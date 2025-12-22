@@ -57,7 +57,7 @@ struct Bcrypt {
         return consume hash
     }
     
-    static func sha512(value: consuming Data) throws -> Data {
+    static func sha512(value: borrowing Data) throws -> Data {
         var hash = Data(count: Int(BCRYPT_512BITS_BASE64_SIZE))
         
         let retval = value.withUnsafeBytes { valueBytes in
