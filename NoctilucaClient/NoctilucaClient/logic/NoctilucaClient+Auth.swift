@@ -48,6 +48,19 @@ extension NoctilucaClient {
         try assertPhase(expected: .awaitingAuthentication)
         logger.info("Received AuthChallenge: nonce=\(message.nonce.base64EncodedString()), methods=\(message.acceptedMethods)")
 
+        let acceptedMethods = message.acceptedMethods.map { ClientAuthMethod(rawValue: $0) }
+        let availableMethods = authenticator.availableMethods(for: message)
+        if availableMethods.isEmpty {
+            logger.error("No supported auth methods for challenge: \(message.acceptedMethods)")
+            await MainActor.run {
+                uiEvents.send(.errorOccurred(.authNegotiationFailed(authMethods: acceptedMethods)))
+            }
+            
+            // Close the connection gracefully
+            await self.close()
+            return
+        }
+
         if let autoRequest = authenticator.nextAutoAuthRequest(for: message) {
             logger.info("Attempting auto authentication using method: \(autoRequest.method.rawValue)")
             try await sendAuthRequest(autoRequest.method.rawValue, nonce: message.nonce, payload: autoRequest.payload)
