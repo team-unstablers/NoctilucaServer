@@ -47,11 +47,13 @@ extension NoctilucaClient {
     func handleAuthChallenge(_ message: AuthChallenge) async throws {
         try assertPhase(expected: .awaitingAuthentication)
         logger.info("Received AuthChallenge: nonce=\(message.nonce.base64EncodedString()), methods=\(message.acceptedMethods)")
-        
-        // TODO: accepted methods 검사
-        // TODO: ssh-key같이 자동 핸들 가능한 것을 시도해 보도록
-        
-        // UI에게 전가
+
+        if let autoRequest = authenticator.nextAutoAuthRequest(for: message) {
+            logger.info("Attempting auto authentication using method: \(autoRequest.method.rawValue)")
+            try await sendAuthRequest(autoRequest.method.rawValue, nonce: message.nonce, payload: autoRequest.payload)
+            return
+        }
+
         await MainActor.run {
             uiEvents.send(.receivedAuthChallenge(message))
         }

@@ -94,7 +94,7 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 - 메인 채널
   - `NoctilucaClient`가 `MainChannel` 이벤트 수신
   - `ServerHello` 수신 → `awaitingAuthentication`
-  - `AuthChallenge` 수신 → UI로 전달 → `AuthRequest` 전송
+  - `AuthChallenge` 수신 → 자동 인증(세션 → 글로벌) → 실패 시 UI 입력 → `AuthRequest` 전송
   - `AuthResponse` 수신 → `.ready` 전환, 추가 채널 생성 허용
 - HIDIO 채널
   - `HIDIOChannel`은 클라이언트에서만 open
@@ -130,7 +130,8 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
   - macOS: AppKit NSToolbar (`MainToolbar`) + 신호등 정렬 스위즐(`NSWindow+NoctilucaLayoutSwizzle`)
   - iOS: `View+iOSToolbar.swift`로 디바이스별 툴바 오버레이
 - 인증 UI
-  - `AuthChallengeSheetView`에서 PAM 기반 username/password 입력
+  - `AuthChallengeSheetView`에서 서버 허용 + 클라이언트 지원 메소드 기반 입력
+  - 입력 상태/검증은 `AuthChallengeSheetViewModel`로 분리
   - macOS: sheet, iOS: fullScreenCover
 - 디버그
   - `PerformanceOverlay`에서 협상된 코덱/RTT 표시
@@ -156,9 +157,15 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 
 # AUTH / PAYLOAD
 
-- `auth/pam/PAMAuthPayload.swift`
-  - payload 포맷: `[u32 usernameLen][u32 passwordLen][username][password]`
-  - 유효성 검증/추출 helper 제공
+- 클라이언트 인증 코어: `auth/ClientAuthenticator.swift`, `auth/ClientAuthPluginRegistry.swift`, `auth/ClientAuthPluginV1.swift`
+  - 자동 인증 순서: 세션 스코프 크레덴셜 → 글로벌 크레덴셜 → UI 입력
+- 빌트인 플러그인
+  - `auth/pam/PAMAuthClientPlugin.swift`
+  - `auth/simple-password/SimplePasswordAuthClientPlugin.swift`
+- PAM 페이로드 (`auth/pam/PAMAuthPayload.swift`)
+  - 포맷: `[u32 usernameLen][u32 passwordLen][username][password]`
+- Simple-password 페이로드
+  - raw password UTF-8 bytes (서버에서 sha512+bcrypt 처리)
 
 # KNOWN TODO / FIXME (요약)
 
@@ -166,7 +173,6 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 - `NoctilucaClient.swift`: `FIXME_projectionStarted` 이벤트로 디코더 시작 알림 임시 전달
 - `VTVideoDecoder.swift`: 하드웨어 디코딩 실패 시 소프트웨어 폴백 미구현
 - `ProjectionSession.swift`: 샘플 타이밍/PTS 정규화 로직 일부 주석 처리
-- `AuthChallengeSheetView.swift`: PAM 외 인증 플러그인 인터페이스 분리 필요, 비밀번호 메모리 정리 필요
 - `SecuritySessionSettingsTab.swift`: 인증서 고정 UI/정보 표시 미구현
 - UI 전반: AddressBar 후보/키 입력 처리 등 TODO/FIXME 다수
 

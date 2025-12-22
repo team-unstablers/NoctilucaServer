@@ -35,9 +35,9 @@ final class SettingsStore: ObservableObject {
     }
 
     func save() {
-        DispatchQueue.main.sync {
+        DispatchQueue.main.async {
             do {
-                try settings.save()
+                try self.settings.save()
             } catch {
                 Self.logger.error("Failed to save settings: \(error.localizedDescription)")
             }
@@ -45,8 +45,8 @@ final class SettingsStore: ObservableObject {
     }
 
     func reload() {
-        DispatchQueue.main.sync {
-            settings = (try? AppSettings.load()) ?? AppSettings()
+        DispatchQueue.main.async {
+            self.settings = (try? AppSettings.load()) ?? AppSettings()
         }
     }
 

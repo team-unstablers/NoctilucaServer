@@ -39,11 +39,15 @@ struct AuthChallengeHandlerModifier: ViewModifier {
                 $0
                     .sheet(isPresented: $shouldPresentAuthChallengeSheet) {
                         if let authChallenge = self.authChallenge {
-                            AuthChallengeSheetView(authChallenge: authChallenge) { action in
+                            AuthChallengeSheetView(
+                                authChallenge: authChallenge,
+                                availableMethods: client.authenticator.availableMethods(for: authChallenge)
+                            ) { action in
                                 Task {
-                                    await handleAuthChallengeResponse(action)
+                                    await handleAuthChallengeResponse(action, challenge: authChallenge)
                                 }
                             }
+                            .id(authChallenge.nonce)
                         }
                     }
 #elseif os(iOS)
@@ -54,11 +58,15 @@ struct AuthChallengeHandlerModifier: ViewModifier {
                                 .ignoresSafeArea()
                             
                             if let authChallenge = self.authChallenge {
-                                AuthChallengeSheetView(authChallenge: authChallenge) { action in
+                                AuthChallengeSheetView(
+                                    authChallenge: authChallenge,
+                                    availableMethods: client.authenticator.availableMethods(for: authChallenge)
+                                ) { action in
                                     Task {
-                                        await handleAuthChallengeResponse(action)
+                                        await handleAuthChallengeResponse(action, challenge: authChallenge)
                                     }
                                 }
+                                .id(authChallenge.nonce)
                                 .background(.background)
                                 .cornerRadius(12)
                                 .padding(12)
@@ -82,15 +90,19 @@ struct AuthChallengeHandlerModifier: ViewModifier {
         self.shouldPresentAuthChallengeSheet = true
     }
     
-    func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction) async {
+    func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction, challenge: AuthChallenge) async {
         self.shouldPresentAuthChallengeSheet = false
         
         switch action {
         case .cancel:
             await client.close()
             return
-        case .confirm(let method, let nonce, let payload):
-            try? await client.sendAuthRequest(method, nonce: nonce, payload: payload)
+        case .confirm(let entry):
+            guard let payload = client.authenticator.payload(for: entry) else {
+                client.logger.error("Failed to build auth payload for method: \(entry.method.rawValue)")
+                return
+            }
+            try? await client.sendAuthRequest(entry.method.rawValue, nonce: challenge.nonce, payload: payload)
         }
     }
 }

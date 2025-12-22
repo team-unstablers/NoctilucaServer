@@ -9,82 +9,24 @@ import SwiftUI
 import SiriusKitClient
 
 enum AuthChallengeSheetAction {
-    case confirm(method: String, nonce: Data, payload: Data)
+    case confirm(entry: ClientAuthEntry)
     case cancel
 }
 
 typealias AuthChallengeSheetActionHandler = (AuthChallengeSheetAction) -> Void
 
-// FIXME
-struct PAMAuthChallengeForm: View {
-    let authChallenge: AuthChallenge
-    let handler: AuthChallengeSheetActionHandler
-    
-    @State
-    var username: String = ""
-    
-    @State
-    var password: String = ""
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            /*
-            Picker("인증 방법", selection: .constant("asdf")) {
-                Text("PAM username-password 인증")
-                    .tag("asdf")
-                
-                Text("간단 비밀번호 인증")
-                Text("SSH 키 인증")
-            }
-            .padding(.bottom, 12)
-             */
-            Text("사용자명")
-                .padding(.bottom, 6)
-            TextField("사용자명 입력", text: $username)
-#if os(iOS)
-                .textInputAutocapitalization(.never)
-#endif
-                .textFieldStyle(.roundedBorder)
-                .padding(.bottom, 12)
-            
-            Text("비밀번호")
-                .padding(.bottom, 6)
-            SecureField("비밀번호 입력", text: $password)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit {
-                    performSubmit()
-                }
-        }
-        .padding(12)
-        .background(Color.gray.mix(with: .white, by: 0.9))
-        .clipShape(.rect(cornerRadius: 8))
-        .padding(.bottom, 12)
-        
-        HStack {
-            Spacer()
-            Button("취소", role: .cancel) {
-                handler(.cancel)
-            }
-            .keyboardShortcut(.escape)
-            Button("확인", role: .confirm) {
-                performSubmit()
-            }
-        }
-    }
-    
-    func performSubmit() {
-        // TODO: 별도 authenticator 플러그인 인터페이스로 뺴야 함
-        // TODO: username / password 메모리에 안 남도록 조치 필요
-        let payload = PAMAuthPayload.payload(username: username, password: password)
-        
-        handler(.confirm(method: "password", nonce: authChallenge.nonce, payload: consume payload))
-    }
-}
-
 struct AuthChallengeSheetView: View {
     let authChallenge: AuthChallenge
     let handler: AuthChallengeSheetActionHandler
-    
+
+    @StateObject private var viewModel: AuthChallengeSheetViewModel
+
+    init(authChallenge: AuthChallenge, availableMethods: [ClientAuthMethod], handler: @escaping AuthChallengeSheetActionHandler) {
+        self.authChallenge = authChallenge
+        self.handler = handler
+        _viewModel = StateObject(wrappedValue: AuthChallengeSheetViewModel(authChallenge: authChallenge, availableMethods: availableMethods))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("인증 챌린지를 받았습니다")
@@ -95,22 +37,109 @@ struct AuthChallengeSheetView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 12)
-            
-            PAMAuthChallengeForm(
-                authChallenge: authChallenge,
-                handler: handler
-            )
+
+            authFormBody
+
+            HStack {
+                Spacer()
+                Button("취소", role: .cancel) {
+                    handler(.cancel)
+                }
+                .keyboardShortcut(.escape)
+                Button("확인", role: .confirm) {
+                    submit()
+                }
+                .disabled(!viewModel.canSubmit)
+            }
         }
         .padding(24)
+    }
+
+    @ViewBuilder
+    private var authFormBody: some View {
+        if viewModel.availableMethods.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("지원 가능한 인증 방법이 없습니다.")
+                    .foregroundStyle(.secondary)
+                Text("서버가 요구하는 인증 방법을 클라이언트가 지원하지 않습니다.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.bottom, 12)
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                if viewModel.availableMethods.count > 1 {
+                    Picker("인증 방법", selection: $viewModel.selectedMethod) {
+                        ForEach(viewModel.availableMethods, id: \.rawValue) { method in
+                            Text(method.displayName)
+                                .tag(method)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } else if let method = viewModel.availableMethods.first {
+                    Text(method.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                authFormInputs
+            }
+            .padding(12)
+            .background(Color.gray.mix(with: .white, by: 0.9))
+            .clipShape(.rect(cornerRadius: 8))
+            .padding(.bottom, 12)
+        }
+    }
+
+    @ViewBuilder
+    private var authFormInputs: some View {
+        switch viewModel.selectedMethod {
+        case .password:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("사용자명")
+                TextField("사용자명 입력", text: $viewModel.username)
+#if os(iOS)
+                    .textInputAutocapitalization(.never)
+#endif
+                    .textFieldStyle(.roundedBorder)
+                Text("비밀번호")
+                SecureField("비밀번호 입력", text: $viewModel.password)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { submit() }
+            }
+        case .simplePassword:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("비밀번호")
+                SecureField("비밀번호 입력", text: $viewModel.simplePassword)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { submit() }
+            }
+        case .sshKey:
+            Text("SSH 키 인증은 아직 지원되지 않습니다.")
+                .foregroundStyle(.secondary)
+        default:
+            Text("지원되지 않는 인증 방법입니다.")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func submit() {
+        guard let entry = viewModel.makeEntry() else { return }
+        handler(.confirm(entry: entry))
     }
 }
 
 #Preview {
-    let authChallenge = AuthChallenge(acceptedMethods: ["password"],
-                                      nonce: Data(),
-                                      message: "제한 구역입니다")
-    
-    AuthChallengeSheetView(authChallenge: authChallenge) { action in
+    let authChallenge = AuthChallenge(
+        acceptedMethods: ["password", "pl.unstabler.noctiluca.NoctilucaServer.auth.simple-password"],
+        nonce: Data(),
+        message: "제한 구역입니다"
+    )
+
+    AuthChallengeSheetView(
+        authChallenge: authChallenge,
+        availableMethods: [.password, .simplePassword]
+    ) { action in
         print(action)
     }
 }

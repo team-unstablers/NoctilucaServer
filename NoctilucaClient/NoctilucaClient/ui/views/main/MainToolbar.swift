@@ -210,7 +210,22 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
 
     @objc
     private func handleToolbarAction(_ sender: Any?) {
-        // Intentionally empty (parity with iOS placeholder actions).
+        guard let item = sender as? NSToolbarItem else {
+            return
+        }
+
+        switch item.itemIdentifier {
+        case .nocSettings:
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                appDelegate.showSettingsWindow(nil)
+            }
+        case .nocStopSession:
+            viewModel.stopSession()
+        case .nocAddSession:
+            viewModel.presentContactEditor(for: nil)
+        default:
+            break
+        }
     }
 }
 

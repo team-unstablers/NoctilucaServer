@@ -17,14 +17,16 @@ final class AppKitSettingsWindowController: NSWindowController {
         
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false
         )
         window.contentView = hostingView
         window.title = "Settings"
         window.minSize = NSSize(width: 640, height: 480)
+        window.collectionBehavior = [.fullScreenNone]
         window.isReleasedWhenClosed = false
+        window.standardWindowButton(.zoomButton)?.isEnabled = false
         window.setFrameAutosaveName("NoctilucaClient.SettingsWindow")
         window.center()
         

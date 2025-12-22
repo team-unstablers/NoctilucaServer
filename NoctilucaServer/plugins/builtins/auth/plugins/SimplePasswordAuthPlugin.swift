@@ -96,8 +96,9 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
         }
         
         do {
+            let digest = try Bcrypt.sha512(value: Data(payload))
             for hash in allowedHashes {
-                if try Bcrypt.verify(password: payload, hash: hash) {
+                if try Bcrypt.verify(password: digest, hash: hash) {
                     return .success(getuid())
                 }
             }
@@ -110,4 +111,3 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
         return .failure(.authenticationFailed(nil))
     }
 }
-

@@ -18,12 +18,6 @@ struct MainToolbarAddressBar: View {
     
     @FocusState
     private var internalFocus: Bool
-
-    @State
-    private var isConnectSheetPresented: Bool = false
-
-    @State
-    private var connectDraft: ContactItem = ContactItem(name: nil, endpointURL: "", preset: SessionSettings(scope: .session))
     
     init(viewModel: MainWindowViewModel,
          settingsStore: SettingsStore,
@@ -83,8 +77,6 @@ struct MainToolbarAddressBar: View {
     }
     
     var body: some View {
-        let canConnect = !connectDraft.endpointURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
         VStack {
             let action = self.action
             
@@ -103,7 +95,7 @@ struct MainToolbarAddressBar: View {
 
                 switch endpoint {
                 case .connect(let endpointURL):
-                    presentConnectSheet(endpointURL: endpointURL)
+                    viewModel.presentQuickConnectSheet(endpointURL: endpointURL)
                 case .contact, .quickConnect:
                     Task {
                         try await self.viewModel.startSession(endpoint: endpoint)
@@ -112,57 +104,6 @@ struct MainToolbarAddressBar: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .sheet(isPresented: $isConnectSheetPresented) {
-            SessionSettingsSheet(
-                scope: .session,
-                sessionSettings: $connectDraft.settings,
-                contactId: connectDraft.id,
-                actions: [
-                    .init(kind: .cancel, title: "취소", role: .cancel) {
-                        isConnectSheetPresented = false
-                    },
-                    .init(kind: .secondary, title: "연락처에 저장하기", isEnabled: canConnect) {
-                        saveContactAndConnect()
-                    },
-                    .init(kind: .primary, title: "연결만 하기", isEnabled: canConnect) {
-                        connectWithoutSaving()
-                    }
-                ]
-            )
-        }
-    }
-
-    private func presentConnectSheet(endpointURL: String) {
-        connectDraft = ContactItem(
-            name: nil,
-            endpointURL: endpointURL,
-            preset: settingsStore.settings.sessionDefaults
-        )
-        isConnectSheetPresented = true
-    }
-
-    private func saveContactAndConnect() {
-        do {
-            try ContactStore.save(connectDraft)
-        } catch {
-            print("Failed to save contact: \(error.localizedDescription)")
-        }
-
-        isConnectSheetPresented = false
-        Task {
-            try? await viewModel.startSession(endpoint: .contact(item: connectDraft))
-        }
-    }
-
-    private func connectWithoutSaving() {
-        let endpointURL = connectDraft.endpointURL
-        isConnectSheetPresented = false
-        Task {
-            try? await viewModel.startSession(
-                endpoint: .quickConnect(endpointURL: endpointURL),
-                settingsOverride: connectDraft.settings
-            )
-        }
     }
 }
 

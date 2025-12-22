@@ -66,7 +66,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            
+                            viewModel.presentContactEditor(for: nil)
                         } label: {
                             Image(systemName: "plus.app")
                         }
@@ -213,7 +213,7 @@ struct ToolbarModifierIPad: ViewModifier {
                     }
                     ToolbarItem(placement: toolbarPlacement) {
                         Button {
-                            
+                            viewModel.presentContactEditor(for: nil)
                         } label: {
                             Image(systemName: "plus.app")
                         }

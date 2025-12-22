@@ -22,11 +22,13 @@ struct ClientAuthMethod: RawRepresentable, Equatable, Hashable, Sendable, Codabl
     }
 
     static let password = ClientAuthMethod(rawValue: "password")
+    static let simplePassword = ClientAuthMethod(rawValue: "pl.unstabler.noctiluca.NoctilucaServer.auth.simple-password")
     static let sshKey = ClientAuthMethod(rawValue: "ssh-key")
 }
 
 enum ClientAuthPayload: Codable, Hashable, Sendable {
     case password(username: String, password: String)
+    case simplePassword(password: String)
     case sshKey(publicKey: String, privateKey: Data)
 
     private enum CodingKeys: String, CodingKey {
@@ -39,6 +41,7 @@ enum ClientAuthPayload: Codable, Hashable, Sendable {
 
     private enum PayloadType: String, Codable {
         case password
+        case simplePassword
         case sshKey
     }
 
@@ -50,6 +53,9 @@ enum ClientAuthPayload: Codable, Hashable, Sendable {
             let username = try container.decode(String.self, forKey: .username)
             let password = try container.decode(String.self, forKey: .password)
             self = .password(username: username, password: password)
+        case .simplePassword:
+            let password = try container.decode(String.self, forKey: .password)
+            self = .simplePassword(password: password)
         case .sshKey:
             let publicKey = try container.decode(String.self, forKey: .publicKey)
             let privateKey = try container.decode(Data.self, forKey: .privateKey)
@@ -64,10 +70,28 @@ enum ClientAuthPayload: Codable, Hashable, Sendable {
             try container.encode(PayloadType.password, forKey: .type)
             try container.encode(username, forKey: .username)
             try container.encode(password, forKey: .password)
+        case .simplePassword(let password):
+            try container.encode(PayloadType.simplePassword, forKey: .type)
+            try container.encode(password, forKey: .password)
         case .sshKey(let publicKey, let privateKey):
             try container.encode(PayloadType.sshKey, forKey: .type)
             try container.encode(publicKey, forKey: .publicKey)
             try container.encode(privateKey, forKey: .privateKey)
+        }
+    }
+}
+
+extension ClientAuthMethod {
+    var displayName: String {
+        switch self {
+        case .password:
+            return "사용자명-비밀번호 인증"
+        case .simplePassword:
+            return "간단 비밀번호 인증"
+        case .sshKey:
+            return "SSH 키 인증"
+        default:
+            return "외부 인증 방법 (\(rawValue))"
         }
     }
 }

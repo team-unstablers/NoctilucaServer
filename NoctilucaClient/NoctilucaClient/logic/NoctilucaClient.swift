@@ -15,6 +15,7 @@ enum NoctilucaClientError: LocalizedError {
     case invalidPhase
     
     case remoteClosedConnection
+    case authNegotiationFailed(authMethods: [ClientAuthMethod])
     
     var errorDescription: String? {
         switch self {
@@ -24,6 +25,13 @@ enum NoctilucaClientError: LocalizedError {
             return "잘못된 페이즈 전환이 시도되었습니다."
         case .remoteClosedConnection:
             return "호스트가 임의로 연결을 종료했습니다."
+        case .authNegotiationFailed(let authMethods):
+            if authMethods.isEmpty {
+                return "인증 방법 협상에 실패했습니다.\n서버에서 아무런 인증 방법도 제시하지 않았습니다."
+            }
+            
+            let joined = authMethods.map { $0.rawValue }.joined(separator: ", ")
+            return "인증 방법 협상에 실패했습니다.\n서버에서 인증 방법으로 \(joined)를 제시했지만, 현재 버전의 클라이언트에서는 이 중 아무것도 지원하지 않습니다."
         }
     }
 }
@@ -90,6 +98,7 @@ class NoctilucaClient: ObservableObject {
     let id: UUID = UUID()
 
     let session: SiriusClient
+    let authenticator: ClientAuthenticator
     let uiEvents = PassthroughSubject<NoctilucaClientUIEvent, Never>()
     
     private var pingTask: Task<Void, Never>?
@@ -128,8 +137,13 @@ class NoctilucaClient: ObservableObject {
 
     init(_ session: SiriusClient) {
         self.session = session
+        self.authenticator = ClientAuthenticator(registry: .shared)
         
         self.session.delegate = self
+    }
+
+    func configureAuthCredentials(sessionEntries: [ClientAuthEntry], globalEntries: [ClientAuthEntry]) {
+        authenticator.configureAutoCredentials(sessionEntries: sessionEntries, globalEntries: globalEntries)
     }
     
     func setup() async throws {

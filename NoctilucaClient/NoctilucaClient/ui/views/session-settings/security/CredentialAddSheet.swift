@@ -27,6 +27,9 @@ struct CredentialAddSheet: View {
     private var password: String = ""
 
     @State
+    private var simplePassword: String = ""
+
+    @State
     private var publicKey: String = ""
 
     @State
@@ -89,6 +92,8 @@ struct CredentialAddSheet: View {
         case .password:
             return !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .simplePassword:
+            return !simplePassword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .sshKey:
             return !publicKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !privateKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -105,6 +110,13 @@ struct CredentialAddSheet: View {
                 TextField("사용자명", text: $username)
                     .textFieldStyle(.roundedBorder)
                 SecureField("비밀번호", text: $password)
+                    .textFieldStyle(.roundedBorder)
+            }
+        case .simplePassword:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("간단 비밀번호")
+                    .font(.headline)
+                SecureField("비밀번호", text: $simplePassword)
                     .textFieldStyle(.roundedBorder)
             }
         case .sshKey:
@@ -138,6 +150,13 @@ struct CredentialAddSheet: View {
                     username: username.trimmingCharacters(in: .whitespacesAndNewlines),
                     password: password
                 )
+            )
+            handler(entry)
+        case .simplePassword:
+            let entry = ClientAuthEntry(
+                method: .simplePassword,
+                displayName: name,
+                payload: .simplePassword(password: simplePassword)
             )
             handler(entry)
         case .sshKey:
@@ -186,6 +205,7 @@ private struct CredentialTemplateRow: View {
 extension CredentialAddSheet {
     enum TemplateKind: String, Identifiable {
         case password
+        case simplePassword
         case sshKey
 
         var id: String { rawValue }
@@ -195,7 +215,7 @@ extension CredentialAddSheet {
             case .global:
                 return [.sshKey]
             case .session:
-                return [.password, .sshKey]
+                return [.password, .simplePassword, .sshKey]
             }
         }
 
@@ -203,6 +223,8 @@ extension CredentialAddSheet {
             switch self {
             case .password:
                 return "사용자명-비밀번호 인증"
+            case .simplePassword:
+                return "간단 비밀번호 인증"
             case .sshKey:
                 return "SSH 키 인증"
             }
@@ -212,6 +234,8 @@ extension CredentialAddSheet {
             switch self {
             case .password:
                 return "사용자명과 비밀번호를 사용한 인증을 수행합니다."
+            case .simplePassword:
+                return "비밀번호만을 사용한 인증을 수행합니다."
             case .sshKey:
                 return "SSH 공개 키/개인 키 기반 인증을 수행합니다."
             }

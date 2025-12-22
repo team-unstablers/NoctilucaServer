@@ -163,6 +163,7 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
   - Release: `PAMAuthPlugin`, `SimplePasswordAuthPlugin`
   - Debug: `NullAuthPlugin` 추가
 - `NoctilucaServer-Bridging-Header.h`를 통해 `PAMAuthPlugin.h`를 Swift에 노출합니다.
+- `SimplePasswordAuthPlugin` 페이로드는 **raw password bytes**이며, 서버 측에서 sha512+bcrypt 검증을 수행합니다.
 
 ## Info.plist 기반 메타데이터
 - `PluginBundlePlistMetadata`/`PluginBundleExportPlistMetadata`가 `NoctilucaPluginKit`의 plist 키 스펙으로 파싱됩니다.

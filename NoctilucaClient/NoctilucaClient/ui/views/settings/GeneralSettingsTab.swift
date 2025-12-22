@@ -28,7 +28,13 @@ struct GeneralSettingsTab: View {
                 .sheet(isPresented: $shouldPresentDefaultConnectionSettingsSheet) {
                     SessionSettingsSheet(
                         scope: .global,
-                        sessionSettings: $settingsStore.settings.sessionDefaults
+                        sessionSettings: $settingsStore.settings.sessionDefaults,
+                        actions: [
+                            .init(kind: .primary, title: "저장") {
+                                settingsStore.save()
+                                shouldPresentDefaultConnectionSettingsSheet = false
+                            }
+                        ]
                     )
                 }
             }

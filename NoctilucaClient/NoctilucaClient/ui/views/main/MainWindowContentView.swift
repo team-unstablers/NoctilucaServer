@@ -22,21 +22,6 @@ struct MainWindowNewConnectionPhaseContentView: View {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
 
-    @EnvironmentObject
-    private var settingsStore: SettingsStore
-
-    @State
-    private var isContactEditorPresented: Bool = false
-
-    @State
-    private var contactDraft: ContactItem = ContactItem(name: nil, endpointURL: "", preset: SessionSettings(scope: .session))
-
-    @State
-    private var isEditingContact: Bool = false
-
-    @State
-    private var isDeleteConfirmationPresented: Bool = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading) {
@@ -59,14 +44,9 @@ struct MainWindowNewConnectionPhaseContentView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
 
-            HStack {
-                Text("저장된 호스트 목록")
-                    .font(.title)
-                Spacer()
-                Button("추가") {
-                    presentContactEditor(for: nil)
-                }
-            }
+            Text("저장된 호스트 목록")
+                .font(.title)
+                .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
 
@@ -102,7 +82,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                                         try? await viewModel.startSession(endpoint: .contact(item: item))
                                     }
                                 case .edit:
-                                    presentContactEditor(for: item)
+                                    viewModel.presentContactEditor(for: item)
                                 }
                             }
                         }
@@ -114,71 +94,6 @@ struct MainWindowNewConnectionPhaseContentView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sheet(isPresented: $isContactEditorPresented) {
-            SessionSettingsSheet(
-                scope: .session,
-                sessionSettings: $contactDraft.settings,
-                contactId: contactDraft.id,
-                actions: [
-                    .init(kind: .cancel, title: "취소", role: .cancel) {
-                        isContactEditorPresented = false
-                    },
-                    isEditingContact
-                        ? .init(kind: .secondary, title: "삭제", role: .destructive) {
-                            isDeleteConfirmationPresented = true
-                        }
-                        : nil,
-                    .init(kind: .primary, title: isEditingContact ? "저장" : "추가") {
-                        saveContact()
-                    }
-                ].compactMap { $0 }
-            )
-        }
-        .alert("연락처 삭제", isPresented: $isDeleteConfirmationPresented) {
-            Button("삭제", role: .destructive) {
-                deleteContact()
-            }
-            Button("취소", role: .cancel) {
-                isDeleteConfirmationPresented = false
-            }
-        } message: {
-            Text("이 연락처를 삭제하면 복구할 수 없습니다.")
-        }
-    }
-
-    private func presentContactEditor(for item: ContactItem?) {
-        if let item {
-            contactDraft = item
-            isEditingContact = true
-        } else {
-            contactDraft = ContactItem(
-                name: nil,
-                endpointURL: "",
-                preset: settingsStore.settings.sessionDefaults
-            )
-            isEditingContact = false
-        }
-
-        isContactEditorPresented = true
-    }
-
-    private func saveContact() {
-        do {
-            try ContactStore.save(contactDraft)
-            isContactEditorPresented = false
-        } catch {
-            print("Failed to save contact: \(error.localizedDescription)")
-        }
-    }
-
-    private func deleteContact() {
-        do {
-            try ContactStore.remove(id: contactDraft.id)
-            isDeleteConfirmationPresented = false
-            isContactEditorPresented = false
-        } catch {
-            print("Failed to delete contact: \(error.localizedDescription)")
-        }
     }
 }
 

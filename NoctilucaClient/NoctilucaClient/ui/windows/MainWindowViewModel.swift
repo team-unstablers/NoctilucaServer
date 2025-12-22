@@ -14,6 +14,11 @@ import Combine
 import SiriusKitClient
 
 class MainWindowViewModel: ObservableObject {
+    enum SessionSettingsSheetMode: Hashable {
+        case quickConnect
+        case contactEditor
+    }
+
     @Published
     var phase: MainWindowPhase = .newConnection
     
@@ -51,6 +56,25 @@ class MainWindowViewModel: ObservableObject {
 
     @Published
     var contactsLoadError: String? = nil
+
+    @Published
+    var isSessionSettingsSheetPresented: Bool = false
+
+    @Published
+    var isDeleteContactConfirmationPresented: Bool = false
+
+    @Published
+    var sessionSettingsSheetMode: SessionSettingsSheetMode = .quickConnect
+
+    @Published
+    var sessionSettingsDraft: ContactItem = ContactItem(
+        name: nil,
+        endpointURL: "",
+        preset: SessionSettings(scope: .session)
+    )
+
+    @Published
+    var isEditingContact: Bool = false
 
     private var settingsStore: SettingsStore?
     private var settingsCancellable: AnyCancellable?
@@ -102,8 +126,12 @@ class MainWindowViewModel: ObservableObject {
         
         let session = try result.get()
         let client = NoctilucaClient(session)
-        
+
         self.client = client
+
+        if let sessionSettings = self.sessionSettings {
+            configureAuthCredentials(for: client, endpoint: endpoint, sessionSettings: sessionSettings)
+        }
 
         if let settingsStore {
             client.applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
@@ -177,6 +205,102 @@ class MainWindowViewModel: ObservableObject {
             contactsLoadError = error.localizedDescription
         }
     }
+
+    var canConnectFromDraft: Bool {
+        !sessionSettingsDraft.endpointURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    func presentContactEditor(for item: ContactItem?) {
+        if let item {
+            sessionSettingsDraft = item
+            isEditingContact = true
+        } else {
+            let preset = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .session)
+            sessionSettingsDraft = ContactItem(
+                name: nil,
+                endpointURL: "",
+                preset: preset
+            )
+            isEditingContact = false
+        }
+
+        sessionSettingsSheetMode = .contactEditor
+        isSessionSettingsSheetPresented = true
+    }
+
+    func presentQuickConnectSheet(endpointURL: String) {
+        let preset = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .session)
+        sessionSettingsDraft = ContactItem(
+            name: nil,
+            endpointURL: endpointURL,
+            preset: preset
+        )
+        isEditingContact = false
+        sessionSettingsSheetMode = .quickConnect
+        isSessionSettingsSheetPresented = true
+    }
+
+    func dismissSessionSettingsSheet() {
+        isSessionSettingsSheetPresented = false
+        isDeleteContactConfirmationPresented = false
+    }
+
+    func requestDeleteContactConfirmation() {
+        isDeleteContactConfirmationPresented = true
+    }
+
+    func cancelDeleteContactConfirmation() {
+        isDeleteContactConfirmationPresented = false
+    }
+
+    func saveContactFromSheet() {
+        do {
+            try ContactStore.save(sessionSettingsDraft)
+            isSessionSettingsSheetPresented = false
+        } catch {
+            print("Failed to save contact: \(error.localizedDescription)")
+        }
+    }
+
+    func deleteContactFromSheet() {
+        do {
+            try ContactStore.remove(id: sessionSettingsDraft.id)
+            isDeleteContactConfirmationPresented = false
+            isSessionSettingsSheetPresented = false
+        } catch {
+            print("Failed to delete contact: \(error.localizedDescription)")
+        }
+    }
+
+    func saveContactAndConnectFromSheet() {
+        do {
+            try ContactStore.save(sessionSettingsDraft)
+        } catch {
+            print("Failed to save contact: \(error.localizedDescription)")
+        }
+
+        isSessionSettingsSheetPresented = false
+
+        Task {
+            try? await startSession(endpoint: .contact(item: sessionSettingsDraft))
+        }
+    }
+
+    func connectWithoutSavingFromSheet() {
+        let endpointURL = sessionSettingsDraft.endpointURL
+        guard !endpointURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        isSessionSettingsSheetPresented = false
+
+        Task {
+            try? await startSession(
+                endpoint: .quickConnect(endpointURL: endpointURL),
+                settingsOverride: sessionSettingsDraft.settings
+            )
+        }
+    }
     
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {
         switch phase {
@@ -198,6 +322,50 @@ class MainWindowViewModel: ObservableObject {
     func handleClientError(_ error: NoctilucaClientError) {
         self.errors.append(error)
         self.shouldDisplayErrorAlert = true
+    }
+
+    private func configureAuthCredentials(
+        for client: NoctilucaClient,
+        endpoint: EndpointKind,
+        sessionSettings: SessionSettings
+    ) {
+        let sessionEntries = loadSessionCredentials(for: endpoint, sessionSettings: sessionSettings)
+        let globalEntries = loadGlobalCredentials()
+
+        client.configureAuthCredentials(sessionEntries: sessionEntries, globalEntries: globalEntries)
+    }
+
+    private func loadSessionCredentials(for endpoint: EndpointKind, sessionSettings: SessionSettings) -> [ClientAuthEntry] {
+        guard sessionSettings.scope == .session else {
+            return []
+        }
+
+        let contactId: UUID?
+        switch endpoint {
+        case .contact(let item):
+            contactId = item.id
+        default:
+            contactId = nil
+        }
+
+        return SessionCredentialsStore.load(
+            scope: .session,
+            contactId: contactId,
+            keyOverride: sessionSettings.credentials.keychainKey
+        )
+    }
+
+    private func loadGlobalCredentials() -> [ClientAuthEntry] {
+        guard let settingsStore else {
+            return []
+        }
+
+        let globalSettings = settingsStore.settings.sessionDefaults
+        return SessionCredentialsStore.load(
+            scope: .global,
+            contactId: nil,
+            keyOverride: globalSettings.credentials.keychainKey
+        )
     }
 
     func handleInputWarningUpdated(_ warning: InputWarning?) {

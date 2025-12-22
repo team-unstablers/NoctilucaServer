@@ -22,6 +22,8 @@ struct CredentialEntryRow: View {
         switch entry.method {
         case .password:
             return "사용자명-비밀번호 인증"
+        case .simplePassword:
+            return "간단 비밀번호 인증"
         case .sshKey:
             return "SSH 키 인증"
         default:
@@ -43,6 +45,8 @@ struct CredentialEntryRow: View {
             if !trimmed.isEmpty {
                 components.append("사용자명: \(trimmed)")
             }
+        case .simplePassword:
+            components.append("비밀번호 기반 인증")
         case .sshKey(let publicKey, _):
             let trimmed = publicKey.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
