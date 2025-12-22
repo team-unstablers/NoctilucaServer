@@ -116,7 +116,7 @@ extension NoctilucaClient {
         self.projectionChannel = channel
         self.logger.info("initializeProjection(): created ProjectionChannel")
         
-        let session = try await channel.createSession()
+        let session = try await channel.createSession(projectionSettings: sessionSettings?.projection)
         self.logger.info("initializeProjection(): created sample session")
         
         await MainActor.run {

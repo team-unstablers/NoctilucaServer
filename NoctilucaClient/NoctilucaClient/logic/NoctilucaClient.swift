@@ -122,6 +122,8 @@ class NoctilucaClient: ObservableObject {
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
+    var sessionSettings: SessionSettings? = nil
+
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {
         didSet {

@@ -126,6 +126,7 @@ class MainWindowViewModel: ObservableObject {
         
         let session = try result.get()
         let client = NoctilucaClient(session)
+        client.sessionSettings = self.sessionSettings
 
         self.client = client
 
