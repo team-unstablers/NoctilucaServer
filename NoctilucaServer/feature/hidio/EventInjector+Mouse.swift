@@ -8,6 +8,7 @@
 import Foundation
 
 import Carbon
+import Cocoa
 import CoreGraphics
 
 import SiriusKit
@@ -42,6 +43,44 @@ extension EventInjector {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
         let position = CGPoint(x: Int(Double(position.x) * 1.0), y: Int(Double(position.y) * 1.0))
+
+        if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
+            mouseType = .leftMouseDragged
+        } else if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_RIGHT > 0) {
+            mouseType = .rightMouseDragged
+        }
+
+        guard let cgEvent = CGEvent(
+                mouseEventSource: eventSource,
+                mouseType: mouseType,
+                mouseCursorPosition: position,
+                mouseButton: mouseButton
+        )
+        else {
+            return
+        }
+
+        cgEvent.sanitizeModifierFlags(with: keyDownState)
+        cgEvent.post(tap: .cgSessionEventTap)
+
+        lastMousePosition = position
+        
+    }
+    
+    func performMouseMoveRelative(pixel position: CursorPositionPixel) {
+        var mouseType: CGEventType = .mouseMoved
+        var mouseButton: CGMouseButton = .left
+        
+        guard let event = CGEvent(source: nil) else {
+            return
+        }
+        
+        let currentPosition = event.location
+
+        let position = CGPoint(
+            x: currentPosition.x + CGFloat(position.x),
+            y: currentPosition.y + CGFloat(position.y)
+        )
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged

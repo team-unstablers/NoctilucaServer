@@ -8,6 +8,8 @@
 #if os(macOS)
 import AppKit
 
+import SiriusKitClient
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsStore = SettingsStore()
@@ -28,7 +30,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         setupMainMenu()
         
-        HIDIOGCKeyboard.registerLifecycleListener()
+        SiriusLogger.configure(
+            minimumLevel: .trace
+        )
+        
         openNewMainWindow(nil)
     }
     

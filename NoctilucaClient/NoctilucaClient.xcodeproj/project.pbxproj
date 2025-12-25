@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; };
 		F61DD5B32EF0271300AC9B35 /* SiriusKitClient.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +81,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */,
+				F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,6 +159,7 @@
 			);
 			name = NoctilucaClient;
 			packageProductDependencies = (
+				F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */,
 			);
 			productName = NoctilucaClient;
 			productReference = F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */;
@@ -190,6 +193,9 @@
 			);
 			mainGroup = F6BD3E8D2EDA1AF6000011DF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F6BD3E972EDA1AF6000011DF /* Products */;
 			projectDirPath = "";
@@ -537,6 +543,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F6BD3E8E2EDA1AF6000011DF /* Project object */;
 }

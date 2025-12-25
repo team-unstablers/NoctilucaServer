@@ -23,5 +23,8 @@ protocol HIDIOVirtualDevice {
     func disconnect()
 }
 
-
+protocol HIDIOVirtualDeviceBus {
+    func connect(to controller: HIDIOController)
+    func disconnect()
+}
 

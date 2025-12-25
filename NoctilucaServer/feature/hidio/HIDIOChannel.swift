@@ -35,30 +35,28 @@ class HIDIOChannel: Channel {
         
         let hidioPacket = try HIDIOPacket.fromProtobufBytes(frame.data)
         
-        for eventContainer in hidioPacket.events {
-            switch eventContainer.event {
-            case .rawEvent(_):
+        for event in hidioPacket.events {
+            switch event {
+            case is RawEvent:
                 // not implemented
                 break
-            case .keyboardSetupEvent(let keyboardSetupEvent):
+            case is KeyboardSetupEvent:
                 // TODO
                 break
-            case .keyboardEvent(let keyboardEvent):
-                self.inject(keyboardEvent: keyboardEvent)
-                // self.eventInjector.injectKeyboardEvent(keyboardEvent)
+            case is KeyboardEvent:
+                self.inject(keyboardEvent: event as! KeyboardEvent)
                 break
-            case .mouseMoveEvent(let mouseMoveEvent):
-                // self.eventInjector.injectMouseMoveEvent(mouseMoveEvent)
+            case is MouseMoveEvent:
+                self.inject(mouseMoveEvent: event as! MouseMoveEvent)
                 break
-            case .mouseButtonEvent(let mouseButtonEvent):
-                // self.eventInjector.injectMouseButtonEvent(mouseButtonEvent)
+            case is MouseButtonEvent:
+                self.eventInjector.post(mouseButtonEvent: event as! MouseButtonEvent)
                 break
-            case .mouseWheelEvent(let mouseWheelEvent):
+            case is MouseWheelEvent:
+                self.eventInjector.post(mouseWheelEvent: event as! MouseWheelEvent)
                 // self.eventInjector.injectMouseWheelEvent(mouseWheelEvent)
                 break
-            case .none:
-                fallthrough
-            @unknown default:
+            default:
                 break
             }
         }
@@ -75,6 +73,25 @@ class HIDIOChannel: Channel {
         case .up:
             eventInjector.performKeyUp(carbonKeyCode, modifiers: 0)
         default:
+            break
+        }
+    }
+    
+    func inject(mouseMoveEvent: MouseMoveEvent) {
+        if mouseMoveEvent.moveType == .absolute {
+            logger.warning("absolute mouse move is not supported yet")
+            return
+        }
+        
+        guard case .displayId(let displayID) = mouseMoveEvent.scope else {
+            logger.warning("only screen scope is supported for mouse move")
+            return
+        }
+        
+        switch mouseMoveEvent.position {
+        case .pixel(let pixelPosition):
+            eventInjector.performMouseMoveRelative(pixel: pixelPosition)
+        case .percent(let percentPosition):
             break
         }
     }

@@ -120,39 +120,50 @@ public struct KeyboardHack: SiriusMessage {
     }
 }
 
-public struct KeyboardSetupEvent: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_KeyboardSetupEvent
+public struct KeyboardSetupEvent: HIDEvent, HIDEventConvertable {
+    public static let kind: HIDIOEventKind = .keyboardSetup
     
     public let preferredLayouts: [KeyboardLayout]
     public let hacks: [KeyboardHack]
     public let flags: UInt32
 
-
-    init(preferredLayouts: [KeyboardLayout], hacks: [KeyboardHack], flags: UInt32) {
+    public init(preferredLayouts: [KeyboardLayout], hacks: [KeyboardHack], flags: UInt32) {
         self.preferredLayouts = preferredLayouts
         self.hacks = hacks
         self.flags = flags
     }
 
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_KeyboardSetupEvent) throws {
-        self.preferredLayouts = try protobufMessage.preferredLayouts.map { try KeyboardLayout(from: $0) }
-        self.hacks = try protobufMessage.hacks.map { try KeyboardHack(from: $0) }
-        self.flags = protobufMessage.flags
+    static func from(_ container: Sirius_Msgdef_V1_Channels_Hidio_HIDEvent) throws -> Self {
+        guard case .keyboardSetupEvent(let message) = container.event else {
+            throw SiriusMessageError.invalidProtobufMessage
+        }
+        
+        let event = Self(
+            preferredLayouts: try message.preferredLayouts.map { try KeyboardLayout(from: $0) },
+            hacks: try message.hacks.map { try KeyboardHack(from: $0) },
+            flags: message.flags
+        )
+        
+        return consume event
     }
 
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
+    func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Hidio_HIDEvent {
+        var container = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent()
+        
+        var message = Sirius_Msgdef_V1_Channels_Hidio_KeyboardSetupEvent()
 
         message.preferredLayouts = self.preferredLayouts.map { $0.toProtobufMessage() }
         message.hacks = self.hacks.map { $0.toProtobufMessage() }
         message.flags = self.flags
+        
+        container.event = .keyboardSetupEvent(message)
 
-        return message
+        return container
     }
 }
 
-public struct KeyboardEvent: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_KeyboardEvent
+public struct KeyboardEvent: HIDEvent, HIDEventConvertable {
+    public static let kind: HIDIOEventKind = .keyboardSetup
     
     public let eventType: KeyboardEventType
     public let scanCode: UInt32
@@ -169,24 +180,35 @@ public struct KeyboardEvent: SiriusMessage {
         self.flags = flags
     }
 
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_KeyboardEvent) throws {
-        self.eventType = KeyboardEventType.fromProtobufEnum(protobufMessage.eventType)
-        self.scanCode = protobufMessage.scanCode
-        self.keyCode = protobufMessage.keyCode
-        self.modifiers = protobufMessage.modifiers
-        self.flags = protobufMessage.flags
+    static func from(_ container: Sirius_Msgdef_V1_Channels_Hidio_HIDEvent) throws -> Self {
+        guard case .keyboardEvent(let message) = container.event else {
+            throw SiriusMessageError.invalidProtobufMessage
+        }
+        
+        let event = Self(
+            eventType: KeyboardEventType.fromProtobufEnum(message.eventType),
+            scanCode: message.scanCode,
+            keyCode: message.keyCode,
+            modifiers: message.modifiers,
+            flags: message.flags
+        )
+        
+        return consume event
     }
 
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
+    func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Hidio_HIDEvent {
+        var container = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent()
+        var message = Sirius_Msgdef_V1_Channels_Hidio_KeyboardEvent()
 
         message.eventType = self.eventType.toProtobufEnum()
         message.scanCode = self.scanCode
         message.keyCode = self.keyCode
         message.modifiers = self.modifiers
         message.flags = self.flags
+        
+        container.event = .keyboardEvent(message)
 
-        return message
+        return container
     }
 }
 

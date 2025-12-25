@@ -29,7 +29,25 @@ public struct HIDIOPacket: SiriusMessage {
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_HIDIOPacket) throws {
         self.sequenceNumber = protobufMessage.sequenceNumber
         self.timestamp = protobufMessage.timestamp
-        self.events = try protobufMessage.events.map { try HIDEvent(from: $0) }
+        self.events = try protobufMessage.events.compactMap {
+            switch $0.event {
+            case .rawEvent:
+                return try RawEvent.from($0)
+            case .keyboardSetupEvent:
+                return try KeyboardSetupEvent.from($0)
+            case .keyboardEvent:
+                return try KeyboardEvent.from($0)
+            case .mouseMoveEvent:
+                return try MouseMoveEvent.from($0)
+            case .mouseButtonEvent:
+                return try MouseButtonEvent.from($0)
+            case .mouseWheelEvent:
+                return try MouseWheelEvent.from($0)
+            default:
+                // throw 하는 대신 뭔가 무시하거나 해야 할 것 같은데..
+                return nil
+            }
+        }
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -37,12 +55,15 @@ public struct HIDIOPacket: SiriusMessage {
 
         message.sequenceNumber = self.sequenceNumber
         message.timestamp = self.timestamp
-        message.events = self.events.map { $0.toProtobufMessage() }
+        message.events = self.events.map {
+            ($0 as! any HIDEventConvertable).toProtobufMessage()
+        }
 
         return message
     }
 }
 
+/*
 public struct HIDEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent
     
@@ -118,4 +139,4 @@ public struct HIDEvent: SiriusMessage {
         return message
     }
 }
-
+*/

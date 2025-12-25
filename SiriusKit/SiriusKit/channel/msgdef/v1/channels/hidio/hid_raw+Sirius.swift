@@ -8,8 +8,8 @@
 import Foundation
 import SwiftProtobuf
 
-public struct RawEvent: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_RawEvent
+public struct RawEvent: HIDEvent, HIDEventConvertable {
+    public static let kind: HIDIOEventKind = .raw
     
     public let id: UInt32
     public let type: UInt32
@@ -22,7 +22,7 @@ public struct RawEvent: SiriusMessage {
     public let extra: Data?
 
 
-    init(id: UInt32, type: UInt32, vendor: UInt32, product: UInt32, param1: UInt32, param2: UInt32, param3: UInt32, param4: UInt32, extra: Data?) {
+    public init(id: UInt32, type: UInt32, vendor: UInt32, product: UInt32, param1: UInt32, param2: UInt32, param3: UInt32, param4: UInt32, extra: Data?) {
         self.id = id
         self.type = type
         self.vendor = vendor
@@ -34,20 +34,29 @@ public struct RawEvent: SiriusMessage {
         self.extra = extra
     }
 
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_RawEvent) throws {
-        self.id = protobufMessage.id
-        self.type = protobufMessage.type
-        self.vendor = protobufMessage.vendor
-        self.product = protobufMessage.product
-        self.param1 = protobufMessage.param1
-        self.param2 = protobufMessage.param2
-        self.param3 = protobufMessage.param3
-        self.param4 = protobufMessage.param4
-        self.extra = protobufMessage.hasExtra ? protobufMessage.extra : nil
+    static func from(_ container: Sirius_Msgdef_V1_Channels_Hidio_HIDEvent) throws -> Self {
+        guard case .rawEvent(let message) = container.event else {
+            throw SiriusMessageError.invalidProtobufMessage
+        }
+        
+        let event = Self(
+            id: message.id,
+            type: message.type,
+            vendor: message.vendor,
+            product: message.product,
+            param1: message.param1,
+            param2: message.param2,
+            param3: message.param3,
+            param4: message.param4,
+            extra: message.hasExtra ? message.extra : nil
+        )
+        
+        return consume event
     }
 
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
+    func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Hidio_HIDEvent {
+        var container = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent()
+        var message = Sirius_Msgdef_V1_Channels_Hidio_RawEvent()
 
         message.id = self.id
         message.type = self.type
@@ -60,8 +69,10 @@ public struct RawEvent: SiriusMessage {
         if let val = self.extra {
             message.extra = val
         }
+        
+        container.event = .rawEvent(message)
 
-        return message
+        return container
     }
 }
 

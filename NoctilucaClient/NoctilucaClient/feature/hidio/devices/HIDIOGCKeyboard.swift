@@ -7,86 +7,101 @@
 
 import Foundation
 
+import Combine
 import GameController
 
 import SiriusKitClient
 
-@objc
-class HIDIOGCKeyboardLifecycleListener: NSObject {
-    @objc
-    public func keyboardConnected(_ notification: NSNotification) {
-        let keyboard = notification.object as! GCKeyboard
-        print("HIDIOGCKeyboard connected, \(keyboard.vendorName)")
-    }
-    
-    @objc
-    public func keyboardDisconnected() {
-        print("HIDIOGCKeyboard disconnected")
-    }
-}
-
 class HIDIOGCKeyboard: HIDIOVirtualDevice {
-    static let lifecycleListener = HIDIOGCKeyboardLifecycleListener()
+    private static var _shared: HIDIOGCKeyboard? = nil
     
-    static func coalesced() -> HIDIOGCKeyboard? {
-        guard let gcKeyboard = GCKeyboard.coalesced else {
-            return nil
+    static func shared() -> HIDIOGCKeyboard? {
+        if _shared == nil {
+            let shared = HIDIOGCKeyboard()
+            shared.setup()
+            
+            _shared = shared
         }
         
-        return HIDIOGCKeyboard(gcKeyboard)
-    }
-    
-    /// 라이프사이클 리스너를 등록한다.
-    /// GCKeyboard는 Notification을 구독하지 않으면 사용할 수 없는 듯 하다
-    static func registerLifecycleListener() {
-        NotificationCenter.default.addObserver(
-            lifecycleListener,
-            selector: #selector(HIDIOGCKeyboardLifecycleListener.keyboardConnected),
-            name: .GCKeyboardDidConnect,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            lifecycleListener,
-            selector: #selector(HIDIOGCKeyboardLifecycleListener.keyboardDisconnected),
-            name: .GCKeyboardDidDisconnect,
-            object: nil
-        )
+        return _shared
     }
     
     static let kind: HIDIOVirtualDeviceKind = .keyboard
+    
+    private var cancellables: Set<AnyCancellable> = []
 
-    private let keyboard: GCKeyboard
-    private var keyboardInput: GCKeyboardInput
-    
-    private var controller: HIDIOController?
-    
-    deinit {
-        self.disconnect()
-    }
-    
-    init(_ keyboard: GCKeyboard) {
-        self.keyboard = keyboard
-        self.keyboardInput = keyboard.keyboardInput!
-    }
-    
-    func connect(to controller: HIDIOController) {
-        self.controller = controller
-      
-        self.keyboardInput.keyChangedHandler = { [weak self] keyboard, key, keyCode, pressed in
-            // print(keyboard, key, keyCode, pressed)
-            Task {
-                let keyCode = LinuxKeycode.from(gameController: keyCode)
-                if pressed {
-                    try? await self?.controller?.keyDown(keyCode: keyCode)
-                } else {
-                    try? await self?.controller?.keyUp(keyCode: keyCode)
-                }
+    private var keyboard: GCKeyboard? {
+        willSet {
+            if newValue == nil {
+                self.destroyKeyboardInputHandler()
+            }
+        }
+        didSet {
+            if keyboard != nil {
+                self.setupKeyboardInputHandler()
             }
         }
     }
     
+    private var controller: HIDIOController?
+
+    init() {
+
+    }
+    
+    deinit {
+        self.destroyKeyboardInputHandler()
+        self.disconnect()
+    }
+
+    fileprivate func setup() {
+        NotificationCenter.default.publisher(for: .GCKeyboardDidConnect)
+            .compactMap { $0.object as? GCKeyboard }
+            .sink { [weak self] keyboard in
+                self?.keyboard = keyboard
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: .GCKeyboardDidDisconnect)
+            .compactMap { $0.object as? GCKeyboard }
+            .sink { [weak self] keyboard in
+                self?.keyboard = nil
+            }
+            .store(in: &cancellables)
+    }
+
+    
+    fileprivate func setupKeyboardInputHandler() {
+        guard self.controller != nil else {
+            return
+        }
+        
+        self.keyboard?.keyboardInput?.keyChangedHandler = { [weak self] keyboard, key, keyCode, pressed in
+            guard let controller = self?.controller else {
+                return
+            }
+            
+            let keyCode = LinuxKeycode.from(gameController: keyCode)
+            
+            if pressed {
+                controller.keyDown(keyCode: keyCode)
+            } else {
+                controller.keyUp(keyCode: keyCode)
+            }
+        }
+    }
+    
+    fileprivate func destroyKeyboardInputHandler() {
+        self.keyboard?.keyboardInput?.keyChangedHandler = nil
+    }
+    
+    func connect(to controller: HIDIOController) {
+        self.controller = controller
+        self.setupKeyboardInputHandler()
+    }
+    
     func disconnect() {
-        self.keyboardInput.keyChangedHandler = nil
+        self.controller = nil
+        self.destroyKeyboardInputHandler()
     }
 }

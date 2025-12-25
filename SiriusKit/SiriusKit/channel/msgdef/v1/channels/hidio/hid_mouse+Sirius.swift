@@ -8,6 +8,9 @@
 import Foundation
 import SwiftProtobuf
 
+
+
+
 public struct MouseMoveEventType: SiriusEnum {
     typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEventType
     
@@ -35,7 +38,6 @@ public struct MouseButtonEventType: SiriusEnum {
     public static let up = Self.fromProtobufEnum(.mouseButtonUp)
 }
 
-
 public struct MouseButtonType: SiriusEnum {
     typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_MouseButtonType
     
@@ -59,8 +61,7 @@ public struct CursorPositionPixel: SiriusMessage {
     public let x: Int32
     public let y: Int32
 
-
-    init(x: Int32, y: Int32) {
+    public init(x: Int32, y: Int32) {
         self.x = x
         self.y = y
     }
@@ -86,8 +87,7 @@ public struct CursorPositionPercent: SiriusMessage {
     public let x: Float
     public let y: Float
 
-
-    init(x: Float, y: Float) {
+    public init(x: Float, y: Float) {
         self.x = x
         self.y = y
     }
@@ -107,163 +107,174 @@ public struct CursorPositionPercent: SiriusMessage {
     }
 }
 
-public struct CursorPositionScope: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope
+public enum CursorPositionScope {
+    case displayId(Int32)
+    case windowId(Int64)
     
-    public enum OneOf_Scope {
-        case displayId(Int32)
-        case windowId(Int64)
-        case none
-    }
-
-
-    public let scope: OneOf_Scope
-
-    init(scope: OneOf_Scope) {
-        self.scope = scope
-    }
-
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope) throws {
-        switch protobufMessage.scope {
+    internal static func from(_ pbMessage: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope) throws -> Self {
+        switch pbMessage.scope {
         case .displayID(let val):
-            self.scope = .displayId(Int32(val))
-            break
+            return .displayId(Int32(val))
         case .windowID(let val):
-            self.scope = .windowId(Int64(val))
-            break
+            return .windowId(Int64(val))
         case .none:
-            self.scope = .none
-            break
+            throw SiriusMessageError.invalidProtobufMessage
         }
     }
-
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
-        switch self.scope {
+    
+    internal func toProtobufEnum() -> Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope {
+        var message = Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope()
+        
+        switch self {
         case .displayId(let val):
             message.scope = .displayID(val)
             break
         case .windowId(let val):
             message.scope = .windowID(val)
             break
-        case .none:
-            break
         }
-
+        
         return message
     }
 }
 
-public struct MouseMoveEvent: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent
-    
-    public enum OneOf_Position {
+public struct MouseMoveEvent: HIDEvent, HIDEventConvertable {
+    public enum OneOf_CursorPosition {
         case pixel(CursorPositionPixel)
         case percent(CursorPositionPercent)
-        case none
     }
-
+    
+    public static let kind: HIDIOEventKind = .mouseMove
+    
     public let moveType: MouseMoveEventType
-    public let scope: CursorPositionScope?
-
-    public let position: OneOf_Position
-
-    init(moveType: MouseMoveEventType, scope: CursorPositionScope?, position: OneOf_Position) {
+    public let scope: CursorPositionScope
+    
+    public let position: OneOf_CursorPosition
+    
+    public init(moveType: MouseMoveEventType, scope: CursorPositionScope, position: OneOf_CursorPosition) {
         self.moveType = moveType
         self.scope = scope
         self.position = position
     }
-
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent) throws {
-        self.moveType = MouseMoveEventType.fromProtobufEnum(protobufMessage.moveType)
-        self.scope = protobufMessage.hasScope ? try CursorPositionScope(from: protobufMessage.scope) : nil
-        switch protobufMessage.position {
-        case .pixel(let val):
-            self.position = .pixel(try CursorPositionPixel(from: val))
-            break
-        case .percent(let val):
-            self.position = .percent(try CursorPositionPercent(from: val))
-            break
-        case .none:
-            self.position = .none
-            break
+    
+    static func from(_ container: Sirius_Msgdef_V1_Channels_Hidio_HIDEvent) throws -> Self {
+        guard case .mouseMoveEvent(let message) = container.event else {
+            throw SiriusMessageError.invalidProtobufMessage
         }
+        
+        let event = Self(
+            moveType: MouseMoveEventType.fromProtobufEnum(message.moveType),
+            scope: try CursorPositionScope.from(message.scope),
+            position: try {
+                switch message.position {
+                case .pixel(let val):
+                    return .pixel(try CursorPositionPixel(from: val))
+                case .percent(let val):
+                    return .percent(try CursorPositionPercent(from: val))
+                case .none:
+                    throw SiriusMessageError.invalidProtobufMessage
+                }
+            }()
+        )
+        
+        return consume event
     }
-
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
-        message.moveType = self.moveType.toProtobufEnum()
-        if let val = self.scope {
-            message.scope = val.toProtobufMessage()
-        }
+    
+    func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Hidio_HIDEvent {
+        var message = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent()
+        
+        var mouseMoveEventMessage = Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent()
+        
+        mouseMoveEventMessage.moveType = self.moveType.toProtobufEnum()
+        mouseMoveEventMessage.scope = self.scope.toProtobufEnum()
+        
         switch self.position {
         case .pixel(let val):
-            message.position = .pixel(val.toProtobufMessage())
+            mouseMoveEventMessage.position = .pixel(val.toProtobufMessage())
             break
         case .percent(let val):
-            message.position = .percent(val.toProtobufMessage())
-            break
-        case .none:
+            mouseMoveEventMessage.position = .percent(val.toProtobufMessage())
             break
         }
-
+        message.event = .mouseMoveEvent(mouseMoveEventMessage)
+        
         return message
     }
 }
 
-public struct MouseButtonEvent: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent
+public struct MouseButtonEvent: HIDEvent, HIDEventConvertable {
+    public static let kind: HIDIOEventKind = .mouseButton
     
     public let eventType: MouseButtonEventType
     public let button: MouseButtonType
 
-
-    init(eventType: MouseButtonEventType, button: MouseButtonType) {
+    public init(eventType: MouseButtonEventType, button: MouseButtonType) {
         self.eventType = eventType
         self.button = button
     }
 
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent) throws {
-        self.eventType = MouseButtonEventType.fromProtobufEnum(protobufMessage.eventType)
-        self.button = MouseButtonType.fromProtobufEnum(protobufMessage.button)
+    static func from(_ container: Sirius_Msgdef_V1_Channels_Hidio_HIDEvent) throws -> Self {
+        guard case .mouseButtonEvent(let message) = container.event else {
+            throw SiriusMessageError.invalidProtobufMessage
+        }
+        
+        let event = Self(
+            eventType: MouseButtonEventType.fromProtobufEnum(message.eventType),
+            button: MouseButtonType.fromProtobufEnum(message.button)
+        )
+        
+        return consume event
     }
 
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
+    func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Hidio_HIDEvent {
+        var container = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent()
+        
+        var message = Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent()
 
         message.eventType = self.eventType.toProtobufEnum()
         message.button = self.button.toProtobufEnum()
 
-        return message
+        container.event = .mouseButtonEvent(message)
+        
+        return container
     }
 }
 
-public struct MouseWheelEvent: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_MouseWheelEvent
+public struct MouseWheelEvent: HIDEvent, HIDEventConvertable {
+    public static let kind: HIDIOEventKind = .mouseWheel
     
     public let deltaX: Float
     public let deltaY: Float
 
-
-    init(deltaX: Float, deltaY: Float) {
+    public init(deltaX: Float, deltaY: Float) {
         self.deltaX = deltaX
         self.deltaY = deltaY
     }
 
-    init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_MouseWheelEvent) throws {
-        self.deltaX = protobufMessage.deltaX
-        self.deltaY = protobufMessage.deltaY
+    static func from(_ container: Sirius_Msgdef_V1_Channels_Hidio_HIDEvent) throws -> Self {
+        guard case .mouseWheelEvent(let message) = container.event else {
+            throw SiriusMessageError.invalidProtobufMessage
+        }
+        
+        let event = Self(
+            deltaX: message.deltaX,
+            deltaY: message.deltaY
+        )
+        
+        return consume event
     }
 
-    func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
+    func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Hidio_HIDEvent {
+        var container = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent()
+        
+        var message = Sirius_Msgdef_V1_Channels_Hidio_MouseWheelEvent()
 
         message.deltaX = self.deltaX
         message.deltaY = self.deltaY
+        
+        container.event = .mouseWheelEvent(message)
 
-        return message
+        return container
     }
 }
 

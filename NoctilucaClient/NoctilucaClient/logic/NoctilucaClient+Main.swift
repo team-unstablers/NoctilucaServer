@@ -28,6 +28,8 @@ extension NoctilucaClient {
         guard let hidioController else {
             return
         }
+        
+        connectGameControllerMouse(hidioController)
 
         switch method {
         case .gameController:
@@ -60,13 +62,23 @@ extension NoctilucaClient {
     }
 
     private func connectGameControllerKeyboard(_ hidioController: HIDIOController) {
-        guard let keyboard = HIDIOGCKeyboard.coalesced() else {
+        guard let keyboard = HIDIOGCKeyboard.shared() else {
             self.logger.warning("HIDIO: GCKeyboard is not available")
             return
         }
 
         self.logger.info("HIDIO: connected GCKeyboard")
         hidioController.connect(keyboard)
+    }
+    
+    private func connectGameControllerMouse(_ hidioController: HIDIOController) {
+        guard let mouse = HIDIOGCMouse.shared() else {
+            self.logger.warning("HIDIO: GCMouse is not available")
+            return
+        }
+
+        self.logger.info("HIDIO: connected GCMouse")
+        hidioController.connect(mouse)
     }
 
     private func handleEventTapError(_ error: Error) {
