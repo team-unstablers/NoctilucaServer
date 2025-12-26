@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 import SiriusKitClient
 
 
@@ -31,6 +32,18 @@ struct HIDIOSwiftUIMouseView: View {
     
     @State
     var scrollPrevLocation: CGPoint = .zero
+
+    @State
+    var scrollPrevTimestamp: TimeInterval?
+
+    @State
+    var scrollVelocity: CGPoint = .zero
+
+    @State
+    var scrollInertiaTimer: Timer?
+
+    @State
+    var scrollInertiaLastTick: TimeInterval?
 
     var body: some View {
         VStack(alignment: .center) {
@@ -89,7 +102,7 @@ struct HIDIOSwiftUIMouseView: View {
                         
                             .onEnded { event in
                                 print("spatial event end: \(event.count)")
-                                handleSpatialEvent(for: .change, events: event)
+                                handleSpatialEvent(for: .end, events: event)
 
                             }
                                                      )
@@ -103,6 +116,8 @@ struct HIDIOSwiftUIMouseView: View {
                         if client.hidioController != nil {
                             client.hidioController.disconnect(.swiftUIMouse)
                         }
+
+                        stopScrollInertia()
                     }
                     .onReceive(client.uiEvents) { event in
                         guard case .FIXME_projectionStarted(let projectionSession) = event else {
@@ -129,30 +144,101 @@ struct HIDIOSwiftUIMouseView: View {
         
         if phase == .change {
             if events.count == 2 {
+                stopScrollInertia()
+
                 if !isScrolling {
                     isScrolling = true
+                    scrollVelocity = .zero
+                    scrollPrevTimestamp = nil
                 }
-                
+
                 let location = events.averageLocation()
-                
+                let timestamp = events.averageTimestamp()
+
                 if scrollPrevLocation != .zero {
                     let deltaX = location.x - scrollPrevLocation.x
                     let deltaY = location.y - scrollPrevLocation.y
+
+                    let scrollDelta = CGPoint(x: deltaX, y: -deltaY)
+
+                    if let prevTimestamp = scrollPrevTimestamp {
+                        let dt = timestamp - prevTimestamp
+                        if dt > 0 {
+                            let vx = scrollDelta.x / dt
+                            let vy = scrollDelta.y / dt
+
+                            let smoothing: CGFloat = 0.2
+                            scrollVelocity = CGPoint(
+                                x: (scrollVelocity.x * (1.0 - smoothing)) + (vx * smoothing),
+                                y: (scrollVelocity.y * (1.0 - smoothing)) + (vy * smoothing)
+                            )
+                        }
+                    }
                     
-                    mouse.reportMouseScroll(deltaX: Double(deltaX), deltaY: Double(-deltaY))
+                    print(scrollDelta.x)
+
+                    mouse.reportMouseScroll(deltaX: Double(scrollDelta.x), deltaY: Double(scrollDelta.y))
                 }
-                
+
                 scrollPrevLocation = location
+                scrollPrevTimestamp = timestamp
             } else {
+                if isScrolling {
+                    startScrollInertiaIfNeeded()
+                }
                 isScrolling = false
                 scrollPrevLocation = .zero
+                scrollPrevTimestamp = nil
                 // end scroll
             }
         } else if phase == .end {
+            if isScrolling {
+                startScrollInertiaIfNeeded()
+            }
             isScrolling = false
             scrollPrevLocation = .zero
+            scrollPrevTimestamp = nil
         }
         
+    }
+
+    fileprivate func startScrollInertiaIfNeeded() {
+        guard scrollInertiaTimer == nil else {
+            return
+        }
+
+        let speed = hypot(scrollVelocity.x, scrollVelocity.y)
+        if speed < 5.0 {
+            return
+        }
+
+        scrollInertiaLastTick = ProcessInfo.processInfo.systemUptime
+
+        scrollInertiaTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
+            let now = ProcessInfo.processInfo.systemUptime
+            let last = scrollInertiaLastTick ?? now
+            let dt = max(0.0, now - last)
+            scrollInertiaLastTick = now
+
+            let decelPerFrame: CGFloat = 0.92
+            let decay = pow(decelPerFrame, dt * 60.0)
+            scrollVelocity = CGPoint(x: scrollVelocity.x * decay, y: scrollVelocity.y * decay)
+
+            let speed = hypot(scrollVelocity.x, scrollVelocity.y)
+            if speed < 5.0 {
+                stopScrollInertia()
+                return
+            }
+
+            let delta = CGPoint(x: scrollVelocity.x * dt, y: scrollVelocity.y * dt)
+            mouse.reportMouseScroll(deltaX: Double(delta.x), deltaY: Double(delta.y))
+        }
+    }
+
+    fileprivate func stopScrollInertia() {
+        scrollInertiaTimer?.invalidate()
+        scrollInertiaTimer = nil
+        scrollInertiaLastTick = nil
     }
 }
 
@@ -171,6 +257,21 @@ fileprivate extension SpatialEventCollection {
             totalY += event.location.y
         }
         
+        
         return CGPoint(x: totalX / CGFloat(self.count), y: totalY / CGFloat(self.count))
+    }
+
+    func averageTimestamp() -> TimeInterval {
+        guard self.count > 0 else {
+            return 0
+        }
+
+        var total: TimeInterval = 0
+
+        for event in self {
+            total += event.timestamp
+        }
+
+        return total / TimeInterval(self.count)
     }
 }

@@ -210,11 +210,11 @@ extension EventInjector {
 
     func post(mouseWheelEvent event: MouseWheelEvent) {
         var mouseType: CGEventType = .null
-
+        
         guard let cgEvent = CGEvent(
                 scrollWheelEvent2Source: eventSource,
                 units: .pixel,
-                wheelCount: 1,
+                wheelCount: abs(event.deltaY) > abs(event.deltaX) ? 1 : 2,
                 wheel1: Int32(-event.deltaY),
                 wheel2: Int32(event.deltaX),
                 wheel3: 0
