@@ -43,10 +43,6 @@ class HIDIOController {
     }
         
     private func publisherTaskMain() async {
-        // TODO: interval 설정 가능해야 함
-        //
-        
-        
         // TODO: 폴링 레이트 설정 가능해야 함
         // 120Hz로 폴링
         let pollingRate = 120.0
