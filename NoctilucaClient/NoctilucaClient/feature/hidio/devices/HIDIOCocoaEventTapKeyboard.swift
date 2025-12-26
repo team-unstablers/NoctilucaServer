@@ -13,6 +13,11 @@ import CoreGraphics
 
 import SiriusKitClient
 
+extension HIDIOVirtualDeviceIdentifier {
+    /// Cocoa Event Tap을 사용한 키보드 가상 디바이스. (macOS 전용)
+    static let cocoaEventTapKeyboard = Self(rawValue: UUID(uuidString: "AFB5D1BE-0126-4C92-96AE-83BB2E2B8A88")!)
+}
+
 final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice {
     struct ToggleShortcut {
         let keyCode: CGKeyCode
@@ -38,6 +43,7 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice {
     }
 
     static let kind: HIDIOVirtualDeviceKind = .keyboard
+    static let identifier: HIDIOVirtualDeviceIdentifier = .cocoaEventTapKeyboard
 
     private let toggleShortcut: ToggleShortcut
 

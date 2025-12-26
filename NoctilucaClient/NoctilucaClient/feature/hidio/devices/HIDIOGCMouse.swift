@@ -20,6 +20,11 @@ import UIKit
 
 import SiriusKitClient
 
+extension HIDIOVirtualDeviceIdentifier {
+    /// GameController.framework를 사용한 마우스 가상 디바이스.
+    static let gcMouse = Self(rawValue: UUID(uuidString: "D2DF5CDE-ED85-4CB3-9774-6CAE7B6C1D77")!)
+}
+
 
 // TODO: HIDIOGCMouseHub 만들기
 
@@ -48,6 +53,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     }
     
     static let kind: HIDIOVirtualDeviceKind = .mouse
+    static let identifier: HIDIOVirtualDeviceIdentifier = .gcMouse
     
     private let logger = NoctilucaLogger(category: "HIDIOGCMouse")
     
@@ -68,17 +74,6 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     
     private var controller: HIDIOController?
     
-    var geometry: CGSize = .zero
-    var origin: CGPoint = .zero
-    
-    var isClicked: Bool {
-        guard let mouseInput = self.mouse?.mouseInput else {
-            return false
-        }
-        
-        return mouseInput.leftButton.isPressed || (mouseInput.rightButton?.isPressed ?? false)
-    }
-
     init() {
     }
     
@@ -176,8 +171,10 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
             self?.logger.debug("Mouse wheel changed: xValue=\(xValue), yValue=\(yValue)")
             
 #if os(macOS)
+            /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
             let delta = CGPoint(x: CGFloat(xValue), y: CGFloat(-yValue))
 #else
+            /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
             let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
 #endif
             controller.mouseWheel(delta: delta)

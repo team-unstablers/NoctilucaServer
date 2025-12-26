@@ -16,7 +16,7 @@ class HIDIOController {
     private let logger = NoctilucaLogger(category: "HIDIOController")
     
     private let channel: HIDIOChannel
-    private var devices: [HIDIOVirtualDeviceKind: HIDIOVirtualDevice] = [:]
+    private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
     
     private let eventStream: AsyncStream<HIDEvent>
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation
@@ -61,24 +61,39 @@ class HIDIOController {
     }
     
     func connect(_ device: HIDIOVirtualDevice) {
-        let kind = type(of: device).kind
+        let identifier = type(of: device).identifier
         
-        self.disconnect(kind: kind)
+        self.disconnect(identifier)
         device.connect(to: self)
         
-        self.devices[kind] = device
-    }
-
-    func device(for kind: HIDIOVirtualDeviceKind) -> HIDIOVirtualDevice? {
-        return devices[kind]
+        self.devices[identifier] = device
     }
     
-    func disconnect(kind: HIDIOVirtualDeviceKind) {
-        guard let device = self.devices[kind] else {
+    func device(for identifier: HIDIOVirtualDeviceIdentifier) -> HIDIOVirtualDevice? {
+        return self.devices[identifier]
+    }
+
+    func devices(for kind: HIDIOVirtualDeviceKind) -> [HIDIOVirtualDevice] {
+        let devices = self.devices.filter { type(of: $0.value).kind == kind }.compactMap { $0.value }
+        return devices
+    }
+    
+    func disconnect(_ identifier: HIDIOVirtualDeviceIdentifier) {
+        guard let device = self.devices[identifier] else {
             return
         }
         
         device.disconnect()
+        self.devices.removeValue(forKey: identifier)
+    }
+    
+    func disconnectAll(kind: HIDIOVirtualDeviceKind) {
+        let devicesToDisconnect = self.devices.filter { type(of: $0.value).kind == kind }
+        
+        for (identifier, device) in devicesToDisconnect {
+            device.disconnect()
+            self.devices.removeValue(forKey: identifier)
+        }
     }
     
     func keyDown(keyCode: LinuxKeycode) {

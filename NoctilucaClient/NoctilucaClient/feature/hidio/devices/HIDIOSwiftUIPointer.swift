@@ -12,8 +12,14 @@ import Combine
 
 import SiriusKitClient
 
-class HIDIOSwiftUIPointer: HIDIOVirtualDevice {
-    static let kind: HIDIOVirtualDeviceKind = .pointer
+extension HIDIOVirtualDeviceIdentifier {
+    /// SwiftUI의 .onTapGesture, .onHover 등을 사용한 마우스 가상 디바이스.
+    static let swiftUIMouse = Self(rawValue: UUID(uuidString: "D2B3CBCF-ED5F-4595-B54B-7491301ECFC7")!)
+}
+
+class HIDIOSwiftUIMouse: HIDIOVirtualDevice {
+    static let kind: HIDIOVirtualDeviceKind = .mouse
+    static let identifier: HIDIOVirtualDeviceIdentifier = .swiftUIMouse
     
     private let logger = NoctilucaLogger(category: "HIDIOSwiftUIMouse")
   
@@ -42,6 +48,28 @@ class HIDIOSwiftUIPointer: HIDIOVirtualDevice {
         let y = point.y / geometry.height
         
         controller.moveMouseAbsolutePercentage(to: CGPoint(x: x, y: y))
+    }
+    
+    func reportMouseClick(button: MouseButtonType, isPressed: Bool) {
+        guard let controller else {
+            logger.debug("No controller connected, skipping mouse click report")
+            return
+        }
+        
+        if isPressed {
+            controller.mouseButtonDown(button: button)
+        } else {
+            controller.mouseButtonUp(button: button)
+        }
+    }
+    
+    func reportMouseScroll(deltaX: Double, deltaY: Double) {
+        guard let controller else {
+            logger.debug("No controller connected, skipping mouse click report")
+            return
+        }
+        
+        controller.mouseWheel(delta: CGPoint(x: deltaX, y: deltaY))
     }
    
     func connect(to controller: HIDIOController) {

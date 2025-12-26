@@ -12,6 +12,11 @@ import GameController
 
 import SiriusKitClient
 
+extension HIDIOVirtualDeviceIdentifier {
+    /// GameController.framework를 사용한 키보드 가상 디바이스.
+    static let gcKeyboard = Self(rawValue: UUID(uuidString: "D75DDF89-09E5-4BFC-B28A-64896249C401")!)
+}
+
 class HIDIOGCKeyboard: HIDIOVirtualDevice {
     private static var _shared: HIDIOGCKeyboard? = nil
     
@@ -27,6 +32,7 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
     }
     
     static let kind: HIDIOVirtualDeviceKind = .keyboard
+    static let identifier: HIDIOVirtualDeviceIdentifier = .gcKeyboard
     
     private var cancellables: Set<AnyCancellable> = []
 

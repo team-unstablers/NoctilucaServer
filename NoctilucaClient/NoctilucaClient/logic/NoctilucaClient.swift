@@ -274,8 +274,10 @@ class NoctilucaClient: ObservableObject {
         
         self.phase = .closed
 
-        self.hidioController?.disconnect(kind: .keyboard)
-        
+        self.hidioController?.disconnectAll(kind: .keyboard)
+        self.hidioController?.disconnectAll(kind: .mouse)
+        self.hidioController?.disconnectAll(kind: .pointer)
+
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
         
