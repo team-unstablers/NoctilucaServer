@@ -30,14 +30,12 @@ struct MainWindowMainPhaseContentView: View {
                         .offset(offset)
                 }
 
-                /*
                 if let session = viewModel.client?.projectionChannel?.sessions.first?.value,
                    let codec = session.codec
                 {
                     PerformanceOverlay(codec: codec, rtt: viewModel.averagePingRTT)
                         .padding(16)
                 }
-                 */
 
 #if os(macOS)
                 if let warning = viewModel.inputWarning {

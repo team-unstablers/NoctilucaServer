@@ -42,16 +42,6 @@ final class SampleBufferHostView: UIView {
 
 final class SampleBufferHostViewController: UIViewController {
     let displayLayer: AVSampleBufferDisplayLayer
-    
-    var isPointerLocked: Bool = false {
-        didSet {
-            setNeedsUpdateOfPrefersPointerLocked()
-        }
-    }
-    
-    override var prefersPointerLocked: Bool {
-        return isPointerLocked
-    }
 
     init(displayLayer: AVSampleBufferDisplayLayer) {
         self.displayLayer = displayLayer
@@ -62,20 +52,6 @@ final class SampleBufferHostViewController: UIViewController {
 
     override func loadView() {
         view = SampleBufferHostView(displayLayer: displayLayer)
-        
-        Task {
-            while (true) {
-                print("[TEST] \(self.prefersPointerLocked) \(self.isPointerLocked) \(view.window?.windowScene?.activationState == .foregroundActive)")
-                try? await Task.sleep(for: .seconds(1))
-                
-                self.setNeedsUpdateOfPrefersPointerLocked()
-            }
-        }
-    }
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesBegan(touches, with: event)
-        isPointerLocked = true
     }
 }
 
@@ -88,7 +64,6 @@ struct UIKitSampleBufferDisplayView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: SampleBufferHostViewController, context: Context) {
         // No-op: displayLayer is managed by SampleBufferHostView.
-        uiViewController.isPointerLocked = true
     }
 }
 
