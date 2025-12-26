@@ -42,7 +42,15 @@ extension EventInjector {
     func performMouseMoveAbsolute(percentage position: CursorPositionPercent) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
-        let position = CGPoint(x: Int(Double(position.x) * 1.0), y: Int(Double(position.y) * 1.0))
+        
+        let screen = NSScreen.main!
+        let screenFrame = screen.frame
+        
+        let position = CGPoint(
+            x: screenFrame.origin.x + CGFloat(position.x) * screenFrame.size.width,
+            y: screenFrame.origin.y + CGFloat(position.y) * screenFrame.size.height
+        )
+        
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -104,6 +112,50 @@ extension EventInjector {
         lastMousePosition = position
         
     }
+    
+    func performMouseMoveRelative(percentage position: CursorPositionPercent) {
+        var mouseType: CGEventType = .mouseMoved
+        var mouseButton: CGMouseButton = .left
+        
+        guard let event = CGEvent(source: nil) else {
+            return
+        }
+        
+        let screen = NSScreen.main!
+        let screenFrame = screen.frame
+        
+        let currentPosition = event.location
+        
+        let position = CGPoint(
+            x: currentPosition.x + (CGFloat(position.x) * screenFrame.size.width),
+            y: currentPosition.y + (CGFloat(position.y) * screenFrame.size.height)
+        )
+
+        
+
+        if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
+            mouseType = .leftMouseDragged
+        } else if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_RIGHT > 0) {
+            mouseType = .rightMouseDragged
+        }
+
+        guard let cgEvent = CGEvent(
+                mouseEventSource: eventSource,
+                mouseType: mouseType,
+                mouseCursorPosition: position,
+                mouseButton: mouseButton
+        )
+        else {
+            return
+        }
+
+        cgEvent.sanitizeModifierFlags(with: keyDownState)
+        cgEvent.post(tap: .cgSessionEventTap)
+
+        lastMousePosition = position
+        
+    }
+
 
     func post(mouseButtonEvent event: MouseButtonEvent) {
         var mouseType: CGEventType = .null

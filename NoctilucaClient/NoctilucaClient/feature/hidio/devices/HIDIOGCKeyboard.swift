@@ -76,6 +76,10 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
             return
         }
         
+        if keyboard == nil {
+            self.keyboard = GCKeyboard.coalesced
+        }
+        
         self.keyboard?.keyboardInput?.keyChangedHandler = { [weak self] keyboard, key, keyCode, pressed in
             guard let controller = self?.controller else {
                 return

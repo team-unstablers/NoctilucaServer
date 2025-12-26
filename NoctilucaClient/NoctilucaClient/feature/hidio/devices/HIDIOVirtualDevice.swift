@@ -14,6 +14,7 @@ enum HIDIOVirtualDeviceError: LocalizedError {
 enum HIDIOVirtualDeviceKind {
     case keyboard
     case mouse
+    case pointer
 }
 
 protocol HIDIOVirtualDevice {

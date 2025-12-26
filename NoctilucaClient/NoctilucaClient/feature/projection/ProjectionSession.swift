@@ -35,6 +35,8 @@ class ProjectionSession: Identifiable {
     
     private(set) var codec: Codec?
     var formatDescription: CMFormatDescription?
+    
+    var size: CGSize = .zero
 
     init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
         self.id = id
@@ -114,6 +116,15 @@ extension ProjectionSession: VideoDecoderDelegate {
         
         let pixelBuffer = frame.pixelBuffer
         self.logger.info("\(pixelBuffer)")
+        
+        if size == .zero {
+            // FIXME
+            guard let dimensions = try? CMFormatDescription(imageBuffer: frame.pixelBuffer).dimensions else {
+                return
+            }
+            
+            self.size = CGSize(width: Int(dimensions.width), height: Int(dimensions.height))
+        }
         
         
         

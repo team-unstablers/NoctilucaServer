@@ -79,20 +79,30 @@ class HIDIOChannel: Channel {
     
     func inject(mouseMoveEvent: MouseMoveEvent) {
         if mouseMoveEvent.moveType == .absolute {
-            logger.warning("absolute mouse move is not supported yet")
-            return
-        }
-        
-        guard case .displayId(let displayID) = mouseMoveEvent.scope else {
-            logger.warning("only screen scope is supported for mouse move")
-            return
-        }
-        
-        switch mouseMoveEvent.position {
-        case .pixel(let pixelPosition):
-            eventInjector.performMouseMoveRelative(pixel: pixelPosition)
-        case .percent(let percentPosition):
-            break
+            guard case .displayId(let displayID) = mouseMoveEvent.scope else {
+                logger.warning("only screen scope is supported for mouse move")
+                return
+            }
+            
+            switch mouseMoveEvent.position {
+            case .pixel(let pixelPosition):
+                return
+            case .percent(let percentPosition):
+                eventInjector.performMouseMoveAbsolute(percentage: percentPosition)
+                break
+            }
+        } else {
+            guard case .displayId(let displayID) = mouseMoveEvent.scope else {
+                logger.warning("only screen scope is supported for mouse move")
+                return
+            }
+            
+            switch mouseMoveEvent.position {
+            case .pixel(let pixelPosition):
+                eventInjector.performMouseMoveRelative(pixel: pixelPosition)
+            case .percent(let percentPosition):
+                eventInjector.performMouseMoveRelative(percentage: percentPosition)
+            }
         }
     }
 }

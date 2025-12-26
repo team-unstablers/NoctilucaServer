@@ -106,12 +106,23 @@ class HIDIOController {
         self.eventStreamContinuation.yield(event)
     }
     
-    func moveMouseRelative(to position: CGPoint) {
+    func moveMouseAbsolutePercentage(to position: CGPoint) {
+        let event = MouseMoveEvent(
+            moveType: .absolute,
+            // TODO: setMouseScope(...) 같은거 필요하고, 프로젝션 윈도우에서 능동적으로 호출해야 함
+            scope: .displayId(-1),
+            position: .percent(CursorPositionPercent(x: Float(position.x), y: Float(position.y)))
+        )
+        
+        self.eventStreamContinuation.yield(event)
+    }
+    
+    func moveMouseRelativePercentage(to position: CGPoint) {
         let event = MouseMoveEvent(
             moveType: .relative,
             // TODO: setMouseScope(...) 같은거 필요하고, 프로젝션 윈도우에서 능동적으로 호출해야 함
             scope: .displayId(-1),
-            position: .pixel(CursorPositionPixel(x: Int32(position.x), y: Int32(position.y)))
+            position: .percent(CursorPositionPercent(x: Float(position.x), y: Float(position.y)))
         )
         
         self.eventStreamContinuation.yield(event)

@@ -40,20 +40,55 @@ final class SampleBufferHostView: UIView {
     }
 }
 
-struct UIKitSampleBufferDisplayView: UIViewRepresentable {
+final class SampleBufferHostViewController: UIViewController {
     let displayLayer: AVSampleBufferDisplayLayer
-
-    func makeUIView(context: Context) -> UIView {
-        let view = SampleBufferHostView(displayLayer: displayLayer)
-        return view
+    
+    var isPointerLocked: Bool = false {
+        didSet {
+            setNeedsUpdateOfPrefersPointerLocked()
+        }
+    }
+    
+    override var prefersPointerLocked: Bool {
+        return isPointerLocked
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {
-        // Update frame or other properties if needed
-        /*
-        displayLayer.frame = uiView.bounds
-        displayLayer.bounds = uiView.bounds
-         */
+    init(displayLayer: AVSampleBufferDisplayLayer) {
+        self.displayLayer = displayLayer
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func loadView() {
+        view = SampleBufferHostView(displayLayer: displayLayer)
+        
+        Task {
+            while (true) {
+                print("[TEST] \(self.prefersPointerLocked) \(self.isPointerLocked) \(view.window?.windowScene?.activationState == .foregroundActive)")
+                try? await Task.sleep(for: .seconds(1))
+                
+                self.setNeedsUpdateOfPrefersPointerLocked()
+            }
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        isPointerLocked = true
+    }
+}
+
+struct UIKitSampleBufferDisplayView: UIViewControllerRepresentable {
+    let displayLayer: AVSampleBufferDisplayLayer
+
+    func makeUIViewController(context: Context) -> SampleBufferHostViewController {
+        SampleBufferHostViewController(displayLayer: displayLayer)
+    }
+
+    func updateUIViewController(_ uiViewController: SampleBufferHostViewController, context: Context) {
+        // No-op: displayLayer is managed by SampleBufferHostView.
+        uiViewController.isPointerLocked = true
     }
 }
 

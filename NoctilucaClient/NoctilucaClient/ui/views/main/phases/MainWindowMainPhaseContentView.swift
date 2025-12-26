@@ -30,12 +30,14 @@ struct MainWindowMainPhaseContentView: View {
                         .offset(offset)
                 }
 
+                /*
                 if let session = viewModel.client?.projectionChannel?.sessions.first?.value,
                    let codec = session.codec
                 {
                     PerformanceOverlay(codec: codec, rtt: viewModel.averagePingRTT)
                         .padding(16)
                 }
+                 */
 
 #if os(macOS)
                 if let warning = viewModel.inputWarning {
@@ -54,7 +56,7 @@ struct MainWindowMainPhaseContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
 #endif
-
+                /*
                 Rectangle()
                     .fill(Color.black.opacity(0.001))
                     // .ignoresSafeArea()
@@ -124,6 +126,9 @@ struct MainWindowMainPhaseContentView: View {
                             }
                         }
                     }
+                 */
+                
+                HIDIOSwiftUIMouseView(client: viewModel.client)
 
 
             }

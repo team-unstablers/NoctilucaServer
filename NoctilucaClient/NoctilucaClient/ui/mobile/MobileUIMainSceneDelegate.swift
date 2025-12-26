@@ -11,6 +11,18 @@ import UIKit
 
 import SwiftUI
 
+final class TestViewController: UIHostingController<AnyView> {
+    var isPointerLocked: Bool = false {
+        didSet {
+            setNeedsUpdateOfPrefersPointerLocked()
+        }
+    }
+    
+    override var prefersPointerLocked: Bool {
+        return isPointerLocked
+    }
+}
+
 class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
@@ -32,12 +44,17 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
             .environmentObject(mainUIViewModel)
             .environmentObject(mainWindowViewModel)
             .environmentObject(settingsStore)
-        
+               
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
-            window.rootViewController = UIHostingController(rootView: contentView)
+            
+            let controller = TestViewController(rootView: AnyView(contentView))
+            window.rootViewController = controller
+
             self.window = window
             window.makeKeyAndVisible()
+            
+            controller.isPointerLocked = true
         }
     }
     

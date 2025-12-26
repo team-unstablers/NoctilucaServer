@@ -47,6 +47,17 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     }
     
     private var controller: HIDIOController?
+    
+    var geometry: CGSize = .zero
+    var origin: CGPoint = .zero
+    
+    var isClicked: Bool {
+        guard let mouseInput = self.mouse?.mouseInput else {
+            return false
+        }
+        
+        return mouseInput.leftButton.isPressed || (mouseInput.rightButton?.isPressed ?? false)
+    }
 
     init() {
     }
@@ -98,18 +109,32 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
             return
         }
         
+        mouse?.handlerQueue = .global(qos: .background)
+        
+        mouseInput.scroll.preferredSystemGestureState = .alwaysReceive
+        
+        
         mouseInput.mouseMovedHandler = { [weak self] mouse, deltaX, deltaY in
             guard let controller = self?.controller else {
                 return
             }
             
-            self?.logger.debug("Mouse moved: deltaX=\(deltaX), deltaY=\(deltaY)")
+            guard let geometry = self?.geometry,
+                  geometry != .zero
+            else {
+                return
+            }
+            
+            // self?.logger.debug("Mouse moved: deltaX=\(deltaX), deltaY=\(deltaY), \(geometry), \(UIScreen.main.nativeBounds.height)x\(UIScreen.main.nativeBounds.width)")
 
-            let position = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
-            controller.moveMouseRelative(to: position)
+            controller.moveMouseRelativePercentage(to: CGPoint(
+                x: CGFloat(deltaX) / geometry.width,
+                y: CGFloat(-deltaY) / geometry.height
+            ))
         }
         
         func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
+            button.preferredSystemGestureState = .alwaysReceive
             button.valueChangedHandler = { [weak self] button, value, pressed in
                 guard let controller = self?.controller else {
                     return
@@ -130,6 +155,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         if let rightButton = mouseInput.rightButton {
             setupButtonHandler(button: rightButton, as: .right)
         }
+
         
         mouseInput.scroll.valueChangedHandler = { [weak self] wheel, xValue, yValue in
             guard let controller = self?.controller else {
@@ -138,13 +164,22 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
             
             self?.logger.debug("Mouse wheel changed: xValue=\(xValue), yValue=\(yValue)")
             
+#if os(macOS)
             let delta = CGPoint(x: CGFloat(xValue), y: CGFloat(-yValue))
+#else
+            let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
+#endif
             controller.mouseWheel(delta: delta)
         }
     }
     
     fileprivate func destroyMouseInputHandler() {
         self.mouse?.mouseInput?.mouseMovedHandler = nil
+        
+        self.mouse?.mouseInput?.leftButton.valueChangedHandler = nil
+        self.mouse?.mouseInput?.rightButton?.valueChangedHandler = nil
+        
+        self.mouse?.mouseInput?.scroll.valueChangedHandler = nil
     }
     
     func connect(to controller: HIDIOController) {
