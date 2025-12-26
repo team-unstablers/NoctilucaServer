@@ -109,27 +109,16 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
             return
         }
         
-        mouse?.handlerQueue = .global(qos: .background)
-        
-        mouseInput.scroll.preferredSystemGestureState = .alwaysReceive
-        
-        
         mouseInput.mouseMovedHandler = { [weak self] mouse, deltaX, deltaY in
             guard let controller = self?.controller else {
                 return
             }
             
-            guard let geometry = self?.geometry,
-                  geometry != .zero
-            else {
-                return
-            }
-            
             // self?.logger.debug("Mouse moved: deltaX=\(deltaX), deltaY=\(deltaY), \(geometry), \(UIScreen.main.nativeBounds.height)x\(UIScreen.main.nativeBounds.width)")
 
-            controller.moveMouseRelativePercentage(to: CGPoint(
-                x: CGFloat(deltaX) / geometry.width,
-                y: CGFloat(-deltaY) / geometry.height
+            controller.moveMouseRelative(to: CGPoint(
+                x: CGFloat(deltaX),
+                y: CGFloat(-deltaY)
             ))
         }
         

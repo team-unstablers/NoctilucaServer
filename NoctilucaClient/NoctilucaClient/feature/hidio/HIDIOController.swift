@@ -44,13 +44,12 @@ class HIDIOController {
         
     private func publisherTaskMain() async {
         // TODO: interval 설정 가능해야 함
-        for await batch in self.eventStream.chunked(by: .repeating(every: .milliseconds(1000 / 60))) {
-            logger.debug("Sending HID event batch of size \(batch.count)")
-            
+        // .chunked(by: .repeating(every: .milliseconds(1000 / 120)))
+        for await event in self.eventStream {
             let packet = HIDIOPacket(
                 sequenceNumber: 0,
                 timestamp: 0,
-                events: batch
+                events: [event]
             )
             
             do {
@@ -112,6 +111,17 @@ class HIDIOController {
             // TODO: setMouseScope(...) 같은거 필요하고, 프로젝션 윈도우에서 능동적으로 호출해야 함
             scope: .displayId(-1),
             position: .percent(CursorPositionPercent(x: Float(position.x), y: Float(position.y)))
+        )
+        
+        self.eventStreamContinuation.yield(event)
+    }
+    
+    func moveMouseRelative(to position: CGPoint) {
+        let event = MouseMoveEvent(
+            moveType: .relative,
+            // TODO: setMouseScope(...) 같은거 필요하고, 프로젝션 윈도우에서 능동적으로 호출해야 함
+            scope: .displayId(-1),
+            position: .pixel(CursorPositionPixel(x: Int32(position.x), y: Int32(position.y)))
         )
         
         self.eventStreamContinuation.yield(event)
