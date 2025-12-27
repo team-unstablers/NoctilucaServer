@@ -38,7 +38,7 @@ extension HIDIOVirtualDeviceIdentifier {
 /// - 이 장치가 HIDIOController에 연결되어 있는 동안, 윈도우의 루트 뷰 컨트롤러에 커서 락이 걸립니다. (= 마우스 커서가 숨겨지고, 중앙에 고정됩니다)
 ///
 ///
-class HIDIOGCMouse: HIDIOVirtualDevice {
+class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     private static var _shared: HIDIOGCMouse? = nil
     
     static func shared() -> HIDIOGCMouse? {
@@ -192,6 +192,15 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     
     func connect(to controller: HIDIOController) {
         self.controller = controller
+        // FIXME: 이거 컨트롤러에서 처리해야 함
+        try? self.lock()
+    }
+    
+    func disconnect() {
+        self.controller = nil
+    }
+    
+    func lock() throws {
         self.setupMouseInputHandler()
         
         DispatchQueue.main.async {
@@ -199,8 +208,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         }
     }
     
-    func disconnect() {
-        self.controller = nil
+    func unlock() throws {
         self.destroyMouseInputHandler()
         
         DispatchQueue.main.async {

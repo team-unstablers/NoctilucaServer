@@ -14,6 +14,8 @@ import SiriusKitClient
 class HIDIOController {
     private let logger = NoctilucaLogger(category: "HIDIOController")
     
+    private let settingsStore: SettingsStore = .shared
+    
     private let channel: HIDIOChannel
     private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
     
@@ -21,6 +23,8 @@ class HIDIOController {
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation
     
     private var publisherTask: Task<Void, Never>? = nil
+    
+    private var pressedKeys: Set<LinuxKeycode> = []
 
     init(channel: HIDIOChannel) {
         self.channel = channel
@@ -106,6 +110,22 @@ class HIDIOController {
         }
     }
     
+    func enableCaptureLock() {
+        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
+        
+        for (_, device) in lockableDevices {
+            try? device.lock()
+        }
+    }
+    
+    func disableCaptureLock() {
+        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
+        
+        for (_, device) in lockableDevices {
+            try? device.unlock()
+        }
+    }
+    
     func keyDown(keyCode: LinuxKeycode) {
         let event = KeyboardEvent(
             eventType: .down,
@@ -116,6 +136,14 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
+        
+        self.pressedKeys.insert(keyCode)
+        
+        // FIXME
+        let keySequence = settingsStore.settings.input.unlockKeySequence
+        if self.pressedKeys == Set([keySequence.key] + keySequence.modifier) {
+            disableCaptureLock()
+        }
     }
     
     func keyUp(keyCode: LinuxKeycode) {
@@ -128,6 +156,8 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
+        
+        self.pressedKeys.remove(keyCode)
     }
     
     func moveMouseAbsolutePercentage(to position: CGPoint) {

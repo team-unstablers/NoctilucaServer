@@ -47,7 +47,11 @@ class MainWindowViewModel: ObservableObject {
 
     @Published
     private(set) var sessionSettings: SessionSettings? = nil
+    
+    @Published
+    private(set) var isInputLockActive: Bool = false
 
+    // TODO: Contact management 관련 코드는 별도 ViewModel로 분리 고려
     @Published
     var contacts: [ContactItem] = []
 

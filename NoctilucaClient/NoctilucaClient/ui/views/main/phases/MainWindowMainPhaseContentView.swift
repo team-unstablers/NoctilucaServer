@@ -126,7 +126,9 @@ struct MainWindowMainPhaseContentView: View {
                     }
                  */
                 
+#if os(iOS)
                 HIDIOSwiftUIMouseView(client: viewModel.client)
+#endif
 
 
             }
@@ -140,6 +142,11 @@ struct MainWindowMainPhaseContentView: View {
                     viewModel.displayLayer = projectionSession.displayLayer
                 }
             }
+#if os(macOS)
+            .onTapGesture {
+                viewModel.client?.hidioController.enableCaptureLock()
+            }
+#endif
         }
     }
 
