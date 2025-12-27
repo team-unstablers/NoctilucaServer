@@ -103,19 +103,23 @@ extension NoctilucaClient {
 
 #if os(macOS)
     func setInputCaptureModeEnabled(_ enabled: Bool) {
+        /*
         guard let device = hidioController?.device(for: .keyboard) as? HIDIOCocoaEventTapKeyboard else {
             return
         }
 
         device.setCaptureModeEnabled(enabled)
+         */
     }
 
     func toggleInputCaptureMode() {
+        /*
         guard let device = hidioController?.device(for: .keyboard) as? HIDIOCocoaEventTapKeyboard else {
             return
         }
 
         device.toggleCaptureMode()
+         */
     }
 #endif
     
