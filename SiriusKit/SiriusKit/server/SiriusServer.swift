@@ -45,7 +45,7 @@ public class SiriusServer {
         try await serverTransport.shutdown()
     }
     
-    private func createClientSession(_ transport: ServerRoleClientTransport) {
+    private func createClientSession(_ transport: any ServerRoleClientTransport) {
         let session = ClientSession(id: UUID(), transport: transport, featureProvider: featureProvider)
         
         self.sessions.append(session)
@@ -66,7 +66,7 @@ extension SiriusServer: ServerRoleRootTransportDelegate {
         delegate?.siriusServer(self, didEncounterError: error)
     }
     
-    func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: ServerRoleClientTransport) {
+    func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: any ServerRoleClientTransport) {
         self.createClientSession(clientTransport)
     }
     

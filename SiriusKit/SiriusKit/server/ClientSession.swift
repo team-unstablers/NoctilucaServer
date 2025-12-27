@@ -17,7 +17,7 @@ public class ClientSession: SiriusSession {
     
     public let id: UUID
     
-    let transport: ServerRoleClientTransport
+    let transport: any ServerRoleClientTransport
     let featureProvider: (any FeatureProvider)
     
     public var channelManager: ChannelManager!
@@ -25,7 +25,7 @@ public class ClientSession: SiriusSession {
     
     public weak var delegate: (any ClientSessionDelegate)?
     
-    init(id: UUID, transport: ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
+    init(id: UUID, transport: any ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
         self.id = id
         
         self.transport = transport
@@ -41,7 +41,7 @@ public class ClientSession: SiriusSession {
 }
 
 extension ClientSession: ServerRoleClientTransportDelegate {
-    func clientTransportDidOpenRemoteStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws {
+    func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: Stream) async throws {
         logger.info("ClientSession \(self.id) received remote stream open.")
         
         if channelManager.mainChannel == nil {
@@ -55,14 +55,14 @@ extension ClientSession: ServerRoleClientTransportDelegate {
         try await channelManager.handleStreamOpen(stream: stream)
     }
     
-    func clientTransportDidCloseStream(_ transport: ServerRoleClientTransport, stream: Stream) async {
+    func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: Stream) async {
         //
     }
     
-    func clientTransportDidClose(_ transport: ServerRoleClientTransport) async {
+    func clientTransportDidClose(_ transport: any ServerRoleClientTransport) async {
         self.delegate?.clientSessionDidCloseTransport(self)
     }
     
-    func clientTransport(_ transport: ServerRoleClientTransport, didEncounterError error: any Error) async {
+    func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async {
     }
 }

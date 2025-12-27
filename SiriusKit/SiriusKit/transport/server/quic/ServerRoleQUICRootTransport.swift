@@ -100,7 +100,7 @@ class ServerRoleQUICRootTransport: ServerRoleRootTransport {
         self.clients.append(transport)
     }
     
-    internal func unregisterClientTransport(_ transport: ServerRoleQUICClientTransport) {
+    internal func unregisterClientTransport(_ transport: ServerRoleQUICClientTransport) async {
         self.clients.removeAll { $0.id == transport.id }
     }
     

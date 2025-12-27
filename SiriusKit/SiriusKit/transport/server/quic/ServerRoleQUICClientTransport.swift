@@ -11,44 +11,53 @@ import Network
 enum ServerRoleQUICClientTransportError: Error {
 }
 
-class ServerRoleQUICClientTransport: ServerRoleClientTransport {
+actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
+    nonisolated let id: ServerRoleClientTransportIdentifier
+    nonisolated(unsafe) weak var delegate: ServerRoleClientTransportDelegate?
+    
     let connectionGroup: NWConnectionGroup
     let serverTransport: ServerRoleQUICRootTransport
     
-    private(set) var streams: [StreamIdentifier: ServerRoleQUICStream] = [:]
+    private var streams: [StreamIdentifier: ServerRoleQUICStream] = [:]
     
-    private let _id: ServerRoleClientTransportIdentifier
-    
-    override var id: ServerRoleClientTransportIdentifier {
-        _id
-    }
-    
+    private let queue = DispatchQueue(label: "io.siriuskit.quic.server.client")
     
     init(_ connectionGroup: NWConnectionGroup, serverTransport: ServerRoleQUICRootTransport, id: ServerRoleClientTransportIdentifier) {
-        self._id = id
+        self.id = id
         
         self.serverTransport = serverTransport
         self.connectionGroup = connectionGroup
     }
     
-    override func disconnect() async {
+    func disconnect() async {
+        let snapshot = Array(self.streams.values)
+        self.streams.removeAll()
+        
+        for stream in snapshot {
+            try? await stream.close()
+        }
+        
         self.connectionGroup.cancel()
         
-        self.serverTransport.unregisterClientTransport(self)
+        await self.serverTransport.unregisterClientTransport(self)
     }
     
-    override func openStream() async -> Result<Stream, TransportLayerError> {
+    func openStream() async -> Result<Stream, TransportLayerError> {
         return await withCheckedContinuation { continuation in
             guard let connection = NWConnection(from: self.connectionGroup) else {
                 continuation.resume(returning: .failure(.openStreamFailed(error: nil)))
                 return
             }
             
-            let stream = ServerRoleQUICStream(connection, transport: self)
+            let stream = ServerRoleQUICStream(connection, transport: self, queue: self.queue)
             
-            stream.setup {
-                self.registerStream(stream)
-                continuation.resume(returning: .success(stream))
+            stream.setup { [weak self, weak stream] in
+                guard let self, let stream else { return }
+                
+                Task {
+                    await self.registerStream(stream)
+                    continuation.resume(returning: .success(stream))
+                }
             }
             
             stream.start()
@@ -56,43 +65,50 @@ class ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
     
     internal func setup() {
-        self.connectionGroup.stateUpdateHandler = { state in
+        self.connectionGroup.stateUpdateHandler = { [weak self] state in
+            guard let self else { return }
+            
             switch state {
             case .failed(let error):
                 Task {
-                    await self.delegate?.clientTransport(self, didEncounterError: error)
+                    if let delegate = self.delegate {
+                        await delegate.clientTransport(self, didEncounterError: error)
+                    }
                     await self.disconnect()
                 }
             case .cancelled:
-                Task {
-                    await self.delegate?.clientTransportDidClose(self)
+                if let delegate = self.delegate {
+                    Task { await delegate.clientTransportDidClose(self) }
                 }
             default:
                 break
             }
         }
         self.connectionGroup.newConnectionHandler = { [weak self] connection in
-            self?.handleNewConnection(connection)
+            guard let self else { return }
+            Task { await self.handleNewConnection(connection) }
         }
     }
     
     internal func start() {
-        self.connectionGroup.start(queue: .main)
+        self.connectionGroup.start(queue: self.queue)
     }
     
-    private func handleNewConnection(_ connection: NWConnection) {
-        let stream = ServerRoleQUICStream(connection, transport: self)
+    private func handleNewConnection(_ connection: NWConnection) async {
+        let stream = ServerRoleQUICStream(connection, transport: self, queue: self.queue)
         
         stream.setup { [weak self] in
-            guard let _self = self else { return }
+            guard let self else { return }
             
-            _self.registerStream(stream)
+            Task { await self.registerStream(stream) }
             
-            Task {
-                do {
-                    try await _self.delegate?.clientTransportDidOpenRemoteStream(_self, stream: stream)
-                } catch {
-                    await _self.delegate?.clientTransport(_self, didEncounterError: error)
+            if let delegate = self.delegate {
+                Task {
+                    do {
+                        try await delegate.clientTransportDidOpenRemoteStream(self, stream: stream)
+                    } catch {
+                        await delegate.clientTransport(self, didEncounterError: error)
+                    }
                 }
             }
         }

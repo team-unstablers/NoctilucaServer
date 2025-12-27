@@ -17,7 +17,7 @@ public class SiriusClient: SiriusSession {
     
     public let id: UUID
     
-    let transport: ClientRoleTransport
+    let transport: any ClientRoleTransport
     let featureProvider: (any FeatureProvider)
     
     public var channelManager: ChannelManager!
@@ -25,7 +25,7 @@ public class SiriusClient: SiriusSession {
     
     public weak var delegate: (any SiriusClientDelegate)?
     
-    init(transport: ClientRoleTransport, featureProvider: (any FeatureProvider)) {
+    init(transport: any ClientRoleTransport, featureProvider: (any FeatureProvider)) {
         self.id = UUID()
         
         self.transport = transport
@@ -52,7 +52,7 @@ public class SiriusClient: SiriusSession {
 }
 
 extension SiriusClient: ClientRoleTransportDelegate {
-    func clientTransportDidEstablishConnection(_ transport: ClientRoleTransport) async {
+    func clientTransportDidEstablishConnection(_ transport: any ClientRoleTransport) async {
         logger.info("SiriusClient with ID: \(self.id.uuidString) established connection.")
         do {
             try await self.channelManager.clientOpenMainChannel()
@@ -62,27 +62,27 @@ extension SiriusClient: ClientRoleTransportDelegate {
         }
     }
     
-    func clientTransportDidOpenRemoteStream(_ transport: ClientRoleTransport, stream: Stream) async throws {
+    func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: Stream) async throws {
         try await channelManager.handleStreamOpen(stream: stream)
     }
     
-    func clientTransportDidClose(_ transport: ClientRoleTransport) async {
+    func clientTransportDidClose(_ transport: any ClientRoleTransport) async {
         logger.info("SiriusClient with ID: \(self.id.uuidString) transport closed.")
         delegate?.siriusClientDidCloseTransport(self)
     }
     
-    func clientTransport(_ transport: ClientRoleTransport, didEncounterError error: any Error) async {
+    func clientTransport(_ transport: any ClientRoleTransport, didEncounterError error: any Error) async {
         logger.error("SiriusClient with ID: \(self.id.uuidString) encountered error: \(error)")
     }
 
-    func clientTransport(_ transport: ClientRoleTransport, didReceiveServerIdentity identity: ServerIdentityInfo, decisionHandler: @escaping (TrustDecision) -> Void) {
+    func clientTransport(_ transport: any ClientRoleTransport, didReceiveServerIdentity identity: ServerIdentityInfo, decisionHandler: @escaping (TrustDecision) -> Void) {
         logger.info("SiriusClient with ID: \(self.id.uuidString) received server identity info for host: \(identity.host).")
         print(identity.alpn)
         print(identity.certificates)
         decisionHandler(.allow)
     }
     
-    func clientTransport(_ transport: ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void) {
+    func clientTransport(_ transport: any ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void) {
         logger.info("SiriusClient with ID: \(self.id.uuidString) received negotiation request.")
     }
 }
