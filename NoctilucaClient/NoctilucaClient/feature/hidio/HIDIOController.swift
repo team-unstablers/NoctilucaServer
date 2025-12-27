@@ -11,7 +11,6 @@ import AsyncAlgorithms
 
 import SiriusKitClient
 
-
 class HIDIOController {
     private let logger = NoctilucaLogger(category: "HIDIOController")
     

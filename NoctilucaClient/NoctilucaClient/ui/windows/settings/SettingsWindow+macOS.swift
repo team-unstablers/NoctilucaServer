@@ -13,6 +13,7 @@ struct AppKitSettingsWindow: View {
     enum SettingsTab: Hashable {
         case general
         case projection
+        case input
         case security
         case misc
         case plugins
@@ -37,10 +38,16 @@ struct AppKitSettingsWindow: View {
                     .id(SettingsTab.general)
                 ProjectionSettingsTab()
                     .tabItem {
-                        Text("입력")
+                        Text("프로젝션")
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
+                InputSettingsTab()
+                    .tabItem {
+                        Text("입력")
+                    }
+                    .tag(SettingsTab.input)
+                    .id(SettingsTab.input)
                 SecuritySettingsTab()
                     .tabItem {
                         Text("보안")
