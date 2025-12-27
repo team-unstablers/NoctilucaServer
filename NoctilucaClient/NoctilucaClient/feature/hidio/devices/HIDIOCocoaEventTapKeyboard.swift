@@ -18,7 +18,7 @@ extension HIDIOVirtualDeviceIdentifier {
     static let cocoaEventTapKeyboard = Self(rawValue: UUID(uuidString: "AFB5D1BE-0126-4C92-96AE-83BB2E2B8A88")!)
 }
 
-final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice {
+final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
     struct ToggleShortcut {
         let keyCode: CGKeyCode
         let requiredFlags: CGEventFlags
@@ -79,6 +79,15 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice {
 
     func disconnect() {
         stopEventTap()
+    }
+
+    func lock() throws {
+        startEventTapIfNeeded()
+        setCaptureModeEnabled(true)
+    }
+
+    func unlock() throws {
+        setCaptureModeEnabled(false)
     }
 
     func setCaptureModeEnabled(_ enabled: Bool) {

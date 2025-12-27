@@ -192,8 +192,6 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     
     func connect(to controller: HIDIOController) {
         self.controller = controller
-        // FIXME: 이거 컨트롤러에서 처리해야 함
-        try? self.lock()
     }
     
     func disconnect() {

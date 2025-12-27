@@ -25,6 +25,7 @@ class HIDIOController {
     private var publisherTask: Task<Void, Never>? = nil
     
     private var pressedKeys: Set<LinuxKeycode> = []
+    private(set) var isCaptureLockEnabled: Bool = false
 
     init(channel: HIDIOChannel) {
         self.channel = channel
@@ -81,6 +82,10 @@ class HIDIOController {
         device.connect(to: self)
         
         self.devices[identifier] = device
+
+        if isCaptureLockEnabled, let lockableDevice = device as? HIDIOLockableVirtualDevice {
+            try? lockableDevice.lock()
+        }
     }
     
     func device(for identifier: HIDIOVirtualDeviceIdentifier) -> HIDIOVirtualDevice? {
@@ -97,6 +102,10 @@ class HIDIOController {
             return
         }
         
+        if let lockableDevice = device as? HIDIOLockableVirtualDevice {
+            try? lockableDevice.unlock()
+        }
+
         device.disconnect()
         self.devices.removeValue(forKey: identifier)
     }
@@ -105,12 +114,17 @@ class HIDIOController {
         let devicesToDisconnect = self.devices.filter { type(of: $0.value).kind == kind }
         
         for (identifier, device) in devicesToDisconnect {
+            if let lockableDevice = device as? HIDIOLockableVirtualDevice {
+                try? lockableDevice.unlock()
+            }
+
             device.disconnect()
             self.devices.removeValue(forKey: identifier)
         }
     }
     
     func enableCaptureLock() {
+        isCaptureLockEnabled = true
         let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
         
         for (_, device) in lockableDevices {
@@ -119,6 +133,7 @@ class HIDIOController {
     }
     
     func disableCaptureLock() {
+        isCaptureLockEnabled = false
         let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
         
         for (_, device) in lockableDevices {
