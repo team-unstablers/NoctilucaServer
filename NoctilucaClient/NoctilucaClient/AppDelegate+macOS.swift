@@ -27,12 +27,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
-        setupMainMenu()
-        
         SiriusLogger.configure(
             minimumLevel: .trace
         )
+        
+#if DEBUG
+        if NoctilucaMeta.isSwiftUIPreview {
+            return
+        }
+#endif
+        
+        NSApp.setActivationPolicy(.regular)
+        setupMainMenu()
+        
         
         openNewMainWindow(nil)
     }
