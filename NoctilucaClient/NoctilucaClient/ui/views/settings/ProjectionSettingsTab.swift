@@ -7,247 +7,63 @@ struct ProjectionSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                SettingsPicker(selection: $settingsStore.settings.input.redirectionMethod) {
-                    SettingsPickerItem(value: AppSettings.InputRedirectionMethod.gameController) {
-                        Text("GameController.framework")
-                        Text("Apple의 게임 컨트롤러 프레임워크를 사용합니다.\nApp 전환 (⌘Tab), 창 닫기(⌘W), App 종료(⌘Q) 등의 단축키가 동작하지 않을 수 있습니다.")
+                SettingsPicker(selection: .constant("auto")) {
+                    SettingsPickerItem(value: "auto") {
+                        Text("하드웨어 가속을 우선하기")
+                        Text("가능한 경우 하드웨어 가속을 시도합니다.\n동시에 많은 비디오 스트림이 열려 있거나, 기기에서 지원하지 않는 형식의 비디오 스트림이 포함된 경우 소프트웨어 디코더로 폴백됩니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    
-                    SettingsPickerItem(value: AppSettings.InputRedirectionMethod.cocoaEventTap) {
-                        Text("Cocoa Event Tap")
-                        Text("macOS의 Cocoa Event Tap API를 사용하여 입력을 리디렉션합니다.\n모든 단축키가 정상적으로 동작하지만, 입력 모니터링 권한을 필요로 합니다.")
+                    SettingsPickerItem(value: "software") {
+                        Text("소프트웨어 디코딩만 사용하기")
+                        Text("항상 소프트웨어 방식의 디코더를 사용합니다.\n배터리 소모가 커질 수 있어 권장하지 않습니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-#if os(iOS)
-                    .disabled(true)
-#endif
                 } label: {
-                    Text("입력 리디렉션 방법")
-                    Text("키보드, 마우스 등의 입력 장치를 원격 컴퓨터로 리디렉션하는 방법을 설정합니다.")
+                    Text("비디오 디코딩 정책")
+                    Text("원격 세션의 화면 데이터를 압축 해제하는 방식을 설정합니다.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("기본 입력 설정")
-            }
-
-#if os(macOS)
-            if settingsStore.settings.input.redirectionMethod == .cocoaEventTap {
-                Section {
-                    let isInputMonitoringGranted = TCCUtil.shared.isAccessGranted(for: .inputMonitoring)
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(isInputMonitoringGranted ? "Input Monitoring 권한이 허용되었습니다." : "Input Monitoring 권한이 필요합니다.")
-                            .font(.headline)
-                        Text("권한이 없으면 Cocoa Event Tap을 사용할 수 없어 GameController 방식으로 자동 폴백됩니다.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    HStack(spacing: 8) {
-                        Button("설정 열기") {
-                            TCCUtil.shared.openSystemPreferences(for: .inputMonitoring)
-                        }
-                        Button("다시 시도") {
-                            TCCUtil.shared.requestAccess(for: .inputMonitoring)
-                        }
-                    }
-                } header: {
-                    Text("입력 권한 상태")
-                }
-            }
-#endif
-            
-            Section {
-                VStack(alignment: .leading) {
-                    Text("보조 키 오버라이드")
-                    Text("각 보조 키가 원격 컴퓨터에서 어떤 키로 인식될지 설정합니다.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.capsLock) {
-                    Text("⇪ (Caps Lock)")
-                        .tag(AppSettings.ModifierKeyOverride.capsLock)
-                    
-                    Text("⌃ (Control)")
-                        .tag(AppSettings.ModifierKeyOverride.control)
-                                            
-                    Text("⌥ (Option)")
-                        .tag(AppSettings.ModifierKeyOverride.option)
-                    
-                    Text("⌘ (Command)")
-                        .tag(AppSettings.ModifierKeyOverride.command)
-                    
-                    Text("fn (Function)")
-                        .tag(AppSettings.ModifierKeyOverride.function)
-
-                    Text("⎋ (Escape)")
-                        .tag(AppSettings.ModifierKeyOverride.escape)
-                    
-                    Text("비활성화")
-                        .tag(AppSettings.ModifierKeyOverride.disabled)
-                } label: {
-                    Text("Caps Lock(⇪) 키")
-                }
-
-                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.control) {
-                    Text("⇪ (Caps Lock)")
-                        .tag(AppSettings.ModifierKeyOverride.capsLock)
-                    
-                    Text("⌃ (Control)")
-                        .tag(AppSettings.ModifierKeyOverride.control)
-                                            
-                    Text("⌥ (Option)")
-                        .tag(AppSettings.ModifierKeyOverride.option)
-                    
-                    Text("⌘ (Command)")
-                        .tag(AppSettings.ModifierKeyOverride.command)
-                    
-                    Text("fn (Function)")
-                        .tag(AppSettings.ModifierKeyOverride.function)
-
-                    Text("⎋ (Escape)")
-                        .tag(AppSettings.ModifierKeyOverride.escape)
-                    
-                    Text("비활성화")
-                        .tag(AppSettings.ModifierKeyOverride.disabled)
-                } label: {
-                    Text("Control(⌃) 키")
-                }
-                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.option) {
-                    Text("⇪ (Caps Lock)")
-                        .tag(AppSettings.ModifierKeyOverride.capsLock)
-                    
-                    Text("⌃ (Control)")
-                        .tag(AppSettings.ModifierKeyOverride.control)
-                                            
-                    Text("⌥ (Option)")
-                        .tag(AppSettings.ModifierKeyOverride.option)
-                    
-                    Text("⌘ (Command)")
-                        .tag(AppSettings.ModifierKeyOverride.command)
-                    
-                    Text("fn (Function)")
-                        .tag(AppSettings.ModifierKeyOverride.function)
-
-                    Text("⎋ (Escape)")
-                        .tag(AppSettings.ModifierKeyOverride.escape)
-                    
-                    Text("비활성화")
-                        .tag(AppSettings.ModifierKeyOverride.disabled)
-                } label: {
-                    Text("Option(⌥) 키")
-                }
-                Picker(selection: $settingsStore.settings.input.modifierKeyOverrides.command) {
-                    Text("⇪ (Caps Lock)")
-                        .tag(AppSettings.ModifierKeyOverride.capsLock)
-                    
-                    Text("⌃ (Control)")
-                        .tag(AppSettings.ModifierKeyOverride.control)
-                                            
-                    Text("⌥ (Option)")
-                        .tag(AppSettings.ModifierKeyOverride.option)
-                    
-                    Text("⌘ (Command)")
-                        .tag(AppSettings.ModifierKeyOverride.command)
-                    
-                    Text("fn (Function)")
-                        .tag(AppSettings.ModifierKeyOverride.function)
-
-                    Text("⎋ (Escape)")
-                        .tag(AppSettings.ModifierKeyOverride.escape)
-                    
-                    Text("비활성화")
-                        .tag(AppSettings.ModifierKeyOverride.disabled)
-                } label: {
-                    Text("Command(⌘) 키")
-                }
-            } header: {
-                Text("키보드 입력 설정")
-                Text("키보드 입력과 관련된 설정을 구성합니다.")
-            }
-            
-            /*
-            Section {
-                SettingsEntry(title: "키매핑 테이블 (고급 기능)", subtitle: "키매핑 테이블을 직접 편집합니다.\n잘못 편집할 경우 입력 기능이 정상적으로 동작하지 않을 수 있습니다.") {
-                    Button("기본값으로 복원") {}
-                    Button("설정…") {}
-                }
-            }
-             */
-            
-            Section {
-                SettingsPicker(selection: $settingsStore.settings.input.mouseMoveMode) {
-                    SettingsPickerItem(value: AppSettings.MouseMoveMode.absolute) {
-                        Text("절대 좌표 모드")
-                        Text("절대 좌표를 사용하여 마우스 위치를 지정합니다.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    SettingsPickerItem(value: AppSettings.MouseMoveMode.relative) {
-                        Text("상대 좌표 모드")
-                        Text("상대 좌표를 사용하여 마우스 위치를 지정합니다.\n게임 스트리밍 등 특수한 케이스에서 도움이 될 수 있습니다.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                } label: {
-                    Text("마우스 이동 모드")
-                    Text("마우스 이동에 사용할 좌표 모드를 설정합니다.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("마우스 입력 설정")
-                Text("마우스 입력과 관련된 설정을 구성합니다.")
-            }
-            
-            Section {
-                Toggle(isOn: $settingsStore.settings.input.invertMouseButtons) {
-                    Text("마우스 버튼 위치를 반전하기")
-                    Text("2-버튼 마우스의 좌우 버튼 위치를 반전하여 사용합니다.\n왼손을 주로 사용하는 사용자에게 도움이 될 수 있습니다.")
-                }
-                Toggle(isOn: $settingsStore.settings.input.invertVerticalScroll) {
-                    Text("세로↕ 스크롤 방향을 반전하기")
-                    Text("세로 스크롤 시 상하 방향을 반전시킵니다.")
-                }
-                Toggle(isOn: $settingsStore.settings.input.invertHorizontalScroll) {
-                    Text("가로↔ 스크롤 방향을 반전하기")
-                    Text("가로 스크롤 시 좌우 방향을 반전시킵니다.")
-                }
-            }
-            
-            Section {
-                // FIXME: 숫자 입력 필드로 변경
-                
-                /*
-                
-                 */
-                SettingsEntry(title: "마우스 스크롤 배수", subtitle: "마우스 스크롤에 배수 값을 적용하여 전송합니다.\n값이 클수록 스크롤 속도가 빨라집니다.") {
-                    Slider(value: $settingsStore.settings.input.mouseScrollMultiplier, in: 0.5...1.5, step: 0.25) {
-                        
-                    } minimumValueLabel: {
-                        Text("0.5x")
-                    } maximumValueLabel: {
-                        Text("1.5x")
-                    }
-                }
-                
-                SettingsEntry(title: "뭔가 잘못 건드려서 망가졌어요", subtitle: "이 버튼을 누르면 입력 관련 설정이 초기화됩니다.") {
-                    Button("입력 관련 설정 초기화") {
-                        settingsStore.resetInputSettings()
-                    }
                 }
             } header: {
                 Text("고급 설정")
-                Text("입력 관련 고급 설정을 구성합니다.")
+                Text("프로젝션과 관련된 고급 설정을 구성합니다.")
             }
+            
+            Section {
+                Toggle(isOn: .constant(false)) {
+                    Text("오디오 프로젝션 사용하기")
+                    Text("원격 세션의 오디오 스트림을 프로젝션 받도록 구성합니다.\n모든 서버 구현체가 이를 지원하는 것은 아닙니다.")
+                }
+                
+                SettingsPicker(selection: .constant("latency-first")) {
+                    SettingsPickerItem(value: "latency-first") {
+                        Text("낮은 지연 시간을 우선하기")
+                        Text("지연 시간을 최대한 줄이도록 코덱을 구성하고, 오디오의 지터 버퍼를 최대한 작게 잡습니다.\n조금이라도 타이밍을 놓칠 것 같으면, 오디오 프레임을 적극적으로 건너뜁니다.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    SettingsPickerItem(value: "stability-first") {
+                        Text("안정성을 우선하기")
+                        Text("품질을 우선하도록 코덱을 구성하고, 오디오의 지터 버퍼를 적절한 크기로 유지합니다.\n네트워크 상태가 불안정한 경우에도 오디오 끊김 현상을 최소화합니다.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                } label: {
+                    Text("오디오 프로젝션 정책")
+                    Text("오디오 프로젝션의 동작과 관련된 정책을 설정합니다.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("실험 기능")
+            }
+            .disabled(true)
+
         }
         .formStyle(.grouped)
+        .navigationTitle("프로젝션 설정")
     }
 }
 
