@@ -143,5 +143,5 @@ struct InputSettingsTab: View {
 #Preview {
     InputSettingsTab()
         .frame(minHeight: 720)
-        .environmentObject(SettingsStore())
+        .environmentObject(SettingsStore.shared)
 }

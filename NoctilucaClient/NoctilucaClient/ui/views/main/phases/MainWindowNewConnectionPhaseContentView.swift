@@ -95,6 +95,6 @@ struct MainWindowNewConnectionPhaseContentView: View {
 
     MainWindowNewConnectionPhaseContentView()
         .environmentObject(viewModel)
-        .environmentObject(SettingsStore(loadFromDisk: false))
+        .environmentObject(SettingsStore.shared)
         .frame(minWidth: 640, minHeight: 480)
 }

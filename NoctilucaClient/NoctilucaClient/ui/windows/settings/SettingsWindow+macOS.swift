@@ -99,7 +99,7 @@ typealias SettingsWindow = AppKitSettingsWindow
 
 #Preview {
     SettingsWindow()
-        .environmentObject(SettingsStore())
+        .environmentObject(SettingsStore.shared)
 }
 
 #endif

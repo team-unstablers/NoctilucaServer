@@ -12,13 +12,15 @@ import SiriusKitClient
 
 final class SettingsStore: ObservableObject {
     private static let logger = NoctilucaLogger(category: "SettingsStore")
+    
+    static let shared = SettingsStore()
 
     @Published
     var settings: AppSettings!
     
     private var cancellables: Set<AnyCancellable> = []
-
-    init(settings: AppSettings = AppSettings(), loadFromDisk: Bool = true) {
+    
+    private init(settings: AppSettings = AppSettings(), loadFromDisk: Bool = true) {
         // TODO: ensure this runs on main thread
         
         if loadFromDisk {

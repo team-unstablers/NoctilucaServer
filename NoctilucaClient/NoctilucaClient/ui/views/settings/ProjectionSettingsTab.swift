@@ -70,5 +70,5 @@ struct ProjectionSettingsTab: View {
 #Preview {
     ProjectionSettingsTab()
         .frame(minHeight: 720)
-        .environmentObject(SettingsStore())
+        .environmentObject(SettingsStore.shared)
 }
