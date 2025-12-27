@@ -13,6 +13,7 @@ struct UIKitSettingsWindow: View {
     enum SettingsTab: Hashable {
         case general
         case projection
+        case input
         case security
         case misc
         case plugins
@@ -27,7 +28,8 @@ struct UIKitSettingsWindow: View {
         Form {
             Section {
                 NavigationLink("일반", value: NavigationItem.settingsDetail(.general))
-                NavigationLink("입력", value: NavigationItem.settingsDetail(.projection))
+                NavigationLink("프로젝션", value: NavigationItem.settingsDetail(.projection))
+                NavigationLink("입력", value: NavigationItem.settingsDetail(.input))
                 NavigationLink("보안", value: NavigationItem.settingsDetail(.security))
                 NavigationLink("기타", value: NavigationItem.settingsDetail(.misc))
                 NavigationLink("플러그인", value: NavigationItem.settingsDetail(.plugins))

@@ -29,13 +29,17 @@ struct GeneralSettingsTab: View {
                     SessionSettingsSheet(
                         scope: .global,
                         sessionSettings: $settingsStore.settings.sessionDefaults,
-                        actions: [
-                            .init(kind: .primary, title: "저장") {
-                                settingsStore.save()
-                                shouldPresentDefaultConnectionSettingsSheet = false
-                            }
-                        ]
-                    )
+                    ) { action in
+                        switch action {
+                        case .cancel:
+                            shouldPresentDefaultConnectionSettingsSheet = false
+                        case .save:
+                            settingsStore.save()
+                            shouldPresentDefaultConnectionSettingsSheet = false
+                        default:
+                            shouldPresentDefaultConnectionSettingsSheet = false
+                        }
+                    }
                 }
             }
         }

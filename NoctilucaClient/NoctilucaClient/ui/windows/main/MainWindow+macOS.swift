@@ -59,6 +59,7 @@ private struct MainWindowRootView: View {
     @EnvironmentObject
     private var settingsStore: SettingsStore
 
+    /*
     private var sessionSettingsActions: [SessionSettingsSheet.Action] {
         switch viewModel.sessionSettingsSheetMode {
         case .quickConnect:
@@ -95,6 +96,7 @@ private struct MainWindowRootView: View {
             return actions
         }
     }
+     */
     
     var body: some View {
         MainWindowContentView()
@@ -115,20 +117,25 @@ private struct MainWindowRootView: View {
                 SessionSettingsSheet(
                     scope: .session,
                     sessionSettings: $viewModel.sessionSettingsDraft.settings,
-                    contactId: viewModel.sessionSettingsDraft.id,
-                    actions: sessionSettingsActions
-                )
-            }
-            .alert("연락처 삭제", isPresented: $viewModel.isDeleteContactConfirmationPresented) {
-                Button("삭제", role: .destructive) {
-                    viewModel.deleteContactFromSheet()
+                    contactId: viewModel.sessionSettingsSheetMode == .quickConnect ? nil : viewModel.sessionSettingsDraft.id,
+                ) { action in
+                    switch action {
+                    case .cancel:
+                        viewModel.dismissSessionSettingsSheet()
+                    case .delete:
+                        viewModel.cancelDeleteContactConfirmation()
+                    case .connect:
+                        viewModel.connectWithoutSavingFromSheet()
+                    case .saveAndConnect:
+                        viewModel.saveContactAndConnectFromSheet()
+                    case .save:
+                        viewModel.saveContactFromSheet()
+                    }
+                    
+                    viewModel.dismissSessionSettingsSheet()
                 }
-                Button("취소", role: .cancel) {
-                    viewModel.cancelDeleteContactConfirmation()
-                }
-            } message: {
-                Text("이 연락처를 삭제하면 복구할 수 없습니다.")
             }
+
             .setupClientPhaseHandler(client: viewModel.client) { phase in
                 viewModel.handleClientPhaseChanged(phase)
             }

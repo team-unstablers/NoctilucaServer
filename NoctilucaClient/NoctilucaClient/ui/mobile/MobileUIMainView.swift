@@ -30,6 +30,8 @@ struct MobileUIMainView: View {
                             GeneralSettingsTab()
                         case .projection:
                             ProjectionSettingsTab()
+                        case .input:
+                            InputSettingsTab()
                         case .security:
                             SecuritySettingsTab()
                         case .misc:
