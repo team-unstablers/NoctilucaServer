@@ -13,6 +13,7 @@ import GameController
 
 import SiriusKitClient
 
+// TODO: 이거 fileprivate 떼거나 해야 함
 fileprivate extension LinuxKeycode {
     var sanitizedLeftVariant: LinuxKeycode {
         switch self {
@@ -30,70 +31,6 @@ fileprivate extension LinuxKeycode {
     }
 }
 
-struct KeySequence: Hashable, Equatable {
-    let modifier: Set<LinuxKeycode>
-    let key: LinuxKeycode
-    
-    init(modifier: Set<LinuxKeycode>, key: LinuxKeycode) {
-        self.modifier = modifier
-        self.key = key
-    }
-    
-    func addModifier(_ modifier: LinuxKeycode) -> Self {
-        return KeySequence(modifier: self.modifier.union([modifier]), key: self.key)
-    }
-    
-    func setKey(_ key: LinuxKeycode) -> Self {
-        return KeySequence(modifier: self.modifier, key: key)
-    }
-}
-
-extension KeySequence {
-    static let empty = KeySequence(modifier: [], key: .KEY_UNKNOWN)
-}
-
-extension KeySequence: CustomStringConvertible {
-    fileprivate var modifierDescription: String {
-        // 정렬 순서: Control, Option, Shift, Command
-        
-        guard !modifier.isEmpty else {
-            return ""
-        }
-        
-        var description: String = ""
-        
-        if modifier.contains(.KEY_LEFTCTRL) {
-            description.append(LinuxKeycode.KEY_LEFTCTRL.appleSymbol!)
-        }
-        
-        if modifier.contains(.KEY_LEFTALT) {
-            description.append(LinuxKeycode.KEY_LEFTALT.appleSymbol!)
-        }
-        
-        if modifier.contains(.KEY_LEFTSHIFT) {
-            description.append(LinuxKeycode.KEY_LEFTSHIFT.appleSymbol!)
-        }
-        
-        if modifier.contains(.KEY_LEFTMETA) {
-            description.append(LinuxKeycode.KEY_LEFTMETA.appleSymbol!)
-        }
-        
-        return description
-    }
-    
-    var description: String {
-        guard self != .empty else {
-            return "(없음)"
-        }
-        
-        if key == .KEY_UNKNOWN {
-            return modifierDescription
-        }
-        
-        return (modifierDescription + (key.appleSymbol ?? key.appleDescription ?? key.description))
-    }
-}
-
 struct KeySequenceLabel: View {
     let keySequence: KeySequence
     
@@ -102,21 +39,40 @@ struct KeySequenceLabel: View {
     }
 }
 
+struct KeySequenceCapturerPolicy: OptionSet {
+    let rawValue: Int
+    
+    static let none = Self([])
+    static let `default` = Self([.disallowEscapeKey])
+    
+    /// Escape 키의 캡쳐를 허용하지 않습니다.
+    static let disallowEscapeKey = Self(rawValue: 1 << 0)
+}
+
 struct KeySequenceCapturer<Label: View>: View {
     @Binding
     var keySequence: KeySequence
     
+    let policy: KeySequenceCapturerPolicy
+    let `default`: KeySequence
+
     @ViewBuilder
     let label: () -> Label
+    
     
     @State
     private var isCapturing: Bool = false
     
-    init(keySequence: Binding<KeySequence>, @ViewBuilder label: @escaping () -> Label) {
+    init(keySequence: Binding<KeySequence>,
+         policy: KeySequenceCapturerPolicy = .default,
+         `default`: KeySequence = .empty,
+         @ViewBuilder label: @escaping () -> Label) {
         // HACK: HIDIOGCKeyboard.shared()를 호출해서 GCKeyboard.coalesced가 nil이 아님을 보장해야 한다
         _ = HIDIOGCKeyboard.shared()
         
         self._keySequence = keySequence
+        self.policy = policy
+        self.default = `default`
         self.label = label
     }
     
@@ -151,9 +107,16 @@ struct KeySequenceCapturer<Label: View>: View {
             keyboardInput.keyChangedHandler = nil
             self.isCapturing = false
             
-            if keySequence.key == .KEY_UNKNOWN || keySequence.key == .KEY_ESC {
+            if keySequence.key == .KEY_UNKNOWN {
                 // modifier 키만 눌린 상태로 타임아웃된 경우는 무시
-                self.keySequence = .empty
+                self.keySequence = self.default
+            }
+            
+            if policy.contains(.disallowEscapeKey),
+               keySequence.key == .KEY_ESC
+            {
+                // Escape 키 캡처는 무시
+                self.keySequence = self.default
             }
         }
         
@@ -176,7 +139,6 @@ struct KeySequenceCapturer<Label: View>: View {
                 let keyCode = LinuxKeycode.from(gameController: keyCode)
                 
                 if keyCode.isModifierKey {
-                    // TODO: left / right를 sanitize 한다: 무조건 left로 바꾸기
                     self.keySequence = self.keySequence.addModifier(keyCode.sanitizedLeftVariant)
                 } else {
                     self.keySequence = self.keySequence.setKey(keyCode)

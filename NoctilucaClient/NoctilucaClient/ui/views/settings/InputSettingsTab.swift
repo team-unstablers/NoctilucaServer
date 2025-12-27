@@ -1,11 +1,30 @@
 import SwiftUI
+import SiriusKitClient
 
 struct InputSettingsTab: View {
     @EnvironmentObject
     private var settingsStore: SettingsStore
-
+    
     var body: some View {
         Form {
+            Section {
+                SettingsEntry(title: "입력 잠금 해제 단축키", subtitle: "키보드 / 마우스가 잠긴 상태에서 입력 잠금을 해제하는 단축키를 설정합니다.") {
+                    HStack {
+                        KeySequenceLabel(keySequence: settingsStore.settings.input.unlockKeySequence)
+                        KeySequenceCapturer(
+                            keySequence: $settingsStore.settings.input.unlockKeySequence,
+                            policy: .none,
+                            default: KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
+                        ) {
+                            Text("변경")
+                        }
+                    }
+                }
+            } header: {
+                Text("입력 설정")
+                Text("전반적인 입력 설정을 구성합니다.")
+            }
+            
             Section {
                 KeyboardRedirectionMethodPicker(input: $settingsStore.settings.input)
             } header: {

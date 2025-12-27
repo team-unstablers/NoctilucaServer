@@ -7,6 +7,8 @@
 
 import Foundation
 
+import SiriusKitClient
+
 extension AppSettings {
     enum InputRedirectionMethod: String, Codable, CaseIterable, Sendable {
         case gameController
@@ -99,6 +101,7 @@ extension AppSettings {
     }
 
     struct Input: Category {
+        var unlockKeySequence: KeySequence = KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
         var redirectionMethod: InputRedirectionMethod = .gameController
         var modifierKeyOverrides: ModifierKeyOverrides = .init()
         var mouseMoveMode: MouseMoveMode = .absolute
@@ -110,6 +113,7 @@ extension AppSettings {
         init() {}
 
         enum CodingKeys: String, CodingKey {
+            case unlockKeySequence
             case redirectionMethod
             case modifierKeyOverrides
             case mouseMoveMode
@@ -125,7 +129,8 @@ extension AppSettings {
             guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
                 return
             }
-
+            
+            unlockKeySequence = container.decodeSafe(KeySequence.self, forKey: .unlockKeySequence, default: unlockKeySequence)
             redirectionMethod = container.decodeSafe(InputRedirectionMethod.self, forKey: .redirectionMethod, default: redirectionMethod)
             modifierKeyOverrides = container.decodeSafe(ModifierKeyOverrides.self, forKey: .modifierKeyOverrides, default: modifierKeyOverrides)
             mouseMoveMode = container.decodeSafe(MouseMoveMode.self, forKey: .mouseMoveMode, default: mouseMoveMode)
@@ -137,6 +142,7 @@ extension AppSettings {
 
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(unlockKeySequence, forKey: .unlockKeySequence)
             try container.encode(redirectionMethod, forKey: .redirectionMethod)
             try container.encode(modifierKeyOverrides, forKey: .modifierKeyOverrides)
             try container.encode(mouseMoveMode, forKey: .mouseMoveMode)
