@@ -35,46 +35,19 @@ struct AuthChallengeHandlerModifier: ViewModifier {
         content
             // HACK: 레이스 컨디션 일어나서 sheet이 표시되어도 내용이 비어있는 경우가 발생함
             .if(authChallenge != nil) {
-#if os(macOS)
-                $0
-                    .sheet(isPresented: $shouldPresentAuthChallengeSheet) {
-                        if let authChallenge = self.authChallenge {
-                            AuthChallengeSheetView(
-                                authChallenge: authChallenge,
-                                availableMethods: client.authenticator.availableMethods(for: authChallenge)
-                            ) { action in
-                                Task {
-                                    await handleAuthChallengeResponse(action, challenge: authChallenge)
-                                }
-                            }
-                            .id(authChallenge.nonce)
-                        }
-                    }
-#elseif os(iOS)
-                $0
-                    .fullScreenCover(isPresented: $shouldPresentAuthChallengeSheet) {
-                        ZStack {
-                            Color.black.opacity(0.4)
-                                .ignoresSafeArea()
-                            
-                            if let authChallenge = self.authChallenge {
-                                AuthChallengeSheetView(
-                                    authChallenge: authChallenge,
-                                    availableMethods: client.authenticator.availableMethods(for: authChallenge)
-                                ) { action in
-                                    Task {
-                                        await handleAuthChallengeResponse(action, challenge: authChallenge)
-                                    }
-                                }
-                                .id(authChallenge.nonce)
-                                .background(.background)
-                                .cornerRadius(12)
-                                .padding(12)
+                $0.dialog(isPresented: $shouldPresentAuthChallengeSheet) {
+                    if let authChallenge = self.authChallenge {
+                        AuthChallengeSheetView(
+                            authChallenge: authChallenge,
+                            availableMethods: client.authenticator.availableMethods(for: authChallenge)
+                        ) { action in
+                            Task {
+                                await handleAuthChallengeResponse(action, challenge: authChallenge)
                             }
                         }
-                        .presentationBackground(.clear)
+                        .id(authChallenge.nonce)
                     }
-#endif
+                }
             }
             .onReceive(client.uiEvents) { event in
                 guard case .receivedAuthChallenge(let challenge) = event else {

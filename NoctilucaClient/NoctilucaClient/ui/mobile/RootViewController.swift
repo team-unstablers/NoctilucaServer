@@ -11,6 +11,12 @@ import UIKit
 import SwiftUI
 
 final class RootViewController: UIHostingController<AnyView> {
+    
+    /// FIXME: 둘이 합치던가 하세요
+    var mainUIViewModel: MobileUIMainViewModel? = nil
+    var mainWindowViewModel: MainWindowViewModel? = nil
+    var settingsStore: SettingsStore? = nil
+    
     /// 포인터 락 여부를 설정합니다.
     /// true로 설정 시 포인터가 고정되지만, 전체 화면 모드에서만 동작합니다.
     var isPointerLocked: Bool = false {
@@ -22,6 +28,29 @@ final class RootViewController: UIHostingController<AnyView> {
     override var prefersPointerLocked: Bool {
         return isPointerLocked
     }
+    
+    init() {
+        let mainUIViewModel = MobileUIMainViewModel()
+        let mainWindowViewModel = MainWindowViewModel()
+        let settingsStore = SettingsStore()
+        
+        self.mainUIViewModel = mainUIViewModel
+        self.mainWindowViewModel = mainWindowViewModel
+        self.settingsStore = settingsStore
+        
+        let contentView = MobileUIMainView()
+            .environmentObject(mainUIViewModel)
+            .environmentObject(mainWindowViewModel)
+            .environmentObject(settingsStore)
+        
+        super.init(rootView: AnyView(contentView))
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    
 }
 
 #endif

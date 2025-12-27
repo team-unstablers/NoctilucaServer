@@ -28,6 +28,9 @@ struct ToolbarModifierIPhone: ViewModifier {
     var horizontalSizeClass
     
     @EnvironmentObject
+    var mobileUIMainViewModel: MobileUIMainViewModel
+
+    @EnvironmentObject
     var viewModel: MainWindowViewModel
     
     @EnvironmentObject
@@ -59,7 +62,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                 if viewModel.phase == .newConnection {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            // navState.append(.settings)
+                            mobileUIMainViewModel.navState.append(.settings)
                         } label: {
                             Image(systemName: "gearshape")
                         }
@@ -87,6 +90,9 @@ struct ToolbarModifierIPhone: ViewModifier {
 
 
 struct ToolbarModifierIPad: ViewModifier {
+    @EnvironmentObject
+    var mobileUIMainViewModel: MobileUIMainViewModel
+    
     @EnvironmentObject
     var viewModel: MainWindowViewModel
     
@@ -206,7 +212,7 @@ struct ToolbarModifierIPad: ViewModifier {
                     let toolbarPlacement: ToolbarItemPlacement = (toolbarStyle == .standard) ? .topBarTrailing : .bottomBar
                     ToolbarItem(placement: toolbarPlacement) {
                         Button {
-                            // navState.append(.settings)
+                            mobileUIMainViewModel.navState.append(.settings)
                         } label: {
                             Image(systemName: "gearshape")
                         }
