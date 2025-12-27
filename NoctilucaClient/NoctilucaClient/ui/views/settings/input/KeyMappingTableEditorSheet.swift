@@ -21,7 +21,7 @@ struct KeyMappingRule {
     var toKey: LinuxKeycode
 }
 
-fileprivate extension LinuxKeycode {
+extension LinuxKeycode {
     var appleDescription: String? {
         switch self {
         case .KEY_ESC:
@@ -62,6 +62,8 @@ fileprivate extension LinuxKeycode {
             return "⌘"
         case .KEY_LEFTALT, .KEY_RIGHTALT:
             return "⌥"
+        case .KEY_LEFTSHIFT, .KEY_RIGHTSHIFT:
+            return "⇧"
         case .KEY_DELETE:
             // 정방향 딜리트
             return "⌦"
