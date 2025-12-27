@@ -30,6 +30,55 @@ extension KeySequence {
     static let empty = KeySequence(modifier: [], key: .KEY_UNKNOWN)
 }
 
+struct KeySequenceMatcher {
+    private var sequence: KeySequence = .empty
+    private var requiredKeys: Set<LinuxKeycode> = []
+    private var isLatched: Bool = false
+
+    mutating func update(sequence: KeySequence) {
+        guard self.sequence != sequence else {
+            return
+        }
+
+        self.sequence = sequence
+        self.requiredKeys = sequence.modifier.union([sequence.key])
+        self.isLatched = false
+    }
+
+    mutating func handleKeyDown(keyCode: LinuxKeycode,
+                                pressedKeys: Set<LinuxKeycode>,
+                                isActive: Bool) -> Bool {
+        guard isActive else {
+            return false
+        }
+
+        guard !isLatched else {
+            return false
+        }
+
+        guard keyCode == sequence.key else {
+            return false
+        }
+
+        guard pressedKeys == requiredKeys else {
+            return false
+        }
+
+        isLatched = true
+        return true
+    }
+
+    mutating func handleKeyUp(pressedKeys: Set<LinuxKeycode>) {
+        guard isLatched else {
+            return
+        }
+
+        if !requiredKeys.isSubset(of: pressedKeys) {
+            isLatched = false
+        }
+    }
+}
+
 extension KeySequence: CustomStringConvertible {
     fileprivate var modifierDescription: String {
         // 정렬 순서: Control, Option, Shift, Command

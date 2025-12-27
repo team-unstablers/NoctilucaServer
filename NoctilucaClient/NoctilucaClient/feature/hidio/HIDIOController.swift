@@ -26,6 +26,7 @@ class HIDIOController {
     
     private var pressedKeys: Set<LinuxKeycode> = []
     private(set) var isCaptureLockEnabled: Bool = false
+    private var unlockSequenceMatcher = KeySequenceMatcher()
 
     init(channel: HIDIOChannel) {
         self.channel = channel
@@ -154,9 +155,13 @@ class HIDIOController {
         
         self.pressedKeys.insert(keyCode)
         
-        // FIXME
         let keySequence = settingsStore.settings.input.unlockKeySequence
-        if self.pressedKeys == Set([keySequence.key] + keySequence.modifier) {
+        unlockSequenceMatcher.update(sequence: keySequence)
+        if unlockSequenceMatcher.handleKeyDown(
+            keyCode: keyCode,
+            pressedKeys: self.pressedKeys,
+            isActive: isCaptureLockEnabled
+        ) {
             disableCaptureLock()
         }
     }
@@ -173,6 +178,10 @@ class HIDIOController {
         self.eventStreamContinuation.yield(event)
         
         self.pressedKeys.remove(keyCode)
+
+        let keySequence = settingsStore.settings.input.unlockKeySequence
+        unlockSequenceMatcher.update(sequence: keySequence)
+        unlockSequenceMatcher.handleKeyUp(pressedKeys: self.pressedKeys)
     }
     
     func moveMouseAbsolutePercentage(to position: CGPoint) {
