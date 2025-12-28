@@ -8,6 +8,11 @@
 import SwiftUI
 
 struct MainWindowNewConnectionPhaseContentView: View {
+#if os(tvOS)
+    @EnvironmentObject
+    var mobileUIMainViewModel: MobileUIMainViewModel
+#endif
+    
     @EnvironmentObject
     var viewModel: MainWindowViewModel
 
@@ -71,7 +76,11 @@ struct MainWindowNewConnectionPhaseContentView: View {
                                         try? await viewModel.startSession(endpoint: .contact(item: item))
                                     }
                                 case .edit:
+#if os(tvOS)
+                                    mobileUIMainViewModel.navState = [.sessionSettings(item.id)]
+#else
                                     viewModel.presentContactEditor(for: item)
+#endif
                                 }
                             }
                         }

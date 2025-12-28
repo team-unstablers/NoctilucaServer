@@ -18,22 +18,29 @@ extension NoctilucaClient {
         }
         
         self.hidioController = HIDIOController(channel: channel)
+        self.hidioController?.onEventTapError = { [weak self] error in
+            self?.handleEventTapError(error)
+        }
         self.logger.info("initializeHIDIO(): created HIDIOController")
+        applyInputFocusState()
         applyInputRedirectionMethod(pendingInputRedirectionMethod)
     }
 
     func applyInputRedirectionMethod(_ method: AppSettings.InputRedirectionMethod) {
         pendingInputRedirectionMethod = method
 
-        guard let hidioController else {
+        guard hidioController != nil else {
             return
         }
         
-        connectGameControllerMouse(hidioController)
+        connectGameControllerMouse()
 
         switch method {
         case .gameController:
-            connectGameControllerKeyboard(hidioController)
+#if os(macOS)
+            HIDIOInputRouter.shared.disconnect(.cocoaEventTapKeyboard)
+#endif
+            connectGameControllerKeyboard()
             updateInputWarning(nil)
         case .cocoaEventTap:
 #if os(macOS)
@@ -43,42 +50,40 @@ extension NoctilucaClient {
                     title: "Input Monitoring 권한 필요",
                     message: "Cocoa Event Tap을 사용하려면 입력 모니터링 권한이 필요합니다. 현재 GameController로 입력을 전송 중입니다."
                 ))
-                connectGameControllerKeyboard(hidioController)
+                HIDIOInputRouter.shared.disconnect(.cocoaEventTapKeyboard)
+                connectGameControllerKeyboard()
                 return
             }
 
-            let eventTapDevice = HIDIOCocoaEventTapKeyboard(
-                onError: { [weak self] error in
-                    self?.handleEventTapError(error)
-                }
-            )
-            hidioController.connect(eventTapDevice)
+            HIDIOInputRouter.shared.disconnect(.gcKeyboard)
+            let eventTapDevice = HIDIOCocoaEventTapKeyboard.shared()
+            HIDIOInputRouter.shared.connectGlobal(eventTapDevice)
             updateInputWarning(nil)
 #else
-            connectGameControllerKeyboard(hidioController)
+            connectGameControllerKeyboard()
             updateInputWarning(nil)
 #endif
         }
     }
 
-    private func connectGameControllerKeyboard(_ hidioController: HIDIOController) {
+    private func connectGameControllerKeyboard() {
         guard let keyboard = HIDIOGCKeyboard.shared() else {
             self.logger.warning("HIDIO: GCKeyboard is not available")
             return
         }
 
         self.logger.info("HIDIO: connected GCKeyboard")
-        hidioController.connect(keyboard)
+        HIDIOInputRouter.shared.connectGlobal(keyboard)
     }
     
-    private func connectGameControllerMouse(_ hidioController: HIDIOController) {
+    private func connectGameControllerMouse() {
         guard let mouse = HIDIOGCMouse.shared() else {
             self.logger.warning("HIDIO: GCMouse is not available")
             return
         }
 
         self.logger.info("HIDIO: connected GCMouse")
-        hidioController.connect(mouse)
+        HIDIOInputRouter.shared.connectGlobal(mouse)
     }
 
     private func handleEventTapError(_ error: Error) {
@@ -88,9 +93,10 @@ extension NoctilucaClient {
             message: "Cocoa Event Tap 초기화에 실패했습니다. 현재 GameController로 입력을 전송 중입니다."
         ))
 
-        if let hidioController {
-            connectGameControllerKeyboard(hidioController)
-        }
+#if os(macOS)
+        HIDIOInputRouter.shared.disconnect(.cocoaEventTapKeyboard)
+#endif
+        connectGameControllerKeyboard()
     }
 
     private func updateInputWarning(_ warning: InputWarning?) {

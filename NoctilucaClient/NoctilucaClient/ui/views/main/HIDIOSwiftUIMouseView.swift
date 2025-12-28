@@ -5,10 +5,11 @@
 //  Created by Gyuhwan Park on 12/26/25.
 //
 
+#if os(iOS) || os(macOS)
+
 import SwiftUI
 import Foundation
 import SiriusKitClient
-
 
 struct HIDIOSwiftUIMouseView: View {
     fileprivate enum SpatialEventPhase {
@@ -141,7 +142,6 @@ struct HIDIOSwiftUIMouseView: View {
     }
     
     fileprivate func handleSpatialEvent(for phase: SpatialEventPhase, events: SpatialEventCollection) {
-        
         if phase == .change {
             if events.count == 2 {
                 stopScrollInertia()
@@ -275,3 +275,5 @@ fileprivate extension SpatialEventCollection {
         return total / TimeInterval(self.count)
     }
 }
+
+#endif

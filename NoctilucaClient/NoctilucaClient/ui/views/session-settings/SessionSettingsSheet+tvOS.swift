@@ -5,7 +5,6 @@
 //  Created by Gyuhwan Park on 12/21/25.
 //
 
-#if !os(tvOS)
 import SwiftUI
 
 
@@ -55,6 +54,44 @@ struct SessionSettingsSheet: View {
     
     @ViewBuilder
     var _body: some View {
+        HStack {
+            VStack {
+                Text("test")
+            }
+            .frame(maxWidth: .infinity)
+            
+            Form {
+                NavigationLink(destination: {
+                    GeneralSessionSettingsTab(sessionSettings: $sessionSettings)
+                }, label: {
+                    Label("일반", systemImage: "gearshape.fill")
+                })
+                
+                NavigationLink(destination: {
+                    ProjectionSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
+                }, label: {
+                    Label("프로젝션", systemImage: "display")
+                })
+                
+                NavigationLink(destination: {
+                    InputSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
+                }, label: {
+                    Label("입력", systemImage: "keyboard.fill")
+                })
+                
+                NavigationLink(destination: {
+                    SecuritySessionSettingsTab(
+                        sessionSettings: $sessionSettings,
+                        scope: scope,
+                        contactId: contactId
+                    )
+                }, label: {
+                    Label("보안", systemImage: "lock.fill")
+                })
+            }
+            .frame(maxWidth: .infinity)
+        }
+        /*
         TabView(selection: $selectedTab) {
             if scope == .session {
                 GeneralSessionSettingsTab(sessionSettings: $sessionSettings)
@@ -98,14 +135,12 @@ struct SessionSettingsSheet: View {
 #if !os(tvOS)
         .tabViewStyle(.sidebarAdaptable)
 #endif
+         */
     }
 
     @ViewBuilder
     private var content: some View {
         _body
-#if os(macOS)
-            .frame(height: 600)
-#endif
 #if !os(tvOS)
             .toolbar {
                 toolbarItems
@@ -232,4 +267,3 @@ struct SessionSettingsSheet: View {
     )
         .frame(minHeight: 720)
 }
-#endif

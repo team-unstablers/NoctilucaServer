@@ -21,18 +21,22 @@ final class RootViewController: UIHostingController<AnyView> {
     /// true로 설정 시 포인터가 고정되지만, 전체 화면 모드에서만 동작합니다.
     var isPointerLocked: Bool = false {
         didSet {
+#if os(iOS)
             setNeedsUpdateOfPrefersPointerLocked()
+#endif
         }
     }
     
+#if os(iOS)
     override var prefersPointerLocked: Bool {
         return isPointerLocked
     }
+#endif
     
     init() {
         let mainUIViewModel = MobileUIMainViewModel()
         let mainWindowViewModel = MainWindowViewModel()
-        let settingsStore = SettingsStore()
+        let settingsStore = SettingsStore.shared
         
         self.mainUIViewModel = mainUIViewModel
         self.mainWindowViewModel = mainWindowViewModel

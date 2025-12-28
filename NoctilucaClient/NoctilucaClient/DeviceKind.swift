@@ -12,11 +12,14 @@ import UIKit
 enum DeviceKind {
     case iPad
     case iPhone
+    case tv
     case mac
     
     static var current: DeviceKind {
 #if os(macOS)
         return .mac
+#elseif os(tvOS)
+        return .tv
 #elseif canImport(UIKit)
         if UIDevice.current.userInterfaceIdiom == .pad {
             return .iPad

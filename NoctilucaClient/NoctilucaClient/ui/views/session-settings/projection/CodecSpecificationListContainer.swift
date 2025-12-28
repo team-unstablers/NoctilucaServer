@@ -115,7 +115,7 @@ struct CodecSpecificationListContainer: View {
         selection.removeAll()
     }
     
-#elseif os(iOS)
+#elseif os(iOS) || os(tvOS)
     enum ModalState {
         case none
         case edit(Int)

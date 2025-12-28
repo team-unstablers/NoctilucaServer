@@ -5,13 +5,11 @@
 //  Created by Gyuhwan Park on 11/29/25.
 //
 
-#if os(iOS)
+#if os(tvOS)
 import SwiftUI
 
 @main
 struct NoctilucaClientApp: App {
-    
-    
     @UIApplicationDelegateAdaptor
     private var appDelegate: AppDelegate
     
@@ -19,23 +17,6 @@ struct NoctilucaClientApp: App {
         WindowGroup {
             // @see MobileUIMainSceneDelegate.swift
             EmptyView()
-        }
-        .windowResizability(.contentMinSize)
-        .commands {
-            CommandGroup(replacing: .newItem) {
-                Button("New Window") {
-                    UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil, errorHandler: nil)
-                }
-                .keyboardShortcut("N", modifiers: [.command, .shift, .option])
-            }
-        }
-        .commands {
-            CommandGroup(replacing: .appSettings) {
-                Button("Settings…") {
-                    openSettings()
-                }
-                .keyboardShortcut(",", modifiers: [.command])
-            }
         }
     }
     

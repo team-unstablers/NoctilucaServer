@@ -121,6 +121,7 @@ class NoctilucaClient: ObservableObject {
     var projectionChannel: ProjectionChannel!
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
+    private var isInputFocusActive: Bool = false
 
     var sessionSettings: SessionSettings? = nil
 
@@ -155,6 +156,19 @@ class NoctilucaClient: ObservableObject {
     func startup() async throws {
         logger.info("Starting up NoctilucaClient...")
         try await session.startup()
+    }
+
+    func setInputFocusActive(_ active: Bool) {
+        isInputFocusActive = active
+        applyInputFocusState()
+    }
+
+    func applyInputFocusState() {
+        if isInputFocusActive {
+            HIDIOInputRouter.shared.activate(hidioController)
+        } else {
+            HIDIOInputRouter.shared.deactivate(hidioController)
+        }
     }
     
     private func mainChannelEventLoop() async {

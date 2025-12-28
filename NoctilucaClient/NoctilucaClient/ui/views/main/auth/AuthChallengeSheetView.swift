@@ -45,7 +45,9 @@ struct AuthChallengeSheetView: View {
                 Button("취소", role: .cancel) {
                     handler(.cancel)
                 }
+#if !os(tvOS)
                 .keyboardShortcut(.escape)
+#endif
                 Button("확인", role: .confirm) {
                     submit()
                 }
@@ -101,17 +103,23 @@ struct AuthChallengeSheetView: View {
 #if os(iOS)
                     .textInputAutocapitalization(.never)
 #endif
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
                 Text("비밀번호")
                 SecureField("비밀번호 입력", text: $viewModel.password)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
                     .onSubmit { submit() }
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
                 Text("비밀번호")
                 SecureField("비밀번호 입력", text: $viewModel.simplePassword)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
                     .onSubmit { submit() }
             }
         case .sshKey:

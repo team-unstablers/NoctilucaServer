@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 12/19/25.
 //
 
+#if !os(tvOS)
 import SwiftUI
 
 struct LaunchEffect: Transition {
@@ -127,3 +128,4 @@ struct ContactItemView: View {
     }
     .frame(minWidth: 360, minHeight: 360)
 }
+#endif

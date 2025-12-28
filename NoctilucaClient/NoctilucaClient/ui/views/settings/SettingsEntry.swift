@@ -20,7 +20,7 @@ struct SettingsEntry<Content: View>: View {
         self.content = content
     }
     
-#if os(iOS)
+#if os(iOS) || os(tvOS)
     var body: some View {
         VStack {
             VStack(alignment: .leading) {

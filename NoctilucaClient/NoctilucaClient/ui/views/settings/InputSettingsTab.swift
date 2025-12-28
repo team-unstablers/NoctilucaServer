@@ -112,6 +112,9 @@ struct InputSettingsTab: View {
             }
             
             Section {
+#if os(tvOS)
+                #warning("FIXME: tvOS에서 슬라이더 구현해야 함")
+#else
                 SettingsEntry(title: "마우스 스크롤 배수", subtitle: "마우스 스크롤에 배수 값을 적용하여 전송합니다.\n값이 클수록 스크롤 속도가 빨라집니다.") {
                     Slider(value: $settingsStore.settings.input.mouseScrollMultiplier, in: 0.5...1.5, step: 0.25) {
                         
@@ -121,6 +124,7 @@ struct InputSettingsTab: View {
                         Text("1.5x")
                     }
                 }
+#endif
             } header: {
                 Text("고급 설정")
                 Text("입력 관련 고급 설정을 구성합니다.")

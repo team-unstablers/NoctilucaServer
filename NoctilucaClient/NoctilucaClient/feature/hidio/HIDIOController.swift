@@ -11,13 +11,13 @@ import AsyncAlgorithms
 
 import SiriusKitClient
 
-class HIDIOController {
+class HIDIOController: HIDIOInputSession {
     private let logger = NoctilucaLogger(category: "HIDIOController")
     
     private let settingsStore: SettingsStore = .shared
     
     private let channel: HIDIOChannel
-    private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
+    private let inputRouter = HIDIOInputRouter.shared
     
     private let eventStream: AsyncStream<HIDEvent>
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation
@@ -27,6 +27,7 @@ class HIDIOController {
     private var pressedKeys: Set<LinuxKeycode> = []
     private(set) var isCaptureLockEnabled: Bool = false
     private var unlockSequenceMatcher = KeySequenceMatcher()
+    var onEventTapError: ((Error) -> Void)? = nil
 
     init(channel: HIDIOChannel) {
         self.channel = channel
@@ -77,69 +78,56 @@ class HIDIOController {
     }
     
     func connect(_ device: HIDIOVirtualDevice) {
-        let identifier = type(of: device).identifier
-        
-        self.disconnect(identifier)
-        device.connect(to: self)
-        
-        self.devices[identifier] = device
-
-        if isCaptureLockEnabled, let lockableDevice = device as? HIDIOLockableVirtualDevice {
-            try? lockableDevice.lock()
-        }
+        inputRouter.connect(device, owner: self)
     }
     
     func device(for identifier: HIDIOVirtualDeviceIdentifier) -> HIDIOVirtualDevice? {
-        return self.devices[identifier]
+        return inputRouter.device(for: identifier, owner: self)
     }
 
     func devices(for kind: HIDIOVirtualDeviceKind) -> [HIDIOVirtualDevice] {
-        let devices = self.devices.filter { type(of: $0.value).kind == kind }.compactMap { $0.value }
-        return devices
+        return inputRouter.devices(for: kind, owner: self)
     }
     
     func disconnect(_ identifier: HIDIOVirtualDeviceIdentifier) {
-        guard let device = self.devices[identifier] else {
-            return
-        }
-        
-        if let lockableDevice = device as? HIDIOLockableVirtualDevice {
-            try? lockableDevice.unlock()
-        }
-
-        device.disconnect()
-        self.devices.removeValue(forKey: identifier)
+        inputRouter.disconnect(identifier, owner: self)
     }
     
     func disconnectAll(kind: HIDIOVirtualDeviceKind) {
-        let devicesToDisconnect = self.devices.filter { type(of: $0.value).kind == kind }
-        
-        for (identifier, device) in devicesToDisconnect {
-            if let lockableDevice = device as? HIDIOLockableVirtualDevice {
-                try? lockableDevice.unlock()
-            }
-
-            device.disconnect()
-            self.devices.removeValue(forKey: identifier)
-        }
+        inputRouter.disconnectAll(kind: kind, owner: self)
     }
     
     func enableCaptureLock() {
-        isCaptureLockEnabled = true
-        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
-        
-        for (_, device) in lockableDevices {
-            try? device.lock()
-        }
+        setCaptureLockEnabled(true)
     }
     
     func disableCaptureLock() {
-        isCaptureLockEnabled = false
-        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
-        
-        for (_, device) in lockableDevices {
-            try? device.unlock()
+        setCaptureLockEnabled(false)
+    }
+
+    func handleInputActivated() {
+    }
+
+    func handleInputDeactivated() {
+        if isCaptureLockEnabled {
+            setCaptureLockEnabled(false, notifyRouter: false)
         }
+        releasePressedKeys()
+    }
+
+    private func setCaptureLockEnabled(_ enabled: Bool, notifyRouter: Bool = true) {
+        isCaptureLockEnabled = enabled
+        if notifyRouter {
+            inputRouter.captureLockDidChange(for: self)
+        }
+    }
+
+    private func releasePressedKeys() {
+        let keysToRelease = pressedKeys
+        for key in keysToRelease {
+            keyUp(keyCode: key)
+        }
+        pressedKeys.removeAll()
     }
     
     func keyDown(keyCode: LinuxKeycode) {

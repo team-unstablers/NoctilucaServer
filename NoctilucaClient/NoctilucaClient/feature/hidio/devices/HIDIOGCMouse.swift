@@ -72,7 +72,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
         }
     }
     
-    private var controller: HIDIOController?
+    private var target: HIDIOEventTarget?
     
     init() {
     }
@@ -116,7 +116,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     }
     
     fileprivate func setupMouseInputHandler() {
-        guard self.controller != nil else {
+        guard self.target != nil else {
             return
         }
         
@@ -125,13 +125,13 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
         }
         
         mouseInput.mouseMovedHandler = { [weak self] mouse, deltaX, deltaY in
-            guard let controller = self?.controller else {
+            guard let target = self?.target else {
                 return
             }
             
             self?.logger.debug("Mouse moved: deltaX=\(deltaX), deltaY=\(deltaY)")
 
-            controller.moveMouseRelative(to: CGPoint(
+            target.moveMouseRelative(to: CGPoint(
                 x: CGFloat(deltaX),
                 y: CGFloat(-deltaY)
             ))
@@ -142,16 +142,16 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
         func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
             button.preferredSystemGestureState = .alwaysReceive
             button.valueChangedHandler = { [weak self] button, value, pressed in
-                guard let controller = self?.controller else {
+                guard let target = self?.target else {
                     return
                 }
                 
                 self?.logger.debug("Mouse button changed: value=\(value), pressed=\(pressed)")
                 
                 if pressed {
-                    controller.mouseButtonDown(button: buttonType)
+                    target.mouseButtonDown(button: buttonType)
                 } else {
-                    controller.mouseButtonUp(button: buttonType)
+                    target.mouseButtonUp(button: buttonType)
                 }
             }
         }
@@ -164,7 +164,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
 
         
         mouseInput.scroll.valueChangedHandler = { [weak self] wheel, xValue, yValue in
-            guard let controller = self?.controller else {
+            guard let target = self?.target else {
                 return
             }
             
@@ -177,7 +177,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
             let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
 #endif
-            controller.mouseWheel(delta: delta)
+            target.mouseWheel(delta: delta)
         }
     }
     
@@ -190,12 +190,12 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
         self.mouse?.mouseInput?.scroll.valueChangedHandler = nil
     }
     
-    func connect(to controller: HIDIOController) {
-        self.controller = controller
+    func connect(to target: HIDIOEventTarget) {
+        self.target = target
     }
     
     func disconnect() {
-        self.controller = nil
+        self.target = nil
     }
     
     func lock() throws {

@@ -19,6 +19,16 @@ extension HIDIOVirtualDeviceIdentifier {
 }
 
 final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
+    private static var _shared: HIDIOCocoaEventTapKeyboard? = nil
+
+    static func shared() -> HIDIOCocoaEventTapKeyboard {
+        if _shared == nil {
+            _shared = HIDIOCocoaEventTapKeyboard()
+        }
+
+        return _shared!
+    }
+
     struct ToggleShortcut {
         let keyCode: CGKeyCode
         let requiredFlags: CGEventFlags
@@ -47,7 +57,7 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
 
     private let toggleShortcut: ToggleShortcut
 
-    private weak var controller: HIDIOController?
+    private var target: HIDIOEventTarget?
     private let stateLock = NSLock()
 
     private var captureModeEnabled: Bool = false
@@ -72,12 +82,13 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
         disconnect()
     }
 
-    func connect(to controller: HIDIOController) {
-        self.controller = controller
+    func connect(to target: HIDIOEventTarget) {
+        self.target = target
         startEventTapIfNeeded()
     }
 
     func disconnect() {
+        target = nil
         stopEventTap()
     }
 
@@ -259,15 +270,15 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
     }
 
     private func dispatchKeyEvent(_ event: KeyEvent) {
-        guard let controller else {
+        guard let target else {
             return
         }
 
         Task {
             if event.isDown {
-                try? await controller.keyDown(keyCode: event.keyCode)
+                target.keyDown(keyCode: event.keyCode)
             } else {
-                try? await controller.keyUp(keyCode: event.keyCode)
+                target.keyUp(keyCode: event.keyCode)
             }
         }
     }

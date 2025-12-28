@@ -63,7 +63,9 @@ struct CredentialAddSheet: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 TextField("표시 이름 (선택 사항)", text: $displayName)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
 
                 templateDetailInputs
             }
@@ -108,27 +110,37 @@ struct CredentialAddSheet: View {
                 Text("사용자명-비밀번호")
                     .font(.headline)
                 TextField("사용자명", text: $username)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
                 SecureField("비밀번호", text: $password)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
                 Text("간단 비밀번호")
                     .font(.headline)
                 SecureField("비밀번호", text: $simplePassword)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {
                 Text("SSH 키")
                     .font(.headline)
                 TextField("공개 키", text: $publicKey, axis: .vertical)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(2...4)
                 TextField("개인 키 (PEM)", text: $privateKey, axis: .vertical)
+#if !os(tvOS)
                     .textFieldStyle(.roundedBorder)
+#endif
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(3...6)
             }

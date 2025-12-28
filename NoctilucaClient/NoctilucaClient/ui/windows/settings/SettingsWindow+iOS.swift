@@ -5,8 +5,7 @@
 //  Created by Gyuhwan Park on 11/26/25.
 //
 
-#if os(iOS)
-
+#if os(iOS) || os(tvOS)
 import SwiftUI
 
 struct UIKitSettingsWindow: View {

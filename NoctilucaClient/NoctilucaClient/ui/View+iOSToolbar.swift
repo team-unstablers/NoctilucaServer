@@ -7,8 +7,7 @@
 
 import SwiftUI
 
-#if os(iOS)
-
+#if os(iOS) || os(tvOS)
 extension View {
     @ViewBuilder
     func setupMainToolbar(for deviceKind: DeviceKind) -> some View {
@@ -17,6 +16,8 @@ extension View {
             self.modifier(ToolbarModifierIPhone())
         case .iPad:
             self.modifier(ToolbarModifierIPad())
+        case .tv:
+            self.modifier(ToolbarModifierIPhone())
         default:
             self.modifier(ToolbarModifierIPad())
         }
@@ -38,53 +39,62 @@ struct ToolbarModifierIPhone: ViewModifier {
     
     @FocusState
     private var isAddressBarFocused: Bool
+    
+    @ViewBuilder
+    func _body(content: Content) -> some View {
+        ZStack(alignment: .bottom) {
+            content
+                .simultaneousGesture(TapGesture().onEnded {
+                    isAddressBarFocused = false
+                })
+            MainToolbarAddressBar(
+                viewModel: viewModel,
+                settingsStore: settingsStore,
+                focusBinding: $isAddressBarFocused
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+        }
+        .toolbar {
+            if viewModel.phase == .newConnection {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        mobileUIMainViewModel.navState.append(.settings)
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.presentContactEditor(for: nil)
+                    } label: {
+                        Image(systemName: "plus.app")
+                    }
+                }
+            } else {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        viewModel.stopSession()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+            }
+        }
+    }
 
     func body(content: Content) -> some View {
+#if os(iOS)
         if horizontalSizeClass == .regular {
             content
                 .safeAreaPadding(.horizontal)
                 .modifier(ToolbarModifierIPad())
         } else {
-            ZStack(alignment: .bottom) {
-                content
-                    .simultaneousGesture(TapGesture().onEnded {
-                        isAddressBarFocused = false
-                    })
-                MainToolbarAddressBar(
-                    viewModel: viewModel,
-                    settingsStore: settingsStore,
-                    focusBinding: $isAddressBarFocused
-                )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-            }
-            .toolbar {
-                if viewModel.phase == .newConnection {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            mobileUIMainViewModel.navState.append(.settings)
-                        } label: {
-                            Image(systemName: "gearshape")
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            viewModel.presentContactEditor(for: nil)
-                        } label: {
-                            Image(systemName: "plus.app")
-                        }
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            viewModel.stopSession()
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                    }
-                }
-            }
+            _body(content: content)
         }
+#else
+        _body(content: content)
+#endif
     }
 }
 

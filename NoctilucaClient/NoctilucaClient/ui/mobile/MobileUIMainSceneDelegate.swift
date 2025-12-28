@@ -36,7 +36,16 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         
+        rootViewController.mainWindowViewModel?.setInputFocusActive(false)
         rootViewController.mainWindowViewModel?.stopSession()
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        rootViewController?.mainWindowViewModel?.setInputFocusActive(true)
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        rootViewController?.mainWindowViewModel?.setInputFocusActive(false)
     }
 }
 

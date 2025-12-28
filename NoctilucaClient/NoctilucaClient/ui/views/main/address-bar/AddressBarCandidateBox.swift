@@ -65,9 +65,11 @@ struct AddressBarCandidateBox: View {
                     query: query,
                     isFocused: index == focusedIndex
                 )
+#if !os(tvOS)
                 .onHover { isHovering in
                     onHoverIndex?(index, isHovering)
                 }
+#endif
                 .onTapGesture {
                     onSelectIndex?(index)
                 }

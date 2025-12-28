@@ -19,6 +19,10 @@ class MainWindowViewModel: ObservableObject {
         case contactEditor
     }
 
+    private let contactStore: ContactStore
+
+    private var contactStoreCancellable: AnyCancellable?
+
     @Published
     var phase: MainWindowPhase = .newConnection
     
@@ -34,7 +38,13 @@ class MainWindowViewModel: ObservableObject {
     @Published
     var shouldDisplayErrorAlert: Bool = false
     
-    var client: NoctilucaClient?
+    var client: NoctilucaClient? {
+        didSet {
+            updateInputFocus()
+        }
+    }
+
+    private var isInputFocusActive: Bool = false
     
     @Published
     var averagePingRTT: TimeInterval = 0.0
@@ -50,16 +60,6 @@ class MainWindowViewModel: ObservableObject {
     
     @Published
     private(set) var isInputLockActive: Bool = false
-
-    // TODO: Contact management 관련 코드는 별도 ViewModel로 분리 고려
-    @Published
-    var contacts: [ContactItem] = []
-
-    @Published
-    var isLoadingContacts: Bool = false
-
-    @Published
-    var contactsLoadError: String? = nil
 
     @Published
     var isSessionSettingsSheetPresented: Bool = false
@@ -82,7 +82,27 @@ class MainWindowViewModel: ObservableObject {
 
     private var settingsStore: SettingsStore?
     private var settingsCancellable: AnyCancellable?
-    private var contactsCancellable: AnyCancellable?
+
+    init(contactStore: ContactStore = .shared) {
+        self.contactStore = contactStore
+        contactStoreCancellable = contactStore.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+    }
+
+    var contacts: [ContactItem] {
+        contactStore.contacts
+    }
+
+    var isLoadingContacts: Bool {
+        contactStore.isLoadingContacts
+    }
+
+    var contactsLoadError: String? {
+        contactStore.contactsLoadError
+    }
     
 
     func appendConnectionLog(_ log: String) {
@@ -91,6 +111,26 @@ class MainWindowViewModel: ObservableObject {
         // 마지막 6개 정도만 남긴다
         if self.connectionLog.count > 6 {
             self.connectionLog.removeFirst(self.connectionLog.count - 6)
+        }
+    }
+
+    func setInputFocusActive(_ active: Bool) {
+        guard isInputFocusActive != active else {
+            return
+        }
+
+        isInputFocusActive = active
+        updateInputFocus()
+    }
+
+    private func updateInputFocus() {
+        if let client {
+            client.setInputFocusActive(isInputFocusActive)
+            return
+        }
+
+        if isInputFocusActive {
+            HIDIOInputRouter.shared.activate(nil)
         }
     }
     
@@ -189,34 +229,7 @@ class MainWindowViewModel: ObservableObject {
     }
 
     func startContactObservation() {
-        guard contactsCancellable == nil else {
-            return
-        }
-
-        loadContacts()
-
-        contactsCancellable = NotificationCenter.default
-            .publisher(for: ContactStore.didChangeNotification)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.loadContacts()
-            }
-    }
-
-    func loadContacts() {
-        isLoadingContacts = true
-        contactsLoadError = nil
-        defer { isLoadingContacts = false }
-
-        do {
-            let loaded = try ContactStore.loadAll()
-            contacts = loaded.sorted {
-                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-            }
-        } catch {
-            contacts = []
-            contactsLoadError = error.localizedDescription
-        }
+        contactStore.startContactObservation()
     }
 
     var canConnectFromDraft: Bool {
@@ -268,7 +281,7 @@ class MainWindowViewModel: ObservableObject {
 
     func saveContactFromSheet() {
         do {
-            try ContactStore.save(sessionSettingsDraft)
+            try contactStore.save(sessionSettingsDraft)
             isSessionSettingsSheetPresented = false
         } catch {
             print("Failed to save contact: \(error.localizedDescription)")
@@ -277,7 +290,7 @@ class MainWindowViewModel: ObservableObject {
 
     func deleteContactFromSheet() {
         do {
-            try ContactStore.remove(id: sessionSettingsDraft.id)
+            try contactStore.remove(id: sessionSettingsDraft.id)
             isDeleteContactConfirmationPresented = false
             isSessionSettingsSheetPresented = false
         } catch {
@@ -287,7 +300,7 @@ class MainWindowViewModel: ObservableObject {
 
     func saveContactAndConnectFromSheet() {
         do {
-            try ContactStore.save(sessionSettingsDraft)
+            try contactStore.save(sessionSettingsDraft)
         } catch {
             print("Failed to save contact: \(error.localizedDescription)")
         }

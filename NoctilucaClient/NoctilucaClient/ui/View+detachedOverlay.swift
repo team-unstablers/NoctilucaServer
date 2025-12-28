@@ -53,7 +53,7 @@ private enum DetachedOverlayConstants {
     static let mouseTrackingInterval: TimeInterval = 1.0 / 30.0
 }
 
-#if os(iOS)
+#if os(iOS) || os(tvOS)
 struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
     let role: DetachedOverlayRole
     let overlayContent: () -> OverlayContent

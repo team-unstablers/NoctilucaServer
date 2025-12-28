@@ -23,7 +23,7 @@ class HIDIOSwiftUIMouse: HIDIOVirtualDevice {
     
     private let logger = NoctilucaLogger(category: "HIDIOSwiftUIMouse")
   
-    private var controller: HIDIOController?
+    private var target: HIDIOEventTarget?
     
     var geometry: CGSize = .zero
 
@@ -39,7 +39,7 @@ class HIDIOSwiftUIMouse: HIDIOVirtualDevice {
     }
     
     func reportMouseMove(_ point: CGPoint) {
-        guard let controller else {
+        guard let target else {
             logger.debug("No controller connected, skipping mouse move report")
             return
         }
@@ -47,36 +47,36 @@ class HIDIOSwiftUIMouse: HIDIOVirtualDevice {
         let x = point.x / geometry.width
         let y = point.y / geometry.height
         
-        controller.moveMouseAbsolutePercentage(to: CGPoint(x: x, y: y))
+        target.moveMouseAbsolutePercentage(to: CGPoint(x: x, y: y))
     }
     
     func reportMouseClick(button: MouseButtonType, isPressed: Bool) {
-        guard let controller else {
+        guard let target else {
             logger.debug("No controller connected, skipping mouse click report")
             return
         }
         
         if isPressed {
-            controller.mouseButtonDown(button: button)
+            target.mouseButtonDown(button: button)
         } else {
-            controller.mouseButtonUp(button: button)
+            target.mouseButtonUp(button: button)
         }
     }
     
     func reportMouseScroll(deltaX: Double, deltaY: Double) {
-        guard let controller else {
+        guard let target else {
             logger.debug("No controller connected, skipping mouse click report")
             return
         }
         
-        controller.mouseWheel(delta: CGPoint(x: deltaX, y: deltaY))
+        target.mouseWheel(delta: CGPoint(x: deltaX, y: deltaY))
     }
    
-    func connect(to controller: HIDIOController) {
-        self.controller = controller
+    func connect(to target: HIDIOEventTarget) {
+        self.target = target
     }
     
     func disconnect() {
-        self.controller = nil
+        self.target = nil
     }
 }

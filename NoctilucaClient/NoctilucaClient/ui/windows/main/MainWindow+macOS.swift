@@ -44,7 +44,16 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        viewModel.setInputFocusActive(false)
         onClose?(self)
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        viewModel.setInputFocusActive(true)
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        viewModel.setInputFocusActive(false)
     }
     
     required init?(coder: NSCoder) {

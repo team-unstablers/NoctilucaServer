@@ -6,6 +6,9 @@
 //
 
 import Foundation
+import CoreGraphics
+
+import SiriusKitClient
 
 enum HIDIOVirtualDeviceError: LocalizedError {
     case initializationFailed(Error?)
@@ -25,13 +28,32 @@ struct HIDIOVirtualDeviceIdentifier: RawRepresentable, Hashable, Equatable {
     }
 }
 
+protocol HIDIOEventTarget: AnyObject {
+    func keyDown(keyCode: LinuxKeycode)
+    func keyUp(keyCode: LinuxKeycode)
+    func moveMouseAbsolutePercentage(to position: CGPoint)
+    func moveMouseRelative(to position: CGPoint)
+    func moveMouseRelativePercentage(to position: CGPoint)
+    func mouseButtonDown(button: MouseButtonType)
+    func mouseButtonUp(button: MouseButtonType)
+    func mouseWheel(delta: CGPoint)
+}
+
+protocol HIDIOInputSession: HIDIOEventTarget {
+    var isCaptureLockEnabled: Bool { get }
+    var onEventTapError: ((Error) -> Void)? { get }
+
+    func handleInputActivated()
+    func handleInputDeactivated()
+}
+
 protocol HIDIOVirtualDevice {
     static var kind: HIDIOVirtualDeviceKind { get }
     /// '인스턴스'에 대한 identifier가 아닌 'Product'에 대한 identifier.
     /// USB 디바이스의 VID/PID와 유사한 개념.
     static var identifier: HIDIOVirtualDeviceIdentifier { get }
     
-    func connect(to controller: HIDIOController)
+    func connect(to target: HIDIOEventTarget)
     func disconnect()
 }
 
@@ -45,7 +67,6 @@ protocol HIDIOLockableVirtualDevice: HIDIOVirtualDevice {
 }
 
 protocol HIDIOVirtualDeviceBus {
-    func connect(to controller: HIDIOController)
+    func connect(to target: HIDIOEventTarget)
     func disconnect()
 }
-

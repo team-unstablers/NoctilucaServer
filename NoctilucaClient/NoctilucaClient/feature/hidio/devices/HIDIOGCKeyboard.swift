@@ -49,7 +49,7 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
         }
     }
     
-    private var controller: HIDIOController?
+    private var target: HIDIOEventTarget?
 
     init() {
 
@@ -78,7 +78,7 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
 
     
     fileprivate func setupKeyboardInputHandler() {
-        guard self.controller != nil else {
+        guard self.target != nil else {
             return
         }
         
@@ -87,31 +87,31 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
         }
         
         self.keyboard?.keyboardInput?.keyChangedHandler = { [weak self] keyboard, key, keyCode, pressed in
-            guard let controller = self?.controller else {
-                return
-            }
+                guard let target = self?.target else {
+                    return
+                }
             
             let keyCode = LinuxKeycode.from(gameController: keyCode)
             
-            if pressed {
-                controller.keyDown(keyCode: keyCode)
-            } else {
-                controller.keyUp(keyCode: keyCode)
+                if pressed {
+                    target.keyDown(keyCode: keyCode)
+                } else {
+                    target.keyUp(keyCode: keyCode)
+                }
             }
         }
-    }
     
     fileprivate func destroyKeyboardInputHandler() {
         self.keyboard?.keyboardInput?.keyChangedHandler = nil
     }
     
-    func connect(to controller: HIDIOController) {
-        self.controller = controller
+    func connect(to target: HIDIOEventTarget) {
+        self.target = target
         self.setupKeyboardInputHandler()
     }
     
     func disconnect() {
-        self.controller = nil
+        self.target = nil
         self.destroyKeyboardInputHandler()
     }
 }

@@ -288,7 +288,9 @@ struct KeyMappingTableEditorSheet: View {
                 Spacer()
                 Button("취소", role: .cancel) {
                 }
+#if !os(tvOS)
                 .keyboardShortcut(.escape)
+#endif
                 Button("확인", role: .confirm) {
                 }
             }

@@ -152,6 +152,9 @@ struct CodecSpecificationSheet: View {
 #endif
                 }
                 
+#if os(tvOS)
+                #warning("FIXME: tvOS에서 슬라이더를 다른 방식으로 구현하던가 해야 함")
+#else
                 Section {
                     SettingsEntry(
                         title: "최대 해상도",
@@ -191,6 +194,7 @@ struct CodecSpecificationSheet: View {
                         }
                     }
                 }
+#endif
                 
                 Section {
                     Picker(selection: $specification.options[.displayDensity]) {
@@ -245,6 +249,26 @@ struct CodecSpecificationSheet: View {
             _body
                 .navigationTitle("\(specification.displayTitle) 코덱 설정")
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("취소") {
+                            actionHandler(.cancel)
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("저장", role: .confirm) {
+                            actionHandler(.save(specification))
+                        }
+                    }
+                }
+        }
+    }
+#elseif os(tvOS)
+        var body: some View {
+        NavigationStack {
+            _body
+                .navigationTitle("\(specification.displayTitle) 코덱 설정")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("취소") {

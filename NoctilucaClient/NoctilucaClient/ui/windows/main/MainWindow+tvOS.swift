@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 12/10/25.
 //
 
-#if os(iOS)
+#if os(tvOS)
 import Foundation
 
 import SwiftUI
@@ -31,9 +31,8 @@ struct UIKitMainWindow: View {
                 MainWindowContentView()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .setupMainToolbar(for: .current)
+            .setupMainToolbar(for: .tv)
         }
-        .navigationBarTitleDisplayMode(.inline)
         .windowToolbarFullScreenVisibility(.automatic)
         .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {
             let error = viewModel.errors.last
@@ -46,28 +45,12 @@ struct UIKitMainWindow: View {
                 }
             )
         }
-        .sheet(isPresented: $viewModel.isSessionSettingsSheetPresented) {
-            SessionSettingsSheet(
-                scope: .session,
-                sessionSettings: $viewModel.sessionSettingsDraft.settings,
-                contactId: viewModel.sessionSettingsSheetMode == .quickConnect ? nil : viewModel.sessionSettingsDraft.id,
-            ) { action in
-                switch action {
-                case .cancel:
-                    viewModel.dismissSessionSettingsSheet()
-                case .delete:
-                    viewModel.cancelDeleteContactConfirmation()
-                case .connect:
-                    viewModel.connectWithoutSavingFromSheet()
-                case .saveAndConnect:
-                    viewModel.saveContactAndConnectFromSheet()
-                case .save:
-                    viewModel.saveContactFromSheet()
-                }
-                
-                viewModel.dismissSessionSettingsSheet()
-            }
+        /*
+        .fullScreenCover(isPresented: $viewModel.isSessionSettingsSheetPresented) {
+
+            .background(.background)
         }
+         */
         .setupClientPhaseHandler(client: viewModel.client) { phase in
             viewModel.handleClientPhaseChanged(phase)
         }

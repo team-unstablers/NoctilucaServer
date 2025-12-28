@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-#if os(iOS)
+#if os(iOS) || os(tvOS)
 private struct SettingsPickerUpdateCurrentValueKey: EnvironmentKey {
     static let defaultValue = { (_: AnyHashable?) in }
 }
@@ -38,7 +38,7 @@ struct SettingsPickerItem<Value: Hashable, Content: View>: View {
         self.content = content
     }
 
-#if os(iOS)
+#if os(iOS) || os(tvOS)
     @Environment(\.settingsPickerCurrentValue)
     private var currentValue: AnyHashable?
     
@@ -112,7 +112,7 @@ struct SettingsPicker<Value: Hashable, Content: View, HeaderContent: View>: View
         self.label = label
     }
     
-#if os(iOS)
+#if os(iOS) || os(tvOS)
     var body: some View {
         VStack(alignment: .leading) {
             label()

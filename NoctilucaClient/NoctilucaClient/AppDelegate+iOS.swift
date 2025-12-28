@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 12/12/25.
 //
 
-#if os(iOS)
+#if os(iOS) || os(tvOS)
 
 import Foundation
 import UIKit

@@ -61,7 +61,7 @@ struct MainWindowConnectingPhaseContentView: View {
                     )
                     .opacity(isLogAreaVisible ? 0.0 : 1.0)
                 }
-#endif
+#elseif os(iOS)
                 .onHover { hoverState in
                     if hoverState {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -72,8 +72,8 @@ struct MainWindowConnectingPhaseContentView: View {
                             isLogAreaVisible = false
                         }
                     }
-
                 }
+#endif
         }
         .padding(24)
     }
