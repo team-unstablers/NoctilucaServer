@@ -95,7 +95,7 @@ struct AuthPluginDetailView: View {
         }
         
         HStack(alignment: .top) {
-            Text("지원하는 인증 매커니즘")
+            Text("지원하는 인증 메커니즘")
             Spacer()
             VStack {
                 ForEach(Array(metaType.supportedMethods), id: \.self) { method in

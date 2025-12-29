@@ -1,5 +1,7 @@
 import SwiftUI
 
+import SiriusKit
+
 struct AboutSettingsTab: View {
     var body: some View {
         Form {
@@ -13,8 +15,8 @@ struct AboutSettingsTab: View {
                     }
                     Spacer()
                     VStack(alignment: .trailing) {
-                        Text("1.0.0-beta1")
-                        Text("App Store")
+                        Text("0.1.0-alpha1")
+                        Text("개발 버전")
                             .font(.subheadline)
                     }
                     .foregroundStyle(.secondary)
@@ -23,8 +25,8 @@ struct AboutSettingsTab: View {
                     Text("SiriusKit 버전")
                     Spacer()
                     VStack(alignment: .trailing) {
-                        Text("1.0.0-beta1")
-                        Text("프로토콜 버전 1 / 개정판 1")
+                        Text("\(SiriusKitMeta.displayVersion)")
+                        Text("프로토콜 버전 \(SiriusKitMeta.currentProtocolVersion.displayVersion)")
                             .font(.subheadline)
                     }
                     .foregroundStyle(.secondary)
@@ -44,7 +46,6 @@ struct AboutSettingsTab: View {
                         Text("HIDIO")
                         Text("Projection")
                         Text("ProjectionData")
-                        Text("ConcurrentSession")
                     }
                     .foregroundStyle(.secondary)
                 }
