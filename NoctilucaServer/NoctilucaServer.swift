@@ -69,8 +69,6 @@ class NoctilucaServer: ObservableObject {
     init() {
         self.authenticator = Authenticator(registry: authPluginRegistry)
         self.context = NoctilucaServerContext(server: self)
-        // FIXME: 이건 AppDelegate에서 하세요.
-        SiriusLogger.configure(minimumLevel: .trace)
         
         logger.info("NoctilucaServer initialized")
         

@@ -50,14 +50,15 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 - `NoctilucaServerApp`가 `@main`으로 앱 엔트리이며 `@StateObject var server = NoctilucaServer.shared`로 서버 싱글턴을 UI 수명주기와 연결합니다.
 - 설정 창(`SettingsWindow`)은 `Window(...).defaultLaunchBehavior(.suppressed)`로 기본 표시를 막고, 메뉴바 트레이에서 열도록 구성합니다.
 - 메뉴바 트레이(`MenuBarExtra`)는 `.menu` 스타일이며 `MainTrayMenuContents`에서 서버 시작/중지/설정/종료 액션을 제공합니다.
-- `AppDelegate.applicationDidFinishLaunching`에서 현재는 `print("Hello, World!")`만 수행합니다(메뉴바 앱 활성 정책 등은 TODO).
+- `AppDelegate.applicationDidFinishLaunching`에서 `SiriusLogger.configure(minimumLevel: .trace)` 호출 후 `print("Hello, World!")`만 수행합니다(메뉴바 앱 활성 정책 등은 TODO).
 - `applicationShouldTerminateAfterLastWindowClosed`는 `false`를 반환하여 마지막 창이 닫혀도 앱이 종료되지 않습니다.
 
 # INIT / STARTUP FLOW (SERVER)
 
+0. `AppDelegate.applicationDidFinishLaunching`에서
+   - `SiriusLogger.configure(minimumLevel: .trace)` 호출
 1. `NoctilucaServer.init()`에서
    - `Authenticator`/`NoctilucaServerContext` 생성
-   - `SiriusLogger.configure(minimumLevel: .trace)` 호출(현재는 init에서 수행, TODO: AppDelegate로 이동)
    - 비동기 `initialize()` 호출
 2. `initialize()`에서
    - `DisplayLayoutManager.shared.startMonitoring()` + `updateDisplayLayouts()`

@@ -7,9 +7,11 @@
 
 import Foundation
 import Cocoa
+import SiriusKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        SiriusLogger.configure(minimumLevel: .trace)
         print("Hello, World!")
         // NSApp.setActivationPolicy(.accessory)
     }
