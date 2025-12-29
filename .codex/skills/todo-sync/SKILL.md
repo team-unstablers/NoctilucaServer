@@ -97,7 +97,7 @@ ${context}
 
 #### A. 기존 이슈 가져오기
 `gh issue list` 명령어를 사용하여 다음 조건에 맞는 이슈 목록을 가져오십시오:
-- Label: `codex:todosync`
+- Label: `codex:todosync` (필요한 경우 `component:$subrepo`로 추가 필터)
 - State: `open`
 
 각 이슈 본문에서 `<refinfo filename="..." lineno="...">`를 추출해 레퍼런스 키로 사용하십시오.
