@@ -39,7 +39,7 @@ struct ContactItemView: View {
     var shouldAnimateLaunchEffect: Bool = false
     
     @ViewBuilder
-    var _body: some View {
+    var __innerBody: some View {
         HStack {
             Image(systemName: "desktopcomputer")
                 .font(.system(size: 32))
@@ -67,16 +67,22 @@ struct ContactItemView: View {
         .frame(maxWidth: .infinity)
         .padding(16)
         .contentShape(.rect(cornerRadius: 8))
-        .glassEffect(
-            .regular.tint(.gray.opacity(0.05)).interactive(true),
-            in: .rect(cornerRadius: 8)
-        )
+        .with {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                $0.glassEffect(
+                    .regular.tint(.gray.opacity(0.05)).interactive(true),
+                    in: .rect(cornerRadius: 8)
+                )
+            } else {
+                $0.background(.ultraThinMaterial)
+            }
+        }
         .padding(.horizontal, 16)
         .padding(.vertical, 4)
     }
     
     var body: some View {
-        _body
+        __innerBody
         .focusable(interactions: [.activate, .edit])
         .focused($isFocused)
         .onKeyPress(.return) {
@@ -91,7 +97,7 @@ struct ContactItemView: View {
         }
         .overlay {
             if shouldAnimateLaunchEffect {
-                _body
+                __innerBody
                     .background(.white)
                     .transition(
                         .launchEffect.animation(.easeInOut(duration: 0.3))

@@ -50,6 +50,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                     .simultaneousGesture(TapGesture().onEnded {
                         isAddressBarFocused = false
                     })
+                /*
                 MainToolbarAddressBar(
                     viewModel: viewModel,
                     settingsStore: settingsStore,
@@ -57,6 +58,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                 )
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
+                 */
             }
             .toolbar {
                 if viewModel.phase == .newConnection {

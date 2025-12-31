@@ -79,11 +79,15 @@ struct NoctilucaHelm: Shape {
 }
 
 #Preview {
-    VStack {
+    if #available(macOS 26.0, iOS 26.0, *) {
         VStack {
-        }
-        .frame(width: 256, height: 256)
-        .glassEffect(.clear.tint(.blue).interactive(), in: NoctilucaHelm())
-        .scaleEffect(2)
-    }.frame(width: 128 * 4, height: 128 * 4)
+            VStack {
+            }
+            .frame(width: 256, height: 256)
+            .glassEffect(.clear.tint(.blue).interactive(), in: NoctilucaHelm())
+            .scaleEffect(2)
+        }.frame(width: 128 * 4, height: 128 * 4)
+    } else {
+        EmptyView()
+    }
 }

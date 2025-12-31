@@ -375,7 +375,13 @@ struct AddressBar: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: radiusSize))
-            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: radiusSize))
+            .with {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    $0.glassEffect(.regular.tint(.gray.opacity(0.05)).interactive(true), in: .rect(cornerRadius: radiusSize))
+                } else {
+                    $0.background(.ultraThinMaterial)
+                }
+            }
             .overlay {
                 RoundedRectangle(cornerRadius: radiusSize)
                     .fill(.clear)
