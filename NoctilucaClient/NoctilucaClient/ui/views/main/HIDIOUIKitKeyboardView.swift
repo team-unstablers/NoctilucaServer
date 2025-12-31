@@ -31,9 +31,7 @@ struct HIDIOUIKitKeyboardInputHost: View {
             )
             .frame(width: 1, height: 1)
             .opacity(0.001)
-            .allowsHitTesting(false)
         }
-        .allowsHitTesting(false)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             updateConnection(isEnabled: isPresented)
@@ -159,7 +157,7 @@ private struct HIDIOUIKitKeyboardKeyButtonStyle: ButtonStyle {
     }
 }
 
-final class HIDIOUIKitKeyboardTextView: UITextView {
+final class HIDIOUIKitKeyboardTextField: UITextField {
     var onInsertText: ((String) -> Void)?
     var onDeleteBackward: (() -> Void)?
 
@@ -167,16 +165,9 @@ final class HIDIOUIKitKeyboardTextView: UITextView {
         true
     }
 
-    override var hasText: Bool {
-        true
-    }
-
-    override func insertText(_ text: String) {
-        onInsertText?(text)
-    }
-
     override func deleteBackward() {
         onDeleteBackward?()
+        super.deleteBackward()
     }
 }
 
@@ -189,35 +180,34 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
         Coordinator(isFirstResponder: $isFirstResponder)
     }
 
-    func makeUIView(context: Context) -> HIDIOUIKitKeyboardTextView {
-        let textView = HIDIOUIKitKeyboardTextView()
-        textView.onInsertText = onInsertText
-        textView.onDeleteBackward = onDeleteBackward
-        textView.delegate = context.coordinator
+    func makeUIView(context: Context) -> HIDIOUIKitKeyboardTextField {
+        let textField = HIDIOUIKitKeyboardTextField()
+        textField.onInsertText = onInsertText
+        textField.onDeleteBackward = onDeleteBackward
+        textField.delegate = context.coordinator
 
-        textView.autocorrectionType = .no
-        textView.autocapitalizationType = .none
-        textView.spellCheckingType = .no
-        textView.smartDashesType = .no
-        textView.smartQuotesType = .no
-        textView.smartInsertDeleteType = .no
-        textView.keyboardType = .asciiCapable
-        textView.returnKeyType = .default
-        textView.enablesReturnKeyAutomatically = false
-        textView.isEditable = true
-        textView.isSelectable = false
-        textView.backgroundColor = .clear
-        textView.textColor = .clear
-        textView.tintColor = .clear
-        textView.text = ""
-        textView.contentInset = .zero
-        textView.scrollIndicatorInsets = .zero
-        textView.inputAssistantItem.leadingBarButtonGroups = []
-        textView.inputAssistantItem.trailingBarButtonGroups = []
-        return textView
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.spellCheckingType = .no
+        textField.smartDashesType = .no
+        textField.smartQuotesType = .no
+        textField.smartInsertDeleteType = .no
+        textField.keyboardType = .asciiCapable
+        textField.returnKeyType = .default
+        textField.enablesReturnKeyAutomatically = false
+        textField.backgroundColor = .clear
+        textField.textColor = .clear
+        textField.tintColor = .clear
+        textField.text = ""
+        textField.borderStyle = .none
+        textField.clearButtonMode = .never
+        textField.inputAssistantItem.leadingBarButtonGroups = []
+        textField.inputAssistantItem.trailingBarButtonGroups = []
+        textField.textContentType = .none
+        return textField
     }
 
-    func updateUIView(_ uiView: HIDIOUIKitKeyboardTextView, context: Context) {
+    func updateUIView(_ uiView: HIDIOUIKitKeyboardTextField, context: Context) {
         if isFirstResponder {
             if !uiView.isFirstResponder {
                 DispatchQueue.main.async {
@@ -229,16 +219,19 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
                 uiView.resignFirstResponder()
             }
         }
+        if uiView.text?.isEmpty == false {
+            uiView.text = ""
+        }
     }
 
-    final class Coordinator: NSObject, UITextViewDelegate {
+    final class Coordinator: NSObject, UITextFieldDelegate {
         @Binding var isFirstResponder: Bool
 
         init(isFirstResponder: Binding<Bool>) {
             _isFirstResponder = isFirstResponder
         }
 
-        func textViewDidBeginEditing(_ textView: UITextView) {
+        func textFieldDidBeginEditing(_ textField: UITextField) {
             if !isFirstResponder {
                 DispatchQueue.main.async {
                     self.isFirstResponder = true
@@ -246,12 +239,24 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
             }
         }
 
-        func textViewDidEndEditing(_ textView: UITextView) {
+        func textFieldDidEndEditing(_ textField: UITextField) {
             if isFirstResponder {
                 DispatchQueue.main.async {
                     self.isFirstResponder = false
                 }
             }
+        }
+
+        func textField(_ textField: UITextField,
+                       shouldChangeCharactersIn range: NSRange,
+                       replacementString string: String) -> Bool {
+            if string.isEmpty {
+                (textField as? HIDIOUIKitKeyboardTextField)?.onDeleteBackward?()
+                return false
+            }
+
+            (textField as? HIDIOUIKitKeyboardTextField)?.onInsertText?(string)
+            return false
         }
     }
 }
