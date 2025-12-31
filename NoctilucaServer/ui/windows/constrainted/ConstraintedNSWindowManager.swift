@@ -15,6 +15,7 @@ import Combine
 import SiriusKit
 
 /// 디스플레이 변화를 감시하면서 각 디스플레이에 '제약된 윈도우'를 관리합니다.
+@MainActor
 class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNSWindow {
     private let logger = NoctilucaLogger(category: "ConstraintedNSWindowManager<\(Window.self)>")
     
@@ -29,6 +30,7 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         }
         
         self.subscription = displayLayoutManager.$displayLayouts
+            .debounce(for: .milliseconds(1000), scheduler: RunLoop.main)
             .sink { [weak self] displayLayouts in
                 self?.updateWindows(for: displayLayouts)
             }
@@ -41,13 +43,7 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         self.subscription = nil
     }
     
-    func updateWindows(for displayLayouts: [CGDirectDisplayID: CGRect]) {
-        DispatchQueue.main.async {
-            self.updateWindowsInner(for: displayLayouts)
-        }
-    }
-    
-    func updateWindowsInner(for displayLayouts: [CGDirectDisplayID: CGRect]) {
+    func updateWindows(for displayLayouts: [CGDirectDisplayID: NSScreen]) {
         // 1. Remove windows for disconnected displays
         let currentDisplayIDs = Set(displayLayouts.keys)
         let existingDisplayIDs = Set(windows.keys)
@@ -64,12 +60,14 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         // 2. Add windows for newly connected displays
         let newDisplayIDs = currentDisplayIDs.subtracting(existingDisplayIDs)
         for displayID in newDisplayIDs {
-            if let screen = NSScreen.screens.first(where: { $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID == displayID }) {
-                self.logger.debug("Creating new \(Window.self) for displayID: \(displayID)")
-                let window = Window(to: screen)
-                
-                windows[displayID] = window
+            guard let screen = displayLayouts[displayID] else {
+                continue
             }
+            
+            self.logger.debug("Creating new \(Window.self) for displayID: \(displayID)")
+            
+            let window = Window(to: screen)
+            windows[displayID] = window
         }
     }
 }
