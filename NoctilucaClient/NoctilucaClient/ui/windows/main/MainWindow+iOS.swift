@@ -88,7 +88,7 @@ typealias MainWindow = UIKitMainWindow
 #Preview {
     UIKitMainWindow()
         .environmentObject(MainWindowViewModel())
-        .environmentObject(SettingsStore())
+        .environmentObject(SettingsStore.shared)
 }
 
 #endif

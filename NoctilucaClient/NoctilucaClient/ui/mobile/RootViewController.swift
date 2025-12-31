@@ -32,7 +32,7 @@ final class RootViewController: UIHostingController<AnyView> {
     init() {
         let mainUIViewModel = MobileUIMainViewModel()
         let mainWindowViewModel = MainWindowViewModel()
-        let settingsStore = SettingsStore()
+        let settingsStore = SettingsStore.shared
         
         self.mainUIViewModel = mainUIViewModel
         self.mainWindowViewModel = mainWindowViewModel

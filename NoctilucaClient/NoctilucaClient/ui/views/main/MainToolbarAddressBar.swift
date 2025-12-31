@@ -160,7 +160,7 @@ struct UIKitStyledMainToolbarAddressBar: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(.red)
-    .environmentObject(SettingsStore(loadFromDisk: false))
+    .environmentObject(SettingsStore.shared)
 }
 
 #endif
