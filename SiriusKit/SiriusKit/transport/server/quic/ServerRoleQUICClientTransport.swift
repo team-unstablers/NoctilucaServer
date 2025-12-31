@@ -22,6 +22,8 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     
     private let queue = DispatchQueue(label: "io.siriuskit.quic.server.client")
     
+    private var isFinalized: Bool = false
+    
     init(_ connectionGroup: NWConnectionGroup, serverTransport: ServerRoleQUICRootTransport, id: ServerRoleClientTransportIdentifier) {
         self.id = id
         
@@ -30,6 +32,12 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
     
     func disconnect() async {
+        guard !isFinalized else {
+            return
+        }
+        
+        self.isFinalized = true
+        
         let snapshot = Array(self.streams.values)
         self.streams.removeAll()
         
@@ -39,6 +47,7 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
         
         self.connectionGroup.cancel()
         
+        await self.delegate?.clientTransportDidClose(self)
         await self.serverTransport.unregisterClientTransport(self)
     }
     
@@ -77,8 +86,8 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
                     await self.disconnect()
                 }
             case .cancelled:
-                if let delegate = self.delegate {
-                    Task { await delegate.clientTransportDidClose(self) }
+                Task {
+                    await self.disconnect()
                 }
             default:
                 break
