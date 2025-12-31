@@ -62,6 +62,17 @@ fileprivate extension ScreenRecorderArgs {
     }
 }
 
+fileprivate extension SCShareableContent {
+    static func currentAppWindow(windowID: Int) async throws -> SCWindow? {
+        if #available(macOS 14.4, *) {
+            return try await SCShareableContent.currentProcess.windows.first(where: {$0.windowID == windowID})
+        } else {
+            // 더 비효율적일 수도 있음
+            return try await SCShareableContent.current.windows.first(where: {$0.windowID == windowID})
+        }
+    }
+}
+
 fileprivate extension ScreenRecorderSource {
     @MainActor
     func createSCContentFilter() async throws -> SCContentFilter {
@@ -97,7 +108,7 @@ fileprivate extension ScreenRecorderSource {
         
         let dummyWindowManager = ScreenCaptureKitWorkaroundDummyWindow.windowManager
         guard let dummyWindowID = dummyWindowManager.windows[displayID]?.windowNumber,
-              let dummyWindow = try await SCShareableContent.currentProcess.windows.first(where: {$0.windowID == dummyWindowID})
+              let dummyWindow = try await SCShareableContent.currentAppWindow(windowID: dummyWindowID)
         else {
             // FIXME: 레이스 컨디션: 해당 디스플레이에 대한 더미 윈도우가 아직 생성되지 않음
             throw ScreenRecorderPrepareError.internalError
