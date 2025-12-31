@@ -6,10 +6,10 @@
 //
 
 import Foundation
-
-import CoreGraphics
-
 import Combine
+
+import Cocoa
+import CoreGraphics
 
 import SiriusKit
 
@@ -33,55 +33,65 @@ fileprivate func displayReconfigurationCallback(
     }
     
     let monitor = DisplayLayoutManager.fromCInteropHandle(userInfo)
-    monitor.updateDisplayLayouts()
+    
+    Task { @MainActor in
+        monitor.updateDisplayLayouts()
+    }
 }
 
-
 /// 디스플레이 구성이 변경될 때 알림을 제공하는 모니터입니다.
+@MainActor
 class DisplayLayoutManager: ObservableObject, CInteropHandle {
     static let shared = DisplayLayoutManager()
     
     let logger = NoctilucaLogger(category: "DisplayReconfigurationMonitor")
     
     @Published
-    private(set) var displayLayouts: [CGDirectDisplayID: CGRect] = [:]
+    private(set) var displayLayouts: [CGDirectDisplayID: NSScreen] = [:]
     
     @Published
     private(set) var monitoringState: DisplayLayoutManagerMonitoringState = .idle
+    
+    private var updateDisplayLayoutsTask: Task<Void, Never>? = nil
     
     init() {
         self.logger.debug("new DisplayReconfigurationMonitor created")
     }
     
     deinit {
-        self.stopMonitoring()
+        CGDisplayRemoveReconfigurationCallback(
+            displayReconfigurationCallback,
+            self.asCInteropHandle
+        )
     }
     
     func updateDisplayLayouts() {
-        DispatchQueue.main.async {
-            self.updateDisplayLayoutsInner()
+        // debounce
+        self.updateDisplayLayoutsTask?.cancel()
+        
+        self.updateDisplayLayoutsTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .milliseconds(1000))
+                self.updateDisplayLayoutsInner()
+            } catch {
+                // pass
+            }
         }
     }
     
     private func updateDisplayLayoutsInner() {
-        var displayCount: UInt32 = 0
-        var activeDisplays = [CGDirectDisplayID](repeating: 0, count: 16)
-        
         self.logger.info("updateDisplayLayouts(): updating display layouts...")
         
-        let error = CGGetActiveDisplayList(UInt32(activeDisplays.count), &activeDisplays, &displayCount)
-        
-        guard error == .success else {
-            self.logger.error("updateDisplayLayouts(): failed to get active display list: \(error)")
-            return
-        }
-        
-        var newLayouts: [CGDirectDisplayID: CGRect] = [:]
-        
-        for i in 0..<Int(displayCount) {
-            let displayID = activeDisplays[i]
-            let bounds = CGDisplayBounds(displayID)
-            newLayouts[displayID] = bounds
+        var newLayouts: [CGDirectDisplayID: NSScreen] = [:]
+
+        for screen in NSScreen.screens {
+            guard let displayID = screen.compatibleDisplayID else {
+                logger.error("[WTF] updateDisplayLayoutsInner(): ???? why NSScreen.compatibleDisplayID is nil?")
+                // TODO: capture event with sentry (when telemetry is enabled)
+                continue
+            }
+            
+            newLayouts[displayID] = screen
         }
         
         self.displayLayouts = newLayouts
