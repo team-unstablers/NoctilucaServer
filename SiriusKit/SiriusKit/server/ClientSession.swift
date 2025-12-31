@@ -17,7 +17,10 @@ public class ClientSession: SiriusSession {
     
     public let id: UUID
     
-    let transport: any ServerRoleClientTransport
+    
+    let clientTransport: any ServerRoleClientTransport
+    var transport: any TransportLayer { clientTransport }
+
     let featureProvider: (any FeatureProvider)
     
     public var channelManager: ChannelManager!
@@ -28,15 +31,15 @@ public class ClientSession: SiriusSession {
     init(id: UUID, transport: any ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
         self.id = id
         
-        self.transport = transport
+        self.clientTransport = transport
         self.featureProvider = featureProvider
         self.channelManager = ChannelManager(session: self)
 
-        self.transport.delegate = self
+        self.clientTransport.delegate = self
     }
     
     public func close() async {
-        await self.transport.disconnect()
+        await self.clientTransport.disconnect()
     }
 }
 

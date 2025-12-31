@@ -8,11 +8,9 @@
 import Foundation
 
 protocol SiriusSession: AnyObject, Identifiable {
-    associatedtype TransportLayerType: TransportLayer
-    
     var id: UUID { get }
     
-    var transport: TransportLayerType { get }
+    var transport: (any TransportLayer) { get }
     var featureProvider: (any FeatureProvider) { get }
     
     var shouldAcceptChannelCreation: Bool { get set }

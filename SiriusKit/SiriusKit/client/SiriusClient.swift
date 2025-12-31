@@ -17,7 +17,9 @@ public class SiriusClient: SiriusSession {
     
     public let id: UUID
     
-    let transport: any ClientRoleTransport
+    let clientTransport: any ClientRoleTransport
+    var transport: any TransportLayer { clientTransport }
+    
     let featureProvider: (any FeatureProvider)
     
     public var channelManager: ChannelManager!
@@ -28,11 +30,11 @@ public class SiriusClient: SiriusSession {
     init(transport: any ClientRoleTransport, featureProvider: (any FeatureProvider)) {
         self.id = UUID()
         
-        self.transport = transport
+        self.clientTransport = transport
         self.featureProvider = featureProvider
         self.channelManager = ChannelManager(session: self)
 
-        self.transport.delegate = self
+        self.clientTransport.delegate = self
         
         logger.info("Initialized SiriusClient with ID: \(self.id.uuidString)")
     }
@@ -43,11 +45,11 @@ public class SiriusClient: SiriusSession {
     public func startup() async throws {
         logger.info("Starting up SiriusClient with ID: \(self.id.uuidString)")
         
-        try await transport.connect()
+        try await clientTransport.connect()
     }
     
     public func shutdown() async {
-        await transport.disconnect()
+        await clientTransport.disconnect()
     }
 }
 
