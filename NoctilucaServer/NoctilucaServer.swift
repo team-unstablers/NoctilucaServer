@@ -173,7 +173,11 @@ class NoctilucaServer: ObservableObject {
 extension NoctilucaServer: SiriusServerDelegate {
     func siriusServerDidStart(_ server: SiriusKit.SiriusServer) {
         logger.info("NoctilucaServer is now running.")
-        self.state = .running(server: server)
+        Task {
+            await MainActor.run {
+                self.state = .running(server: server)
+            }
+        }
     }
     
     func siriusServerDidStop(_ server: SiriusKit.SiriusServer) {
