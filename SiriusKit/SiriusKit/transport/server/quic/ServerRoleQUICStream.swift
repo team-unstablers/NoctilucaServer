@@ -13,22 +13,29 @@ import Atomics
 class ServerRoleQUICStream: Stream {
     let connection: NWConnection
     let transport: ServerRoleQUICClientTransport
+    private let queue: DispatchQueue
     
     private var receiveTask: Task<Void, Error>?
+    private let isClosed = ManagedAtomic(false)
     
-    init(_ connection: NWConnection, transport: ServerRoleQUICClientTransport, identifier: StreamIdentifier = StreamIdentifier()) {
+    init(_ connection: NWConnection, transport: ServerRoleQUICClientTransport, queue: DispatchQueue, identifier: StreamIdentifier = StreamIdentifier()) {
         self.connection = connection
         self.transport = transport
+        self.queue = queue
         
         super.init()
         self.id = identifier
     }
     
     override func close() async throws {
+        if self.isClosed.exchange(true, ordering: .acquiring) {
+            return
+        }
+        
         receiveTask?.cancel()
         connection.cancel()
         
-        transport.unregisterStream(self)
+        await transport.unregisterStream(self)
     }
     
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
@@ -51,21 +58,19 @@ class ServerRoleQUICStream: Stream {
     }
     
     internal func setup(_ readyHandler: (() -> Void)?) {
-        self.connection.stateUpdateHandler = { state in
+        self.connection.stateUpdateHandler = { [weak self] state in
+            guard let self else { return }
+            
             switch (state) {
             case .cancelled:
                 self.continuation.yield(with: .success(.closed))
                 self.continuation.finish()
-                break
+                Task { try? await self.close() }
             case .failed(let error):
                 self.continuation.yield(with: .success(.error(error)))
-                Task {
-                    try! await self.close()
-                }
-                break
+                Task { try? await self.close() }
             case .ready:
                 readyHandler?()
-                break
             default:
                 break
             }
@@ -78,11 +83,11 @@ class ServerRoleQUICStream: Stream {
                 try await self.receiveLoop()
             } catch {
                 self.continuation.yield(with: .success(.error(error)))
-                try! await self.close()
+                try? await self.close()
             }
         }
         
-        self.connection.start(queue: .main)
+        self.connection.start(queue: self.queue)
     }
     
     private func receiveLoop() async throws {

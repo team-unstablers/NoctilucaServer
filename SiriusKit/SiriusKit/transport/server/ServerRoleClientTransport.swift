@@ -11,26 +11,23 @@ typealias ServerRoleClientTransportIdentifier = TransportLayerIdentifier
 
 protocol ServerRoleClientTransportDelegate: AnyObject {
     /// - NOTE: 리모트에서 스트림을 열었을 때에만 호출됩니다.
-    func clientTransportDidOpenRemoteStream(_ transport: ServerRoleClientTransport, stream: Stream) async throws
-    func clientTransportDidCloseStream(_ transport: ServerRoleClientTransport, stream: Stream) async
+    func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: Stream) async throws
+    func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: Stream) async
     
-    func clientTransportDidClose(_ transport: ServerRoleClientTransport) async
-    func clientTransport(_ transport: ServerRoleClientTransport, didEncounterError error: any Error) async
+    func clientTransportDidClose(_ transport: any ServerRoleClientTransport) async
+    func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async
 }
 
-class ServerRoleClientTransport: TransportLayer {
-    weak var delegate: ServerRoleClientTransportDelegate?
-    
-    var id: ServerRoleClientTransportIdentifier {
-        ServerRoleClientTransportIdentifier()
+protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerRoleClientTransportIdentifier {
+    var delegate: ServerRoleClientTransportDelegate? { get set }
+}
+
+extension ServerRoleClientTransport {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
     }
     
-    func disconnect() async {
-        // To be implemented by subclasses
-    }
-    
-    func openStream() async -> Result<Stream, TransportLayerError> {
-        // To be implemented by subclasses
-        return .failure(.notImplemented)
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }

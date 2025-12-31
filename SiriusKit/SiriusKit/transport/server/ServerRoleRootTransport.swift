@@ -13,7 +13,7 @@ protocol ServerRoleRootTransportDelegate: AnyObject {
     func serverTransportDidStopListening(_ serverTransport: ServerRoleRootTransport)
     func serverTransport(_ serverTransport: ServerRoleRootTransport, didEncounterError error: any Error)
     
-    func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: ServerRoleClientTransport)
+    func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: any ServerRoleClientTransport)
     func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: Error)
 }
 

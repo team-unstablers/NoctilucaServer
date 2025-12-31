@@ -16,7 +16,7 @@ public struct SiriusClientBuilder {
     public enum TransportProtocol {
         case quic(host: String, port: UInt16)
         
-        func buildTransport() -> ClientRoleTransport {
+        func buildTransport() -> any ClientRoleTransport {
             switch self {
             case .quic(let host, let port):
                 return ClientRoleQUICTransport(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!)

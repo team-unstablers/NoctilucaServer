@@ -37,39 +37,24 @@ struct NegotiationResponse {
 }
 
 protocol ClientRoleTransportDelegate: AnyObject {
-    func clientTransportDidEstablishConnection(_ transport: ClientRoleTransport) async
-    func clientTransportDidOpenRemoteStream(_ transport: ClientRoleTransport, stream: Stream) async throws
-    func clientTransportDidClose(_ transport: ClientRoleTransport) async
-    func clientTransport(_ transport: ClientRoleTransport, didEncounterError error: any Error) async
+    func clientTransportDidEstablishConnection(_ transport: any ClientRoleTransport) async
+    func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: Stream) async throws
+    func clientTransportDidClose(_ transport: any ClientRoleTransport) async
+    func clientTransport(_ transport: any ClientRoleTransport, didEncounterError error: any Error) async
     
-    func clientTransport(_ transport: ClientRoleTransport, didReceiveServerIdentity identity: ServerIdentityInfo, decisionHandler: @escaping (TrustDecision) -> Void)
-    func clientTransport(_ transport: ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void)
+    func clientTransport(_ transport: any ClientRoleTransport, didReceiveServerIdentity identity: ServerIdentityInfo, decisionHandler: @escaping (TrustDecision) -> Void)
+    func clientTransport(_ transport: any ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void)
 }
 
-class ClientRoleTransport: TransportLayer {
-    weak var delegate: ClientRoleTransportDelegate?
+protocol ClientRoleTransport: TransportLayer, Hashable where ID == ClientRoleTransportIdentifier {
+    var delegate: ClientRoleTransportDelegate? { get set }
     
-    var id: ClientRoleTransportIdentifier {
-        ClientRoleTransportIdentifier()
-    }
-    
-    func connect() async throws {
-        // To be implemented by subclasses
-    }
-    
-    func disconnect() async {
-        // To be implemented by subclasses
-    }
-    
-    func openStream() async -> Result<Stream, TransportLayerError> {
-        // To be implemented by subclasses
-        return .failure(.notImplemented)
-    }
+    func connect() async throws
 }
 
-extension ClientRoleTransport: Hashable, Equatable {
-    static func == (lhs: ClientRoleTransport, rhs: ClientRoleTransport) -> Bool {
-        return lhs.id == rhs.id
+extension ClientRoleTransport {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
     }
     
     func hash(into hasher: inout Hasher) {

@@ -19,6 +19,6 @@ enum TransportLayerError: Error {
 protocol TransportLayer: AnyObject, Identifiable {
     var id: TransportLayerIdentifier { get }
     
-    func disconnect() async throws
+    func disconnect() async
     func openStream() async -> Result<Stream, TransportLayerError>
 }
