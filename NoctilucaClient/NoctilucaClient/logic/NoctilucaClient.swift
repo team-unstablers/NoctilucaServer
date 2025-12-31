@@ -186,6 +186,10 @@ class NoctilucaClient: ObservableObject {
             // 예상치 못한 오류
             await self.panic("Error in mainChannelEventLoop: \(error.localizedDescription)")
         }
+        
+        // reached end of main channel event loop
+        // TODO: raise error event instead (or retry?)
+        await self.close()
     }
     
     private func pingLoop() async {
