@@ -14,7 +14,7 @@ enum ServerRoleQUICRootTransportError: Error {
     case quicParametersCreationFailed
 }
 
-class ServerRoleQUICRootTransport: ServerRoleRootTransport {
+actor ServerRoleQUICRootTransport: ServerRoleRootTransport {
     private let port: NWEndpoint.Port
     private let identity: QUICServerIdentity
     
@@ -24,14 +24,14 @@ class ServerRoleQUICRootTransport: ServerRoleRootTransport {
     
     private(set) var clients: [ServerRoleQUICClientTransport] = []
     
+    nonisolated(unsafe) weak var delegate: ServerRoleRootTransportDelegate?
+
     init(port: NWEndpoint.Port, using identity: QUICServerIdentity) {
         self.port = port
         self.identity = identity
-        
-        super.init()
     }
     
-    override func startup() async throws {
+    func startup() async throws {
         let parameters = try await self.createQuicParameters()
         return try await withCheckedThrowingContinuation { continuation in
             
@@ -39,27 +39,31 @@ class ServerRoleQUICRootTransport: ServerRoleRootTransport {
             do {
                 let listener = try NWListener(using: parameters, on: port)
                 listener.stateUpdateHandler = { newState in
-                    switch newState {
-                    case .ready:
-                        continuation.resume()
-                        self.delegate?.serverTransportDidStartListening(self)
-                        return
-                    case .failed(let error):
-                        self.delegate?.serverTransport(self, didEncounterError: error)
-                        continuation.resume(throwing: error)
-                        self.listener?.cancel()
-                        return
-                    case .cancelled:
-                        self.delegate?.serverTransportDidStopListening(self)
-                        break
-                    default:
-                        break
+                    Task {
+                        switch newState {
+                        case .ready:
+                            continuation.resume()
+                            self.delegate?.serverTransportDidStartListening(self)
+                            return
+                        case .failed(let error):
+                            self.delegate?.serverTransport(self, didEncounterError: error)
+                            continuation.resume(throwing: error)
+                            await self.listener?.cancel()
+                            return
+                        case .cancelled:
+                            self.delegate?.serverTransportDidStopListening(self)
+                            break
+                        default:
+                            break
+                        }
                     }
                 }
                 
                 listener.newConnectionGroupHandler = { [weak self] connectionGroup in
-                    print("New connection received from: \(connectionGroup.debugDescription))")
-                    self?.handleNewConnectionGroup(connectionGroup: connectionGroup)
+                    Task {
+                        print("New connection received from: \(connectionGroup.debugDescription))")
+                        await self?.handleNewConnectionGroup(connectionGroup: connectionGroup)
+                    }
                 }
                 
                 
@@ -73,7 +77,7 @@ class ServerRoleQUICRootTransport: ServerRoleRootTransport {
         }
     }
     
-    override func shutdown() async throws {
+    func shutdown() async throws {
         guard let listener = self.listener else {
             return
         }
@@ -83,19 +87,19 @@ class ServerRoleQUICRootTransport: ServerRoleRootTransport {
         self.listener = nil
     }
     
-    private func handleNewConnectionGroup(connectionGroup: NWConnectionGroup) {
+    private func handleNewConnectionGroup(connectionGroup: NWConnectionGroup) async {
         let transport = ServerRoleQUICClientTransport(connectionGroup, serverTransport: self, id: ServerRoleClientTransportIdentifier())
         
-        self.registerClientTransport(transport)
+        await self.registerClientTransport(transport)
     }
     
-    internal func registerClientTransport(_ transport: ServerRoleQUICClientTransport) {
-        transport.setup()
+    internal func registerClientTransport(_ transport: ServerRoleQUICClientTransport) async {
+        await transport.setup()
         
         // HACK: QUICClientTransportDelegate를 설정할 타이밍을 제공하기 위해 여기서 델리게이트 콜백을 호출
         self.delegate?.serverTransportDidAcceptConnection(self, clientTransport: transport)
 
-        transport.start()
+        await transport.start()
         
         self.clients.append(transport)
     }

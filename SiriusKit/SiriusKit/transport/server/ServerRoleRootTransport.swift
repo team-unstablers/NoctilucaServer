@@ -17,12 +17,10 @@ protocol ServerRoleRootTransportDelegate: AnyObject {
     func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: Error)
 }
 
-class ServerRoleRootTransport {
-    weak var delegate: ServerRoleRootTransportDelegate?
+protocol ServerRoleRootTransport: AnyObject {
+    var delegate: ServerRoleRootTransportDelegate? { get set }
     
-    func startup() async throws {
-    }
+    func startup() async throws
     
-    func shutdown() async throws {
-    }
+    func shutdown() async throws
 }
