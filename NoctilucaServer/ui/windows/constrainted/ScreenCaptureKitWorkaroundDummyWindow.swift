@@ -35,6 +35,8 @@ class ScreenCaptureKitWorkaroundDummyWindow: NSWindow, ConstraintedNSWindow {
         // Mission Control에 안 뜨게 하고 모든 데스크탑 공간에 존재하게 함
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         
+        self.animationBehavior = .none
+        
         // 화면에 표시 (Key Window로는 설정하지 않음)
         self.orderFront(nil)
         
