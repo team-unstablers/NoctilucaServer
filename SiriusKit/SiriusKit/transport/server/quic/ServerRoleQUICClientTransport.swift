@@ -137,11 +137,11 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
 }
 
 extension ServerRoleQUICClientTransport: Hashable, Equatable {
-    static func == (lhs: ServerRoleQUICClientTransport, rhs: ServerRoleQUICClientTransport) -> Bool {
+    nonisolated static func == (lhs: ServerRoleQUICClientTransport, rhs: ServerRoleQUICClientTransport) -> Bool {
         return lhs.id == rhs.id
     }
     
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
