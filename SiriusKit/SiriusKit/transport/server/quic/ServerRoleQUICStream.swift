@@ -28,14 +28,12 @@ class ServerRoleQUICStream: Stream {
     }
     
     override func close() async throws {
-        if self.isClosed.exchange(true, ordering: .acquiring) {
+        if self.isClosed.load(ordering: .acquiring) {
             return
         }
         
-        receiveTask?.cancel()
         connection.cancel()
-        
-        await transport.unregisterStream(self)
+        await finalize(event: .closed)
     }
     
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
@@ -63,12 +61,9 @@ class ServerRoleQUICStream: Stream {
             
             switch (state) {
             case .cancelled:
-                self.continuation.yield(with: .success(.closed))
-                self.continuation.finish()
-                Task { try? await self.close() }
+                Task { await self.finalize(event: .closed) }
             case .failed(let error):
-                self.continuation.yield(with: .success(.error(error)))
-                Task { try? await self.close() }
+                Task { await self.finalize(event: .error(error)) }
             case .ready:
                 readyHandler?()
             default:
@@ -82,8 +77,12 @@ class ServerRoleQUICStream: Stream {
             do {
                 try await self.receiveLoop()
             } catch {
-                self.continuation.yield(with: .success(.error(error)))
-                try? await self.close()
+                if let streamError = error as? StreamError, case .endOfStream = streamError {
+                    await self.finalize(event: .closed)
+                    return
+                }
+                
+                await self.finalize(event: .error(error))
             }
         }
         
@@ -125,6 +124,19 @@ class ServerRoleQUICStream: Stream {
                 }
             }
         }
+    }
+    
+    private func finalize(event: StreamEvent) async {
+        if self.isClosed.exchange(true, ordering: .acquiring) {
+            return
+        }
+        
+        receiveTask?.cancel()
+        
+        self.continuation.yield(with: .success(event))
+        self.continuation.finish()
+        
+        await transport.unregisterStream(self)
     }
 }
 
