@@ -194,7 +194,9 @@ extension NoctilucaServer: SiriusServerDelegate {
         let session = NoctilucaClientSession(session: session, server: context)
         session.initialize()
         
-        self.clients[session.id] = session
+        Task { @MainActor in
+            self.clients[session.id] = session
+        }
     }
     
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {
