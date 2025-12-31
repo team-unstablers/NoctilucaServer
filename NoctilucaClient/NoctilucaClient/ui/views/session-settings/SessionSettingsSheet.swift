@@ -150,7 +150,7 @@ struct SessionSettingsSheet: View {
                     }
                 }
 
-                Button(role: .confirm) {
+                Button(role: .compatibleConfirm) {
                     self.actionHandler(.save)
                 } label: {
                     Image(systemName: "checkmark")

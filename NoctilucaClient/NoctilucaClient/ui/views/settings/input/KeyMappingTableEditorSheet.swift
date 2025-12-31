@@ -289,7 +289,7 @@ struct KeyMappingTableEditorSheet: View {
                 Button("취소", role: .cancel) {
                 }
                 .keyboardShortcut(.escape)
-                Button("확인", role: .confirm) {
+                Button("확인", role: .compatibleConfirm) {
                 }
             }
         }

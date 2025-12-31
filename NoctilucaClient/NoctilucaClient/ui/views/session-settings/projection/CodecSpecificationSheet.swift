@@ -253,7 +253,7 @@ struct CodecSpecificationSheet: View {
                     }
                     
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("저장", role: .confirm) {
+                        Button("저장", role: .compatibleConfirm) {
                             actionHandler(.save(specification))
                         }
                     }

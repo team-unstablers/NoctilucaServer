@@ -46,7 +46,7 @@ struct AuthChallengeSheetView: View {
                     handler(.cancel)
                 }
                 .keyboardShortcut(.escape)
-                Button("확인", role: .confirm) {
+                Button("확인", role: .compatibleConfirm) {
                     submit()
                 }
                 .disabled(!viewModel.canSubmit)
