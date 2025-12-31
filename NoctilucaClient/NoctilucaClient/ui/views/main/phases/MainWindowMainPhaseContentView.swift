@@ -20,6 +20,11 @@ struct MainWindowMainPhaseContentView: View {
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
 
+#if os(iOS)
+    @State private var shouldPresentKeyboard: Bool = false
+    @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
+#endif
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .topTrailing) {
@@ -128,11 +133,36 @@ struct MainWindowMainPhaseContentView: View {
                 
 #if os(iOS)
                 HIDIOSwiftUIMouseView(client: viewModel.client)
+
+                HIDIOUIKitKeyboardInputHost(
+                    client: viewModel.client,
+                    keyboard: uiKitKeyboard,
+                    isPresented: $shouldPresentKeyboard
+                )
+
+                Button {
+                    shouldPresentKeyboard.toggle()
+                } label: {
+                    Image(systemName: shouldPresentKeyboard ? "keyboard.chevron.compact.down" : "keyboard")
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                }
+                .background(.ultraThinMaterial, in: Circle())
+                .padding(16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
 #endif
 
 
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+#if os(iOS)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                HIDIOUIKitKeyboardHelperView(
+                    keyboard: uiKitKeyboard,
+                    isVisible: shouldPresentKeyboard
+                )
+            }
+#endif
             .if(viewModel.client != nil) {
                 $0.onReceive(viewModel.client!.uiEvents) { event in
                     guard case .FIXME_projectionStarted(let projectionSession) = event else {
@@ -145,6 +175,13 @@ struct MainWindowMainPhaseContentView: View {
 #if os(macOS)
             .onTapGesture {
                 viewModel.client?.hidioController.enableCaptureLock()
+            }
+#endif
+#if os(iOS)
+            .onChange(of: viewModel.phase) { _, newValue in
+                if newValue != .connected {
+                    shouldPresentKeyboard = false
+                }
             }
 #endif
         }

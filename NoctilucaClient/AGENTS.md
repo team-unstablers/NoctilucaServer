@@ -80,8 +80,10 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
   - `feature/hidio/HIDIOChannel.swift`: HIDIO 채널
   - `feature/hidio/HIDIOController.swift`: 키보드/마우스 이벤트 패킷 전송
   - `feature/hidio/devices/*`: GCKeyboard 기반 가상 디바이스 및 키코드 매핑
+  - `feature/hidio/devices/HIDIOUIKitKeyboard.swift`: iOS 온스크린 키보드 입력(US ASCII) → LinuxKeycode 매핑 디바이스
 - UI
   - `ui/views/main/*`: 주소창/연결 상태/스트리밍 화면
+  - `ui/views/main/HIDIOUIKitKeyboardView.swift`: iOS 키보드 입력 호스트 + modifier helper view
   - `ui/views/session*`: 세션 설정 UI
   - `ui/views/settings/*`: 앱 설정 UI
   - `ui/windows/*`: 플랫폼별 창/툴바 구성
