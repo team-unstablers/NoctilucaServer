@@ -48,9 +48,13 @@ fileprivate struct FrameInfo {
 fileprivate extension ScreenRecorderArgs {
     /// Create a default SCStreamConfiguration based on the codec settings.
     func createSCStreamConfiguration() -> SCStreamConfiguration {
-        if codec.isHDREnabled {
-            // Apple의 HDR용 프리셋을 반환한다
-            return SCStreamConfiguration(preset: .captureHDRStreamCanonicalDisplay)
+        if #available(macOS 15.0, *) {
+            // SCStreamConfiguration(preset:)은 macOS 15.0부터 사용할 수 있습니다.
+            // (= HDR 캡쳐는 macOS 15.0부터 지원합니다.)
+            if codec.isHDREnabled {
+                // Apple의 HDR용 프리셋을 반환한다
+                return SCStreamConfiguration(preset: .captureHDRStreamCanonicalDisplay)
+            }
         }
         
         // 기본 설정을 반환한다
@@ -159,6 +163,13 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
         guard case .entireDisplay(let displayID) = source else {
             logger.error("prepare(): AVFoundationScreenRecorder only supports entire display capture.")
             throw ScreenRecorderPrepareError.invalidSource
+        }
+        
+        if !SystemCapability.HDR.screenCaptureKitSupportsHDRCapture,
+              codec.isHDREnabled
+        {
+            // 이 버전의 OS에서는 HDR 캡쳐를 지원하지 않으므로 경고 메시지를 띄운다.
+            logger.warning("prepare(): capturing HDR content requires macOS 15.0 or later.")
         }
         
         let configuration = args.createSCStreamConfiguration()
