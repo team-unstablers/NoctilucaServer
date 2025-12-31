@@ -111,6 +111,7 @@ class NoctilucaServer: ObservableObject {
         _ = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)
     }
     
+    @MainActor
     func initialize() async throws {
         DisplayLayoutManager.shared.startMonitoring()
         DisplayLayoutManager.shared.updateDisplayLayouts()
