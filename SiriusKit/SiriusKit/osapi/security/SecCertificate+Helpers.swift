@@ -30,6 +30,7 @@ extension SecCertificate {
         return applicationLabel
     }
     
+#if os(macOS)
     func extractMetadataValue(for key: CFString) -> Any? {
         guard let valuesDict = SecCertificateCopyValues(self, [key] as [CFString] as CFArray, nil) as? [String: Any] else {
             return nil
@@ -41,17 +42,22 @@ extension SecCertificate {
         
         return container[kSecPropertyKeyValue as String]
     }
+#endif
     
     func extractNotBefore() -> Date? {
         if #available(macOS 15.0, iOS 18.0, *) {
             let notBefore = SecCertificateCopyNotValidBeforeDate(self) as? Date
             return notBefore
         } else {
+#if os(macOS)
             guard let rawValue = extractMetadataValue(for: kSecOIDX509V1ValidityNotBefore) as? NSNumber else {
                 return nil
             }
             
             return Date(timeIntervalSinceReferenceDate: rawValue.doubleValue)
+#else
+            return nil
+#endif
         }
     }
     
@@ -60,11 +66,15 @@ extension SecCertificate {
             let notAfter = SecCertificateCopyNotValidAfterDate(self) as? Date
             return notAfter
         } else {
+#if os(macOS)
             guard let rawValue = extractMetadataValue(for: kSecOIDX509V1ValidityNotAfter) as? NSNumber else {
                 return nil
             }
             
             return Date(timeIntervalSinceReferenceDate: rawValue.doubleValue)
+#else
+            return nil
+#endif
         }
     }
 }

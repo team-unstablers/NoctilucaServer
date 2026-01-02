@@ -62,7 +62,7 @@ class ProjectionSession: Identifiable {
     }
     
     private func processEncodedFrame(_ frame: consuming EncodedFrame) async throws {
-        self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
+        // self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
         
         if let planner = self.qualityPlanner {
             let backpressure = self.dataChannel.writeBackPressure > 0

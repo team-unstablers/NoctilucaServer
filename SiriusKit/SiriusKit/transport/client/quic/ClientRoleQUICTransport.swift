@@ -24,6 +24,8 @@ actor ClientRoleQUICTransport: ClientRoleTransport {
     
     private let verifyQueue = DispatchQueue(label: "io.siriuskit.quic.client.verify")
     
+    private var isFinalized: Bool = false
+    
     init(host: NWEndpoint.Host, port: NWEndpoint.Port, alpn: SiriusQUICAlpn = .siriusV1) {
         self.host = host
         self.port = port
@@ -52,6 +54,12 @@ actor ClientRoleQUICTransport: ClientRoleTransport {
     }
     
     func disconnect() async {
+        guard !isFinalized else {
+            return
+        }
+        
+        self.isFinalized = true
+        
         let snapshot = Array(self.streams.values)
         self.streams.removeAll()
         
@@ -120,10 +128,9 @@ actor ClientRoleQUICTransport: ClientRoleTransport {
             if let delegate {
                 Task { await delegate.clientTransport(self, didEncounterError: error) }
             }
+            await self.disconnect()
         case .cancelled:
-            if let delegate {
-                Task { await delegate.clientTransportDidClose(self) }
-            }
+            await self.disconnect()
         default:
             break
         }
