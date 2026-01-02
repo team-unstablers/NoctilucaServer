@@ -120,6 +120,13 @@ extension CodecSpecification {
         .option(.dynamicRange, .kDynamicRangeSDR)
         .option(.colorRange, .kColorRangeLimited)
         .option(.displayDensity, .kDisplayDensityAuto)
+    
+    static let zrle = CodecSpecification(fourCC: .zrle)
+        .option(.colorFormat, .kColorFormatRGB888)
+        .option(.compressionLevel, .init(rawValue: "3"))
+    
+    static let mjpg = CodecSpecification(fourCC: .mjpg)
+        .option(.compressionLevel, .init(rawValue: "90"))
 }
 
 extension CodecSpecification {
@@ -129,12 +136,17 @@ extension CodecSpecification {
             return "Advanced Video Coding (H.264)"
         case .hvc1:
             return "High Efficiency Video Coding (H.265)"
+        case .zrle:
+            return "Run-Length Encoding (RLE) + Zstd"
+        case .mjpg:
+            return "Motion JPEG"
+            
         default:
             return "Unknown Codec (\(fourCC.stringRepresentation))"
         }
     }
     
-    var description: String {
+    fileprivate var commonDescription: String {
         var entries: [String] = []
         
         let profile = self.option(.profile) ?? .kProfileAuto
@@ -188,6 +200,15 @@ extension CodecSpecification {
         }
         
         return entries.joined(separator: ", ")
+    }
+    
+    var description: String {
+        switch self.fourCC {
+        case .zrle, .mjpg:
+            return "압축 레벨 \(self.option(.compressionLevel)?.rawValue ?? "1")"
+        default:
+            return commonDescription
+        }
     }
 }
 
