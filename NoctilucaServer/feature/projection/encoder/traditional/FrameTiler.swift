@@ -14,6 +14,14 @@ import Metal
 class FrameTiler {
     private(set) var tileSize: Int
     private let ciContext: CIContext
+    private var cachedTileSets: [[CVPixelBuffer]] = []
+    private var cachedTileSize: Int = 0
+    private var cachedPaddedWidth: Int = 0
+    private var cachedPaddedHeight: Int = 0
+    private var cachedPixelFormat: OSType = 0
+    private var cachedTileCount: Int = 0
+    private var shouldPropagateAttachments: Bool = true
+    private var tileSetIndex: Int = 0
     
     init(tileSize: Int) {
         self.tileSize = max(1, tileSize)
@@ -47,115 +55,77 @@ class FrameTiler {
             kCVPixelBufferMetalCompatibilityKey: kCFBooleanTrue as Any
         ] as CFDictionary
 
-        if let bytesPerPixel = bytesPerPixel(for: pixelFormat) {
-            CVPixelBufferLockBaseAddress(image, .readOnly)
-            defer { CVPixelBufferUnlockBaseAddress(image, .readOnly) }
-            
-            guard let baseAddress = CVPixelBufferGetBaseAddress(image) else { return [] }
-            let srcBytesPerRow = CVPixelBufferGetBytesPerRow(image)
-            let srcBase = baseAddress.assumingMemoryBound(to: UInt8.self)
-            
-            for y in stride(from: 0, to: paddedHeight, by: tileSize) {
-                for x in stride(from: 0, to: paddedWidth, by: tileSize) {
-                    var pixelBuffer: CVPixelBuffer?
-                    let status = CVPixelBufferCreate(
-                        kCFAllocatorDefault,
-                        tileSize,
-                        tileSize,
-                        pixelFormat,
-                        attrs,
-                        &pixelBuffer
-                    )
+        let tilesPerRow = max(1, paddedWidth / tileSize)
+        let tilesPerColumn = max(1, paddedHeight / tileSize)
+        let tileCount = tilesPerRow * tilesPerColumn
+        let tileBuffers = acquireTileSet(
+            tileSize: tileSize,
+            paddedWidth: paddedWidth,
+            paddedHeight: paddedHeight,
+            pixelFormat: pixelFormat,
+            tileCount: tileCount,
+            attrs: attrs
+        )
+        if tileBuffers.isEmpty {
+            return []
+        }
+        
+        let bytesPerPixel = bytesPerPixel(for: pixelFormat)!
+        
+        CVPixelBufferLockBaseAddress(image, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(image, .readOnly) }
+        
+        guard let baseAddress = CVPixelBufferGetBaseAddress(image) else { return [] }
+        let srcBytesPerRow = CVPixelBufferGetBytesPerRow(image)
+        let srcBase = baseAddress.assumingMemoryBound(to: UInt8.self)
+        
+        var tileIndex = 0
+        for y in stride(from: 0, to: paddedHeight, by: tileSize) {
+            for x in stride(from: 0, to: paddedWidth, by: tileSize) {
+                if tileIndex >= tileBuffers.count { break }
+                let pixelBuffer = tileBuffers[tileIndex]
+                tileIndex += 1
+                
+                CVPixelBufferLockBaseAddress(pixelBuffer, [])
+                
+                if let dstBase = CVPixelBufferGetBaseAddress(pixelBuffer) {
+                    let dstBytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+                    let dst = dstBase.assumingMemoryBound(to: UInt8.self)
                     
-                    guard status == kCVReturnSuccess, let pixelBuffer else {
-                        continue
-                    }
-                    
-                    CVBufferPropagateAttachments(image, pixelBuffer)
-                    CVPixelBufferLockBaseAddress(pixelBuffer, [])
-                    
-                    if let dstBase = CVPixelBufferGetBaseAddress(pixelBuffer) {
-                        let dstBytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-                        let dst = dstBase.assumingMemoryBound(to: UInt8.self)
+                    for row in 0..<tileSize {
+                        let sourceY = min(height - 1, y + row)
+                        let srcRow = srcBase + (sourceY * srcBytesPerRow)
+                        let dstRow = dst + (row * dstBytesPerRow)
                         
-                        for row in 0..<tileSize {
-                            let sourceY = min(height - 1, y + row)
-                            let srcRow = srcBase + (sourceY * srcBytesPerRow)
-                            let dstRow = dst + (row * dstBytesPerRow)
-                            
-                            let copyWidth = x < width ? min(width - x, tileSize) : 0
-                            if copyWidth > 0 {
-                                let srcStart = srcRow + (x * bytesPerPixel)
-                                memcpy(dstRow, srcStart, copyWidth * bytesPerPixel)
-                            }
-                            
-                            let lastPixelX = max(0, min(width - 1, x + copyWidth - 1))
-                            let lastPixel = srcRow + (lastPixelX * bytesPerPixel)
-                            if copyWidth < tileSize {
-                                var dstPixel = dstRow + (copyWidth * bytesPerPixel)
-                                for _ in copyWidth..<tileSize {
-                                    memcpy(dstPixel, lastPixel, bytesPerPixel)
-                                    dstPixel += bytesPerPixel
-                                }
+                        let copyWidth = x < width ? min(width - x, tileSize) : 0
+                        if copyWidth > 0 {
+                            let srcStart = srcRow + (x * bytesPerPixel)
+                            memcpy(dstRow, srcStart, copyWidth * bytesPerPixel)
+                        }
+                        
+                        let lastPixelX = max(0, min(width - 1, x + copyWidth - 1))
+                        let lastPixel = srcRow + (lastPixelX * bytesPerPixel)
+                        if copyWidth < tileSize {
+                            var dstPixel = dstRow + (copyWidth * bytesPerPixel)
+                            for _ in copyWidth..<tileSize {
+                                memcpy(dstPixel, lastPixel, bytesPerPixel)
+                                dstPixel += bytesPerPixel
                             }
                         }
                     }
-                    
-                    CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
-                    tiles.append(pixelBuffer)
-                }
-            }
-            
-            return tiles
-        }
-
-        let ciImage = CIImage(cvImageBuffer: image)
-        let extent = ciImage.extent.integral
-        let paddedExtent = CGRect(
-            x: extent.origin.x,
-            y: extent.origin.y,
-            width: CGFloat(paddedWidth),
-            height: CGFloat(paddedHeight)
-        )
-        
-        let paddedImage: CIImage
-        if paddedWidth == Int(extent.width) && paddedHeight == Int(extent.height) {
-            paddedImage = ciImage
-        } else {
-            paddedImage = ciImage.clampedToExtent().cropped(to: paddedExtent)
-        }
-        
-        for y in stride(from: 0, to: paddedHeight, by: tileSize) {
-            for x in stride(from: 0, to: paddedWidth, by: tileSize) {
-                let tileRect = CGRect(
-                    x: extent.origin.x + CGFloat(x),
-                    y: extent.origin.y + CGFloat(y),
-                    width: CGFloat(tileSize),
-                    height: CGFloat(tileSize)
-                )
-                
-                var pixelBuffer: CVPixelBuffer?
-                let status = CVPixelBufferCreate(
-                    kCFAllocatorDefault,
-                    tileSize,
-                    tileSize,
-                    pixelFormat,
-                    attrs,
-                    &pixelBuffer
-                )
-                
-                guard status == kCVReturnSuccess, let pixelBuffer else {
-                    continue
                 }
                 
-                CVBufferPropagateAttachments(image, pixelBuffer)
-                let tileImage = paddedImage
-                    .cropped(to: tileRect)
-                    .transformed(by: CGAffineTransform(translationX: -tileRect.origin.x, y: -tileRect.origin.y))
-                let destinationBounds = CGRect(x: 0, y: 0, width: CGFloat(tileSize), height: CGFloat(tileSize))
-                ciContext.render(tileImage, to: pixelBuffer, bounds: destinationBounds, colorSpace: colorSpace)
+                CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
                 tiles.append(pixelBuffer)
             }
+        }
+        
+        if shouldPropagateAttachments {
+            for tile in tiles {
+                CVBufferPropagateAttachments(image, tile)
+            }
+            
+            shouldPropagateAttachments = false
         }
         
         return tiles
@@ -173,5 +143,65 @@ private extension FrameTiler {
         default:
             return nil
         }
+    }
+
+    func acquireTileSet(
+        tileSize: Int,
+        paddedWidth: Int,
+        paddedHeight: Int,
+        pixelFormat: OSType,
+        tileCount: Int,
+        attrs: CFDictionary
+    ) -> [CVPixelBuffer] {
+        let shouldRebuild = cachedTileSize != tileSize ||
+        cachedPaddedWidth != paddedWidth ||
+        cachedPaddedHeight != paddedHeight ||
+        cachedPixelFormat != pixelFormat ||
+        cachedTileCount != tileCount ||
+        cachedTileSets.count != 2 ||
+        cachedTileSets.contains(where: { $0.count != tileCount })
+        
+        if shouldRebuild {
+            var newSets: [[CVPixelBuffer]] = []
+            newSets.reserveCapacity(2)
+            
+            for _ in 0..<2 {
+                var tiles: [CVPixelBuffer] = []
+                tiles.reserveCapacity(tileCount)
+                
+                for _ in 0..<tileCount {
+                    var pixelBuffer: CVPixelBuffer?
+                    let status = CVPixelBufferCreate(
+                        kCFAllocatorDefault,
+                        tileSize,
+                        tileSize,
+                        pixelFormat,
+                        attrs,
+                        &pixelBuffer
+                    )
+                    
+                    guard status == kCVReturnSuccess, let pixelBuffer else {
+                        return []
+                    }
+                    
+                    tiles.append(pixelBuffer)
+                }
+                
+                newSets.append(tiles)
+            }
+            
+            cachedTileSets = newSets
+            cachedTileSize = tileSize
+            cachedPaddedWidth = paddedWidth
+            cachedPaddedHeight = paddedHeight
+            cachedPixelFormat = pixelFormat
+            cachedTileCount = tileCount
+            tileSetIndex = 0
+            shouldPropagateAttachments = true
+        }
+        
+        let index = tileSetIndex
+        tileSetIndex = (tileSetIndex + 1) % 2
+        return cachedTileSets[index]
     }
 }

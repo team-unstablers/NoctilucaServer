@@ -152,7 +152,7 @@ final class ZRLEVideoEncoder: VideoEncoder {
                 
                 for index in diffIndices {
                     let tile = rgbTiles[index]
-                    let rle = try self.rleCompress(tile, colorFormat: colorFormat)
+                    let rle = try rleCompress(tile, colorFormat: colorFormat)
                     let zstd = try self.zstdCompress(rle, compressionLevel: self.compressionLevel)
                     
                     let geometry = geometryForTile(
@@ -210,14 +210,11 @@ final class ZRLEVideoEncoder: VideoEncoder {
 
 private enum ZRLEVideoEncoderError: LocalizedError {
     case compressionFailed(String)
-    case unsupportedPixelFormat(OSType)
     
     var errorDescription: String? {
         switch self {
         case .compressionFailed(let reason):
             return "ZRLE compression failed: \(reason)"
-        case .unsupportedPixelFormat(let format):
-            return "Unsupported pixel format: \(format)"
         }
     }
 }
@@ -241,111 +238,6 @@ private extension ZRLEVideoEncoder {
         let x = (index % tilesPerRow) * tileSize
         let y = (index / tilesPerRow) * tileSize
         return CGRect(x: x, y: y, width: tileSize, height: tileSize)
-    }
-    
-    func rleCompress(_ pixelBuffer: CVPixelBuffer, colorFormat: CodecOptionValue) throws -> Data {
-        let format = CVPixelBufferGetPixelFormatType(pixelBuffer)
-        guard format == kCVPixelFormatType_32BGRA else {
-            throw ZRLEVideoEncoderError.unsupportedPixelFormat(format)
-        }
-        
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-        
-        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-        
-        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
-            throw VideoEncoderError.invalidSampleBuffer
-        }
-        
-        let pixelBytes = baseAddress.assumingMemoryBound(to: UInt8.self)
-        let useRGB565 = (colorFormat == .kColorFormatRGB565)
-        
-        var output = Data()
-        
-        for row in 0..<height {
-            let rowPtr = pixelBytes + (row * bytesPerRow)
-            
-            var runCount: UInt32 = 0
-            var prevB: UInt8 = 0
-            var prevG: UInt8 = 0
-            var prevR: UInt8 = 0
-            var prev565: UInt16 = 0
-            
-            for col in 0..<width {
-                let pixelPtr = rowPtr + (col * 4)
-                let b = pixelPtr[0]
-                let g = pixelPtr[1]
-                let r = pixelPtr[2]
-                
-                if runCount == 0 {
-                    if useRGB565 {
-                        prev565 = packRGB565(r: r, g: g, b: b)
-                    } else {
-                        prevB = b
-                        prevG = g
-                        prevR = r
-                    }
-                    runCount = 1
-                    continue
-                }
-                
-                if useRGB565 {
-                    let current = packRGB565(r: r, g: g, b: b)
-                    if current == prev565 && runCount < UInt32.max {
-                        runCount &+= 1
-                    } else {
-                        appendRun(&output, count: runCount, pixel565: prev565)
-                        prev565 = current
-                        runCount = 1
-                    }
-                } else {
-                    if b == prevB && g == prevG && r == prevR && runCount < UInt32.max {
-                        runCount &+= 1
-                    } else {
-                        appendRun(&output, count: runCount, b: prevB, g: prevG, r: prevR)
-                        prevB = b
-                        prevG = g
-                        prevR = r
-                        runCount = 1
-                    }
-                }
-            }
-            
-            if runCount > 0 {
-                if useRGB565 {
-                    appendRun(&output, count: runCount, pixel565: prev565)
-                } else {
-                    appendRun(&output, count: runCount, b: prevB, g: prevG, r: prevR)
-                }
-            }
-        }
-        
-        return output
-    }
-    
-    func appendRun(_ data: inout Data, count: UInt32, b: UInt8, g: UInt8, r: UInt8) {
-        let countLE = count.littleEndian
-        withUnsafeBytes(of: countLE) { data.append(contentsOf: $0) }
-        data.append(b)
-        data.append(g)
-        data.append(r)
-    }
-    
-    func appendRun(_ data: inout Data, count: UInt32, pixel565: UInt16) {
-        let countLE = count.littleEndian
-        withUnsafeBytes(of: countLE) { data.append(contentsOf: $0) }
-        let pixelLE = pixel565.littleEndian
-        withUnsafeBytes(of: pixelLE) { data.append(contentsOf: $0) }
-    }
-    
-    func packRGB565(r: UInt8, g: UInt8, b: UInt8) -> UInt16 {
-        let r5 = UInt16(r >> 3)
-        let g6 = UInt16(g >> 2)
-        let b5 = UInt16(b >> 3)
-        return (r5 << 11) | (g6 << 5) | b5
     }
     
     func zstdCompress(_ data: Data, compressionLevel: Int32) throws -> Data {
