@@ -208,7 +208,6 @@ private extension ZRLEVideoDecoder {
             throw ZRLEVideoDecoderError.pixelBufferUnavailable
         }
         let output = baseAddress.assumingMemoryBound(to: UInt8.self)
-        let useRGB565 = (colorFormat == .kColorFormatRGB565)
         
         for tile in tiles {
             guard tile.originX >= 0, tile.originY >= 0 else {
@@ -223,76 +222,16 @@ private extension ZRLEVideoDecoder {
             }
             
             let rleData = try zstdDecompress(tile.data)
-            try applyRLE(
+            try rleDecompress(
                 rleData,
                 to: output,
                 bytesPerRow: bytesPerRow,
-                tile: tile,
-                useRGB565: useRGB565
+                originX: tile.originX,
+                originY: tile.originY,
+                width: tile.width,
+                height: tile.height,
+                colorFormat: colorFormat
             )
-        }
-    }
-    
-    func applyRLE(
-        _ data: Data,
-        to output: UnsafeMutablePointer<UInt8>,
-        bytesPerRow: Int,
-        tile: ZRLETile,
-        useRGB565: Bool
-    ) throws {
-        var offset = 0
-        for row in 0..<tile.height {
-            var col = 0
-            while col < tile.width {
-                guard offset + 4 <= data.count else {
-                    throw ZRLEVideoDecoderError.invalidTileData("rle header truncated")
-                }
-                let runCount = Int(readUInt32LE(data, offset: &offset))
-                if runCount <= 0 {
-                    throw ZRLEVideoDecoderError.invalidTileData("invalid run length")
-                }
-                guard col + runCount <= tile.width else {
-                    throw ZRLEVideoDecoderError.invalidTileData("run exceeds row width")
-                }
-                
-                let b: UInt8
-                let g: UInt8
-                let r: UInt8
-                
-                if useRGB565 {
-                    guard offset + 2 <= data.count else {
-                        throw ZRLEVideoDecoderError.invalidTileData("rgb565 truncated")
-                    }
-                    let pixel565 = readUInt16LE(data, offset: &offset)
-                    let rgb = unpackRGB565(pixel565)
-                    b = rgb.b
-                    g = rgb.g
-                    r = rgb.r
-                } else {
-                    guard offset + 3 <= data.count else {
-                        throw ZRLEVideoDecoderError.invalidTileData("rgb888 truncated")
-                    }
-                    b = data[offset]
-                    g = data[offset + 1]
-                    r = data[offset + 2]
-                    offset += 3
-                }
-                
-                var pixelPtr = output + ((tile.originY + row) * bytesPerRow) + ((tile.originX + col) * 4)
-                for _ in 0..<runCount {
-                    pixelPtr[0] = b
-                    pixelPtr[1] = g
-                    pixelPtr[2] = r
-                    pixelPtr[3] = 0xFF
-                    pixelPtr += 4
-                }
-                
-                col += runCount
-            }
-        }
-        
-        if offset != data.count {
-            throw ZRLEVideoDecoderError.invalidTileData("rle payload trailing bytes")
         }
     }
 }
@@ -427,16 +366,6 @@ private extension ZRLEVideoDecoder {
         return output
     }
     
-    func unpackRGB565(_ value: UInt16) -> (r: UInt8, g: UInt8, b: UInt8) {
-        let r5 = (value >> 11) & 0x1F
-        let g6 = (value >> 5) & 0x3F
-        let b5 = value & 0x1F
-        let r = UInt8((r5 << 3) | (r5 >> 2))
-        let g = UInt8((g6 << 2) | (g6 >> 4))
-        let b = UInt8((b5 << 3) | (b5 >> 2))
-        return (r, g, b)
-    }
-    
     func readUInt16BE(_ data: Data, offset: inout Int) -> UInt16 {
         let value = data.subdata(in: offset..<(offset + 2)).withUnsafeBytes { $0.load(as: UInt16.self) }.bigEndian
         offset += 2
@@ -449,20 +378,9 @@ private extension ZRLEVideoDecoder {
         return value
     }
     
-    func readUInt16LE(_ data: Data, offset: inout Int) -> UInt16 {
-        let value = data.subdata(in: offset..<(offset + 2)).withUnsafeBytes { $0.load(as: UInt16.self) }.littleEndian
-        offset += 2
-        return value
-    }
-    
-    func readUInt32LE(_ data: Data, offset: inout Int) -> UInt32 {
-        let value = data.subdata(in: offset..<(offset + 4)).withUnsafeBytes { $0.load(as: UInt32.self) }.littleEndian
-        offset += 4
-        return value
-    }
 }
 
-private enum ZRLEVideoDecoderError: LocalizedError {
+enum ZRLEVideoDecoderError: LocalizedError {
     case compressionFailed(String)
     case invalidTileData(String)
     case pixelBufferUnavailable
