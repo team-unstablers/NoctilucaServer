@@ -18,6 +18,9 @@ struct NoctilucaServerApp: App {
     @Environment(\.openWindow)
     private var openWindow
     
+    @Environment(\.dismissWindow)
+    private var dismissWindow
+
     private let settingsWindowID = "pl.unstabler.noctiluca.NoctilucaServer.SettingsWindow"
     
     var body: some Scene {
@@ -25,7 +28,9 @@ struct NoctilucaServerApp: App {
             SettingsWindow()
                 .environmentObject(server)
         }
-        .defaultLaunchBehavior(.suppressed)
+        // TODO: AppDeleagte로 엔트리포인트 옮기고 hosting window 만들어야 할듯 ㅠ_ㅠ
+        //       이거 AppKit 직접 안 쓰면 도저히 방법이 없네...
+        // .defaultLaunchBehavior(.suppressed)
         
         /*
         Window("test", id: "test") {

@@ -29,7 +29,14 @@ struct PluginBundleDetailSheet: View {
                     Text("서명")
                 }
         }
-        .tabViewStyle(.grouped)
+        .with {
+            if #available(macOS 15.0, *) {
+                $0.tabViewStyle(.grouped)
+            } else {
+                #warning("macOS 15.0 아래 버전에서 탭 표시 동작을 확인해야 합니다")
+                $0
+            }
+        }
     }
 }
 

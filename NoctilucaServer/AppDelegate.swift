@@ -11,12 +11,10 @@ import Cocoa
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("Hello, World!")
-        // NSApp.setActivationPolicy(.accessory)
+        NSApp.setActivationPolicy(.accessory)
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
     }
-    
-    
 }

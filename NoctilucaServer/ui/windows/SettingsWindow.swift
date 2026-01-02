@@ -69,7 +69,7 @@ struct SettingsWindow: View {
         .navigationSubtitle("test")
         .toolbar {
             ToolbarItem {
-                Button("설정 저장", role: .confirm) {
+                Button("설정 저장", role: .compatibleConfirm) {
                     do {
                         try server.settings.save()
                     } catch {
