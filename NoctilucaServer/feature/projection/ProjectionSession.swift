@@ -19,7 +19,8 @@ class ProjectionSession: Identifiable {
     let dataChannel: ProjectionDataChannel
     
     let recorder: any ScreenRecorder
-    let encoder: any VideoEncoder
+    var encoder: any VideoEncoder
+    var codec: Codec?
     
     private var encoderEventLoopTask: Task<Void, Error>?
     private var qualityPlanner: (any QualityPlanner)?
@@ -119,6 +120,19 @@ class ProjectionSession: Identifiable {
         )
         
         try await self.recorder.prepare(with: recorderArgs)
+        
+        self.codec = codec
+        switch codec.fourCC {
+        case .zrle:
+            if !(encoder is ZRLEVideoEncoder) {
+                encoder = ZRLEVideoEncoder()
+            }
+        default:
+            if !(encoder is VTVideoEncoder) {
+                encoder = VTVideoEncoder()
+            }
+        }
+        
         try self.encoder.prepare(with: .init(
             codec: codec,
             inputFormatDescription: nil
