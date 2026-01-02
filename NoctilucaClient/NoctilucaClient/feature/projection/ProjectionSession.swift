@@ -23,7 +23,7 @@ class ProjectionSession: Identifiable {
     let dataChannel: ProjectionDataChannel
     let controlChannel: ProjectionChannel
     
-    let decoder: any VideoDecoder
+    private(set) var decoder: any VideoDecoder
     private var performanceReporter: ProjectionPerformanceReporter?
     
     var displayLayer = AVSampleBufferDisplayLayer()
@@ -52,7 +52,20 @@ class ProjectionSession: Identifiable {
     
     func prepare(codec: Codec) async throws {
         self.codec = codec
-        try self.decoder.prepare(with: .init(codec: codec))
+        switch codec.fourCC {
+        case .zrle:
+            if !(decoder is ZRLEVideoDecoder) {
+                decoder = ZRLEVideoDecoder()
+                decoder.delegate = self
+            }
+            formatDescription = nil
+        default:
+            if !(decoder is VTVideoDecoder) {
+                decoder = VTVideoDecoder()
+                decoder.delegate = self
+            }
+        }
+        try decoder.prepare(with: .init(codec: codec))
     }
     
     func start() async throws {
@@ -69,7 +82,7 @@ class ProjectionSession: Identifiable {
 
 extension ProjectionSession: ProjectionDataChannelDelegate {
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveCodecParameterSets codecParameterSets: consuming SiriusKitClient.CodecParameterSetMessage) {
-        let codec = CodecFourCC.hvc1
+        guard let codec = self.codec?.fourCC else { return }
         
         switch codec {
         case .hvc1:
@@ -78,6 +91,8 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
         case .avc1:
             self.formatDescription = try! CMFormatDescription(h264ParameterSets: codecParameterSets.parameterSets.map { $0.data })
             
+        case .zrle:
+            return
         default:
             return
         }
