@@ -59,6 +59,12 @@ class ProjectionSession: Identifiable {
                 decoder.delegate = self
             }
             formatDescription = nil
+        case .mjpg:
+            if !(decoder is MJPGVideoDecoder) {
+                decoder = MJPGVideoDecoder()
+                decoder.delegate = self
+            }
+            formatDescription = nil
         default:
             if !(decoder is VTVideoDecoder) {
                 decoder = VTVideoDecoder()
