@@ -127,6 +127,10 @@ class ProjectionSession: Identifiable {
             if !(encoder is ZRLEVideoEncoder) {
                 encoder = ZRLEVideoEncoder()
             }
+        case .mjpg:
+            if !(encoder is MJPGVideoEncoder) {
+                encoder = MJPGVideoEncoder()
+            }
         default:
             if !(encoder is VTVideoEncoder) {
                 encoder = VTVideoEncoder()
