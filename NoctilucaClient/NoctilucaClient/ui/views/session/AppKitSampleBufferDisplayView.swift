@@ -29,8 +29,14 @@ struct AppKitSampleBufferDisplayView: NSViewRepresentable {
         displayLayer.videoGravity = .resize
         displayLayer.contentsScale = NSScreen.main?.backingScaleFactor ?? 1.0
         
-        view.layer?.preferredDynamicRange = .high
-        displayLayer.preferredDynamicRange = .high
+        if #available (macOS 26.0, *) {
+            view.layer?.preferredDynamicRange = .high
+            displayLayer.preferredDynamicRange = .high
+        } else {
+            view.layer?.wantsExtendedDynamicRangeContent = true
+            displayLayer.wantsExtendedDynamicRangeContent = true
+        }
+        
         
         return view
     }

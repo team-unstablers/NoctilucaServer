@@ -294,7 +294,7 @@ class MainWindowViewModel: ObservableObject {
 
         isSessionSettingsSheetPresented = false
 
-        Task {
+        Task { @MainActor in
             try? await startSession(endpoint: .contact(item: sessionSettingsDraft))
         }
     }
