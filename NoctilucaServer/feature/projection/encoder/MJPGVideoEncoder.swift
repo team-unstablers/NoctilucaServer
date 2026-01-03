@@ -5,6 +5,9 @@ import ImageIO
 import Metal
 import SiriusKit
 import UniformTypeIdentifiers
+import VideoToolbox
+
+import libturbojpeg
 
 final class MJPGVideoEncoder: VideoEncoder {
     private let logger = NoctilucaLogger(category: "MJPGVideoEncoder")
@@ -22,9 +25,12 @@ final class MJPGVideoEncoder: VideoEncoder {
     let events: AsyncStream<VideoEncoderEvent>
     fileprivate let continuation: AsyncStream<VideoEncoderEvent>.Continuation
     
-    let frameTiler = FrameTiler(tileSize: 64)
+    let frameTiler = FrameTiler(tileSize: 128)
     let frameTileDiffer = FrameTileDiffer()
     
+    private var compressHandle: tjhandle? = nil
+    
+
     init() {
         self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.mjpgencoder.worker")
         self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.mjpgencoder.callback")
@@ -61,6 +67,13 @@ final class MJPGVideoEncoder: VideoEncoder {
         self.continuation = continuationLocal
     }
     
+    deinit {
+        if let handle = compressHandle {
+            tjDestroy(handle)
+            compressHandle = nil
+        }
+    }
+    
     func prepare(with configuration: VideoEncoderConfiguration) throws {
         guard self.configuration == nil else {
             throw VideoEncoderError.alreadyPrepared
@@ -72,6 +85,8 @@ final class MJPGVideoEncoder: VideoEncoder {
         
         self.configuration = configuration
         
+        self.compressHandle = tjInitCompress()
+
         // RGB888 or RGB565
         if let configuredColorFormat = configuration.codec.option(.colorFormat) {
             self.colorFormat = configuredColorFormat
@@ -123,11 +138,15 @@ final class MJPGVideoEncoder: VideoEncoder {
         do {
             try workerQueue.sync {
                 // RGB888 or RGB565
+                /*
                 let rgbSampleBuffer = try sampleBuffer.convertToRGBIfNeeded(required: colorFormat, ciContext: ciContext)
             
                 guard let pixelBuffer = rgbSampleBuffer.imageBuffer else {
                     throw VideoEncoderError.invalidSampleBuffer
                 }
+                 */
+                
+                let pixelBuffer = sampleBuffer.imageBuffer!
                 
                 // 64x64로 타일 인코딩을 행한다
                 let rgbTiles = frameTiler.tile(pixelBuffer)
@@ -191,6 +210,7 @@ final class MJPGVideoEncoder: VideoEncoder {
     // MARK: - On-the-fly controls
     
     func forceKeyframe() {
+        logger.info("Force keyframe requested.")
         // 타일 차이 기록 초기화를 행한다
         self.frameTileDiffer.reset()
     }
@@ -234,34 +254,46 @@ private extension MJPGVideoEncoder {
     func encodeJPEG(_ pixelBuffer: CVPixelBuffer, quality: Double) throws -> Data {
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
-        let ciImage = CIImage(cvImageBuffer: pixelBuffer)
-        let rect = CGRect(x: 0, y: 0, width: width, height: height)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
         
-        guard let cgImage = ciContext.createCGImage(ciImage, from: rect) else {
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
+        
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
+            // FIXME
             throw MJPGVideoEncoderError.cgImageCreationFailed
         }
         
-        let data = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(
-            data,
-            UTType.jpeg.identifier as CFString,
-            1,
-            nil
-        ) else {
-            throw MJPGVideoEncoderError.destinationCreationFailed
+        
+        var outPtr: UnsafeMutablePointer<UInt8>? = nil
+        var outSize: UInt = 0
+        
+        let retval = withUnsafeMutablePointer(to: &outSize) { outSizePtr in
+            tjCompress2(
+                compressHandle!,
+                baseAddress,
+                Int32(width),
+                Int32(bytesPerRow),
+                Int32(height),
+                TJPF_BGRA.rawValue,
+                &outPtr,
+                outSizePtr,
+                TJSAMP_420.rawValue,
+                50,
+                0
+            )
         }
         
-        let clampedQuality = max(0.0, min(1.0, quality))
-        let properties: CFDictionary = [
-            kCGImageDestinationLossyCompressionQuality: clampedQuality
-        ] as CFDictionary
-        
-        CGImageDestinationAddImage(destination, cgImage, properties)
-        guard CGImageDestinationFinalize(destination) else {
+        guard retval == 0 else {
             throw MJPGVideoEncoderError.destinationFinalizeFailed
         }
         
-        return data as Data
+        
+        let data = Data(bytes: outPtr!, count: Int(outSize))
+        
+        tjFree(outPtr)
+        
+        return consume data
     }
     
     func microseconds(from time: CMTime) -> UInt64 {
