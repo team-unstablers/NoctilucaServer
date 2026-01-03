@@ -9,6 +9,7 @@ import Accelerate
 
 import UniformTypeIdentifiers
 
+import libturbojpeg
 
 /// MJPG (tiled JPEG) 소프트웨어 디코더
 final class MJPGVideoDecoder: VideoDecoder {
@@ -26,6 +27,8 @@ final class MJPGVideoDecoder: VideoDecoder {
     private var frameHeight: Int = 0
     private var cachedFormatDescription: CMFormatDescription?
     
+    private var decompressHandle: tjhandle? = nil
+    
     init() {
         self.workerQueue = DispatchQueue(label: "pl.unstabler.noctiluca.decoder.mjpg.worker")
         self.callbackQueue = DispatchQueue(label: "pl.unstabler.noctiluca.decoder.mjpg.callback")
@@ -36,6 +39,13 @@ final class MJPGVideoDecoder: VideoDecoder {
         self.callbackQueue = callbackQueue
     }
     
+    deinit {
+        if let handle = decompressHandle {
+            tjDestroy(handle)
+            decompressHandle = nil
+        }
+    }
+    
     func prepare(with configuration: VideoDecoderConfiguration) throws {
         guard self.configuration == nil else {
             throw VideoDecoderError.alreadyPrepared
@@ -44,6 +54,8 @@ final class MJPGVideoDecoder: VideoDecoder {
             throw VideoDecoderError.unsupportedCodec(configuration.codec.fourCC.stringRepresentation)
         }
         self.configuration = configuration
+        
+        self.decompressHandle = tjInitDecompress()
     }
     
     func start() throws {
@@ -239,24 +251,19 @@ private extension MJPGVideoDecoder {
                 throw MJPGVideoDecoderError.invalidTileData("tile out of bounds")
             }
             
-            let cgImage = try decodeJPEG(tile.data)
-            let flippedY = outputHeight - tile.originY - tile.height
-            let rect = CGRect(x: tile.originX, y: flippedY, width: tile.width, height: tile.height)
+            let decoded = try decodeJPEG(tile)
+            // let flippedY = outputHeight - tile.originY - tile.height
+            let rect = CGRect(x: tile.originX, y: tile.originY, width: tile.width, height: tile.height)
             
+            let tileBytesPerRow = tile.width * 4 // FIXME
             
-            /*
-            for y in 0..<tile.height {
-                let destRow = baseAddress.advanced(by: (flippedY + y) * bytesPerRow + tile.originX * 4)
-                guard let tileDataProvider = cgImage.dataProvider,
-                      let tileData = tileDataProvider.data else {
-                    throw MJPGVideoDecoderError.jpegDecodeFailed
+            decoded.withUnsafeBytes { decodedPtr in
+                for y in 0..<tile.height {
+                    let destRow = baseAddress.advanced(by: (tile.originY + y) * bytesPerRow + tile.originX * 4)
+                    let srcRow = decodedPtr.baseAddress!.advanced(by: y * tileBytesPerRow)
+                    memcpy(destRow, srcRow, tile.width * 4)
                 }
-                let tileBase = CFDataGetBytePtr(tileData)
-                let tileBytesPerRow = cgImage.bytesPerRow
-                let srcRow = tileBase!.advanced(by: y * tileBytesPerRow)
-                memcpy(destRow, srcRow, tile.width * 4)
             }
-             */
             
             // context.draw(cgImage, in: rect)
         }
@@ -368,7 +375,32 @@ private extension MJPGVideoDecoder {
         return (maxX, maxY)
     }
     
-    func decodeJPEG(_ data: Data) throws -> CGImage {
+    func decodeJPEG(_ tile: borrowing MJPGTile) throws -> Data {
+        var dstData = Data(count: Int(tile.width) * Int(tile.height) * 4)
+        
+        let retval = dstData.withUnsafeMutableBytes { dstPtr in
+            tile.data.withUnsafeBytes { jpegPtr in
+                tjDecompress2(
+                    self.decompressHandle!,
+                    jpegPtr,
+                    UInt(tile.data.count),
+                    dstPtr,
+                    Int32(tile.width),
+                    0,
+                    Int32(tile.height),
+                    TJPF_BGRA.rawValue,
+                    TJFLAG_FASTDCT
+                )
+            }
+        }
+        
+        guard retval == 0 else {
+            throw MJPGVideoDecoderError.jpegDecodeFailed
+        }
+        
+        return consume dstData
+        
+        /*
         let options: CFDictionary = [
             kCGImageSourceShouldCache: kCFBooleanTrue,
             kCGImageSourceShouldCacheImmediately: kCFBooleanTrue,
@@ -384,6 +416,7 @@ private extension MJPGVideoDecoder {
             throw MJPGVideoDecoderError.jpegDecodeFailed
         }
         return image
+         */
     }
     
     func readUInt16BE(_ data: Data, offset: inout Int) -> UInt16 {
