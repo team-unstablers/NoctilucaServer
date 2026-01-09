@@ -17,8 +17,8 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 # DIRECTORY STRUCTURE
 
-- `NoctilucaServerApp.swift` - `@main` App, Settings Window + MenuBarExtra 구성
-- `AppDelegate.swift` - 앱 런치 훅 (`applicationDidFinishLaunching`), 창 닫힘 정책
+- `NoctilucaServerApp.swift` - AppKit 전환 후 placeholder (SwiftUI `@main` 제거)
+- `AppDelegate.swift` - `@main` 엔트리, NSStatusItem 트레이 메뉴/설정 창 관리
 - `NoctilucaServer.swift` / `ServerContext.swift` - 서버 싱글턴, SiriusServer 구성/시동, 상태 관리, 세션 수락
 - `NoctilucaMeta.swift` - 앱 메타(이름/버전/라이선스/번들 ID)
 - `client-session/` - 메인 채널 이벤트 루프, 핸드셰이크/인증, 세션 상태 머신
@@ -38,8 +38,9 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
   - `plugins/builtins/auth/` - 기본 인증 번들(`NoctilucaCoreAuth`) + PAM/SimplePassword/Null
 - `models/settings/` - `AppSettings` (JSON + Keychain)
 - `ui/`
-  - `MainTrayMenuContents.swift` - 메뉴바 트레이 UI (서버 시작/중지)
+  - `MainTrayMenuContents.swift` - (legacy) SwiftUI 트레이 메뉴 뷰
   - `windows/SettingsWindow.swift` - 설정 창(TabView)
+  - `windows/AppKitSettingsWindowController.swift` - AppKit 설정 창 컨트롤러(NSHostingView 래핑)
   - `windows/constrainted/` - ScreenCaptureKit workaround 더미 윈도우
   - `views/settings/` - 설정 탭별 UI
 - `utils/` - 로깅/JSON/TCC/C 인터롭 유틸
@@ -47,10 +48,9 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 # ENTRY POINTS & APP LIFECYCLE
 
-- `NoctilucaServerApp`가 `@main`으로 앱 엔트리이며 `@StateObject var server = NoctilucaServer.shared`로 서버 싱글턴을 UI 수명주기와 연결합니다.
-- 설정 창(`SettingsWindow`)은 `Window(...).defaultLaunchBehavior(.suppressed)`로 기본 표시를 막고, 메뉴바 트레이에서 열도록 구성합니다.
-- 메뉴바 트레이(`MenuBarExtra`)는 `.menu` 스타일이며 `MainTrayMenuContents`에서 서버 시작/중지/설정/종료 액션을 제공합니다.
-- `AppDelegate.applicationDidFinishLaunching`에서 현재는 `print("Hello, World!")`만 수행합니다(메뉴바 앱 활성 정책 등은 TODO).
+- `AppDelegate`가 `@main` 엔트리이며 `static main()`에서 `NSApplicationMain`을 호출합니다.
+- 트레이 UI는 `NSStatusItem + NSMenu`로 구성하며 상태/클라이언트 변화를 Combine으로 구독해 메뉴를 동기화합니다.
+- 설정 창은 `AppKitSettingsWindowController`가 `NSHostingView<SettingsWindow>`로 래핑하여 표시합니다.
 - `applicationShouldTerminateAfterLastWindowClosed`는 `false`를 반환하여 마지막 창이 닫혀도 앱이 종료되지 않습니다.
 
 # INIT / STARTUP FLOW (SERVER)
@@ -193,8 +193,9 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 # UI / MENU BAR
 
-- `MainTrayMenuContents`:
-  - 상태에 따라 "서버 시작/중지" 버튼을 토글
+- 트레이 메뉴(AppKit):
+  - "현재 활성 중인 세션 없음" (disabled)
+  - 상태에 따라 "서버 시작/중지" 토글
   - 설정 창 열기 / 앱 종료 제공
 - `SettingsWindow`:
   - TabView: 일반/프로젝션/보안/기타/플러그인/정보
