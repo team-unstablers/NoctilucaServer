@@ -285,11 +285,6 @@ struct CodecSpecificationAddSheet: View {
             title: "Motion JPEG",
             description: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\nRLE보다 압축 효율이 높지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
         ),
-        .init(
-            specification: .zrle,
-            title: "RLE (Run-Length Encoding) + Zstd",
-            description: "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 압축 방식입니다.\n압축 효율이 상당히 낮지만 리소스 사용량이 적습니다.\n가상 머신 환경에서 정적인 컨텐츠를 표시해야 하는 경우 적합합니다."
-        ),
     ]
     
     let handler: (CodecSpecification) -> Void
