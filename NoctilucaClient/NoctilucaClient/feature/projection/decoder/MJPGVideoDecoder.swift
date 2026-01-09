@@ -1,13 +1,7 @@
 import Foundation
 import CoreMedia
 import CoreVideo
-import CoreGraphics
-import ImageIO
 import SiriusKitClient
-
-import Accelerate
-
-import UniformTypeIdentifiers
 
 import libturbojpeg
 
@@ -56,6 +50,9 @@ final class MJPGVideoDecoder: VideoDecoder {
         self.configuration = configuration
         
         self.decompressHandle = tjInitDecompress()
+        guard self.decompressHandle != nil else {
+            throw MJPGVideoDecoderError.decompressorUnavailable
+        }
     }
     
     func start() throws {
@@ -180,10 +177,14 @@ private extension MJPGVideoDecoder {
             throw MJPGVideoDecoderError.invalidTileData("insufficient header")
         }
         let tileCount = readUInt32BE(data, offset: &offset)
+        let maxPossibleTiles = (data.count - 4) / 12
+        if Int(tileCount) > maxPossibleTiles {
+            throw MJPGVideoDecoderError.invalidTileData("tile count exceeds data length")
+        }
         if tileCount == 0 { return [] }
         
         var tiles: [MJPGTile] = []
-        tiles.reserveCapacity(Int(tileCount))
+        tiles.reserveCapacity(min(Int(tileCount), maxPossibleTiles))
         
         for _ in 0..<tileCount {
             guard offset + 12 <= data.count else {
@@ -195,7 +196,7 @@ private extension MJPGVideoDecoder {
             let h = Int(readUInt16BE(data, offset: &offset))
             let length = Int(readUInt32BE(data, offset: &offset))
             
-            guard length >= 0, offset + length <= data.count else {
+            guard length >= 0, length <= data.count - offset else {
                 throw MJPGVideoDecoderError.invalidTileData("truncated tile payload")
             }
             let tileData = data.subdata(in: offset..<(offset + length))
@@ -211,6 +212,7 @@ private extension MJPGVideoDecoder {
         let outputWidth = CVPixelBufferGetWidth(pixelBuffer)
         let outputHeight = CVPixelBufferGetHeight(pixelBuffer)
         let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let bytesPerPixel = 4
         
         CVPixelBufferLockBaseAddress(pixelBuffer, [])
         defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
@@ -219,26 +221,6 @@ private extension MJPGVideoDecoder {
             throw MJPGVideoDecoderError.pixelBufferUnavailable
         }
         
-        /*
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let alphaInfo = CGImageAlphaInfo.premultipliedFirst
-        let bitmapInfo = CGBitmapInfo.byteOrder32Little.union(CGBitmapInfo(rawValue: alphaInfo.rawValue))
-        guard let context = CGContext(
-            data: baseAddress,
-            width: outputWidth,
-            height: outputHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: bytesPerRow,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo.rawValue
-        ) else {
-            throw MJPGVideoDecoderError.contextCreationFailed
-        }
-        
-        context.setBlendMode(.copy)
-        context.interpolationQuality = .none
-         */
-        
         for tile in tiles {
             guard tile.originX >= 0, tile.originY >= 0 else {
                 throw MJPGVideoDecoderError.invalidTileData("negative tile origin")
@@ -246,26 +228,25 @@ private extension MJPGVideoDecoder {
             guard tile.width > 0, tile.height > 0 else {
                 throw MJPGVideoDecoderError.invalidTileData("invalid tile size")
             }
+            guard tile.width <= Int.max / bytesPerPixel else {
+                throw MJPGVideoDecoderError.invalidTileData("tile width overflow")
+            }
             guard tile.originX + tile.width <= outputWidth,
                   tile.originY + tile.height <= outputHeight else {
                 throw MJPGVideoDecoderError.invalidTileData("tile out of bounds")
             }
             
             let decoded = try decodeJPEG(tile)
-            // let flippedY = outputHeight - tile.originY - tile.height
-            let rect = CGRect(x: tile.originX, y: tile.originY, width: tile.width, height: tile.height)
             
-            let tileBytesPerRow = tile.width * 4 // FIXME
+            let tileBytesPerRow = tile.width * bytesPerPixel
             
             decoded.withUnsafeBytes { decodedPtr in
                 for y in 0..<tile.height {
-                    let destRow = baseAddress.advanced(by: (tile.originY + y) * bytesPerRow + tile.originX * 4)
+                    let destRow = baseAddress.advanced(by: (tile.originY + y) * bytesPerRow + tile.originX * bytesPerPixel)
                     let srcRow = decodedPtr.baseAddress!.advanced(by: y * tileBytesPerRow)
-                    memcpy(destRow, srcRow, tile.width * 4)
+                    memcpy(destRow, srcRow, tile.width * bytesPerPixel)
                 }
             }
-            
-            // context.draw(cgImage, in: rect)
         }
     }
 }
@@ -376,12 +357,27 @@ private extension MJPGVideoDecoder {
     }
     
     func decodeJPEG(_ tile: borrowing MJPGTile) throws -> Data {
-        var dstData = Data(count: Int(tile.width) * Int(tile.height) * 4)
+        let bytesPerPixel = 4
+        guard tile.width > 0, tile.height > 0 else {
+            throw MJPGVideoDecoderError.invalidTileData("invalid tile size")
+        }
+        guard tile.width <= Int.max / bytesPerPixel else {
+            throw MJPGVideoDecoderError.invalidTileData("tile width overflow")
+        }
+        guard tile.height <= Int.max / (tile.width * bytesPerPixel) else {
+            throw MJPGVideoDecoderError.invalidTileData("tile buffer overflow")
+        }
+        let bufferSize = tile.width * tile.height * bytesPerPixel
+        var dstData = Data(count: bufferSize)
+
+        guard let handle = self.decompressHandle else {
+            throw MJPGVideoDecoderError.decompressorUnavailable
+        }
         
         let retval = dstData.withUnsafeMutableBytes { dstPtr in
             tile.data.withUnsafeBytes { jpegPtr in
                 tjDecompress2(
-                    self.decompressHandle!,
+                    handle,
                     jpegPtr,
                     UInt(tile.data.count),
                     dstPtr,
@@ -399,24 +395,6 @@ private extension MJPGVideoDecoder {
         }
         
         return consume dstData
-        
-        /*
-        let options: CFDictionary = [
-            kCGImageSourceShouldCache: kCFBooleanTrue,
-            kCGImageSourceShouldCacheImmediately: kCFBooleanTrue,
-            kCGImageSourceTypeIdentifierHint: UTType.jpeg.identifier
-        ] as CFDictionary
-        
-        guard let source = CGImageSourceCreateWithData(data as CFData, options) else {
-            throw MJPGVideoDecoderError.jpegDecodeFailed
-        }
-        
-        guard CGImageSourceGetCount(source) > 0,
-              let image = CGImageSourceCreateImageAtIndex(source, 0, options) else {
-            throw MJPGVideoDecoderError.jpegDecodeFailed
-        }
-        return image
-         */
     }
     
     func readUInt16BE(_ data: Data, offset: inout Int) -> UInt16 {
@@ -433,18 +411,18 @@ private extension MJPGVideoDecoder {
 }
 
 enum MJPGVideoDecoderError: LocalizedError {
+    case decompressorUnavailable
     case jpegDecodeFailed
-    case contextCreationFailed
     case invalidTileData(String)
     case pixelBufferUnavailable
     case missingKeyframe
     
     var errorDescription: String? {
         switch self {
+        case .decompressorUnavailable:
+            return "MJPG decompressor is not available"
         case .jpegDecodeFailed:
             return "MJPG JPEG decode failed"
-        case .contextCreationFailed:
-            return "MJPG failed to create bitmap context"
         case .invalidTileData(let reason):
             return "MJPG tile data invalid: \(reason)"
         case .pixelBufferUnavailable:
