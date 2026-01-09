@@ -8,10 +8,12 @@
 import Foundation
 import Cocoa
 import ApplicationServices
+import UserNotifications
 
 enum TCCScope {
     case accessibility
     case screenCapture
+    case notifications
 }
 
 class TCCUtil {
@@ -19,11 +21,19 @@ class TCCUtil {
     
     private(set) public var grantedScopes: Set<TCCScope> = []
     
-    func refresh() {
+    func refresh() async {
         grantedScopes = []
         
         if AXIsProcessTrusted() {
             grantedScopes.insert(.accessibility)
+        }
+        
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            grantedScopes.insert(.notifications)
+        default:
+            break
         }
     }
     
@@ -37,6 +47,8 @@ class TCCUtil {
         case .screenCapture:
             // No API to request screen capture permission programmatically.
             break
+        case .notifications:
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         }
     }
     
@@ -48,6 +60,8 @@ class TCCUtil {
             urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
         case .screenCapture:
             urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+        case .notifications:
+            urlString = "x-apple.systempreferences:com.apple.preference.notifications"
         }
         
         if let url = URL(string: urlString) {
