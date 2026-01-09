@@ -175,7 +175,7 @@ struct SessionSettingsSheet: View {
             
             
             ToolbarItemGroup(placement: .confirmationAction) {
-                Button(role: .confirm) {
+                Button(role: .compatibleConfirm) {
                     self.actionHandler(.connect)
                 } label: {
                     Text("연결")
@@ -193,7 +193,7 @@ struct SessionSettingsSheet: View {
             }
             
             ToolbarItemGroup(placement: .confirmationAction) {
-                Button(role: .confirm) {
+                Button(role: .compatibleConfirm) {
                     self.actionHandler(.save)
                 } label: {
                     Text("저장")

@@ -209,7 +209,7 @@ private extension VTVideoEncoder {
         let codecType = try codec.fourCC.codecType()
         let pixelBufferFormat = codec.cvPixelFormat
         
-        let size = codec.size ??
+        let size = codec.size?.cgSize ??
             CGSize(width: CGFloat(CVPixelBufferGetWidth(imageBuffer)),
                    height: CGFloat(CVPixelBufferGetHeight(imageBuffer)))
         

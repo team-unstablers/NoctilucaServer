@@ -47,6 +47,12 @@ public struct CodecOptionKey: RawRepresentable, Codable, Hashable, Equatable {
     
     /// 디스플레이 밀도를 설정합니다.
     public static let displayDensity = Self(rawValue: "display-density")
+    
+    /// 압축 레벨을 설정합니다. (ZRLE / MJPG 전용)
+    public static let compressionLevel = Self(rawValue: "compression-level")
+    
+    /// 타일 사이즈를 설정합니다. (ZRLE / MJPG 전용)
+    public static let tileSize = Self(rawValue: "tile-size")
 }
 
 public struct CodecOptions: Codable, Equatable, Hashable {

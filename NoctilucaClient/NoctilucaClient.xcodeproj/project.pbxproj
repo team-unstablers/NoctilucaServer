@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; };
 		F61DD5B32EF0271300AC9B35 /* SiriusKitClient.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F627116D2F08626200E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F627116C2F08626200E8A3D7 /* libzstd */; };
+		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
+		F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +32,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */,
 				F61DD5B32EF0271300AC9B35 /* SiriusKitClient.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -38,6 +42,9 @@
 
 /* Begin PBXFileReference section */
 		F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SiriusKitClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6561F102F08B6E00090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/ios-arm64/libturbojpeg.framework"; sourceTree = "<group>"; };
+		F6561F132F08B6F10090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/macos-arm64_x86_64/libturbojpeg.framework"; sourceTree = "<group>"; };
+		F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = ../frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
 		F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaClientTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -80,6 +87,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */,
+				F627116D2F08626200E8A3D7 /* libzstd in Frameworks */,
 				F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */,
 				F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */,
 			);
@@ -110,6 +119,9 @@
 		F6BD3EB02EDA1B2A000011DF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */,
+				F6561F102F08B6E00090BCB3 /* libturbojpeg.framework */,
+				F6561F132F08B6F10090BCB3 /* libturbojpeg.framework */,
 				F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */,
 			);
 			name = Frameworks;
@@ -160,6 +172,7 @@
 			name = NoctilucaClient;
 			packageProductDependencies = (
 				F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */,
+				F627116C2F08626200E8A3D7 /* libzstd */,
 			);
 			productName = NoctilucaClient;
 			productReference = F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */;
@@ -195,6 +208,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+				F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F6BD3E972EDA1AF6000011DF /* Products */;
@@ -435,6 +449,7 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoctilucaClient/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
@@ -448,7 +463,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClient;
 				PRODUCT_NAME = "Noctiluca Navigator";
@@ -459,6 +474,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/NoctilucaClient-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -488,6 +504,7 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoctilucaClient/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
@@ -501,7 +518,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClient;
 				PRODUCT_NAME = "Noctiluca Navigator";
@@ -512,6 +529,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/NoctilucaClient-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -551,6 +569,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/zstd";
+			requirement = {
+				kind = exactVersion;
+				version = 1.5.7;
+			};
+		};
 		F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
@@ -562,6 +588,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F627116C2F08626200E8A3D7 /* libzstd */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
+			productName = libzstd;
+		};
 		F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;

@@ -52,9 +52,7 @@ struct PluginBundleDetailView: View {
             }
         }
         
-        HStack(alignment: .top) {
-            Text("개발자")
-            Spacer()
+        SettingsEntry(title: "개발자") {
             VStack(alignment: .trailing) {
                 ForEach(metadata.authors, id: \.self) { author in
                     Text(verbatim: author)
@@ -63,9 +61,7 @@ struct PluginBundleDetailView: View {
             .foregroundStyle(.secondary)
         }
         
-        HStack(alignment: .top) {
-            Text("라이선스")
-            Spacer()
+        SettingsEntry(title: "라이선스") {
             SoftwareLicenseText(license: metadata.license)
                 .foregroundStyle(.secondary)
         }
@@ -95,21 +91,16 @@ struct PluginBundleDetailView: View {
          }
          */
         
-        HStack(alignment: .top) {
-            Text("서명 정보")
-            Spacer()
+        SettingsEntry(title: "서명 정보") {
             Text("Apple Development: Kirino Kousaka (ABCDE12345)")
                 .foregroundStyle(.secondary)
         }
         
         
         
-        HStack(alignment: .top) {
-            Text("버전")
-            Spacer()
+        SettingsEntry(title: "버전") {
             Text("\(metadata.displayVersion) (\(metadata.version))")
                 .foregroundStyle(.secondary)
         }
     }
 }
-

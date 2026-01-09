@@ -241,6 +241,7 @@ Context Resolve Checklist:
   `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다.
 - `CodecOption`/`CodecOptionsParser` 정의가 `SiriusKit/channel/msgdef/v1/channels/projection`로 이동했고,
   클라이언트에서도 사용할 수 있도록 `public`으로 노출되었습니다.
+- ZRLE(타일 + RLE + Zstd) 소프트웨어 디코더(`ZRLEVideoDecoder`)가 추가되었습니다. (`codec.fourCC == .zrle`일 때 사용)
 - 디코더 설계 문서: `DECODER_PLAN.md` (VideoToolbox 기반 디코딩 계층 설계 초안)
 - `ProjectionSession`은 매 1초마다 `ProjectionPerformanceReport`를 전송해 디코드 성능을 리포트합니다.
 - UI/세션/디코더 주변에 FIXME/TODO가 다수 존재하므로 변경 시 범위 확인 필요

@@ -280,6 +280,11 @@ struct CodecSpecificationAddSheet: View {
             title: "Advanced Video Coding (H.264)",
             description: "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다."
         ),
+        .init(
+            specification: .mjpg,
+            title: "Motion JPEG",
+            description: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\nRLE보다 압축 효율이 높지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
+        ),
     ]
     
     let handler: (CodecSpecification) -> Void

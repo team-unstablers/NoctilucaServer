@@ -90,6 +90,9 @@ struct Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource: Senda
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// 디스플레이 ID.
+  //// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+  //// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
   var displayID: Int32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -108,21 +111,20 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: Senda
   //// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
   var displayID: Int32 = 0
 
-  //// 왼쪽 위 모서리의 X 좌표
-  var x: UInt32 = 0
-
-  //// 왼쪽 위 모서리의 Y 좌표
-  var y: UInt32 = 0
-
-  //// 너비
-  var width: UInt32 = 0
-
-  //// 높이
-  var height: UInt32 = 0
+  var region: Sirius_Msgdef_V1_Channels_Projection_SRRect {
+    get {return _region ?? Sirius_Msgdef_V1_Channels_Projection_SRRect()}
+    set {_region = newValue}
+  }
+  /// Returns true if `region` has been explicitly set.
+  var hasRegion: Bool {return self._region != nil}
+  /// Clears the value of `region`. Subsequent reads from it will return its default value.
+  mutating func clearRegion() {self._region = nil}
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
+
+  fileprivate var _region: Sirius_Msgdef_V1_Channels_Projection_SRRect? = nil
 }
 
 //// 단일 창을 프로젝션할 때 사용합니다.
@@ -239,7 +241,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource: Sw
 
 extension Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".DisplayRegionProjectionSource"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayId\0\u{1}x\0\u{1}y\0\u{1}width\0\u{1}height\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayId\0\u{1}region\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -248,40 +250,29 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: Sw
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularSFixed32Field(value: &self.displayID) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.x) }()
-      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.y) }()
-      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.width) }()
-      case 5: try { try decoder.decodeSingularFixed32Field(value: &self.height) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._region) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if self.displayID != 0 {
       try visitor.visitSingularSFixed32Field(value: self.displayID, fieldNumber: 1)
     }
-    if self.x != 0 {
-      try visitor.visitSingularFixed32Field(value: self.x, fieldNumber: 2)
-    }
-    if self.y != 0 {
-      try visitor.visitSingularFixed32Field(value: self.y, fieldNumber: 3)
-    }
-    if self.width != 0 {
-      try visitor.visitSingularFixed32Field(value: self.width, fieldNumber: 4)
-    }
-    if self.height != 0 {
-      try visitor.visitSingularFixed32Field(value: self.height, fieldNumber: 5)
-    }
+    try { if let v = self._region {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource, rhs: Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource) -> Bool {
     if lhs.displayID != rhs.displayID {return false}
-    if lhs.x != rhs.x {return false}
-    if lhs.y != rhs.y {return false}
-    if lhs.width != rhs.width {return false}
-    if lhs.height != rhs.height {return false}
+    if lhs._region != rhs._region {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

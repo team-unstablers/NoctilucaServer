@@ -19,7 +19,8 @@ class ProjectionSession: Identifiable {
     let dataChannel: ProjectionDataChannel
     
     let recorder: any ScreenRecorder
-    let encoder: any VideoEncoder
+    var encoder: any VideoEncoder
+    var codec: Codec?
     
     private var encoderEventLoopTask: Task<Void, Error>?
     private var qualityPlanner: (any QualityPlanner)?
@@ -119,6 +120,23 @@ class ProjectionSession: Identifiable {
         )
         
         try await self.recorder.prepare(with: recorderArgs)
+        
+        self.codec = codec
+        switch codec.fourCC {
+        case .zrle:
+            if !(encoder is ZRLEVideoEncoder) {
+                encoder = ZRLEVideoEncoder()
+            }
+        case .mjpg:
+            if !(encoder is MJPGVideoEncoder) {
+                encoder = MJPGVideoEncoder()
+            }
+        default:
+            if !(encoder is VTVideoEncoder) {
+                encoder = VTVideoEncoder()
+            }
+        }
+        
         try self.encoder.prepare(with: .init(
             codec: codec,
             inputFormatDescription: nil
@@ -195,12 +213,12 @@ private extension ProjectionSession {
     static func makeQualityPlanner(codec: Codec) -> QualityPlanner {
         // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
         let frameRate = (codec.frameRate ?? 0.0) > 0 ? Float(codec.frameRate!) : 30.0
-        let resolution = codec.size ?? CGSize(width: 1920, height: 1080)
+        let resolution = codec.size ?? SRSize(width: 1920, height: 1080)
         
         // FIXME: 무조건 AutoQuality를 쓰는건 아니잖아요.
         let planner = AutoQualityPlanner(
             codec: codec.fourCC,
-            resolution: resolution,
+            resolution: resolution.cgSize,
             frameRate: frameRate,
             strategy: .balanced // FIXME: hard-coded strategy.
         )

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreVideo
 import ScreenCaptureKit
 
 import SiriusKit
@@ -48,17 +49,26 @@ fileprivate struct FrameInfo {
 fileprivate extension ScreenRecorderArgs {
     /// Create a default SCStreamConfiguration based on the codec settings.
     func createSCStreamConfiguration() -> SCStreamConfiguration {
+        let configuration: SCStreamConfiguration
+        
         if #available(macOS 15.0, *) {
             // SCStreamConfiguration(preset:)은 macOS 15.0부터 사용할 수 있습니다.
             // (= HDR 캡쳐는 macOS 15.0부터 지원합니다.)
             if codec.isHDREnabled {
                 // Apple의 HDR용 프리셋을 반환한다
                 return SCStreamConfiguration(preset: .captureHDRStreamCanonicalDisplay)
+            } else {
+                configuration = SCStreamConfiguration()
             }
+        } else {
+            configuration = SCStreamConfiguration()
+        }
+
+        if codec.fourCC == .mjpg {
+            configuration.pixelFormat = kCVPixelFormatType_32BGRA
         }
         
-        // 기본 설정을 반환한다
-        return SCStreamConfiguration()
+        return configuration
     }
 }
 

@@ -9,21 +9,17 @@ import SwiftUI
 
 struct ScreenRecorderPicker: View {
     var body: some View {
-        Picker(selection: .constant(ScreenRecorderType.screenCaptureKit)) {
+        SettingsPicker(selection: .constant(ScreenRecorderType.screenCaptureKit)) {
             ForEach(ScreenRecorderType.allCases, id: \.self) { recorderType in
-                VStack(alignment: .leading) {
+                SettingsPickerItem(value: recorderType) {
                     Text(recorderType.displayName)
                     Text(recorderType.description)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .tag(recorderType)
             }
         } label: {
             Text("화면 레코더 선택")
-            
         }
-        .pickerStyle(.inline)
-        
     }
 }

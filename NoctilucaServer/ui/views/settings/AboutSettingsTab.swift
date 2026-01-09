@@ -6,61 +6,36 @@ struct AboutSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading) {
-                        Text("Noctiluca Server 버전")
-                        Text("")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
+                SettingsEntry(title: "Noctiluca Server 버전") {
                     VStack(alignment: .trailing) {
                         Text("0.1.0-alpha1")
                         Text("개발 버전")
                             .font(.subheadline)
                     }
-                    .foregroundStyle(.secondary)
                 }
-                HStack(alignment: .top) {
-                    Text("SiriusKit 버전")
-                    Spacer()
+                SettingsEntry(title: "SiriusKit 버전") {
                     VStack(alignment: .trailing) {
                         Text("\(SiriusKitMeta.displayVersion)")
                         Text("프로토콜 버전 \(SiriusKitMeta.currentProtocolVersion.displayVersion)")
                             .font(.subheadline)
                     }
-                    .foregroundStyle(.secondary)
                 }
-                HStack(alignment: .top) {
-                    Text("사용 중인 트랜스포트 레이어 구현체")
-                    Spacer()
+                SettingsEntry(title: "사용 중인 트랜스포트 레이어 구현체") {
                     VStack(alignment: .trailing) {
                         Text("QUIC (SiriusKit + Apple)")
                     }
-                    .foregroundStyle(.secondary)
                 }
-                HStack(alignment: .top) {
-                    Text("사용 가능한 기능 목록")
-                    Spacer()
+                SettingsEntry(title: "사용 가능한 기능 목록") {
                     VStack(alignment: .trailing) {
                         Text("HIDIO")
                         Text("Projection")
                         Text("ProjectionData")
                     }
-                    .foregroundStyle(.secondary)
                 }
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading) {
-                        Text("유효한 라이선스")
-                        Text("")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
+                SettingsEntry(title: "유효한 라이선스") {
                     VStack(alignment: .trailing) {
                         Text("아니오")
                     }
-                    .foregroundStyle(.secondary)
                 }
             } header: {
                 Text("Noctiluca Server (Explicit Edition) 정보")

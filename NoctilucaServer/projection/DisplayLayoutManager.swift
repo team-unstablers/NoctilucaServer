@@ -27,7 +27,7 @@ fileprivate func displayReconfigurationCallback(
         return
     }
     
-    if flags == .beginConfigurationFlag {
+    if flags.contains(.beginConfigurationFlag) {
         // Ignoring begin configuration event
         return
     }
@@ -125,4 +125,3 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
         }
     }
 }
-

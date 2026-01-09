@@ -47,7 +47,7 @@ extension CodecSpecification {
         var codec = SiriusKit.Codec(
             fourCC: self.fourCC,
             frameRate: Float(self.frameRate),
-            size: CGSize(width: 0, height: 0),
+            size: SRSize(width: 0, height: 0),
             options: self.siriusKitCodecOptions,
             // FIXME - CodecSpecification에 품질 정책 없음!!
             quality: .auto(mode: .balancedPriority)
