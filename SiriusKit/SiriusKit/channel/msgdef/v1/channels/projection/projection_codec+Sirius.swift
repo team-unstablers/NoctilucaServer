@@ -54,12 +54,12 @@ public struct Codec: SiriusMessage {
     public let frameRate: Float?
     
     /// 비디오 사이즈 (픽셀 단위). nil로 설정하는 경우 소스 (모니터)의 해상도를 따릅니다.
-    public let size: CGSize?
+    public let size: SRSize?
     public let options: CodecOptions
 
     public let quality: Quality
 
-    public init(fourCC: CodecFourCC, frameRate: Float?, size: CGSize?, options: CodecOptions, quality: Quality) {
+    public init(fourCC: CodecFourCC, frameRate: Float?, size: SRSize?, options: CodecOptions, quality: Quality) {
         self.fourCC = fourCC
         self.frameRate = frameRate
         self.size = size
@@ -71,10 +71,8 @@ public struct Codec: SiriusMessage {
         self.fourCC = CodecFourCC(rawValue: protobufMessage.fourCc)
         self.frameRate = protobufMessage.hasFrameRate ? protobufMessage.frameRate : nil
         
-        if protobufMessage.hasWidth,
-           protobufMessage.hasHeight
-        {
-            self.size = CGSize(width: CGFloat(protobufMessage.width), height: CGFloat(protobufMessage.height))
+        if protobufMessage.hasSize {
+            self.size = SRSize(from: protobufMessage.size)
         } else {
             self.size = nil
         }
@@ -119,8 +117,7 @@ public struct Codec: SiriusMessage {
             message.frameRate = val
         }
         if let val = self.size {
-            message.width  = UInt32(val.width)
-            message.height = UInt32(val.height)
+            message.size = val.toProtobufMessage()
         }
         
         message.options = CodecOptionsParser.serialize(options: self.options)

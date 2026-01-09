@@ -213,6 +213,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
   //// - 바이트 오더는 반드시 빅 엔디안이어야 합니다.
   var fourCc: UInt32 = 0
 
+  //// 코덱 품질 설정
+  //// -
   var quality: Sirius_Msgdef_V1_Channels_Projection_Codec.OneOf_Quality? = nil
 
   var constantBitrate: Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality {
@@ -265,27 +267,15 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
   /// Clears the value of `frameRate`. Subsequent reads from it will return its default value.
   mutating func clearFrameRate() {self._frameRate = nil}
 
-  var width: UInt32 {
-    get {return _width ?? 0}
-    set {_width = newValue}
+  var size: Sirius_Msgdef_V1_Channels_Projection_SRSize {
+    get {return _size ?? Sirius_Msgdef_V1_Channels_Projection_SRSize()}
+    set {_size = newValue}
   }
-  /// Returns true if `width` has been explicitly set.
-  var hasWidth: Bool {return self._width != nil}
-  /// Clears the value of `width`. Subsequent reads from it will return its default value.
-  mutating func clearWidth() {self._width = nil}
+  /// Returns true if `size` has been explicitly set.
+  var hasSize: Bool {return self._size != nil}
+  /// Clears the value of `size`. Subsequent reads from it will return its default value.
+  mutating func clearSize() {self._size = nil}
 
-  var height: UInt32 {
-    get {return _height ?? 0}
-    set {_height = newValue}
-  }
-  /// Returns true if `height` has been explicitly set.
-  var hasHeight: Bool {return self._height != nil}
-  /// Clears the value of `height`. Subsequent reads from it will return its default value.
-  mutating func clearHeight() {self._height = nil}
-
-  //// "color-format: 'YUV444'; profile: 'high'; level: '4.2'" 등의 형식으로 코덱 옵션을 지정할 수 있습니다.
-  //// eg)
-  ////     color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high'; level: '4.2';
   var options: String {
     get {return _options ?? String()}
     set {_options = newValue}
@@ -297,6 +287,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
+  //// 코덱 품질 설정
+  //// -
   enum OneOf_Quality: Equatable, Sendable {
     case constantBitrate(Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality)
     case variableBitrate(Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality)
@@ -309,8 +301,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
   init() {}
 
   fileprivate var _frameRate: Float? = nil
-  fileprivate var _width: UInt32? = nil
-  fileprivate var _height: UInt32? = nil
+  fileprivate var _size: Sirius_Msgdef_V1_Channels_Projection_SRSize? = nil
   fileprivate var _options: String? = nil
 }
 
@@ -483,7 +474,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_LosslessQuality: SwiftProtobuf.Me
 
 extension Sirius_Msgdef_V1_Channels_Projection_Codec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Codec"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}fourCC\0\u{1}constantBitrate\0\u{1}variableBitrate\0\u{1}fixedQuality\0\u{1}lossless\0\u{1}auto\0\u{2}\u{3}frameRate\0\u{1}width\0\u{1}height\0\u{2}\u{4}options\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}fourCC\0\u{1}constantBitrate\0\u{1}variableBitrate\0\u{1}fixedQuality\0\u{1}lossless\0\u{1}auto\0\u{2}\u{3}frameRate\0\u{1}size\0\u{2}\u{5}options\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -558,8 +549,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_Codec: SwiftProtobuf.Message, Swi
         }
       }()
       case 9: try { try decoder.decodeSingularFloatField(value: &self._frameRate) }()
-      case 10: try { try decoder.decodeSingularFixed32Field(value: &self._width) }()
-      case 11: try { try decoder.decodeSingularFixed32Field(value: &self._height) }()
+      case 10: try { try decoder.decodeSingularMessageField(value: &self._size) }()
       case 15: try { try decoder.decodeSingularStringField(value: &self._options) }()
       default: break
       }
@@ -600,11 +590,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_Codec: SwiftProtobuf.Message, Swi
     try { if let v = self._frameRate {
       try visitor.visitSingularFloatField(value: v, fieldNumber: 9)
     } }()
-    try { if let v = self._width {
-      try visitor.visitSingularFixed32Field(value: v, fieldNumber: 10)
-    } }()
-    try { if let v = self._height {
-      try visitor.visitSingularFixed32Field(value: v, fieldNumber: 11)
+    try { if let v = self._size {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
     } }()
     try { if let v = self._options {
       try visitor.visitSingularStringField(value: v, fieldNumber: 15)
@@ -616,8 +603,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_Codec: SwiftProtobuf.Message, Swi
     if lhs.fourCc != rhs.fourCc {return false}
     if lhs.quality != rhs.quality {return false}
     if lhs._frameRate != rhs._frameRate {return false}
-    if lhs._width != rhs._width {return false}
-    if lhs._height != rhs._height {return false}
+    if lhs._size != rhs._size {return false}
     if lhs._options != rhs._options {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

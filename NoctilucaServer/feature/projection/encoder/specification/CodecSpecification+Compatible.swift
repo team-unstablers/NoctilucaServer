@@ -160,7 +160,7 @@ extension CodecSpecification {
     func isResolutionLevelCompatible(with another: borrowing SiriusKit.Codec) -> Bool {
         let oursLevel = self.maximumResolutionLevel
         let theirsLevel: CodecResolutionLevel = if let size = another.size {
-            CodecResolutionLevel.fromCGSize(size: size)
+            CodecResolutionLevel.fromCGSize(size: size.cgSize)
         } else {
             .unlimited
         }

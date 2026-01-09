@@ -53,41 +53,41 @@ public struct WindowFilterExpression {
     public var `operator`: WindowFilterExpressionOperator
     public var invert: Bool
     
-    init(_ field: WindowFilterExpressionField) {
+    public init(_ field: WindowFilterExpressionField) {
         self.field = field
         self.operator = .exact
         self.invert = false
     }
     
-    func exact() -> Self {
+    public func exact() -> Self {
         var mutated = self
         mutated.operator = .exact
         
         return mutated
     }
     
-    func contains() -> Self {
+    public func contains() -> Self {
         var mutated = self
         mutated.operator = .contains
         
         return mutated
     }
     
-    func icontains() -> Self {
+    public func icontains() -> Self {
         var mutated = self
         mutated.operator = .icontains
         
         return mutated
     }
     
-    func regex() -> Self {
+    public func regex() -> Self {
         var mutated = self
         mutated.operator = .regex
         
         return mutated
     }
     
-    func inverted() -> Self {
+    public func inverted() -> Self {
         var mutated = self
         mutated.invert = true
         
@@ -158,6 +158,5 @@ public extension WindowFilter {
         return Self(expression: expression)
     }
 }
-
 
 

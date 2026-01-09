@@ -81,36 +81,23 @@ public struct DisplayRegionProjectionSource: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource
     
     public let displayID: Int32
-    public let x: UInt32
-    public let y: UInt32
-    public let width: UInt32
-    public let height: UInt32
+    public let region: SRRect
 
-
-    init(displayID: Int32, x: UInt32, y: UInt32, width: UInt32, height: UInt32) {
+    init(displayID: Int32, region: SRRect) {
         self.displayID = displayID
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.region = region
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource) throws {
         self.displayID = protobufMessage.displayID
-        self.x = protobufMessage.x
-        self.y = protobufMessage.y
-        self.width = protobufMessage.width
-        self.height = protobufMessage.height
+        self.region = SRRect(from: protobufMessage.region)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
         message.displayID = self.displayID
-        message.x = self.x
-        message.y = self.y
-        message.width = self.width
-        message.height = self.height
+        message.region = self.region.toProtobufMessage()
 
         return message
     }
