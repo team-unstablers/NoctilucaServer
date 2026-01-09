@@ -21,9 +21,10 @@ class ScreenCaptureKitWorkaroundDummyWindow: NSWindow, ConstraintedNSWindow {
             // 테두리 없음
             styleMask: [.borderless],
             backing: .buffered,
-            defer: false,
+            defer: true,
         )
         
+        self.isReleasedWhenClosed = false
         self.configure()
     }
     

@@ -9,6 +9,7 @@ import Foundation
 
 import Cocoa
 
+@MainActor
 protocol ConstraintedNSWindow: AnyObject {
     init(to screen: NSScreen)
 }

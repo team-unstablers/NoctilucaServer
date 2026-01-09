@@ -30,7 +30,7 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         }
         
         self.subscription = displayLayoutManager.$displayLayouts
-            .debounce(for: .milliseconds(1000), scheduler: RunLoop.main)
+            .receive(on: RunLoop.main)
             .sink { [weak self] displayLayouts in
                 self?.updateWindows(for: displayLayouts)
             }
@@ -50,10 +50,9 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         
         let disconnectedDisplayIDs = existingDisplayIDs.subtracting(currentDisplayIDs)
         for displayID in disconnectedDisplayIDs {
-            if let window = windows[displayID] {
+            if let window = windows.removeValue(forKey: displayID) {
                 self.logger.debug("Closing \(Window.self) for disconnected displayID: \(displayID)")
                 window.close()
-                windows.removeValue(forKey: displayID)
             }
         }
         
@@ -64,6 +63,11 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
                 continue
             }
             
+            if screen.frame.width <= 1 || screen.frame.height <= 1 {
+                self.logger.warning("updateWindows(): invalid screen size for displayID: \(displayID) frame: \(screen.frame)")
+                continue
+            }
+            
             self.logger.debug("Creating new \(Window.self) for displayID: \(displayID)")
             
             let window = Window(to: screen)
@@ -71,6 +75,5 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         }
     }
 }
-
 
 
