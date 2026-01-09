@@ -64,9 +64,7 @@ struct AuthPluginDetailView: View {
                 .font(.subheadline)
         }
         
-        HStack(alignment: .top) {
-            Text("개발자")
-            Spacer()
+        SettingsEntry(title: "개발자") {
             VStack(alignment: .trailing) {
                 ForEach(metaType.authors, id: \.self) { author in
                     Text(author)
@@ -75,16 +73,12 @@ struct AuthPluginDetailView: View {
             .foregroundStyle(.secondary)
         }
         
-        HStack(alignment: .top) {
-            Text("라이선스")
-            Spacer()
+        SettingsEntry(title: "라이선스") {
             SoftwareLicenseText(license: metaType.license)
                 .foregroundStyle(.secondary)
         }
         
-        HStack(alignment: .top) {
-            Text("유형")
-            Spacer()
+        SettingsEntry(title: "유형") {
             if plugin is BuiltInAuthPluginV1 {
                 Text("내장 플러그인")
                     .foregroundStyle(.secondary)
@@ -94,9 +88,7 @@ struct AuthPluginDetailView: View {
             }
         }
         
-        HStack(alignment: .top) {
-            Text("지원하는 인증 메커니즘")
-            Spacer()
+        SettingsEntry(title: "지원하는 인증 메커니즘") {
             VStack {
                 ForEach(Array(metaType.supportedMethods), id: \.self) { method in
                     Text(method.rawValue)
@@ -105,9 +97,7 @@ struct AuthPluginDetailView: View {
             .foregroundStyle(.secondary)
         }
         
-        HStack(alignment: .top) {
-            Text("버전")
-            Spacer()
+        SettingsEntry(title: "버전") {
             Text("\(metaType.displayVersion) (\(metaType.version))")
                 .foregroundStyle(.secondary)
         }

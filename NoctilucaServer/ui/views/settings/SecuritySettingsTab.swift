@@ -18,20 +18,12 @@ struct SecuritySettingsTab: View {
                     Text("서버 포트")
                     Text("Noctiluca가 수신 대기할 포트를 설정합니다.")
                 }
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading) {
-                        Text("서버 인증서")
-                        Text("이 인증서는 2032-12-31까지 유효합니다.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
+                SettingsEntry(title: "서버 인증서", subtitle: "이 인증서는 2032-12-31까지 유효합니다.") {
                     VStack(alignment: .trailing) {
                         Text("Keychain에서 불러온 인증서: Test Certificate")
                         Text("AA:BB:CC:DD:EE:FF:DE:AD:BE:EF")
                             .font(.subheadline.monospaced())
                     }
-                    .foregroundStyle(.secondary)
                 }
                 Toggle(isOn: $settings.quicTransport.tlsUseAutoconf) {
                     Text("서버 인증서를 자동으로 구성하기")
@@ -43,16 +35,12 @@ struct SecuritySettingsTab: View {
                         Text("엄격한 유효성 검사 사용하기")
                         Text("시스템의 트러스트 스토어를 기준으로 신뢰할 수 없는 인증서를 사용 시 경고를 표시합니다.")
                     }
-                    HStack(alignment: .center) {
-                        Text("인증서 불러오기")
-                        Spacer()
-                        HStack {
-                            Button("파일 선택…") {
-                                
-                            }
-                            Button("Keychain에서 불러오기…") {
-                                
-                            }
+                    SettingsEntry(title: "인증서 불러오기") {
+                        Button("파일 선택…") {
+                            
+                        }
+                        Button("Keychain에서 불러오기…") {
+                            
                         }
                     }
                 }
