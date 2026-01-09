@@ -126,8 +126,9 @@ extension CodecSpecification {
         .option(.compressionLevel, .init(rawValue: "3"))
     
     static let mjpg = CodecSpecification(fourCC: .mjpg)
-        .option(.colorFormat, .kColorFormatYUV420)
-        .option(.compressionLevel, .init(rawValue: "90"))
+        .option(.colorFormat, .kColorFormatAuto)
+        .option(.tileSize, .kTileSize256x256)
+        .option(.compressionLevel, .init(rawValue: "50"))
 }
 
 extension CodecSpecification {
