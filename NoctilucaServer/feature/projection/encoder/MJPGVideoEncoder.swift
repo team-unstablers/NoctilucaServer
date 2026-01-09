@@ -17,8 +17,9 @@ final class MJPGVideoEncoder: VideoEncoder {
 
     fileprivate var configuration: VideoEncoderConfiguration?
 
-    private var colorFormat: CodecOptionValue = .kColorFormatRGB888
+    private var colorFormat: CodecOptionValue = .kColorFormatYUV420
     private var compressionLevel: Int32 = 90
+    private var subsampling: Int32 = TJSAMP_420.rawValue
 
     private var isStarted = false
     
@@ -86,18 +87,22 @@ final class MJPGVideoEncoder: VideoEncoder {
         self.configuration = configuration
         
         self.compressHandle = tjInitCompress()
-
-        // RGB888 or RGB565
-        if let configuredColorFormat = configuration.codec.option(.colorFormat) {
-            self.colorFormat = configuredColorFormat
-        } else {
-            self.colorFormat = .kColorFormatRGB888
+        guard self.compressHandle != nil else {
+            throw MJPGVideoEncoderError.compressorUnavailable
         }
+
+        // MJPG: kColorFormatAuto는 YUV420과 동일하게 처리
+        if let configuredColorFormat = configuration.codec.option(.colorFormat) {
+            self.colorFormat = (configuredColorFormat == .kColorFormatAuto) ? .kColorFormatYUV420 : configuredColorFormat
+        } else {
+            self.colorFormat = .kColorFormatYUV420
+        }
+        self.subsampling = self.jpegSubsampling(for: self.colorFormat)
         
-        // JPEG quality (80...100)
+        // JPEG quality (1...100)
         let levelString = configuration.codec.option(.compressionLevel)?.rawValue ?? "90"
         if let parsedLevel = Int32(levelString) {
-            self.compressionLevel = max(80, min(100, parsedLevel))
+            self.compressionLevel = max(1, min(100, parsedLevel))
         } else {
             self.compressionLevel = 90
         }
@@ -138,15 +143,21 @@ final class MJPGVideoEncoder: VideoEncoder {
         do {
             try workerQueue.sync {
                 // RGB888 or RGB565
-                /*
-                let rgbSampleBuffer = try sampleBuffer.convertToRGBIfNeeded(required: colorFormat, ciContext: ciContext)
-            
-                guard let pixelBuffer = rgbSampleBuffer.imageBuffer else {
+                let pixelBuffer: CVPixelBuffer
+                if let imageBuffer = sampleBuffer.imageBuffer {
+                    let pixelFormat = CVPixelBufferGetPixelFormatType(imageBuffer)
+                    if pixelFormat == kCVPixelFormatType_32BGRA {
+                        pixelBuffer = imageBuffer
+                    } else {
+                        let rgbSampleBuffer = try sampleBuffer.convertToRGBIfNeeded(required: colorFormat, ciContext: ciContext)
+                        guard let convertedBuffer = rgbSampleBuffer.imageBuffer else {
+                            throw VideoEncoderError.invalidSampleBuffer
+                        }
+                        pixelBuffer = convertedBuffer
+                    }
+                } else {
                     throw VideoEncoderError.invalidSampleBuffer
                 }
-                 */
-                
-                let pixelBuffer = sampleBuffer.imageBuffer!
                 
                 // 64x64로 타일 인코딩을 행한다
                 let rgbTiles = frameTiler.tile(pixelBuffer)
@@ -228,13 +239,16 @@ final class MJPGVideoEncoder: VideoEncoder {
 
 // MARK: - Helpers
 
-private enum MJPGVideoEncoderError: LocalizedError {
-    case cgImageCreationFailed
-    case destinationCreationFailed
-    case destinationFinalizeFailed
+    private enum MJPGVideoEncoderError: LocalizedError {
+        case compressorUnavailable
+        case cgImageCreationFailed
+        case destinationCreationFailed
+        case destinationFinalizeFailed
     
     var errorDescription: String? {
         switch self {
+        case .compressorUnavailable:
+            return "MJPG compressor is not available."
         case .cgImageCreationFailed:
             return "MJPG failed to create CGImage from pixel buffer."
         case .destinationCreationFailed:
@@ -246,12 +260,18 @@ private enum MJPGVideoEncoderError: LocalizedError {
 }
 
 private extension MJPGVideoEncoder {
-    func jpegQuality() -> Double {
-        let raw = Double(compressionLevel)
-        return max(0.0, min(1.0, raw / 100.0))
+    func jpegQuality() -> Int32 {
+        return max(1, min(100, compressionLevel))
+    }
+
+    func jpegSubsampling(for colorFormat: CodecOptionValue) -> Int32 {
+        if colorFormat == .kColorFormatYUV444 {
+            return TJSAMP_444.rawValue
+        }
+        return TJSAMP_420.rawValue
     }
     
-    func encodeJPEG(_ pixelBuffer: CVPixelBuffer, quality: Double) throws -> Data {
+    func encodeJPEG(_ pixelBuffer: CVPixelBuffer, quality: Int32) throws -> Data {
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
         let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
@@ -265,12 +285,16 @@ private extension MJPGVideoEncoder {
         }
         
         
+        guard let handle = compressHandle else {
+            throw MJPGVideoEncoderError.compressorUnavailable
+        }
+
         var outPtr: UnsafeMutablePointer<UInt8>? = nil
         var outSize: UInt = 0
         
         let retval = withUnsafeMutablePointer(to: &outSize) { outSizePtr in
             tjCompress2(
-                compressHandle!,
+                handle,
                 baseAddress,
                 Int32(width),
                 Int32(bytesPerRow),
@@ -278,8 +302,8 @@ private extension MJPGVideoEncoder {
                 TJPF_BGRA.rawValue,
                 &outPtr,
                 outSizePtr,
-                TJSAMP_420.rawValue,
-                50,
+                subsampling,
+                quality,
                 0
             )
         }
@@ -289,7 +313,11 @@ private extension MJPGVideoEncoder {
         }
         
         
-        let data = Data(bytes: outPtr!, count: Int(outSize))
+        guard let outPtr else {
+            throw MJPGVideoEncoderError.destinationFinalizeFailed
+        }
+
+        let data = Data(bytes: outPtr, count: Int(outSize))
         
         tjFree(outPtr)
         
