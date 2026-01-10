@@ -7,6 +7,7 @@
 
 import AppKit
 import Combine
+import UserNotifications
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -29,6 +30,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        TCCUtil.shared.requestAccess(for: .notifications)
+        
+        UNUserNotificationCenter.current().delegate = self
+        
         setupStatusItem()
         bindServerState()
         updateMenuState()
@@ -143,5 +148,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             startStopItem.action = #selector(stopServer(_:))
             startStopItem.isEnabled = true
         }
+    }
+}
+
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    public func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.sound, .banner, .list])
     }
 }

@@ -157,6 +157,7 @@ class NoctilucaServer: ObservableObject {
         ScreenCaptureKitWorkaroundDummyWindow.windowManager.startup()
     }
     
+    @MainActor
     func startup() async throws {
         guard case .idle = state else {
             return
@@ -191,6 +192,7 @@ class NoctilucaServer: ObservableObject {
             try await server.startup()
         } catch {
             logger.error("Failed to start NoctilucaServer: \(error)")
+            AppNotification.serverStartFailed(error: error).post()
             self.state = .idle
             throw error
         }
@@ -213,6 +215,7 @@ extension NoctilucaServer: SiriusServerDelegate {
         logger.info("NoctilucaServer is now running.")
         Task {
             await MainActor.run {
+                AppNotification.serverStarted.post()
                 self.state = .running(server: server)
             }
         }
@@ -220,7 +223,10 @@ extension NoctilucaServer: SiriusServerDelegate {
     
     func siriusServerDidStop(_ server: SiriusKit.SiriusServer) {
         logger.info("NoctilucaServer has stopped.")
-        self.state = .idle
+        Task { @MainActor in
+            AppNotification.serverStopped.post()
+            self.state = .idle
+        }
     }
     
     func siriusServer(_ server: SiriusKit.SiriusServer, didEncounterError error: any Error) {
