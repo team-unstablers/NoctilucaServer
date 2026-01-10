@@ -105,11 +105,6 @@ extension AppSettings {
     }
     
     struct QUICTransport: Category {
-        enum TLSIdentity: Codable {
-            case keychain(identifier: String)
-            case pemFile(certFilePath: String, keyFilePath: String)
-        }
-        
         var listenPort: UInt16 = SiriusQUICDefaultPort
         
         /// 자동 구성된 TLS 설정 사용하기
