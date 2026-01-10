@@ -20,6 +20,10 @@ public class ClientSession: SiriusSession {
     
     let clientTransport: any ServerRoleClientTransport
     var transport: any TransportLayer { clientTransport }
+    
+    public var remoteAddress: String? {
+        clientTransport.remoteAddress
+    }
 
     let featureProvider: (any FeatureProvider)
     

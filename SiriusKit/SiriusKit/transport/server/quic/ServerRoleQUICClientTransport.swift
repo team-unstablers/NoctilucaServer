@@ -24,6 +24,14 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     
     private var isFinalized: Bool = false
     
+    nonisolated var remoteAddress: String? {
+        guard let endpoint = self.connectionGroup.descriptor.members.first else {
+            return nil
+        }
+        
+        return endpoint.asString()
+    }
+    
     init(_ connectionGroup: NWConnectionGroup, serverTransport: ServerRoleQUICRootTransport, id: ServerRoleClientTransportIdentifier) {
         self.id = id
         
@@ -93,6 +101,7 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
                 break
             }
         }
+        
         self.connectionGroup.newConnectionHandler = { [weak self] connection in
             guard let self else { return }
             Task { await self.handleNewConnection(connection) }

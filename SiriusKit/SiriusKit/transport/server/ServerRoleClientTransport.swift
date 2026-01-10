@@ -20,6 +20,8 @@ protocol ServerRoleClientTransportDelegate: AnyObject {
 
 protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerRoleClientTransportIdentifier {
     var delegate: ServerRoleClientTransportDelegate? { get set }
+    
+    var remoteAddress: String? { get }
 }
 
 extension ServerRoleClientTransport {
