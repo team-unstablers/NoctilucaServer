@@ -13,7 +13,7 @@ import CryptoKit
 import SwiftASN1
 import X509
 
-extension SecCertificate {
+public extension SecCertificate {
     func extractApplicationLabel() throws -> Data {
         let security = SRSecurity.shared
         
