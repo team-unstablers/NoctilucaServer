@@ -26,7 +26,7 @@ struct SettingsWindow: View {
     var body: some View {
         NavigationStack {
             TabView(selection: $selectedTab) {
-                SettingsGeneralTab(settings: $server.settings)
+                GeneralSettingsTab(settings: $server.settings)
                     .tabItem {
                         Text("일반")
                     }

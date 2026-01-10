@@ -155,6 +155,12 @@ class NoctilucaServer: ObservableObject {
         await authenticator.setupAllowedEntires(self.settings.security.allowedEntries)
         
         ScreenCaptureKitWorkaroundDummyWindow.windowManager.startup()
+        
+        if settings.general.autoStart {
+            Task {
+                try await startup()
+            }
+        }
     }
     
     @MainActor
