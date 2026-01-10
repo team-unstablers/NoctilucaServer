@@ -44,6 +44,39 @@ extension SecCertificate {
     }
 #endif
     
+    
+    func extractCommonName() -> String? {
+        if #available(macOS 15.0, iOS 18.0, *) {
+            var commonName: CFString? = nil
+            
+            guard SecCertificateCopyCommonName(self, &commonName) == errSecSuccess,
+                  let unwrappedCommonName = commonName as String?
+            else {
+                return nil
+            }
+            
+            return unwrappedCommonName
+        } else {
+#if os(macOS)
+            guard let rawValue = extractMetadataValue(for: kSecOIDCommonName) as? String else {
+                return nil
+            }
+            
+            return rawValue
+#else
+            return nil
+#endif
+        }
+    }
+    
+    /// SHA-256 fingerprint
+    func extractFingerprint() -> Data? {
+        let data = SecCertificateCopyData(self) as Data
+        let digest = SHA256.hash(data: data)
+        
+        return digest.withUnsafeBytes { Data($0) }
+    }
+    
     func extractNotBefore() -> Date? {
         if #available(macOS 15.0, iOS 18.0, *) {
             let notBefore = SecCertificateCopyNotValidBeforeDate(self) as? Date

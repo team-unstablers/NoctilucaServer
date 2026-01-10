@@ -40,6 +40,13 @@ enum QUICServerIdentityCreationError: Error {
     case fileWriteFailed
 }
 
+public struct QUICServerIdentityInfo {
+    public let commonName: String
+    public let fingerprint: Data
+    public let notBefore: Date
+    public let notAfter: Date
+}
+
 public struct QUICServerIdentityCreationArgs {
     // Keychain의 경우 식별자 역할, P12 파일의 경우 파일 이름 역할을 합니다.
     public let identityLabel: String
@@ -110,6 +117,24 @@ enum SelfSignedCertificateBuilder {
 }
 
 public extension QUICServerIdentity {
+    func secCertificate() async throws -> SecCertificate {
+        let identityRef = try await getServerIdentity()
+        
+        let identityCF = identityRef as CFTypeRef
+        guard CFGetTypeID(identityCF) == SecIdentityGetTypeID() else {
+            throw QUICServerIdentitySanityCheckError.identityCastFailed
+        }
+        let identity = identityCF as! SecIdentity
+        
+        var certificate: SecCertificate?
+        let certificateStatus = SecIdentityCopyCertificate(identity, &certificate)
+        guard certificateStatus == errSecSuccess, let certificate else {
+            throw QUICServerIdentitySanityCheckError.certificateCopyFailed(certificateStatus)
+        }
+        
+        return certificate
+    }
+    
     /// 서버 아이덴티티 (인증서)에 대한 Sanity Check를 실시합니다.
     /// - 인증서가 유효한지 확인합니다.
     ///
@@ -172,6 +197,37 @@ public extension QUICServerIdentity {
             
             return result == .unspecified || result == .proceed
         }
+    }
+    
+    func identityInfo() async throws -> QUICServerIdentityInfo {
+        let identityRef = try await getServerIdentity()
+        
+        let identityCF = identityRef as CFTypeRef
+        guard CFGetTypeID(identityCF) == SecIdentityGetTypeID() else {
+            throw QUICServerIdentitySanityCheckError.identityCastFailed
+        }
+        let identity = identityCF as! SecIdentity
+        
+        var certificate: SecCertificate?
+        let certificateStatus = SecIdentityCopyCertificate(identity, &certificate)
+        guard certificateStatus == errSecSuccess, let certificate else {
+            throw QUICServerIdentitySanityCheckError.certificateCopyFailed(certificateStatus)
+        }
+        
+        guard let commonName = certificate.extractCommonName(),
+              let fingerprint = certificate.extractFingerprint(),
+              let notBefore = certificate.extractNotBefore(),
+              let notAfter = certificate.extractNotAfter()
+        else {
+            throw QUICServerIdentitySanityCheckError.certificateCopyFailed(-1)
+        }
+        
+        return QUICServerIdentityInfo(
+            commonName: commonName,
+            fingerprint: fingerprint,
+            notBefore: notBefore,
+            notAfter: notAfter
+        )
     }
 }
 

@@ -33,10 +33,19 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
         let security = SRSecurity.shared
         let keychain = SRKeychain.shared
         
+        /*
         // 1. 충돌 여부를 확인한다
         guard !(try keychain.queryIdentityExistance(by: args.identityLabel).get()) else {
             throw QUICServerIdentityCreationError.identityAlreadyExists
         }
+         */
+        
+        if try keychain.queryIdentityExistance(by: args.identityLabel).get() {
+            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .identity).get()
+            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .certificate).get()
+            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .privateKey).get()
+        }
+        
         
         do {
             // 2. cert-key pair를 생성한다
