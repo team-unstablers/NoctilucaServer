@@ -109,7 +109,7 @@ class NoctilucaServer: ObservableObject {
     private func loadIdentity() async throws {
         if self.settings.quicTransport.tlsUseAutoconf {
             if self.settings.quicTransport.identity == nil {
-                try self.settings.quicTransport.autoConfigureIdentity()
+                try self.settings.quicTransport.autoconfigureIdentity()
                 try self.settings.save()
             }
             

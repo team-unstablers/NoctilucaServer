@@ -44,6 +44,9 @@ struct SecuritySettingsTab: View {
                              */
                         }
                     }
+                } else {
+                    SettingsEntry(title: "서버 인증서 지정되지 않음", subtitle: "서버 인증서가 지정되지 않았습니다. 서버 기동에 실패할 수 있습니다.") {
+                    }
                 }
                 Toggle(isOn: $settings.quicTransport.tlsUseAutoconf) {
                     Text("서버 인증서를 자동으로 구성하기")
@@ -63,6 +66,17 @@ struct SecuritySettingsTab: View {
                             
                         }
                     }
+                } else {
+                     SettingsEntry(title: "자가 서명 인증서 설정") {
+                         Button("인증서 재발급…") {
+                             do {
+                                 try settings.quicTransport.autoconfigureIdentity()
+                             } catch {
+                                 // TODO: NSAlert
+                             }
+                         }
+                    }
+                   
                 }
 
             } header: {
