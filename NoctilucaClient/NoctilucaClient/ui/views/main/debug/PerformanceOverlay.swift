@@ -45,7 +45,7 @@ struct PerformanceOverlay: View {
             codec: .init(
                 fourCC: .avc1,
                 frameRate: 60.0,
-                size: CGSize(width: 1920, height: 1080),
+                size: SRSize(width: 1920, height: 1080),
                 options: CodecOptions(
                     mandatory: [:],
                     optional: [
