@@ -1,6 +1,43 @@
 import SwiftUI
 
+import Cocoa
+import Security
+import SecurityInterface
+
 import SiriusKit
+
+fileprivate enum SecuritySettingsTabAlertCase: AlertCase {
+    /// showCertificatePicker(): 키체인에 서버용 인증서가 없습니다
+    case identityNotExists
+    case internalPickerError
+    
+    var id: String {
+        switch self {
+        case .identityNotExists:
+            return "identityNotExists"
+        case .internalPickerError:
+            return "internalPickerError"
+        }
+    }
+    
+    var title: String {
+        switch self {
+        case .identityNotExists:
+            return "사용 가능한 인증서 없음"
+        case .internalPickerError:
+            return "시스템 오류"
+        }
+    }
+    
+    var message: String {
+        switch self {
+        case .identityNotExists:
+            return "Keychain에 사용 가능한 인증서가 없습니다.\nSSL 서버 용도의 인증서를 하나 이상 추가한 후 다시 시도해주세요."
+        case .internalPickerError:
+            return "macOS 시스템에서 인증서 선택을 위한 UI를 제공하지 않았습니다."
+        }
+    }
+}
 
 struct SecuritySettingsTab: View {
     @Binding
@@ -13,7 +50,13 @@ struct SecuritySettingsTab: View {
     var certificate: SecCertificate? = nil
     
     @State
+    var passesSanityCheck: Bool? = nil
+
+    @State
     var showCertificateDetailSheet: Bool = false
+    
+    @State
+    fileprivate var alertCase: SecuritySettingsTabAlertCase? = nil
 
     var body: some View {
         Form {
@@ -44,6 +87,10 @@ struct SecuritySettingsTab: View {
                              */
                         }
                     }
+                    if passesSanityCheck == false {
+                        SettingsEntry(title: "⚠️ 유효성 검사 실패", subtitle: "인증서 유효성 검사에 실패했습니다. 클라이언트가 경고를 표시할 수 있습니다.") {
+                        }
+                    }
                 } else {
                     SettingsEntry(title: "서버 인증서 지정되지 않음", subtitle: "서버 인증서가 지정되지 않았습니다. 서버 기동에 실패할 수 있습니다.") {
                     }
@@ -59,11 +106,13 @@ struct SecuritySettingsTab: View {
                         Text("시스템의 트러스트 스토어를 기준으로 신뢰할 수 없는 인증서를 사용 시 경고를 표시합니다.")
                     }
                     SettingsEntry(title: "인증서 불러오기") {
+                        /*
                         Button("파일 선택…") {
                             
                         }
+                         */
                         Button("Keychain에서 불러오기…") {
-                            
+                            showCertificatePicker()
                         }
                     }
                 } else {
@@ -107,6 +156,7 @@ struct SecuritySettingsTab: View {
                 Text("Sirius 프로토콜의 동작 방식을 설정합니다. [더 알아보기…](http://google.com)")
             }
         }
+        .enumAlert(alertCase: $alertCase)
         .formStyle(.grouped)
         .sheet(isPresented: $showCertificateDetailSheet) {
             if let certificate = certificate {
@@ -115,25 +165,75 @@ struct SecuritySettingsTab: View {
                 Text("인증서 정보를 불러올 수 없습니다.")
             }
         }
-        .onChange(of: settings.quicTransport.identity) { _, newValue in
-            self.identityInfo = nil
-            self.certificate = nil
-            
-            Task {
-                self.identityInfo = try? await newValue?.identityInfo()
-                self.certificate = try? await newValue?.secCertificate()
-            }
+        .onChange(of: settings.quicTransport.identity) { _, _ in
+            self.updateIdentityInfo()
+        }
+        .onChange(of: settings.quicTransport.tlsStrictValidation) { _, _ in
+            self.updateIdentityInfo()
         }
         .onAppear {
-            Task {
-                guard let identity = settings.quicTransport.identity else {
-                    self.identityInfo = nil
-                    self.certificate = nil
+            self.updateIdentityInfo()
+        }
+    }
+    
+    func updateIdentityInfo() {
+        self.identityInfo = nil
+        self.certificate = nil
+        self.passesSanityCheck = nil
+        
+        Task {
+            guard let identity = settings.quicTransport.identity else {
+                self.identityInfo = nil
+                self.certificate = nil
+                self.passesSanityCheck = nil
+                return
+            }
+            
+            self.identityInfo = try? await identity.identityInfo()
+            self.certificate = try? await identity.secCertificate()
+            self.passesSanityCheck = (try? await identity.sanityCheck(strict: self.settings.quicTransport.tlsStrictValidation)) ?? false
+        }
+    }
+    
+    func showCertificatePicker() {
+        // SSL 서버 용도의 인증서로만 제한한다
+        let sslServerPolicy = SecPolicyCreateSSL(true, nil)
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassIdentity,
+            kSecReturnRef as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+            kSecMatchPolicy as String: sslServerPolicy,
+        ]
+        
+        var itemResult: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &itemResult)
+        
+        guard status == errSecSuccess,
+              let identities = itemResult as? [SecIdentity] else {
+            self.alertCase = .identityNotExists
+            return
+        }
+        
+        // 2. SFChooseIdentityPanel 띄우기
+        guard let panel = SFChooseIdentityPanel.shared() else {
+            self.alertCase = .internalPickerError
+            return
+        }
+        
+        panel.setAlternateButtonTitle("취소")
+        panel.setInformativeText("'서버 인증' (OID 1.3.6.1.5.5.7.3.1) 목적으로 발급된 인증서만 사용할 수 있습니다.")
+        
+        let response = panel.runModal(forIdentities: identities, message: "서버에서 사용할 인증서를 선택해 주세요.")
+        
+        if response == NSApplication.ModalResponse.OK.rawValue {
+            if let identity = panel.identity() {
+                guard let keychainLabel = identity.takeUnretainedValue().extractLabel()
+                else {
                     return
                 }
                 
-                self.identityInfo = try? await identity.identityInfo()
-                self.certificate = try? await identity.secCertificate()
+                self.settings.quicTransport.identity = .keychain(identifier: keychainLabel)
             }
         }
     }

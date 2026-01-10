@@ -37,4 +37,9 @@ extension TLSIdentity {
         let quicIdentity = self.load()
         return try await quicIdentity.identityInfo()
     }
+    
+    func sanityCheck(strict: Bool = false) async throws -> Bool {
+        let quicIdentity = self.load()
+        return try await quicIdentity.sanityCheck(strict: strict)
+    }
 }
