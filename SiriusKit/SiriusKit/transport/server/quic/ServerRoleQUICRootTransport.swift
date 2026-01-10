@@ -114,6 +114,8 @@ actor ServerRoleQUICRootTransport: ServerRoleRootTransport {
         // QUIC 보안 옵션 생성
         let options = NWProtocolQUIC.Options()
         
+        options.idleTimeout = 5000
+        
         // ALPN 설정 (클라이언트와 이 문자열이 일치해야 통신 가능)
         options.alpn = [SiriusQUICAlpn.siriusV1.rawValue]
         options.direction = .bidirectional
