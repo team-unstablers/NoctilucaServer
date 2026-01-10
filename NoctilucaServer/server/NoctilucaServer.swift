@@ -10,6 +10,20 @@ import Combine
 
 import SiriusKit
 
+enum NoctilucaServerError: LocalizedError {
+    case noIdentityConfigured
+    case identityValidationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .noIdentityConfigured:
+            return "No identity is configured for the server."
+        case .identityValidationFailed:
+            return "The configured identity failed validation."
+        }
+    }
+}
+
 enum NoctilucaServerState {
     case idle
     case preparing
@@ -44,14 +58,14 @@ class NoctilucaServerContext: ServerContext {
 class NoctilucaServer: ObservableObject {
     static let shared = NoctilucaServer()
     
-    private static let defaultKeychainIdentity = "pl.unstabler.noctiluca.server.testIdentity"
-    
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
     let featureProvider = NoctilucaFeatureProvider()
     
     let authPluginRegistry = AuthPluginRegistry.shared
     let pluginBundleRegistry = PluginBundleRegistry.shared
+    
+    private(set) public var identity: TLSIdentity?
     
     let authenticator: Authenticator
     
@@ -92,24 +106,43 @@ class NoctilucaServer: ObservableObject {
          */
     }
     
-    private func __FIXME__ensureKeychainIdentity(identityLabel: String) throws {
-        if (try KeychainQUICServerIdentity.checkIdentityExistance(label: identityLabel)) {
-            return
+    private func loadIdentity() async throws {
+        if self.settings.quicTransport.tlsUseAutoconf {
+            if self.settings.quicTransport.identity == nil {
+                try self.settings.quicTransport.autoConfigureIdentity()
+                try self.settings.save()
+            }
+            
+            do {
+                try await loadIdentityInternal()
+            } catch NoctilucaServerError.identityValidationFailed {
+                // 아이덴티티 제거 후 재생성 시도
+                self.settings.quicTransport.identity = nil
+                try self.settings.save()
+                try await loadIdentity()
+            }
+
+        } else {
+            try await loadIdentityInternal()
+        }
+    }
+    
+    private func loadIdentityInternal() async throws {
+        guard let identity = self.settings.quicTransport.identity else {
+            // throw error: No identity configured
+            throw NoctilucaServerError.noIdentityConfigured
         }
         
-        logger.info("Creating self-signed identity with label: \(identityLabel)...")
+        let quicIdentity = identity.load()
         
-        let args = QUICServerIdentityCreationArgs(
-            identityLabel: identityLabel,
-            commonName: identityLabel,
-            organizationName: "team unstablers Inc.",
-            organizationalUnitName: "test unit",
-            countryName: "KR",
-            validityPeriodInDays: 365
-        )
+        guard try await quicIdentity.sanityCheck(strict: self.settings.quicTransport.tlsStrictValidation) else {
+            self.logger.error("Identity validation failed for identity: \(identity)")
+            throw NoctilucaServerError.identityValidationFailed
+        }
         
-        _ = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)
+        self.identity = identity
     }
+    
     
     @MainActor
     func initialize() async throws {
@@ -133,12 +166,16 @@ class NoctilucaServer: ObservableObject {
             self.state = .preparing
             
             logger.info("Starting up NoctilucaServer...")
-            try __FIXME__ensureKeychainIdentity(identityLabel: Self.defaultKeychainIdentity)
+            
+            try await self.loadIdentity()
+            guard let identity = self.identity else {
+                throw NoctilucaServerError.noIdentityConfigured
+            }
             
             
             let result = try SiriusServerBuilder()
                 .useFeatureProvider(featureProvider)
-                .useTransportProtocol(.quic(port: settings.quicTransport.listenPort, identitySource: .keychain(label: Self.defaultKeychainIdentity)))
+                .useTransportProtocol(.quic(port: settings.quicTransport.listenPort, identitySource: identity.identitySource))
                 .withExtraConfiguration("someValue", forKey: "someKey")
                 .build()
             
@@ -202,3 +239,4 @@ extension NoctilucaServer: SiriusServerDelegate {
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {
     }
 }
+

@@ -84,9 +84,6 @@
     "256x256" : {
 
     },
-    "AA:BB:CC:DD:EE:FF:DE:AD:BE:EF" : {
-
-    },
     "Ad-hoc 서명된 플러그인을 포함하여 모든 플러그인을 허용합니다.\n**악성 플러그인에 의해 시스템이 손상될 수 있습니다.**" : {
 
     },
@@ -132,6 +129,9 @@
           }
         }
       }
+    },
+    "Close" : {
+
     },
     "core.plugin.PluginBundleRegistryError.duplicateBundle(id: %@)" : {
       "comment" : "플러그인 번들이 중복 등록되었습니다."
@@ -199,9 +199,6 @@
 
     },
     "Keychain에서 불러오기…" : {
-
-    },
-    "Keychain에서 불러온 인증서: Test Certificate" : {
 
     },
     "Main Profile" : {
@@ -643,6 +640,12 @@
 
     },
     "인증 요청 시 표시할 메시지" : {
+
+    },
+    "인증서 세부 정보 보기…" : {
+
+    },
+    "인증서 정보를 불러올 수 없습니다." : {
 
     },
     "일반" : {

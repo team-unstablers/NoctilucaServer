@@ -110,7 +110,24 @@ extension AppSettings {
         /// 자동 구성된 TLS 설정 사용하기
         /// - true 설정 시 자가 서명 인증서를 자동으로 발급하여 사용한다
         /// - 인증서 만료 시 갱신, 분실 시 재발급 등을 자동으로 처리한다
-        var tlsUseAutoconf: Bool = true
+        var tlsUseAutoconf: Bool = true {
+            didSet {
+                if tlsStrictValidation {
+                    tlsStrictValidation = false
+                }
+                
+                if tlsUseAutoconf {
+                    do {
+                        try self.autoconfigureIdentity()
+                    } catch {
+                        AppSettings.logger.error("Failed to auto-configure QUIC identity: \(error.localizedDescription)")
+                        tlsUseAutoconf = false
+                    }
+                } else {
+                    identity = nil
+                }
+            }
+        }
         
         /// 엄격한 유효성 검사 사용하기
         /// - 시스템의 트러스트 스토어를 기준으로 인증서가 신뢰 가능한지 엄격하게 검사한다
@@ -150,5 +167,37 @@ extension AppSettings {
             try container.encode(tlsStrictValidation, forKey: .tlsStrictValidation)
             try container.encodeIfPresent(identity, forKey: .identity)
         }
+    }
+}
+
+extension AppSettings.QUICTransport {
+    mutating func autoconfigureIdentity() throws {
+        guard tlsUseAutoconf else {
+            return
+        }
+        
+        // 아이덴티티를 새로 만들자!
+        AppSettings.logger.info("Creating new auto-configured identity...")
+        
+        let hostname = hostname()
+        let commonName = "Noctiluca Server: self-signed server identity (\(hostname))"
+        self.identity = .keychain(identifier: commonName)
+        
+        // 아이덴티티를 매번 새로 생성하게 함 -- 하기 try-catch에서 재생성 시도할 때 이 부분을 타야 함
+        // if (!(try KeychainQUICServerIdentity.checkIdentityExistance(label: commonName))) {
+        AppSettings.logger.info("Creating self-signed identity with label: \(commonName)...")
+        
+        let args = QUICServerIdentityCreationArgs(
+            // identityLabel하고 commonName이 같지 않으면 생성에 실패함
+            identityLabel: commonName,
+            commonName: commonName,
+            organizationName: "Noctiluca Server",
+            organizationalUnitName: "Auto-configured Identity",
+            countryName: "KR",
+            validityPeriodInDays: 365
+        )
+        
+        _ = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)
+        // }
     }
 }

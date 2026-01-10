@@ -1,8 +1,19 @@
 import SwiftUI
 
+import SiriusKit
+
 struct SecuritySettingsTab: View {
     @Binding
     var settings: AppSettings
+    
+    @State
+    var identityInfo: QUICServerIdentityInfo? = nil
+    
+    @State
+    var certificate: SecCertificate? = nil
+    
+    @State
+    var showCertificateDetailSheet: Bool = false
 
     var body: some View {
         Form {
@@ -18,11 +29,20 @@ struct SecuritySettingsTab: View {
                     Text("서버 포트")
                     Text("Noctiluca가 수신 대기할 포트를 설정합니다.")
                 }
-                SettingsEntry(title: "서버 인증서", subtitle: "이 인증서는 2032-12-31까지 유효합니다.") {
-                    VStack(alignment: .trailing) {
-                        Text("Keychain에서 불러온 인증서: Test Certificate")
-                        Text("AA:BB:CC:DD:EE:FF:DE:AD:BE:EF")
-                            .font(.subheadline.monospaced())
+                if let identityInfo = identityInfo {
+                    SettingsEntry(title: "서버 인증서", subtitle: "이 인증서는 \(identityInfo.notAfter.formatted(date: .numeric, time: .omitted))까지 유효합니다.") {
+                        VStack(alignment: .trailing) {
+                            Text(identityInfo.commonName)
+                            Button {
+                                showCertificateDetailSheet = true
+                            } label: {
+                                Text("인증서 세부 정보 보기…")
+                            }
+                            /*
+                            Text(identityInfo.fingerprint.asFingerprintString())
+                                .font(.subheadline.monospaced())
+                             */
+                        }
                     }
                 }
                 Toggle(isOn: $settings.quicTransport.tlsUseAutoconf) {
@@ -74,5 +94,39 @@ struct SecuritySettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .sheet(isPresented: $showCertificateDetailSheet) {
+            if let certificate = certificate {
+                CertificateSheet(certificate: certificate)
+            } else {
+                Text("인증서 정보를 불러올 수 없습니다.")
+            }
+        }
+        .onChange(of: settings.quicTransport.identity) { _, newValue in
+            self.identityInfo = nil
+            self.certificate = nil
+            
+            Task {
+                self.identityInfo = try? await newValue?.identityInfo()
+                self.certificate = try? await newValue?.secCertificate()
+            }
+        }
+        .onAppear {
+            Task {
+                guard let identity = settings.quicTransport.identity else {
+                    self.identityInfo = nil
+                    self.certificate = nil
+                    return
+                }
+                
+                self.identityInfo = try? await identity.identityInfo()
+                self.certificate = try? await identity.secCertificate()
+            }
+        }
+    }
+}
+
+fileprivate extension Data {
+    func asFingerprintString() -> String {
+        return self.map { String(format: "%02X", $0) }.joined(separator: ":")
     }
 }
