@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 import CoreGraphics
 import CoreMedia
@@ -15,10 +16,14 @@ import SiriusKit
 class ProjectionSession: Identifiable {
     private let logger = NoctilucaLogger(category: "ProjectionSession")
     
+    private let recorderQueue: DispatchQueue = .global(qos: .userInteractive)
+    
     let id: UUID
     let dataChannel: ProjectionDataChannel
     
-    let recorder: any ScreenRecorder
+    private var recorderArgs: ScreenRecorderArgs!
+    
+    var recorder: any ScreenRecorder
     var encoder: any VideoEncoder
     var codec: Codec?
     
@@ -30,6 +35,7 @@ class ProjectionSession: Identifiable {
     
     private var flushAll: Bool = false
     
+    private var screenLockCancellable: AnyCancellable!
     
     // FIXME
     var targetBitrate = 0
@@ -39,10 +45,35 @@ class ProjectionSession: Identifiable {
         self.id = id
         self.dataChannel = dataChannel
         
-        self.recorder = ScreenCaptureKitScreenRecorder(queue: .global(qos: .userInteractive))
+        // TODO: 설정에서 preferredScreenRecorder를 읽어오도록
+        self.recorder = ScreenRecorderFactory.create(preferred: .screenCaptureKit, queue: recorderQueue)
         self.encoder = VTVideoEncoder()
         
+        self.screenLockCancellable = ScreenLockObserver.shared.$isScreenLocked
+            .receive(on: RunLoop.main)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] isLocked in
+                Task {
+                    await self?.reconfigureRecorder()
+                }
+            }
+        
         self.recorder.delegate = self
+    }
+    
+    private func reconfigureRecorder() async {
+        try? await self.recorder.stop()
+        
+        self.recorder = ScreenRecorderFactory.create(preferred: .screenCaptureKit, queue: recorderQueue)
+        self.recorder.delegate = self
+        
+        do {
+            try await self.recorder.prepare(with: recorderArgs)
+            try await self.recorder.start()
+        } catch {
+            self.logger.error("Failed to reconfigure recorder for projection session \(self.id): \(error)")
+        }
     }
     
     private func encoderEventLoopMain() async throws {
@@ -121,6 +152,8 @@ class ProjectionSession: Identifiable {
         
         try await self.recorder.prepare(with: recorderArgs)
         
+        self.recorderArgs = recorderArgs
+        
         self.codec = codec
         switch codec.fourCC {
         case .zrle:
@@ -148,6 +181,7 @@ class ProjectionSession: Identifiable {
             _ = self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
             _ = self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
         }
+        
         
         self.encoderEventLoopTask = Task {
             try await self.encoderEventLoopMain()
