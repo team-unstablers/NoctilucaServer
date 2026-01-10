@@ -303,6 +303,7 @@ private extension VTVideoEncoder {
         }
         
         // TODO: GOP 설정
+        setProperty(session, key: kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration, value: NSNumber(value: 4.0))
         
         /*
         if let colorFormat = colorFormat(from: parsedOptions) {
@@ -574,9 +575,11 @@ private func compressionOutputCallback(
     }
     
     guard let sampleBuffer = sampleBuffer, CMSampleBufferDataIsReady(sampleBuffer) else {
+        /*
         encoder.continuation.yield(with: .success(.errorOccurred(
             VideoEncoderError.invalidSampleBuffer
         )))
+         */
         return
     }
     
