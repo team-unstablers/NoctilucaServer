@@ -1,14 +1,19 @@
 import SwiftUI
 
-struct SettingsGeneralTab: View {
+struct GeneralSettingsTab: View {
     @Binding
     var settings: AppSettings
 
     var body: some View {
         Form {
             Section("일반") {
-                Toggle(isOn: .constant(true)) {
+                Toggle(isOn: .constant(false)) {
                     Text("시스템 기동 시 자동으로 Noctiluca 시작하기")
+                }
+                
+                Toggle(isOn: $settings.general.autoStart) {
+                    Text("앱 기동 시 자동으로 서버 시작하기")
+                    Text("Noctiluca Server 앱이 실행될 때 서버를 자동으로 시작합니다.")
                 }
 
                 IntegerField(value: $settings.general.maxConcurrentSessions) {
