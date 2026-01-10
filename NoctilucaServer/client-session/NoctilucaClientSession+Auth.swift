@@ -146,6 +146,10 @@ extension NoctilucaClientSession {
             try self.shiftPhase(to: .ready)
             
             try await self.mainChannel.sendAuthResponse(AuthResponse(sessionID: self.id))
+            
+            Task { @MainActor in
+                AppNotification.newConnection(endpoint: remoteAddress).post()
+            }
             return
             
         case .failure(let error):

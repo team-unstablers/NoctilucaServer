@@ -10,6 +10,7 @@ import Foundation
 import UserNotifications
 
 enum AppNotificationCategory: String {
+    case clientEvents = "noctiluca.client.events"
     case serverEvents = "noctiluca.server.events"
     case licenseEvents = "noctiluca.license.events"
     case updateEvents = "noctiluca.update.events"
@@ -17,7 +18,10 @@ enum AppNotificationCategory: String {
 
 enum AppNotification: Identifiable {
     // TODO: 새 연결 생성
+    case newConnection(endpoint: String)
     // TODO: 연결 종료
+    case connectionClosed(endpoint: String)
+    
     // TODO: 서버 시작
     case serverStarted
     // TODO: 서버 시작 시 오류 발생
@@ -37,6 +41,10 @@ enum AppNotification: Identifiable {
     
     var id: String {
         switch self {
+        case .newConnection:
+            return "new_connection"
+        case .connectionClosed:
+            return "connection_closed"
         case .serverStarted:
             return "server_started"
         case .serverStartFailed:
@@ -56,6 +64,8 @@ enum AppNotification: Identifiable {
     
     var category: AppNotificationCategory {
         switch self {
+        case .newConnection, .connectionClosed:
+            return .clientEvents
         case .serverStarted, .serverStartFailed, .serverStopped, .tlsAutoconfRenewed:
             return .serverEvents
         case .invalidLicense:
@@ -67,6 +77,10 @@ enum AppNotification: Identifiable {
     
     var title: String {
         switch self {
+        case .newConnection:
+            return "새 클라이언트 연결됨"
+        case .connectionClosed:
+            return "클라이언트 연결 종료됨"
         case .serverStarted:
             return "서버 시작됨"
         case .serverStartFailed:
@@ -84,8 +98,24 @@ enum AppNotification: Identifiable {
         }
     }
     
+    var subtitle: String? {
+        switch self {
+        case .newConnection(let endpoint):
+            return endpoint
+        case .connectionClosed(let endpoint):
+            return endpoint
+            
+        default:
+            return nil
+        }
+    }
+    
     var message: String {
         switch self {
+        case .newConnection:
+            return "새 클라이언트가 서버에 연결되었습니다."
+        case .connectionClosed:
+            return "클라이언트 연결이 종료되었습니다."
         case .serverStarted:
             return "서버가 성공적으로 시작되었습니다."
         case .serverStartFailed(let error):
@@ -116,6 +146,10 @@ enum AppNotification: Identifiable {
         content.sound = .default
         content.categoryIdentifier = self.category.rawValue
         content.interruptionLevel = .active
+        
+        if let subtitle = self.subtitle {
+            content.subtitle = subtitle
+        }
         
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,

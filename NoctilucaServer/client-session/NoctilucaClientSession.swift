@@ -61,7 +61,9 @@ class NoctilucaClientSession: Identifiable {
     var mainChannel: MainChannel!
     
     private(set) var phase: NoctilucaClientSessionPhase = .initial
+    
     var clientInfo: ClientInfo? = nil
+    var remoteAddress: String
     
     var authNonce: Data? = nil
     var loginAttempts: Int = 0
@@ -72,6 +74,7 @@ class NoctilucaClientSession: Identifiable {
     init(session: ClientSession, server: ServerContext) {
         self.session = session
         self.server = server
+        self.remoteAddress = "(unknown)"
         
         self.session.delegate = self
     }
@@ -81,6 +84,8 @@ class NoctilucaClientSession: Identifiable {
             logger.warning("initialize() called, but phase is not initial. Current phase: \(self.phase)")
             return
         }
+        
+        self.remoteAddress = session.remoteAddress ?? "(unknown)"
         
         // 우선 5초 이내에 client hello를 받아야 한다
         // TODO: 이 값은 설정 가능하도록 한다
@@ -178,6 +183,12 @@ class NoctilucaClientSession: Identifiable {
             return
         }
         
+        if self.phase == .ready {
+            Task { @MainActor in
+                AppNotification.connectionClosed(endpoint: remoteAddress).post()
+            }
+        }
+
         self.phase = .closed
         
         // FIXME
