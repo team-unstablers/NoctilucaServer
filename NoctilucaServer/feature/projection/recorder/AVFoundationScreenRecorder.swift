@@ -99,6 +99,10 @@ extension AVFoundationScreenRecorder: AVCaptureVideoDataOutputSampleBufferDelega
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         // TODO: copy samplebuffer
         
+        guard CMSampleBufferDataIsReady(sampleBuffer) else {
+            return
+        }
+        
         self.delegate?.screenRecorder(self, didCaptureFrame: sampleBuffer)
     }
 }

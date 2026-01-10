@@ -64,9 +64,7 @@ fileprivate extension ScreenRecorderArgs {
             configuration = SCStreamConfiguration()
         }
 
-        if codec.fourCC == .mjpg {
-            configuration.pixelFormat = kCVPixelFormatType_32BGRA
-        }
+        configuration.pixelFormat = kCVPixelFormatType_32BGRA
         
         return configuration
     }
@@ -84,6 +82,53 @@ fileprivate extension SCShareableContent {
 }
 
 fileprivate extension ScreenRecorderSource {
+    @MainActor
+    func contentSize() async throws -> CGSize? {
+        switch self {
+        case .entireDisplay:
+            return __entireDisplay__contentSize()
+        case .window:
+            return try await __window__contentSize()
+            
+        case .displayRegion:
+            fatalError("not implemented")
+        }
+    }
+    
+    @MainActor
+    func __entireDisplay__contentSize() -> CGSize? {
+        guard case .entireDisplay(let rawDisplayID) = self else {
+            fatalError("__entireDisplay__contentSize() called on non-entireDisplay source")
+        }
+        
+        let displayID: CGDirectDisplayID = if self.requiresPrimaryDisplay {
+            CGMainDisplayID()
+        } else {
+            CGDirectDisplayID(rawDisplayID)
+        }
+        
+        guard let display = DisplayLayoutManager.shared.displayLayouts[displayID] else {
+            return nil
+        }
+        
+        return display.frame.size
+    }
+    
+    @MainActor
+    func __window__contentSize() async throws -> CGSize? {
+        guard case .window(let windowID) = self else {
+            fatalError("__window__contentSize() called on non-window source")
+        }
+        
+        let shareableContent = try await SCShareableContent.current
+        
+        guard let window = shareableContent.windows.first(where: { $0.windowID == windowID }) else {
+            throw ScreenRecorderPrepareError.invalidSource
+        }
+        
+        return window.frame.size
+    }
+    
     @MainActor
     func createSCContentFilter() async throws -> SCContentFilter {
         switch self {
@@ -224,6 +269,11 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
         }
          */
         
+        if let contentSize = try await source.contentSize() {
+            configuration.width = Int(contentSize.width)
+            configuration.height = Int(contentSize.height)
+        }
+        
         configuration.minimumFrameInterval = codec.minimumFrameInterval
         
         // HACK: 최소 2 이상이어야 함, macOS 14쯤때부터 1로 설정하면 지랄나더라
@@ -262,6 +312,10 @@ extension ScreenCaptureKitScreenRecorder: SCStreamOutput {
         }
         
         guard frameInfo.status == .complete else {
+            return
+        }
+        
+        guard CMSampleBufferDataIsReady(sampleBuffer) else {
             return
         }
 
