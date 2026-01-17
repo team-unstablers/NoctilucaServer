@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Noctiluca Server</title>
+    
+    <options customize="allow" require-scripts="false" hostArchitectures="x86_64,arm64"/>
+
+    <welcome file="welcome.html" mime-type="text/html" />
+    <readme file="readme.html" mime-type="text/html" />
+    <license file="license.html" mime-type="text/html" />
+    
+    <choices-outline>
+        <line choice="app.noctiluca.server"/>
+        <line choice="app.noctiluca.server.pamconf"/>
+    </choices-outline>
+    
+    <choice id="app.noctiluca.server" title="app.noctiluca.server.title" description="app.noctiluca.server.description" selected="true" enabled="false">
+        <pkg-ref id="app.noctiluca.server"/>
+    </choice>
+    <choice id="app.noctiluca.server.pamconf" title="app.noctiluca.server.pamconf.title" description="app.noctiluca.server.pamconf.description" selected="true">
+        <pkg-ref id="app.noctiluca.server.pamconf" />
+    </choice>
+    <!--
+    <choice id="$LAUNCHER_ID" title="Launcher">
+        <pkg-ref id="$LAUNCHER_ID"/>
+    </choice>
+    -->
+
+    <pkg-ref id="app.noctiluca.server" version="0.1.0" onConclusion="none">NoctilucaServer.pkg</pkg-ref>
+    <pkg-ref id="app.noctiluca.server.pamconf" version="0.1.0" onConclusion="none">NoctilucaServerPAMConf.pkg</pkg-ref>
+</installer-gui-script>

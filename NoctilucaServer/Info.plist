@@ -17,7 +17,7 @@
 			<key>UTTypeIcons</key>
 			<dict/>
 			<key>UTTypeIdentifier</key>
-			<string>pl.unstabler.noctiluca.NoctilucaServer.PluginBundle</string>
+			<string>app.noctiluca.server.PluginBundle</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
