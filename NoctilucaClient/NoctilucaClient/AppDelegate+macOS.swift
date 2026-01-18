@@ -10,6 +10,12 @@ import AppKit
 
 import SiriusKitClient
 
+@objc
+protocol EditMenuActions {
+    func redo(_ sender: AnyObject)
+    func undo(_ sender: AnyObject)
+}
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsStore = SettingsStore.shared
@@ -145,17 +151,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         fileMenu.addItem(closeAllItem)
          */
         
-        /*
         let editMenuItem = NSMenuItem()
         mainMenu.addItem(editMenuItem)
         
         let editMenu = NSMenu(title: "Edit")
         editMenuItem.submenu = editMenu
         
-        let undoItem = NSMenuItem(title: "Undo", action: #selector(NSResponder.undo), keyEquivalent: "z")
+        let undoItem = NSMenuItem(title: "Undo", action: #selector(EditMenuActions.undo(_:)), keyEquivalent: "z")
         editMenu.addItem(undoItem)
         
-        let redoItem = NSMenuItem(title: "Redo", action: #selector(NSResponder.redo), keyEquivalent: "Z")
+        let redoItem = NSMenuItem(title: "Redo", action: #selector(EditMenuActions.redo(_:)), keyEquivalent: "Z")
         editMenu.addItem(redoItem)
         
         editMenu.addItem(.separator())
@@ -174,7 +179,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let selectAllItem = NSMenuItem(title: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         editMenu.addItem(selectAllItem)
-         */
         
         let viewMenuItem = NSMenuItem()
         mainMenu.addItem(viewMenuItem)
