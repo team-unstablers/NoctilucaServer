@@ -55,7 +55,7 @@ final class ClientAuthenticator {
                 continue
             }
 
-            if let payload = payload(for: entry) {
+            if let payload = payload(for: entry, nonce: challenge.nonce) {
                 return (entry.method, payload)
             }
         }
@@ -64,12 +64,12 @@ final class ClientAuthenticator {
         return nil
     }
 
-    func payload(for entry: ClientAuthEntry) -> Data? {
+    func payload(for entry: ClientAuthEntry, nonce: Data) -> Data? {
         let plugins = registry.plugins(supporting: entry.method)
 
         for plugin in plugins {
             do {
-                return try plugin.payload(for: entry)
+                return try plugin.payload(for: entry, nonce: nonce)
             } catch {
                 logger.debug("payload(): failed using plugin \(type(of: plugin).id): \(error.localizedDescription)")
             }

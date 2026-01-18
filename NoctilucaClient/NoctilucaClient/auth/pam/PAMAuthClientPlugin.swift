@@ -16,7 +16,7 @@ final class PAMAuthClientPlugin: ClientAuthPluginV1 {
 
     init() {}
 
-    func payload(for entry: ClientAuthEntry) throws -> Data {
+    func payload(for entry: ClientAuthEntry, nonce: Data) throws -> Data {
         guard entry.method == .password else {
             throw ClientAuthPluginError.unsupportedEntry
         }

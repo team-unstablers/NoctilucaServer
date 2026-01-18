@@ -71,7 +71,7 @@ struct AuthChallengeHandlerModifier: ViewModifier {
             await client.close()
             return
         case .confirm(let entry):
-            guard let payload = client.authenticator.payload(for: entry) else {
+            guard let payload = client.authenticator.payload(for: entry, nonce: challenge.nonce) else {
                 client.logger.error("Failed to build auth payload for method: \(entry.method.rawValue)")
                 return
             }

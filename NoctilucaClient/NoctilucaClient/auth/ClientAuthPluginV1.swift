@@ -30,5 +30,5 @@ protocol ClientAuthPluginV1: AnyObject {
 
     init()
 
-    func payload(for entry: ClientAuthEntry) throws -> Data
+    func payload(for entry: ClientAuthEntry, nonce: Data) throws -> Data
 }

@@ -16,7 +16,7 @@ final class SimplePasswordAuthClientPlugin: ClientAuthPluginV1 {
 
     init() {}
 
-    func payload(for entry: ClientAuthEntry) throws -> Data {
+    func payload(for entry: ClientAuthEntry, nonce: Data) throws -> Data {
         guard entry.method == .simplePassword else {
             throw ClientAuthPluginError.unsupportedEntry
         }
