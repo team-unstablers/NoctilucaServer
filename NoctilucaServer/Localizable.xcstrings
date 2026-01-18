@@ -3240,6 +3240,39 @@
         }
       }
     },
+    "settings.security.auth_method.sheet.error_alert.dismiss" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "확인"
+          }
+        }
+      }
+    },
+    "settings.security.auth_method.sheet.error_alert.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오류 발생"
+          }
+        }
+      }
+    },
+    "settings.security.auth_method.sheet.error_alert.unknown_error" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "알 수 없는 오류가 발생했습니다."
+          }
+        }
+      }
+    },
     "settings.security.auth_method.sheet.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {

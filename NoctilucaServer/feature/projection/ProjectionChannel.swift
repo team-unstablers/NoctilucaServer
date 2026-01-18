@@ -67,7 +67,10 @@ class ProjectionChannel: Channel {
             let identifier = request.identifier
             
             let projectionSettings = NoctilucaServer.shared.settings.projection
-            let negotiator = CodecNegotiator.create(from: .balanced, specifications: projectionSettings.codecSpecifications)
+            let negotiator = CodecNegotiator.create(
+                from: projectionSettings.codecNegotiationPolicy,
+                specifications: projectionSettings.codecSpecifications
+            )
             
             let negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs)
             
