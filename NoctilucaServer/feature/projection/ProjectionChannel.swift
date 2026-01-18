@@ -66,7 +66,8 @@ class ProjectionChannel: Channel {
         do {
             let identifier = request.identifier
             
-            let negotiator = CodecNegotiator.create(from: .balanced, specifications: NoctilucaServer.shared.settings.projection.codecSpecifications)
+            let projectionSettings = NoctilucaServer.shared.settings.projection
+            let negotiator = CodecNegotiator.create(from: .balanced, specifications: projectionSettings.codecSpecifications)
             
             let negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs)
             
@@ -78,7 +79,11 @@ class ProjectionChannel: Channel {
             
             let channel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
             print("Opened ProjectionDataChannel with id: \(channel.identifier)")
-            let projectionSession = ProjectionSession(id: identifier, dataChannel: channel)
+            let projectionSession = ProjectionSession(
+                id: identifier,
+                dataChannel: channel,
+                preferredRecorderType: projectionSettings.preferredScreenRecorder
+            )
             
             try await projectionSession.prepare(request, codec: negotiatedCodec)
             try await projectionSession.start()

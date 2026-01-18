@@ -8,7 +8,7 @@ struct ProjectionSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                ScreenRecorderPicker()
+                ScreenRecorderPicker(selection: $settings.projection.preferredScreenRecorder)
             } header: {
                 Text(String(localized: "settings.projection.screen_recorder.title", defaultValue: "화면 레코더 설정"))
             }

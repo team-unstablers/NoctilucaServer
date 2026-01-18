@@ -13,6 +13,8 @@ extension AppSettings {
         /// 잠금 화면 등에서는 AVFoundation 기반 녹화기로 폴백할 수 있습니다.
         var preferredScreenRecorder: ScreenRecorderType = .screenCaptureKit
         
+        /// 코덱 협상 정책.
+        var codecNegotiationPolicy: CodecNegotiationPolicy = .balanced
         
         var codecSpecifications: [CodecSpecification] = [
             .hevc,
@@ -23,6 +25,7 @@ extension AppSettings {
 
         enum CodingKeys: String, CodingKey {
             case preferredScreenRecorder
+            case codecNegotiationPolicy
             case codecSpecifications
         }
 
@@ -34,12 +37,14 @@ extension AppSettings {
             }
 
             preferredScreenRecorder = container.decodeSafe(ScreenRecorderType.self, forKey: .preferredScreenRecorder, default: preferredScreenRecorder)
+            codecNegotiationPolicy = container.decodeSafe(CodecNegotiationPolicy.self, forKey: .codecNegotiationPolicy, default: codecNegotiationPolicy)
             codecSpecifications = container.decodeSafe([CodecSpecification].self, forKey: .codecSpecifications, default: codecSpecifications)
         }
 
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(preferredScreenRecorder, forKey: .preferredScreenRecorder)
+            try container.encode(codecNegotiationPolicy, forKey: .codecNegotiationPolicy)
             try container.encode(codecSpecifications, forKey: .codecSpecifications)
         }
     }

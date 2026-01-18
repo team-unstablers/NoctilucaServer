@@ -8,8 +8,11 @@
 import SwiftUI
 
 struct ScreenRecorderPicker: View {
+    @Binding
+    var selection: ScreenRecorderType
+    
     var body: some View {
-        SettingsPicker(selection: .constant(ScreenRecorderType.screenCaptureKit)) {
+        SettingsPicker(selection: $selection) {
             ForEach(ScreenRecorderType.allCases, id: \.self) { recorderType in
                 SettingsPickerItem(value: recorderType) {
                     Text(recorderType.displayName)

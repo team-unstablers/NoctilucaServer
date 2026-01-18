@@ -20,6 +20,7 @@ class ProjectionSession: Identifiable {
     
     let id: UUID
     let dataChannel: ProjectionDataChannel
+    private let preferredRecorderType: ScreenRecorderType
     
     private var recorderArgs: ScreenRecorderArgs!
     
@@ -41,12 +42,12 @@ class ProjectionSession: Identifiable {
     var targetBitrate = 0
     var maxBitrate = 0
 
-    init(id: UUID, dataChannel: ProjectionDataChannel) {
+    init(id: UUID, dataChannel: ProjectionDataChannel, preferredRecorderType: ScreenRecorderType) {
         self.id = id
         self.dataChannel = dataChannel
+        self.preferredRecorderType = preferredRecorderType
         
-        // TODO: 설정에서 preferredScreenRecorder를 읽어오도록
-        self.recorder = ScreenRecorderFactory.create(preferred: .screenCaptureKit, queue: recorderQueue)
+        self.recorder = ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
         self.encoder = VTVideoEncoder()
         
         self.screenLockCancellable = ScreenLockObserver.shared.$isScreenLocked
@@ -65,7 +66,7 @@ class ProjectionSession: Identifiable {
     private func reconfigureRecorder() async {
         try? await self.recorder.stop()
         
-        self.recorder = ScreenRecorderFactory.create(preferred: .screenCaptureKit, queue: recorderQueue)
+        self.recorder = ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
         self.recorder.delegate = self
         
         do {
