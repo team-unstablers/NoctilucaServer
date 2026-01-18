@@ -14,6 +14,7 @@
 		F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F62711432F0852DE00E8A3D7 /* libzstd */; };
 		F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; };
 		F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F63971242F1CCA4400F01622 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F63971232F1CCA4400F01622 /* Xuanxue */; };
 		F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F66965372ECF27110032EF4E /* SiriusKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F66965362ECF27110032EF4E /* SiriusKit.framework */; };
@@ -127,6 +128,7 @@
 				F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F66965372ECF27110032EF4E /* SiriusKit.framework in Frameworks */,
 				F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */,
+				F63971242F1CCA4400F01622 /* Xuanxue in Frameworks */,
 				F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */,
 				F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */,
 			);
@@ -216,6 +218,7 @@
 			name = NoctilucaServer;
 			packageProductDependencies = (
 				F62711432F0852DE00E8A3D7 /* libzstd */,
+				F63971232F1CCA4400F01622 /* Xuanxue */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -254,6 +257,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */,
+				F63971222F1CCA4400F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669650C2ECF26770032EF4E /* Products */;
@@ -627,6 +631,14 @@
 				version = 1.5.7;
 			};
 		};
+		F63971222F1CCA4400F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -634,6 +646,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
+		};
+		F63971232F1CCA4400F01622 /* Xuanxue */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F63971222F1CCA4400F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */;
+			productName = Xuanxue;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
