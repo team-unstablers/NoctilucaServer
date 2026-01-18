@@ -32,5 +32,5 @@ public protocol AuthPluginV1: AnyObject {
     func deny(_ entry: AuthEntry) async throws
     
     /// 플러그인에게 주어진 인증 방법과 페이로드를 사용하여 인증을 시도하도록 요청합니다.
-    func authenticate(using method: AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError>
+    func authenticate(using method: AuthMethod, payload: borrowing Data, nonce: Data) async -> Result<uid_t, AuthError>
 }

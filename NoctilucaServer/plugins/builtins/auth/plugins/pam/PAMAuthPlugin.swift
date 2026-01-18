@@ -86,7 +86,7 @@ final class PAMAuthPlugin: BuiltInAuthPluginV1 {
         return self.allowedUsers.contains(entry.username)
     }
     
-    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError> {
+    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: borrowing Data, nonce: Data) async -> Result<uid_t, AuthError> {
         guard method == .password else {
             return .failure(.unsupportedMethod)
         }

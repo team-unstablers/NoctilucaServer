@@ -42,7 +42,7 @@ class Authenticator {
         }
     }
     
-    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: consuming Data) async -> Result<uid_t, AuthError> {
+    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: consuming Data, nonce: Data) async -> Result<uid_t, AuthError> {
         let LOG_TAG = "authenticate(using: \(method))"
         let supportedPlugins = self.plugins.filter { type(of: $0).supportedMethods.contains(method) }
         
@@ -55,7 +55,7 @@ class Authenticator {
         // 순차적으로 dispatch한다.
         for supportedPlugin in supportedPlugins {
             logger.debug("\(LOG_TAG): trying plugin: \(type(of: supportedPlugin).name)")
-            let result = await supportedPlugin.authenticate(using: method, payload: payload)
+            let result = await supportedPlugin.authenticate(using: method, payload: payload, nonce: nonce)
             
             if case .success(let uid) = result {
                 logger.info("\(LOG_TAG): authentication succeeded using plugin: \(type(of: supportedPlugin).name), uid: \(uid)")

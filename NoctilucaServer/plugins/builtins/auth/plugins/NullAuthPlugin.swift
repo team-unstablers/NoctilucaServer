@@ -39,7 +39,7 @@ final class NullAuthPlugin: BuiltInAuthPluginV1 {
         // do nothing
     }
     
-    func authenticate(using method: AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError> {
+    func authenticate(using method: AuthMethod, payload: borrowing Data, nonce: Data) async -> Result<uid_t, AuthError> {
         guard method == .none else {
             return .failure(.unsupportedMethod)
         }

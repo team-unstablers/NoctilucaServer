@@ -137,7 +137,7 @@ extension NoctilucaClientSession {
             return
         }
         
-        let result = await server.authenticator.authenticate(using: method, payload: message.payload)
+        let result = await server.authenticator.authenticate(using: method, payload: message.payload, nonce: authNonce)
         
         switch result {
         case .success(let uid):

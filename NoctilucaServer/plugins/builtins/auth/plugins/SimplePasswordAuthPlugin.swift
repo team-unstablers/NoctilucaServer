@@ -94,7 +94,7 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
         allowedHashes.removeAll { $0 == hash }
     }
     
-    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: borrowing Data) async -> Result<uid_t, AuthError> {
+    func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: borrowing Data, nonce: Data) async -> Result<uid_t, AuthError> {
         guard method == .simplePassword else {
             return .failure(.unsupportedMethod)
         }
