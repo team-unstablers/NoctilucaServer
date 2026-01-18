@@ -50,7 +50,7 @@ struct AuthMethodEntry: View {
         case .simplePassword:
             return String(localized: "settings.security.auth_entry.simple_password.description", defaultValue: "비밀번호만을 사용한 인증을 허용합니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)")
         case .sshKey:
-            return String(localized: "settings.security.auth_entry.ssh_key.description", defaultValue: "SSH 키를 사용한 인증을 허용합니다.")
+            return entry.identifier
 
         default:
             return String(localized: "settings.security.auth_entry.external.description", defaultValue: "외부 플러그인을 통해 제공되는 인증 방법입니다.")

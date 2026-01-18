@@ -475,6 +475,12 @@
         }
       }
     },
+    "plugins.auth.SSHAuthPlugin.description" : {
+      "comment" : "Provides SSH public key authentication."
+    },
+    "plugins.auth.SSHAuthPlugin.name" : {
+      "comment" : "SSHAuthPlugin"
+    },
     "Projection" : {
 
     },
@@ -3058,17 +3064,6 @@
         }
       }
     },
-    "settings.security.auth_entry.ssh_key.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "SSH 키를 사용한 인증을 허용합니다."
-          }
-        }
-      }
-    },
     "settings.security.auth_entry.ssh_key.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -3432,7 +3427,7 @@
         }
       }
     },
-    "settings.security.certificate_picker.informative_text_2" : {
+    "settings.security.certificate_picker.informative_text" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ko" : {

@@ -12,6 +12,8 @@ import Collaboration
 #endif
 import SwiftUI
 
+import Xuanxue
+
 import NoctilucaPluginKit
 
 struct AuthMethodContainer: View {
@@ -94,6 +96,12 @@ private struct AuthMethodSelectionSheet: View {
     @State 
     private var sshPublicKey: String = ""
     
+    @State
+    var shouldPresentErrorAlert: Bool = false
+    
+    @State
+    var error: Error? = nil
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(String(localized: "settings.security.auth_method.sheet.title", defaultValue: "인증 방법 선택"))
@@ -130,6 +138,13 @@ private struct AuthMethodSelectionSheet: View {
         }
         .padding()
         .frame(minWidth: 520, minHeight: 420, alignment: .topLeading)
+        .alert(isPresented: $shouldPresentErrorAlert) {
+            Alert(
+                title: Text(String(localized: "settings.security.auth_method.sheet.error_alert.title", defaultValue: "오류 발생")),
+                message: Text(error?.localizedDescription ?? String(localized: "settings.security.auth_method.sheet.error_alert.unknown_error", defaultValue: "알 수 없는 오류가 발생했습니다.")),
+                dismissButton: .default(Text(String(localized: "settings.security.auth_method.sheet.error_alert.dismiss", defaultValue: "확인")))
+            )
+        }
     }
     
     private var canCommitSelection: Bool {
@@ -203,12 +218,17 @@ private struct AuthMethodSelectionSheet: View {
     
     private func handleSubmit() {
         guard canCommitSelection else { return }
-        let method = selectedAuthMethod()
-        onSelect(method)
-        isPresented = false
+        do {
+            let method = try selectedAuthMethod()
+            onSelect(method)
+            isPresented = false
+        } catch {
+            self.error = error
+            shouldPresentErrorAlert = true
+        }
     }
     
-    private func selectedAuthMethod() -> AuthEntry {
+    private func selectedAuthMethod() throws -> AuthEntry {
         switch selectedTemplate {
         case .pam:
             let principal = pamPrincipal.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -227,7 +247,12 @@ private struct AuthMethodSelectionSheet: View {
             
             return AuthEntry(method: .simplePassword, identifier: "bcrypt+sha512", data: hash)
         case .sshKey:
-            return AuthEntry(method: .sshKey, identifier: sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines))
+            let keyString = sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = try SSHPublicKey(sshString: keyString)
+            
+            let comment = key.comment ?? keyString
+            
+            return AuthEntry(method: .sshKey, identifier: comment, data: keyString.data(using: .utf8))
         #if DEBUG
         case .null:
             return AuthEntry(method: .null, identifier: "")

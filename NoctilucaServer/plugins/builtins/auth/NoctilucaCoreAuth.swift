@@ -46,11 +46,13 @@ class NoctilucaCoreAuth: NoctilucaPluginBundle {
     static var exports: [NoctilucaPluginExport] = [
         .auth(PAMAuthPlugin()),
         .auth(SimplePasswordAuthPlugin()),
+        .auth(SSHAuthPlugin()),
         .auth(NullAuthPlugin())
     ]
 #else
     static var exports: [NoctilucaPluginExport] = [
         .auth(PAMAuthPlugin()),
+        .auth(SSHAuthPlugin()),
         .auth(SimplePasswordAuthPlugin()),
     ]
 #endif
