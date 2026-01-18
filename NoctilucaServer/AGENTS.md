@@ -232,6 +232,7 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 - 작업을 진행할 때 확실하지 않거나 궁금한 점이 있으면, 되도록 **추측하지 말고 사용자에게 질문**해서 명확히 하는 것을 우선해 주세요.
 - 사용자가 한국어 화자인 만큼, 모든 대화와 Plan 작성은 **반드시 한국어**로 진행해 주세요.
 - 프로젝트에 대한 중요한 정보나 커다란 변경 사항이 있을 때는, `AGENTS.md`를 수정하여 프로젝트에 대한 최신 정보를 반영해 주세요.
+- UI 코드를 작성할 때는 i18n을 항상 고려하고, 화면에 보이는 문자열은 `String(localized:defaultValue:)`를 통해 정의해 주세요.
 
 ## 2. Workflow Protocol (중요)
 Codex는 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 **[Explicit Plan Mode]** 조건에 해당할 경우 행동 방식을 변경해야 합니다.
@@ -266,5 +267,18 @@ Codex는 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 
   - `msgdef/v1/channels: 채널 메시지 정의 업데이트`
   - `docs(README): README 파일에 설치 가이드 추가`
   - `test(transport/quic): QUIC 전송 테스트 케이스 작성`
+
+# I18N RULES
+
+- 키는 `scopes.join(".")` 규칙을 따릅니다. 즉, 화면/기능/컴포넌트의 계층을 점(`.`)으로 연결해 명확한 네이밍을 유지합니다.
+- 사용자에게 보이는 문구는 항상 `String(localized:defaultValue:)`로 감싸며, 기본 문자열은 의미가 드러나도록 명확하게 작성합니다.
+
+### EXAMPLES
+- `String(localized: "software_license.custom", defaultValue: "커스텀 라이선스")`
+- `String(localized: "settings.general.title", defaultValue: "일반")`
+- `String(localized: "settings.general.autostart.title", defaultValue: "앱 기동 시 서버 자동으로 시작")`
+- `String(localized: "settings.general.autostart.description", defaultValue: "앱을 기동하면 서버를 자동으로 시작하여 접속을 받을 수 있도록 합니다.")`
+- `String(localized: "auth.method.pam", defaultValue: "UNIX PAM 인증")`
+- `String(localized: "auth.method.pam.description", defaultValue: "UNIX PAM (username-password) 방식의 인증을 수행합니다.")`
 
 </section>

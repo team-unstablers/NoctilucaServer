@@ -64,7 +64,7 @@ struct AuthPluginDetailView: View {
                 .font(.subheadline)
         }
         
-        SettingsEntry(title: "개발자") {
+        SettingsEntry(title: String(localized: "settings.about.plugin.author", defaultValue: "개발자")) {
             VStack(alignment: .trailing) {
                 ForEach(metaType.authors, id: \.self) { author in
                     Text(author)
@@ -72,23 +72,23 @@ struct AuthPluginDetailView: View {
             }
             .foregroundStyle(.secondary)
         }
-        
-        SettingsEntry(title: "라이선스") {
+
+        SettingsEntry(title: String(localized: "settings.about.plugin.license", defaultValue: "라이선스")) {
             SoftwareLicenseText(license: metaType.license)
                 .foregroundStyle(.secondary)
         }
-        
-        SettingsEntry(title: "유형") {
+
+        SettingsEntry(title: String(localized: "settings.about.plugin.type", defaultValue: "유형")) {
             if plugin is BuiltInAuthPluginV1 {
-                Text("내장 플러그인")
+                Text(String(localized: "settings.about.plugin.type_builtin", defaultValue: "내장 플러그인"))
                     .foregroundStyle(.secondary)
             } else {
-                Text("외부 플러그인")
+                Text(String(localized: "settings.about.plugin.type_external", defaultValue: "외부 플러그인"))
                     .foregroundStyle(.secondary)
             }
         }
-        
-        SettingsEntry(title: "지원하는 인증 메커니즘") {
+
+        SettingsEntry(title: String(localized: "settings.about.plugin.supported_methods", defaultValue: "지원하는 인증 메커니즘")) {
             VStack {
                 ForEach(Array(metaType.supportedMethods), id: \.self) { method in
                     Text(method.rawValue)
@@ -96,8 +96,8 @@ struct AuthPluginDetailView: View {
             }
             .foregroundStyle(.secondary)
         }
-        
-        SettingsEntry(title: "버전") {
+
+        SettingsEntry(title: String(localized: "settings.about.plugin.version", defaultValue: "버전")) {
             Text("\(metaType.displayVersion) (\(metaType.version))")
                 .foregroundStyle(.secondary)
         }

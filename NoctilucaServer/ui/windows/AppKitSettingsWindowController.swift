@@ -21,7 +21,7 @@ final class AppKitSettingsWindowController: NSWindowController {
             defer: false
         )
         window.contentView = hostingView
-        window.title = "Noctiluca Server 설정"
+        window.title = String(localized: "window.settings.title", defaultValue: "Noctiluca Server 설정")
         window.minSize = NSSize(width: 640, height: 480)
         window.collectionBehavior = [.fullScreenNone]
         window.isReleasedWhenClosed = false

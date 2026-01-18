@@ -42,7 +42,7 @@ struct PluginBundleDetailView: View {
                     .lineLimit(1)
             }
             Spacer()
-            Button("정보 보기…") {
+            Button(String(localized: "settings.plugins.detail.show_info", defaultValue: "정보 보기…")) {
                 showingInfoSheet = true
             }
         }
@@ -52,7 +52,7 @@ struct PluginBundleDetailView: View {
             }
         }
         
-        SettingsEntry(title: "개발자") {
+        SettingsEntry(title: String(localized: "settings.plugins.detail.developer", defaultValue: "개발자")) {
             VStack(alignment: .trailing) {
                 ForEach(metadata.authors, id: \.self) { author in
                     Text(verbatim: author)
@@ -61,7 +61,7 @@ struct PluginBundleDetailView: View {
             .foregroundStyle(.secondary)
         }
         
-        SettingsEntry(title: "라이선스") {
+        SettingsEntry(title: String(localized: "settings.plugins.detail.license", defaultValue: "라이선스")) {
             SoftwareLicenseText(license: metadata.license)
                 .foregroundStyle(.secondary)
         }
@@ -91,14 +91,14 @@ struct PluginBundleDetailView: View {
          }
          */
         
-        SettingsEntry(title: "서명 정보") {
+        SettingsEntry(title: String(localized: "settings.plugins.detail.signature", defaultValue: "서명 정보")) {
             Text("Apple Development: Kirino Kousaka (ABCDE12345)")
                 .foregroundStyle(.secondary)
         }
         
         
         
-        SettingsEntry(title: "버전") {
+        SettingsEntry(title: String(localized: "settings.plugins.detail.version", defaultValue: "버전")) {
             Text("\(metadata.displayVersion) (\(metadata.version))")
                 .foregroundStyle(.secondary)
         }

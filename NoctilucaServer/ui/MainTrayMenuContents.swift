@@ -19,13 +19,13 @@ struct MainTrayMenuContents: View {
     var server: NoctilucaServer
     
     var body: some View {
-        Button("현재 활성 중인 세션 없음") {
-            
+        Button(String(localized: "menu.session.none", defaultValue: "현재 활성 중인 세션 없음")) {
+
         }
         .disabled(true)
-        
+
         if case .running(_) = server.state {
-            Button("서버 중지") {
+            Button(String(localized: "menu.server.stop", defaultValue: "서버 중지")) {
                 Task {
                     do {
                         try await server.shutdown()
@@ -35,7 +35,7 @@ struct MainTrayMenuContents: View {
                 }
             }
         } else {
-            Button("서버 시작") {
+            Button(String(localized: "menu.server.start", defaultValue: "서버 시작")) {
                 Task {
                     do {
                         try await server.startup()
@@ -46,11 +46,11 @@ struct MainTrayMenuContents: View {
             }
         }
         Divider()
-        Button("설정") {
+        Button(String(localized: "menu.settings", defaultValue: "설정")) {
             actionHandler(.openSettingsWindow)
         }
         Divider()
-        Button("종료") {
+        Button(String(localized: "menu.quit", defaultValue: "종료")) {
             actionHandler(.quitApplication)
         }
     }

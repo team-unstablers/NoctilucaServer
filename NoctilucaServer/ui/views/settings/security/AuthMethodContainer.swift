@@ -29,9 +29,9 @@ struct AuthMethodContainer: View {
             List(selection: $selection) {
                 if authMethods.isEmpty {
                     VStack(alignment: .leading) {
-                        Text("(구성된 인증 방법이 없습니다)")
+                        Text(String(localized: "settings.security.auth_method.empty_title", defaultValue: "(구성된 인증 방법이 없습니다)"))
                             .font(.headline)
-                        Text("현재 상태로는 아무도 로그인할 수 없습니다. 인증 방법을 추가하려면 아래 '추가' 버튼을 클릭하세요.")
+                        Text(String(localized: "settings.security.auth_method.empty_description", defaultValue: "현재 상태로는 아무도 로그인할 수 없습니다. 인증 방법을 추가하려면 아래 '추가' 버튼을 클릭하세요."))
                             .font(.subheadline.monospaced())
                             .lineLimit(1)
                     }
@@ -50,12 +50,12 @@ struct AuthMethodContainer: View {
             
             HStack {
                 Spacer()
-                Button("삭제", role: .destructive) {
+                Button(String(localized: "settings.security.auth_method.delete", defaultValue: "삭제"), role: .destructive) {
                     removeSelected()
                 }
                 .disabled(selection.isEmpty)
-                
-                Button("추가") {
+
+                Button(String(localized: "settings.security.auth_method.add", defaultValue: "추가")) {
                     isAddSheetPresented = true
                 }
             }
@@ -96,9 +96,9 @@ private struct AuthMethodSelectionSheet: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("인증 방법 선택")
+            Text(String(localized: "settings.security.auth_method.sheet.title", defaultValue: "인증 방법 선택"))
                 .font(.title2.bold())
-            Text("추가할 인증 방법을 선택하세요.")
+            Text(String(localized: "settings.security.auth_method.sheet.description", defaultValue: "추가할 인증 방법을 선택하세요."))
                 .foregroundStyle(.secondary)
             
             VStack(alignment: .leading, spacing: 8) {
@@ -119,10 +119,10 @@ private struct AuthMethodSelectionSheet: View {
             
             HStack {
                 Spacer()
-                Button("취소") {
+                Button(String(localized: "settings.security.auth_method.sheet.cancel", defaultValue: "취소")) {
                     isPresented = false
                 }
-                Button("추가") {
+                Button(String(localized: "settings.security.auth_method.sheet.add", defaultValue: "추가")) {
                     handleSubmit()
                 }
                 .disabled(!canCommitSelection)
@@ -152,18 +152,18 @@ private struct AuthMethodSelectionSheet: View {
         switch selectedTemplate {
         case .pam:
             VStack(alignment: .leading, spacing: 8) {
-                Text("PAM 인증 세부 설정")
+                Text(String(localized: "settings.security.auth_method.pam.detail_title", defaultValue: "PAM 인증 세부 설정"))
                     .font(.headline)
-                Picker("허용 범위", selection: $pamAllowMode) {
-                    Text("사용자").tag(PAMAllowMode.user)
-                    Text("그룹").tag(PAMAllowMode.group)
+                Picker(String(localized: "settings.security.auth_method.pam.allow_scope", defaultValue: "허용 범위"), selection: $pamAllowMode) {
+                    Text(String(localized: "settings.security.auth_method.pam.user", defaultValue: "사용자")).tag(PAMAllowMode.user)
+                    Text(String(localized: "settings.security.auth_method.pam.group", defaultValue: "그룹")).tag(PAMAllowMode.group)
                 }
                 .pickerStyle(.segmented)
                 HStack(spacing: 8) {
-                    TextField(pamAllowMode == .user ? "허용 사용자 이름" : "허용 그룹 이름", text: $pamPrincipal)
+                    TextField(pamAllowMode == .user ? String(localized: "settings.security.auth_method.pam.user_placeholder", defaultValue: "허용 사용자 이름") : String(localized: "settings.security.auth_method.pam.group_placeholder", defaultValue: "허용 그룹 이름"), text: $pamPrincipal)
                         .textFieldStyle(.roundedBorder)
                     #if os(macOS) && canImport(Collaboration)
-                    Button("사용자/그룹 선택…") {
+                    Button(String(localized: "settings.security.auth_method.pam.select_identity", defaultValue: "사용자/그룹 선택…")) {
                         presentIdentityPicker()
                     }
                     .focusable(true)
@@ -172,24 +172,24 @@ private struct AuthMethodSelectionSheet: View {
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
-                Text("간단 비밀번호 인증")
+                Text(String(localized: "settings.security.auth_method.simple_password.title", defaultValue: "간단 비밀번호 인증"))
                     .font(.headline)
-                Text("입력된 비밀번호는 SHA-512 + bcrypt로 이중 해시 처리되어 저장됩니다.")
+                Text(String(localized: "settings.security.auth_method.simple_password.description", defaultValue: "입력된 비밀번호는 SHA-512 + bcrypt로 이중 해시 처리되어 저장됩니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                TextField("비밀번호 입력", text: $simplePasswordValue, axis: .vertical)
+                TextField(String(localized: "settings.security.auth_method.simple_password.placeholder", defaultValue: "비밀번호 입력"), text: $simplePasswordValue, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(1...3)
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {
-                Text("SSH 키 인증")
+                Text(String(localized: "settings.security.auth_method.ssh_key.title", defaultValue: "SSH 키 인증"))
                     .font(.headline)
-                Text("허용할 공개 키를 입력하세요.")
+                Text(String(localized: "settings.security.auth_method.ssh_key.description", defaultValue: "허용할 공개 키를 입력하세요."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                TextField("ssh-ed25519 AAAA...", text: $sshPublicKey, axis: .vertical)
+                TextField(String(localized: "settings.security.auth_method.ssh_key.placeholder", defaultValue: "ssh-ed25519 AAAA..."), text: $sshPublicKey, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(2...4)
@@ -241,7 +241,7 @@ private struct AuthMethodSelectionSheet: View {
         guard let window = NSApp.keyWindow ?? NSApplication.shared.windows.first else { return }
         let picker = CBIdentityPicker()
         picker.allowsMultipleSelection = false
-        picker.title = "인증 허용 대상 선택"
+        picker.title = String(localized: "settings.security.auth_method.pam.picker_title", defaultValue: "인증 허용 대상 선택")
         picker.runModal(for: window) { response in
             guard response == .OK else { return }
             applyPickedIdentity(picker.identities.first)
@@ -326,14 +326,14 @@ private extension AuthMethodSelectionSheet {
         var title: String {
             switch self {
             case .pam:
-                return "UNIX PAM 인증 (사용자명-비밀번호)"
+                return String(localized: "settings.security.auth_method.template.pam.title", defaultValue: "UNIX PAM 인증 (사용자명-비밀번호)")
             case .simplePassword:
-                return "간단 비밀번호 인증 (권장하지 않음)"
+                return String(localized: "settings.security.auth_method.template.simple_password.title", defaultValue: "간단 비밀번호 인증 (권장하지 않음)")
             case .sshKey:
-                return "SSH 키 인증"
+                return String(localized: "settings.security.auth_method.template.ssh_key.title", defaultValue: "SSH 키 인증")
             #if DEBUG
             case .null:
-                return "인증 방법 없음 (DEBUG)"
+                return String(localized: "settings.security.auth_method.template.null.title", defaultValue: "인증 방법 없음 (DEBUG)")
             #endif
             }
         }
@@ -341,14 +341,14 @@ private extension AuthMethodSelectionSheet {
         var description: String {
             switch self {
             case .pam:
-                return "사용자명-비밀번호 인증을 허용합니다."
+                return String(localized: "settings.security.auth_method.template.pam.description", defaultValue: "사용자명-비밀번호 인증을 허용합니다.")
             case .simplePassword:
-                return "비밀번호만을 사용한 인증을 허용합니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
+                return String(localized: "settings.security.auth_method.template.simple_password.description", defaultValue: "비밀번호만을 사용한 인증을 허용합니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)")
             case .sshKey:
-                return "SSH 키 인증을 허용합니다."
+                return String(localized: "settings.security.auth_method.template.ssh_key.description", defaultValue: "SSH 키 인증을 허용합니다.")
             #if DEBUG
             case .null:
-                return "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
+                return String(localized: "settings.security.auth_method.template.null.description", defaultValue: "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)")
             #endif
             }
         }

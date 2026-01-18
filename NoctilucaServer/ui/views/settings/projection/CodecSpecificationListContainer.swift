@@ -30,8 +30,8 @@ struct CodecSpecificationListContainer: View {
     var body: some View {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
-                Text("코덱 우선순위 설정")
-                Text("서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다.")
+                Text(String(localized: "settings.projection.codec_priority.title", defaultValue: "코덱 우선순위 설정"))
+                Text(String(localized: "settings.projection.codec_priority.description", defaultValue: "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -42,7 +42,7 @@ struct CodecSpecificationListContainer: View {
                             CodecSpecificationListEntry(specification: specification)
                             if (selection.first == specification.hashValue) {
                                 Spacer()
-                                Button("편집") {
+                                Button(String(localized: "settings.projection.codec_priority.edit", defaultValue: "편집")) {
                                     isEditSheetPresented = true
                                 }
                             }
@@ -58,12 +58,12 @@ struct CodecSpecificationListContainer: View {
             
             HStack {
                 Spacer()
-                Button("삭제", role: .destructive) {
+                Button(String(localized: "settings.projection.codec_priority.delete", defaultValue: "삭제"), role: .destructive) {
                     removeSelected()
                 }
                 .disabled(selection.isEmpty)
-                
-                Button("추가") {
+
+                Button(String(localized: "settings.projection.codec_priority.add", defaultValue: "추가")) {
                     isAddSheetPresented = true
                 }
             }
@@ -179,18 +179,18 @@ struct CodecSpecificationAddSheet: View {
     static let templates: [Template] = [
         .init(
             specification: .hevc,
-            title: "High Efficiency Video Coding (H.265)",
-            description: "H.264보다 더 높은 압축 효율을 제공하는 최신 비디오 코덱입니다."
+            title: String(localized: "settings.projection.codec_add.hevc.title", defaultValue: "High Efficiency Video Coding (H.265)"),
+            description: String(localized: "settings.projection.codec_add.hevc.description", defaultValue: "H.264보다 더 높은 압축 효율을 제공하는 최신 비디오 코덱입니다.")
         ),
         .init(
             specification: .h264,
-            title: "Advanced Video Coding (H.264)",
-            description: "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다."
+            title: String(localized: "settings.projection.codec_add.h264.title", defaultValue: "Advanced Video Coding (H.264)"),
+            description: String(localized: "settings.projection.codec_add.h264.description", defaultValue: "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다.")
         ),
         .init(
             specification: .mjpg,
-            title: "Motion JPEG",
-            description: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\nRLE보다 압축 효율이 높지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
+            title: String(localized: "settings.projection.codec_add.mjpg.title", defaultValue: "Motion JPEG"),
+            description: String(localized: "settings.projection.codec_add.mjpg.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\nRLE보다 압축 효율이 높지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
         ),
     ]
     
@@ -205,9 +205,9 @@ struct CodecSpecificationAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading) {
-                Text("코덱 선택")
+                Text(String(localized: "settings.projection.codec_add.title", defaultValue: "코덱 선택"))
                     .font(.title2.bold())
-                Text("추가할 코덱 유형을 선택하세요.")
+                Text(String(localized: "settings.projection.codec_add.description", defaultValue: "추가할 코덱 유형을 선택하세요."))
                     .foregroundStyle(.secondary)
             }
             
@@ -232,10 +232,10 @@ struct CodecSpecificationAddSheet: View {
             
             HStack {
                 Spacer()
-                Button("취소") {
+                Button(String(localized: "settings.projection.codec_add.cancel", defaultValue: "취소")) {
                     dismiss()
                 }
-                Button("추가") {
+                Button(String(localized: "settings.projection.codec_add.add", defaultValue: "추가")) {
                     guard let selected = selected else { return }
                     handler(selected.specification)
                 }

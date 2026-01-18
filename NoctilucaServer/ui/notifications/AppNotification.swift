@@ -76,25 +76,26 @@ enum AppNotification: Identifiable {
     }
     
     var title: String {
+        // @claude, key로써는 `notification.{self}.title` 형태를 사용해 주세요
         switch self {
         case .newConnection:
-            return "새 클라이언트 연결됨"
+            return String(localized: "notification.new_connection.title", defaultValue: "새 클라이언트 연결됨")
         case .connectionClosed:
-            return "클라이언트 연결 종료됨"
+            return String(localized: "notification.connection_closed.title", defaultValue: "클라이언트 연결 종료됨")
         case .serverStarted:
-            return "서버 시작됨"
+            return String(localized: "notification.server_started.title", defaultValue: "서버 시작됨")
         case .serverStartFailed:
-            return "서버 시작 실패"
+            return String(localized: "notification.server_start_failed.title", defaultValue: "서버 시작 실패")
         case .serverStopped:
-            return "서버 종료됨"
+            return String(localized: "notification.server_stopped.title", defaultValue: "서버 종료됨")
         case .tlsAutoconfRenewed:
-            return "인증서 자동 갱신 성공"
+            return String(localized: "notification.tls_autoconf_renewed.title", defaultValue: "인증서 자동 갱신 성공")
         case .invalidLicense:
-            return "부정한 라이선스"
+            return String(localized: "notification.invalid_license.title", defaultValue: "부정한 라이선스")
         case .updateAvailable:
-            return "새 업데이트 사용 가능"
+            return String(localized: "notification.update_available.title", defaultValue: "새 업데이트 사용 가능")
         case .criticalUpdateRequired:
-            return "긴급 업데이트 필요"
+            return String(localized: "notification.critical_update_required.title", defaultValue: "긴급 업데이트 필요")
         }
     }
     
@@ -111,29 +112,30 @@ enum AppNotification: Identifiable {
     }
     
     var message: String {
+        // @claude, key로써는 `notification.{self}.message` 형태를 사용해 주세요
         switch self {
         case .newConnection:
-            return "새 클라이언트가 서버에 연결되었습니다."
+            return String(localized: "notification.new_connection.message", defaultValue: "새 클라이언트가 서버에 연결되었습니다.")
         case .connectionClosed:
-            return "클라이언트 연결이 종료되었습니다."
+            return String(localized: "notification.connection_closed.message", defaultValue: "클라이언트 연결이 종료되었습니다.")
         case .serverStarted:
-            return "서버가 성공적으로 시작되었습니다."
+            return String(localized: "notification.server_started.message", defaultValue: "서버가 성공적으로 시작되었습니다.")
         case .serverStartFailed(let error):
-            return "서버 시작 중 오류가 발생했습니다: \(error.localizedDescription)"
+            return String(format: String(localized: "notification.server_start_failed.message", defaultValue: "서버 시작 중 오류가 발생했습니다: %@"), error.localizedDescription)
         case .serverStopped:
-            return "서버가 종료되었습니다."
+            return String(localized: "notification.server_stopped.message", defaultValue: "서버가 종료되었습니다.")
         case .tlsAutoconfRenewed:
-            return "TLS 인증서가 자동으로 갱신되었습니다."
+            return String(localized: "notification.tls_autoconf_renewed.message", defaultValue: "TLS 인증서가 자동으로 갱신되었습니다.")
         case .invalidLicense:
-            return "부정한 라이선스가 감지되었습니다.\n정식 버전 구매를 고려해 주세요."
+            return String(localized: "notification.invalid_license.message", defaultValue: "부정한 라이선스가 감지되었습니다.\n정식 버전 구매를 고려해 주세요.")
         case .updateAvailable(let version):
-            return "새 버전 \(version)이(가) 사용 가능합니다."
+            return String(format: String(localized: "notification.update_available.message", defaultValue: "새 버전 %@이(가) 사용 가능합니다."), version)
         case .criticalUpdateRequired(let version, let isInvalidLicense):
-            var message = "심각한 보안 문제가 발견되어 버전 \(version)으로의 긴급 업데이트가 필요합니다."
+            var message = String(format: String(localized: "notification.critical_update_required.message", defaultValue: "심각한 보안 문제가 발견되어 버전 %@으로의 긴급 업데이트가 필요합니다."), version)
             if isInvalidLicense {
-                message += "\n이 업데이트는 불법 복제본 사용자에게도 제공됩니다. 업데이트를 긍정적으로 고려해 주세요."
+                message += "\n" + String(localized: "notification.critical_update_required.piracy_notice", defaultValue: "이 업데이트는 불법 복제본 사용자에게도 제공됩니다. 업데이트를 긍정적으로 고려해 주세요.")
             }
-            
+
             return message
         }
     }

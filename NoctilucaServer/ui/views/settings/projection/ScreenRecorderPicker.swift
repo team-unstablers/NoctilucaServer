@@ -19,7 +19,7 @@ struct ScreenRecorderPicker: View {
                 }
             }
         } label: {
-            Text("화면 레코더 선택")
+            Text(String(localized: "settings.projection.recorder.title", defaultValue: "화면 레코더 선택"))
         }
     }
 }

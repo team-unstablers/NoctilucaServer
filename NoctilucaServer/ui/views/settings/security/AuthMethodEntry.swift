@@ -13,49 +13,47 @@ import NoctilucaPluginKit
 struct AuthMethodEntry: View {
     let entry: AuthEntry
     
-    /// FIXME: i18n
     var methodTypeLabel: String {
         switch entry.method {
 #if DEBUG
         case .null:
-            return "인증을 요구하지 않음 (권장하지 않음)"
+            return String(localized: "settings.security.auth_entry.null.title", defaultValue: "인증을 요구하지 않음 (권장하지 않음)")
 #endif
         case .password:
-            return "UNIX PAM 인증 (사용자명-비밀번호)"
+            return String(localized: "settings.security.auth_entry.password.title", defaultValue: "UNIX PAM 인증 (사용자명-비밀번호)")
         case .simplePassword:
-            return "간단 비밀번호 인증 (권장하지 않음)"
+            return String(localized: "settings.security.auth_entry.simple_password.title", defaultValue: "간단 비밀번호 인증 (권장하지 않음)")
         case .sshKey:
-            return "SSH 키 인증"
-        
+            return String(localized: "settings.security.auth_entry.ssh_key.title", defaultValue: "SSH 키 인증")
+
         default:
-            return "외부 인증 방법 (\(entry.method.rawValue))"
+            return String(localized: "settings.security.auth_entry.external.title", defaultValue: "외부 인증 방법") + " (\(entry.method.rawValue))"
         }
     }
     
-    /// FIXME: i18n
     var descriptionText: String {
         switch entry.method {
 #if DEBUG
         case .null:
-            return "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
+            return String(localized: "settings.security.auth_entry.null.description", defaultValue: "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)")
 #endif
         case .password:
             if entry.identifier.hasPrefix("group") {
                 let groupName = entry.identifier.dropFirst("group:".count)
-                return "\(groupName) 그룹에 속한 Mac 사용자에게 사용자명-비밀번호 인증을 허용합니다."
+                return String(format: String(localized: "settings.security.auth_entry.password.group_description", defaultValue: "%@ 그룹에 속한 Mac 사용자에게 사용자명-비밀번호 인증을 허용합니다."), String(groupName))
             } else if entry.identifier.hasPrefix("user") {
                 let userName = entry.identifier.dropFirst("user:".count)
-                return "\(userName) 사용자에게 사용자명-비밀번호 인증을 허용합니다."
+                return String(format: String(localized: "settings.security.auth_entry.password.user_description", defaultValue: "%@ 사용자에게 사용자명-비밀번호 인증을 허용합니다."), String(userName))
             } else {
-                return "지정된 사용자 또는 그룹에 속한 Mac 사용자에게 사용자명-비밀번호 인증을 허용합니다."
+                return String(localized: "settings.security.auth_entry.password.default_description", defaultValue: "지정된 사용자 또는 그룹에 속한 Mac 사용자에게 사용자명-비밀번호 인증을 허용합니다.")
             }
         case .simplePassword:
-            return "비밀번호만을 사용한 인증을 허용합니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
+            return String(localized: "settings.security.auth_entry.simple_password.description", defaultValue: "비밀번호만을 사용한 인증을 허용합니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)")
         case .sshKey:
-            return "SSH 키를 사용한 인증을 허용합니다. (FIXME: format the key display)"
-        
+            return String(localized: "settings.security.auth_entry.ssh_key.description", defaultValue: "SSH 키를 사용한 인증을 허용합니다.")
+
         default:
-            return "외부 플러그인을 통해 제공되는 인증 방법입니다. (FIXME)"
+            return String(localized: "settings.security.auth_entry.external.description", defaultValue: "외부 플러그인을 통해 제공되는 인증 방법입니다.")
         }
     }
     

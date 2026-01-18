@@ -37,7 +37,7 @@ struct CertificateSheet: View {
             
             HStack {
                 Spacer()
-                Button("Close") {
+                Button(String(localized: "settings.security.certificate.close", defaultValue: "닫기")) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
