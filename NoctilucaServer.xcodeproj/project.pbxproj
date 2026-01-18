@@ -69,11 +69,12 @@
 		F64C01172F1BA295009781D8 /* Exceptions for "distutil" folder in "NoctilucaServer" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"/Localized: installer-templates/Resources/license.html",
 				"/Localized: installer-templates/Resources/Localizable.strings",
 				build.sh,
 				"installer-templates/distribution.xml",
-				"installer-templates/Resources/license.html",
 				"installer-templates/Resources/Localizable.strings",
+				"installer-templates/Resources/readme.html",
 				"installer-templates/Resources/welcome.html",
 			);
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
@@ -247,6 +248,7 @@
 				en,
 				Base,
 				ko,
+				ja,
 			);
 			mainGroup = F66965022ECF26770032EF4E;
 			minimizedProjectReferenceProxies = 1;

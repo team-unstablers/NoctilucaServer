@@ -1,6 +1,6 @@
 "app.noctiluca.server.title" = "Noctiluca Server";
 "app.noctiluca.server.description" = "Noctiluca Server";
 
-"app.noctiluca.server.pamconf.title" = "Noctiluca Server: PAM 인증을 위한 추가 설정 파일";
-"app.noctiluca.server.pamconf.description" = "Noctiluca Server가 UNIX PAM 인증을 수행할 수 있도록 /etc/pam.d 디렉토리에 설정 파일을 설치합니다.\n이 파일이 설치되지 않으면 UNIX PAM 인증이 동작하지 않을 수 있습니다.";
+"app.noctiluca.server.pamconf.title" = "PAM 인증을 위한 시스템 구성";
+"app.noctiluca.server.pamconf.description" = "Noctiluca Server가 UNIX PAM 인증을 수행할 수 있도록 시스템을 구성합니다.\n이 항목이 설치되지 않으면 UNIX PAM 인증이 동작하지 않을 수 있습니다.\n\n참고: 이 항목을 설치하려면 관리자 권한이 필요합니다.";
 
