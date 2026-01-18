@@ -10,6 +10,7 @@
 		F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; };
 		F61DD5B32EF0271300AC9B35 /* SiriusKitClient.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F627116D2F08626200E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F627116C2F08626200E8A3D7 /* libzstd */; };
+		F639712A2F1CCCFD00F01622 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F63971292F1CCCFD00F01622 /* Xuanxue */; };
 		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */; };
@@ -89,6 +90,7 @@
 			files = (
 				F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F627116D2F08626200E8A3D7 /* libzstd in Frameworks */,
+				F639712A2F1CCCFD00F01622 /* Xuanxue in Frameworks */,
 				F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */,
 				F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */,
 			);
@@ -173,6 +175,7 @@
 			packageProductDependencies = (
 				F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */,
 				F627116C2F08626200E8A3D7 /* libzstd */,
+				F63971292F1CCCFD00F01622 /* Xuanxue */,
 			);
 			productName = NoctilucaClient;
 			productReference = F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */;
@@ -209,6 +212,7 @@
 			packageReferences = (
 				F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */,
+				F63971282F1CCCFD00F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F6BD3E972EDA1AF6000011DF /* Products */;
@@ -577,6 +581,14 @@
 				version = 1.5.7;
 			};
 		};
+		F63971282F1CCCFD00F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
@@ -592,6 +604,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
+		};
+		F63971292F1CCCFD00F01622 /* Xuanxue */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F63971282F1CCCFD00F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */;
+			productName = Xuanxue;
 		};
 		F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;
