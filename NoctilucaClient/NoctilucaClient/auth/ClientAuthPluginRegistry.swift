@@ -15,6 +15,7 @@ final class ClientAuthPluginRegistry {
     private init() {
         register(plugin: PAMAuthClientPlugin())
         register(plugin: SimplePasswordAuthClientPlugin())
+        register(plugin: SSHAuthClientPlugin())
     }
 
     func register(plugin: ClientAuthPluginV1) {

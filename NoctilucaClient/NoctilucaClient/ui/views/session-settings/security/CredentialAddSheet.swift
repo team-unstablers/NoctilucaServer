@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Xuanxue
 
 struct CredentialAddSheet: View {
     let scope: SessionSettingsScope
@@ -28,9 +29,6 @@ struct CredentialAddSheet: View {
 
     @State
     private var simplePassword: String = ""
-
-    @State
-    private var publicKey: String = ""
 
     @State
     private var privateKey: String = ""
@@ -95,8 +93,7 @@ struct CredentialAddSheet: View {
         case .simplePassword:
             return !simplePassword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .sshKey:
-            return !publicKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && !privateKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return !privateKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
@@ -123,11 +120,7 @@ struct CredentialAddSheet: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("SSH 키")
                     .font(.headline)
-                TextField("공개 키", text: $publicKey, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(.body, design: .monospaced))
-                    .lineLimit(2...4)
-                TextField("개인 키 (PEM)", text: $privateKey, axis: .vertical)
+                TextField("개인 키 (OpenSSH 형식 / PEM 형식을 지원합니다)", text: $privateKey, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(3...6)
@@ -160,13 +153,18 @@ struct CredentialAddSheet: View {
             )
             handler(entry)
         case .sshKey:
-            let trimmedPublicKey = publicKey.trimmingCharacters(in: .whitespacesAndNewlines)
             let trimmedPrivateKey = privateKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // FIXME: 오류 핸들링 및 다이얼로그 표시
+            guard let privateKey = try? SSHPrivateKey(sshString: trimmedPrivateKey) else {
+                return
+            }
+            
             let entry = ClientAuthEntry(
                 method: .sshKey,
                 displayName: name,
                 payload: .sshKey(
-                    publicKey: trimmedPublicKey,
+                    publicKey: "",
                     privateKey: Data(trimmedPrivateKey.utf8)
                 )
             )
