@@ -6,11 +6,16 @@
 //
 
 import SiriusKit
+import AppKit
 
 class ProjectionChannel: Channel {
     private let logger = NoctilucaLogger(category: "ProjectionChannel")
-    private(set) var sessions: [UUID: ProjectionSession] = [:]
     
+    private let cursorStateHolder = CursorStateHolder.shared
+    private var subscription: CursorEventSubscription? = nil
+    
+    private(set) var sessions: [UUID: ProjectionSession] = [:]
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
         
@@ -42,6 +47,12 @@ class ProjectionChannel: Channel {
         case .projectionPerformanceReport:
             let report = try ProjectionPerformanceReport.fromProtobufBytes(frame.data)
             await self.handlePerformanceReport(report)
+        case .subscribeCursorEventsRequest:
+            let request = try SubscribeCursorEventsRequest.fromProtobufBytes(frame.data)
+            try await self.handleSubscribeCursorEventsRequest(request)
+        case .unsubscribeCursorEventsRequest:
+            let request = try UnsubscribeCursorEventsRequest.fromProtobufBytes(frame.data)
+            try await self.handleUnsubscribeCursorEventsRequest(request)
             
         default:
             print("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
@@ -102,4 +113,55 @@ class ProjectionChannel: Channel {
             self.logger.error("Failed to handle projection request: \(error)")
         }
     }
+    
+    private func handleSubscribeCursorEventsRequest(_ request: SubscribeCursorEventsRequest) async throws {
+        if let subscription = self.subscription {
+            // TODO: send error
+            return
+        }
+        
+        let subscription = CursorEventSubscription()
+        subscription.channel = self
+        
+        await subscription.setup()
+        
+        self.subscription = subscription
+        
+        try await self.send(opcode: .subscribeCursorEventsResponse, message: SubscribeCursorEventsResponse(
+            requestID: request.requestID,
+            subscriptionID: subscription.id
+        ))
+    }
+    
+    private func handleUnsubscribeCursorEventsRequest(_ request: UnsubscribeCursorEventsRequest) async throws {
+        guard let subscription = self.subscription else {
+            // TODO: send error
+            return
+        }
+        
+        subscription.destroy()
+        self.subscription = nil
+
+        try await self.send(opcode: .unsubscribeCursorEventsResponse, message: UnsubscribeCursorEventsResponse(
+            requestID: request.requestID,
+            subscriptionID: subscription.id,
+            isSuccess: true
+        ))
+    }
+    
+    func sendCursorEvent() async throws {
+        guard let cursorImage = await cursorStateHolder.cursorImage,
+              let png = cursorImage.pngData
+        else {
+            return
+        }
+        
+        try await self.send(opcode: .cursorEvent, message: CursorEvent(
+            cursorType: UInt64(cursorStateHolder.cursorHash),
+            mimeType: "image/png",
+            size: SRSize(width: cursorImage.size.width, height: cursorImage.size.height),
+            imageData: png
+        ))
+    }
 }
+

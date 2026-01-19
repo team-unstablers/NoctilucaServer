@@ -1,5 +1,5 @@
 {
-  "originHash" : "eee427d9842d182465efec3387ecbe5bd041e5c5f61e8062e17c41b5e7849514",
+  "originHash" : "b3305233cf03b9d340e691a69b3fd3dca8d72897956da1a0d94f451fab501cf6",
   "pins" : [
     {
       "identity" : "swift-asn1",
@@ -65,12 +65,21 @@
       }
     },
     {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax.git",
+      "state" : {
+        "revision" : "4799286537280063c85a32f09884cfbca301b1a1",
+        "version" : "602.0.0"
+      }
+    },
+    {
       "identity" : "xuanxue",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/team-unstablers/Xuanxue.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "09e0f3275cbb4aee311e786efd2bc0f7318c34ca"
+        "revision" : "1618eef3a4b675d7b25df77b71304829ce5ef942",
+        "version" : "1.0.1"
       }
     },
     {

@@ -10,6 +10,7 @@
 		F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; };
 		F624FD762EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD862EE2B2E6007A68B3 /* libpam.tbd */; };
+		F62689452F1E50F60030D59B /* Gesu in Frameworks */ = {isa = PBXBuildFile; productRef = F62689442F1E50F60030D59B /* Gesu */; };
 		F627113F2F084EC200E8A3D7 /* libz.1.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F627113E2F084EBB00E8A3D7 /* libz.1.tbd */; };
 		F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F62711432F0852DE00E8A3D7 /* libzstd */; };
 		F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; };
@@ -127,6 +128,7 @@
 				F627113F2F084EC200E8A3D7 /* libz.1.tbd in Frameworks */,
 				F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F66965372ECF27110032EF4E /* SiriusKit.framework in Frameworks */,
+				F62689452F1E50F60030D59B /* Gesu in Frameworks */,
 				F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */,
 				F63971242F1CCA4400F01622 /* Xuanxue in Frameworks */,
 				F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */,
@@ -219,6 +221,7 @@
 			packageProductDependencies = (
 				F62711432F0852DE00E8A3D7 /* libzstd */,
 				F63971232F1CCA4400F01622 /* Xuanxue */,
+				F62689442F1E50F60030D59B /* Gesu */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -635,13 +638,17 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F62689442F1E50F60030D59B /* Gesu */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Gesu;
+		};
 		F62711432F0852DE00E8A3D7 /* libzstd */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;

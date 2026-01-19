@@ -9,7 +9,9 @@ import SiriusKit
 
 class HIDIOChannel: Channel {
     let logger = NoctilucaLogger(category: "HIDIOChannel")
+    
     let eventInjector = EventInjector()
+    let cursorStateHolder = CursorStateHolder.shared
     
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -60,6 +62,8 @@ class HIDIOChannel: Channel {
                 break
             }
         }
+        
+        await cursorStateHolder.updateCursorHash()
     }
     
     func inject(keyboardEvent: KeyboardEvent) {

@@ -278,7 +278,7 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
         
         // HACK: 최소 2 이상이어야 함, macOS 14쯤때부터 1로 설정하면 지랄나더라
         configuration.queueDepth = 2
-        configuration.showsCursor = true // flags.contains(.showCursor)
+        configuration.showsCursor = flags.contains(.showCursor)
         
         let filter = try await source.createSCContentFilter()
         let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
