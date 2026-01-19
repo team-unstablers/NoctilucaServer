@@ -27,7 +27,7 @@ struct MainWindowMainPhaseContentView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .topTrailing) {
+            ZStack(alignment: .topLeading) {
                 if let displayLayer = viewModel.displayLayer {
                     SampleBufferDisplayView(displayLayer: displayLayer)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -35,12 +35,20 @@ struct MainWindowMainPhaseContentView: View {
                         .offset(offset)
                 }
 
+                /*
                 if let session = viewModel.client?.projectionChannel?.sessions.first?.value,
                    let codec = session.codec
                 {
                     PerformanceOverlay(codec: codec, rtt: viewModel.averagePingRTT)
                         .padding(16)
                 }
+                 */
+                
+                if let cursorImage = viewModel.client?.projectionChannel?.cursorImage {
+                    Image(decorative: cursorImage, scale: 1.0, orientation: .up)
+                }
+                
+                
 
 #if os(macOS)
                 if let warning = viewModel.inputWarning {

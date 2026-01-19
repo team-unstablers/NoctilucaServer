@@ -6,15 +6,22 @@
 //
 
 import Foundation
+import Combine
+
+import CoreGraphics
 
 import SiriusKitClient
 
-class ProjectionChannel: Channel {
+class ProjectionChannel: Channel, ObservableObject {
     private let logger = SiriusLogger(category: "ProjectionChannel", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     private static let defaultSpecifications: [CodecSpecification] = [.hevc, .h264]
     
     private(set) var pendingSessions: [UUID: (ProjectionSessionCreatedEvent) -> Void] = [:]
     private(set) var sessions: [UUID: ProjectionSession] = [:]
+    
+    @Published
+    private(set) var cursorImage: CGImage? = nil
+
     
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -38,6 +45,9 @@ class ProjectionChannel: Channel {
                 self.logger.warning("No pending session found for identifier: \(event.identifier)")
             }
             
+        case .cursorEvent:
+            let event = try CursorEvent.fromProtobufBytes(frame.data)
+            try await self.handleCursorEvent(event)
         default:
             break
         }
@@ -128,5 +138,39 @@ class ProjectionChannel: Channel {
         return CodecOptions(mandatory: [:], optional: combined)
     }
     
+    func subscribeCursorEvents() async throws {
+        try await self.send(opcode: .subscribeCursorEventsRequest, message: SubscribeCursorEventsRequest(
+            // FIXME
+            requestID: 0,
+            flags: 0
+        ))
+    }
+    
+    func unsubscribeCursorEvents() async throws {
+        try await self.send(opcode: .unsubscribeCursorEventsRequest, message: UnsubscribeCursorEventsRequest(
+            // FIXME
+            requestID: 0,
+            subscriptionID: UUID()
+        ))
+    }
+    
+    private func handleCursorEvent(_ event: CursorEvent) async throws {
+        self.logger.info("Received cursorEvent: cursorType=\(event.cursorType)")
+        
+        guard let dataProvider = CGDataProvider(data: event.imageData as CFData) else {
+            return
+        }
+        
+        let cursorImage = CGImage(
+            pngDataProviderSource: dataProvider,
+            decode: nil,
+            shouldInterpolate: true,
+            intent: .defaultIntent
+        )
+        
+        await MainActor.run {
+            self.cursorImage = cursorImage
+        }
+    }
 
 }
