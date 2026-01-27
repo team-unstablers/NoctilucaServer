@@ -6,7 +6,6 @@
 //
 
 import Foundation
-
 import CoreImage
 import CoreGraphics
 import Metal
@@ -15,11 +14,14 @@ class FrameTiler {
     private(set) var tileSize: Int
     private let ciContext: CIContext
     private var cachedTileSets: [[CVPixelBuffer]] = []
+    
+    // 캐싱 변수들
     private var cachedTileSize: Int = 0
     private var cachedPaddedWidth: Int = 0
     private var cachedPaddedHeight: Int = 0
     private var cachedPixelFormat: OSType = 0
     private var cachedTileCount: Int = 0
+    
     private var shouldPropagateAttachments: Bool = true
     private var tileSetIndex: Int = 0
     
@@ -43,21 +45,21 @@ class FrameTiler {
         let paddedWidth = ((width + tileSize - 1) / tileSize) * tileSize
         let paddedHeight = ((height + tileSize - 1) / tileSize) * tileSize
         
-        var tiles: [CVImageBuffer] = []
-        tiles.reserveCapacity((paddedWidth / tileSize) * (paddedHeight / tileSize))
-        
+        // 픽셀 포맷 및 속성 가져오기
         let pixelFormat = CVPixelBufferGetPixelFormatType(image)
-        let colorSpace = CVImageBufferGetColorSpace(image)?.takeUnretainedValue() ?? CGColorSpaceCreateDeviceRGB()
+        let bytesPerPixel = self.bytesPerPixel(for: pixelFormat) ?? 4 // 기본값 4로 가정
+        
+        // 타일 버퍼 준비
+        let tilesPerRow = paddedWidth / tileSize
+        let tilesPerColumn = paddedHeight / tileSize
+        let tileCount = tilesPerRow * tilesPerColumn
         
         let attrs: CFDictionary = [
             kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue as Any,
             kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue as Any,
             kCVPixelBufferMetalCompatibilityKey: kCFBooleanTrue as Any
         ] as CFDictionary
-
-        let tilesPerRow = max(1, paddedWidth / tileSize)
-        let tilesPerColumn = max(1, paddedHeight / tileSize)
-        let tileCount = tilesPerRow * tilesPerColumn
+        
         let tileBuffers = acquireTileSet(
             tileSize: tileSize,
             paddedWidth: paddedWidth,
@@ -66,69 +68,95 @@ class FrameTiler {
             tileCount: tileCount,
             attrs: attrs
         )
-        if tileBuffers.isEmpty {
-            return []
-        }
         
-        let bytesPerPixel = bytesPerPixel(for: pixelFormat)!
+        if tileBuffers.isEmpty { return [] }
         
+        // 소스 이미지 잠금 (읽기 전용)
         CVPixelBufferLockBaseAddress(image, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(image, .readOnly) }
         
-        guard let baseAddress = CVPixelBufferGetBaseAddress(image) else { return [] }
+        guard let srcBaseAddress = CVPixelBufferGetBaseAddress(image) else { return [] }
         let srcBytesPerRow = CVPixelBufferGetBytesPerRow(image)
-        let srcBase = baseAddress.assumingMemoryBound(to: UInt8.self)
+        let srcBaseRaw = UnsafeRawPointer(srcBaseAddress) // 불필요한 형변환 최소화
         
-        var tileIndex = 0
-        for y in stride(from: 0, to: paddedHeight, by: tileSize) {
-            for x in stride(from: 0, to: paddedWidth, by: tileSize) {
-                if tileIndex >= tileBuffers.count { break }
-                let pixelBuffer = tileBuffers[tileIndex]
-                tileIndex += 1
+        // [최적화 1] 병렬 처리: 타일 개수만큼 병렬로 작업 수행
+        DispatchQueue.concurrentPerform(iterations: tileCount) { index in
+            if index >= tileBuffers.count { return }
+            
+            let tileBuffer = tileBuffers[index]
+            
+            // 현재 타일의 논리적 위치 계산 (이중 루프 대신 단일 인덱스 사용)
+            let tileCol = index % tilesPerRow
+            let tileRow = index / tilesPerRow
+            let startX = tileCol * tileSize
+            let startY = tileRow * tileSize
+            
+            CVPixelBufferLockBaseAddress(tileBuffer, [])
+            defer { CVPixelBufferUnlockBaseAddress(tileBuffer, []) }
+            
+            guard let dstBaseAddress = CVPixelBufferGetBaseAddress(tileBuffer) else { return }
+            let dstBytesPerRow = CVPixelBufferGetBytesPerRow(tileBuffer)
+            let dstBaseRaw = UnsafeMutableRawPointer(dstBaseAddress)
+            
+            // 타일 내부 행(Row) 반복
+            for row in 0..<tileSize {
+                // 소스 이미지에서의 Y 좌표
+                let currentY = startY + row
+                // 이미지 범위를 벗어나면 마지막 줄을 계속 복사 (Clamping)
+                let sourceY = min(height - 1, currentY)
                 
-                CVPixelBufferLockBaseAddress(pixelBuffer, [])
+                // 포인터 계산
+                let srcRowPtr = srcBaseRaw.advanced(by: sourceY * srcBytesPerRow)
+                let dstRowPtr = dstBaseRaw.advanced(by: row * dstBytesPerRow)
                 
-                if let dstBase = CVPixelBufferGetBaseAddress(pixelBuffer) {
-                    let dstBytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-                    let dst = dstBase.assumingMemoryBound(to: UInt8.self)
+                // 복사할 유효 너비 계산
+                let validWidth = (startX < width) ? min(width - startX, tileSize) : 0
+                
+                // 1. 유효한 이미지 데이터 복사 (memcpy)
+                if validWidth > 0 {
+                    let srcPixelPtr = srcRowPtr.advanced(by: startX * bytesPerPixel)
+                    memcpy(dstRowPtr, srcPixelPtr, validWidth * bytesPerPixel)
+                }
+                
+                // 2. 패딩 처리 (이미지 오른쪽 끝부분)
+                if validWidth < tileSize {
+                    // 마지막 유효 픽셀의 위치 (유효 데이터가 없으면 0번째 픽셀)
+                    let lastPixelIndex = max(0, min(width - 1, startX + validWidth - 1))
+                    // 원본에서의 마지막 픽셀 포인터 (소스에서 가져옴)
+                    let lastPixelPtr = srcRowPtr.advanced(by: lastPixelIndex * bytesPerPixel)
                     
-                    for row in 0..<tileSize {
-                        let sourceY = min(height - 1, y + row)
-                        let srcRow = srcBase + (sourceY * srcBytesPerRow)
-                        let dstRow = dst + (row * dstBytesPerRow)
-                        
-                        let copyWidth = x < width ? min(width - x, tileSize) : 0
-                        if copyWidth > 0 {
-                            let srcStart = srcRow + (x * bytesPerPixel)
-                            memcpy(dstRow, srcStart, copyWidth * bytesPerPixel)
-                        }
-                        
-                        let lastPixelX = max(0, min(width - 1, x + copyWidth - 1))
-                        let lastPixel = srcRow + (lastPixelX * bytesPerPixel)
-                        if copyWidth < tileSize {
-                            var dstPixel = dstRow + (copyWidth * bytesPerPixel)
-                            for _ in copyWidth..<tileSize {
-                                memcpy(dstPixel, lastPixel, bytesPerPixel)
-                                dstPixel += bytesPerPixel
-                            }
+                    // 채워야 할 시작 지점
+                    let fillStartPtr = dstRowPtr.advanced(by: validWidth * bytesPerPixel)
+                    let fillCount = tileSize - validWidth
+                    
+                    // [최적화 2] 4바이트(32bit) 픽셀인 경우 memset_pattern4 사용
+                    // 기존: for 루프 내 memcpy (CPU 과부하 원인) -> 변경: 시스템 최적화 함수
+                    if bytesPerPixel == 4 {
+                        memset_pattern4(fillStartPtr, lastPixelPtr, fillCount * 4)
+                    } else {
+                        // 4바이트가 아닌 경우 (예외적) - 루프 대신 패턴 복사 시도
+                        // 단순히 루프를 돌리더라도 UnsafeRawPointer 레벨에서 처리하여 Iterator 오버헤드 감소
+                        var currentFillPtr = fillStartPtr
+                        for _ in 0..<fillCount {
+                            memcpy(currentFillPtr, lastPixelPtr, bytesPerPixel)
+                            currentFillPtr += bytesPerPixel
                         }
                     }
                 }
-                
-                CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
-                tiles.append(pixelBuffer)
             }
         }
         
+        // 메타데이터 전파 (첫 프레임에서만)
         if shouldPropagateAttachments {
-            for tile in tiles {
+            // 병렬 처리 후 메인 스레드나 호출 스레드에서 수행해도 무방하지만,
+            // 안전을 위해 타일 배열 순회
+            for tile in tileBuffers {
                 CVBufferPropagateAttachments(image, tile)
             }
-            
             shouldPropagateAttachments = false
         }
         
-        return tiles
+        return tileBuffers
     }
 }
 
@@ -141,6 +169,7 @@ private extension FrameTiler {
              kCVPixelFormatType_32ABGR:
             return 4
         default:
+            // 다른 포맷이 필요하다면 여기에 추가 (예: YpCbCr 등은 평면이 달라 로직 변경 필요)
             return nil
         }
     }
