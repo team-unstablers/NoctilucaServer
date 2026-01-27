@@ -7,26 +7,93 @@
 
 import Foundation
 import Combine
+import Atomics
 
 import CoreGraphics
 
 import SiriusKitClient
 
 class ProjectionChannel: Channel, ObservableObject {
-    private let logger = SiriusLogger(category: "ProjectionChannel", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    let logger = SiriusLogger(category: "ProjectionChannel", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     private static let defaultSpecifications: [CodecSpecification] = [.hevc, .h264]
-    
+
+    /// Request ID 생성을 위한 atomic 카운터
+    private let requestCounter = ManagedAtomic<UInt64>(0)
+
+    /// 다음 request ID를 생성합니다.
+    func nextRequestID() -> UInt64 {
+        requestCounter.loadThenWrappingIncrement(ordering: .relaxed)
+    }
+
     private(set) var pendingSessions: [UUID: (ProjectionSessionCreatedEvent) -> Void] = [:]
     private(set) var sessions: [UUID: ProjectionSession] = [:]
-    
+
+    // MARK: - Displayman
+
+    var pendingDisplayListRequests: [UInt64: (DisplayListResponse) -> Void] = [:]
+    var pendingSubscribeDisplayChangesRequests: [UInt64: (SubscribeDisplayChangesResponse) -> Void] = [:]
+    var displayChangesSubscriptionID: UUID? = nil
+
+    /// 현재 프로젝션 대상 디스플레이 ID
+    private(set) var currentDisplayID: Int32 = -1
+
+    /// 현재 프로젝션 설정 (재시작 시 사용)
+    private var currentProjectionSettings: SessionSettings.Projection? = nil
+
+    let displayChangeSubject = PassthroughSubject<DisplayChangedEvent, Never>()
+    private var displayChangeCancellable: AnyCancellable?
+
     @Published
     private(set) var cursorImage: CGImage? = nil
 
     
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
-        
+
         assert(direction == .local, "ProjectionChannel must be opened from client side")
+
+        setupDisplayChangeHandler()
+    }
+
+    // MARK: - Display Change Debouncing
+
+    private func setupDisplayChangeHandler() {
+        displayChangeCancellable = displayChangeSubject
+            .debounce(for: .seconds(1.5), scheduler: RunLoop.main)
+            .sink { [weak self] event in
+                Task { await self?.handleDebouncedDisplayChange(event) }
+            }
+    }
+
+    private func handleDebouncedDisplayChange(_ event: DisplayChangedEvent) async {
+        // 메인 디스플레이 관련 변경만 처리
+        let shouldRestartProjection = event.eventType.contains(.becamePrimary)
+            || (event.eventType.contains(.disconnected) && event.display.state.isPrimary)
+            || (event.eventType.contains(.modified) && event.display.state.isPrimary)
+
+        guard shouldRestartProjection else {
+            self.logger.info("Display change event does not require projection restart")
+            return
+        }
+
+        self.logger.info("Main display changed, restarting projection...")
+
+        // 기존 세션 중지
+        for (_, session) in self.sessions {
+            do {
+                try await session.stop()
+            } catch {
+                self.logger.error("Failed to stop existing projection session: \(error)")
+            }
+        }
+        self.sessions.removeAll()
+
+        // 새로운 디스플레이 정보 조회 및 프로젝션 재시작
+        do {
+            let _ = try await self.createSession(projectionSettings: self.currentProjectionSettings)
+        } catch {
+            self.logger.error("Failed to restart projection session: \(error)")
+        }
     }
     
     override func handleFrame(frame: SiriusFrame) async throws {
@@ -48,6 +115,21 @@ class ProjectionChannel: Channel, ObservableObject {
         case .cursorEvent:
             let event = try CursorEvent.fromProtobufBytes(frame.data)
             try await self.handleCursorEvent(event)
+
+        // MARK: - Displayman opcodes
+
+        case .displayListResponse:
+            let response = try DisplayListResponse.fromProtobufBytes(frame.data)
+            self.handleDisplayListResponse(response)
+
+        case .subscribeDisplayChangesResponse:
+            let response = try SubscribeDisplayChangesResponse.fromProtobufBytes(frame.data)
+            self.handleSubscribeDisplayChangesResponse(response)
+
+        case .displayChangedEvent:
+            let event = try DisplayChangedEvent.fromProtobufBytes(frame.data)
+            self.handleDisplayChangedEvent(event)
+
         default:
             break
         }
@@ -57,35 +139,72 @@ class ProjectionChannel: Channel, ObservableObject {
         guard let clientSession = self.clientSession else {
             fatalError()
         }
-        
+
+        // 프로젝션 설정 저장 (재시작 시 사용)
+        self.currentProjectionSettings = projectionSettings
+
         let identifier = UUID()
 
+        // 디스플레이 목록 조회 및 메인 디스플레이 찾기
+        let displayID = try await fetchPrimaryDisplayID()
+        self.currentDisplayID = displayID
+
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
-        try await sendProjectionRequest(identifier: identifier, preferredCodecs: preferredCodecs)
-        
+        try await sendProjectionRequest(identifier: identifier, displayID: displayID, preferredCodecs: preferredCodecs)
+
         let createdEvent = await withCheckedContinuation { cont in
             self.pendingSessions[identifier] = { event in
                 self.pendingSessions.removeValue(forKey: identifier)
                 cont.resume(returning: event)
             }
         }
-        
+
         let channel = clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
-        
+
         let session = ProjectionSession(id: identifier, dataChannel: channel, controlChannel: self)
-        
+
         try await session.prepare(codec: createdEvent.codec)
         try await session.start()
-        
+
         self.sessions[identifier] = session
+
+        // 디스플레이 변경 이벤트 구독
+        do {
+            let _ = try await subscribeDisplayChanges(eventMask: .none)
+            self.logger.info("Subscribed to display change events")
+        } catch {
+            self.logger.warning("Failed to subscribe to display change events: \(error)")
+        }
+
         return session
     }
 
-    private func sendProjectionRequest(identifier: UUID, preferredCodecs: [Codec]) async throws {
+    /// 서버에서 디스플레이 목록을 조회하고 메인 디스플레이 ID를 반환합니다.
+    private func fetchPrimaryDisplayID() async throws -> Int32 {
+        let response = try await requestDisplayList()
+
+        // 메인 디스플레이 찾기
+        if let primaryDisplay = response.displays.first(where: { $0.state.isPrimary }) {
+            self.logger.info("Found primary display: id=\(primaryDisplay.displayID), name=\(primaryDisplay.displayName)")
+            return Int32(primaryDisplay.displayID)
+        }
+
+        // 메인 디스플레이가 없으면 첫 번째 연결된 디스플레이 사용
+        if let firstDisplay = response.displays.first(where: { $0.state.isConnected }) {
+            self.logger.warning("No primary display found, using first connected display: id=\(firstDisplay.displayID)")
+            return Int32(firstDisplay.displayID)
+        }
+
+        // 아무 디스플레이도 없으면 -1 반환 (서버가 기본 처리)
+        self.logger.warning("No displays found, using default display ID -1")
+        return -1
+    }
+
+    private func sendProjectionRequest(identifier: UUID, displayID: Int32, preferredCodecs: [Codec]) async throws {
         try await self.send(opcode: .projectionRequest, message: ProjectionRequest(
             identifier: identifier,
             viewport: ProjectionSource(
-                value: .entireDisplay(EntireDisplayProjectionSource(displayID: Int32(-1))),
+                value: .entireDisplay(EntireDisplayProjectionSource(displayID: displayID)),
                 flags: .none
             ),
             preferredCodecs: preferredCodecs

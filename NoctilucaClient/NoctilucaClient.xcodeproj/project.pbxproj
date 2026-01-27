@@ -585,8 +585,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.1;
 			};
 		};
 		F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
