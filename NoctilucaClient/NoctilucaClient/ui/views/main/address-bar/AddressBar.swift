@@ -218,10 +218,12 @@ struct AddressBar: View {
         case up
         case down
     }
-    
+
     let endpointURL: String
-    let contacts: [ContactItem]
-    
+
+    @ObservedObject
+    private var contactsStore = ContactsStore.shared
+
     let securityIndicator: AddressBarSecurityIndicatorState?
     
     let qualityIndicator: AddressBarQualityIndicatorState?
@@ -238,12 +240,10 @@ struct AddressBar: View {
          qualityIndicator: AddressBarQualityIndicatorState? = nil,
          rtt: TimeInterval = 0,
          action: AddressBarActionState? = nil,
-         contacts: [ContactItem] = [],
          isFocused: FocusState<Bool>.Binding,
          submitHandler: @escaping (EndpointKind?) -> Void) {
         self.endpointURL = endpointURL
         self._draftURL = .init(initialValue: endpointURL)
-        self.contacts = contacts
         self.securityIndicator = securityIndicator
         self.qualityIndicator = qualityIndicator
         self.rtt = rtt
@@ -540,6 +540,7 @@ struct AddressBar: View {
     }
 
     private func filterContacts(for query: String) -> [ContactItem] {
+        let contacts = contactsStore.contacts
         guard !contacts.isEmpty else { return [] }
 
         if query.isEmpty {
@@ -553,7 +554,7 @@ struct AddressBar: View {
     }
 
     private var contactSignature: [String] {
-        contacts.map { item in
+        contactsStore.contacts.map { item in
             "\(item.id.uuidString):\(item.displayName):\(item.endpointURL)"
         }
     }
@@ -567,7 +568,6 @@ private struct AddressBarPreviewContainer: View {
     let securityIndicator: AddressBarSecurityIndicatorState?
     let qualityIndicator: AddressBarQualityIndicatorState?
     let action: AddressBarActionState?
-    let contacts: [ContactItem]
 
     var body: some View {
         AddressBar(
@@ -576,7 +576,6 @@ private struct AddressBarPreviewContainer: View {
             qualityIndicator: qualityIndicator,
             rtt: 0,
             action: action,
-            contacts: contacts,
             isFocused: $isFocused
         ) { action in
             print(action as Any)
@@ -591,8 +590,7 @@ private struct AddressBarPreviewContainer: View {
                 endpointURL: "",
                 securityIndicator: nil,
                 qualityIndicator: nil,
-                action: nil,
-                contacts: []
+                action: nil
             )
             
             Spacer()

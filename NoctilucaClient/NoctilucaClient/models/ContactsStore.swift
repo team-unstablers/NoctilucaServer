@@ -1,21 +1,45 @@
 //
-//  ContactStore.swift
+//  ContactsStore.swift
 //  NoctilucaClient
 //
 //  Created by Gyuhwan Park on 12/21/25.
 //
 
 import Foundation
+import Combine
 
-enum ContactStoreError: LocalizedError {
+enum ContactsStoreError: LocalizedError {
     case contactNotFound
 }
 
-struct ContactStore {
-    private static let contactsDirectoryName = "contacts"
-    static let didChangeNotification = Notification.Name("NoctilucaClient.ContactStoreDidChange")
+final class ContactsStore: ObservableObject {
+    static let shared = ContactsStore()
 
-    static func save(_ contact: ContactItem) throws {
+    private static let contactsDirectoryName = "contacts"
+
+    @Published private(set) var contacts: [ContactItem] = []
+    @Published private(set) var isLoading: Bool = false
+    @Published private(set) var loadError: String?
+
+    private init() {
+        loadContacts()
+    }
+
+    // MARK: - Public API
+
+    func loadContacts() {
+        isLoading = true
+        loadError = nil
+        do {
+            let loaded = try loadAll()
+            contacts = loaded.sorted { $0.displayName < $1.displayName }
+        } catch {
+            loadError = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    func save(_ contact: ContactItem) throws {
         let fileManager = FileManager.default
         let url = try contactURL(for: contact.id)
 
@@ -27,25 +51,26 @@ struct ContactStore {
             )
         }
 
-        let json = try jsonEncoder.encode(contact)
+        let json = try Self.jsonEncoder.encode(contact)
         try json.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
-        notifyChange()
+        loadContacts()
     }
 
-    static func load(id: UUID) throws -> ContactItem {
+    func remove(id: UUID) throws {
         let fileManager = FileManager.default
         let url = try contactURL(for: id)
         guard fileManager.fileExists(atPath: url.path) else {
-            throw ContactStoreError.contactNotFound
+            return
         }
 
-        var contact = try jsonDecoder.decode(ContactItem.self, from: Data(contentsOf: url))
-        contact.normalizeAfterLoad()
-        return contact
+        try fileManager.removeItem(at: url)
+        loadContacts()
     }
 
-    static func loadAll() throws -> [ContactItem] {
+    // MARK: - Private
+
+    private func loadAll() throws -> [ContactItem] {
         let fileManager = FileManager.default
         let directory = try contactsDirectory()
         guard fileManager.fileExists(atPath: directory.path) else {
@@ -60,7 +85,7 @@ struct ContactStore {
 
         return urls.compactMap { url in
             guard url.pathExtension == "json" else { return nil }
-            guard var contact = try? jsonDecoder.decode(ContactItem.self, from: Data(contentsOf: url)) else {
+            guard var contact = try? Self.jsonDecoder.decode(ContactItem.self, from: Data(contentsOf: url)) else {
                 return nil
             }
             contact.normalizeAfterLoad()
@@ -68,40 +93,25 @@ struct ContactStore {
         }
     }
 
-    static func remove(id: UUID) throws {
-        let fileManager = FileManager.default
-        let url = try contactURL(for: id)
-        guard fileManager.fileExists(atPath: url.path) else {
-            return
-        }
-
-        try fileManager.removeItem(at: url)
-        notifyChange()
-    }
-
-    static func contactURL(for id: UUID) throws -> URL {
+    private func contactURL(for id: UUID) throws -> URL {
         try contactsDirectory().appendingPathComponent("\(id.uuidString).json", isDirectory: false)
     }
 
-    static func contactsDirectory() throws -> URL {
+    private func contactsDirectory() throws -> URL {
         let base = try AppSettings.applicationSupportDirectory()
-        return base.appendingPathComponent(contactsDirectoryName, isDirectory: true)
-    }
-}
-
-private extension ContactStore {
-    static func notifyChange() {
-        NotificationCenter.default.post(name: didChangeNotification, object: nil)
+        return base.appendingPathComponent(Self.contactsDirectoryName, isDirectory: true)
     }
 
-    static let jsonEncoder: JSONEncoder = {
+    // MARK: - JSON Encoder/Decoder
+
+    private static let jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .useDefaultKeys
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
         return encoder
     }()
 
-    static let jsonDecoder: JSONDecoder = {
+    private static let jsonDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .useDefaultKeys
         return decoder

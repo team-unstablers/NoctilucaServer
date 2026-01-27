@@ -86,7 +86,6 @@ struct MainToolbarAddressBar: View {
                 qualityIndicator: qualityIndicator,
                 rtt: viewModel.averagePingRTT,
                 action: action,
-                contacts: viewModel.contacts,
                 isFocused: resolvedFocusBinding
             ) { endpoint in
                 guard let endpoint else {
@@ -95,7 +94,7 @@ struct MainToolbarAddressBar: View {
 
                 switch endpoint {
                 case .connect(let endpointURL):
-                    viewModel.presentQuickConnectSheet(endpointURL: endpointURL)
+                    viewModel.contactSheetCoordinator.presentQuickConnect(endpointURL: endpointURL)
                 case .contact, .quickConnect:
                     Task {
                         try await self.viewModel.startSession(endpoint: endpoint)

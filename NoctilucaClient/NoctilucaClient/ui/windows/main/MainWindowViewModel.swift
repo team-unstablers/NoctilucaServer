@@ -14,31 +14,25 @@ import Combine
 import SiriusKitClient
 
 class MainWindowViewModel: ObservableObject {
-    enum SessionSettingsSheetMode: Hashable {
-        case quickConnect
-        case contactEditor
-    }
-
     @Published
     var phase: MainWindowPhase = .newConnection
-    
+
     @Published
     var endpointURL: String = ""
-    
-    @Published
-    var connectionLog: [String] = []
-    
+
     @Published
     var errors: [NoctilucaClientError] = []
-    
+
     @Published
     var shouldDisplayErrorAlert: Bool = false
-    
+
     var client: NoctilucaClient?
-    
+
+    var sessionEventCoordinator: SessionEventCoordinator!
+
     @Published
     var averagePingRTT: TimeInterval = 0.0
-    
+
     @Published
     var displayLayer: AVSampleBufferDisplayLayer? = nil
 
@@ -47,54 +41,38 @@ class MainWindowViewModel: ObservableObject {
 
     @Published
     private(set) var sessionSettings: SessionSettings? = nil
-    
+
     @Published
     private(set) var isInputLockActive: Bool = false
 
-    // TODO: Contact management 관련 코드는 별도 ViewModel로 분리 고려
     @Published
-    var contacts: [ContactItem] = []
-
-    @Published
-    var isLoadingContacts: Bool = false
-
-    @Published
-    var contactsLoadError: String? = nil
-
-    @Published
-    var isSessionSettingsSheetPresented: Bool = false
-
-    @Published
-    var isDeleteContactConfirmationPresented: Bool = false
-
-    @Published
-    var sessionSettingsSheetMode: SessionSettingsSheetMode = .quickConnect
-
-    @Published
-    var sessionSettingsDraft: ContactItem = ContactItem(
-        name: nil,
-        endpointURL: "",
-        preset: SessionSettings(scope: .session)
-    )
-
-    @Published
-    var isEditingContact: Bool = false
+    var contactSheetCoordinator: ContactSheetCoordinator
 
     private var settingsStore: SettingsStore?
     private var settingsCancellable: AnyCancellable?
-    private var contactsCancellable: AnyCancellable?
-    
 
-    func appendConnectionLog(_ log: String) {
-        self.connectionLog.append(log)
-        
-        // 마지막 6개 정도만 남긴다
-        if self.connectionLog.count > 6 {
-            self.connectionLog.removeFirst(self.connectionLog.count - 6)
+    init() {
+        self.contactSheetCoordinator = ContactSheetCoordinator()
+        self.sessionEventCoordinator = SessionEventCoordinator(self)
+        setupContactSheetCoordinator()
+    }
+
+    private func setupContactSheetCoordinator() {
+        contactSheetCoordinator.onConnect = { [weak self] endpoint, settingsOverride in
+            Task { @MainActor in
+                try? await self?.startSession(endpoint: endpoint, settingsOverride: settingsOverride)
+            }
         }
     }
     
+    
     func startSession(endpoint: EndpointKind, settingsOverride: SessionSettings? = nil) async throws {
+        if self.client != nil {
+            // TODO: confirm before stopping existing session
+            await self.stopSession()
+        }
+        
+        // FIXME: IPv6 지원하지 않는다
         let endpointURL = endpoint.endpointURL
         let host = endpointURL.split(separator: ":").first
         let port = UInt16(endpointURL.split(separator: ":").last ?? "") ?? 8282
@@ -120,19 +98,9 @@ class MainWindowViewModel: ObservableObject {
             }
         }
         
-        self.appendConnectionLog("\(host):\(port) 에 연결을 시도합니다")
         
-        let result = SiriusClientBuilder()
-            .useTransportProtocol(.quic(host: String(host), port: port))
-            .useFeatureProvider(NoctilucaFeatureProvider())
-            .build()
-        
-        
-        let session = try result.get()
-        let client = NoctilucaClient(session)
-        client.sessionSettings = self.sessionSettings
-
-        self.client = client
+        let clientManager = NoctilucaClientManager.shared
+        let client = try await clientManager.createClient(to: String(host), port: port, settings: self.sessionSettings)
 
         if let sessionSettings = self.sessionSettings {
             configureAuthCredentials(for: client, endpoint: endpoint, sessionSettings: sessionSettings)
@@ -142,23 +110,28 @@ class MainWindowViewModel: ObservableObject {
             client.applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
         }
         
-        try await client.setup()
-        self.appendConnectionLog("Sirius 프로토콜 클라이언트를 초기화했습니다")
+        do {
+            try await client.setup()
+            self.sessionEventCoordinator.bind(to: client)
+            
+            try await client.startup()
+        } catch {
+            self.phase = .newConnection
+            await clientManager.killClient(id: client.id)
+            
+            throw error
+        }
         
-        try await client.startup()
-        self.appendConnectionLog("연결을 시작합니다")
+        self.client = client
     }
     
-    func stopSession() {
-        print("stopSession")
-        Task {
-            guard let client = self.client else {
-                return
-            }
-            
-            await client.close()
-            self.client = nil
+    func stopSession() async {
+        guard let client = self.client else {
+            return
         }
+        self.client = nil
+
+        await NoctilucaClientManager.shared.killClient(id: client.id)
         
         self.endpointURL = ""
         self.sessionSettings = nil
@@ -178,6 +151,7 @@ class MainWindowViewModel: ObservableObject {
         }
 
         self.settingsStore = settingsStore
+        self.contactSheetCoordinator.settingsStore = settingsStore
         settingsCancellable?.cancel()
 
         settingsCancellable = settingsStore.$settings
@@ -188,131 +162,8 @@ class MainWindowViewModel: ObservableObject {
             }
     }
 
-    func startContactObservation() {
-        guard contactsCancellable == nil else {
-            return
-        }
-
-        loadContacts()
-
-        contactsCancellable = NotificationCenter.default
-            .publisher(for: ContactStore.didChangeNotification)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.loadContacts()
-            }
-    }
-
     func loadContacts() {
-        isLoadingContacts = true
-        contactsLoadError = nil
-        defer { isLoadingContacts = false }
-
-        do {
-            let loaded = try ContactStore.loadAll()
-            contacts = loaded.sorted {
-                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-            }
-        } catch {
-            contacts = []
-            contactsLoadError = error.localizedDescription
-        }
-    }
-
-    var canConnectFromDraft: Bool {
-        !sessionSettingsDraft.endpointURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    func presentContactEditor(for item: ContactItem?) {
-        if let item {
-            sessionSettingsDraft = item
-            isEditingContact = true
-        } else {
-            let preset = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .session)
-            sessionSettingsDraft = ContactItem(
-                name: nil,
-                endpointURL: "",
-                preset: preset
-            )
-            isEditingContact = false
-        }
-
-        sessionSettingsSheetMode = .contactEditor
-        isSessionSettingsSheetPresented = true
-    }
-
-    func presentQuickConnectSheet(endpointURL: String) {
-        let preset = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .session)
-        sessionSettingsDraft = ContactItem(
-            name: nil,
-            endpointURL: endpointURL,
-            preset: preset
-        )
-        isEditingContact = false
-        sessionSettingsSheetMode = .quickConnect
-        isSessionSettingsSheetPresented = true
-    }
-
-    func dismissSessionSettingsSheet() {
-        isSessionSettingsSheetPresented = false
-        isDeleteContactConfirmationPresented = false
-    }
-
-    func requestDeleteContactConfirmation() {
-        isDeleteContactConfirmationPresented = true
-    }
-
-    func cancelDeleteContactConfirmation() {
-        isDeleteContactConfirmationPresented = false
-    }
-
-    func saveContactFromSheet() {
-        do {
-            try ContactStore.save(sessionSettingsDraft)
-            isSessionSettingsSheetPresented = false
-        } catch {
-            print("Failed to save contact: \(error.localizedDescription)")
-        }
-    }
-
-    func deleteContactFromSheet() {
-        do {
-            try ContactStore.remove(id: sessionSettingsDraft.id)
-            isDeleteContactConfirmationPresented = false
-            isSessionSettingsSheetPresented = false
-        } catch {
-            print("Failed to delete contact: \(error.localizedDescription)")
-        }
-    }
-
-    func saveContactAndConnectFromSheet() {
-        do {
-            try ContactStore.save(sessionSettingsDraft)
-        } catch {
-            print("Failed to save contact: \(error.localizedDescription)")
-        }
-
-        isSessionSettingsSheetPresented = false
-
-        Task { @MainActor in
-            try? await startSession(endpoint: .contact(item: sessionSettingsDraft))
-        }
-    }
-
-    func connectWithoutSavingFromSheet() {
-        let endpointURL = sessionSettingsDraft.endpointURL
-        guard !endpointURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return
-        }
-
-        isSessionSettingsSheetPresented = false
-
-        Task {
-            try? await startSession(
-                endpoint: .quickConnect(endpointURL: endpointURL),
-                settingsOverride: sessionSettingsDraft.settings
-            )
-        }
+        ContactsStore.shared.loadContacts()
     }
     
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {
@@ -326,7 +177,9 @@ class MainWindowViewModel: ObservableObject {
         case .panic:
             break
         case .closed:
-            self.stopSession()
+            Task { @MainActor in
+                await self.stopSession()
+            }
         }
     }
     

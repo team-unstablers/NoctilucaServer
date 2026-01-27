@@ -36,7 +36,9 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         
-        rootViewController.mainWindowViewModel?.stopSession()
+        Task { @MainActor in
+            await rootViewController.mainWindowViewModel?.stopSession()
+        }
     }
 }
 

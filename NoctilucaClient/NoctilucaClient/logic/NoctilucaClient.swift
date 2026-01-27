@@ -289,6 +289,8 @@ class NoctilucaClient: ObservableObject {
         self.eventLoopTask?.cancel()
 
         await self.session.shutdown()
+        
+        await NoctilucaClientManager.shared.detachClient(id: self.id)
     }
 }
 

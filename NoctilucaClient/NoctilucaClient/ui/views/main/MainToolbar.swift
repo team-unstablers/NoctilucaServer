@@ -222,7 +222,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         case .nocStopSession:
             viewModel.stopSession()
         case .nocAddSession:
-            viewModel.presentContactEditor(for: nil)
+            viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
         default:
             break
         }

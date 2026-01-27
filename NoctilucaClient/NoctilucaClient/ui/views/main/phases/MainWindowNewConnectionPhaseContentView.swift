@@ -11,6 +11,9 @@ struct MainWindowNewConnectionPhaseContentView: View {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
 
+    @ObservedObject
+    private var contactsStore = ContactsStore.shared
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading) {
@@ -41,19 +44,19 @@ struct MainWindowNewConnectionPhaseContentView: View {
 
             ScrollView {
                 VStack {
-                    if viewModel.isLoadingContacts {
+                    if contactsStore.isLoading {
                         ProgressView()
                             .padding(.vertical, 32)
-                    } else if let contactsLoadError = viewModel.contactsLoadError {
+                    } else if let loadError = contactsStore.loadError {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("연락처 목록을 불러오지 못했습니다.")
                                 .font(.headline)
-                            Text(contactsLoadError)
+                            Text(loadError)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 16)
-                    } else if viewModel.contacts.isEmpty {
+                    } else if contactsStore.contacts.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("(저장된 호스트가 없습니다)")
                                 .font(.headline)
@@ -63,7 +66,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                         }
                         .padding(.vertical, 16)
                     } else {
-                        ForEach(viewModel.contacts) { item in
+                        ForEach(contactsStore.contacts) { item in
                             ContactItemView(item: item) { action in
                                 switch action {
                                 case .launch:
@@ -71,7 +74,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                                         try? await viewModel.startSession(endpoint: .contact(item: item))
                                     }
                                 case .edit:
-                                    viewModel.presentContactEditor(for: item)
+                                    viewModel.contactSheetCoordinator.presentContactEditor(for: item)
                                 }
                             }
                         }

@@ -1,0 +1,76 @@
+//
+//  NoctilucaClientManager.swift
+//  NoctilucaClient
+//
+//  Created by Gyuhwan Park on 1/28/26.
+//
+
+import Foundation
+import Combine
+
+import SiriusKitClient
+
+@MainActor
+class NoctilucaClientManager: ObservableObject {
+    nonisolated public static let shared = NoctilucaClientManager()
+    
+    private let logger = NoctilucaLogger(category: "NoctilucaClientManager")
+    
+    @Published
+    private(set) public var clients: [UUID: NoctilucaClient] = [:]
+    
+    nonisolated private init() {
+        
+    }
+    
+    public func createClient(
+        to host: String,
+        port: UInt16,
+        
+        settings: SessionSettings?
+    ) async throws -> NoctilucaClient {
+        let siriusClientResult = SiriusClientBuilder()
+            .useTransportProtocol(.quic(host: host, port: port))
+            .useFeatureProvider(NoctilucaFeatureProvider())
+            .build()
+        
+        let session = try siriusClientResult.get()
+        let client = NoctilucaClient(session)
+        
+        client.sessionSettings = settings
+        
+        guard !clients.keys.contains(client.id) else {
+            self.logger.warning("Client with ID \(client.id.uuidString) already exists. Skipping adding new client.")
+            
+            return client
+        }
+        
+        clients[client.id] = client
+        
+        return client
+    }
+    
+    public func killClient(id: UUID) async {
+        guard let client = clients[id] else {
+            self.logger.warning("No client found with ID \(id.uuidString). Cannot kill non-existing client.")
+            return
+        }
+        
+        await client.close()
+        clients[id] = nil
+    }
+    
+    public func killClient(client: NoctilucaClient) async {
+        await self.killClient(id: client.id)
+    }
+    
+    public func detachClient(id: UUID) {
+        clients[id] = nil
+    }
+    
+    public func detachClient(client: NoctilucaClient) {
+        self.detachClient(id: client.id)
+    }
+}
+
+

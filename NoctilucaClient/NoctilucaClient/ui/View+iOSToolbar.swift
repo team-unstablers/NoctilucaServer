@@ -71,7 +71,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            viewModel.presentContactEditor(for: nil)
+                            viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
                         } label: {
                             Image(systemName: "plus.app")
                         }
@@ -79,7 +79,9 @@ struct ToolbarModifierIPhone: ViewModifier {
                 } else {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
-                            viewModel.stopSession()
+                            Task {
+                                await viewModel.stopSession()
+                            }
                         } label: {
                             Image(systemName: "xmark")
                         }
@@ -221,7 +223,7 @@ struct ToolbarModifierIPad: ViewModifier {
                     }
                     ToolbarItem(placement: toolbarPlacement) {
                         Button {
-                            viewModel.presentContactEditor(for: nil)
+                            viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
                         } label: {
                             Image(systemName: "plus.app")
                         }
@@ -229,7 +231,9 @@ struct ToolbarModifierIPad: ViewModifier {
                 } else {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
-                            viewModel.stopSession()
+                            Task {
+                                await viewModel.stopSession()
+                            }
                         } label: {
                             Image(systemName: "xmark")
                         }

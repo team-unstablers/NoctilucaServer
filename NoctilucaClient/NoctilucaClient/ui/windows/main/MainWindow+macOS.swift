@@ -113,26 +113,25 @@ private struct MainWindowRootView: View {
                     }
                 )
             }
-            .sheet(isPresented: $viewModel.isSessionSettingsSheetPresented) {
+            .sheet(isPresented: $viewModel.contactSheetCoordinator.isPresented) {
+                let coordinator = viewModel.contactSheetCoordinator
                 SessionSettingsSheet(
                     scope: .session,
-                    sessionSettings: $viewModel.sessionSettingsDraft.settings,
-                    contactId: viewModel.sessionSettingsSheetMode == .quickConnect ? nil : viewModel.sessionSettingsDraft.id,
+                    sessionSettings: $viewModel.contactSheetCoordinator.draft.settings,
+                    contactId: coordinator.mode == .quickConnect ? nil : coordinator.draft.id
                 ) { action in
                     switch action {
                     case .cancel:
-                        viewModel.dismissSessionSettingsSheet()
+                        coordinator.dismiss()
                     case .delete:
-                        viewModel.cancelDeleteContactConfirmation()
+                        coordinator.delete()
                     case .connect:
-                        viewModel.connectWithoutSavingFromSheet()
+                        coordinator.connectWithoutSaving()
                     case .saveAndConnect:
-                        viewModel.saveContactAndConnectFromSheet()
+                        coordinator.saveAndConnect()
                     case .save:
-                        viewModel.saveContactFromSheet()
+                        coordinator.save()
                     }
-                    
-                    viewModel.dismissSessionSettingsSheet()
                 }
             }
 
@@ -146,7 +145,7 @@ private struct MainWindowRootView: View {
             .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
             .onAppear {
                 viewModel.bind(settingsStore: settingsStore)
-                viewModel.startContactObservation()
+                viewModel.loadContacts()
             }
     }
 }

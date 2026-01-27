@@ -43,6 +43,7 @@ struct MainWindowConnectingPhaseContentView: View {
             }
 
 
+            /*
                 Text(
                     self.viewModel.connectionLog.joined(separator: "\n")
                 )
@@ -74,6 +75,7 @@ struct MainWindowConnectingPhaseContentView: View {
                     }
 
                 }
+             */
         }
         .padding(24)
     }
