@@ -18,24 +18,25 @@ import SiriusKitClient
 
 class ProjectionSession: Identifiable {
     private let logger = SiriusLogger(category: "ProjectionSession", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
-    
+
     let id: UUID
     let dataChannel: ProjectionDataChannel
     let controlChannel: ProjectionChannel
-    
+
     private(set) var decoder: any VideoDecoder
+    private var tileCompositor: TileCompositor?
     private var performanceReporter: ProjectionPerformanceReporter?
-    
+
     var displayLayer = AVSampleBufferDisplayLayer()
-    
+
     private var renderTimebase: CMTimebase?
     private var firstRemotePTS: CMTime?
     private var firstLocalRenderTime: CMTime?
     private let hostClock = CMClockGetHostTimeClock()
-    
+
     private(set) var codec: Codec?
     var formatDescription: CMFormatDescription?
-    
+
     var size: CGSize = .zero
 
     init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
@@ -52,33 +53,44 @@ class ProjectionSession: Identifiable {
 
     deinit {
         performanceReporter?.stop()
+        tileCompositor?.invalidate()
         try? decoder.stop()
     }
-    
+
     func prepare(codec: Codec) async throws {
+        guard let size = codec.size else {
+            fatalError("FIXME: size is nil")
+        }
         self.codec = codec
 
         // 기존 디코더 정리 (새 디코더로 교체 전)
         try? decoder.stop()
+        tileCompositor?.invalidate()
+        tileCompositor = nil
 
         switch codec.fourCC {
         case .zrle:
-            if !(decoder is ZRLEVideoDecoder) {
-                decoder = ZRLEVideoDecoder()
-                decoder.delegate = self
-            }
+            let zrleDecoder = ZRLEVideoDecoder()
+            zrleDecoder.delegate = self
+            zrleDecoder.tileDelegate = self
+            decoder = zrleDecoder
+            tileCompositor = createTileCompositor(frameSize: size.cgSize)
             formatDescription = nil
+
         case .mjpg:
-            if !(decoder is MJPGVideoDecoder) {
-                decoder = MJPGVideoDecoder()
-                decoder.delegate = self
-            }
+            let mjpgDecoder = MJPGVideoDecoder()
+            mjpgDecoder.delegate = self
+            mjpgDecoder.tileDelegate = self
+            decoder = mjpgDecoder
+            tileCompositor = createTileCompositor(frameSize: size.cgSize)
             formatDescription = nil
+
         default:
             if !(decoder is VTVideoDecoder) {
                 decoder = VTVideoDecoder()
                 decoder.delegate = self
             }
+            tileCompositor = nil
         }
         try decoder.prepare(with: .init(codec: codec))
     }
@@ -205,6 +217,43 @@ extension ProjectionSession: VideoDecoderDelegate {
     }
 }
 
+extension ProjectionSession: TiledVideoDecoderDelegate {
+    func tiledVideoDecoder(_ decoder: any VideoDecoder, didDecode frame: DecodedTileFrame) {
+        guard let compositor = tileCompositor else {
+            logger.error("Tile compositor not available for tile frame")
+            performanceReporter?.recordDroppedFrame()
+            return
+        }
+
+        do {
+            let pixelBuffer = try compositor.composite(frame)
+            performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
+
+            let now = mach_absolute_time()
+            let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
+
+            if size == .zero {
+                size = frame.frameSize
+            }
+
+            let sampleBuffer = try CMSampleBuffer(
+                imageBuffer: pixelBuffer,
+                formatDescription: CMFormatDescription(imageBuffer: pixelBuffer),
+                sampleTiming: CMSampleTimingInfo(
+                    duration: CMTime.invalid,
+                    presentationTimeStamp: presentationTime,
+                    decodeTimeStamp: CMTime.invalid
+                )
+            )
+
+            displayLayer.enqueue(sampleBuffer)
+        } catch {
+            logger.error("Tile composition failed: \(error.localizedDescription)")
+            performanceReporter?.recordDroppedFrame()
+        }
+    }
+}
+
 private final class ProjectionPerformanceReporter {
     private let logger = SiriusLogger(category: "ProjectionPerformanceReporter", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     private let sessionID: UUID
@@ -295,6 +344,17 @@ private final class ProjectionPerformanceReporter {
 }
 
 private extension ProjectionSession {
+    func createTileCompositor(frameSize: CGSize) -> TileCompositor {
+        // Metal 가능하면 MetalTileCompositor 사용, 실패 시 CPU fallback
+        if let metalCompositor = try? MetalTileCompositor(frameSize: frameSize) {
+            logger.info("Using MetalTileCompositor for tile composition")
+            return metalCompositor
+        } else {
+            logger.info("Metal not available, using CPUTileCompositor")
+            return CPUTileCompositor(frameSize: frameSize)
+        }
+    }
+
     func prepareRenderTimebaseIfNeeded() -> CMTimebase? {
         if let timebase = renderTimebase {
             return timebase
