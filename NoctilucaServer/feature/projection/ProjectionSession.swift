@@ -156,6 +156,12 @@ class ProjectionSession: Identifiable {
         self.recorderArgs = recorderArgs
         
         self.codec = codec
+
+        // 기존 encoder event loop task 취소 및 encoder 정리
+        encoderEventLoopTask?.cancel()
+        encoderEventLoopTask = nil
+        try? self.encoder.stop()
+
         switch codec.fourCC {
         case .zrle:
             if !(encoder is ZRLEVideoEncoder) {
@@ -195,6 +201,15 @@ class ProjectionSession: Identifiable {
     }
     
     func stop() async throws {
+        // Task 취소
+        encoderEventLoopTask?.cancel()
+        encoderEventLoopTask = nil
+
+        // Combine 구독 취소
+        screenLockCancellable?.cancel()
+        screenLockCancellable = nil
+
+        // recorder/encoder 정리
         try await self.recorder.stop()
         try self.encoder.stop()
     }

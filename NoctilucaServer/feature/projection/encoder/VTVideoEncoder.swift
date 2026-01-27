@@ -95,6 +95,7 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
             compressionSession = nil
             isStarted = false
         }
+        continuation.finish()
     }
     
     func flush() throws {

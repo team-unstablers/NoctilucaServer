@@ -69,6 +69,7 @@ final class MJPGVideoEncoder: VideoEncoder {
     }
     
     deinit {
+        continuation.finish()
         if let handle = compressHandle {
             tjDestroy(handle)
             compressHandle = nil

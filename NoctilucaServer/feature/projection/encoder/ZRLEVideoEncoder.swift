@@ -43,7 +43,11 @@ final class ZRLEVideoEncoder: VideoEncoder {
         
         self.continuation = continuationLocal
     }
-    
+
+    deinit {
+        continuation.finish()
+    }
+
     init(workerQueue: DispatchQueue, callbackQueue: DispatchQueue) {
         self.workerQueue = workerQueue
         self.callbackQueue = callbackQueue
