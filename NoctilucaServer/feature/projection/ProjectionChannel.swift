@@ -151,7 +151,7 @@ class ProjectionChannel: Channel {
     
     func sendCursorEvent() async throws {
         guard let cursorImage = await cursorStateHolder.cursorImage,
-              let png = cursorImage.pngData
+              let png = cursorImage.pngData()
         else {
             return
         }
