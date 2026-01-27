@@ -31,7 +31,15 @@ final class ZRLEVideoDecoder: VideoDecoder {
         self.workerQueue = workerQueue
         self.callbackQueue = callbackQueue
     }
-    
+
+    deinit {
+        workerQueue.sync {
+            baseFrameBuffer = nil
+            pixelBufferPool = nil
+            cachedFormatDescription = nil
+        }
+    }
+
     func prepare(with configuration: VideoDecoderConfiguration) throws {
         guard self.configuration == nil else {
             throw VideoDecoderError.alreadyPrepared

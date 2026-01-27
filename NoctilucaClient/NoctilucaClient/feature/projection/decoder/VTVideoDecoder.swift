@@ -40,7 +40,18 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
         self.callbackQueue = callbackQueue
         super.init()
     }
-    
+
+    deinit {
+        workerQueue.sync {
+            if let session = decompressionSession {
+                VTDecompressionSessionFinishDelayedFrames(session)
+                VTDecompressionSessionInvalidate(session)
+            }
+            decompressionSession = nil
+            currentFormatDescription = nil
+        }
+    }
+
     func prepare(with configuration: VideoDecoderConfiguration) throws {
         guard self.configuration == nil else {
             throw VideoDecoderError.alreadyPrepared

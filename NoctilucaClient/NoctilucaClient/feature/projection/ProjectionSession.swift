@@ -42,16 +42,25 @@ class ProjectionSession: Identifiable {
         self.id = id
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel
-        
+
         self.decoder = VTVideoDecoder()
         self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, controlChannel: controlChannel)
-        
+
         self.dataChannel.delegate = self
         self.decoder.delegate = self
+    }
+
+    deinit {
+        performanceReporter?.stop()
+        try? decoder.stop()
     }
     
     func prepare(codec: Codec) async throws {
         self.codec = codec
+
+        // 기존 디코더 정리 (새 디코더로 교체 전)
+        try? decoder.stop()
+
         switch codec.fourCC {
         case .zrle:
             if !(decoder is ZRLEVideoDecoder) {

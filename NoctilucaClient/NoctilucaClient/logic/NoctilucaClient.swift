@@ -275,16 +275,19 @@ class NoctilucaClient: ObservableObject {
         guard self.phase != .closed else {
             return
         }
-        
+
         self.phase = .closed
 
         self.hidioController?.disconnectAll(kind: .keyboard)
         self.hidioController?.disconnectAll(kind: .mouse)
         self.hidioController?.disconnectAll(kind: .pointer)
 
+        // Projection 정리
+        await self.projectionChannel?.stopAllSessions()
+
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
-        
+
         await self.session.shutdown()
     }
 }

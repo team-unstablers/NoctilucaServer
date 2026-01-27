@@ -28,6 +28,28 @@ class ProjectionChannel: Channel, ObservableObject {
     private(set) var pendingSessions: [UUID: (ProjectionSessionCreatedEvent) -> Void] = [:]
     private(set) var sessions: [UUID: ProjectionSession] = [:]
 
+    /// 모든 projection session을 중지하고 리소스를 정리합니다.
+    func stopAllSessions() async {
+        // 디스플레이 변경 구독 취소
+        displayChangeCancellable?.cancel()
+        displayChangeCancellable = nil
+
+        // 모든 세션 중지
+        for (_, session) in sessions {
+            do {
+                try await session.stop()
+            } catch {
+                logger.warning("Failed to stop projection session: \(error)")
+            }
+        }
+        sessions.removeAll()
+        pendingSessions.removeAll()
+    }
+
+    deinit {
+        displayChangeCancellable?.cancel()
+    }
+
     // MARK: - Displayman
 
     var pendingDisplayListRequests: [UInt64: (DisplayListResponse) -> Void] = [:]
