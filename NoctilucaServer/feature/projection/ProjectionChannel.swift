@@ -9,11 +9,14 @@ import SiriusKit
 import AppKit
 
 class ProjectionChannel: Channel {
-    private let logger = NoctilucaLogger(category: "ProjectionChannel")
-    
+    let logger = NoctilucaLogger(category: "ProjectionChannel")
+
     private let cursorStateHolder = CursorStateHolder.shared
     private var subscription: CursorEventSubscription? = nil
-    
+
+    /// Display 변경 이벤트 구독
+    var displaySubscription: DisplayEventSubscription? = nil
+
     private(set) var sessions: [UUID: ProjectionSession] = [:]
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
@@ -31,15 +34,23 @@ class ProjectionChannel: Channel {
                 self.logger.error("Failed to stop projection session \(session.id): \(error)")
             }
         }
-        
+
         self.sessions.removeAll()
+
+        // cursor subscription 정리
+        self.subscription?.destroy()
+        self.subscription = nil
+
+        // display subscription 정리
+        self.displaySubscription?.destroy()
+        self.displaySubscription = nil
     }
     
     override func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
-        
+
         switch frame.opcode {
         case .projectionRequest:
             let projectionRequest = try ProjectionRequest.fromProtobufBytes(frame.data)
@@ -53,7 +64,18 @@ class ProjectionChannel: Channel {
         case .unsubscribeCursorEventsRequest:
             let request = try UnsubscribeCursorEventsRequest.fromProtobufBytes(frame.data)
             try await self.handleUnsubscribeCursorEventsRequest(request)
-            
+
+        // displayman opcodes
+        case .displayListRequest:
+            let request = try DisplayListRequest.fromProtobufBytes(frame.data)
+            try await self.handleDisplayListRequest(request)
+        case .subscribeDisplayChangesRequest:
+            let request = try SubscribeDisplayChangesRequest.fromProtobufBytes(frame.data)
+            try await self.handleSubscribeDisplayChangesRequest(request)
+        case .unsubscribeDisplayChangesRequest:
+            let request = try UnsubscribeDisplayChangesRequest.fromProtobufBytes(frame.data)
+            try await self.handleUnsubscribeDisplayChangesRequest(request)
+
         default:
             print("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
             break
