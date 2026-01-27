@@ -63,6 +63,30 @@ struct RLECodecSpecificationSheet: View {
                             }
                         }
                     }
+
+                    Slider(
+                        value: .convert($specification.options[.quantizeLevel]),
+                        in: 0...3,
+                        step: 1,
+                        minimumValueLabel: Text(String(localized: "settings.projection.rle_sheet.quantize_level.min", defaultValue: "0 (없음)")),
+                        maximumValueLabel: Text(String(localized: "settings.projection.rle_sheet.quantize_level.max", defaultValue: "3 (강함)"))
+                    ) {
+                        Text(String(localized: "settings.projection.rle_sheet.quantize_level.title", defaultValue: "양자화 레벨"))
+                        if let quantizeLevel = Int(specification.options[.quantizeLevel]?.rawValue ?? "2") {
+                            switch quantizeLevel {
+                            case 0:
+                                Text(String(localized: "settings.projection.rle_sheet.quantize_level.none_description", defaultValue: "양자화를 사용하지 않습니다. 원본 색상을 유지합니다."))
+                            case 1:
+                                Text(String(localized: "settings.projection.rle_sheet.quantize_level.light_description", defaultValue: "가벼운 양자화를 적용합니다. 색상 품질을 유지하면서 압축률을 약간 향상시킵니다."))
+                            case 2:
+                                Text(String(localized: "settings.projection.rle_sheet.quantize_level.medium_description", defaultValue: "중간 양자화를 적용합니다. 그라데이션 영역에서 압축률이 향상됩니다."))
+                            case 3:
+                                Text(String(localized: "settings.projection.rle_sheet.quantize_level.strong_description", defaultValue: "강한 양자화를 적용합니다. 압축률이 크게 향상되지만, 색상 밴딩이 발생할 수 있습니다."))
+                            default:
+                                Text(String(localized: "settings.projection.rle_sheet.quantize_level.value_description", defaultValue: "양자화 레벨을 \(quantizeLevel)으로 설정합니다."))
+                            }
+                        }
+                    }
                     
                     Slider(
                         value: .convert($specification.maximumResolutionLevel.rawValue),

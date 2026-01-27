@@ -17,14 +17,16 @@ final class ZRLEVideoEncoder: VideoEncoder {
 
     private var colorFormat: CodecOptionValue = .kColorFormatRGB888
     private var compressionLevel: Int32 = 3
+    private var quantizeLevel: Int = 2
+    private var tileSize: Int = 64
 
     private var isStarted = false
-    
+
     let events: AsyncStream<VideoEncoderEvent>
     fileprivate let continuation: AsyncStream<VideoEncoderEvent>.Continuation
-    
-    let frameTiler = FrameTiler(tileSize: 64)
-    let frameTileDiffer = FrameTileDiffer()
+
+    private var frameTiler: FrameTiler!
+    private var frameTileDiffer: FrameTileDiffer!
     
     init() {
         self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.zrleencoder.worker")
@@ -70,20 +72,20 @@ final class ZRLEVideoEncoder: VideoEncoder {
         guard self.configuration == nil else {
             throw VideoEncoderError.alreadyPrepared
         }
-        
+
         guard configuration.codec.fourCC == .zrle else {
             throw VideoEncoderError.unsupportedCodec(configuration.codec.fourCC.stringRepresentation)
         }
-        
+
         self.configuration = configuration
-        
+
         // RGB888 or RGB565
         if let configuredColorFormat = configuration.codec.option(.colorFormat) {
             self.colorFormat = configuredColorFormat
         } else {
             self.colorFormat = .kColorFormatRGB888
         }
-        
+
         // Zstd compression level (1...22)
         let levelString = configuration.codec.option(.compressionLevel)?.rawValue ?? "3"
         if let parsedLevel = Int32(levelString) {
@@ -91,6 +93,26 @@ final class ZRLEVideoEncoder: VideoEncoder {
         } else {
             self.compressionLevel = 3
         }
+
+        // 양자화 레벨 (0...3)
+        let quantizeString = configuration.codec.option(.quantizeLevel)?.rawValue ?? "2"
+        if let parsedQuantize = Int(quantizeString) {
+            self.quantizeLevel = max(0, min(3, parsedQuantize))
+        } else {
+            self.quantizeLevel = 2
+        }
+
+        // 타일 사이즈
+        let tileSizeString = configuration.codec.option(.tileSize)?.rawValue ?? "64"
+        if let parsedTileSize = Int(tileSizeString), parsedTileSize > 0 {
+            self.tileSize = parsedTileSize
+        } else {
+            self.tileSize = 64
+        }
+
+        // 타일러와 디퍼 생성
+        self.frameTiler = FrameTiler(tileSize: self.tileSize)
+        self.frameTileDiffer = FrameTileDiffer()
     }
     
     func start() throws {
@@ -156,7 +178,7 @@ final class ZRLEVideoEncoder: VideoEncoder {
                 
                 for index in diffIndices {
                     let tile = rgbTiles[index]
-                    let rle = try rleCompress(tile, colorFormat: colorFormat)
+                    let rle = try rleCompress(tile, colorFormat: colorFormat, quantizeLevel: quantizeLevel)
                     let zstd = try self.zstdCompress(rle, compressionLevel: self.compressionLevel)
                     
                     let geometry = geometryForTile(

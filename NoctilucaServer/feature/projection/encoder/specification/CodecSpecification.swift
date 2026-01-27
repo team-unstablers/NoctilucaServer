@@ -122,13 +122,16 @@ extension CodecSpecification {
         .option(.displayDensity, .kDisplayDensityAuto)
     
     static let zrle = CodecSpecification(fourCC: .zrle)
-        .option(.colorFormat, .kColorFormatRGB888)
+        .option(.colorFormat, .kColorFormatRGB565)
         .option(.compressionLevel, .init(rawValue: "3"))
+        .option(.tileSize, .kTileSize128x128)
+        .option(.quantizeLevel, .kQuantizeLevel2)
+        .option(.maxFrameRate, .init(rawValue: "15"))
     
     static let mjpg = CodecSpecification(fourCC: .mjpg)
         .option(.colorFormat, .kColorFormatAuto)
         .option(.tileSize, .kTileSize256x256)
-        .option(.compressionLevel, .init(rawValue: "50"))
+        .option(.compressionLevel, .init(rawValue: "28"))
 }
 
 extension CodecSpecification {

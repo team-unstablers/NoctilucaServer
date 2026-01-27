@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:llm-prompts">
+   </FileRef>
+   <FileRef
       location = "group:Gesu">
    </FileRef>
    <FileRef

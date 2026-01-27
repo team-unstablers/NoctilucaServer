@@ -20,14 +20,15 @@ final class MJPGVideoEncoder: VideoEncoder {
     private var colorFormat: CodecOptionValue = .kColorFormatYUV420
     private var compressionLevel: Int32 = 90
     private var subsampling: Int32 = TJSAMP_420.rawValue
+    private var tileSize: Int = 256
 
     private var isStarted = false
-    
+
     let events: AsyncStream<VideoEncoderEvent>
     fileprivate let continuation: AsyncStream<VideoEncoderEvent>.Continuation
-    
-    let frameTiler = FrameTiler(tileSize: 128)
-    let frameTileDiffer = FrameTileDiffer()
+
+    private var frameTiler: FrameTiler!
+    private var frameTileDiffer: FrameTileDiffer!
     
     private var compressHandle: tjhandle? = nil
     
@@ -107,6 +108,18 @@ final class MJPGVideoEncoder: VideoEncoder {
         } else {
             self.compressionLevel = 90
         }
+
+        // 타일 사이즈
+        let tileSizeString = configuration.codec.option(.tileSize)?.rawValue ?? "256"
+        if let parsedTileSize = Int(tileSizeString), parsedTileSize > 0 {
+            self.tileSize = parsedTileSize
+        } else {
+            self.tileSize = 256
+        }
+
+        // 타일러와 디퍼 생성
+        self.frameTiler = FrameTiler(tileSize: self.tileSize)
+        self.frameTileDiffer = FrameTileDiffer()
     }
     
     func start() throws {

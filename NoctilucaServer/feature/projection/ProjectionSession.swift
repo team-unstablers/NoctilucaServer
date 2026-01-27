@@ -262,9 +262,18 @@ private extension ProjectionSession {
     
     static func makeQualityPlanner(codec: Codec) -> QualityPlanner {
         // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
-        let frameRate = (codec.frameRate ?? 0.0) > 0 ? Float(codec.frameRate!) : 60.0
+        var frameRate: Float = 60.0
+
+        // maxFrameRate 옵션이 있으면 적용
+        if let maxFrameRateString = codec.option(.maxFrameRate)?.rawValue,
+           let maxFps = Float(maxFrameRateString), maxFps > 0 {
+            frameRate = maxFps
+        } else if let codecFrameRate = codec.frameRate, codecFrameRate > 0 {
+            frameRate = Float(codecFrameRate)
+        }
+
         let resolution = codec.size ?? SRSize(width: 2880, height: 2560)
-        
+
         // FIXME: 무조건 AutoQuality를 쓰는건 아니잖아요.
         let planner = AutoQualityPlanner(
             codec: codec.fourCC,
@@ -272,7 +281,7 @@ private extension ProjectionSession {
             frameRate: frameRate,
             strategy: .balanced // FIXME: hard-coded strategy.
         )
-        
+
         // FIXME: codec.options로부터 allow-degradation 옵션을 읽어오도록
         planner.allowDegradation = true
         return planner
