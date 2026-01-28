@@ -57,10 +57,6 @@ public struct CodecOptionKey: RawRepresentable, Codable, Hashable, Equatable {
     /// 양자화 레벨을 설정합니다. (ZRLE 전용, 그라데이션 압축률 향상용)
     /// @typedef { '0' | '1' | '2' | '3' }
     public static let quantizeLevel = Self(rawValue: "quantize-level")
-
-    /// 최대 프레임레이트를 설정합니다.
-    /// @typedef { '15' | '30' | '60' | ... }
-    public static let maxFrameRate = Self(rawValue: "max-frame-rate")
 }
 
 public struct CodecOptions: Codable, Equatable, Hashable {
