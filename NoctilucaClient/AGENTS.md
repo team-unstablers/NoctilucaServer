@@ -69,13 +69,18 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
   - `logic/NoctilucaClient+Main.swift`: HIDIO/Projection 채널 초기화 및 세션 시작
 - Feature Provider
   - `feature/NoctilucaFeatureProvider.swift`: Sirius feature → 채널 타입 매핑
-- Projection
+- Projection (Video)
   - `feature/projection/ProjectionChannel.swift`: Projection 요청/세션 생성 및 관리
   - `feature/projection/ProjectionDataChannel.swift`: 프레임/파라미터 세트 수신
   - `feature/projection/ProjectionSession.swift`: 디코더 + 렌더링 + 성능 리포팅
   - `feature/projection/decoder/VideoDecoder.swift`: 디코더 인터페이스 및 데이터 모델
   - `feature/projection/decoder/VTVideoDecoder.swift`: VideoToolbox 기반 디코더 구현
   - `feature/projection/decoder/specification/*`: 코덱 스펙, HDR/10-bit 지원 판정, 해상도 레벨
+- Audio Projection
+  - `feature/projection/AudioProjectionSession.swift`: 오디오 디코딩 + AVAudioEngine 재생
+  - `feature/projection/decoder/AudioDecoder.swift`: 오디오 디코더 인터페이스 및 데이터 모델
+  - `feature/projection/decoder/PCMAudioDecoder.swift`: G.711 (PCMU/PCMA) → PCM 디코더
+  - `feature/projection/decoder/OpusAudioDecoder.swift`: Opus → PCM 디코더
 - HIDIO (Input)
   - `feature/hidio/HIDIOChannel.swift`: HIDIO 채널
   - `feature/hidio/HIDIOController.swift`: 키보드/마우스 이벤트 패킷 전송
@@ -237,6 +242,12 @@ Context Resolve Checklist:
 
 ## Recent Notes
 
+- **오디오 프로젝션 기능 구현 완료**:
+  - `AudioDecoder` 프로토콜 및 `PCMAudioDecoder`(G.711), `OpusAudioDecoder` 구현
+  - `AudioProjectionSession`이 `AVAudioEngine`으로 디코딩된 오디오 재생
+  - `ProjectionDataChannel`에 `didReceiveAudioFrame` delegate 메서드 추가
+  - `ProjectionChannel`에 오디오 세션 이벤트 핸들러 추가 (`audioSessions` 관리)
+  - 초기 버퍼링 옵션 지원 (`enableInitialBuffering`, `initialBufferCount`)
 - `CodecOptionsParser.parse(optionsString:)`는 이제 `[CodecOptionKey: CodecOptionValue]` 대신
   `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다.
 - `CodecOption`/`CodecOptionsParser` 정의가 `SiriusKit/channel/msgdef/v1/channels/projection`로 이동했고,

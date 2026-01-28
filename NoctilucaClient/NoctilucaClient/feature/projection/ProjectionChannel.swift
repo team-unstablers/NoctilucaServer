@@ -28,13 +28,18 @@ class ProjectionChannel: Channel, ObservableObject {
     private(set) var pendingSessions: [UUID: (ProjectionSessionCreatedEvent) -> Void] = [:]
     private(set) var sessions: [UUID: ProjectionSession] = [:]
 
+    // MARK: - Audio Sessions
+
+    private(set) var pendingAudioSessions: [UUID: (AudioSessionCreatedEvent) -> Void] = [:]
+    private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
+
     /// 모든 projection session을 중지하고 리소스를 정리합니다.
     func stopAllSessions() async {
         // 디스플레이 변경 구독 취소
         displayChangeCancellable?.cancel()
         displayChangeCancellable = nil
 
-        // 모든 세션 중지
+        // 모든 비디오 세션 중지
         for (_, session) in sessions {
             do {
                 try await session.stop()
@@ -44,6 +49,17 @@ class ProjectionChannel: Channel, ObservableObject {
         }
         sessions.removeAll()
         pendingSessions.removeAll()
+
+        // 모든 오디오 세션 중지
+        for (_, session) in audioSessions {
+            do {
+                try session.stop()
+            } catch {
+                logger.warning("Failed to stop audio projection session: \(error)")
+            }
+        }
+        audioSessions.removeAll()
+        pendingAudioSessions.removeAll()
     }
 
     deinit {
@@ -152,6 +168,20 @@ class ProjectionChannel: Channel, ObservableObject {
             let event = try DisplayChangedEvent.fromProtobufBytes(frame.data)
             self.handleDisplayChangedEvent(event)
 
+        // MARK: - Audio projection opcodes
+
+        case .audioSessionCreatedEvent:
+            let event = try AudioSessionCreatedEvent.fromProtobufBytes(frame.data)
+            await self.handleAudioSessionCreatedEvent(event)
+
+        case .audioSessionCreationFailedEvent:
+            let event = try AudioSessionCreationFailedEvent.fromProtobufBytes(frame.data)
+            self.logger.error("Audio session creation failed: identifier=\(event.identifier), reason=\(event.reason)")
+
+        case .audioSessionEndedEvent:
+            let event = try AudioSessionEndedEvent.fromProtobufBytes(frame.data)
+            await self.handleAudioSessionEndedEvent(event)
+
         default:
             break
         }
@@ -197,6 +227,15 @@ class ProjectionChannel: Channel, ObservableObject {
         } catch {
             self.logger.warning("Failed to subscribe to display change events: \(error)")
         }
+        
+        // FIXME
+        try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
+            identifier: UUID(),
+            source: .sessionAudio,
+            preferredCodecs: [
+                .init(fourCC: .opus, quality: .auto)
+            ]
+        ))
 
         return session
     }
@@ -297,21 +336,77 @@ class ProjectionChannel: Channel, ObservableObject {
     
     private func handleCursorEvent(_ event: CursorEvent) async throws {
         self.logger.info("Received cursorEvent: cursorType=\(event.cursorType)")
-        
+
         guard let dataProvider = CGDataProvider(data: event.imageData as CFData) else {
             return
         }
-        
+
         let cursorImage = CGImage(
             pngDataProviderSource: dataProvider,
             decode: nil,
             shouldInterpolate: true,
             intent: .defaultIntent
         )
-        
+
         await MainActor.run {
             self.cursorImage = cursorImage
         }
+    }
+
+    // MARK: - Audio Session Event Handlers
+
+    private func handleAudioSessionCreatedEvent(_ event: AudioSessionCreatedEvent) async {
+        self.logger.info("Audio session created: identifier=\(event.identifier), codec=\(event.codec.fourCC.stringRepresentation)")
+
+        // Check if there's a pending continuation
+        if let continuation = self.pendingAudioSessions[event.identifier] {
+            self.pendingAudioSessions.removeValue(forKey: event.identifier)
+            continuation(event)
+            return
+        }
+
+        // No pending request - auto-create session from server event
+        guard let clientSession = self.clientSession else {
+            self.logger.error("No client session available for audio session")
+            return
+        }
+
+        guard let channel = clientSession.channelManager.channels[event.identifier] as? ProjectionDataChannel else {
+            self.logger.error("No ProjectionDataChannel found for audio session identifier: \(event.identifier)")
+            return
+        }
+
+        let session = AudioProjectionSession(id: event.identifier, dataChannel: channel, controlChannel: self)
+
+        do {
+            try await session.prepare(codec: event.codec)
+            try await session.start()
+
+            // Set up data channel delegate
+            channel.delegate = session
+
+            self.audioSessions[event.identifier] = session
+            self.logger.info("Audio projection session started: \(event.identifier)")
+        } catch {
+            self.logger.error("Failed to start audio projection session: \(error)")
+        }
+    }
+
+    private func handleAudioSessionEndedEvent(_ event: AudioSessionEndedEvent) async {
+        self.logger.info("Audio session ended: identifier=\(event.identifier), reason=\(event.reason)")
+
+        guard let session = self.audioSessions[event.identifier] else {
+            self.logger.warning("No audio session found for identifier: \(event.identifier)")
+            return
+        }
+
+        do {
+            try session.stop()
+        } catch {
+            self.logger.error("Failed to stop audio session: \(error)")
+        }
+
+        self.audioSessions.removeValue(forKey: event.identifier)
     }
 
 }
