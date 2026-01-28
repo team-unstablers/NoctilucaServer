@@ -238,15 +238,6 @@ extension ScreenCaptureKitAudioRecorder: SCStreamOutput {
         guard CMSampleBufferDataIsReady(sampleBuffer) else {
             return
         }
-        
-        do {
-            print(try sampleBuffer.audioStreamPacketDescriptions())
-            try sampleBuffer.withAudioBufferList { (listPtr, blockBuffer) in
-                print(listPtr, blockBuffer)
-            }
-        } catch {
-            print(error)
-        }
 
         self.delegate?.audioRecorder(self, didCaptureFrame: sampleBuffer)
         
