@@ -13,6 +13,8 @@
 		F639712A2F1CCCFD00F01622 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F63971292F1CCCFD00F01622 /* Xuanxue */; };
 		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F6B2AB7C2F2A71AE00B7CF41 /* WebPDecoder.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB7B2F2A71AE00B7CF41 /* WebPDecoder.xcframework */; };
+		F6B2AB822F2A736F00B7CF41 /* SharpYuv.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB812F2A736F00B7CF41 /* SharpYuv.xcframework */; };
 		F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
@@ -47,6 +49,8 @@
 		F6561F132F08B6F10090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/macos-arm64_x86_64/libturbojpeg.framework"; sourceTree = "<group>"; };
 		F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = ../frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
 		F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaClientTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6B2AB7B2F2A71AE00B7CF41 /* WebPDecoder.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = WebPDecoder.xcframework; path = ../frameworks/WebPDecoder.xcframework; sourceTree = "<group>"; };
+		F6B2AB812F2A736F00B7CF41 /* SharpYuv.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SharpYuv.xcframework; path = ../frameworks/SharpYuv.xcframework; sourceTree = "<group>"; };
 		F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -88,10 +92,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6B2AB822F2A736F00B7CF41 /* SharpYuv.xcframework in Frameworks */,
 				F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F627116D2F08626200E8A3D7 /* libzstd in Frameworks */,
 				F639712A2F1CCCFD00F01622 /* Xuanxue in Frameworks */,
 				F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */,
+				F6B2AB7C2F2A71AE00B7CF41 /* WebPDecoder.xcframework in Frameworks */,
 				F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -122,7 +128,9 @@
 			isa = PBXGroup;
 			children = (
 				F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */,
+				F6B2AB7B2F2A71AE00B7CF41 /* WebPDecoder.xcframework */,
 				F6561F102F08B6E00090BCB3 /* libturbojpeg.framework */,
+				F6B2AB812F2A736F00B7CF41 /* SharpYuv.xcframework */,
 				F6561F132F08B6F10090BCB3 /* libturbojpeg.framework */,
 				F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */,
 			);
