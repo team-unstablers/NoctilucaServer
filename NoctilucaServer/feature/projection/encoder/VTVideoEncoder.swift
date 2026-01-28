@@ -590,7 +590,12 @@ private func compressionOutputCallback(
        let notSync = attachment[kCMSampleAttachmentKey_NotSync] as? Bool {
         isKeyFrame = !notSync
     }
-    
+
+    // 키프레임마다 SPS/PPS를 재전송하여 첫 프레임 드랍 시에도 클라이언트가 디코더를 초기화할 수 있도록 함
+    if isKeyFrame {
+        encoder.shouldEmitParameterSets = true
+    }
+
     guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
         encoder.continuation.yield(with: .success(.errorOccurred(
             VideoEncoderError.invalidSampleBuffer
