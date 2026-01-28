@@ -198,7 +198,8 @@ fileprivate extension ScreenRecorderSource {
 fileprivate extension SiriusKit.Codec {
     var minimumFrameInterval: CMTime {
         guard let frameRate = self.frameRate, frameRate > 0.0 else {
-            return .zero
+            // 30fps
+            return CMTime(value: 1, timescale: CMTimeScale(30))
         }
         
         // 1 / {frameRate} 초 간격

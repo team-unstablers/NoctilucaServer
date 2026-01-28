@@ -73,12 +73,22 @@ struct CodecSpecification: Codable {
         spec.options[key] = value
         return spec
     }
+        
+    func also(_ transformFn: (inout CodecSpecification) -> Void) -> Self {
+        var spec = self
+        
+        transformFn(&spec)
+        
+        return spec
+    }
 }
 
 extension CodecSpecification: Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(fourCC.rawValue)
+        hasher.combine(frameRate)
         hasher.combine(options)
+        hasher.combine(extras)
     }
 }
 
@@ -106,8 +116,8 @@ extension CodecSpecification {
         .option(.compressionLevel, .init(rawValue: "3"))
         .option(.tileSize, .kTileSize256x256)
         .option(.quantizeLevel, .kQuantizeLevel3)
-        .option(.maxFrameRate, .init(rawValue: "10"))
-    
+        .also { $0.frameRate = 10 }
+
     static let mjpg = CodecSpecification(fourCC: .mjpg)
         .option(.colorFormat, .kColorFormatYUV420)
         .option(.tileSize, .kTileSize256x256)

@@ -104,7 +104,7 @@ class ProjectionSession: Identifiable {
 
         let maxBitrateKbps = self.qualityPlanner?.maxBitrateKbps() ?? 2400
         let dropResult = frameDropController.shouldDropByBackpressure(
-            writeBackPressure: self.dataChannel.writeBackPressure,
+            writeBackPressure: Int(self.dataChannel.writeBackPressure),
             maxBitrateKbps: maxBitrateKbps
         )
 
@@ -259,16 +259,7 @@ private extension ProjectionSession {
     
     static func makeQualityPlanner(codec: Codec) -> (planner: QualityPlanner, frameRate: Float) {
         // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
-        var frameRate: Float = 60.0
-
-        // maxFrameRate 옵션이 있으면 적용
-        if let maxFrameRateString = codec.option(.maxFrameRate)?.rawValue,
-           let maxFps = Float(maxFrameRateString), maxFps > 0 {
-            frameRate = maxFps
-        } else if let codecFrameRate = codec.frameRate, codecFrameRate > 0 {
-            frameRate = Float(codecFrameRate)
-        }
-
+        var frameRate = codec.frameRate ?? 30.0
         let resolution = codec.size ?? SRSize(width: 2880, height: 2560)
 
         // FIXME: 무조건 AutoQuality를 쓰는건 아니잖아요.

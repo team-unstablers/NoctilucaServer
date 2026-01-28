@@ -105,8 +105,8 @@ struct RLECodecSpecificationSheet: View {
 
                     Slider(
                         value: $specification.frameRate,
-                        in: 0...60,
-                        step: 15,
+                        in: 5...15,
+                        step: 5,
                         minimumValueLabel: Text(String(localized: "settings.projection.rle_sheet.framerate.auto", defaultValue: "자동")),
                         maximumValueLabel: Text(String(localized: "settings.projection.rle_sheet.framerate.60fps", defaultValue: "60 FPS"))
                     ) {

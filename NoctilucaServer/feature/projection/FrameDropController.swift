@@ -8,6 +8,8 @@
 import Foundation
 import CoreMedia
 
+import SiriusKit
+
 /// 프레임 드랍 정책을 관리하는 컨트롤러
 /// PTS 기반 드랍과 backpressure 기반 드랍을 별도 메서드로 제공
 class FrameDropController {
@@ -45,7 +47,7 @@ class FrameDropController {
 
         if latency > threshold {
             consecutivePtsDropCount += 1
-            logger.debug("Dropping frame due to PTS latency: \(latency)s (threshold: \(threshold)s, consecutive: \(consecutivePtsDropCount))")
+            logger.debug("Dropping frame due to PTS latency: \(latency)s (threshold: \(threshold)s, consecutive: \(self.consecutivePtsDropCount))")
 
             if consecutivePtsDropCount >= ptsDropKeyframeThreshold {
                 needsKeyframeAfterPtsDrop = true
