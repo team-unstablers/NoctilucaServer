@@ -8,3 +8,7 @@ WebPDecoder.xcframework/ios-arm64/libwebpdecoder.a filter=lfs diff=lfs merge=lfs
 WebPDecoder.xcframework/ios-arm64_x86_64-maccatalyst/libwebpdecoder.a filter=lfs diff=lfs merge=lfs -text
 WebPDecoder.xcframework/ios-arm64_x86_64-simulator/libwebpdecoder.a filter=lfs diff=lfs merge=lfs -text
 WebPDecoder.xcframework/macos-arm64_x86_64/libwebpdecoder.a filter=lfs diff=lfs merge=lfs -text
+SharpYuv.xcframework/ios-arm64/libsharpyuv.a filter=lfs diff=lfs merge=lfs -text
+SharpYuv.xcframework/ios-arm64_x86_64-maccatalyst/libsharpyuv.a filter=lfs diff=lfs merge=lfs -text
+SharpYuv.xcframework/ios-arm64_x86_64-simulator/libsharpyuv.a filter=lfs diff=lfs merge=lfs -text
+SharpYuv.xcframework/macos-arm64_x86_64/libsharpyuv.a filter=lfs diff=lfs merge=lfs -text
