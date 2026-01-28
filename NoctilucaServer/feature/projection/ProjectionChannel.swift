@@ -18,6 +18,7 @@ class ProjectionChannel: Channel {
     var displaySubscription: DisplayEventSubscription? = nil
 
     private(set) var sessions: [UUID: ProjectionSession] = [:]
+    private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -27,6 +28,7 @@ class ProjectionChannel: Channel {
     
     // FIXME: 채널 닫고 그래야 함
     func destroy() async {
+        // 비디오 프로젝션 세션 정리
         for session in self.sessions.values {
             do {
                 try await session.stop()
@@ -34,8 +36,17 @@ class ProjectionChannel: Channel {
                 self.logger.error("Failed to stop projection session \(session.id): \(error)")
             }
         }
-
         self.sessions.removeAll()
+
+        // 오디오 프로젝션 세션 정리
+        for audioSession in self.audioSessions.values {
+            do {
+                try await audioSession.stop()
+            } catch {
+                self.logger.error("Failed to stop audio projection session \(audioSession.id): \(error)")
+            }
+        }
+        self.audioSessions.removeAll()
 
         // cursor subscription 정리
         self.subscription?.destroy()
@@ -64,6 +75,10 @@ class ProjectionChannel: Channel {
         case .unsubscribeCursorEventsRequest:
             let request = try UnsubscribeCursorEventsRequest.fromProtobufBytes(frame.data)
             try await self.handleUnsubscribeCursorEventsRequest(request)
+            
+        case .audioProjectionRequest:
+            let projectionRequest = try AudioProjectionRequest.fromProtobufBytes(frame.data)
+            try await self.handleAudioProjectionRequest(consume projectionRequest)
 
         // displayman opcodes
         case .displayListRequest:
@@ -205,6 +220,72 @@ class ProjectionChannel: Channel {
             size: SRSize(width: cursorImage.size.width, height: cursorImage.size.height),
             imageData: png
         ))
+    }
+    
+    /// 서버가 지원하는 오디오 코덱 목록 (우선순위 순)
+    private static let supportedAudioCodecs: [CodecFourCC] = [.opus, .pcmu, .pcma]
+
+    private func handleAudioProjectionRequest(_ request: AudioProjectionRequest) async throws {
+        guard let session = self.clientSession else {
+            return
+        }
+
+        let identifier = request.identifier
+
+        do {
+            // 코덱 협상: 클라이언트 선호 코덱 중 서버가 지원하는 첫 번째 코덱 선택
+            guard let negotiatedCodec = negotiateAudioCodec(clientPreferred: request.preferredCodecs) else {
+                self.logger.warning("No supported audio codec found for session \(identifier)")
+                try await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
+                    identifier: identifier,
+                    reason: .codecNotSupported,
+                    message: "No supported audio codec found. Server supports: \(Self.supportedAudioCodecs.map { $0.stringRepresentation }.joined(separator: ", "))"
+                ))
+                return
+            }
+
+            self.logger.info("Negotiated audio codec: \(negotiatedCodec.fourCC.stringRepresentation) for session \(identifier)")
+
+            let channel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
+
+            self.logger.info("Opened ProjectionDataChannel for audio with id: \(channel.identifier)")
+
+            let projectionSession = AudioProjectionSession(
+                id: identifier,
+                dataChannel: channel
+            )
+
+            try await projectionSession.prepare(request, codec: negotiatedCodec)
+            try await projectionSession.start()
+
+            self.audioSessions[identifier] = projectionSession
+
+            try await self.send(opcode: .audioSessionCreatedEvent, message: AudioSessionCreatedEvent(
+                identifier: identifier,
+                source: request.source,
+                codec: negotiatedCodec
+            ))
+        } catch {
+            self.logger.error("Failed to handle audio projection request: \(error)")
+
+            // 세션 생성 실패 이벤트 전송
+            try? await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
+                identifier: identifier,
+                reason: .unknown,
+                message: error.localizedDescription
+            ))
+        }
+    }
+
+    /// 클라이언트 선호 코덱 목록에서 서버가 지원하는 첫 번째 코덱을 선택
+    private func negotiateAudioCodec(clientPreferred: [SiriusKit.AudioCodec]) -> SiriusKit.AudioCodec? {
+        // 클라이언트 선호 순서대로 서버 지원 여부 확인
+        for codec in clientPreferred {
+            if Self.supportedAudioCodecs.contains(codec.fourCC) {
+                return codec
+            }
+        }
+        return nil
     }
 }
 

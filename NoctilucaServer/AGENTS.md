@@ -12,6 +12,7 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 - SiriusKit (Sirius 프로토콜, QUIC/Network.framework, Protobuf)
 - ScreenCaptureKit + AVFoundation(AVCaptureSession)
 - VideoToolbox (H.264/H.265 인코딩)
+- AVAudioConverter (Opus/G.711 오디오 인코딩)
 - CoreGraphics / CoreMedia
 - Keychain (보안 설정 저장)
 
@@ -27,7 +28,11 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 - `feature/` - Sirius FeatureProvider 및 채널 구현
   - `NoctilucaFeatureProvider.swift`
   - `feature/hidio/` - 키보드/마우스 이벤트 인젝션 채널
-  - `feature/projection/` - 프로젝션 채널/세션, ScreenRecorder(SCK/AVF), VideoEncoder(VT), 코덱 협상/품질 플래너
+  - `feature/projection/` - 프로젝션 채널/세션, ScreenRecorder(SCK/AVF), VideoEncoder(VT), AudioEncoder(Opus/G.711), 코덱 협상/품질 플래너
+    - `encoder/AudioEncoder.swift` - 오디오 인코더 프로토콜
+    - `encoder/OpusAudioEncoder.swift` - Opus 오디오 인코더 (AVAudioConverter 기반)
+    - `encoder/PCMAudioEncoder.swift` - G.711 mu-law/A-law 인코더 (AVAudioConverter 기반)
+    - `audio-recorder/ScreenCaptureKitAudioRecorder.swift` - ScreenCaptureKit 오디오 캡처
 - `projection/` - 디스플레이 레이아웃/윈도우/데스크톱 컨텍스트 관리
   - `DisplayLayoutManager.swift` (디스플레이 변화 모니터)
   - `DesktopContextManager.swift` (앱/윈도우 관찰, AX 이벤트)
@@ -117,6 +122,25 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 - `ProjectionDataChannel` 프레임 포맷:
   - `<headerLen: u32><frameLen: u32><headerBytes><frameBytes>` (Big-Endian)
   - `SiriusFrame(opcode: .frameData)`로 감쌈
+
+# AUDIO PROJECTION PIPELINE (SERVER)
+
+- `ProjectionChannel`에서 `AudioProjectionRequest` 수신
+  - 동일 `identifier`로 `ProjectionDataChannel` 생성
+  - `AudioProjectionSession.prepare()` → `start()`
+  - `AudioSessionCreatedEvent` 전송
+- `AudioProjectionSession`:
+  - `ScreenCaptureKitAudioRecorder` + `AudioEncoder` (Opus/PCM) 사용
+  - 코덱에 따라 인코더 자동 선택:
+    - `.opus` → `OpusAudioEncoder`
+    - `.pcmu`, `.pcma` → `PCMAudioEncoder`
+  - `encoder.events`를 통해 인코딩된 프레임 전송
+- `AudioEncoder` 구현:
+  - `OpusAudioEncoder`: AVAudioConverter + `kAudioFormatOpus`, 20ms 프레임 버퍼링
+  - `PCMAudioEncoder`: AVAudioConverter + `kAudioFormatULaw`/`kAudioFormatALaw`, 8kHz 리샘플링
+- `ProjectionDataChannel.send(audioFrame:)`:
+  - 비디오와 동일한 와이어 포맷 사용
+  - `SiriusFrame(opcode: .frameData)`로 전송
 
 # SCREEN CAPTURE & DISPLAY LAYOUT
 
@@ -220,6 +244,11 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 ## Recent Notes
 
+- **오디오 프로젝션 기능 구현 완료**:
+  - `AudioEncoder` 프로토콜 및 `OpusAudioEncoder`, `PCMAudioEncoder` 구현
+  - `AudioProjectionSession`이 `ScreenCaptureKitAudioRecorder`와 오디오 인코더를 연결
+  - `ProjectionDataChannel.send(audioFrame:)` 메서드 추가
+  - `CodecFourCC.opus`, `.pcmu`, `.pcma` 확장 추가
 - `CodecOptionsParser.parse(optionsString:)`가 이제 `[CodecOptionKey: CodecOptionValue]` 대신 `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다. 기존 호출부는 아직 미정리 상태입니다.
 - CodecOption/CodecOptionsParser 정의가 `SiriusKit/channel/msgdef/v1/channels/projection`로 이동했고, 클라이언트에서도 사용할 수 있도록 `public`으로 노출되었습니다.
 

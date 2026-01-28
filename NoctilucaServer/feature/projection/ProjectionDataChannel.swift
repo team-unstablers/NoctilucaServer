@@ -61,4 +61,42 @@ class ProjectionDataChannel: Channel {
         
         try await self.send(frame: consume siriusFrame)
     }
+
+    func send(audioFrame frame: EncodedAudioFrame) async throws {
+        let serializedHeader = frame.header.serialize()
+        let frameData = frame.data
+
+        // header.count / frameData.count / header / frameData
+        let siriusFrameSize = ((4 + 4) + serializedHeader.count + frameData.count)
+        var siriusFrameData = Data(count: siriusFrameSize)
+
+        // perform memcpy
+        // 1. header size
+        let headerSize = UInt32(serializedHeader.count).bigEndian
+        withUnsafeBytes(of: headerSize) { ptr in
+            siriusFrameData.replaceSubrange(0..<4, with: ptr)
+        }
+
+        // 2. frame data size
+        let frameDataSize = UInt32(frameData.count).bigEndian
+        withUnsafeBytes(of: frameDataSize) { ptr in
+            siriusFrameData.replaceSubrange(4..<8, with: ptr)
+        }
+
+        // 3. header bytes
+        let range = 8..<(8 + serializedHeader.count)
+        siriusFrameData.replaceSubrange(range, with: serializedHeader)
+
+        // 4. frame data bytes
+        let frameDataRange = (8 + serializedHeader.count)..<siriusFrameSize
+        siriusFrameData.replaceSubrange(frameDataRange, with: frameData)
+
+        let siriusFrame = SiriusFrame(
+            opcode: .frameData,
+            length: UInt32(siriusFrameSize),
+            data: consume siriusFrameData
+        )
+
+        try await self.send(frame: consume siriusFrame)
+    }
 }
