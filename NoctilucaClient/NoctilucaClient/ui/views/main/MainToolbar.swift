@@ -220,7 +220,9 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 appDelegate.showSettingsWindow(nil)
             }
         case .nocStopSession:
-            viewModel.stopSession()
+            Task {
+                await viewModel.stopSession()
+            }
         case .nocAddSession:
             viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
         default:

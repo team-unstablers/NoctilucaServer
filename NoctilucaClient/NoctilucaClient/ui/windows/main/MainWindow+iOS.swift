@@ -67,14 +67,6 @@ struct UIKitMainWindow: View {
                 }
             }
         }
-        .setupClientPhaseHandler(client: viewModel.client) { phase in
-            viewModel.handleClientPhaseChanged(phase)
-        }
-        .setupClientErrorHandler(client: viewModel.client) { error in
-            viewModel.handleClientError(error)
-        }
-        .setupAuthChallengeHandler(client: viewModel.client)
-        .setupClientStatisticsHandler(client: viewModel.client, viewModel: viewModel)
         .onAppear {
             viewModel.bind(settingsStore: settingsStore)
             viewModel.loadContacts()

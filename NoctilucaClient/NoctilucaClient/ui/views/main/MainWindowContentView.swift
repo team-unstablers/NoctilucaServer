@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+import SiriusKitClient
+
 struct MainWindowContentView: View {
 #if os(iOS)
     @Environment(\.horizontalSizeClass)
@@ -17,6 +19,27 @@ struct MainWindowContentView: View {
     var viewModel: MainWindowViewModel
 
     var body: some View {
+        content
+            // HACK: 레이스 컨디션 일어나서 sheet이 표시되어도 내용이 비어있는 경우가 발생함
+            .if(viewModel.sessionEventCoordinator.authChallenge != nil) {
+                $0.dialog(isPresented: $viewModel.sessionEventCoordinator.shouldPresentAuthChallengeSheet) {
+                    if let authChallenge = viewModel.sessionEventCoordinator.authChallenge {
+                        AuthChallengeSheetView(
+                            authChallenge: authChallenge,
+                            availableMethods: viewModel.sessionEventCoordinator.availableAuthMethods
+                        ) { action in
+                            Task {
+                                await viewModel.sessionEventCoordinator.handleAuthChallengeResponse(action)
+                            }
+                        }
+                        .id(authChallenge.nonce)
+                    }
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch viewModel.phase {
         case .newConnection:
             MainWindowNewConnectionPhaseContentView()
@@ -31,6 +54,5 @@ struct MainWindowContentView: View {
         default:
             EmptyView()
         }
-
     }
 }

@@ -171,15 +171,6 @@ struct MainWindowMainPhaseContentView: View {
                 )
             }
 #endif
-            .if(viewModel.client != nil) {
-                $0.onReceive(viewModel.client!.uiEvents) { event in
-                    guard case .FIXME_projectionStarted(let projectionSession) = event else {
-                        return
-                    }
-
-                    viewModel.displayLayer = projectionSession.displayLayer
-                }
-            }
 #if os(macOS)
             .onTapGesture {
                 viewModel.client?.hidioController.enableCaptureLock()
