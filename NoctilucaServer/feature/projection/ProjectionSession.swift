@@ -151,17 +151,11 @@ class ProjectionSession: Identifiable {
 
         switch codec.fourCC {
         case .zrle:
-            if !(encoder is ZRLEVideoEncoder) {
-                encoder = ZRLEVideoEncoder()
-            }
+            encoder = ZRLEVideoEncoder()
         case .mjpg:
-            if !(encoder is MJPGVideoEncoder) {
-                encoder = MJPGVideoEncoder()
-            }
+            encoder = MJPGVideoEncoder()
         default:
-            if !(encoder is VTVideoEncoder) {
-                encoder = VTVideoEncoder()
-            }
+            encoder = VTVideoEncoder()
         }
         
         try self.encoder.prepare(with: .init(
