@@ -169,29 +169,67 @@ final class WebPVideoEncoder: VideoEncoder {
                     return
                 }
 
-                // 변경된 각 타일을 WebP로 인코딩한다
-                // TODO: 가능한 경우 병렬 처리를 행한다
+                // 변경된 각 타일을 WebP로 인코딩한다 (병렬 처리)
 
                 let tileSize = frameTiler.tileSize
                 let paddedWidth = paddedDimension(CVPixelBufferGetWidth(pixelBuffer), tileSize: tileSize)
                 let tilesPerRow = max(1, paddedWidth / tileSize)
 
-                var encodedTiles: [ProjectionFrameTile] = []
-                encodedTiles.reserveCapacity(diffIndices.count)
-
                 let webpQuality = self.webpQuality()
-                for index in diffIndices {
+                let diffIndicesArray = Array(diffIndices)
+                let diffCount = diffIndicesArray.count
+
+                // 병렬 처리를 위한 결과 배열 (미리 할당)
+                let encodedTilesPtr = UnsafeMutablePointer<ProjectionFrameTile?>.allocate(capacity: diffCount)
+                encodedTilesPtr.initialize(repeating: nil, count: diffCount)
+                defer {
+                    encodedTilesPtr.deinitialize(count: diffCount)
+                    encodedTilesPtr.deallocate()
+                }
+
+                // 에러 저장용
+                let errorLock = NSLock()
+                var encodeError: Error?
+
+                DispatchQueue.concurrentPerform(iterations: diffCount) { i in
+                    // 이미 에러가 발생했으면 스킵
+                    errorLock.lock()
+                    let hasError = encodeError != nil
+                    errorLock.unlock()
+                    if hasError { return }
+
+                    let index = diffIndicesArray[i]
                     let tile = rgbTiles[index]
 
-                    let webp = try encodeWebP(tile, quality: webpQuality)
+                    do {
+                        let webp = try self.encodeWebP(tile, quality: webpQuality)
+                        let geometry = self.geometryForTile(
+                            index: index,
+                            tilesPerRow: tilesPerRow,
+                            tileSize: tileSize
+                        )
+                        encodedTilesPtr[i] = ProjectionFrameTile(geometry: geometry, data: webp)
+                    } catch {
+                        errorLock.lock()
+                        if encodeError == nil {
+                            encodeError = error
+                        }
+                        errorLock.unlock()
+                    }
+                }
 
-                    let geometry = geometryForTile(
-                        index: index,
-                        tilesPerRow: tilesPerRow,
-                        tileSize: tileSize
-                    )
+                // 에러가 발생했으면 throw
+                if let error = encodeError {
+                    throw error
+                }
 
-                    encodedTiles.append(ProjectionFrameTile(geometry: geometry, data: webp))
+                // 결과 수집
+                var encodedTiles: [ProjectionFrameTile] = []
+                encodedTiles.reserveCapacity(diffCount)
+                for i in 0..<diffCount {
+                    if let tile = encodedTilesPtr[i] {
+                        encodedTiles.append(tile)
+                    }
                 }
 
                 // emit frame
@@ -285,8 +323,8 @@ private extension WebPVideoEncoder {
             throw WebPVideoEncoderError.configInitFailed
         }
         
-        config.quality = 80
-        config.method = 3  // 0=fastest
+        config.quality = 65
+        config.method = 1  // 0=fastest
         // config.pass = 1
         // config.autofilter = 0
         // config.filter_strength = 0
