@@ -24,7 +24,7 @@ final class AudioJitterBuffer {
     // MARK: - Configuration
 
     /// Minimum buffer duration in milliseconds before starting playback.
-    var minBufferMs: Int = 60
+    var minBufferMs: Int = 150
 
     /// Maximum buffer duration in milliseconds (frames beyond this are dropped).
     var maxBufferMs: Int = 200
