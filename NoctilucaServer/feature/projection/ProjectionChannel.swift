@@ -105,16 +105,37 @@ class ProjectionChannel: Channel {
                 specifications: projectionSettings.codecSpecifications
             )
             
-            let negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs)
+            var negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs)
             
-            guard let negotiatedCodec else {
-                // TODO: error 던져야 함
-                self.logger.error("Failed to negotiate codec for projection session")
-                return
+            guard var negotiatedCodec else {
+                fatalError("Failed to negotiate codec for projection session")
+            }
+            
+            // FIXME
+            if let desiredSize = request.preferredCodecs.compactMap({ $0.size }).first {
+                negotiatedCodec = Codec(
+                    fourCC: negotiatedCodec.fourCC,
+                    frameRate: negotiatedCodec.frameRate,
+                    size: desiredSize,
+                    options: negotiatedCodec.options,
+                    quality: negotiatedCodec.quality
+                )
+            } else {
+                let contentSize = await request.viewport.contentSize
+                
+                negotiatedCodec = Codec(
+                    fourCC: negotiatedCodec.fourCC,
+                    frameRate: negotiatedCodec.frameRate,
+                    size: contentSize,
+                    options: negotiatedCodec.options,
+                    quality: negotiatedCodec.quality
+                )
             }
             
             let channel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
-            print("Opened ProjectionDataChannel with id: \(channel.identifier)")
+            
+            self.logger.info("Opened ProjectionDataChannel with id: \(channel.identifier)")
+            
             let projectionSession = ProjectionSession(
                 id: identifier,
                 dataChannel: channel,
@@ -187,3 +208,36 @@ class ProjectionChannel: Channel {
     }
 }
 
+
+fileprivate extension ProjectionSource {
+    @MainActor
+    var contentSize: SRSize? {
+        switch value {
+        case .entireDisplay(let source):
+            let layoutManager = DisplayLayoutManager.shared
+            let displayID = switch (source.displayID) {
+            case -1:
+                layoutManager.displayLayouts.keys.first { CGDisplayIsMain($0) != 0 }!
+            case -2:
+                fatalError("entire display layout is not supported yet")
+            default:
+                CGDirectDisplayID(source.displayID)
+            }
+            
+            if let displaySize = DisplayLayoutManager.shared.displayLayouts[displayID]?.frame.size {
+                return SRSize(width: displaySize.width, height: displaySize.height)
+            } else {
+                return nil
+            }
+            
+        case .region(let region):
+            return SRSize(width: region.region.width, height: region.region.height)
+            
+        case .singleWindow(let window):
+            fatalError("not implemented yet")
+            
+        default:
+            return nil
+        }
+    }
+}
