@@ -1,2 +1,10 @@
 libturbojpeg.xcframework/ios-arm64/libturbojpeg.framework/libturbojpeg filter=lfs diff=lfs merge=lfs -text
 libturbojpeg.xcframework/macos-arm64_x86_64/libturbojpeg.framework/Versions/A/libturbojpeg filter=lfs diff=lfs merge=lfs -text
+WebP.xcframework/ios-arm64/libwebp.a filter=lfs diff=lfs merge=lfs -text
+WebP.xcframework/ios-arm64_x86_64-maccatalyst/libwebp.a filter=lfs diff=lfs merge=lfs -text
+WebP.xcframework/ios-arm64_x86_64-simulator/libwebp.a filter=lfs diff=lfs merge=lfs -text
+WebP.xcframework/macos-arm64_x86_64/libwebp.a filter=lfs diff=lfs merge=lfs -text
+WebPDecoder.xcframework/ios-arm64/libwebpdecoder.a filter=lfs diff=lfs merge=lfs -text
+WebPDecoder.xcframework/ios-arm64_x86_64-maccatalyst/libwebpdecoder.a filter=lfs diff=lfs merge=lfs -text
+WebPDecoder.xcframework/ios-arm64_x86_64-simulator/libwebpdecoder.a filter=lfs diff=lfs merge=lfs -text
+WebPDecoder.xcframework/macos-arm64_x86_64/libwebpdecoder.a filter=lfs diff=lfs merge=lfs -text
