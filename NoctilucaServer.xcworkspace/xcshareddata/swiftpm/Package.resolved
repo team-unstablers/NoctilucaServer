@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/team-unstablers/Xuanxue.git",
       "state" : {
-        "revision" : "1618eef3a4b675d7b25df77b71304829ce5ef942",
-        "version" : "1.0.1"
+        "revision" : "eecd56e4c3d00f7b628fe309958dba75c4924714",
+        "version" : "1.0.2"
       }
     },
     {
