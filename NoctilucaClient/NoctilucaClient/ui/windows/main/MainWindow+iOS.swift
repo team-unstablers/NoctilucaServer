@@ -21,6 +21,9 @@ enum MainWindowToolbarStyle {
 struct UIKitMainWindow: View {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
+    
+    @EnvironmentObject
+    var contactSheetCoordinator: ContactSheetCoordinator
 
     @EnvironmentObject
     private var settingsStore: SettingsStore
@@ -46,30 +49,25 @@ struct UIKitMainWindow: View {
                 }
             )
         }
-        .sheet(isPresented: $viewModel.contactSheetCoordinator.isPresented) {
-            let coordinator = viewModel.contactSheetCoordinator
+        .sheet(isPresented: $contactSheetCoordinator.isPresented) {
             SessionSettingsSheet(
                 scope: .session,
-                sessionSettings: $viewModel.contactSheetCoordinator.draft.settings,
-                contactId: coordinator.mode == .quickConnect ? nil : coordinator.draft.id
+                sessionSettings: $contactSheetCoordinator.draft.settings,
+                contactId: contactSheetCoordinator.mode == .quickConnect ? nil : contactSheetCoordinator.draft.id
             ) { action in
                 switch action {
                 case .cancel:
-                    coordinator.dismiss()
+                    contactSheetCoordinator.dismiss()
                 case .delete:
-                    coordinator.delete()
+                    contactSheetCoordinator.delete()
                 case .connect:
-                    coordinator.connectWithoutSaving()
+                    contactSheetCoordinator.connectWithoutSaving()
                 case .saveAndConnect:
-                    coordinator.saveAndConnect()
+                    contactSheetCoordinator.saveAndConnect()
                 case .save:
-                    coordinator.save()
+                    contactSheetCoordinator.save()
                 }
             }
-        }
-        .onAppear {
-            viewModel.bind(settingsStore: settingsStore)
-            viewModel.loadContacts()
         }
     }
 }

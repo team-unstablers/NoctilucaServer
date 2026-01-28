@@ -38,9 +38,13 @@ final class RootViewController: UIHostingController<AnyView> {
         self.mainWindowViewModel = mainWindowViewModel
         self.settingsStore = settingsStore
         
+        mainWindowViewModel.bind(settingsStore: settingsStore)
+        mainWindowViewModel.loadContacts()
+        
         let contentView = MobileUIMainView()
             .environmentObject(mainUIViewModel)
             .environmentObject(mainWindowViewModel)
+            .environmentObject(mainWindowViewModel.contactSheetCoordinator)
             .environmentObject(settingsStore)
         
         super.init(rootView: AnyView(contentView))

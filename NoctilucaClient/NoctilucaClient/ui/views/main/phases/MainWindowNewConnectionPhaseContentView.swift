@@ -10,6 +10,9 @@ import SwiftUI
 struct MainWindowNewConnectionPhaseContentView: View {
     @EnvironmentObject
     var viewModel: MainWindowViewModel
+    
+    @EnvironmentObject
+    var contactSheetCoordinator: ContactSheetCoordinator
 
     @ObservedObject
     private var contactsStore = ContactsStore.shared
@@ -74,7 +77,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                                         try? await viewModel.startSession(endpoint: .contact(item: item))
                                     }
                                 case .edit:
-                                    viewModel.contactSheetCoordinator.presentContactEditor(for: item)
+                                    contactSheetCoordinator.presentContactEditor(for: item)
                                 }
                             }
                         }

@@ -16,10 +16,15 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     
     init(settingsStore: SettingsStore) {
         self.viewModel = MainWindowViewModel()
+        
+        viewModel.bind(settingsStore: settingsStore)
+        viewModel.loadContacts()
+        
         self.toolbarController = MainToolbar(viewModel: viewModel, settingsStore: settingsStore)
         
         let contentView = MainWindowRootView(viewModel: viewModel)
             .environmentObject(settingsStore)
+            .environmentObject(viewModel.contactSheetCoordinator)
         
         let hostingView = NSHostingView(rootView: contentView)
         let window = NSWindow(
@@ -55,6 +60,9 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
 private struct MainWindowRootView: View {
     @ObservedObject
     var viewModel: MainWindowViewModel
+    
+    @EnvironmentObject
+    var contactSheetCoordinator: ContactSheetCoordinator
 
     @EnvironmentObject
     private var settingsStore: SettingsStore
@@ -113,11 +121,11 @@ private struct MainWindowRootView: View {
                     }
                 )
             }
-            .sheet(isPresented: $viewModel.contactSheetCoordinator.isPresented) {
-                let coordinator = viewModel.contactSheetCoordinator
+            .sheet(isPresented: $contactSheetCoordinator.isPresented) {
+                let coordinator = contactSheetCoordinator
                 SessionSettingsSheet(
                     scope: .session,
-                    sessionSettings: $viewModel.contactSheetCoordinator.draft.settings,
+                    sessionSettings: $contactSheetCoordinator.draft.settings,
                     contactId: coordinator.mode == .quickConnect ? nil : coordinator.draft.id
                 ) { action in
                     switch action {
@@ -133,11 +141,6 @@ private struct MainWindowRootView: View {
                         coordinator.save()
                     }
                 }
-            }
-
-            .onAppear {
-                viewModel.bind(settingsStore: settingsStore)
-                viewModel.loadContacts()
             }
     }
 }
