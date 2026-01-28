@@ -83,8 +83,9 @@ final class MetalTileCompositor: TileCompositor {
         var usedTileTextures: [MTLTexture] = []
         for tile in frame.tiles {
             // target을 output이 아니라 canvasTexture로 변경
-            let tileTexture = try blitTile(tile, to: canvasTexture, encoder: blitEncoder)
-            usedTileTextures.append(tileTexture)
+            if let tileTexture = try blitTile(tile, to: canvasTexture, encoder: blitEncoder) {
+                usedTileTextures.append(tileTexture)
+            }
         }
         
         // 3. ✨ [핵심] Canvas(완성본)를 Output(CVPixelBuffer)으로 통째로 복사
@@ -204,11 +205,26 @@ final class MetalTileCompositor: TileCompositor {
     }
 
     @discardableResult
-    private func blitTile(_ tile: DecodedTile, to texture: MTLTexture, encoder: any MTLBlitCommandEncoder) throws -> MTLTexture {
+    private func blitTile(_ tile: DecodedTile, to texture: MTLTexture, encoder: any MTLBlitCommandEncoder) throws -> MTLTexture? {
+        let tileX = Int(tile.rect.origin.x)
+        let tileY = Int(tile.rect.origin.y)
         let tileWidth = Int(tile.rect.width)
         let tileHeight = Int(tile.rect.height)
 
-        // 타일 텍스처 획득
+        // 타일이 완전히 화면 밖이면 조용히 스킵
+        guard tileX < texture.width, tileY < texture.height else {
+            return nil
+        }
+
+        // 클리핑 계산
+        let clippedWidth = min(tileWidth, texture.width - tileX)
+        let clippedHeight = min(tileHeight, texture.height - tileY)
+
+        guard clippedWidth > 0, clippedHeight > 0 else {
+            return nil
+        }
+
+        // 타일 텍스처 획득 (원본 크기로)
         guard let tileTexture = tileTexturePool.acquire(width: tileWidth, height: tileHeight) else {
             throw TileCompositorError.textureCreationFailed
         }
@@ -227,24 +243,19 @@ final class MetalTileCompositor: TileCompositor {
             )
         }
 
-        // 블리팅
+        // 블리팅 (클리핑된 영역만)
         encoder.copy(
             from: tileTexture,
             sourceSlice: 0,
             sourceLevel: 0,
             sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
-            sourceSize: MTLSize(width: tileWidth, height: tileHeight, depth: 1),
+            sourceSize: MTLSize(width: clippedWidth, height: clippedHeight, depth: 1),
             to: texture,
             destinationSlice: 0,
             destinationLevel: 0,
-            destinationOrigin: MTLOrigin(
-                x: Int(tile.rect.origin.x),
-                y: Int(tile.rect.origin.y),
-                z: 0
-            )
+            destinationOrigin: MTLOrigin(x: tileX, y: tileY, z: 0)
         )
 
-        // 타일 텍스처는 GPU 작업 완료 후 반환해야 하므로 여기서 반환
         return tileTexture
     }
 

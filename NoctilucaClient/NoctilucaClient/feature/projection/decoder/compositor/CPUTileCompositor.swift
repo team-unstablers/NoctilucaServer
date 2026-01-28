@@ -145,22 +145,29 @@ final class CPUTileCompositor: TileCompositor {
         guard tileWidth > 0, tileHeight > 0 else {
             throw TileCompositorError.invalidTileRect
         }
-        guard tileX + tileWidth <= outputWidth,
-              tileY + tileHeight <= outputHeight else {
-            throw TileCompositorError.invalidTileRect
+
+        // 클리핑 계산: 실제로 복사할 영역
+        let clippedWidth = min(tileWidth, outputWidth - tileX)
+        let clippedHeight = min(tileHeight, outputHeight - tileY)
+
+        // 타일이 완전히 화면 밖이면 스킵
+        guard clippedWidth > 0, clippedHeight > 0 else {
+            return
         }
+
+        let clippedBytesPerRow = clippedWidth * 4
 
         tile.pixelData.withUnsafeBytes { srcPtr in
             guard let srcBase = srcPtr.baseAddress else { return }
 
-            for row in 0..<tileHeight {
+            for row in 0..<clippedHeight {
                 let srcOffset = row * tileBytesPerRow
                 let dstOffset = (tileY + row) * bytesPerRow + tileX * 4
 
                 memcpy(
                     baseAddress.advanced(by: dstOffset),
                     srcBase.advanced(by: srcOffset),
-                    tileBytesPerRow
+                    clippedBytesPerRow
                 )
             }
         }

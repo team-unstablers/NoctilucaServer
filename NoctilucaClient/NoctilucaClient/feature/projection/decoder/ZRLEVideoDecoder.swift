@@ -43,6 +43,12 @@ final class ZRLEVideoDecoder: VideoDecoder {
         } else {
             self.colorFormat = .kColorFormatRGB888
         }
+
+        // codec.size에서 실제 콘텐츠 크기 설정
+        if let size = configuration.codec.size {
+            self.frameWidth = Int(size.width)
+            self.frameHeight = Int(size.height)
+        }
     }
     
     func start() throws {
@@ -94,8 +100,9 @@ private extension ZRLEVideoDecoder {
 
         let isKeyframe = frame.header.flags.contains(.isKeyframe)
 
+        // codec.size가 설정되어 있으면 그것을 사용, 없으면 타일에서 계산 (fallback)
         let targetSize: (width: Int, height: Int)
-        if frameWidth > 0, frameHeight > 0, !isKeyframe {
+        if frameWidth > 0, frameHeight > 0 {
             targetSize = (frameWidth, frameHeight)
         } else {
             targetSize = frameSize(from: tiles)

@@ -46,10 +46,16 @@ final class MJPGVideoDecoder: VideoDecoder {
             throw VideoDecoderError.unsupportedCodec(configuration.codec.fourCC.stringRepresentation)
         }
         self.configuration = configuration
-        
+
         self.decompressHandle = tjInitDecompress()
         guard self.decompressHandle != nil else {
             throw MJPGVideoDecoderError.decompressorUnavailable
+        }
+
+        // codec.size에서 실제 콘텐츠 크기 설정
+        if let size = configuration.codec.size {
+            self.frameWidth = Int(size.width)
+            self.frameHeight = Int(size.height)
         }
     }
     
@@ -102,8 +108,9 @@ private extension MJPGVideoDecoder {
 
         let isKeyframe = frame.header.flags.contains(.isKeyframe)
 
+        // codec.size가 설정되어 있으면 그것을 사용, 없으면 타일에서 계산 (fallback)
         let targetSize: (width: Int, height: Int)
-        if frameWidth > 0, frameHeight > 0, !isKeyframe {
+        if frameWidth > 0, frameHeight > 0 {
             targetSize = (frameWidth, frameHeight)
         } else {
             targetSize = frameSize(from: tiles)
