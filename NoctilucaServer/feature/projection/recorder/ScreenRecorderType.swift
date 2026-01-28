@@ -26,7 +26,11 @@ enum ScreenRecorderType: String, Codable, Hashable, Equatable {
     }
     
     static var allCases: [ScreenRecorderType] {
+#if DEBUG
         return [.screenCaptureKit, .avFoundation, .null]
+#else
+        return [.screenCaptureKit, .avFoundation]
+#endif
     }
     
     var displayName: String {
