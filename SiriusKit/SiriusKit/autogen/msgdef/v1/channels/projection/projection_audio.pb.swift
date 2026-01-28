@@ -20,54 +20,168 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-enum Sirius_Msgdef_V1_Channels_Projection_AudioStreamKind: SwiftProtobuf.Enum, Swift.CaseIterable {
+enum Sirius_Msgdef_V1_Channels_Projection_AudioSessionFailureReason: SwiftProtobuf.Enum, Swift.CaseIterable {
   typealias RawValue = Int
-
-  /// 기타 알 수 없는 유형의 오디오 스트림.
-  case unknown // = 0
-
-  /// 사용자 세션 전역의 오디오 루프백 스트림.
-  case sessionAudio // = 1
-
-  /// 특정한 애플리케이션의 오디오 스트림.
-  case applicationAudio // = 2
-
-  /// 마이크 입력 오디오 스트림.
-  case microphoneAudio // = 3
+  case audioSessionFailureUnknown // = 0
+  case audioSessionFailureSourceNotFound // = 1
+  case audioSessionFailureCodecNotSupported // = 2
+  case audioSessionFailurePermissionDenied // = 3
   case UNRECOGNIZED(Int)
 
   init() {
-    self = .unknown
+    self = .audioSessionFailureUnknown
   }
 
   init?(rawValue: Int) {
     switch rawValue {
-    case 0: self = .unknown
-    case 1: self = .sessionAudio
-    case 2: self = .applicationAudio
-    case 3: self = .microphoneAudio
+    case 0: self = .audioSessionFailureUnknown
+    case 1: self = .audioSessionFailureSourceNotFound
+    case 2: self = .audioSessionFailureCodecNotSupported
+    case 3: self = .audioSessionFailurePermissionDenied
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
 
   var rawValue: Int {
     switch self {
-    case .unknown: return 0
-    case .sessionAudio: return 1
-    case .applicationAudio: return 2
-    case .microphoneAudio: return 3
+    case .audioSessionFailureUnknown: return 0
+    case .audioSessionFailureSourceNotFound: return 1
+    case .audioSessionFailureCodecNotSupported: return 2
+    case .audioSessionFailurePermissionDenied: return 3
     case .UNRECOGNIZED(let i): return i
     }
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_AudioStreamKind] = [
-    .unknown,
-    .sessionAudio,
-    .applicationAudio,
-    .microphoneAudio,
+  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_AudioSessionFailureReason] = [
+    .audioSessionFailureUnknown,
+    .audioSessionFailureSourceNotFound,
+    .audioSessionFailureCodecNotSupported,
+    .audioSessionFailurePermissionDenied,
   ]
 
+}
+
+enum Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangeReason: SwiftProtobuf.Enum, Swift.CaseIterable {
+  typealias RawValue = Int
+  case audioSessionChangeUnknown // = 0
+  case audioSessionChangeSourceChanged // = 1
+  case audioSessionChangeCodecRenegotiated // = 2
+  case UNRECOGNIZED(Int)
+
+  init() {
+    self = .audioSessionChangeUnknown
+  }
+
+  init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .audioSessionChangeUnknown
+    case 1: self = .audioSessionChangeSourceChanged
+    case 2: self = .audioSessionChangeCodecRenegotiated
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  var rawValue: Int {
+    switch self {
+    case .audioSessionChangeUnknown: return 0
+    case .audioSessionChangeSourceChanged: return 1
+    case .audioSessionChangeCodecRenegotiated: return 2
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangeReason] = [
+    .audioSessionChangeUnknown,
+    .audioSessionChangeSourceChanged,
+    .audioSessionChangeCodecRenegotiated,
+  ]
+
+}
+
+enum Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndReason: SwiftProtobuf.Enum, Swift.CaseIterable {
+  typealias RawValue = Int
+  case audioSessionEndUnknown // = 0
+  case audioSessionEndClientRequested // = 1
+  case audioSessionEndSourceUnavailable // = 2
+  case audioSessionEndError // = 3
+  case UNRECOGNIZED(Int)
+
+  init() {
+    self = .audioSessionEndUnknown
+  }
+
+  init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .audioSessionEndUnknown
+    case 1: self = .audioSessionEndClientRequested
+    case 2: self = .audioSessionEndSourceUnavailable
+    case 3: self = .audioSessionEndError
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  var rawValue: Int {
+    switch self {
+    case .audioSessionEndUnknown: return 0
+    case .audioSessionEndClientRequested: return 1
+    case .audioSessionEndSourceUnavailable: return 2
+    case .audioSessionEndError: return 3
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndReason] = [
+    .audioSessionEndUnknown,
+    .audioSessionEndClientRequested,
+    .audioSessionEndSourceUnavailable,
+    .audioSessionEndError,
+  ]
+
+}
+
+//// CBR (Constant Bit Rate) 모드
+struct Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// 고정 비트레이트 (kbps)
+  var bitrateKbps: UInt32 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// VBR (Variable Bit Rate) 모드
+struct Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// 최대 비트레이트 (kbps)
+  var maxBitrateKbps: UInt32 = 0
+
+  //// 타겟 비트레이트 (kbps)
+  var targetBitrateKbps: UInt32 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
+struct Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
 }
 
 struct Sirius_Msgdef_V1_Channels_Projection_AudioCodec: Sendable {
@@ -82,10 +196,35 @@ struct Sirius_Msgdef_V1_Channels_Projection_AudioCodec: Sendable {
   //// - 'PCMA': G.711 A-law
   var fourCc: UInt32 = 0
 
-  //// 타겟 비트레이트 (kbps). 값을 0으로 설정하면 서버가 적절한 비트레이트를 선택합니다.
-  //// - 기본적으로 VBR(Variable Bit Rate) 모드로 작동합니다.
-  //// - CBR(Constant Bit Rate) 모드를 원할 경우, options 필드에 "bitrate-mode: cbr;" 옵션을 추가할 수 있습니다.
-  var bitRate: UInt32 = 0
+  //// 품질 설정
+  var quality: Sirius_Msgdef_V1_Channels_Projection_AudioCodec.OneOf_Quality? = nil
+
+  /// CBR 모드
+  var constantBitrate: Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality {
+    get {
+      if case .constantBitrate(let v)? = quality {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality()
+    }
+    set {quality = .constantBitrate(newValue)}
+  }
+
+  /// VBR 모드
+  var variableBitrate: Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality {
+    get {
+      if case .variableBitrate(let v)? = quality {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality()
+    }
+    set {quality = .variableBitrate(newValue)}
+  }
+
+  /// 자동 모드
+  var auto: Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality {
+    get {
+      if case .auto(let v)? = quality {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality()
+    }
+    set {quality = .auto(newValue)}
+  }
 
   //// 샘플링 레이트 (Hz). 값을 0으로 설정하면 스트림의 기본 샘플링 레이트를 사용합니다.
   var sampleRate: UInt32 = 0
@@ -105,12 +244,147 @@ struct Sirius_Msgdef_V1_Channels_Projection_AudioCodec: Sendable {
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
+  //// 품질 설정
+  enum OneOf_Quality: Equatable, Sendable {
+    /// CBR 모드
+    case constantBitrate(Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality)
+    /// VBR 모드
+    case variableBitrate(Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality)
+    /// 자동 모드
+    case auto(Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality)
+
+  }
+
   init() {}
 
   fileprivate var _options: String? = nil
 }
 
+//// 세션 전역 오디오 루프백 소스
+struct Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// 특정 애플리케이션의 오디오 소스
+struct Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var identifier: Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource.OneOf_Identifier? = nil
+
+  //// 프로세스 ID
+  var pid: UInt64 {
+    get {
+      if case .pid(let v)? = identifier {return v}
+      return 0
+    }
+    set {identifier = .pid(newValue)}
+  }
+
+  //// 앱 번들 ID (macOS)
+  var bundleID: String {
+    get {
+      if case .bundleID(let v)? = identifier {return v}
+      return String()
+    }
+    set {identifier = .bundleID(newValue)}
+  }
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  enum OneOf_Identifier: Equatable, Sendable {
+    //// 프로세스 ID
+    case pid(UInt64)
+    //// 앱 번들 ID (macOS)
+    case bundleID(String)
+
+  }
+
+  init() {}
+}
+
+//// 마이크 입력 소스
+struct Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// 특정 마이크 장치 ID. 비어있으면 기본 마이크 사용.
+  var deviceID: String {
+    get {return _deviceID ?? String()}
+    set {_deviceID = newValue}
+  }
+  /// Returns true if `deviceID` has been explicitly set.
+  var hasDeviceID: Bool {return self._deviceID != nil}
+  /// Clears the value of `deviceID`. Subsequent reads from it will return its default value.
+  mutating func clearDeviceID() {self._deviceID = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _deviceID: String? = nil
+}
+
+//// 오디오 소스 (프로젝션할 오디오의 출처)
+struct Sirius_Msgdef_V1_Channels_Projection_AudioSource: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var value: Sirius_Msgdef_V1_Channels_Projection_AudioSource.OneOf_Value? = nil
+
+  /// 세션 전역 오디오 루프백
+  var sessionAudio: Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource {
+    get {
+      if case .sessionAudio(let v)? = value {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource()
+    }
+    set {value = .sessionAudio(newValue)}
+  }
+
+  /// 특정 앱 오디오
+  var applicationAudio: Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource {
+    get {
+      if case .applicationAudio(let v)? = value {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource()
+    }
+    set {value = .applicationAudio(newValue)}
+  }
+
+  /// 마이크 입력
+  var microphone: Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource {
+    get {
+      if case .microphone(let v)? = value {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource()
+    }
+    set {value = .microphone(newValue)}
+  }
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  enum OneOf_Value: Equatable, Sendable {
+    /// 세션 전역 오디오 루프백
+    case sessionAudio(Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource)
+    /// 특정 앱 오디오
+    case applicationAudio(Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource)
+    /// 마이크 입력
+    case microphone(Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource)
+
+  }
+
+  init() {}
+}
+
 //// 오디오 스트림의 프로젝션을 요청합니다.
+/// opcode = 0x80C1
 struct Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -125,20 +399,17 @@ struct Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest: Sendable {
   /// Clears the value of `identifier`. Subsequent reads from it will return its default value.
   mutating func clearIdentifier() {self._identifier = nil}
 
-  /// 프로젝션할 오디오 스트림의 종류.
-  var kind: Sirius_Msgdef_V1_Channels_Projection_AudioStreamKind = .unknown
-
-  /// 특정 오디오 스트림을 지정하는 ID. 비어 있을 경우 기본 스트림이 선택됩니다.
-  /// 예: APPLICATION_AUDIO의 경우 `pid:{pid}` 또는 `app-bundle-id:com.contoso.gameapp` 형태로 지정할 수 있습니다.
-  var streamID: String {
-    get {return _streamID ?? String()}
-    set {_streamID = newValue}
+  //// 프로젝션할 오디오 소스
+  var source: Sirius_Msgdef_V1_Channels_Projection_AudioSource {
+    get {return _source ?? Sirius_Msgdef_V1_Channels_Projection_AudioSource()}
+    set {_source = newValue}
   }
-  /// Returns true if `streamID` has been explicitly set.
-  var hasStreamID: Bool {return self._streamID != nil}
-  /// Clears the value of `streamID`. Subsequent reads from it will return its default value.
-  mutating func clearStreamID() {self._streamID = nil}
+  /// Returns true if `source` has been explicitly set.
+  var hasSource: Bool {return self._source != nil}
+  /// Clears the value of `source`. Subsequent reads from it will return its default value.
+  mutating func clearSource() {self._source = nil}
 
+  //// 선호하는 코덱 목록 (우선순위 순)
   var preferredCodecs: [Sirius_Msgdef_V1_Channels_Projection_AudioCodec] = []
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -146,9 +417,11 @@ struct Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest: Sendable {
   init() {}
 
   fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
-  fileprivate var _streamID: String? = nil
+  fileprivate var _source: Sirius_Msgdef_V1_Channels_Projection_AudioSource? = nil
 }
 
+//// 오디오 프로젝션 중지를 요청합니다.
+/// opcode = 0x80C2
 struct Sirius_Msgdef_V1_Channels_Projection_StopAudioProjectionRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -170,17 +443,267 @@ struct Sirius_Msgdef_V1_Channels_Projection_StopAudioProjectionRequest: Sendable
   fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
 }
 
+//// 오디오 세션이 성공적으로 생성되었을 때 발생하는 이벤트
+/// opcode = 0x80C3
+struct Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreatedEvent: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var identifier: Sirius_Msgdef_UUID {
+    get {return _identifier ?? Sirius_Msgdef_UUID()}
+    set {_identifier = newValue}
+  }
+  /// Returns true if `identifier` has been explicitly set.
+  var hasIdentifier: Bool {return self._identifier != nil}
+  /// Clears the value of `identifier`. Subsequent reads from it will return its default value.
+  mutating func clearIdentifier() {self._identifier = nil}
+
+  var source: Sirius_Msgdef_V1_Channels_Projection_AudioSource {
+    get {return _source ?? Sirius_Msgdef_V1_Channels_Projection_AudioSource()}
+    set {_source = newValue}
+  }
+  /// Returns true if `source` has been explicitly set.
+  var hasSource: Bool {return self._source != nil}
+  /// Clears the value of `source`. Subsequent reads from it will return its default value.
+  mutating func clearSource() {self._source = nil}
+
+  var codec: Sirius_Msgdef_V1_Channels_Projection_AudioCodec {
+    get {return _codec ?? Sirius_Msgdef_V1_Channels_Projection_AudioCodec()}
+    set {_codec = newValue}
+  }
+  /// Returns true if `codec` has been explicitly set.
+  var hasCodec: Bool {return self._codec != nil}
+  /// Clears the value of `codec`. Subsequent reads from it will return its default value.
+  mutating func clearCodec() {self._codec = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _source: Sirius_Msgdef_V1_Channels_Projection_AudioSource? = nil
+  fileprivate var _codec: Sirius_Msgdef_V1_Channels_Projection_AudioCodec? = nil
+}
+
+//// 오디오 세션 생성이 실패했을 때 발생하는 이벤트
+/// opcode = 0x80C4
+struct Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreationFailedEvent: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var identifier: Sirius_Msgdef_UUID {
+    get {return _identifier ?? Sirius_Msgdef_UUID()}
+    set {_identifier = newValue}
+  }
+  /// Returns true if `identifier` has been explicitly set.
+  var hasIdentifier: Bool {return self._identifier != nil}
+  /// Clears the value of `identifier`. Subsequent reads from it will return its default value.
+  mutating func clearIdentifier() {self._identifier = nil}
+
+  var reason: Sirius_Msgdef_V1_Channels_Projection_AudioSessionFailureReason = .audioSessionFailureUnknown
+
+  var message: String {
+    get {return _message ?? String()}
+    set {_message = newValue}
+  }
+  /// Returns true if `message` has been explicitly set.
+  var hasMessage: Bool {return self._message != nil}
+  /// Clears the value of `message`. Subsequent reads from it will return its default value.
+  mutating func clearMessage() {self._message = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _message: String? = nil
+}
+
+//// 오디오 세션 설정이 변경되었을 때 발생하는 이벤트
+/// opcode = 0x80C5
+struct Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangedEvent: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var identifier: Sirius_Msgdef_UUID {
+    get {return _identifier ?? Sirius_Msgdef_UUID()}
+    set {_identifier = newValue}
+  }
+  /// Returns true if `identifier` has been explicitly set.
+  var hasIdentifier: Bool {return self._identifier != nil}
+  /// Clears the value of `identifier`. Subsequent reads from it will return its default value.
+  mutating func clearIdentifier() {self._identifier = nil}
+
+  var reason: Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangeReason = .audioSessionChangeUnknown
+
+  var source: Sirius_Msgdef_V1_Channels_Projection_AudioSource {
+    get {return _source ?? Sirius_Msgdef_V1_Channels_Projection_AudioSource()}
+    set {_source = newValue}
+  }
+  /// Returns true if `source` has been explicitly set.
+  var hasSource: Bool {return self._source != nil}
+  /// Clears the value of `source`. Subsequent reads from it will return its default value.
+  mutating func clearSource() {self._source = nil}
+
+  var codec: Sirius_Msgdef_V1_Channels_Projection_AudioCodec {
+    get {return _codec ?? Sirius_Msgdef_V1_Channels_Projection_AudioCodec()}
+    set {_codec = newValue}
+  }
+  /// Returns true if `codec` has been explicitly set.
+  var hasCodec: Bool {return self._codec != nil}
+  /// Clears the value of `codec`. Subsequent reads from it will return its default value.
+  mutating func clearCodec() {self._codec = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _source: Sirius_Msgdef_V1_Channels_Projection_AudioSource? = nil
+  fileprivate var _codec: Sirius_Msgdef_V1_Channels_Projection_AudioCodec? = nil
+}
+
+//// 오디오 세션이 종료되었을 때 발생하는 이벤트
+/// opcode = 0x80C6
+struct Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndedEvent: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var identifier: Sirius_Msgdef_UUID {
+    get {return _identifier ?? Sirius_Msgdef_UUID()}
+    set {_identifier = newValue}
+  }
+  /// Returns true if `identifier` has been explicitly set.
+  var hasIdentifier: Bool {return self._identifier != nil}
+  /// Clears the value of `identifier`. Subsequent reads from it will return its default value.
+  mutating func clearIdentifier() {self._identifier = nil}
+
+  var reason: Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndReason = .audioSessionEndUnknown
+
+  var message: String {
+    get {return _message ?? String()}
+    set {_message = newValue}
+  }
+  /// Returns true if `message` has been explicitly set.
+  var hasMessage: Bool {return self._message != nil}
+  /// Clears the value of `message`. Subsequent reads from it will return its default value.
+  mutating func clearMessage() {self._message = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _message: String? = nil
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
-extension Sirius_Msgdef_V1_Channels_Projection_AudioStreamKind: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{1}SESSION_AUDIO\0\u{1}APPLICATION_AUDIO\0\u{1}MICROPHONE_AUDIO\0")
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSessionFailureReason: SwiftProtobuf._ProtoNameProviding {
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0AUDIO_SESSION_FAILURE_UNKNOWN\0\u{1}AUDIO_SESSION_FAILURE_SOURCE_NOT_FOUND\0\u{1}AUDIO_SESSION_FAILURE_CODEC_NOT_SUPPORTED\0\u{1}AUDIO_SESSION_FAILURE_PERMISSION_DENIED\0")
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangeReason: SwiftProtobuf._ProtoNameProviding {
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0AUDIO_SESSION_CHANGE_UNKNOWN\0\u{1}AUDIO_SESSION_CHANGE_SOURCE_CHANGED\0\u{1}AUDIO_SESSION_CHANGE_CODEC_RENEGOTIATED\0")
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndReason: SwiftProtobuf._ProtoNameProviding {
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0AUDIO_SESSION_END_UNKNOWN\0\u{1}AUDIO_SESSION_END_CLIENT_REQUESTED\0\u{1}AUDIO_SESSION_END_SOURCE_UNAVAILABLE\0\u{1}AUDIO_SESSION_END_ERROR\0")
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioConstantBitrateQuality"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}bitrateKbps\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.bitrateKbps) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.bitrateKbps != 0 {
+      try visitor.visitSingularFixed32Field(value: self.bitrateKbps, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality) -> Bool {
+    if lhs.bitrateKbps != rhs.bitrateKbps {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioVariableBitrateQuality"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}maxBitrateKbps\0\u{1}targetBitrateKbps\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.maxBitrateKbps) }()
+      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.targetBitrateKbps) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.maxBitrateKbps != 0 {
+      try visitor.visitSingularFixed32Field(value: self.maxBitrateKbps, fieldNumber: 1)
+    }
+    if self.targetBitrateKbps != 0 {
+      try visitor.visitSingularFixed32Field(value: self.targetBitrateKbps, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality) -> Bool {
+    if lhs.maxBitrateKbps != rhs.maxBitrateKbps {return false}
+    if lhs.targetBitrateKbps != rhs.targetBitrateKbps {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioAutoQuality"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    // Load everything into unknown fields
+    while try decoder.nextFieldNumber() != nil {}
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
 }
 
 extension Sirius_Msgdef_V1_Channels_Projection_AudioCodec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".AudioCodec"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}fourCC\0\u{1}bitRate\0\u{1}sampleRate\0\u{1}channelCount\0\u{2}\u{b}options\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}fourCC\0\u{1}constantBitrate\0\u{1}variableBitrate\0\u{1}auto\0\u{1}sampleRate\0\u{1}channelCount\0\u{2}\u{9}options\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -189,9 +712,47 @@ extension Sirius_Msgdef_V1_Channels_Projection_AudioCodec: SwiftProtobuf.Message
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularFixed32Field(value: &self.fourCc) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.bitRate) }()
-      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.sampleRate) }()
-      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.channelCount) }()
+      case 2: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_AudioConstantBitrateQuality?
+        var hadOneofValue = false
+        if let current = self.quality {
+          hadOneofValue = true
+          if case .constantBitrate(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.quality = .constantBitrate(v)
+        }
+      }()
+      case 3: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_AudioVariableBitrateQuality?
+        var hadOneofValue = false
+        if let current = self.quality {
+          hadOneofValue = true
+          if case .variableBitrate(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.quality = .variableBitrate(v)
+        }
+      }()
+      case 4: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_AudioAutoQuality?
+        var hadOneofValue = false
+        if let current = self.quality {
+          hadOneofValue = true
+          if case .auto(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.quality = .auto(v)
+        }
+      }()
+      case 5: try { try decoder.decodeSingularFixed32Field(value: &self.sampleRate) }()
+      case 6: try { try decoder.decodeSingularFixed32Field(value: &self.channelCount) }()
       case 15: try { try decoder.decodeSingularStringField(value: &self._options) }()
       default: break
       }
@@ -206,14 +767,26 @@ extension Sirius_Msgdef_V1_Channels_Projection_AudioCodec: SwiftProtobuf.Message
     if self.fourCc != 0 {
       try visitor.visitSingularFixed32Field(value: self.fourCc, fieldNumber: 1)
     }
-    if self.bitRate != 0 {
-      try visitor.visitSingularFixed32Field(value: self.bitRate, fieldNumber: 2)
+    switch self.quality {
+    case .constantBitrate?: try {
+      guard case .constantBitrate(let v)? = self.quality else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    }()
+    case .variableBitrate?: try {
+      guard case .variableBitrate(let v)? = self.quality else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }()
+    case .auto?: try {
+      guard case .auto(let v)? = self.quality else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    }()
+    case nil: break
     }
     if self.sampleRate != 0 {
-      try visitor.visitSingularFixed32Field(value: self.sampleRate, fieldNumber: 3)
+      try visitor.visitSingularFixed32Field(value: self.sampleRate, fieldNumber: 5)
     }
     if self.channelCount != 0 {
-      try visitor.visitSingularFixed32Field(value: self.channelCount, fieldNumber: 4)
+      try visitor.visitSingularFixed32Field(value: self.channelCount, fieldNumber: 6)
     }
     try { if let v = self._options {
       try visitor.visitSingularStringField(value: v, fieldNumber: 15)
@@ -223,7 +796,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_AudioCodec: SwiftProtobuf.Message
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioCodec, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioCodec) -> Bool {
     if lhs.fourCc != rhs.fourCc {return false}
-    if lhs.bitRate != rhs.bitRate {return false}
+    if lhs.quality != rhs.quality {return false}
     if lhs.sampleRate != rhs.sampleRate {return false}
     if lhs.channelCount != rhs.channelCount {return false}
     if lhs._options != rhs._options {return false}
@@ -232,9 +805,203 @@ extension Sirius_Msgdef_V1_Channels_Projection_AudioCodec: SwiftProtobuf.Message
   }
 }
 
+extension Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".SessionAudioSource"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    // Load everything into unknown fields
+    while try decoder.nextFieldNumber() != nil {}
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource, rhs: Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".ApplicationAudioSource"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}pid\0\u{1}bundleId\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try {
+        var v: UInt64?
+        try decoder.decodeSingularFixed64Field(value: &v)
+        if let v = v {
+          if self.identifier != nil {try decoder.handleConflictingOneOf()}
+          self.identifier = .pid(v)
+        }
+      }()
+      case 2: try {
+        var v: String?
+        try decoder.decodeSingularStringField(value: &v)
+        if let v = v {
+          if self.identifier != nil {try decoder.handleConflictingOneOf()}
+          self.identifier = .bundleID(v)
+        }
+      }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    switch self.identifier {
+    case .pid?: try {
+      guard case .pid(let v)? = self.identifier else { preconditionFailure() }
+      try visitor.visitSingularFixed64Field(value: v, fieldNumber: 1)
+    }()
+    case .bundleID?: try {
+      guard case .bundleID(let v)? = self.identifier else { preconditionFailure() }
+      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+    }()
+    case nil: break
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource, rhs: Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource) -> Bool {
+    if lhs.identifier != rhs.identifier {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".MicrophoneAudioSource"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}deviceId\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self._deviceID) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._deviceID {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource, rhs: Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource) -> Bool {
+    if lhs._deviceID != rhs._deviceID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSource: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioSource"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}sessionAudio\0\u{1}applicationAudio\0\u{1}microphone\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_SessionAudioSource?
+        var hadOneofValue = false
+        if let current = self.value {
+          hadOneofValue = true
+          if case .sessionAudio(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.value = .sessionAudio(v)
+        }
+      }()
+      case 2: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_ApplicationAudioSource?
+        var hadOneofValue = false
+        if let current = self.value {
+          hadOneofValue = true
+          if case .applicationAudio(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.value = .applicationAudio(v)
+        }
+      }()
+      case 3: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_MicrophoneAudioSource?
+        var hadOneofValue = false
+        if let current = self.value {
+          hadOneofValue = true
+          if case .microphone(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.value = .microphone(v)
+        }
+      }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    switch self.value {
+    case .sessionAudio?: try {
+      guard case .sessionAudio(let v)? = self.value else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    }()
+    case .applicationAudio?: try {
+      guard case .applicationAudio(let v)? = self.value else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    }()
+    case .microphone?: try {
+      guard case .microphone(let v)? = self.value else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }()
+    case nil: break
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioSource, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioSource) -> Bool {
+    if lhs.value != rhs.value {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".AudioProjectionRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}identifier\0\u{1}kind\0\u{1}streamID\0\u{1}preferredCodecs\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}identifier\0\u{1}source\0\u{1}preferredCodecs\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -243,9 +1010,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest: SwiftProt
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
-      case 2: try { try decoder.decodeSingularEnumField(value: &self.kind) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self._streamID) }()
-      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.preferredCodecs) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._source) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.preferredCodecs) }()
       default: break
       }
     }
@@ -259,22 +1025,18 @@ extension Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest: SwiftProt
     try { if let v = self._identifier {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
-    if self.kind != .unknown {
-      try visitor.visitSingularEnumField(value: self.kind, fieldNumber: 2)
-    }
-    try { if let v = self._streamID {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 3)
+    try { if let v = self._source {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     } }()
     if !self.preferredCodecs.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.preferredCodecs, fieldNumber: 4)
+      try visitor.visitRepeatedMessageField(value: self.preferredCodecs, fieldNumber: 3)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioProjectionRequest) -> Bool {
     if lhs._identifier != rhs._identifier {return false}
-    if lhs.kind != rhs.kind {return false}
-    if lhs._streamID != rhs._streamID {return false}
+    if lhs._source != rhs._source {return false}
     if lhs.preferredCodecs != rhs.preferredCodecs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -310,6 +1072,187 @@ extension Sirius_Msgdef_V1_Channels_Projection_StopAudioProjectionRequest: Swift
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_StopAudioProjectionRequest, rhs: Sirius_Msgdef_V1_Channels_Projection_StopAudioProjectionRequest) -> Bool {
     if lhs._identifier != rhs._identifier {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreatedEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioSessionCreatedEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}identifier\0\u{1}source\0\u{1}codec\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._source) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._codec) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._identifier {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._source {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try { if let v = self._codec {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreatedEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreatedEvent) -> Bool {
+    if lhs._identifier != rhs._identifier {return false}
+    if lhs._source != rhs._source {return false}
+    if lhs._codec != rhs._codec {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreationFailedEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioSessionCreationFailedEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}identifier\0\u{1}reason\0\u{1}message\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
+      case 2: try { try decoder.decodeSingularEnumField(value: &self.reason) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self._message) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._identifier {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if self.reason != .audioSessionFailureUnknown {
+      try visitor.visitSingularEnumField(value: self.reason, fieldNumber: 2)
+    }
+    try { if let v = self._message {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreationFailedEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionCreationFailedEvent) -> Bool {
+    if lhs._identifier != rhs._identifier {return false}
+    if lhs.reason != rhs.reason {return false}
+    if lhs._message != rhs._message {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangedEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioSessionChangedEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}identifier\0\u{1}reason\0\u{1}source\0\u{1}codec\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
+      case 2: try { try decoder.decodeSingularEnumField(value: &self.reason) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._source) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._codec) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._identifier {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if self.reason != .audioSessionChangeUnknown {
+      try visitor.visitSingularEnumField(value: self.reason, fieldNumber: 2)
+    }
+    try { if let v = self._source {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try { if let v = self._codec {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangedEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangedEvent) -> Bool {
+    if lhs._identifier != rhs._identifier {return false}
+    if lhs.reason != rhs.reason {return false}
+    if lhs._source != rhs._source {return false}
+    if lhs._codec != rhs._codec {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndedEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".AudioSessionEndedEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}identifier\0\u{1}reason\0\u{1}message\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
+      case 2: try { try decoder.decodeSingularEnumField(value: &self.reason) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self._message) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._identifier {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if self.reason != .audioSessionEndUnknown {
+      try visitor.visitSingularEnumField(value: self.reason, fieldNumber: 2)
+    }
+    try { if let v = self._message {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndedEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndedEvent) -> Bool {
+    if lhs._identifier != rhs._identifier {return false}
+    if lhs.reason != rhs.reason {return false}
+    if lhs._message != rhs._message {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
