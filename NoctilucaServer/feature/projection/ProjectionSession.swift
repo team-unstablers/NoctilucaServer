@@ -34,8 +34,8 @@ class ProjectionSession: Identifiable {
     private var backpressureTrueCount: Int = 0
     private let backpressureWindowSize = 30 // ~0.5s at 60fps, FIXME
     
-    private var flushAll: Bool = false
-    
+    private let frameDropController = FrameDropController()
+
     private var screenLockCancellable: AnyCancellable!
     
     // FIXME
@@ -96,39 +96,26 @@ class ProjectionSession: Identifiable {
     
     private func processEncodedFrame(_ frame: consuming EncodedFrame) async throws {
         // self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
-        
+
         if let planner = self.qualityPlanner {
             let backpressure = self.dataChannel.writeBackPressure > 0
             accumulateBackpressure(backpressure, planner: planner)
         }
-        
-        if flushAll {
-            // drop frame until backpressure is cleared
-            if self.dataChannel.writeBackPressure == 0 {
-                self.flushAll = false
-                self.encoder.forceKeyframe()
-                return
-            } else {
-                self.logger.info("Flushing frame due to backpressure on projection session \(self.id)")
-                return
-            }
-        }
-        
-        // FIXME: dynamic threshold
-        // FIXME: 프로젝션 요청에 있는 비디오 파라미터를 참조해야 함
+
         let maxBitrateKbps = self.qualityPlanner?.maxBitrateKbps() ?? 2400
-        // (bytes per second)    * MAX_FRAME_INTERVAL
-        // = ((2400 / 8) * 1000) * 1
-        
-        // 최대 1초치의 버퍼까지만 허용, 그 이상이면 프레임 드롭
-        let threshold = ((maxBitrateKbps / 8) * 1000) * 1
-        if (self.dataChannel.writeBackPressure > threshold) {
-            self.logger.warning("High write backpressure (\(self.dataChannel.writeBackPressure) bytes) on projection session \(self.id), dropping frame")
-            self.flushAll = true
+        let dropResult = frameDropController.shouldDropByBackpressure(
+            writeBackPressure: self.dataChannel.writeBackPressure,
+            maxBitrateKbps: maxBitrateKbps
+        )
+
+        if dropResult.needsKeyframe {
+            self.encoder.forceKeyframe()
+        }
+
+        if dropResult.shouldDrop {
             return
         }
-        
-        
+
         try await self.dataChannel.send(videoFrame: frame)
     }
     
@@ -182,8 +169,10 @@ class ProjectionSession: Identifiable {
             inputFormatDescription: nil
         ))
         
-        self.qualityPlanner = Self.makeQualityPlanner(codec: codec)
-        
+        let (qualityPlanner, frameRate) = Self.makeQualityPlanner(codec: codec)
+        self.qualityPlanner = qualityPlanner
+        frameDropController.configure(frameRate: frameRate)
+
         if let planner = self.qualityPlanner {
             _ = self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
             _ = self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
@@ -225,22 +214,30 @@ extension ProjectionSession: ScreenRecorderDelegate {
     }
     
     func screenRecorder(_ recorder: any ScreenRecorder, didCaptureFrame frameData: CMSampleBuffer) {
-        let pixelBuffer = frameData.imageBuffer
-        
+        // PTS 기반 드랍 판정 (인코딩 전)
+        let ptsDropResult = frameDropController.shouldDropByPts(frameData)
+        if ptsDropResult.shouldDrop {
+            return
+        }
+
+        if ptsDropResult.needsKeyframe {
+            encoder.forceKeyframe()
+        }
+
         /*
+        let pixelBuffer = frameData.imageBuffer
         CVBufferRemoveAttachment(pixelBuffer!, kCVImageBufferICCProfileKey)
         let colorAttachments: [CFString: Any] = [
             kCVImageBufferColorPrimariesKey: kCVImageBufferColorPrimaries_ITU_R_2020,
             kCVImageBufferTransferFunctionKey: kCVImageBufferTransferFunction_ITU_R_2100_HLG, // kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ, // HLG라면
             kCVImageBufferYCbCrMatrixKey: kCVImageBufferYCbCrMatrix_ITU_R_2020
         ]
-        
+
         // 3. PixelBuffer에 태그 주입
         // CVBufferSetAttachments는 기존 키가 있으면 덮어씁니다.
         CVBufferSetAttachments(pixelBuffer!, colorAttachments as CFDictionary, .shouldPropagate)
          */
-        
-        
+
         try? encoder.encode(frameID: UInt64(Date().timeIntervalSince1970 * 1000), sampleBuffer: frameData)
     }
 }
@@ -260,7 +257,7 @@ private extension ProjectionSession {
         }
     }
     
-    static func makeQualityPlanner(codec: Codec) -> QualityPlanner {
+    static func makeQualityPlanner(codec: Codec) -> (planner: QualityPlanner, frameRate: Float) {
         // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
         var frameRate: Float = 60.0
 
@@ -284,7 +281,7 @@ private extension ProjectionSession {
 
         // FIXME: codec.options로부터 allow-degradation 옵션을 읽어오도록
         planner.allowDegradation = true
-        return planner
+        return (planner, frameRate)
     }
     
     
