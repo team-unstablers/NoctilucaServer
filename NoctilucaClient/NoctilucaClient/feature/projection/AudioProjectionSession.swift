@@ -8,10 +8,14 @@
 import Foundation
 import AVFoundation
 import CoreMedia
+import Accelerate
 
 import SiriusKitClient
 
 /// Audio projection session that handles audio decoding and playback.
+///
+/// Uses AVAudioSourceNode (pull-based) with a jitter buffer for accurate
+/// PTS-based timing and smooth playback.
 class AudioProjectionSession: Identifiable {
     private let logger = SiriusLogger(category: "AudioProjectionSession", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
 
@@ -25,21 +29,23 @@ class AudioProjectionSession: Identifiable {
     // MARK: - AVAudioEngine
 
     private var audioEngine: AVAudioEngine?
-    private var playerNode: AVAudioPlayerNode?
+    private var sourceNode: AVAudioSourceNode?
 
     /// Output format for the audio engine (48kHz, stereo, Float32)
     private var outputFormat: AVAudioFormat?
 
-    // MARK: - Buffering Control
+    // MARK: - Jitter Buffer
 
-    /// If true, buffers initial frames before starting playback.
-    var enableInitialBuffering: Bool = false
+    /// Jitter buffer for PTS-based timing control.
+    private var jitterBuffer: AudioJitterBuffer!
 
-    /// Number of frames to buffer before starting playback.
-    var initialBufferCount: Int = 3
+    // MARK: - Fade Control (for smooth underflow handling)
 
-    private var isBuffering: Bool = false
-    private var bufferedFrames: [DecodedAudioFrame] = []
+    /// Current fade gain (0.0 = silent, 1.0 = full volume).
+    private var fadeGain: Float = 1.0
+
+    /// Fade step per sample for smooth transitions.
+    private var fadeStepPerSample: Float = 1.0 / 480.0  // ~10ms fade at 48kHz
 
     private var isStarted: Bool = false
 
@@ -96,10 +102,13 @@ class AudioProjectionSession: Identifiable {
         guard let decoder = decoder else {
             throw AudioDecoderError.notPrepared
         }
-        guard let audioEngine = audioEngine,
-              let playerNode = playerNode else {
+        guard let audioEngine = audioEngine else {
             throw AudioDecoderError.notPrepared
         }
+
+        // Reset jitter buffer and fade state
+        jitterBuffer.reset()
+        fadeGain = 1.0
 
         try decoder.start()
 
@@ -112,27 +121,19 @@ class AudioProjectionSession: Identifiable {
 
         isStarted = true
 
-        if enableInitialBuffering {
-            isBuffering = true
-            logger.info("AudioProjectionSession started (buffering mode, count: \(self.initialBufferCount))")
-        } else {
-            playerNode.play()
-            logger.info("AudioProjectionSession started (immediate playback)")
-        }
+        logger.info("AudioProjectionSession started (jitter buffer mode)")
     }
 
     /// Stops audio decoding and playback.
     func stop() throws {
         isStarted = false
 
-        playerNode?.stop()
         audioEngine?.stop()
 
         try decoder?.stop()
         decoder = nil
 
-        bufferedFrames.removeAll()
-        isBuffering = false
+        jitterBuffer?.reset()
 
         logger.info("AudioProjectionSession stopped")
     }
@@ -141,27 +142,166 @@ class AudioProjectionSession: Identifiable {
 
     private func setupAudioEngine() throws {
         let engine = AVAudioEngine()
-        let player = AVAudioPlayerNode()
 
-        // Create output format (48kHz, stereo, Float32)
+        // Create output format (48kHz, stereo, Float32, NON-INTERLEAVED)
+        // AVAudioEngine prefers non-interleaved format internally
         guard let format = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 2) else {
             throw AudioDecoderError.unsupportedFormat
         }
         self.outputFormat = format
 
-        // Attach player node to engine
-        engine.attach(player)
+        // Initialize jitter buffer
+        jitterBuffer = AudioJitterBuffer(sampleRate: 48000, maxDurationMs: 500)
 
-        // Connect player to main mixer
-        engine.connect(player, to: engine.mainMixerNode, format: format)
+        // Create AVAudioSourceNode (pull-based)
+        let sourceNode = AVAudioSourceNode(format: format) { [weak self] silence, timestamp, frameCount, audioBufferList in
+            guard let self = self else {
+                silence.pointee = true
+                return noErr
+            }
+            return self.renderCallback(
+                silence: silence,
+                timestamp: timestamp,
+                frameCount: frameCount,
+                audioBufferList: audioBufferList
+            )
+        }
+
+        // Attach source node to engine
+        engine.attach(sourceNode)
+
+        // Connect source to main mixer
+        engine.connect(sourceNode, to: engine.mainMixerNode, format: format)
 
         // Prepare the engine
         engine.prepare()
 
         self.audioEngine = engine
-        self.playerNode = player
+        self.sourceNode = sourceNode
 
-        logger.info("Audio engine setup complete")
+        logger.info("Audio engine setup complete (AVAudioSourceNode mode)")
+    }
+
+    // MARK: - Render Callback
+
+    /// Audio render callback. Called from the real-time audio thread.
+    /// - Warning: This runs on a real-time thread. Avoid memory allocation, locks, and Objective-C dispatch.
+    private func renderCallback(
+        silence: UnsafeMutablePointer<ObjCBool>,
+        timestamp: UnsafePointer<AudioTimeStamp>,
+        frameCount: AVAudioFrameCount,
+        audioBufferList: UnsafeMutablePointer<AudioBufferList>
+    ) -> OSStatus {
+        let bufferList = UnsafeMutableAudioBufferListPointer(audioBufferList)
+        let requestedFrames = Int(frameCount)
+
+        // For non-interleaved stereo, we have 2 separate buffers (L and R)
+        guard bufferList.count >= 2,
+              let leftBuffer = bufferList[0].mData?.assumingMemoryBound(to: Float.self),
+              let rightBuffer = bufferList[1].mData?.assumingMemoryBound(to: Float.self) else {
+            silence.pointee = true
+            return noErr
+        }
+
+        // Get interleaved data from jitter buffer into temp storage
+        // We need to deinterleave: L R L R L R -> L L L, R R R
+        let hasData = jitterBuffer.dequeue(
+            intoLeft: leftBuffer,
+            intoRight: rightBuffer,
+            frameCount: requestedFrames
+        )
+
+        if hasData {
+            // Data available - apply fade in if recovering from underflow
+            if fadeGain < 1.0 {
+                applyFadeInNonInterleaved(left: leftBuffer, right: rightBuffer, frameCount: requestedFrames)
+            }
+            silence.pointee = false
+        } else {
+            // Underflow - apply fade out for smooth transition
+            if fadeGain > 0 {
+                applyFadeOutNonInterleaved(left: leftBuffer, right: rightBuffer, frameCount: requestedFrames)
+                silence.pointee = false
+            } else {
+                // Already faded out, output silence
+                fillSilenceNonInterleaved(left: leftBuffer, right: rightBuffer, frameCount: requestedFrames)
+                silence.pointee = true
+            }
+        }
+
+        return noErr
+    }
+
+    // MARK: - Fade Helpers (Non-Interleaved, SIMD-optimized)
+
+    /// Applies fade-in to non-interleaved audio buffers using vDSP.
+    private func applyFadeInNonInterleaved(
+        left: UnsafeMutablePointer<Float>,
+        right: UnsafeMutablePointer<Float>,
+        frameCount: Int
+    ) {
+        // Calculate how many samples until we reach full gain
+        let samplesToFullGain = Int(ceil((1.0 - fadeGain) / fadeStepPerSample))
+        let fadeSamples = min(samplesToFullGain, frameCount)
+
+        if fadeSamples > 0 {
+            // Use vDSP_vrampmul for SIMD ramp multiplication
+            var startGain = fadeGain
+            var endGain = min(1.0, fadeGain + Float(fadeSamples) * fadeStepPerSample)
+
+            // Apply ramp to left channel
+            vDSP_vrampmul(left, 1, &startGain, &fadeStepPerSample, left, 1, vDSP_Length(fadeSamples))
+
+            // Apply ramp to right channel (reset startGain)
+            startGain = fadeGain
+            vDSP_vrampmul(right, 1, &startGain, &fadeStepPerSample, right, 1, vDSP_Length(fadeSamples))
+
+            fadeGain = endGain
+        }
+
+        // Rest of the samples are at full gain (no modification needed)
+    }
+
+    /// Applies fade-out to non-interleaved audio buffers using vDSP.
+    private func applyFadeOutNonInterleaved(
+        left: UnsafeMutablePointer<Float>,
+        right: UnsafeMutablePointer<Float>,
+        frameCount: Int
+    ) {
+        // Calculate how many samples until we reach zero
+        let samplesToZero = Int(ceil(fadeGain / fadeStepPerSample))
+        let fadeSamples = min(samplesToZero, frameCount)
+
+        if fadeSamples > 0 {
+            var negativeStep = -fadeStepPerSample
+            var startGain = fadeGain
+            let endGain = max(0.0, fadeGain - Float(fadeSamples) * fadeStepPerSample)
+
+            // Apply negative ramp to left channel
+            vDSP_vrampmul(left, 1, &startGain, &negativeStep, left, 1, vDSP_Length(fadeSamples))
+
+            // Apply negative ramp to right channel (reset startGain)
+            startGain = fadeGain
+            vDSP_vrampmul(right, 1, &startGain, &negativeStep, right, 1, vDSP_Length(fadeSamples))
+
+            fadeGain = endGain
+        }
+
+        // Clear rest with silence (SIMD)
+        if fadeSamples < frameCount {
+            vDSP_vclr(left.advanced(by: fadeSamples), 1, vDSP_Length(frameCount - fadeSamples))
+            vDSP_vclr(right.advanced(by: fadeSamples), 1, vDSP_Length(frameCount - fadeSamples))
+        }
+    }
+
+    /// Fills non-interleaved buffers with silence using vDSP.
+    private func fillSilenceNonInterleaved(
+        left: UnsafeMutablePointer<Float>,
+        right: UnsafeMutablePointer<Float>,
+        frameCount: Int
+    ) {
+        vDSP_vclr(left, 1, vDSP_Length(frameCount))
+        vDSP_vclr(right, 1, vDSP_Length(frameCount))
     }
 
     // MARK: - Frame Handling
@@ -183,27 +323,9 @@ class AudioProjectionSession: Identifiable {
 extension AudioProjectionSession: AudioDecoderDelegate {
     func audioDecoder(_ decoder: AudioDecoder, didDecode frame: DecodedAudioFrame) {
         guard isStarted else { return }
-        guard let playerNode = playerNode else { return }
 
-        if enableInitialBuffering && isBuffering {
-            // Buffering mode: accumulate frames
-            bufferedFrames.append(frame)
-
-            if bufferedFrames.count >= initialBufferCount {
-                // Buffering complete - schedule all frames and start playback
-                logger.info("Initial buffering complete, starting playback with \(self.bufferedFrames.count) frames")
-
-                for buffered in bufferedFrames {
-                    playerNode.scheduleBuffer(buffered.pcmBuffer)
-                }
-                bufferedFrames.removeAll()
-                isBuffering = false
-                playerNode.play()
-            }
-        } else {
-            // Immediate playback mode
-            playerNode.scheduleBuffer(frame.pcmBuffer)
-        }
+        // Enqueue to jitter buffer (PTS-based timing handled internally)
+        jitterBuffer.enqueue(frame)
     }
 
     func audioDecoder(_ decoder: AudioDecoder, didFailWith error: Error) {
