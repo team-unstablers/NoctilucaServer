@@ -40,7 +40,25 @@ extension NoctilucaClient {
         
         logger.info("Received ServerHello: protocolVersion=\(message.protocolVersion.rawValue), serverName=\(message.serverName ?? "nil")")
         
-        // TODO: protocol version negotiation
+        // Protocol Version Negotiation
+        let clientVersion = SiriusProtocolVersion.v1_0
+        let serverVersion = message.protocolVersion
+        
+        if clientVersion.majorVersion != serverVersion.majorVersion {
+            logger.error("Protocol version mismatch: Client expects major version \(clientVersion.majorVersion), but Server is \(serverVersion.majorVersion)")
+            
+            await MainActor.run {
+                uiEvents.send(.errorOccurred(.protocolVersionMismatch(client: clientVersion.displayVersion, server: serverVersion.displayVersion)))
+            }
+            
+            await self.close()
+            return
+        }
+        
+        if clientVersion.minorVersion != serverVersion.minorVersion {
+             logger.warning("Protocol minor version mismatch: Client \(clientVersion.displayVersion), Server \(serverVersion.displayVersion). Proceeding with compatibility mode.")
+        }
+        
         try shiftPhase(to: .awaitingAuthentication)
     }
     

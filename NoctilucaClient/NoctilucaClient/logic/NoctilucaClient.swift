@@ -13,6 +13,7 @@ import SiriusKitClient
 enum NoctilucaClientError: LocalizedError {
     case unsupportedProtocolVersion
     case invalidPhase
+    case protocolVersionMismatch(client: String, server: String)
     
     case remoteClosedConnection
     case authNegotiationFailed(authMethods: [ClientAuthMethod])
@@ -23,6 +24,8 @@ enum NoctilucaClientError: LocalizedError {
             return "지원하지 않는 프로토콜 버전입니다."
         case .invalidPhase:
             return "잘못된 페이즈 전환이 시도되었습니다."
+        case .protocolVersionMismatch(let client, let server):
+            return "프로토콜 버전이 호환되지 않습니다.\nClient: \(client), Server: \(server)"
         case .remoteClosedConnection:
             return "호스트가 임의로 연결을 종료했습니다."
         case .authNegotiationFailed(let authMethods):

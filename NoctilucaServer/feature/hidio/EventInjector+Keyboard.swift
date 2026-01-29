@@ -8,21 +8,11 @@
 import Foundation
 
 import Carbon
+import CoreGraphics
 
 import SiriusKit
 
 extension EventInjector {
-    func post(keyEvent event: KeyboardEvent) {
-        switch event.eventType {
-        case .down:
-            postKeyDown(Int(event.keyCode))
-        case .up:
-            postKeyUp(Int(event.keyCode))
-        default:
-            break
-        }
-    }
-    
     func postKeyDown(_ keyCode: Int) {
         enqueue { [weak self] in
             self?.handleKeyDown(keyCode)
@@ -32,6 +22,29 @@ extension EventInjector {
     func postKeyUp(_ keyCode: Int) {
         enqueue { [weak self] in
             self?.handleKeyUp(keyCode)
+        }
+    }
+
+    func postUcs4Input(_ ucs4: UInt32) {
+        enqueue { [weak self] in
+            self?.handleUcs4Input(ucs4)
+        }
+    }
+
+    private func handleUcs4Input(_ ucs4: UInt32) {
+        guard let scalar = UnicodeScalar(ucs4) else { return }
+        let utf16Chars = Array(String(scalar).utf16)
+
+        // UCS4 입력은 keyDown/keyUp을 원샷으로 발생시켜 문자를 주입합니다.
+        // virtualKey 0(A)은 UnicodeString이 설정되면 무시됩니다.
+        if let downEvent = CGEvent(keyboardEventSource: eventSource, virtualKey: 0, keyDown: true) {
+            downEvent.keyboardSetUnicodeString(stringLength: utf16Chars.count, unicodeString: utf16Chars)
+            downEvent.post(tap: .cgSessionEventTap)
+        }
+
+        if let upEvent = CGEvent(keyboardEventSource: eventSource, virtualKey: 0, keyDown: false) {
+            upEvent.keyboardSetUnicodeString(stringLength: utf16Chars.count, unicodeString: utf16Chars)
+            upEvent.post(tap: .cgSessionEventTap)
         }
     }
 
