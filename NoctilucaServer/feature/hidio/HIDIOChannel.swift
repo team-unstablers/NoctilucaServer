@@ -86,11 +86,15 @@ class HIDIOChannel: Channel {
         switch event.eventType {
         case .down:
             eventInjector.postKeyDown(carbonKeyCode)
-        case .up:
+        case .keyUp:
             eventInjector.postKeyUp(carbonKeyCode)
         default:
             break
         }
+    }
+    
+    private func injectUcs4Key(_ event: KeyboardEvent) {
+        eventInjector.postUcs4Input(event.keyCode)
     }
     
     func inject(mouseMoveEvent: MouseMoveEvent) {
