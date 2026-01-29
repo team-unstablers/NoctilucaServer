@@ -8,8 +8,8 @@ struct MiscSettingsTab: View {
         Form {
             Section(String(localized: "settings.misc.telemetry.title", defaultValue: "텔레메트리 및 진단 정보")) {
                 Toggle(isOn: $settings.telemetry.enableTelemetry) {
-                    Text(String(localized: "settings.misc.telemetry.enable.title", defaultValue: "Noctiluca의 개발을 익명으로 돕기"))
-                    Text(String(localized: "settings.misc.telemetry.enable.description", defaultValue: "사용자 환경 및 사용 통계를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](http://google.com)"))
+                    Text(markdown: String(localized: "settings.misc.telemetry.enable.title", defaultValue: "Noctiluca의 개발을 익명으로 돕기"))
+                    Text(markdown: String(localized: "settings.misc.telemetry.enable.description", defaultValue: "사용자 환경 및 사용 통계를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](http://google.com)"))
                 }
                 SettingsEntry(title: String(localized: "settings.misc.telemetry.identifier.title", defaultValue: "텔레메트리 식별자")) {
                     Button(String(localized: "settings.misc.telemetry.identifier.reset", defaultValue: "식별자 재설정")) {

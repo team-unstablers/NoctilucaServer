@@ -8,24 +8,24 @@ struct GeneralSettingsTab: View {
         Form {
             Section(String(localized: "settings.general.title", defaultValue: "일반")) {
                 Toggle(isOn: .constant(false)) {
-                    Text(String(localized: "settings.general.autolaunch.title", defaultValue: "시스템 기동 시 자동으로 Noctiluca 시작하기"))
+                    Text(markdown: String(localized: "settings.general.autolaunch.title", defaultValue: "시스템 기동 시 자동으로 Noctiluca 시작하기"))
                 }
                 
                 Toggle(isOn: $settings.general.autoStart) {
-                    Text(String(localized: "settings.general.autostart.title", defaultValue: "앱 기동 시 자동으로 서버 시작하기"))
-                    Text(String(localized: "settings.general.autostart.description", defaultValue: "Noctiluca Server 앱이 실행될 때 서버를 자동으로 시작합니다."))
+                    Text(markdown: String(localized: "settings.general.autostart.title", defaultValue: "앱 기동 시 자동으로 서버 시작하기"))
+                    Text(markdown: String(localized: "settings.general.autostart.description", defaultValue: "Noctiluca Server 앱이 실행될 때 서버를 자동으로 시작합니다."))
                 }
 
                 IntegerField(value: $settings.general.maxConcurrentSessions) {
-                    Text(String(localized: "settings.general.max_concurrent_sessions.title", defaultValue: "최대 동시 접속 수"))
-                    Text(String(localized: "settings.general.max_concurrent_sessions.description", defaultValue: "Noctiluca가 허용할 최대 동시 접속 수를 설정합니다."))
+                    Text(markdown: String(localized: "settings.general.max_concurrent_sessions.title", defaultValue: "최대 동시 접속 수"))
+                    Text(markdown: String(localized: "settings.general.max_concurrent_sessions.description", defaultValue: "Noctiluca가 허용할 최대 동시 접속 수를 설정합니다."))
                 }
             }
 
             Section(String(localized: "settings.notification.title", defaultValue: "알림")) {
                 Toggle(isOn: $settings.notifications.enabled) {
-                    Text(String(localized: "settings.notification.enabled.title", defaultValue: "알림 표시하기"))
-                    Text(String(localized: "settings.notification.enabled.description", defaultValue: "이벤트 발생 시 알림을 표시합니다."))
+                    Text(markdown: String(localized: "settings.notification.enabled.title", defaultValue: "알림 표시하기"))
+                    Text(markdown: String(localized: "settings.notification.enabled.description", defaultValue: "이벤트 발생 시 알림을 표시합니다."))
                 }
                 
                 if settings.notifications.enabled {

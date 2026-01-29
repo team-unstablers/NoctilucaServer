@@ -222,24 +222,34 @@ class ProjectionChannel: Channel {
         ))
     }
     
-    /// 서버가 지원하는 오디오 코덱 목록 (우선순위 순)
-    private static let supportedAudioCodecs: [CodecFourCC] = [.opus, .pcmu, .pcma]
-
     private func handleAudioProjectionRequest(_ request: AudioProjectionRequest) async throws {
         guard let session = self.clientSession else {
             return
         }
 
         let identifier = request.identifier
+        let projectionSettings = NoctilucaServer.shared.settings.projection
+        
+        guard projectionSettings.isAudioProjectionEnabled else {
+            self.logger.warning("Audio projection request rejected because it is disabled in settings")
+            try await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
+                identifier: identifier,
+                reason: .unknown,
+                message: "Audio projection is disabled on server."
+            ))
+            return
+        }
 
         do {
+            let serverSupportedCodecs = projectionSettings.audioCodecSpecifications.map { $0.fourCC }
+            
             // 코덱 협상: 클라이언트 선호 코덱 중 서버가 지원하는 첫 번째 코덱 선택
-            guard let negotiatedCodec = negotiateAudioCodec(clientPreferred: request.preferredCodecs) else {
+            guard let negotiatedCodec = negotiateAudioCodec(clientPreferred: request.preferredCodecs, serverSupported: serverSupportedCodecs) else {
                 self.logger.warning("No supported audio codec found for session \(identifier)")
                 try await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
                     identifier: identifier,
                     reason: .codecNotSupported,
-                    message: "No supported audio codec found. Server supports: \(Self.supportedAudioCodecs.map { $0.stringRepresentation }.joined(separator: ", "))"
+                    message: "No supported audio codec found. Server supports: \(serverSupportedCodecs.map { $0.stringRepresentation }.joined(separator: ", "))"
                 ))
                 return
             }
@@ -278,10 +288,10 @@ class ProjectionChannel: Channel {
     }
 
     /// 클라이언트 선호 코덱 목록에서 서버가 지원하는 첫 번째 코덱을 선택
-    private func negotiateAudioCodec(clientPreferred: [SiriusKit.AudioCodec]) -> SiriusKit.AudioCodec? {
+    private func negotiateAudioCodec(clientPreferred: [SiriusKit.AudioCodec], serverSupported: [CodecFourCC]) -> SiriusKit.AudioCodec? {
         // 클라이언트 선호 순서대로 서버 지원 여부 확인
         for codec in clientPreferred {
-            if Self.supportedAudioCodecs.contains(codec.fourCC) {
+            if serverSupported.contains(codec.fourCC) {
                 return codec
             }
         }

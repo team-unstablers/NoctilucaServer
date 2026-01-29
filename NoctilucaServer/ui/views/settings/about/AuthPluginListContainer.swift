@@ -80,10 +80,10 @@ struct AuthPluginDetailView: View {
 
         SettingsEntry(title: String(localized: "settings.about.plugin.type", defaultValue: "유형")) {
             if plugin is BuiltInAuthPluginV1 {
-                Text(String(localized: "settings.about.plugin.type_builtin", defaultValue: "내장 플러그인"))
+                Text(markdown: String(localized: "settings.about.plugin.type_builtin", defaultValue: "내장 플러그인"))
                     .foregroundStyle(.secondary)
             } else {
-                Text(String(localized: "settings.about.plugin.type_external", defaultValue: "외부 플러그인"))
+                Text(markdown: String(localized: "settings.about.plugin.type_external", defaultValue: "외부 플러그인"))
                     .foregroundStyle(.secondary)
             }
         }

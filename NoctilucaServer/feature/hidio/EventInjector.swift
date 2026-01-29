@@ -8,6 +8,7 @@
 import Foundation
 
 import Carbon
+import Cocoa
 import CoreGraphics
 
 import SiriusKit
@@ -29,10 +30,18 @@ class EventInjector {
     public static let MOUSE_DOWN_STATE_RIGHT: UInt16 = 0b10
 
     public let serialQueue = DispatchQueue(label: "EventInjector", qos: .userInteractive)
+    private let serialQueueKey = DispatchSpecificKey<Void>()
 
     var eventSource: CGEventSource!
 
     var keyDownState = Set<Int>()
+    var repeatableKeysInOrder: [Int] = []
+    var repeatKey: Int? = nil
+    var repeatTimer: DispatchSourceTimer? = nil
+    var repeatDelay: TimeInterval = 0
+    var repeatInterval: TimeInterval = 0
+    let minimumRepeatDelay: TimeInterval = 0.05
+    let minimumRepeatInterval: TimeInterval = 0.01
 
     var mouseClickedButton: Int64 = 0
     var mouseClickedAt: Double = 0
@@ -41,6 +50,7 @@ class EventInjector {
     var lastMousePosition: CGPoint? = nil
 
     init() {
+        serialQueue.setSpecific(key: serialQueueKey, value: ())
     }
 
     func prepare() throws {
@@ -49,6 +59,71 @@ class EventInjector {
         }
 
         self.eventSource = eventSource
+        refreshKeyRepeatSettings()
+    }
+
+    func resetKeyboardState() {
+        enqueue { [weak self] in
+            self?.resetKeyboardStateOnQueue()
+        }
+    }
+
+    func refreshKeyRepeatSettings() {
+        repeatDelay = NSEvent.keyRepeatDelay
+        repeatInterval = NSEvent.keyRepeatInterval
+    }
+
+    func isRepeatEnabled() -> Bool {
+        return repeatDelay >= minimumRepeatDelay && repeatInterval >= minimumRepeatInterval
+    }
+
+    func dispatchInterval(for seconds: TimeInterval) -> DispatchTimeInterval {
+        let nanoseconds = Int(max(0, seconds) * 1_000_000_000)
+        return .nanoseconds(nanoseconds)
+    }
+
+    func enqueue(_ block: @escaping () -> Void) {
+        if DispatchQueue.getSpecific(key: serialQueueKey) != nil {
+            block()
+        } else {
+            serialQueue.async(execute: block)
+        }
+    }
+
+    func stopRepeatTimer() {
+        repeatTimer?.cancel()
+        repeatTimer = nil
+    }
+
+    func resetKeyboardStateOnQueue() {
+        stopRepeatTimer()
+        repeatKey = nil
+        repeatableKeysInOrder.removeAll()
+
+        if !keyDownState.isEmpty {
+            for keyCode in keyDownState {
+                postKeyEvent(keyCode: keyCode, isDown: false, isRepeat: false)
+            }
+            keyDownState.removeAll()
+        }
+    }
+
+    func postKeyEvent(keyCode: Int, isDown: Bool, isRepeat: Bool) {
+        guard let cgEvent = CGEvent(
+            keyboardEventSource: eventSource,
+            virtualKey: CGKeyCode(keyCode),
+            keyDown: isDown
+        )
+        else {
+            return
+        }
+
+        if isRepeat {
+            cgEvent.setIntegerValueField(.keyboardEventAutorepeat, value: 1)
+        }
+
+        cgEvent.sanitizeModifierFlags(with: keyDownState)
+        cgEvent.post(tap: .cgSessionEventTap)
     }
 }
 

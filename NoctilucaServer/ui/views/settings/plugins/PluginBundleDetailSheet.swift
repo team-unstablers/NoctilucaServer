@@ -22,11 +22,11 @@ struct PluginBundleDetailSheet: View {
         TabView() {
             Text("test")
                 .tabItem {
-                    Text(String(localized: "settings.plugins.detail_sheet.tab.general", defaultValue: "기본"))
+                    Text(markdown: String(localized: "settings.plugins.detail_sheet.tab.general", defaultValue: "기본"))
                 }
             Text("test2")
                 .tabItem {
-                    Text(String(localized: "settings.plugins.detail_sheet.tab.signature", defaultValue: "서명"))
+                    Text(markdown: String(localized: "settings.plugins.detail_sheet.tab.signature", defaultValue: "서명"))
                 }
         }
         .with {

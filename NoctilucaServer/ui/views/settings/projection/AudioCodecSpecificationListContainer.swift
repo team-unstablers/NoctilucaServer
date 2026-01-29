@@ -1,22 +1,59 @@
 //
-//  AuthMethodContainer.swift
+//  AudioCodecSpecificationListContainer.swift
 //  NoctilucaServer
 //
-//  Created by Gyuhwan Park on 12/4/25.
+//  Created by Codex on 1/30/26.
 //
 
 import Foundation
-import AppKit
-#if canImport(Collaboration)
-import Collaboration
-#endif
 import SwiftUI
-
 import SiriusKit
 
-struct CodecSpecificationListContainer: View {
+enum AudioCodecSpecificationSheetAction {
+    case save(AudioCodecSpecification)
+    case cancel
+}
+
+struct AudioCodecSpecificationSheet: View {
+    let actionHandler: (AudioCodecSpecificationSheetAction) -> Void
+    
+    @State
+    var specification: AudioCodecSpecification
+    
+    init(specification: AudioCodecSpecification, actionHandler: @escaping (AudioCodecSpecificationSheetAction) -> Void) {
+        self._specification = State(initialValue: specification)
+        self.actionHandler = actionHandler
+    }
+    
+    var body: some View {
+        VStack {
+            Form {
+                Section {
+                    Text(markdown: String(localized: "settings.projection.audio_codec.no_options", defaultValue: "이 코덱에는 설정할 수 있는 옵션이 없습니다."))
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text(specification.displayTitle)
+                }
+            }
+            .formStyle(.grouped)
+            
+            HStack {
+                Button(String(localized: "settings.projection.codec_sheet.cancel", defaultValue: "취소")) {
+                    actionHandler(.cancel)
+                }
+                Button(String(localized: "settings.projection.codec_sheet.save", defaultValue: "저장")) {
+                    actionHandler(.save(specification))
+                }
+            }
+            .padding(.bottom)
+        }
+        .frame(minWidth: 300, minHeight: 200)
+    }
+}
+
+struct AudioCodecSpecificationListContainer: View {
     @Binding
-    var codecSpecifications: [CodecSpecification]
+    var codecSpecifications: [AudioCodecSpecification]
     
     @State
     private var selection = Set<Int>()
@@ -30,8 +67,8 @@ struct CodecSpecificationListContainer: View {
     var body: some View {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
-                Text(markdown: String(localized: "settings.projection.codec_priority.title", defaultValue: "코덱 우선순위 설정"))
-                Text(markdown: String(localized: "settings.projection.codec_priority.description", defaultValue: "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."))
+                Text(markdown: String(localized: "settings.projection.audio_codec_priority.title", defaultValue: "오디오 코덱 우선순위 설정"))
+                Text(markdown: String(localized: "settings.projection.audio_codec_priority.description", defaultValue: "서버에서 사용할 오디오 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -39,7 +76,7 @@ struct CodecSpecificationListContainer: View {
                 List(selection: $selection) {
                     ForEach(codecSpecifications, id: \.self) { specification in
                         HStack {
-                            CodecSpecificationListEntry(specification: specification)
+                            AudioCodecSpecificationListEntry(specification: specification)
                             if (selection.first == specification.hashValue) {
                                 Spacer()
                                 Button(String(localized: "settings.projection.codec_priority.edit", defaultValue: "편집")) {
@@ -53,7 +90,7 @@ struct CodecSpecificationListContainer: View {
                     .onMove(perform: moveCodecSpecification)
                 }
                 .listStyle(.inset)
-                .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
             }
             
             HStack {
@@ -71,39 +108,18 @@ struct CodecSpecificationListContainer: View {
         .sheet(isPresented: $isEditSheetPresented) {
             if let firstSelected = selection.first,
                let specification = codecSpecifications.first(where: { $0.hashValue == firstSelected }) {
-                switch specification.fourCC {
-                case .zrle:
-                    RLECodecSpecificationSheet(specification: specification) { action in
-                        if case .save(let newSpecification) = action {
-                            if let index = codecSpecifications.firstIndex(of: specification) {
-                                codecSpecifications[index] = newSpecification
-                            }
+                AudioCodecSpecificationSheet(specification: specification) { action in
+                     if case .save(let newSpecification) = action {
+                        if let index = codecSpecifications.firstIndex(of: specification) {
+                            codecSpecifications[index] = newSpecification
                         }
-                        isEditSheetPresented = false
                     }
-                case .mjpg:
-                    MJPGCodecSpecificationSheet(specification: specification) { action in
-                        if case .save(let newSpecification) = action {
-                            if let index = codecSpecifications.firstIndex(of: specification) {
-                                codecSpecifications[index] = newSpecification
-                            }
-                        }
-                        isEditSheetPresented = false
-                    }
-                default:
-                    CodecSpecificationSheet(specification: specification) { action in
-                        if case .save(let newSpecification) = action {
-                            if let index = codecSpecifications.firstIndex(of: specification) {
-                                codecSpecifications[index] = newSpecification
-                            }
-                        }
-                        isEditSheetPresented = false
-                    }
+                    isEditSheetPresented = false
                 }
             }
         }
         .sheet(isPresented: $isAddSheetPresented) {
-            CodecSpecificationAddSheet { specification in
+            AudioCodecSpecificationAddSheet { specification in
                 if !codecSpecifications.contains(specification) {
                     codecSpecifications.append(specification)
                 }
@@ -111,18 +127,7 @@ struct CodecSpecificationListContainer: View {
             }
             .fixedSize()
         }
-        
-
-        
-        /*
-        if let selected = selection.first,
-           let handle = pluginRegistry.bundles[selected]
-        {
-            PluginBundleDetailView(metadata: handle.metadata)
-        }
-         */
     }
-    
     
     private func moveCodecSpecification(from source: IndexSet, to destination: Int) {
         codecSpecifications.move(fromOffsets: source, toOffset: destination)
@@ -135,12 +140,10 @@ struct CodecSpecificationListContainer: View {
     }
 }
 
-private struct CodecSpecificationAddTemplateRow: View {
-    let specification: CodecSpecification
-    
+private struct AudioCodecSpecificationAddTemplateRow: View {
+    let specification: AudioCodecSpecification
     let title: String
     let description: String
-    
     let isSelected: Bool
     
     var body: some View {
@@ -155,7 +158,6 @@ private struct CodecSpecificationAddTemplateRow: View {
             Spacer()
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    // .foregroundStyle(.accentColor)
             }
         }
         .padding(12)
@@ -166,9 +168,9 @@ private struct CodecSpecificationAddTemplateRow: View {
     }
 }
 
-struct CodecSpecificationAddSheet: View {
+struct AudioCodecSpecificationAddSheet: View {
     struct Template: Hashable, Equatable {
-        let specification: CodecSpecification
+        let specification: AudioCodecSpecification
         let title: String
         let description: String
         
@@ -179,33 +181,23 @@ struct CodecSpecificationAddSheet: View {
     
     static let templates: [Template] = [
         .init(
-            specification: .hevc,
-            title: String(localized: "settings.projection.codec_add.hevc.title", defaultValue: "High Efficiency Video Coding (H.265)"),
-            description: String(localized: "settings.projection.codec_add.hevc.description", defaultValue: "H.264보다 더 높은 압축 효율을 제공하는 최신 비디오 코덱입니다.")
+            specification: .opus,
+            title: "Opus",
+            description: String(localized: "settings.projection.audio_codec.opus.description", defaultValue: "높은 음질과 낮은 지연 시간을 제공하는 현대적인 오디오 코덱입니다.")
         ),
         .init(
-            specification: .h264,
-            title: String(localized: "settings.projection.codec_add.h264.title", defaultValue: "Advanced Video Coding (H.264)"),
-            description: String(localized: "settings.projection.codec_add.h264.description", defaultValue: "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다.")
+            specification: .pcmu,
+            title: "G.711 u-law",
+            description: String(localized: "settings.projection.audio_codec.pcmu.description", defaultValue: "전통적인 전화망에서 사용되는 표준 코덱입니다. 호환성이 높습니다.")
         ),
         .init(
-            specification: .webp,
-            title: String(localized: "settings.projection.codec_add.mjpg.title", defaultValue: "WebP"),
-            description: String(localized: "settings.projection.codec_add.mjpg.description", defaultValue: "JPEG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
-        ),
-        .init(
-            specification: .mjpg,
-            title: String(localized: "settings.projection.codec_add.mjpg.title", defaultValue: "Motion JPEG"),
-            description: String(localized: "settings.projection.codec_add.mjpg.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
-        ),
-        .init(
-            specification: .zrle,
-            title: String(localized: "settings.projection.codec_add.zrle.title", defaultValue: "RLE + Zstd"),
-            description: String(localized: "settings.projection.codec_add.zrle.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 방식의 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다.")
-        ),
+            specification: .pcma,
+            title: "G.711 a-law",
+            description: String(localized: "settings.projection.audio_codec.pcma.description", defaultValue: "유럽 등지에서 주로 사용되는 G.711 변형입니다.")
+        )
     ]
     
-    let handler: (CodecSpecification) -> Void
+    let handler: (AudioCodecSpecification) -> Void
     
     @Environment(\.dismiss)
     private var dismiss
@@ -227,7 +219,7 @@ struct CodecSpecificationAddSheet: View {
                     Button {
                         selected = template
                     } label: {
-                        CodecSpecificationAddTemplateRow(
+                        AudioCodecSpecificationAddTemplateRow(
                             specification: template.specification,
                             title: template.title,
                             description: template.description,
@@ -250,7 +242,6 @@ struct CodecSpecificationAddSheet: View {
                     guard let selected = selected else { return }
                     handler(selected.specification)
                 }
-                // .disabled(!canCommitSelection)
             }
         }
         .padding()

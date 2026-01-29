@@ -42,14 +42,15 @@ class BalancedCodecNegotiator: CodecNegotiator {
      */
     
     /// 두 스펙 셋의 완화된 합집합을 구합니다.
-    func union(_ ours: [CodecSpecification], _ theirs: [SiriusKit.Codec]) -> [SiriusKit.Codec] {
-        var result: [SiriusKit.Codec] = []
+    func union(_ ours: [CodecSpecification], _ theirs: [SiriusKit.Codec]) -> [CodecSpecification] {
+        var result: [CodecSpecification] = []
         
         // 최대한 클라이언트의 순서를 존중한다
         for theirsSpec in theirs {
             for oursSpec in ours {
                 if oursSpec.isCompatible(with: theirsSpec) {
-                    result.append(theirsSpec)
+                    result.append(oursSpec)
+                    break
                 }
             }
         }
@@ -84,7 +85,7 @@ class BalancedCodecNegotiator: CodecNegotiator {
         // 2. 완화된 합집합 시도 - isCompatible() 기반으로 결정을 시도한다
         let candidates = union(self.ours, theirs)
         if let realizable = candidates.first(where: { $0.isRealizable() }) {
-            return realizable
+            return realizable.toSiriusKitCodec()
         }
        
         // 3. 호환되는 코덱 스펙이 없으므로 클라이언트와 서버 양쪽 다 처리 가능한 코덱 중 하나를 임의로 선택한다
@@ -97,7 +98,7 @@ class BalancedCodecNegotiator: CodecNegotiator {
     }
 }
 
-class ServerOverridenCodecNegotiator: CodecNegotiator {
+class ServerOverriddenCodecNegotiator: CodecNegotiator {
     override func negotiate(with theirs: [SiriusKit.Codec]) -> SiriusKit.Codec? {
         // 서버 측 우선 정책: 서버 측 스펙 셋에서 실현 가능한 첫 번째 스펙을 반환한다
         return ours.first(where: { $0.isRealizable() } )?.toSiriusKitCodec()
@@ -111,7 +112,7 @@ extension CodecNegotiator {
         case .balanced:
             return BalancedCodecNegotiator(specifications: specifications)
         case .overrideFromServer:
-            return ServerOverridenCodecNegotiator(specifications: specifications)
+            return ServerOverriddenCodecNegotiator(specifications: specifications)
         }
     }
 }

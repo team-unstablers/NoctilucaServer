@@ -31,9 +31,9 @@ struct AuthMethodContainer: View {
             List(selection: $selection) {
                 if authMethods.isEmpty {
                     VStack(alignment: .leading) {
-                        Text(String(localized: "settings.security.auth_method.empty_title", defaultValue: "(구성된 인증 방법이 없습니다)"))
+                        Text(markdown: String(localized: "settings.security.auth_method.empty_title", defaultValue: "(구성된 인증 방법이 없습니다)"))
                             .font(.headline)
-                        Text(String(localized: "settings.security.auth_method.empty_description", defaultValue: "현재 상태로는 아무도 로그인할 수 없습니다. 인증 방법을 추가하려면 아래 '추가' 버튼을 클릭하세요."))
+                        Text(markdown: String(localized: "settings.security.auth_method.empty_description", defaultValue: "현재 상태로는 아무도 로그인할 수 없습니다. 인증 방법을 추가하려면 아래 '추가' 버튼을 클릭하세요."))
                             .font(.subheadline.monospaced())
                             .lineLimit(1)
                     }
@@ -104,9 +104,9 @@ private struct AuthMethodSelectionSheet: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(String(localized: "settings.security.auth_method.sheet.title", defaultValue: "인증 방법 선택"))
+            Text(markdown: String(localized: "settings.security.auth_method.sheet.title", defaultValue: "인증 방법 선택"))
                 .font(.title2.bold())
-            Text(String(localized: "settings.security.auth_method.sheet.description", defaultValue: "추가할 인증 방법을 선택하세요."))
+            Text(markdown: String(localized: "settings.security.auth_method.sheet.description", defaultValue: "추가할 인증 방법을 선택하세요."))
                 .foregroundStyle(.secondary)
             
             VStack(alignment: .leading, spacing: 8) {
@@ -140,9 +140,9 @@ private struct AuthMethodSelectionSheet: View {
         .frame(minWidth: 520, minHeight: 420, alignment: .topLeading)
         .alert(isPresented: $shouldPresentErrorAlert) {
             Alert(
-                title: Text(String(localized: "settings.security.auth_method.sheet.error_alert.title", defaultValue: "오류 발생")),
+                title: Text(markdown: String(localized: "settings.security.auth_method.sheet.error_alert.title", defaultValue: "오류 발생")),
                 message: Text(error?.localizedDescription ?? String(localized: "settings.security.auth_method.sheet.error_alert.unknown_error", defaultValue: "알 수 없는 오류가 발생했습니다.")),
-                dismissButton: .default(Text(String(localized: "settings.security.auth_method.sheet.error_alert.dismiss", defaultValue: "확인")))
+                dismissButton: .default(Text(markdown: String(localized: "settings.security.auth_method.sheet.error_alert.dismiss", defaultValue: "확인")))
             )
         }
     }
@@ -167,11 +167,11 @@ private struct AuthMethodSelectionSheet: View {
         switch selectedTemplate {
         case .pam:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "settings.security.auth_method.pam.detail_title", defaultValue: "PAM 인증 세부 설정"))
+                Text(markdown: String(localized: "settings.security.auth_method.pam.detail_title", defaultValue: "PAM 인증 세부 설정"))
                     .font(.headline)
                 Picker(String(localized: "settings.security.auth_method.pam.allow_scope", defaultValue: "허용 범위"), selection: $pamAllowMode) {
-                    Text(String(localized: "settings.security.auth_method.pam.user", defaultValue: "사용자")).tag(PAMAllowMode.user)
-                    Text(String(localized: "settings.security.auth_method.pam.group", defaultValue: "그룹")).tag(PAMAllowMode.group)
+                    Text(markdown: String(localized: "settings.security.auth_method.pam.user", defaultValue: "사용자")).tag(PAMAllowMode.user)
+                    Text(markdown: String(localized: "settings.security.auth_method.pam.group", defaultValue: "그룹")).tag(PAMAllowMode.group)
                 }
                 .pickerStyle(.segmented)
                 HStack(spacing: 8) {
@@ -187,9 +187,9 @@ private struct AuthMethodSelectionSheet: View {
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "settings.security.auth_method.simple_password.title", defaultValue: "간단 비밀번호 인증"))
+                Text(markdown: String(localized: "settings.security.auth_method.simple_password.title", defaultValue: "간단 비밀번호 인증"))
                     .font(.headline)
-                Text(String(localized: "settings.security.auth_method.simple_password.description", defaultValue: "입력된 비밀번호는 SHA-512 + bcrypt로 이중 해시 처리되어 저장됩니다."))
+                Text(markdown: String(localized: "settings.security.auth_method.simple_password.description", defaultValue: "입력된 비밀번호는 SHA-512 + bcrypt로 이중 해시 처리되어 저장됩니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 TextField(String(localized: "settings.security.auth_method.simple_password.placeholder", defaultValue: "비밀번호 입력"), text: $simplePasswordValue, axis: .vertical)
@@ -199,9 +199,9 @@ private struct AuthMethodSelectionSheet: View {
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "settings.security.auth_method.ssh_key.title", defaultValue: "SSH 키 인증"))
+                Text(markdown: String(localized: "settings.security.auth_method.ssh_key.title", defaultValue: "SSH 키 인증"))
                     .font(.headline)
-                Text(String(localized: "settings.security.auth_method.ssh_key.description", defaultValue: "허용할 공개 키를 입력하세요."))
+                Text(markdown: String(localized: "settings.security.auth_method.ssh_key.description", defaultValue: "허용할 공개 키를 입력하세요."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 TextField(String(localized: "settings.security.auth_method.ssh_key.placeholder", defaultValue: "ssh-ed25519 AAAA..."), text: $sshPublicKey, axis: .vertical)

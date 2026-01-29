@@ -15,6 +15,12 @@ import SiriusKit
 
 extension EventInjector {
     func post(mouseMoveEvent event: MouseMoveEvent, scaleX: Double = 1.0, scaleY: Double = 1.0) {
+        enqueue { [weak self] in
+            self?.postMouseMoveEventOnQueue(event, scaleX: scaleX, scaleY: scaleY)
+        }
+    }
+    
+    private func postMouseMoveEventOnQueue(_ event: MouseMoveEvent, scaleX: Double, scaleY: Double) {
         switch event.moveType {
         case .absolute:
             break
@@ -27,7 +33,7 @@ extension EventInjector {
         
         switch event.position {
         case .percent(let position):
-            self.performMouseMoveAbsolute(percentage: position)
+            self.performMouseMoveAbsoluteOnQueue(percentage: position)
         case .pixel(let position):
             // not supported yet
             return
@@ -40,6 +46,12 @@ extension EventInjector {
     }
     
     func performMouseMoveAbsolute(percentage position: CursorPositionPercent) {
+        enqueue { [weak self] in
+            self?.performMouseMoveAbsoluteOnQueue(percentage: position)
+        }
+    }
+    
+    private func performMouseMoveAbsoluteOnQueue(percentage position: CursorPositionPercent) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
         
@@ -76,6 +88,12 @@ extension EventInjector {
     }
     
     func performMouseMoveRelative(pixel position: CursorPositionPixel) {
+        enqueue { [weak self] in
+            self?.performMouseMoveRelativeOnQueue(pixel: position)
+        }
+    }
+    
+    private func performMouseMoveRelativeOnQueue(pixel position: CursorPositionPixel) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
         
@@ -114,6 +132,12 @@ extension EventInjector {
     }
     
     func performMouseMoveRelative(percentage position: CursorPositionPercent) {
+        enqueue { [weak self] in
+            self?.performMouseMoveRelativeOnQueue(percentage: position)
+        }
+    }
+    
+    private func performMouseMoveRelativeOnQueue(percentage position: CursorPositionPercent) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
         
@@ -153,11 +177,17 @@ extension EventInjector {
         cgEvent.post(tap: .cgSessionEventTap)
 
         lastMousePosition = position
-        
+
     }
 
 
     func post(mouseButtonEvent event: MouseButtonEvent) {
+        enqueue { [weak self] in
+            self?.postMouseButtonEventOnQueue(event)
+        }
+    }
+    
+    private func postMouseButtonEventOnQueue(_ event: MouseButtonEvent) {
         var mouseType: CGEventType = .null
         
 
@@ -209,6 +239,12 @@ extension EventInjector {
     }
 
     func post(mouseWheelEvent event: MouseWheelEvent) {
+        enqueue { [weak self] in
+            self?.postMouseWheelEventOnQueue(event)
+        }
+    }
+    
+    private func postMouseWheelEventOnQueue(_ event: MouseWheelEvent) {
         var mouseType: CGEventType = .null
         
         guard let cgEvent = CGEvent(

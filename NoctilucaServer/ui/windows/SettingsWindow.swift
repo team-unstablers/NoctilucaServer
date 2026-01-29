@@ -28,37 +28,37 @@ struct SettingsWindow: View {
             TabView(selection: $selectedTab) {
                 GeneralSettingsTab(settings: $server.settings)
                     .tabItem {
-                        Text(String(localized: "settings.tab.general", defaultValue: "일반"))
+                        Text(markdown: String(localized: "settings.tab.general", defaultValue: "일반"))
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
                 ProjectionSettingsTab(settings: $server.settings)
                     .tabItem {
-                        Text(String(localized: "settings.tab.projection", defaultValue: "프로젝션"))
+                        Text(markdown: String(localized: "settings.tab.projection", defaultValue: "프로젝션"))
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
                 SecuritySettingsTab(settings: $server.settings)
                     .tabItem {
-                        Text(String(localized: "settings.tab.security", defaultValue: "보안"))
+                        Text(markdown: String(localized: "settings.tab.security", defaultValue: "보안"))
                     }
                     .tag(SettingsTab.security)
                     .id(SettingsTab.security)
                 MiscSettingsTab(settings: $server.settings)
                     .tabItem {
-                        Text(String(localized: "settings.tab.misc", defaultValue: "기타"))
+                        Text(markdown: String(localized: "settings.tab.misc", defaultValue: "기타"))
                     }
                     .tag(SettingsTab.misc)
                     .id(SettingsTab.misc)
                 PluginsSettingsTab(settings: $server.settings)
                     .tabItem {
-                        Text(String(localized: "settings.tab.plugins", defaultValue: "플러그인"))
+                        Text(markdown: String(localized: "settings.tab.plugins", defaultValue: "플러그인"))
                     }
                     .tag(SettingsTab.plugins)
                     .id(SettingsTab.plugins)
                 AboutSettingsTab()
                     .tabItem {
-                        Text(String(localized: "settings.tab.about", defaultValue: "정보"))
+                        Text(markdown: String(localized: "settings.tab.about", defaultValue: "정보"))
                     }
                     .tag(SettingsTab.about)
                     .id(SettingsTab.about)

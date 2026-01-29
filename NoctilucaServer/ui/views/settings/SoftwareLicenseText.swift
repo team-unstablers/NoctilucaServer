@@ -25,10 +25,10 @@ fileprivate extension SoftwareLicense {
         switch self {
         case .custom(let name, let url, let isOpenSource):
             /// FIXME: markdown injection 막아야 함
-            Text(String(localized: "software_license.custom", defaultValue: "커스텀 라이선스: [\(name)](\(url))"))
+            Text(markdown: String(localized: "software_license.custom", defaultValue: "커스텀 라이선스: [\(name)](\(url))"))
         case .dual(let a, let b):
             VStack(alignment: .leading) {
-                Text(String(localized: "software_license.dual", defaultValue: "다중 라이선스"))
+                Text(markdown: String(localized: "software_license.dual", defaultValue: "다중 라이선스"))
                 // 여기서 무한 재귀가 발생하는데 어쩌죠...
                 /*
                 a.textView
@@ -36,7 +36,7 @@ fileprivate extension SoftwareLicense {
                  */
             }
         case .proprietary(let name, let url):
-            Text(String(localized: "software_license.proprietary", defaultValue: "[\(name)](\(url))"))
+            Text(markdown: String(localized: "software_license.proprietary", defaultValue: "[\(name)](\(url))"))
         case .mit:
             Text("MIT License")
         case .apache2_0:
@@ -50,7 +50,7 @@ fileprivate extension SoftwareLicense {
         case .cc0:
             Text("Creative Commons Zero v1.0 Universal")
         @unknown default:
-            Text(String(localized: "software_license.unknown", defaultValue: "알 수 없는 라이선스"))
+            Text(markdown: String(localized: "software_license.unknown", defaultValue: "알 수 없는 라이선스"))
         }
     }
 }

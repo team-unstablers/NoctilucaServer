@@ -73,9 +73,9 @@ class HIDIOChannel: Channel {
         
         switch keyboardEvent.eventType {
         case .down:
-            eventInjector.performKeyDown(carbonKeyCode, modifiers: 0)
+            eventInjector.postKeyDown(carbonKeyCode)
         case .up:
-            eventInjector.performKeyUp(carbonKeyCode, modifiers: 0)
+            eventInjector.postKeyUp(carbonKeyCode)
         default:
             break
         }
@@ -108,5 +108,13 @@ class HIDIOChannel: Channel {
                 eventInjector.performMouseMoveRelative(percentage: percentPosition)
             }
         }
+    }
+    
+    override func handleStreamClose() {
+        eventInjector.resetKeyboardState()
+    }
+    
+    override func handleStreamError(error: (any Error)) {
+        eventInjector.resetKeyboardState()
     }
 }

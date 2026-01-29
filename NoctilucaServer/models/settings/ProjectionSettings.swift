@@ -25,6 +25,12 @@ extension AppSettings {
         var codecNegotiationPolicy: CodecNegotiationPolicy = .balanced
         
         var codecSpecifications: [CodecSpecification] = Self.defaultCodecSpecifications()
+        
+        /// 오디오 프로젝션 활성화 여부
+        var isAudioProjectionEnabled: Bool = true
+        
+        /// 오디오 코덱 우선순위
+        var audioCodecSpecifications: [AudioCodecSpecification] = [.opus]
 
         init() {}
 
@@ -32,6 +38,8 @@ extension AppSettings {
             case preferredScreenRecorder
             case codecNegotiationPolicy
             case codecSpecifications
+            case isAudioProjectionEnabled
+            case audioCodecSpecifications
         }
 
         init(from decoder: any Decoder) throws {
@@ -44,6 +52,9 @@ extension AppSettings {
             preferredScreenRecorder = container.decodeSafe(ScreenRecorderType.self, forKey: .preferredScreenRecorder, default: preferredScreenRecorder)
             codecNegotiationPolicy = container.decodeSafe(CodecNegotiationPolicy.self, forKey: .codecNegotiationPolicy, default: codecNegotiationPolicy)
             codecSpecifications = container.decodeSafe([CodecSpecification].self, forKey: .codecSpecifications, default: codecSpecifications)
+            
+            isAudioProjectionEnabled = container.decodeSafe(Bool.self, forKey: .isAudioProjectionEnabled, default: isAudioProjectionEnabled)
+            audioCodecSpecifications = container.decodeSafe([AudioCodecSpecification].self, forKey: .audioCodecSpecifications, default: audioCodecSpecifications)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -51,6 +62,8 @@ extension AppSettings {
             try container.encode(preferredScreenRecorder, forKey: .preferredScreenRecorder)
             try container.encode(codecNegotiationPolicy, forKey: .codecNegotiationPolicy)
             try container.encode(codecSpecifications, forKey: .codecSpecifications)
+            try container.encode(isAudioProjectionEnabled, forKey: .isAudioProjectionEnabled)
+            try container.encode(audioCodecSpecifications, forKey: .audioCodecSpecifications)
         }
     }
 }
