@@ -13,9 +13,7 @@ extension CodecSpecification {
     func isRealizable() -> Bool {
         switch self.fourCC {
         case .avc1, .hvc1:
-            // VideoToolbox 인코더 지원 (대부분의 macOS에서 지원됨)
-            // TODO: 실제 하드웨어 가속 지원 여부 확인 (VTIsHardwareDecodeSupported 등)
-            return true
+            return VTVideoEncoder.isSupported(codec: self)
             
         case .mjpg, .zrle, .webp:
             // 소프트웨어 인코더 지원

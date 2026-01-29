@@ -75,8 +75,17 @@ protocol VideoEncoder: AnyObject {
     /// NOTE: 이는 구현체에 따라, 옵션에 따라 곧바로 지켜지지 않을 수 있습니다.
     @discardableResult
     func updateMaxBitrate(bitrateKbps: Int) -> Bool
-}
     
+    /// 주어진 코덱 사양을 이 인코더가 처리할 수 있는지 확인합니다.
+    static func isSupported(codec: CodecSpecification) -> Bool
+}
+
+extension VideoEncoder {
+    static func isSupported(codec: CodecSpecification) -> Bool {
+        return false
+    }
+}
+
 
 enum VideoEncoderError: LocalizedError {
     case notPrepared

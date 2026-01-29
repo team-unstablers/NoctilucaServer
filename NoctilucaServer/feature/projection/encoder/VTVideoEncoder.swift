@@ -191,6 +191,137 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
         }
         return success
     }
+    
+    // MARK: - Capability Check
+    
+    static func isSupported(codec: CodecSpecification) -> Bool {
+        // 1. 코덱 타입 확인
+        guard let codecType = try? codec.fourCC.codecType() else {
+            return false
+        }
+        
+        // 2. 시스템 인코더 목록 조회 및 1차 필터링
+        var encoderList: CFArray?
+        let listStatus = VTCopyVideoEncoderList(nil, &encoderList)
+        
+        guard listStatus == noErr, let list = encoderList as? [[String: Any]] else {
+            return false
+        }
+        
+        let isHardwareRequired = (codec.option(.hardwareAcceleration) == .kHardwareAccelerationTrue)
+        
+        let hasCompatibleEncoder = list.contains { encoder in
+            guard let type = encoder[kVTVideoEncoderList_CodecType as String] as? NSNumber,
+                  type.uint32Value == codecType else {
+                return false
+            }
+            
+            if isHardwareRequired {
+                let isHardwareAccelerated = encoder[kVTVideoEncoderList_IsHardwareAccelerated as String] as? Bool ?? false
+                return isHardwareAccelerated
+            }
+            
+            return true
+        }
+        
+        if !hasCompatibleEncoder {
+            return false
+        }
+        
+        // 3. 실제 세션 생성 테스트 (상세 스펙 검증)
+        return canInitializeSession(for: codec, codecType: codecType)
+    }
+    
+    private static func canInitializeSession(for codec: CodecSpecification, codecType: CMVideoCodecType) -> Bool {
+        // 테스트용 해상도 (표준 FHD)
+        let width: Int32 = 1920
+        let height: Int32 = 1080
+        
+        var specification: [CFString: Any] = [:]
+        
+        // 하드웨어 가속 요구사항 반영
+        let hardwareAccelOption = codec.option(.hardwareAcceleration)
+        if hardwareAccelOption == .kHardwareAccelerationAuto {
+            specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
+        } else if hardwareAccelOption == .kHardwareAccelerationTrue {
+            specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
+            specification[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder] = true
+        }
+        
+        // 픽셀 포맷 등 속성 설정
+        var attributes: [CFString: Any] = [:]
+        
+        // NOTE: CodecSpecification은 SiriusKit.Codec과 달리 옵션 딕셔너리를 직접 사용하므로
+        // 필요한 속성을 추출하는 로직을 재구성해야 합니다.
+        // 여기서는 가장 중요한 Color Format/Range/BitDepth 위주로 확인합니다.
+        
+        let colorFormat = codec.option(.colorFormat) ?? .kColorFormatYUV420
+        let colorRange = codec.option(.colorRange) ?? .kColorRangeLimited
+        
+        // TODO: CodecSpecification에 10-bit 여부를 명시하는 속성이 없으므로
+        // 프로파일(Main10)을 보고 추론하거나, 기본값(8bit)으로 가정합니다.
+        let is10Bit = (codec.option(.profile) == .kProfileHEVCMain10)
+        
+        let pixelFormat: OSType
+        if colorFormat == .kColorFormatYUV444 {
+             if is10Bit {
+                 pixelFormat = (colorRange == .kColorRangeFull) ?
+                     kCVPixelFormatType_444YpCbCr10BiPlanarFullRange :
+                     kCVPixelFormatType_444YpCbCr10BiPlanarVideoRange
+             } else {
+                 pixelFormat = (colorRange == .kColorRangeFull) ?
+                     kCVPixelFormatType_444YpCbCr8BiPlanarFullRange :
+                     kCVPixelFormatType_444YpCbCr8BiPlanarVideoRange
+             }
+         } else {
+             if is10Bit {
+                 pixelFormat = (colorRange == .kColorRangeFull) ?
+                     kCVPixelFormatType_420YpCbCr10BiPlanarFullRange :
+                     kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange
+             } else {
+                 pixelFormat = (colorRange == .kColorRangeFull) ?
+                     kCVPixelFormatType_420YpCbCr8BiPlanarFullRange :
+                     kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+             }
+         }
+        
+        attributes[kCVPixelBufferPixelFormatTypeKey] = pixelFormat
+        
+        var session: VTCompressionSession?
+        let status = VTCompressionSessionCreate(
+            allocator: kCFAllocatorDefault,
+            width: width,
+            height: height,
+            codecType: codecType,
+            encoderSpecification: specification.isEmpty ? nil : specification as CFDictionary,
+            imageBufferAttributes: attributes.isEmpty ? nil : attributes as CFDictionary,
+            compressedDataAllocator: nil,
+            outputCallback: nil, // 콜백 불필요
+            refcon: nil,
+            compressionSessionOut: &session
+        )
+        
+        guard status == noErr, let createdSession = session else {
+            return false
+        }
+        
+        // 프로퍼티 설정 시도 (실패 시 지원 안함으로 간주)
+        if let profileLevel = codec.profileLevelString {
+            if VTSessionSetProperty(createdSession, key: kVTCompressionPropertyKey_ProfileLevel, value: profileLevel) != noErr {
+                VTCompressionSessionInvalidate(createdSession)
+                return false
+            }
+        }
+        
+        // 준비 단계까지 성공해야 함
+        if VTCompressionSessionPrepareToEncodeFrames(createdSession) != noErr {
+            VTCompressionSessionInvalidate(createdSession)
+            return false
+        }
+        
+        VTCompressionSessionInvalidate(createdSession)
+        return true
+    }
 }
 
 // MARK: - Compression Session
@@ -411,6 +542,51 @@ private extension SiriusKit.Codec {
         }
     }
     
+    var profileLevelString: CFString? {
+        switch self.fourCC {
+        case .avc1:
+            return h264ProfileLevelString()
+        case .hvc1:
+            return hevcProfileLevelString()
+        default:
+            return nil
+        }
+    }
+    
+    func h264ProfileLevelString() -> CFString? {
+        let profile = self.option(.profile) ?? .kProfileAuto
+        
+        switch profile {
+        case .kProfileH264High:
+            return kVTProfileLevel_H264_High_AutoLevel
+        case .kProfileH264Main:
+            return kVTProfileLevel_H264_Main_AutoLevel
+        case .kProfileH264Baseline:
+            return kVTProfileLevel_H264_Baseline_AutoLevel
+        case .kProfileAuto:
+            fallthrough
+        default:
+            return nil
+        }
+    }
+    
+    func hevcProfileLevelString() -> CFString? {
+        let profile = self.option(.profile) ?? .kProfileAuto
+        
+        switch profile {
+        case .kProfileHEVCMain:
+            return kVTProfileLevel_HEVC_Main_AutoLevel
+        case .kProfileHEVCMain10:
+            return kVTProfileLevel_HEVC_Main10_AutoLevel
+        case .kProfileAuto:
+            fallthrough
+        default:
+            return nil
+        }
+    }
+}
+
+private extension CodecSpecification {
     var profileLevelString: CFString? {
         switch self.fourCC {
         case .avc1:
