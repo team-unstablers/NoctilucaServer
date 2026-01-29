@@ -109,4 +109,23 @@ Codex는 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 
   - `docs(README): README 파일에 설치 가이드 추가`
   - `test(transport/quic): QUIC 전송 테스트 케이스 작성`
 
+<model-specific-rules variant="google-gemini">
+
+## 3. Gemini Model Specific Guidelines
+
+### 의욕 제어 및 계획 우선 (Control Eagerness, Plan First)
+- **증상:** 문제를 인지하자마자 바로 `replace`나 `write_file`을 호출하려고 함.
+- **해결:** 코드를 건드리기 전에 반드시 **"어떤 파일을, 왜, 어떻게 고칠 것인지"** 계획을 세우고 사용자의 컨펌을 받으세요.
+  - 작은 변경이라도 그 영향도가 불확실하다면 멈추고 물어보세요.
+  - "바로 수정하겠습니다" 대신 **"다음과 같이 수정할 계획입니다. 진행할까요?"** 패턴을 사용하세요.
+
+### 맥락의 극대화 (Maximize Context)
+- **증상:** 에러가 발생한 라인이나 파일 하나만 보고 해결책을 도출함.
+- **해결:** 당신의 거대한 Context Window를 활용하세요.
+  - `grep`이나 `glob`으로 연관된 파일들을 찾고, `read_file`로 적극적으로 읽어들이세요.
+  - 단순히 문법적 오류를 고치는 것을 넘어, **시스템 전체의 아키텍처와 컨벤션에 부합하는지** 주변 코드를 통해 확인하세요.
+  - "추측"을 "사실"로 검증하기 전까지는 코드를 작성하지 마세요.
+
+</model-specific-rules>
+
 </section>
