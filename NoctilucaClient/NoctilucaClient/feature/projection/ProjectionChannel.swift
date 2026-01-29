@@ -13,6 +13,11 @@ import CoreGraphics
 
 import SiriusKitClient
 
+enum ProjectionChannelError: Error {
+    case sessionCreationCancelled
+    case channelClosed
+}
+
 class ProjectionChannel: Channel, ObservableObject {
     let logger = SiriusLogger(category: "ProjectionChannel", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     private static let defaultSpecifications: [CodecSpecification] = [.hevc, .h264]

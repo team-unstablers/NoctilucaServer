@@ -31,7 +31,7 @@ final class ClientAuthenticator {
         return challenge.acceptedMethods.compactMap { rawValue in
             let method = ClientAuthMethod(rawValue: rawValue)
             return supported.contains(method) ? method : nil
-        }
+        }.sorted { $0.sortPriority < $1.sortPriority }
     }
 
     func configureAutoCredentials(sessionEntries: [ClientAuthEntry], globalEntries: [ClientAuthEntry]) {

@@ -66,6 +66,18 @@ extension NoctilucaClient {
             try await sendAuthRequest(autoRequest.method.rawValue, nonce: message.nonce, payload: autoRequest.payload)
             return
         }
+        
+        let availableInteractiveMethods = availableMethods.filter { $0 != .sshKey }
+        if availableInteractiveMethods.isEmpty {
+            logger.error("No supported interactive auth methods for challenge: \(message.acceptedMethods)")
+            await MainActor.run {
+                uiEvents.send(.errorOccurred(.authNegotiationFailed(authMethods: acceptedMethods)))
+            }
+            
+            // Close the connection gracefully
+            await self.close()
+            return
+        }
 
         await MainActor.run {
             uiEvents.send(.receivedAuthChallenge(message))

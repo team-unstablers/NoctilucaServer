@@ -94,4 +94,18 @@ extension ClientAuthMethod {
             return "외부 인증 방법 (\(rawValue))"
         }
     }
+
+    /// UI 표시 시 정렬 우선순위 (낮을수록 먼저 표시)
+    var sortPriority: Int {
+        switch self {
+        case .password:
+            return 0
+        case .simplePassword:
+            return 1
+        case .sshKey:
+            return 2
+        default:
+            return 100
+        }
+    }
 }

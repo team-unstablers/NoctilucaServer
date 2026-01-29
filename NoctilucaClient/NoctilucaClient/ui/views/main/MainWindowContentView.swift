@@ -26,7 +26,7 @@ struct MainWindowContentView: View {
                     if let authChallenge = viewModel.sessionEventCoordinator.authChallenge {
                         AuthChallengeSheetView(
                             authChallenge: authChallenge,
-                            availableMethods: viewModel.sessionEventCoordinator.availableAuthMethods
+                            availableMethods: viewModel.sessionEventCoordinator.availableAuthMethods.filter { $0 != .sshKey }
                         ) { action in
                             Task {
                                 await viewModel.sessionEventCoordinator.handleAuthChallengeResponse(action)
