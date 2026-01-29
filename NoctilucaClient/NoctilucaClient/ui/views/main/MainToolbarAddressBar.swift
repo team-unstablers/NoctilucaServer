@@ -87,17 +87,18 @@ struct MainToolbarAddressBar: View {
                 rtt: viewModel.averagePingRTT,
                 action: action,
                 isFocused: resolvedFocusBinding
-            ) { endpoint in
-                guard let endpoint else {
+            ) { action in
+                switch action {
+                case .cancel:
                     return
-                }
-
-                switch endpoint {
-                case .connect(let endpointURL):
-                    viewModel.contactSheetCoordinator.presentQuickConnect(endpointURL: endpointURL)
-                case .contact, .quickConnect:
-                    Task {
-                        try await self.viewModel.startSession(endpoint: endpoint)
+                case .submit(let endpoint):
+                    switch endpoint {
+                    case .connect(let endpointURL):
+                        viewModel.contactSheetCoordinator.presentQuickConnect(endpointURL: endpointURL)
+                    case .contact, .quickConnect:
+                        Task {
+                            try await self.viewModel.startSession(endpoint: endpoint)
+                        }
                     }
                 }
             }
