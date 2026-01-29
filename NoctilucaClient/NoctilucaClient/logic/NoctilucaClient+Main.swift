@@ -24,6 +24,9 @@ extension NoctilucaClient {
         let pointerRouter = PointerInputRouter(controller: controller)
         controller.pointerInputRouter = pointerRouter
         pointerRouter.updateInputMode(pendingPointerInputMode)
+        
+        // Enable capture lock to ensure mouse cursor is hidden/locked when connected
+        controller.enableCaptureLock()
 
         connectGameControllerMouse(controller)
         applyInputRedirectionMethod(pendingInputRedirectionMethod)

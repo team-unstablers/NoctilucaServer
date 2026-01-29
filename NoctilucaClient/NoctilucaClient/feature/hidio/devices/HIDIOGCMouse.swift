@@ -117,6 +117,15 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
                 self?.mouse = nil
             }
             .store(in: &cancellables)
+
+        if let currentMouse = GCMouse.current {
+            self.logger.debug("Found existing current GCMouse: \(currentMouse)")
+            self.mouse = currentMouse
+            self.isHardwareConnected = true
+        } else if let firstMouse = GCMouse.mice().first {
+            self.logger.debug("Found existing GCMouse (not current): \(firstMouse)")
+            self.isHardwareConnected = true
+        }
     }
     
     fileprivate func setupMouseInputHandler() {
@@ -211,6 +220,10 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     func connect(to controller: HIDIOController) {
         self.controller = controller
         controller.pointerInputRouter?.updateHardwareMouseConnected(isHardwareConnected)
+        
+        if self.mouse != nil {
+            self.setupMouseInputHandler()
+        }
     }
     
     func disconnect() {
@@ -287,7 +300,8 @@ fileprivate extension HIDIOGCMouse {
 fileprivate extension HIDIOGCMouse {
     func rootViewController() -> RootViewController? {
         // FIXME: multi window (multi scene)에서 제대로 동작하는지?
-        guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+        let scenes = UIApplication.shared.connectedScenes
+        guard let scene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene ?? scenes.compactMap({ $0 as? UIWindowScene }).first,
               let window = scene.windows.first(where: { $0.rootViewController is RootViewController }),
               let rootViewController = window.rootViewController as? RootViewController
         else {

@@ -45,12 +45,9 @@ struct HIDIOUIKitMouseView: View {
                         }
 
                         connectPointerIfNeeded(client)
-
-                        // FIXME: 레이스 컨디션
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            let size = projectionSession.size
-                            aspectRatio = size.width / size.height
-                        }
+                        
+                        let size = projectionSession.size
+                        aspectRatio = size.width / size.height
                     }
                 Spacer()
             } else {
@@ -102,19 +99,16 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private let longPressRecognizer = UILongPressGestureRecognizer()
     private let chordedDragRecognizer = ChordedDragGestureRecognizer()
 
-    private var lastPanTranslation: CGPoint = .zero
-    private var lastScrollTranslation: CGPoint = .zero
     private var lastLongPressLocation: CGPoint = .zero
     private var isLongPressDragging: Bool = false
     private var isChordedDragging: Bool = false
-    private var moveInertiaDisplayLink: CADisplayLink?
+    
+    // Unified Inertia Engine
+    private var inertiaDisplayLink: CADisplayLink?
+    private var inertiaLastTimestamp: CFTimeInterval?
+    
     private var moveInertiaVelocity: CGPoint = .zero
-    private var moveInertiaLastTimestamp: CFTimeInterval?
-
-    // Scroll Inertia
-    private var scrollInertiaDisplayLink: CADisplayLink?
     private var scrollInertiaVelocity: CGPoint = .zero
-    private var scrollInertiaLastTimestamp: CFTimeInterval?
 
     init(pointer: HIDIOUIKitPointer) {
         self.pointer = pointer
@@ -130,8 +124,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
 
     deinit {
-        stopMoveInertia()
-        stopScrollInertia()
+        stopInertiaLoop()
     }
 
     override func layoutSubviews() {
@@ -143,10 +136,11 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         inputMode = mode
         self.trackpadMoveMultiplier = max(0.1, CGFloat(trackpadMoveMultiplier))
         if mode != .trackpad {
-            stopMoveInertia()
+            moveInertiaVelocity = .zero
         }
-        stopScrollInertia()
-        configureRecognizerState()
+        scrollInertiaVelocity = .zero
+        checkInertiaState()
+        // No explicit configureRecognizerState() needed as delegate handles it dynamically.
     }
 
     private func setupRecognizers() {
@@ -182,34 +176,80 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         twoFingerPanRecognizer.delegate = self
         longPressRecognizer.delegate = self
         chordedDragRecognizer.delegate = self
-
+        
+        // All recognizers are enabled by default; delegate controls participation.
         addGestureRecognizer(twoFingerTapRecognizer)
         addGestureRecognizer(tapRecognizer)
         addGestureRecognizer(twoFingerPanRecognizer)
         addGestureRecognizer(panRecognizer)
         addGestureRecognizer(longPressRecognizer)
         addGestureRecognizer(chordedDragRecognizer)
-
-        configureRecognizerState()
     }
 
-    private func configureRecognizerState() {
+    // MARK: - Touch Handling (Direct)
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard inputMode == .touch, let touch = touches.first, event?.allTouches?.count == 1 else {
+            super.touchesBegan(touches, with: event)
+            return
+        }
+        
+        let location = touch.location(in: self)
+        pointer.moveAbsolute(to: location)
+        pointer.buttonDown(.left)
+    }
+    
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard inputMode == .touch, let touch = touches.first, event?.allTouches?.count == 1 else {
+            super.touchesMoved(touches, with: event)
+            return
+        }
+        
+        let location = touch.location(in: self)
+        pointer.moveAbsolute(to: location)
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard inputMode == .touch, let touch = touches.first else {
+            super.touchesEnded(touches, with: event)
+            return
+        }
+        
+        // Ensure we lift the button even if it transitioned to multi-touch, 
+        // but typically we care about the primary finger lifting.
+        let location = touch.location(in: self)
+        pointer.moveAbsolute(to: location)
+        pointer.buttonUp(.left)
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard inputMode == .touch, let touch = touches.first else {
+            super.touchesCancelled(touches, with: event)
+            return
+        }
+        
+        let location = touch.location(in: self)
+        pointer.moveAbsolute(to: location)
+        pointer.buttonUp(.left)
+    }
+
+    // MARK: - UIGestureRecognizerDelegate
+    
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Enforce input mode policies at the start of gestures
         switch inputMode {
         case .touch:
-            tapRecognizer.isEnabled = true
-            twoFingerTapRecognizer.isEnabled = true
-            panRecognizer.isEnabled = true
-            twoFingerPanRecognizer.isEnabled = true
-            longPressRecognizer.isEnabled = false
-            chordedDragRecognizer.isEnabled = false
+            // In Touch mode, single finger pan/tap is handled directly by touchesBegan/Moved/Ended
+            if gestureRecognizer == tapRecognizer || 
+               gestureRecognizer == longPressRecognizer || 
+               gestureRecognizer == chordedDragRecognizer ||
+               gestureRecognizer == panRecognizer { // Disable PanRecognizer for single touch
+                return false
+            }
         case .trackpad:
-            tapRecognizer.isEnabled = true
-            twoFingerTapRecognizer.isEnabled = true
-            panRecognizer.isEnabled = true
-            twoFingerPanRecognizer.isEnabled = true
-            longPressRecognizer.isEnabled = true
-            chordedDragRecognizer.isEnabled = true
+            break
         }
+        return true
     }
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
@@ -219,10 +259,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
         switch inputMode {
         case .touch:
-            let location = recognizer.location(in: self)
-            pointer.moveAbsolute(to: location)
-            pointer.buttonDown(.left)
-            pointer.buttonUp(.left)
+            // Should be handled by PanRecognizer in .began
+            break
         case .trackpad:
             pointer.buttonDown(.left)
             pointer.buttonUp(.left)
@@ -253,26 +291,15 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
         switch inputMode {
         case .touch:
-            handleTouchDrag(recognizer)
+            // Handled by touchesBegan/Moved/Ended
+            break
         case .trackpad:
             handleTrackpadMove(recognizer)
         }
     }
 
     private func handleTouchDrag(_ recognizer: UIPanGestureRecognizer) {
-        let location = recognizer.location(in: self)
-        switch recognizer.state {
-        case .began:
-            pointer.moveAbsolute(to: location)
-            pointer.buttonDown(.left)
-        case .changed:
-            pointer.moveAbsolute(to: location)
-        case .ended, .cancelled, .failed:
-            pointer.moveAbsolute(to: location)
-            pointer.buttonUp(.left)
-        default:
-            break
-        }
+        // Deprecated: Handled by direct touches overrides
     }
 
     private func handleTrackpadMove(_ recognizer: UIPanGestureRecognizer) {
@@ -280,16 +307,13 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         switch recognizer.state {
         case .began:
             stopMoveInertia()
-            lastPanTranslation = translation
+            recognizer.setTranslation(.zero, in: self)
         case .changed:
-            let delta = CGPoint(
-                x: translation.x - lastPanTranslation.x,
-                y: translation.y - lastPanTranslation.y
-            )
-            lastPanTranslation = translation
+            // With setTranslation(.zero) called after reading, 'translation' is the delta since last change.
+            let delta = translation
+            recognizer.setTranslation(.zero, in: self)
             pointer.moveRelativePercentage(by: scaledDelta(delta))
         case .ended, .cancelled, .failed:
-            lastPanTranslation = .zero
             let velocity = recognizer.velocity(in: self)
             startMoveInertia(with: velocity)
         default:
@@ -303,16 +327,13 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         switch recognizer.state {
         case .began:
             stopScrollInertia()
-            lastScrollTranslation = translation
+            recognizer.setTranslation(.zero, in: self)
         case .changed:
-            let delta = CGPoint(
-                x: translation.x - lastScrollTranslation.x,
-                y: -(translation.y - lastScrollTranslation.y)
-            )
-            lastScrollTranslation = translation
+            // Y is inverted for scroll naturally
+            let delta = CGPoint(x: translation.x, y: -translation.y)
+            recognizer.setTranslation(.zero, in: self)
             pointer.scroll(delta: normalizedScrollDelta(delta))
         case .ended, .cancelled, .failed:
-            lastScrollTranslation = .zero
             let velocity = recognizer.velocity(in: self)
             startScrollInertia(with: velocity)
         default:
@@ -386,110 +407,106 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
 
     private func startMoveInertia(with velocity: CGPoint) {
-        guard inputMode == .trackpad else {
-            return
-        }
-
+        guard inputMode == .trackpad else { return }
         let speed = hypot(velocity.x, velocity.y)
-        guard speed >= 40.0 else {
-            return
-        }
+        guard speed >= 40.0 else { return }
 
         moveInertiaVelocity = velocity
-        moveInertiaLastTimestamp = nil
-
-        if moveInertiaDisplayLink == nil {
-            let link = CADisplayLink(target: self, selector: #selector(handleMoveInertiaTick(_:)))
-            link.add(to: .main, forMode: .common)
-            moveInertiaDisplayLink = link
-        }
+        ensureInertiaLoop()
     }
 
     private func stopMoveInertia() {
-        moveInertiaDisplayLink?.invalidate()
-        moveInertiaDisplayLink = nil
         moveInertiaVelocity = .zero
-        moveInertiaLastTimestamp = nil
+        checkInertiaState()
     }
-
-    @objc private func handleMoveInertiaTick(_ link: CADisplayLink) {
-        guard inputMode == .trackpad else {
-            stopMoveInertia()
-            return
-        }
-
-        let now = link.timestamp
-        let last = moveInertiaLastTimestamp ?? now
-        let dt = max(0.0, now - last)
-        moveInertiaLastTimestamp = now
-
-        // Match the snappy friction from scroll inertia
-        let decelerationRate: CGFloat = 0.95
-        let decay = pow(decelerationRate, CGFloat(dt) * 60.0)
-        
-        moveInertiaVelocity = CGPoint(x: moveInertiaVelocity.x * decay, y: moveInertiaVelocity.y * decay)
-
-        let speed = hypot(moveInertiaVelocity.x, moveInertiaVelocity.y)
-        if speed < 40.0 {
-            stopMoveInertia()
-            return
-        }
-
-        let delta = CGPoint(x: moveInertiaVelocity.x * CGFloat(dt), y: moveInertiaVelocity.y * CGFloat(dt))
-        pointer.moveRelativePercentage(by: scaledDelta(delta))
-    }
-
+    
     private func startScrollInertia(with velocity: CGPoint) {
         let speed = hypot(velocity.x, velocity.y)
         guard speed >= 50.0 else { return }
 
         scrollInertiaVelocity = velocity
-        scrollInertiaLastTimestamp = nil
-
-        if scrollInertiaDisplayLink == nil {
-            let link = CADisplayLink(target: self, selector: #selector(handleScrollInertiaTick(_:)))
-            link.add(to: .main, forMode: .common)
-            scrollInertiaDisplayLink = link
-        }
+        ensureInertiaLoop()
     }
 
     private func stopScrollInertia() {
-        scrollInertiaDisplayLink?.invalidate()
-        scrollInertiaDisplayLink = nil
         scrollInertiaVelocity = .zero
-        scrollInertiaLastTimestamp = nil
+        checkInertiaState()
     }
 
-    @objc private func handleScrollInertiaTick(_ link: CADisplayLink) {
-        let now = link.timestamp
-        let last = scrollInertiaLastTimestamp ?? now
-        let dt = max(0.0, now - last)
-        scrollInertiaLastTimestamp = now
-
-        // Adjusted friction to mimic the snappy feel of native lists.
-        // 0.95 per frame means velocity drops to ~5% after 1 second (0.95^60).
-        // This prevents the "sliding on ice" feeling.
-        let decelerationRate: CGFloat = 0.95
-        let decay = pow(decelerationRate, CGFloat(dt) * 60.0)
-        
-        scrollInertiaVelocity = CGPoint(
-            x: scrollInertiaVelocity.x * decay,
-            y: scrollInertiaVelocity.y * decay
-        )
-
-        let speed = hypot(scrollInertiaVelocity.x, scrollInertiaVelocity.y)
-        // Increased threshold to snap to stop cleanly without crawling
-        if speed < 40.0 {
-            stopScrollInertia()
-            return
+    private func ensureInertiaLoop() {
+        if inertiaDisplayLink == nil {
+            inertiaLastTimestamp = nil
+            let link = CADisplayLink(target: self, selector: #selector(handleInertiaTick(_:)))
+            link.add(to: .main, forMode: .common)
+            inertiaDisplayLink = link
         }
+        inertiaDisplayLink?.isPaused = false
+    }
 
-        // Apply scroll delta
-        let delta = CGPoint(
-            x: scrollInertiaVelocity.x * CGFloat(dt),
-            y: -(scrollInertiaVelocity.y * CGFloat(dt))
-        )
-        pointer.scroll(delta: normalizedScrollDelta(delta))
+    private func stopInertiaLoop() {
+        inertiaDisplayLink?.invalidate()
+        inertiaDisplayLink = nil
+        inertiaLastTimestamp = nil
+        moveInertiaVelocity = .zero
+        scrollInertiaVelocity = .zero
+    }
+    
+    private func checkInertiaState() {
+        if moveInertiaVelocity == .zero && scrollInertiaVelocity == .zero {
+            inertiaDisplayLink?.isPaused = true
+            inertiaLastTimestamp = nil
+        }
+    }
+
+    @objc private func handleInertiaTick(_ link: CADisplayLink) {
+        let now = link.timestamp
+        let last = inertiaLastTimestamp ?? now
+        let dt = max(0.0, now - last)
+        inertiaLastTimestamp = now
+        
+        // 1. Move Inertia
+        if moveInertiaVelocity != .zero {
+            if inputMode != .trackpad {
+                moveInertiaVelocity = .zero
+            } else {
+                let decelerationRate: CGFloat = 0.95
+                let decay = pow(decelerationRate, CGFloat(dt) * 60.0)
+                
+                moveInertiaVelocity = CGPoint(x: moveInertiaVelocity.x * decay, y: moveInertiaVelocity.y * decay)
+                let speed = hypot(moveInertiaVelocity.x, moveInertiaVelocity.y)
+                
+                if speed < 40.0 {
+                    moveInertiaVelocity = .zero
+                } else {
+                    let delta = CGPoint(x: moveInertiaVelocity.x * CGFloat(dt), y: moveInertiaVelocity.y * CGFloat(dt))
+                    pointer.moveRelativePercentage(by: scaledDelta(delta))
+                }
+            }
+        }
+        
+        // 2. Scroll Inertia
+        if scrollInertiaVelocity != .zero {
+            let decelerationRate: CGFloat = 0.95
+            let decay = pow(decelerationRate, CGFloat(dt) * 60.0)
+            
+            scrollInertiaVelocity = CGPoint(
+                x: scrollInertiaVelocity.x * decay,
+                y: scrollInertiaVelocity.y * decay
+            )
+            let speed = hypot(scrollInertiaVelocity.x, scrollInertiaVelocity.y)
+            
+            if speed < 40.0 {
+                scrollInertiaVelocity = .zero
+            } else {
+                let delta = CGPoint(
+                    x: scrollInertiaVelocity.x * CGFloat(dt),
+                    y: -(scrollInertiaVelocity.y * CGFloat(dt))
+                )
+                pointer.scroll(delta: normalizedScrollDelta(delta))
+            }
+        }
+        
+        checkInertiaState()
     }
 
     private func normalizedScrollDelta(_ delta: CGPoint) -> CGPoint {

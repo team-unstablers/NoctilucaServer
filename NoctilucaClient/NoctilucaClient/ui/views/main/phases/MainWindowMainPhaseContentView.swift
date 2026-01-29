@@ -50,9 +50,16 @@ struct MainWindowMainPhaseContentView: View {
                 
                 if let cursorImage = viewModel.client?.projectionChannel?.cursorImage {
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
+                    let width = CGFloat(cursorImage.width)
+                    let height = CGFloat(cursorImage.height)
+                    
+                    // SwiftUI .position places the CENTER of the view at the point.
+                    // We want the TOP-LEFT (0,0) of the cursor image to be at the point.
+                    // So we shift the position by +width/2, +height/2.
+                    // (Assuming hotspot is at 0,0 for now. Ideal solution requires hotspot info from server)
                     let position = CGPoint(
-                        x: rect.minX + (cursorPosition.x * rect.width),
-                        y: rect.minY + (cursorPosition.y * rect.height)
+                        x: rect.minX + (cursorPosition.x * rect.width) + (width / 2),
+                        y: rect.minY + (cursorPosition.y * rect.height) + (height / 2)
                     )
 
                     Image(decorative: cursorImage, scale: 1.0, orientation: .up)

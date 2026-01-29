@@ -62,6 +62,7 @@ class ProjectionSession: Identifiable {
             fatalError("FIXME: size is nil")
         }
         self.codec = codec
+        self.size  = size.cgSize
 
         // 기존 디코더 정리 (새 디코더로 교체 전)
         try? decoder.stop()
@@ -165,18 +166,6 @@ extension ProjectionSession: VideoDecoderDelegate {
         var timingInfo = CMSampleTimingInfo(duration: CMTime.invalid,
                                             presentationTimeStamp: presentationTime,
                                             decodeTimeStamp: CMTime.invalid)
-        
-        let pixelBuffer = frame.pixelBuffer
-        
-        if size == .zero {
-            // FIXME
-            guard let dimensions = try? CMFormatDescription(imageBuffer: frame.pixelBuffer).dimensions else {
-                return
-            }
-            
-            self.size = CGSize(width: Int(dimensions.width), height: Int(dimensions.height))
-        }
-        
         
         
         // 2. 기존의 잘못된(Rec.709) 태그를 덮어씌울 HDR 태그 정의
