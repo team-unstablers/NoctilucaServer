@@ -208,7 +208,8 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
             return false
         }
         
-        let isHardwareRequired = (codec.option(.hardwareAcceleration) == .kHardwareAccelerationTrue)
+        // auto는 true가 아니기 때문에..
+        // let isHardwareREquired = (codec.option(.hardwareAcceleration) == .kHardwareAccelerationAuto)
         
         let hasCompatibleEncoder = list.contains { encoder in
             guard let type = encoder[kVTVideoEncoderList_CodecType as String] as? NSNumber,
@@ -216,10 +217,12 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
                 return false
             }
             
+            /*
             if isHardwareRequired {
                 let isHardwareAccelerated = encoder[kVTVideoEncoderList_IsHardwareAccelerated as String] as? Bool ?? false
                 return isHardwareAccelerated
             }
+             */
             
             return true
         }
@@ -243,9 +246,6 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
         let hardwareAccelOption = codec.option(.hardwareAcceleration)
         if hardwareAccelOption == .kHardwareAccelerationAuto {
             specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
-        } else if hardwareAccelOption == .kHardwareAccelerationTrue {
-            specification[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder] = true
-            specification[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder] = true
         }
         
         // 픽셀 포맷 등 속성 설정

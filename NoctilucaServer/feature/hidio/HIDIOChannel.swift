@@ -67,11 +67,23 @@ class HIDIOChannel: Channel {
     }
     
     func inject(keyboardEvent: KeyboardEvent) {
-        guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(keyboardEvent.keyCode)).toCarbonKeycode else {
+        switch keyboardEvent.eventType {
+        case .ucs4:
+            injectUcs4Key(keyboardEvent)
+        case .down, .up:
+            injectNormalKey(keyboardEvent)
+        default:
+            logger.warning("unhandled keyboard event type: \(keyboardEvent.eventType)")
+        }
+    }
+    
+    private func injectNormalKey(_ event: KeyboardEvent) {
+        guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(event.keyCode)).toCarbonKeycode else {
+            logger.warning("failed to map linux keycode \(event.keyCode) to carbon keycode")
             return
         }
         
-        switch keyboardEvent.eventType {
+        switch event.eventType {
         case .down:
             eventInjector.postKeyDown(carbonKeyCode)
         case .up:
