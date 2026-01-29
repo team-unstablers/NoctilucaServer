@@ -18,6 +18,8 @@ class HIDIOController {
     
     private let channel: HIDIOChannel
     private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
+
+    var pointerInputRouter: PointerInputRouter?
     
     private let eventStream: AsyncStream<HIDEvent>
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation

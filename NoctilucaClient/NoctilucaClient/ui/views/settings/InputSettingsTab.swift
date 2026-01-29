@@ -78,21 +78,19 @@ struct InputSettingsTab: View {
                 Text("마우스 입력 설정")
                 Text("마우스 입력과 관련된 설정을 구성합니다.")
             } footer: {
-                if settingsStore.settings.input.mouseMoveMode == .relative {
-#if os(macOS)
-                        // TODO: 마우스 / 키보드 캡쳐 해제 단축키 추가해야 함
-                    Text("참고:\n- 이 방식은 마우스를 잠급니다. 미리 설정된 단축키를 누르면 마우스 잠금이 해제됩니다.")
-#else
-                    Text("참고:\n- 이 방식은 마우스를 잠급니다. ⎋ (escape) 키를 누르면 마우스 잠금이 해제됩니다.\n- iPad에서는 멀티 태스킹이 활성화된 경우 SwiftUI Gesture handler 방식으로 폴백됩니다.")
-#endif
-
-                } else {
 #if os(iOS)
-                    // TODO: 문제 해결되면 삭제할 것. GameController.framework를 완전히 끄면 이 문제는 해결될 것으로 보임
-                    Text("참고:\n- 이 방식은 기술적 한계로 인해 드래그 동작 (마우스 버튼을 누른 상태에서 이동)이 부드럽게 동작하지 않을 수 있습니다.")
-#endif
-
+                switch settingsStore.settings.input.touchInputMode {
+                case .touch:
+                    Text("참고:\n- 터치 모드는 탭 시 해당 위치로 이동 후 클릭합니다.\n- 드래그는 한 손가락으로 바로 클릭+드래그로 처리됩니다.")
+                case .trackpad:
+                    Text("참고:\n- 트랙패드 모드는 상대 좌표로 커서를 이동합니다.\n- 드래그는 긴 누름 또는 두 손가락 조합으로 실행됩니다.")
                 }
+#else
+                if settingsStore.settings.input.mouseMoveMode == .relative {
+                    // TODO: 마우스 / 키보드 캡쳐 해제 단축키 추가해야 함
+                    Text("참고:\n- 이 방식은 마우스를 잠급니다. 미리 설정된 단축키를 누르면 마우스 잠금이 해제됩니다.")
+                }
+#endif
                 
             }
             
@@ -112,6 +110,16 @@ struct InputSettingsTab: View {
             }
             
             Section {
+#if os(iOS)
+                SettingsEntry(title: "트랙패드 이동 배수", subtitle: "트랙패드 모드에서 커서 이동량에 배수를 적용합니다.\n값이 클수록 커서가 더 멀리 이동합니다.") {
+                    Slider(value: $settingsStore.settings.input.trackpadMoveMultiplier, in: 0.5...2.0, step: 0.1) {
+                    } minimumValueLabel: {
+                        Text("0.5x")
+                    } maximumValueLabel: {
+                        Text("2.0x")
+                    }
+                }
+#endif
                 SettingsEntry(title: "마우스 스크롤 배수", subtitle: "마우스 스크롤에 배수 값을 적용하여 전송합니다.\n값이 클수록 스크롤 속도가 빨라집니다.") {
                     Slider(value: $settingsStore.settings.input.mouseScrollMultiplier, in: 0.5...1.5, step: 0.25) {
                         

@@ -73,6 +73,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     }
     
     private var controller: HIDIOController?
+    private var isHardwareConnected: Bool = false
     
     init() {
     }
@@ -86,7 +87,8 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
                 self?.logger.debug("GCMouse did connect: \(mouse)")
-                
+                self?.isHardwareConnected = true
+                self?.controller?.pointerInputRouter?.updateHardwareMouseConnected(true)
             }
             .store(in: &cancellables)
         
@@ -94,6 +96,8 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
                 self?.logger.debug("GCMouse did disconnect: \(mouse)")
+                self?.isHardwareConnected = false
+                self?.controller?.pointerInputRouter?.updateHardwareMouseConnected(false)
             }
             .store(in: &cancellables)
  
@@ -130,11 +134,13 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             }
             
             self?.logger.debug("Mouse moved: deltaX=\(deltaX), deltaY=\(deltaY)")
+            let delta = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
 
-            controller.moveMouseRelative(to: CGPoint(
-                x: CGFloat(deltaX),
-                y: CGFloat(-deltaY)
-            ))
+            if let router = self?.controller?.pointerInputRouter {
+                router.moveMouseRelative(from: .hardware, by: delta)
+            } else {
+                controller.moveMouseRelative(to: delta)
+            }
             
             self?.centerCursor()
         }
@@ -149,9 +155,17 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
                 self?.logger.debug("Mouse button changed: value=\(value), pressed=\(pressed)")
                 
                 if pressed {
-                    controller.mouseButtonDown(button: buttonType)
+                    if let router = self?.controller?.pointerInputRouter {
+                        router.mouseButtonDown(from: .hardware, button: buttonType)
+                    } else {
+                        controller.mouseButtonDown(button: buttonType)
+                    }
                 } else {
-                    controller.mouseButtonUp(button: buttonType)
+                    if let router = self?.controller?.pointerInputRouter {
+                        router.mouseButtonUp(from: .hardware, button: buttonType)
+                    } else {
+                        controller.mouseButtonUp(button: buttonType)
+                    }
                 }
             }
         }
@@ -177,7 +191,11 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
             let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
 #endif
-            controller.mouseWheel(delta: delta)
+            if let router = self?.controller?.pointerInputRouter {
+                router.mouseWheel(from: .hardware, delta: delta)
+            } else {
+                controller.mouseWheel(delta: delta)
+            }
         }
     }
     
@@ -192,6 +210,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     
     func connect(to controller: HIDIOController) {
         self.controller = controller
+        controller.pointerInputRouter?.updateHardwareMouseConnected(isHardwareConnected)
     }
     
     func disconnect() {

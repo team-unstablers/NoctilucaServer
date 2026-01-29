@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 #if os(macOS)
 import AppKit
@@ -19,10 +20,13 @@ struct MainWindowMainPhaseContentView: View {
     @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
+    @State private var cursorPosition: CGPoint = CGPoint(x: 0.5, y: 0.5)
+    @State private var projectionAspectRatio: CGFloat = 16.0 / 9.0
 
 #if os(iOS)
     @State private var shouldPresentKeyboard: Bool = false
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
+    @EnvironmentObject private var settingsStore: SettingsStore
 #endif
 
     var body: some View {
@@ -45,7 +49,16 @@ struct MainWindowMainPhaseContentView: View {
                  */
                 
                 if let cursorImage = viewModel.client?.projectionChannel?.cursorImage {
+                    let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
+                    let position = CGPoint(
+                        x: rect.minX + (cursorPosition.x * rect.width),
+                        y: rect.minY + (cursorPosition.y * rect.height)
+                    )
+
                     Image(decorative: cursorImage, scale: 1.0, orientation: .up)
+                        .position(position)
+                        .scaleEffect(scale)
+                        .offset(offset)
                 }
                 
                 
@@ -140,7 +153,13 @@ struct MainWindowMainPhaseContentView: View {
                  */
                 
 #if os(iOS)
-                HIDIOSwiftUIMouseView(client: viewModel.client)
+                HIDIOUIKitMouseView(
+                    client: viewModel.client,
+                    mode: $settingsStore.settings.input.touchInputMode,
+                    trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
+                    cursorPosition: $cursorPosition,
+                    aspectRatio: $projectionAspectRatio
+                )
 
                 HIDIOUIKitKeyboardInputHost(
                     client: viewModel.client,
@@ -177,12 +196,40 @@ struct MainWindowMainPhaseContentView: View {
             }
 #endif
 #if os(iOS)
+            .onReceive((viewModel.client?.uiEvents.eraseToAnyPublisher() ?? Empty().eraseToAnyPublisher())) { event in
+                guard case .FIXME_projectionStarted(let session) = event else {
+                    return
+                }
+
+                projectionAspectRatio = session.size.width / session.size.height
+            }
+#endif
+#if os(iOS)
             .onChange(of: viewModel.phase) { _, newValue in
                 if newValue != .connected {
                     shouldPresentKeyboard = false
                 }
             }
 #endif
+        }
+    }
+
+    private func fittedProjectionRect(in size: CGSize, aspectRatio: CGFloat) -> CGRect {
+        guard size.width > 0, size.height > 0, aspectRatio > 0 else {
+            return CGRect(origin: .zero, size: size)
+        }
+
+        let containerRatio = size.width / size.height
+        if containerRatio > aspectRatio {
+            let height = size.height
+            let width = height * aspectRatio
+            let x = (size.width - width) / 2
+            return CGRect(x: x, y: 0, width: width, height: height)
+        } else {
+            let width = size.width
+            let height = width / aspectRatio
+            let y = (size.height - height) / 2
+            return CGRect(x: 0, y: y, width: width, height: height)
         }
     }
 

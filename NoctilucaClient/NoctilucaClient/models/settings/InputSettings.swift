@@ -63,6 +63,39 @@ extension AppSettings {
         }
     }
 
+    enum PointerInputMode: String, Codable, CaseIterable, Sendable {
+        case automatic
+        case touchPointer
+        case hardwareMouse
+
+        init(from decoder: any Decoder) throws {
+            let container = try? decoder.singleValueContainer()
+            let rawValue = (try? container?.decode(String.self)) ?? Self.automatic.rawValue
+            self = PointerInputMode(rawValue: rawValue) ?? .automatic
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(rawValue)
+        }
+    }
+
+    enum TouchInputMode: String, Codable, CaseIterable, Sendable {
+        case touch
+        case trackpad
+
+        init(from decoder: any Decoder) throws {
+            let container = try? decoder.singleValueContainer()
+            let rawValue = (try? container?.decode(String.self)) ?? Self.touch.rawValue
+            self = TouchInputMode(rawValue: rawValue) ?? .touch
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(rawValue)
+        }
+    }
+
     struct ModifierKeyOverrides: Codable, Sendable {
         var capsLock: ModifierKeyOverride = .capsLock
         var control: ModifierKeyOverride = .control
@@ -105,6 +138,9 @@ extension AppSettings {
         var redirectionMethod: InputRedirectionMethod = .gameController
         var modifierKeyOverrides: ModifierKeyOverrides = .init()
         var mouseMoveMode: MouseMoveMode = .absolute
+        var pointerInputMode: PointerInputMode = .automatic
+        var touchInputMode: TouchInputMode = .touch
+        var trackpadMoveMultiplier: Double = 1.0
         var invertMouseButtons: Bool = false
         var invertVerticalScroll: Bool = false
         var invertHorizontalScroll: Bool = false
@@ -117,6 +153,9 @@ extension AppSettings {
             case redirectionMethod
             case modifierKeyOverrides
             case mouseMoveMode
+            case pointerInputMode
+            case touchInputMode
+            case trackpadMoveMultiplier
             case invertMouseButtons
             case invertVerticalScroll
             case invertHorizontalScroll
@@ -134,6 +173,19 @@ extension AppSettings {
             redirectionMethod = container.decodeSafe(InputRedirectionMethod.self, forKey: .redirectionMethod, default: redirectionMethod)
             modifierKeyOverrides = container.decodeSafe(ModifierKeyOverrides.self, forKey: .modifierKeyOverrides, default: modifierKeyOverrides)
             mouseMoveMode = container.decodeSafe(MouseMoveMode.self, forKey: .mouseMoveMode, default: mouseMoveMode)
+            let hasPointerInputMode = container.contains(.pointerInputMode)
+            pointerInputMode = container.decodeSafe(PointerInputMode.self, forKey: .pointerInputMode, default: pointerInputMode)
+            touchInputMode = container.decodeSafe(TouchInputMode.self, forKey: .touchInputMode, default: touchInputMode)
+            trackpadMoveMultiplier = container.decodeSafe(Double.self, forKey: .trackpadMoveMultiplier, default: trackpadMoveMultiplier)
+
+            if !hasPointerInputMode {
+                switch mouseMoveMode {
+                case .relative:
+                    pointerInputMode = .hardwareMouse
+                case .absolute:
+                    pointerInputMode = .touchPointer
+                }
+            }
             invertMouseButtons = container.decodeSafe(Bool.self, forKey: .invertMouseButtons, default: invertMouseButtons)
             invertVerticalScroll = container.decodeSafe(Bool.self, forKey: .invertVerticalScroll, default: invertVerticalScroll)
             invertHorizontalScroll = container.decodeSafe(Bool.self, forKey: .invertHorizontalScroll, default: invertHorizontalScroll)
@@ -146,6 +198,9 @@ extension AppSettings {
             try container.encode(redirectionMethod, forKey: .redirectionMethod)
             try container.encode(modifierKeyOverrides, forKey: .modifierKeyOverrides)
             try container.encode(mouseMoveMode, forKey: .mouseMoveMode)
+            try container.encode(pointerInputMode, forKey: .pointerInputMode)
+            try container.encode(touchInputMode, forKey: .touchInputMode)
+            try container.encode(trackpadMoveMultiplier, forKey: .trackpadMoveMultiplier)
             try container.encode(invertMouseButtons, forKey: .invertMouseButtons)
             try container.encode(invertVerticalScroll, forKey: .invertVerticalScroll)
             try container.encode(invertHorizontalScroll, forKey: .invertHorizontalScroll)
