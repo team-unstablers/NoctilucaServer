@@ -233,14 +233,25 @@ class ProjectionChannel: Channel, ObservableObject {
             self.logger.warning("Failed to subscribe to display change events: \(error)")
         }
         
-        // FIXME
-        try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
-            identifier: UUID(),
-            source: .sessionAudio,
-            preferredCodecs: [
-                .init(fourCC: .opus, quality: .auto)
-            ]
-        ))
+        // 오디오 프로젝션 요청
+        if self.currentProjectionSettings?.isAudioProjectionEnabled ?? true {
+            do {
+                let audioSpecs = self.currentProjectionSettings?.audioCodecSpecifications ?? [.opus]
+                let preferredCodecs = audioSpecs.map { $0.toSiriusKitCodec() }
+                
+                try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
+                    identifier: UUID(),
+                    source: .sessionAudio,
+                    preferredCodecs: preferredCodecs
+                ))
+                self.logger.info("Sent AudioProjectionRequest")
+            } catch {
+                self.logger.error("Failed to send AudioProjectionRequest: \(error)")
+                // 오디오 요청 실패는 비디오 세션에 영향을 주지 않도록 무시
+            }
+        } else {
+            self.logger.info("Audio projection is disabled in settings, skipping request.")
+        }
 
         return session
     }

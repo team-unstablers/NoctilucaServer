@@ -17,8 +17,15 @@ extension NoctilucaClient {
             return
         }
         
-        self.hidioController = HIDIOController(channel: channel)
+        let controller = HIDIOController(channel: channel)
+        self.hidioController = controller
         self.logger.info("initializeHIDIO(): created HIDIOController")
+
+        let pointerRouter = PointerInputRouter(controller: controller)
+        controller.pointerInputRouter = pointerRouter
+        pointerRouter.updateInputMode(pendingPointerInputMode)
+
+        connectGameControllerMouse(controller)
         applyInputRedirectionMethod(pendingInputRedirectionMethod)
     }
 
@@ -28,8 +35,6 @@ extension NoctilucaClient {
         guard let hidioController else {
             return
         }
-        
-        connectGameControllerMouse(hidioController)
 
         switch method {
         case .gameController:
@@ -59,6 +64,11 @@ extension NoctilucaClient {
             updateInputWarning(nil)
 #endif
         }
+    }
+
+    func applyPointerInputMode(_ mode: AppSettings.PointerInputMode) {
+        pendingPointerInputMode = mode
+        hidioController?.pointerInputRouter?.updateInputMode(mode)
     }
 
     private func connectGameControllerKeyboard(_ hidioController: HIDIOController) {

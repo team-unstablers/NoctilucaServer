@@ -134,6 +134,9 @@ extension SessionSettings {
         var codecSettingsMode: CodecSettingsMode = .useDefault
         var codecNegotiationPolicy: CodecNegotiationPolicy = .asOptional
         var codecSpecifications: [CodecSpecification] = [.hevc]
+        
+        var isAudioProjectionEnabled: Bool = true
+        var audioCodecSpecifications: [AudioCodecSpecification] = [.opus]
     }
 }
 

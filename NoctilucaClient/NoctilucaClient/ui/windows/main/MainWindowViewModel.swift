@@ -49,7 +49,7 @@ class MainWindowViewModel: ObservableObject {
     var contactSheetCoordinator: ContactSheetCoordinator
 
     private var settingsStore: SettingsStore?
-    private var settingsCancellable: AnyCancellable?
+    private var settingsCancellables: Set<AnyCancellable> = []
 
     init() {
         self.contactSheetCoordinator = ContactSheetCoordinator()
@@ -108,6 +108,7 @@ class MainWindowViewModel: ObservableObject {
 
         if let settingsStore {
             client.applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
+            client.applyPointerInputMode(settingsStore.settings.input.pointerInputMode)
         }
         
         do {
@@ -152,14 +153,24 @@ class MainWindowViewModel: ObservableObject {
 
         self.settingsStore = settingsStore
         self.contactSheetCoordinator.settingsStore = settingsStore
-        settingsCancellable?.cancel()
+        settingsCancellables.forEach { $0.cancel() }
+        settingsCancellables.removeAll()
 
-        settingsCancellable = settingsStore.$settings
+        settingsStore.$settings
             .map { $0!.input.redirectionMethod }
             .removeDuplicates()
             .sink { [weak self] method in
                 self?.applyInputRedirectionMethod(method)
             }
+            .store(in: &settingsCancellables)
+
+        settingsStore.$settings
+            .map { $0!.input.pointerInputMode }
+            .removeDuplicates()
+            .sink { [weak self] mode in
+                self?.applyPointerInputMode(mode)
+            }
+            .store(in: &settingsCancellables)
     }
 
     func loadContacts() {
@@ -250,6 +261,14 @@ class MainWindowViewModel: ObservableObject {
         }
 
         client.applyInputRedirectionMethod(method)
+    }
+
+    private func applyPointerInputMode(_ mode: AppSettings.PointerInputMode) {
+        guard let client else {
+            return
+        }
+
+        client.applyPointerInputMode(mode)
     }
     
     func dismissLastError() {

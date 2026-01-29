@@ -27,6 +27,20 @@ struct ProjectionSessionSettingsTab: View {
         )
     }
     
+    private var isAudioProjectionEnabled: Binding<Bool> {
+        Binding(
+            get: { sessionSettings.projection.isAudioProjectionEnabled },
+            set: { sessionSettings.projection.isAudioProjectionEnabled = $0 }
+        )
+    }
+
+    private var audioCodecSpecifications: Binding<[AudioCodecSpecification]> {
+        Binding(
+            get: { sessionSettings.projection.audioCodecSpecifications },
+            set: { sessionSettings.projection.audioCodecSpecifications = $0 }
+        )
+    }
+    
     var body: some View {
         Form {
             Section {
@@ -79,6 +93,16 @@ struct ProjectionSessionSettingsTab: View {
             
             Section {
                 CodecSpecificationListContainer(codecSpecifications: codecSpecifications)
+            }
+            
+            Section {
+                Toggle("오디오 프로젝션 활성화", isOn: isAudioProjectionEnabled)
+                
+                if isAudioProjectionEnabled.wrappedValue {
+                    AudioCodecSpecificationListContainer(codecSpecifications: audioCodecSpecifications)
+                }
+            } header: {
+                Text("오디오 설정")
             }
         }
         .formStyle(.grouped)

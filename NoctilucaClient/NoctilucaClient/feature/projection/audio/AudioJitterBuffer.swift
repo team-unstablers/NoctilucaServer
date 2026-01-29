@@ -32,6 +32,12 @@ final class AudioJitterBuffer {
     /// Late threshold in milliseconds. Frames older than this are skipped.
     var lateThresholdMs: Int = 40
 
+    /// Hard lateness threshold in milliseconds to trigger resync immediately.
+    var lateResyncThresholdMs: Int = 250
+
+    /// Consecutive late frames count to trigger resync.
+    var lateResyncConsecutiveFrames: Int = 5
+
     // MARK: - State
 
     enum State {
@@ -84,6 +90,11 @@ final class AudioJitterBuffer {
     private var totalFramesEnqueued: Int = 0
     private var totalFramesDropped: Int = 0
     private var totalLateFramesSkipped: Int = 0
+
+    // MARK: - Resync Tracking
+
+    private var consecutiveLateFrames: Int = 0
+    private var needsResyncAfterUnderflow: Bool = false
 
     // MARK: - Initialization
 
@@ -141,13 +152,32 @@ final class AudioJitterBuffer {
             setAnchorLocked(remotePTS: frame.pts)
         }
 
+        // Resync after underflow to realign PTS with local clock
+        if needsResyncAfterUnderflow {
+            resyncLocked(remotePTS: frame.pts, reason: "underflow")
+        }
+
         // Check for late frames (only when playing)
         if state == .playing {
             let lateness = latenessLocked(of: frame.pts)
-            if lateness > Double(lateThresholdMs) / 1000.0 {
-                totalLateFramesSkipped += 1
-                os_log(.debug, log: logger, "Skipping late frame: %.1f ms late", lateness * 1000)
-                return
+            let lateThreshold = Double(lateThresholdMs) / 1000.0
+            let resyncThreshold = Double(lateResyncThresholdMs) / 1000.0
+
+            if lateness > resyncThreshold {
+                os_log(.info, log: logger, "Resyncing: frame late by %.1f ms (threshold %.1f ms)", lateness * 1000, resyncThreshold * 1000)
+                resyncLocked(remotePTS: frame.pts, reason: "lateness")
+            } else if lateness > lateThreshold {
+                consecutiveLateFrames += 1
+                if consecutiveLateFrames >= lateResyncConsecutiveFrames {
+                    os_log(.info, log: logger, "Resyncing: %d consecutive late frames (latest %.1f ms late)", consecutiveLateFrames, lateness * 1000)
+                    resyncLocked(remotePTS: frame.pts, reason: "late-streak")
+                } else {
+                    totalLateFramesSkipped += 1
+                    os_log(.debug, log: logger, "Skipping late frame: %.1f ms late (streak %d)", lateness * 1000, consecutiveLateFrames)
+                    return
+                }
+            } else {
+                consecutiveLateFrames = 0
             }
         }
 
@@ -178,12 +208,14 @@ final class AudioJitterBuffer {
             let bufferedMs = Double(availableSamples / channelCount) / sampleRate * 1000.0
             if bufferedMs >= Double(minBufferMs) {
                 state = .playing
+                consecutiveLateFrames = 0
                 os_log(.info, log: logger, "Buffering complete, starting playback (%.1f ms buffered)", bufferedMs)
             }
         } else if state == .underflow {
             let bufferedMs = Double(availableSamples / channelCount) / sampleRate * 1000.0
             if bufferedMs >= Double(minBufferMs) {
                 state = .playing
+                consecutiveLateFrames = 0
                 os_log(.info, log: logger, "Recovered from underflow (%.1f ms buffered)", bufferedMs)
             }
         }
@@ -208,6 +240,8 @@ final class AudioJitterBuffer {
             // Underflow
             if state == .playing {
                 state = .underflow
+                needsResyncAfterUnderflow = true
+                consecutiveLateFrames = 0
                 os_log(.debug, log: logger, "Underflow detected, available: %d, requested: %d", availableSamples, requestedSamples)
             }
 
@@ -261,6 +295,8 @@ final class AudioJitterBuffer {
             // Underflow
             if state == .playing {
                 state = .underflow
+                needsResyncAfterUnderflow = true
+                consecutiveLateFrames = 0
                 os_log(.debug, log: logger, "Underflow detected, available: %d, requested: %d", availableSamples, requestedSamples)
             }
 
@@ -305,6 +341,8 @@ final class AudioJitterBuffer {
         state = .buffering
         anchorRemotePTS = nil
         anchorHostTime = nil
+        consecutiveLateFrames = 0
+        needsResyncAfterUnderflow = false
 
         // Clear buffer using vDSP (SIMD)
         vDSP_vclr(ringBuffer, 1, vDSP_Length(ringBufferCapacity))
@@ -320,6 +358,19 @@ final class AudioJitterBuffer {
         anchorRemotePTS = remotePTS
         anchorHostTime = mach_absolute_time()
         os_log(.debug, log: logger, "Anchor set: remote PTS = %.3f", remotePTS.seconds)
+    }
+
+    /// Resets buffer state and reanchors timing to the given PTS.
+    /// Must be called with lock held.
+    private func resyncLocked(remotePTS: CMTime, reason: String) {
+        readPosition = 0
+        writePosition = 0
+        availableSamples = 0
+        state = .buffering
+        consecutiveLateFrames = 0
+        needsResyncAfterUnderflow = false
+        setAnchorLocked(remotePTS: remotePTS)
+        os_log(.info, log: logger, "Jitter buffer resynced (%{public}s)", reason)
     }
 
     /// Calculates how late a frame is compared to the expected playback time.
