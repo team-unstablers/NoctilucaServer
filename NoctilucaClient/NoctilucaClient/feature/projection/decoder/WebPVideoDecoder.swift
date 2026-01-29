@@ -1,3 +1,4 @@
+#if !targetEnvironment(simulator)
 import Foundation
 import CoreMedia
 import CoreVideo
@@ -285,3 +286,4 @@ enum WebPVideoDecoderError: LocalizedError {
         }
     }
 }
+#endif

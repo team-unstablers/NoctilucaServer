@@ -1,0 +1,6 @@
+module SharpYuv [system] {
+    header "sharpyuv.h"
+    header "sharpyuv_csp.h"
+
+    export *
+}
