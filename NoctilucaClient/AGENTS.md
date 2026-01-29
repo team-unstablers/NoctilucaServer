@@ -185,6 +185,9 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 
 # XCODE / BUILD NOTES
 
+- **클라이언트 빌드 시 반드시 xcworkspace를 사용하여 빌드하십시오.**
+  - 워크스페이스 경로: `../NoctilucaServer.xcworkspace`
+  - 예시: `xcodebuild -workspace ../NoctilucaServer.xcworkspace -scheme NoctilucaClient ...`
 - `NoctilucaClient.xcodeproj`가 기본 프로젝트 (scheme: `NoctilucaClient`, product: `Noctiluca Navigator.app`)
 - `NoctilucaClient 2.xcodeproj`는 사용자 데이터만 포함 (실사용 전 확인 필요)
 
