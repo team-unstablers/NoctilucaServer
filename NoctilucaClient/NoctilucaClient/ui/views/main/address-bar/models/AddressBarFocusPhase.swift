@@ -48,18 +48,6 @@ enum AddressBarFocusPhase: Equatable {
         }
     }
 
-    /// 포커스 테두리 스케일
-    var focusBorderScale: CGFloat {
-        switch self {
-        case .idle, .focusingOut:
-            return 1.5
-        case .focusingIn:
-            return 1.5  // 시작점, 애니메이션으로 1.0으로 전환
-        case .editing:
-            return 1.0
-        }
-    }
-
     /// 포커스 상태인지 여부
     var isFocused: Bool {
         switch self {

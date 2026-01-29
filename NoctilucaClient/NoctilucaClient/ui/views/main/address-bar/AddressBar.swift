@@ -28,16 +28,13 @@ struct AddressBar: View {
     // MARK: - Local State (Animation)
 
     @State
-    private var labelAreaOpacity: CGFloat = 1.0
+    private var focusPhase: AddressBarFocusPhase = .idle
 
     @State
-    private var labelTextOpacity: CGFloat = 1.0
+    private var focusAnimationTask: Task<Void, Never>? = nil
 
     @State
-    private var textFieldOpacity: CGFloat = 0.0
-
-    @State
-    private var focusBorderScale: CGFloat = 1.5
+    private var animatedBorderScale: CGFloat = 1.5
 
     // MARK: - Initialization
 
@@ -83,9 +80,9 @@ struct AddressBar: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 24)
-        .background(.white.opacity(isFocused ? 0.8 : 0.6))
+        .background(.white.opacity(focusPhase.isFocused ? 0.8 : 0.6))
         .overlay(alignment: .bottom) {
-            if !isFocused, let action = self.action {
+            if !focusPhase.isFocused, let action = self.action {
                 AddressBarProgressIndicator(progress: action.progress)
             }
         }
@@ -118,27 +115,27 @@ struct AddressBar: View {
                         .foregroundStyle(.secondary)
                     Text(endpointURL)
                         .font(.system(size: 14))
-                        .opacity(labelTextOpacity)
+                        .opacity(focusPhase.labelTextOpacity)
                 }
-                .opacity(labelTextOpacity)
+                .opacity(focusPhase.labelTextOpacity)
             } else {
                 if endpointURL.isEmpty {
                     Text("호스트 주소를 입력하세요")
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
-                        .opacity(labelTextOpacity)
+                        .opacity(focusPhase.labelTextOpacity)
                 } else {
                     Text(endpointURL)
                         .font(.system(size: 14))
-                        .opacity(labelTextOpacity)
+                        .opacity(focusPhase.labelTextOpacity)
                 }
             }
 
-            if isFocused {
+            if focusPhase.isFocused {
                 Spacer()
             }
         }
-        .animation(.linear(duration: 0.2), value: isFocused)
+        .animation(.linear(duration: 0.2), value: focusPhase.isFocused)
     }
 
     @ViewBuilder
@@ -149,12 +146,12 @@ struct AddressBar: View {
             .submitLabel(.go)
             .textInputAutocapitalization(.never)
 #endif
-            .opacity(textFieldOpacity)
+            .opacity(focusPhase.textFieldOpacity)
             .font(.system(size: 14))
             .textFieldStyle(.plain)
             .autocorrectionDisabled(true)
             .focused($isFocused)
-            .animation(.linear(duration: 0.2).delay(0.2), value: isFocused)
+            .animation(.linear(duration: 0.2).delay(0.2), value: focusPhase.isFocused)
             .onSubmit(handleSubmit)
             .onKeyPress(.escape, action: handleEscape)
             .onKeyPress(.downArrow) {
@@ -174,18 +171,18 @@ struct AddressBar: View {
 #if os(macOS)
             .strokeBorder(
                 Color(nsColor: .keyboardFocusIndicatorColor)
-                    .opacity(isFocused ? 1 : 0.001),
+                    .opacity(focusPhase.isFocused ? 1 : 0.001),
                 lineWidth: 4
             )
 #else
             .strokeBorder(
                 Color.accentColor
-                    .opacity(isFocused ? 1 : 0.001),
+                    .opacity(focusPhase.isFocused ? 1 : 0.001),
                 lineWidth: 4
             )
 #endif
-            .animation(.easeInOut(duration: 0.3), value: isFocused)
-            .scaleEffect(focusBorderScale)
+            .animation(.easeInOut(duration: 0.3), value: focusPhase.isFocused)
+            .scaleEffect(animatedBorderScale)
     }
 
     @ViewBuilder
@@ -202,12 +199,12 @@ struct AddressBar: View {
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 24)
-        .opacity(labelAreaOpacity)
+        .opacity(focusPhase.indicatorOpacity)
     }
 
     @ViewBuilder
     private var candidateOverlay: some View {
-        if isFocused, !viewModel.candidates.isEmpty {
+        if focusPhase.isFocused, !viewModel.candidates.isEmpty {
             AddressBarCandidateBox(
                 candidates: viewModel.candidates,
                 focusedIndex: viewModel.candidateFocusIndex,
@@ -224,27 +221,39 @@ struct AddressBar: View {
     // MARK: - Event Handlers
 
     private func handleFocusChange(_ newValue: Bool) {
+        // 기존 애니메이션 취소
+        focusAnimationTask?.cancel()
+
         if newValue {
-            // 포커스 IN: 즉시 변경
-            focusBorderScale = 1.5
-            labelAreaOpacity = 0.0
-
-            // border 스케일 애니메이션
-            withAnimation(.easeOut(duration: 0.2)) {
-                focusBorderScale = 1.0
-            } completion: {
-                // 애니메이션 완료 후 텍스트 전환
-                labelTextOpacity = 0.0
-                textFieldOpacity = 1.0
-            }
+            startFocusInAnimation()
         } else {
-            // 포커스 OUT: 즉시 변경
-            textFieldOpacity = 0.0
-            labelTextOpacity = 1.0
+            startFocusOutAnimation()
+        }
+    }
 
-            // 인디케이터 영역 페이드인
+    private func startFocusInAnimation() {
+        focusPhase = .focusingIn
+        animatedBorderScale = 1.5
+
+        withAnimation(.easeOut(duration: 0.2)) {
+            animatedBorderScale = 1.0
+        }
+
+        focusAnimationTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled, focusPhase == .focusingIn else { return }
+            focusPhase = .editing
+        }
+    }
+
+    private func startFocusOutAnimation() {
+        focusPhase = .focusingOut
+
+        focusAnimationTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled, focusPhase == .focusingOut else { return }
             withAnimation(.easeOut(duration: 0.2)) {
-                labelAreaOpacity = 1.0
+                focusPhase = .idle
             }
         }
     }
