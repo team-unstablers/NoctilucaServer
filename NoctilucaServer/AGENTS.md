@@ -244,6 +244,12 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 ## Recent Notes
 
+- **WebP 타일 비디오 인코더 구현 완료**:
+  - `WebPVideoEncoder.swift` 구현 (libwebp Advanced API 사용)
+  - `WebPConfig` + `WebPPicture` + `WebPMemoryWriter` 기반 인코딩
+  - `config.method = 0` (fastest) 하드코딩으로 실시간 인코딩 최적화
+  - `ProjectionSession`에서 `.webp` fourCC 분기 추가
+  - 의존성: `WebP.xcframework`, `SharpYuv.xcframework` 필요
 - **오디오 프로젝션 기능 구현 완료**:
   - `AudioEncoder` 프로토콜 및 `OpusAudioEncoder`, `PCMAudioEncoder` 구현
   - `AudioProjectionSession`이 `ScreenCaptureKitAudioRecorder`와 오디오 인코더를 연결

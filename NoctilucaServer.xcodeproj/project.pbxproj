@@ -20,6 +20,8 @@
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F66965372ECF27110032EF4E /* SiriusKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F66965362ECF27110032EF4E /* SiriusKit.framework */; };
 		F66965382ECF27110032EF4E /* SiriusKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F66965362ECF27110032EF4E /* SiriusKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */; };
+		F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB7E2F2A736300B7CF41 /* SharpYuv.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +60,8 @@
 		F659BDF22EF3C1730010A18E /* NoctilucaServerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaServerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669650B2ECF26770032EF4E /* NoctilucaServer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoctilucaServer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F66965362ECF27110032EF4E /* SiriusKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SiriusKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = WebP.xcframework; path = frameworks/WebP.xcframework; sourceTree = "<group>"; };
+		F6B2AB7E2F2A736300B7CF41 /* SharpYuv.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SharpYuv.xcframework; path = frameworks/SharpYuv.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -131,6 +135,8 @@
 				F62689452F1E50F60030D59B /* Gesu in Frameworks */,
 				F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */,
 				F63971242F1CCA4400F01622 /* Xuanxue in Frameworks */,
+				F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */,
+				F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */,
 				F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */,
 				F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */,
 			);
@@ -167,7 +173,9 @@
 				F627113E2F084EBB00E8A3D7 /* libz.1.tbd */,
 				F6379D3D2EE7D554004BC795 /* libbcrypt.framework */,
 				F624FD862EE2B2E6007A68B3 /* libpam.tbd */,
+				F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */,
 				F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */,
+				F6B2AB7E2F2A736300B7CF41 /* SharpYuv.xcframework */,
 				F66965362ECF27110032EF4E /* SiriusKit.framework */,
 			);
 			name = Frameworks;

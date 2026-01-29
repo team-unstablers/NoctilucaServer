@@ -117,6 +117,12 @@ extension CodecSpecification {
         .option(.tileSize, .kTileSize256x256)
         .option(.quantizeLevel, .kQuantizeLevel3)
         .also { $0.frameRate = 10 }
+    
+    static let webp = CodecSpecification(fourCC: .webp)
+        .option(.colorFormat, .kColorFormatYUV444)
+        .option(.compressionLevel, .init(rawValue: "80"))
+        .option(.tileSize, .kTileSize256x256)
+        .also { $0.frameRate = 30 }
 
     static let mjpg = CodecSpecification(fourCC: .mjpg)
         .option(.colorFormat, .kColorFormatYUV420)

@@ -154,6 +154,8 @@ class ProjectionSession: Identifiable {
             encoder = ZRLEVideoEncoder()
         case .mjpg:
             encoder = MJPGVideoEncoder()
+        case .webp:
+            encoder = WebPVideoEncoder()
         default:
             encoder = VTVideoEncoder()
         }

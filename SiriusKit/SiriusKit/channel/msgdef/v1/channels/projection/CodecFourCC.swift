@@ -67,4 +67,7 @@ public extension CodecFourCC {
 
     /// Motion JPEG
     static let mjpg = CodecFourCC("M", "J", "P", "G")
+    
+    /// WebP
+    static let webp = CodecFourCC("W", "E", "B", "P")
 }

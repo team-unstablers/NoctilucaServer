@@ -1,0 +1,9 @@
+module WebP [system] {
+    header "WebP/decode.h"
+    header "WebP/encode.h"
+    header "WebP/types.h"
+    header "WebP/mux.h"
+    header "WebP/demux.h"
+    
+    export *
+}

@@ -1,0 +1,6 @@
+module WebPDecoder [system] {
+    header "WebPDecoder/decode.h"
+    header "WebPDecoder/types.h"
+    
+    export *
+}

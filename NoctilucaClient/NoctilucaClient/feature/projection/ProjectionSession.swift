@@ -85,6 +85,14 @@ class ProjectionSession: Identifiable {
             tileCompositor = createTileCompositor(frameSize: size.cgSize)
             formatDescription = nil
 
+        case .webp:
+            let webpDecoder = WebPVideoDecoder()
+            webpDecoder.delegate = self
+            webpDecoder.tileDelegate = self
+            decoder = webpDecoder
+            tileCompositor = createTileCompositor(frameSize: size.cgSize)
+            formatDescription = nil
+
         default:
             if !(decoder is VTVideoDecoder) {
                 decoder = VTVideoDecoder()
