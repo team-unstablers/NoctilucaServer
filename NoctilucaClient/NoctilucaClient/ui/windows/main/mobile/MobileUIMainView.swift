@@ -15,11 +15,6 @@ struct MobileUIMainView: View {
     var body: some View {
         NavigationStack(path: $viewModel.navState) {
             MainWindow()
-            /*
-                .toolbar {
-
-                }
-             */
                 .navigationDestination(for: NavigationItem.self) { item in
                     switch item {
                     case .settings:
