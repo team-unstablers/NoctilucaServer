@@ -109,6 +109,7 @@ struct CodecSpecificationListContainer: View {
                 }
                 isAddSheetPresented = false
             }
+            .fixedSize()
         }
         
 
@@ -189,18 +190,18 @@ struct CodecSpecificationAddSheet: View {
         ),
         .init(
             specification: .webp,
-            title: String(localized: "settings.projection.codec_add.mjpg.title", defaultValue: "Tiled WebP"),
-            description: String(localized: "settings.projection.codec_add.mjpg.description", defaultValue: "타일링된 WebP를 사용합니다.\nMJPG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
+            title: String(localized: "settings.projection.codec_add.mjpg.title", defaultValue: "WebP"),
+            description: String(localized: "settings.projection.codec_add.mjpg.description", defaultValue: "JPEG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
         ),
         .init(
             specification: .mjpg,
             title: String(localized: "settings.projection.codec_add.mjpg.title", defaultValue: "Motion JPEG"),
-            description: String(localized: "settings.projection.codec_add.mjpg.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\nRLE보다 압축 효율이 높지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
+            description: String(localized: "settings.projection.codec_add.mjpg.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
         ),
         .init(
             specification: .zrle,
             title: String(localized: "settings.projection.codec_add.zrle.title", defaultValue: "RLE + Zstd"),
-            description: String(localized: "settings.projection.codec_add.zrle.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 기반 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다.")
+            description: String(localized: "settings.projection.codec_add.zrle.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 방식의 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다.")
         ),
     ]
     
