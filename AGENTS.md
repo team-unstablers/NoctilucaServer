@@ -76,7 +76,7 @@ Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는
 - **권한이 부족하여 작업을 수행할 수 없는 경우, 반드시 사용자에게 elevation 요청을 해야 합니다.** (If a command fails due to insufficient permissions, you must elevate the command to the user for approval.)
 
 ## 2. Workflow Protocol (중요)
-Codex는 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 **[Explicit Plan Mode]** 조건에 해당할 경우 행동 방식을 변경해야 합니다.
+당신(에이전트)가 OpenAI Codex인 경우, 당신은 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 **[Explicit Plan Mode]** 조건에 해당할 경우 행동 방식을 변경해야 합니다.
 
 ### [Explicit Plan Mode] 트리거 조건
 1. 사용자가 명시적으로 **'Plan 모드'**, **'계획 모드'**, 또는 **'설계 먼저'**라고 요청한 경우.
@@ -85,7 +85,9 @@ Codex는 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 
 ### [Explicit Plan Mode] 행동 수칙
 위 조건이 발동되면 **즉시 코드 구현을 멈추고** 다음 절차를 따르세요:
 1. **Stop:** 코드를 작성하거나 수정하지 마십시오. (파일 읽기는 가능)
-2. **Plan:** `update_plan` 도구를 사용하여 **한국어**로 상세 구현 계획, 영향 범위, 예상 리스크를 작성하십시오.
+2. **Plan:** **한국어**로 상세 구현 계획, 영향 범위, 예상 리스크를 작성하십시오.
+   - 계획 작성 전용 도구(예: `update_plan`, `EnterPlanMode` 등)가 있다면 해당 도구를 사용하십시오.
+   - 그러한 도구가 없다면, 일반 텍스트로 계획을 작성하여 사용자에게 제시하십시오.
 3. **Ask:** 사용자에게 계획을 제시하고 **"이대로 진행할까요?"**라고 승인을 요청하십시오.
 4. **Action:** 사용자의 명시적 승인(예: "ㅇㅇ", "진행해")이 떨어진 후에만 코드를 수정하십시오.
 
@@ -108,24 +110,4 @@ Codex는 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 
   - `msgdef/v1/channels: 채널 메시지 정의 업데이트`
   - `docs(README): README 파일에 설치 가이드 추가`
   - `test(transport/quic): QUIC 전송 테스트 케이스 작성`
-
-<model-specific-rules variant="google-gemini">
-
-## 3. Gemini Model Specific Guidelines
-
-### 의욕 제어 및 계획 우선 (Control Eagerness, Plan First)
-- **증상:** 문제를 인지하자마자 바로 `replace`나 `write_file`을 호출하려고 함.
-- **해결:** 코드를 건드리기 전에 반드시 **"어떤 파일을, 왜, 어떻게 고칠 것인지"** 계획을 세우고 사용자의 컨펌을 받으세요.
-  - 작은 변경이라도 그 영향도가 불확실하다면 멈추고 물어보세요.
-  - "바로 수정하겠습니다" 대신 **"다음과 같이 수정할 계획입니다. 진행할까요?"** 패턴을 사용하세요.
-
-### 맥락의 극대화 (Maximize Context)
-- **증상:** 에러가 발생한 라인이나 파일 하나만 보고 해결책을 도출함.
-- **해결:** 당신의 거대한 Context Window를 활용하세요.
-  - `grep`이나 `glob`으로 연관된 파일들을 찾고, `read_file`로 적극적으로 읽어들이세요.
-  - 단순히 문법적 오류를 고치는 것을 넘어, **시스템 전체의 아키텍처와 컨벤션에 부합하는지** 주변 코드를 통해 확인하세요.
-  - "추측"을 "사실"로 검증하기 전까지는 코드를 작성하지 마세요.
-
-</model-specific-rules>
-
 </section>
