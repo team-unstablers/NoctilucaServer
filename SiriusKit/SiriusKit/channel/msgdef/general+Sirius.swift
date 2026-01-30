@@ -12,6 +12,7 @@ extension MessageOpcode {
     static let serverNotice: MessageOpcode = MessageOpcode(rawValue: 0x0001)
     static let clientHello: MessageOpcode = MessageOpcode(rawValue: 0x0002)
     static let serverHello: MessageOpcode = MessageOpcode(rawValue: 0x0003)
+    static let goodbye: MessageOpcode = MessageOpcode(rawValue: 0x0004)
 }
 
 public struct NoticeSeverity: SiriusEnum {
@@ -27,6 +28,35 @@ public struct NoticeSeverity: SiriusEnum {
     public static let warning = Self.fromProtobufEnum(.warning)
     public static let error = Self.fromProtobufEnum(.error)
     public static let fatal = Self.fromProtobufEnum(.fatal)
+}
+
+public struct ClosureCode: RawRepresentable, Equatable {
+    public let rawValue: UInt32
+    
+    public init(rawValue: UInt32) {
+        self.rawValue = rawValue
+    }
+    
+    /// 정상적으로 세션이 종료되었습니다.
+    public static let successful = Self(rawValue: 0)
+    
+    /// 프로토콜 오류로 인해 세션이 종료되었습니다.
+    /// 부정한 메시지를 수신하였거나, 프로토콜 규격을 준수하지 않은 경우에 발생합니다.
+    /// 필요한 경우, message 필드를 통해 추가적인 정보를 제공할 수 있습니다.
+    public static let protocolError = Self(rawValue: 1)
+    
+    
+    /// 서버 내부 오류로 인해 세션이 종료되었습니다.
+    public static let internalServerError = Self(rawValue: 2)
+
+    /// 인증에 실패하여 세션이 종료되었습니다.
+    public static let authenticationFailed = Self(rawValue: 3)
+    
+    /// 세션 시트를 마련하는데 실패하였습니다.
+    /// 보통 이 오류는 서버의 자원 부족 / 최대 연결 수 초과 등의 이유로 발생합니다.
+    public static let sessionAllocationFailed = Self(rawValue: 4)
+    
+    // 기타 확장 가능한 종료 코드들은 extension으로 정의할 수 있습니다.
 }
 
 
@@ -129,5 +159,34 @@ public struct ServerHello: SiriusMessage {
 
         return message
     }
+}
+
+public struct Goodbye: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_Goodbye
+    
+    public let code: ClosureCode
+    public let message: String?
+    
+    public init(code: ClosureCode, message: String?) {
+        self.code = code
+        self.message = message
+    }
+    
+    init(from protobufMessage: ProtobufMessage) throws {
+        self.code = .init(rawValue: protobufMessage.code)
+        self.message = protobufMessage.hasMessage ? protobufMessage.message : nil
+    }
+    
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+        
+        message.code = self.code.rawValue
+        if let val = self.message {
+            message.message = val
+        }
+        
+        return message
+    }
+    
 }
 

@@ -151,6 +151,32 @@ struct Sirius_Msgdef_ServerHello: Sendable {
   fileprivate var _motd: String? = nil
 }
 
+//// Graceful한 접속 종료 메시지.
+//// 서버에서도, 클라이언트에서도 전송할 수 있습니다.
+//// opcode = 0x0004
+struct Sirius_Msgdef_Goodbye: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var code: UInt32 = 0
+
+  var message: String {
+    get {return _message ?? String()}
+    set {_message = newValue}
+  }
+  /// Returns true if `message` has been explicitly set.
+  var hasMessage: Bool {return self._message != nil}
+  /// Clears the value of `message`. Subsequent reads from it will return its default value.
+  mutating func clearMessage() {self._message = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _message: String? = nil
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "sirius.msgdef"
@@ -313,6 +339,45 @@ extension Sirius_Msgdef_ServerHello: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if lhs.supportedFeatures != rhs.supportedFeatures {return false}
     if lhs._serverName != rhs._serverName {return false}
     if lhs._motd != rhs._motd {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_Goodbye: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".Goodbye"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}message\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.code) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self._message) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.code != 0 {
+      try visitor.visitSingularFixed32Field(value: self.code, fieldNumber: 1)
+    }
+    try { if let v = self._message {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 2)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_Goodbye, rhs: Sirius_Msgdef_Goodbye) -> Bool {
+    if lhs.code != rhs.code {return false}
+    if lhs._message != rhs._message {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
