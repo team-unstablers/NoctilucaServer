@@ -74,11 +74,12 @@ enum NoctilucaClientPhase {
 enum NoctilucaClientUIEvent: Sendable {
     case receivedAuthChallenge(AuthChallenge)
     case receivedAuthResponse(AuthResponse)
+    case receivedGoodbye(ClosureCode, String?)
     case phaseChanged(NoctilucaClientPhase)
     case errorOccurred(NoctilucaClientError)
-    
+
     case pingRTTUpdated(TimeInterval)
-    
+
     case FIXME_projectionStarted(ProjectionSession)
 
     case inputWarningUpdated(InputWarning?)
@@ -166,7 +167,7 @@ class NoctilucaClient: ObservableObject {
             logger.error("mainChannel is not initialized.")
             return
         }
-        
+
         do {
             for await event in mainChannel.events {
                 switch event {
@@ -176,7 +177,15 @@ class NoctilucaClient: ObservableObject {
                     try await self.handleAuthChallenge(consume message)
                 case .receivedAuthResponse(let message):
                     try await self.handleAuthResponse(consume message)
-                    
+                case .receivedGoodbye(let message):
+                    logger.info("Received Goodbye from server: code=\(message.code.rawValue), message=\(message.message ?? "(none)")")
+                    await MainActor.run {
+                        self.uiEvents.send(.receivedGoodbye(message.code, message.message))
+                    }
+                    // Goodbye 수신 시에는 재전송 없이 정리만 수행
+                    await self.close()
+                    return
+
                 case .receivedPong:
                     self.pongHandler?()
                 default:
@@ -190,7 +199,7 @@ class NoctilucaClient: ObservableObject {
             // 예상치 못한 오류
             await self.panic("Error in mainChannelEventLoop: \(error.localizedDescription)")
         }
-        
+
         // reached end of main channel event loop
         // TODO: raise error event instead (or retry?)
         await self.close()
@@ -266,15 +275,30 @@ class NoctilucaClient: ObservableObject {
             // 간이 lock 역할을 한다
             return
         }
-        
+
         try? self.shiftPhase(to: .panic)
-        
+
         logger.fatal("panic(): \(reason)")
         logger.fatal("panic(): dropping the client session \(self.id)")
-        
+
         await self.close()
     }
-    
+
+    /// Goodbye 메시지를 전송하고 연결을 종료한다.
+    func closeWithGoodbye(code: ClosureCode = .successful, message: String? = nil) async {
+        guard self.phase != .closed else { return }
+
+        do {
+            try await self.mainChannel?.sendGoodbye(Goodbye(code: code, message: message))
+            // 상대방이 수신할 시간을 주기 위해 약간의 지연을 둔다
+            try? await Task.sleep(for: .milliseconds(100))
+        } catch {
+            logger.warning("Failed to send Goodbye: \(error)")
+        }
+
+        await self.close()
+    }
+
     func close() async {
         guard self.phase != .closed else {
             return
