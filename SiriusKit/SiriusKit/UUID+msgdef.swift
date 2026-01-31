@@ -9,7 +9,7 @@ import Foundation
 
 extension UUID {
     /// 이거 졸라느릴거같은데 ㅋㅋㅋ;
-    init(msgdef: Sirius_Msgdef_UUID) {
+    init(msgdef: Sirius_Msgdef_SRUUID) {
         var uuidBytes = [UInt8](repeating: 0, count: 16)
         let data = msgdef.value
         data.copyBytes(to: &uuidBytes, count: min(data.count, uuidBytes.count))
@@ -21,8 +21,8 @@ extension UUID {
         ))
     }
     
-    func asMsgDef() -> Sirius_Msgdef_UUID {
-        var container = Sirius_Msgdef_UUID()
+    func asMsgDef() -> Sirius_Msgdef_SRUUID {
+        var container = Sirius_Msgdef_SRUUID()
         
         withUnsafeBytes(of: self.uuid) { bytes in
             container.value = Data(bytes: bytes.baseAddress!, count: bytes.count)

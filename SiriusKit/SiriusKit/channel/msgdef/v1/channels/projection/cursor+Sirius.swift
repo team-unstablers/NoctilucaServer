@@ -128,37 +128,111 @@ public struct UnsubscribeCursorEventsResponse: SiriusMessage {
 }
 
 
-public struct CursorEvent: SiriusMessage {
-    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_CursorEvent
-    
+public struct CursorMoveEvent: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent
+
+    public let displayID: UInt32
+    public let position: SRPoint
+
+    public init(displayID: UInt32, position: SRPoint) {
+        self.displayID = displayID
+        self.position = position
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.displayID = protobuf.displayID
+        self.position = SRPoint(from: protobuf.position)
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.displayID = displayID
+        message.position = position.toProtobufMessage()
+
+        return message
+    }
+}
+
+public struct CursorImageEvent: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent
+
     public let cursorType: UInt64
     public let mimeType: String
     public let size: SRSize
-    public let imageData: Data
-    
-    public init(cursorType: UInt64, mimeType: String, size: SRSize, imageData: Data) {
+    public let hotspot: SRPoint
+    public let imageData: Data?
+
+    public init(cursorType: UInt64, mimeType: String, size: SRSize, hotspot: SRPoint, imageData: Data?) {
         self.cursorType = cursorType
         self.mimeType = mimeType
         self.size = size
+        self.hotspot = hotspot
         self.imageData = imageData
     }
-    
-    init(from protobufMessage: ProtobufMessage) throws {
-        self.cursorType = protobufMessage.cursorType
-        self.mimeType = protobufMessage.mimeType
-        self.size = SRSize(from: protobufMessage.size)
-        self.imageData = protobufMessage.imageData
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.cursorType = protobuf.cursorType
+        self.mimeType = protobuf.mimeType
+        self.size = SRSize(from: protobuf.size)
+        self.hotspot = SRPoint(from: protobuf.hotspot)
+        self.imageData = protobuf.imageData
     }
-    
+
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
+
+        message.cursorType = cursorType
+        message.mimeType = mimeType
+        message.size = size.toProtobufMessage()
+        message.hotspot = hotspot.toProtobufMessage()
         
-        message.cursorType = self.cursorType
-        message.mimeType = self.mimeType
-        message.size = self.size.toProtobufMessage()
-        message.imageData = self.imageData
+        if let imageData = imageData {
+            message.imageData = imageData
+        }
         
-        
+        return message
+    }
+}
+
+public struct CursorEvent: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_CursorEvent
+
+    public enum Event {
+        case moveEvent(CursorMoveEvent)
+        case imageEvent(CursorImageEvent)
+        case none
+    }
+
+    public let event: Event
+
+    public init(event: Event) {
+        self.event = event
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        switch protobuf.event {
+        case .moveEvent(let v):
+            self.event = .moveEvent(try CursorMoveEvent(from: v))
+        case .imageEvent(let v):
+            self.event = .imageEvent(try CursorImageEvent(from: v))
+        case .none:
+            self.event = .none
+        }
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        switch self.event {
+        case .moveEvent(let val):
+            message.event = .moveEvent(val.toProtobufMessage())
+        case .imageEvent(let val):
+            message.event = .imageEvent(val.toProtobufMessage())
+        case .none:
+            break
+        }
+
         return message
     }
 }

@@ -21,6 +21,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+/// @opcode: 0x80A1
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -28,7 +29,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsRequest: Sendab
 
   var requestID: UInt64 = 0
 
-  /// reserved
+  /// @optionset: SubscribeCursorEventsFlags
   var flags: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -36,6 +37,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsRequest: Sendab
   init() {}
 }
 
+/// @opcode: 0x80A2
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -44,8 +46,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsResponse: Senda
   var requestID: UInt64 = 0
 
   //// 구독 식별자.
-  var subscriptionID: Sirius_Msgdef_UUID {
-    get {return _subscriptionID ?? Sirius_Msgdef_UUID()}
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
   }
   /// Returns true if `subscriptionID` has been explicitly set.
@@ -57,9 +59,10 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsResponse: Senda
 
   init() {}
 
-  fileprivate var _subscriptionID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
+/// @opcode: 0x80A3
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -68,8 +71,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsRequest: Send
   var requestID: UInt64 = 0
 
   //// 구독 식별자.
-  var subscriptionID: Sirius_Msgdef_UUID {
-    get {return _subscriptionID ?? Sirius_Msgdef_UUID()}
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
   }
   /// Returns true if `subscriptionID` has been explicitly set.
@@ -81,9 +84,10 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsRequest: Send
 
   init() {}
 
-  fileprivate var _subscriptionID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
+/// @opcode: 0x80A4
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -92,8 +96,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsResponse: Sen
   var requestID: UInt64 = 0
 
   //// 구독 식별자.
-  var subscriptionID: Sirius_Msgdef_UUID {
-    get {return _subscriptionID ?? Sirius_Msgdef_UUID()}
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
   }
   /// Returns true if `subscriptionID` has been explicitly set.
@@ -108,18 +112,50 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsResponse: Sen
 
   init() {}
 
-  fileprivate var _subscriptionID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
-struct Sirius_Msgdef_V1_Channels_Projection_CursorEvent: Sendable {
+struct Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// 커서가 현재 위치한 디스플레이 ID.
+  //// 특수 값:
+  ////   - `-1`은 다른 메시지에서 '기본 디스플레이'를 의미했지만, 여기서는 사용하지 않습니다 (assertion).
+  ////   - `-2`는 전체 디스플레이 영역 (그래픽 세션의 전체 뷰포트)를 의미합니다.
+  var displayID: UInt32 = 0
+
+  //// 커서의 새로운 위치 (픽셀 단위).
+  var position: Sirius_Msgdef_V1_Channels_Projection_SRPoint {
+    get {return _position ?? Sirius_Msgdef_V1_Channels_Projection_SRPoint()}
+    set {_position = newValue}
+  }
+  /// Returns true if `position` has been explicitly set.
+  var hasPosition: Bool {return self._position != nil}
+  /// Clears the value of `position`. Subsequent reads from it will return its default value.
+  mutating func clearPosition() {self._position = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _position: Sirius_Msgdef_V1_Channels_Projection_SRPoint? = nil
+}
+
+struct Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// 커서 유형 식별자.
+  //// Note: 이 값은 서버 구현체 / OS마다 다를 수 있습니다. 커서 이미지 캐싱용으로만 사용하시기 바랍니다.
   var cursorType: UInt64 = 0
 
+  //// 커서 이미지의 MIME 타입 (예: "image/png")
   var mimeType: String = String()
 
+  //// 커서 이미지의 크기
   var size: Sirius_Msgdef_V1_Channels_Projection_SRSize {
     get {return _size ?? Sirius_Msgdef_V1_Channels_Projection_SRSize()}
     set {_size = newValue}
@@ -129,13 +165,69 @@ struct Sirius_Msgdef_V1_Channels_Projection_CursorEvent: Sendable {
   /// Clears the value of `size`. Subsequent reads from it will return its default value.
   mutating func clearSize() {self._size = nil}
 
-  var imageData: Data = Data()
+  //// 커서 이미지 내에서 클릭 지점을 나타내는 좌표 (픽셀 단위, 이미지 좌상단 기준)
+  var hotspot: Sirius_Msgdef_V1_Channels_Projection_SRPoint {
+    get {return _hotspot ?? Sirius_Msgdef_V1_Channels_Projection_SRPoint()}
+    set {_hotspot = newValue}
+  }
+  /// Returns true if `hotspot` has been explicitly set.
+  var hasHotspot: Bool {return self._hotspot != nil}
+  /// Clears the value of `hotspot`. Subsequent reads from it will return its default value.
+  mutating func clearHotspot() {self._hotspot = nil}
+
+  //// 커서 이미지 데이터 (바이너리)
+  //// Note: 커서 이미지는 `disableImageCache` 플래그를 설정하지 않는 한, 처음 한 번만 전송됩니다.
+  var imageData: Data {
+    get {return _imageData ?? Data()}
+    set {_imageData = newValue}
+  }
+  /// Returns true if `imageData` has been explicitly set.
+  var hasImageData: Bool {return self._imageData != nil}
+  /// Clears the value of `imageData`. Subsequent reads from it will return its default value.
+  mutating func clearImageData() {self._imageData = nil}
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 
   fileprivate var _size: Sirius_Msgdef_V1_Channels_Projection_SRSize? = nil
+  fileprivate var _hotspot: Sirius_Msgdef_V1_Channels_Projection_SRPoint? = nil
+  fileprivate var _imageData: Data? = nil
+}
+
+/// @opcode: 0x80A5
+struct Sirius_Msgdef_V1_Channels_Projection_CursorEvent: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var event: Sirius_Msgdef_V1_Channels_Projection_CursorEvent.OneOf_Event? = nil
+
+  var moveEvent: Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent {
+    get {
+      if case .moveEvent(let v)? = event {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent()
+    }
+    set {event = .moveEvent(newValue)}
+  }
+
+  var imageEvent: Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent {
+    get {
+      if case .imageEvent(let v)? = event {return v}
+      return Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent()
+    }
+    set {event = .imageEvent(newValue)}
+  }
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  enum OneOf_Event: Equatable, Sendable {
+    case moveEvent(Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent)
+    case imageEvent(Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent)
+
+  }
+
+  init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -152,8 +244,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsRequest: Swi
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
-      case 16: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -161,10 +253,10 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsRequest: Swi
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 16)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -187,7 +279,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsResponse: Sw
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
       default: break
       }
@@ -200,7 +292,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsResponse: Sw
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     try { if let v = self._subscriptionID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -226,7 +318,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsRequest: S
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
       default: break
       }
@@ -239,7 +331,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsRequest: S
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     try { if let v = self._subscriptionID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -265,7 +357,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsResponse: 
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
       case 3: try { try decoder.decodeSingularBoolField(value: &self.isSuccess) }()
       default: break
@@ -279,7 +371,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsResponse: 
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     try { if let v = self._subscriptionID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -299,9 +391,9 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeCursorEventsResponse: 
   }
 }
 
-extension Sirius_Msgdef_V1_Channels_Projection_CursorEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".CursorEvent"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}cursorType\0\u{1}mimeType\0\u{1}size\0\u{1}imageData\0")
+extension Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".CursorMoveEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayID\0\u{1}position\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -309,10 +401,50 @@ extension Sirius_Msgdef_V1_Channels_Projection_CursorEvent: SwiftProtobuf.Messag
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.cursorType) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.displayID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._position) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.displayID != 0 {
+      try visitor.visitSingularUInt32Field(value: self.displayID, fieldNumber: 1)
+    }
+    try { if let v = self._position {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent) -> Bool {
+    if lhs.displayID != rhs.displayID {return false}
+    if lhs._position != rhs._position {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".CursorImageEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}cursorType\0\u{1}mimeType\0\u{1}size\0\u{1}hotspot\0\u{1}imageData\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.cursorType) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.mimeType) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._size) }()
-      case 4: try { try decoder.decodeSingularBytesField(value: &self.imageData) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._hotspot) }()
+      case 5: try { try decoder.decodeSingularBytesField(value: &self._imageData) }()
       default: break
       }
     }
@@ -324,7 +456,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_CursorEvent: SwiftProtobuf.Messag
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.cursorType != 0 {
-      try visitor.visitSingularFixed64Field(value: self.cursorType, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.cursorType, fieldNumber: 1)
     }
     if !self.mimeType.isEmpty {
       try visitor.visitSingularStringField(value: self.mimeType, fieldNumber: 2)
@@ -332,17 +464,88 @@ extension Sirius_Msgdef_V1_Channels_Projection_CursorEvent: SwiftProtobuf.Messag
     try { if let v = self._size {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     } }()
-    if !self.imageData.isEmpty {
-      try visitor.visitSingularBytesField(value: self.imageData, fieldNumber: 4)
+    try { if let v = self._hotspot {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
+    try { if let v = self._imageData {
+      try visitor.visitSingularBytesField(value: v, fieldNumber: 5)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent) -> Bool {
+    if lhs.cursorType != rhs.cursorType {return false}
+    if lhs.mimeType != rhs.mimeType {return false}
+    if lhs._size != rhs._size {return false}
+    if lhs._hotspot != rhs._hotspot {return false}
+    if lhs._imageData != rhs._imageData {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_CursorEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".CursorEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}moveEvent\0\u{1}imageEvent\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_CursorMoveEvent?
+        var hadOneofValue = false
+        if let current = self.event {
+          hadOneofValue = true
+          if case .moveEvent(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.event = .moveEvent(v)
+        }
+      }()
+      case 2: try {
+        var v: Sirius_Msgdef_V1_Channels_Projection_CursorImageEvent?
+        var hadOneofValue = false
+        if let current = self.event {
+          hadOneofValue = true
+          if case .imageEvent(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.event = .imageEvent(v)
+        }
+      }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    switch self.event {
+    case .moveEvent?: try {
+      guard case .moveEvent(let v)? = self.event else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    }()
+    case .imageEvent?: try {
+      guard case .imageEvent(let v)? = self.event else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    }()
+    case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_CursorEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_CursorEvent) -> Bool {
-    if lhs.cursorType != rhs.cursorType {return false}
-    if lhs.mimeType != rhs.mimeType {return false}
-    if lhs._size != rhs._size {return false}
-    if lhs.imageData != rhs.imageData {return false}
+    if lhs.event != rhs.event {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -20,129 +20,15 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-enum Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEventType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case mouseMoveAbsolute // = 0
-  case mouseMoveRelative // = 1
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .mouseMoveAbsolute
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .mouseMoveAbsolute
-    case 1: self = .mouseMoveRelative
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .mouseMoveAbsolute: return 0
-    case .mouseMoveRelative: return 1
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEventType] = [
-    .mouseMoveAbsolute,
-    .mouseMoveRelative,
-  ]
-
-}
-
-enum Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEventType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case mouseButtonDown // = 0
-  case mouseButtonUp // = 1
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .mouseButtonDown
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .mouseButtonDown
-    case 1: self = .mouseButtonUp
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .mouseButtonDown: return 0
-    case .mouseButtonUp: return 1
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEventType] = [
-    .mouseButtonDown,
-    .mouseButtonUp,
-  ]
-
-}
-
-enum Sirius_Msgdef_V1_Channels_Hidio_MouseButtonType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case mouseButtonLeft // = 0
-  case mouseButtonRight // = 1
-  case mouseButtonMiddle // = 2
-  case mouseButtonBack // = 3
-  case mouseButtonForward // = 4
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .mouseButtonLeft
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .mouseButtonLeft
-    case 1: self = .mouseButtonRight
-    case 2: self = .mouseButtonMiddle
-    case 3: self = .mouseButtonBack
-    case 4: self = .mouseButtonForward
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .mouseButtonLeft: return 0
-    case .mouseButtonRight: return 1
-    case .mouseButtonMiddle: return 2
-    case .mouseButtonBack: return 3
-    case .mouseButtonForward: return 4
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Hidio_MouseButtonType] = [
-    .mouseButtonLeft,
-    .mouseButtonRight,
-    .mouseButtonMiddle,
-    .mouseButtonBack,
-    .mouseButtonForward,
-  ]
-
-}
-
 struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  //// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
   var x: Int32 = 0
 
-  /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  //// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
   var y: Int32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -155,10 +41,10 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPercent: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  //// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
   var x: Float = 0
 
-  /// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  //// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
   var y: Float = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -173,9 +59,9 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
 
   var scope: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope.OneOf_Scope? = nil
 
-  /// 한 디스플레이의 전체 영역을 기준으로 합니다.
-  /// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-  /// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
+  //// 한 디스플레이의 전체 영역을 기준으로 합니다.
+  //// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+  //// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
   var displayID: Int32 {
     get {
       if case .displayID(let v)? = scope {return v}
@@ -184,7 +70,7 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
     set {scope = .displayID(newValue)}
   }
 
-  /// 특정 윈도우 ID(핸들)을 기준으로 합니다.
+  //// 특정 윈도우 ID(핸들)을 기준으로 합니다.
   var windowID: Int64 {
     get {
       if case .windowID(let v)? = scope {return v}
@@ -196,11 +82,11 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   enum OneOf_Scope: Equatable, Sendable {
-    /// 한 디스플레이의 전체 영역을 기준으로 합니다.
-    /// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-    /// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
+    //// 한 디스플레이의 전체 영역을 기준으로 합니다.
+    //// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+    //// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
     case displayID(Int32)
-    /// 특정 윈도우 ID(핸들)을 기준으로 합니다.
+    //// 특정 윈도우 ID(핸들)을 기준으로 합니다.
     case windowID(Int64)
 
   }
@@ -208,17 +94,14 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
   init() {}
 }
 
-///
-///## MOUSE MOVE EVENT
-///- MouseMoveEvent 메시지는 마우스 이동 이벤트를 나타냅니다.
-///- moveType 필드는 절대 좌표 이동과 상대 좌표 이동을 구분합니다.
-///</code>
+//// 마우스 이동 이벤트를 나타내는 메시지
 struct Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var moveType: Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEventType = .mouseMoveAbsolute
+  /// @constset: MouseMoveEventType
+  var moveType: UInt32 = 0
 
   var scope: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope {
     get {return _scope ?? Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope()}
@@ -260,27 +143,33 @@ struct Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: Sendable {
   fileprivate var _scope: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope? = nil
 }
 
+//// 마우스 버튼 입력 이벤트를 나타내는 메시지
 struct Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var eventType: Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEventType = .mouseButtonDown
+  /// @constset: MouseButtonEventType
+  var eventType: UInt32 = 0
 
-  var button: Sirius_Msgdef_V1_Channels_Hidio_MouseButtonType = .mouseButtonLeft
+  /// @constset: MouseButtonType
+  var button: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 }
 
+//// 마우스 휠 이벤트를 나타내는 메시지
 struct Sirius_Msgdef_V1_Channels_Hidio_MouseWheelEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// 수평 휠 델타
   var deltaX: Float = 0
 
+  //// 수직 휠 델타
   var deltaY: Float = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -292,18 +181,6 @@ struct Sirius_Msgdef_V1_Channels_Hidio_MouseWheelEvent: Sendable {
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.hidio"
 
-extension Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEventType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MOUSE_MOVE_ABSOLUTE\0\u{1}MOUSE_MOVE_RELATIVE\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEventType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MOUSE_BUTTON_DOWN\0\u{1}MOUSE_BUTTON_UP\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Hidio_MouseButtonType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MOUSE_BUTTON_LEFT\0\u{1}MOUSE_BUTTON_RIGHT\0\u{1}MOUSE_BUTTON_MIDDLE\0\u{1}MOUSE_BUTTON_BACK\0\u{1}MOUSE_BUTTON_FORWARD\0")
-}
-
 extension Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".CursorPositionPixel"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}x\0\u{1}y\0")
@@ -314,8 +191,8 @@ extension Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel: SwiftProtobuf.Mes
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularSFixed32Field(value: &self.x) }()
-      case 2: try { try decoder.decodeSingularSFixed32Field(value: &self.y) }()
+      case 1: try { try decoder.decodeSingularSInt32Field(value: &self.x) }()
+      case 2: try { try decoder.decodeSingularSInt32Field(value: &self.y) }()
       default: break
       }
     }
@@ -323,10 +200,10 @@ extension Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel: SwiftProtobuf.Mes
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.x != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.x, fieldNumber: 1)
+      try visitor.visitSingularSInt32Field(value: self.x, fieldNumber: 1)
     }
     if self.y != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.y, fieldNumber: 2)
+      try visitor.visitSingularSInt32Field(value: self.y, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -386,7 +263,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: SwiftProtobuf.Mes
       switch fieldNumber {
       case 1: try {
         var v: Int32?
-        try decoder.decodeSingularSFixed32Field(value: &v)
+        try decoder.decodeSingularSInt32Field(value: &v)
         if let v = v {
           if self.scope != nil {try decoder.handleConflictingOneOf()}
           self.scope = .displayID(v)
@@ -394,7 +271,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: SwiftProtobuf.Mes
       }()
       case 2: try {
         var v: Int64?
-        try decoder.decodeSingularSFixed64Field(value: &v)
+        try decoder.decodeSingularSInt64Field(value: &v)
         if let v = v {
           if self.scope != nil {try decoder.handleConflictingOneOf()}
           self.scope = .windowID(v)
@@ -413,11 +290,11 @@ extension Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: SwiftProtobuf.Mes
     switch self.scope {
     case .displayID?: try {
       guard case .displayID(let v)? = self.scope else { preconditionFailure() }
-      try visitor.visitSingularSFixed32Field(value: v, fieldNumber: 1)
+      try visitor.visitSingularSInt32Field(value: v, fieldNumber: 1)
     }()
     case .windowID?: try {
       guard case .windowID(let v)? = self.scope else { preconditionFailure() }
-      try visitor.visitSingularSFixed64Field(value: v, fieldNumber: 2)
+      try visitor.visitSingularSInt64Field(value: v, fieldNumber: 2)
     }()
     case nil: break
     }
@@ -441,7 +318,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: SwiftProtobuf.Message,
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularEnumField(value: &self.moveType) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.moveType) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._scope) }()
       case 3: try {
         var v: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel?
@@ -479,8 +356,8 @@ extension Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: SwiftProtobuf.Message,
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
-    if self.moveType != .mouseMoveAbsolute {
-      try visitor.visitSingularEnumField(value: self.moveType, fieldNumber: 1)
+    if self.moveType != 0 {
+      try visitor.visitSingularUInt32Field(value: self.moveType, fieldNumber: 1)
     }
     try { if let v = self._scope {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -518,19 +395,19 @@ extension Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent: SwiftProtobuf.Messag
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularEnumField(value: &self.eventType) }()
-      case 2: try { try decoder.decodeSingularEnumField(value: &self.button) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.eventType) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.button) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.eventType != .mouseButtonDown {
-      try visitor.visitSingularEnumField(value: self.eventType, fieldNumber: 1)
+    if self.eventType != 0 {
+      try visitor.visitSingularUInt32Field(value: self.eventType, fieldNumber: 1)
     }
-    if self.button != .mouseButtonLeft {
-      try visitor.visitSingularEnumField(value: self.button, fieldNumber: 2)
+    if self.button != 0 {
+      try visitor.visitSingularUInt32Field(value: self.button, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }

@@ -20,14 +20,14 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// opcode = 0x0021
+/// @opcode: 0x0021
 struct Sirius_Msgdef_V1_ChannelStartRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var featureID: Sirius_Msgdef_UUID {
-    get {return _featureID ?? Sirius_Msgdef_UUID()}
+  var featureID: Sirius_Msgdef_SRUUID {
+    get {return _featureID ?? Sirius_Msgdef_SRUUID()}
     set {_featureID = newValue}
   }
   /// Returns true if `featureID` has been explicitly set.
@@ -35,8 +35,8 @@ struct Sirius_Msgdef_V1_ChannelStartRequest: Sendable {
   /// Clears the value of `featureID`. Subsequent reads from it will return its default value.
   mutating func clearFeatureID() {self._featureID = nil}
 
-  var channelID: Sirius_Msgdef_UUID {
-    get {return _channelID ?? Sirius_Msgdef_UUID()}
+  var channelID: Sirius_Msgdef_SRUUID {
+    get {return _channelID ?? Sirius_Msgdef_SRUUID()}
     set {_channelID = newValue}
   }
   /// Returns true if `channelID` has been explicitly set.
@@ -50,11 +50,11 @@ struct Sirius_Msgdef_V1_ChannelStartRequest: Sendable {
 
   init() {}
 
-  fileprivate var _featureID: Sirius_Msgdef_UUID? = nil
-  fileprivate var _channelID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _featureID: Sirius_Msgdef_SRUUID? = nil
+  fileprivate var _channelID: Sirius_Msgdef_SRUUID? = nil
 }
 
-//// opcode = 0x0022
+/// @opcode: 0x0022
 struct Sirius_Msgdef_V1_ChannelStartResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -68,7 +68,7 @@ struct Sirius_Msgdef_V1_ChannelStartResponse: Sendable {
   init() {}
 }
 
-//// opcode = 0x0023
+/// @opcode: 0x0023
 struct Sirius_Msgdef_V1_ChannelCloseRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for

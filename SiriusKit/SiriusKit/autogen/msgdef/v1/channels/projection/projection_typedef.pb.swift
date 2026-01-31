@@ -52,10 +52,6 @@ struct Sirius_Msgdef_V1_Channels_Projection_SRPoint: Sendable {
   init() {}
 }
 
-///
-///## SRSize
-///- SRSize 메시지는 2D 공간에서의 크기를 정의하는 데 사용됩니다.
-///- x 필드는 너비를 나타내고, y 필드는 높이를 나타냅니다
 struct Sirius_Msgdef_V1_Channels_Projection_SRSize: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for

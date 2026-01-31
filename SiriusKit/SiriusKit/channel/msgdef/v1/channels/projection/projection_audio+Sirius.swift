@@ -19,52 +19,6 @@ public extension MessageOpcode {
     static let audioSessionEndedEvent: MessageOpcode = MessageOpcode(rawValue: 0x80C6)
 }
 
-// MARK: - Enums
-
-public struct AudioSessionFailureReason: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_AudioSessionFailureReason
-
-    public let rawValue: Int
-
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-
-    public static let unknown = Self.fromProtobufEnum(.audioSessionFailureUnknown)
-    public static let sourceNotFound = Self.fromProtobufEnum(.audioSessionFailureSourceNotFound)
-    public static let codecNotSupported = Self.fromProtobufEnum(.audioSessionFailureCodecNotSupported)
-    public static let permissionDenied = Self.fromProtobufEnum(.audioSessionFailurePermissionDenied)
-}
-
-public struct AudioSessionChangeReason: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_AudioSessionChangeReason
-
-    public let rawValue: Int
-
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-
-    public static let unknown = Self.fromProtobufEnum(.audioSessionChangeUnknown)
-    public static let sourceChanged = Self.fromProtobufEnum(.audioSessionChangeSourceChanged)
-    public static let codecRenegotiated = Self.fromProtobufEnum(.audioSessionChangeCodecRenegotiated)
-}
-
-public struct AudioSessionEndReason: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_AudioSessionEndReason
-
-    public let rawValue: Int
-
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-
-    public static let unknown = Self.fromProtobufEnum(.audioSessionEndUnknown)
-    public static let clientRequested = Self.fromProtobufEnum(.audioSessionEndClientRequested)
-    public static let sourceUnavailable = Self.fromProtobufEnum(.audioSessionEndSourceUnavailable)
-    public static let error = Self.fromProtobufEnum(.audioSessionEndError)
-}
-
 // MARK: - AudioCodec
 
 public struct AudioCodec: SiriusMessage {
@@ -315,7 +269,7 @@ public struct AudioSessionCreationFailedEvent: SiriusMessage {
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.identifier = UUID(msgdef: protobufMessage.identifier)
-        self.reason = .fromProtobufEnum(protobufMessage.reason)
+        self.reason = .init(rawValue: protobufMessage.reason)
         self.message = protobufMessage.hasMessage ? protobufMessage.message : nil
     }
 
@@ -323,7 +277,7 @@ public struct AudioSessionCreationFailedEvent: SiriusMessage {
         var message = ProtobufMessage()
 
         message.identifier = identifier.asMsgDef()
-        message.reason = reason.toProtobufEnum()
+        message.reason = reason.rawValue
         if let msg = self.message {
             message.message = msg
         }
@@ -349,7 +303,7 @@ public struct AudioSessionChangedEvent: SiriusMessage {
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.identifier = UUID(msgdef: protobufMessage.identifier)
-        self.reason = .fromProtobufEnum(protobufMessage.reason)
+        self.reason = .init(rawValue: protobufMessage.reason)
         self.source = protobufMessage.hasSource ? try AudioSource(from: protobufMessage.source) : nil
         self.codec = protobufMessage.hasCodec ? try AudioCodec(from: protobufMessage.codec) : nil
     }
@@ -358,7 +312,7 @@ public struct AudioSessionChangedEvent: SiriusMessage {
         var message = ProtobufMessage()
 
         message.identifier = identifier.asMsgDef()
-        message.reason = reason.toProtobufEnum()
+        message.reason = reason.rawValue
         if let source = source {
             message.source = source.toProtobufMessage()
         }
@@ -385,7 +339,7 @@ public struct AudioSessionEndedEvent: SiriusMessage {
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.identifier = UUID(msgdef: protobufMessage.identifier)
-        self.reason = .fromProtobufEnum(protobufMessage.reason)
+        self.reason = .init(rawValue: protobufMessage.reason)
         self.message = protobufMessage.hasMessage ? protobufMessage.message : nil
     }
 
@@ -393,7 +347,7 @@ public struct AudioSessionEndedEvent: SiriusMessage {
         var message = ProtobufMessage()
 
         message.identifier = identifier.asMsgDef()
-        message.reason = reason.toProtobufEnum()
+        message.reason = reason.rawValue
         if let msg = self.message {
             message.message = msg
         }

@@ -37,22 +37,6 @@ public struct WindowEventSubscriptionFlagSet: OptionSet, Hashable, Equatable {
     public static let minimalData = Self(rawValue: 1 << 1)
 }
 
-public struct WindowChangeEventType: OptionSet, Hashable, Equatable {
-    public let rawValue: UInt32
-    
-    public init(rawValue: UInt32) {
-        self.rawValue = rawValue
-    }
-    
-    public static let none = Self([])
-    public static let focused = Self(rawValue: 1 << 0)
-    public static let unfocused = Self(rawValue: 1 << 1)
-    public static let moved = Self(rawValue: 1 << 2)
-    public static let resized = Self(rawValue: 1 << 3)
-    public static let closed = Self(rawValue: 1 << 4)
-    public static let metadataChanged = Self(rawValue: 1 << 5)
-}
-
 public struct WindowListRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_WindowListRequest
     
@@ -105,7 +89,7 @@ public struct WindowInfo: SiriusMessage {
     public let iconHash: UInt64?
     public let thumbnail: Data?
     public let metadata: [String: String]
-    public let hints: WindowHints
+    public let hints: WindowHint
     public let flags: WindowInfoFlags
 
 
@@ -121,7 +105,7 @@ public struct WindowInfo: SiriusMessage {
         iconHash: UInt64?,
         thumbnail: Data?,
         metadata: [String: String],
-        hints: WindowHints,
+        hints: WindowHint,
         flags: WindowInfoFlags
     ) {
         self.windowID = windowID
@@ -146,12 +130,12 @@ public struct WindowInfo: SiriusMessage {
         self.applicationName = protobufMessage.applicationName
         self.applicationBundleID = protobufMessage.applicationBundleID
         self.windowClass = protobufMessage.windowClass
-        self.role = WindowRole(from: protobufMessage.role)
+        self.role = WindowRole(rawValue: protobufMessage.role)
         self.bounds = SRRect(from: protobufMessage.bounds)
         self.iconHash = protobufMessage.hasIconHash ? protobufMessage.iconHash : nil
         self.thumbnail = protobufMessage.hasThumbnail ? protobufMessage.thumbnail : nil
         self.metadata = protobufMessage.metadata
-        self.hints = WindowHints(rawValue: protobufMessage.hints)
+        self.hints = WindowHint(rawValue: protobufMessage.hints)
         self.flags = WindowInfoFlags(rawValue: protobufMessage.flags)
     }
 
@@ -164,7 +148,7 @@ public struct WindowInfo: SiriusMessage {
         message.applicationName = self.applicationName
         message.applicationBundleID = self.applicationBundleID
         message.windowClass = self.windowClass
-        message.role = self.role.toProtobufEnum()
+        message.role = self.role.rawValue
         message.bounds = self.bounds.toProtobufMessage()
         if let iconHash = self.iconHash {
             message.iconHash = iconHash
@@ -547,71 +531,6 @@ public struct WindowChangedEvent: SiriusMessage {
     }
 }
 
-private extension WindowFilterExpressionOperator {
-    func toProtobufEnum() -> Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpressionOperator {
-        switch self {
-        case .exact:
-            return .matchExact
-        case .contains:
-            return .matchContains
-        case .icontains:
-            return .matchIcontains
-        case .regex:
-            return .matchRegex
-        }
-    }
-    
-    static func fromProtobufEnum(
-        _ protobufEnum: Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpressionOperator
-    ) -> Self {
-        switch protobufEnum {
-        case .matchExact:
-            return .exact
-        case .matchContains:
-            return .contains
-        case .matchIcontains:
-            return .icontains
-        case .matchRegex:
-            return .regex
-        case .UNRECOGNIZED:
-            return .exact
-        }
-    }
-}
-
-private extension WindowFilter.Operator {
-    func toProtobufEnum() -> Sirius_Msgdef_V1_Channels_Projection_WindowFilterOperator {
-        switch self {
-        case .and:
-            return .and
-        case .or:
-            return .or
-        }
-    }
-    
-    static func fromProtobufEnum(
-        _ protobufEnum: Sirius_Msgdef_V1_Channels_Projection_WindowFilterOperator
-    ) -> Self {
-        switch protobufEnum {
-        case .and:
-            return .and
-        case .or:
-            return .or
-        case .UNRECOGNIZED:
-            return .and
-        }
-    }
-}
-
-private extension WindowRole {
-    init(from protobufEnum: Sirius_Msgdef_V1_Channels_Projection_WindowRole) {
-        self.init(rawValue: UInt32(protobufEnum.rawValue))
-    }
-    
-    func toProtobufEnum() -> Sirius_Msgdef_V1_Channels_Projection_WindowRole {
-        return Sirius_Msgdef_V1_Channels_Projection_WindowRole(rawValue: Int(self.rawValue)) ?? .unknown
-    }
-}
 
 private extension WindowFilterExpression {
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression) throws {
@@ -634,14 +553,14 @@ private extension WindowFilterExpression {
         }
         
         self.init(field)
-        self.operator = WindowFilterExpressionOperator.fromProtobufEnum(protobufMessage.operator)
+        self.operator = WindowFilterExpressionOperator(rawValue: protobufMessage.operator)
         self.invert = protobufMessage.invert
     }
     
     func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression {
         var message = Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression()
         
-        message.operator = self.operator.toProtobufEnum()
+        message.operator = self.operator.rawValue
         message.invert = self.invert
         switch self.field {
         case .windowID(let val):
@@ -668,7 +587,7 @@ private extension WindowFilter {
     }
     
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_WindowFilter) throws {
-        let op = WindowFilter.Operator.fromProtobufEnum(protobufMessage.operator)
+        let op = WindowFilterOperator(rawValue: protobufMessage.operator)
         if !protobufMessage.expressions.isEmpty {
             self.init(op, expressions: try protobufMessage.expressions.map { try WindowFilter(from: $0) })
         } else if protobufMessage.hasExpression {
@@ -681,7 +600,7 @@ private extension WindowFilter {
     func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Projection_WindowFilter {
         var message = Sirius_Msgdef_V1_Channels_Projection_WindowFilter()
         
-        message.operator = self.operator.toProtobufEnum()
+        message.operator = self.operator.rawValue
         if let expression = self.expression {
             message.expression = expression.toProtobufMessage()
         } else {

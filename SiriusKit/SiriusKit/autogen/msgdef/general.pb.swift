@@ -8,7 +8,6 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-import Foundation
 import SwiftProtobuf
 
 // If the compiler emits an error on this type, it is because this file
@@ -63,20 +62,7 @@ enum Sirius_Msgdef_NoticeSeverity: SwiftProtobuf.Enum, Swift.CaseIterable {
 
 }
 
-struct Sirius_Msgdef_UUID: Sendable {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  //// 16 bytes UUID value
-  var value: Data = Data()
-
-  var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  init() {}
-}
-
-//// opcode = 0x0001
+/// @opcode: 0x0001
 struct Sirius_Msgdef_ServerNotice: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -95,15 +81,16 @@ struct Sirius_Msgdef_ServerNotice: Sendable {
   init() {}
 }
 
-//// 클라이언트가 서버에 접속할 때 보내는 초기 핸드쉐이크 메시지
-//// opcode = 0x0002
+/// @opcode: 0x0002
 struct Sirius_Msgdef_ClientHello: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  /// @constset: SiriusProtocolVersion
   var protocolVersion: UInt32 = 0
 
+  /// TODO: optional로 설정해야 함
   var agentName: String = String()
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -112,16 +99,17 @@ struct Sirius_Msgdef_ClientHello: Sendable {
 }
 
 //// 서버가 클라이언트의 접속 요청에 응답할 때 보내는 메시지
-//// opcode = 0x0003
+/// @opcode: 0x0003
 struct Sirius_Msgdef_ServerHello: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  /// @constset: SiriusProtocolVersion
   var protocolVersion: UInt32 = 0
 
   //// 지원하는 기능 목록
-  var supportedFeatures: [Sirius_Msgdef_UUID] = []
+  var supportedFeatures: [Sirius_Msgdef_SRUUID] = []
 
   //// 서버 정책에 따라 생략될 수 있음
   var serverName: String {
@@ -153,12 +141,13 @@ struct Sirius_Msgdef_ServerHello: Sendable {
 
 //// Graceful한 접속 종료 메시지.
 //// 서버에서도, 클라이언트에서도 전송할 수 있습니다.
-//// opcode = 0x0004
+/// @opcode: 0x0004
 struct Sirius_Msgdef_Goodbye: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  /// @constset: ClosureCode 
   var code: UInt32 = 0
 
   var message: String {
@@ -185,36 +174,6 @@ extension Sirius_Msgdef_NoticeSeverity: SwiftProtobuf._ProtoNameProviding {
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0INFO\0\u{1}WARNING\0\u{1}ERROR\0\u{1}FATAL\0")
 }
 
-extension Sirius_Msgdef_UUID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".UUID"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}value\0")
-
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularBytesField(value: &self.value) }()
-      default: break
-      }
-    }
-  }
-
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.value.isEmpty {
-      try visitor.visitSingularBytesField(value: self.value, fieldNumber: 1)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  static func ==(lhs: Sirius_Msgdef_UUID, rhs: Sirius_Msgdef_UUID) -> Bool {
-    if lhs.value != rhs.value {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
 extension Sirius_Msgdef_ServerNotice: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ServerNotice"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}severity\0\u{1}code\0\u{1}message\0\u{1}timestamp\0")
@@ -226,9 +185,9 @@ extension Sirius_Msgdef_ServerNotice: SwiftProtobuf.Message, SwiftProtobuf._Mess
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularEnumField(value: &self.severity) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.code) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.code) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.message) }()
-      case 4: try { try decoder.decodeSingularFixed64Field(value: &self.timestamp) }()
+      case 4: try { try decoder.decodeSingularUInt64Field(value: &self.timestamp) }()
       default: break
       }
     }
@@ -239,13 +198,13 @@ extension Sirius_Msgdef_ServerNotice: SwiftProtobuf.Message, SwiftProtobuf._Mess
       try visitor.visitSingularEnumField(value: self.severity, fieldNumber: 1)
     }
     if self.code != 0 {
-      try visitor.visitSingularFixed32Field(value: self.code, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.code, fieldNumber: 2)
     }
     if !self.message.isEmpty {
       try visitor.visitSingularStringField(value: self.message, fieldNumber: 3)
     }
     if self.timestamp != 0 {
-      try visitor.visitSingularFixed64Field(value: self.timestamp, fieldNumber: 4)
+      try visitor.visitSingularUInt64Field(value: self.timestamp, fieldNumber: 4)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -270,7 +229,7 @@ extension Sirius_Msgdef_ClientHello: SwiftProtobuf.Message, SwiftProtobuf._Messa
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.protocolVersion) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.protocolVersion) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.agentName) }()
       default: break
       }
@@ -279,7 +238,7 @@ extension Sirius_Msgdef_ClientHello: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.protocolVersion != 0 {
-      try visitor.visitSingularFixed32Field(value: self.protocolVersion, fieldNumber: 1)
+      try visitor.visitSingularUInt32Field(value: self.protocolVersion, fieldNumber: 1)
     }
     if !self.agentName.isEmpty {
       try visitor.visitSingularStringField(value: self.agentName, fieldNumber: 2)
@@ -305,7 +264,7 @@ extension Sirius_Msgdef_ServerHello: SwiftProtobuf.Message, SwiftProtobuf._Messa
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.protocolVersion) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.protocolVersion) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.supportedFeatures) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self._serverName) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self._motd) }()
@@ -320,7 +279,7 @@ extension Sirius_Msgdef_ServerHello: SwiftProtobuf.Message, SwiftProtobuf._Messa
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.protocolVersion != 0 {
-      try visitor.visitSingularFixed32Field(value: self.protocolVersion, fieldNumber: 1)
+      try visitor.visitSingularUInt32Field(value: self.protocolVersion, fieldNumber: 1)
     }
     if !self.supportedFeatures.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.supportedFeatures, fieldNumber: 2)
@@ -354,7 +313,7 @@ extension Sirius_Msgdef_Goodbye: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.code) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.code) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self._message) }()
       default: break
       }
@@ -367,7 +326,7 @@ extension Sirius_Msgdef_Goodbye: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.code != 0 {
-      try visitor.visitSingularFixed32Field(value: self.code, fieldNumber: 1)
+      try visitor.visitSingularUInt32Field(value: self.code, fieldNumber: 1)
     }
     try { if let v = self._message {
       try visitor.visitSingularStringField(value: v, fieldNumber: 2)

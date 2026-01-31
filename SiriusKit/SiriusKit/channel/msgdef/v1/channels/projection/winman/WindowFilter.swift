@@ -8,13 +8,6 @@
 import Foundation
 
 
-public enum WindowFilterExpressionOperator {
-    case exact
-    case contains
-    case icontains
-    case regex
-}
-
 public enum WindowFilterExpressionField {
     /// 윈도우 핸들 ID로 매칭합니다.
     /// @note OS / DM에 따라 윈도우 핸들 ID의 크기가 다를 수 있으므로 fixed64 타입을 사용합니다.
@@ -55,34 +48,34 @@ public struct WindowFilterExpression {
     
     public init(_ field: WindowFilterExpressionField) {
         self.field = field
-        self.operator = .exact
+        self.operator = .matchExact
         self.invert = false
     }
     
     public func exact() -> Self {
         var mutated = self
-        mutated.operator = .exact
+        mutated.operator = .matchExact
         
         return mutated
     }
     
     public func contains() -> Self {
         var mutated = self
-        mutated.operator = .contains
+        mutated.operator = .matchContains
         
         return mutated
     }
     
     public func icontains() -> Self {
         var mutated = self
-        mutated.operator = .icontains
+        mutated.operator = .matchIContains
         
         return mutated
     }
     
     public func regex() -> Self {
         var mutated = self
-        mutated.operator = .regex
+        mutated.operator = .matchRegex
         
         return mutated
     }
@@ -123,10 +116,7 @@ public extension WindowFilterExpression {
 }
 
 public struct WindowFilter {
-    public enum Operator {
-        case `and`
-        case `or`
-    }
+    public typealias Operator = WindowFilterOperator
     
     public let `operator`: Operator
     public let expressions: [WindowFilter]

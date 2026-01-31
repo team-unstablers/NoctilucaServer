@@ -9,52 +9,6 @@ import Foundation
 import SwiftProtobuf
 
 
-
-
-public struct MouseMoveEventType: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEventType
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let absolute = Self.fromProtobufEnum(.mouseMoveAbsolute)
-    public static let relative = Self.fromProtobufEnum(.mouseMoveRelative)
-}
-
-
-public struct MouseButtonEventType: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEventType
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let down = Self.fromProtobufEnum(.mouseButtonDown)
-    public static let up = Self.fromProtobufEnum(.mouseButtonUp)
-}
-
-public struct MouseButtonType: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_MouseButtonType
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let left = Self.fromProtobufEnum(.mouseButtonLeft)
-    public static let right = Self.fromProtobufEnum(.mouseButtonRight)
-    public static let middle = Self.fromProtobufEnum(.mouseButtonMiddle)
-    public static let back = Self.fromProtobufEnum(.mouseButtonBack)
-    public static let forward = Self.fromProtobufEnum(.mouseButtonForward)
-}
-
-
 public struct CursorPositionPixel: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel
     
@@ -163,7 +117,7 @@ public struct MouseMoveEvent: HIDEvent, HIDEventConvertable {
         }
         
         let event = Self(
-            moveType: MouseMoveEventType.fromProtobufEnum(message.moveType),
+            moveType: .init(rawValue: message.moveType),
             scope: try CursorPositionScope.from(message.scope),
             position: try {
                 switch message.position {
@@ -185,7 +139,7 @@ public struct MouseMoveEvent: HIDEvent, HIDEventConvertable {
         
         var mouseMoveEventMessage = Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent()
         
-        mouseMoveEventMessage.moveType = self.moveType.toProtobufEnum()
+        mouseMoveEventMessage.moveType = self.moveType.rawValue
         mouseMoveEventMessage.scope = self.scope.toProtobufEnum()
         
         switch self.position {
@@ -219,8 +173,8 @@ public struct MouseButtonEvent: HIDEvent, HIDEventConvertable {
         }
         
         let event = Self(
-            eventType: MouseButtonEventType.fromProtobufEnum(message.eventType),
-            button: MouseButtonType.fromProtobufEnum(message.button)
+            eventType: .init(rawValue: message.eventType),
+            button: .init(rawValue: message.button)
         )
         
         return consume event
@@ -231,8 +185,8 @@ public struct MouseButtonEvent: HIDEvent, HIDEventConvertable {
         
         var message = Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent()
 
-        message.eventType = self.eventType.toProtobufEnum()
-        message.button = self.button.toProtobufEnum()
+        message.eventType = self.eventType.rawValue
+        message.button = self.button.rawValue
 
         container.event = .mouseButtonEvent(message)
         

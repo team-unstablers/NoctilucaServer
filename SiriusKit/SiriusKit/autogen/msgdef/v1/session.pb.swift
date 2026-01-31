@@ -21,20 +21,21 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// 서버가 클라이언트에게 인증 방식을 요청할 때 보내는 메시지
-//// opcode = 0x0011
+//// 서버가 클라이언트에게 인증을 요구할 때 보내는 메시지
+/// @opcode: 0x0011
 struct Sirius_Msgdef_V1_AuthChallenge: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// 서버가 받아들일 수 있는 인증 방식 목록.
+  //// 서버가 허용하는 인증 방식 목록 (AuthMethod 상수 참조)
   var acceptedMethods: [String] = []
 
-  /// 클라이언트가 인증에 사용할 수 있는 nonce 값. ~32bytes 정도가 이상적. (이지 않을까)
+  //// 재전송 공격 방지를 위한 임의의 데이터 (Nonce)
+  //// 권장 길이: 32 bytes 이상
   var nonce: Data = Data()
 
-  //// 서버가 클라이언트에게 전달하는 추가 메시지
+  //// 사용자에게 표시할 인증 안내 메시지 (옵션)
   var message: String {
     get {return _message ?? String()}
     set {_message = newValue}
@@ -51,17 +52,21 @@ struct Sirius_Msgdef_V1_AuthChallenge: Sendable {
   fileprivate var _message: String? = nil
 }
 
-/// opcode = 0x0012
+//// 클라이언트가 서버에게 인증 정보를 전송하는 메시지
+/// @opcode: 0x0012
 struct Sirius_Msgdef_V1_AuthRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// 클라이언트가 선택한 인증 방식
+  /// @constset: AuthMethod
   var method: String = String()
 
-  /// nonce 값.
+  //// 서버로부터 받은 nonce 값을 그대로 포함해야 함
   var nonce: Data = Data()
 
+  //// 인증 데이터 (비밀번호, 서명 등). 인증 방식에 따라 포맷이 달라짐.
   var payload: Data {
     get {return _payload ?? Data()}
     set {_payload = newValue}
@@ -78,14 +83,16 @@ struct Sirius_Msgdef_V1_AuthRequest: Sendable {
   fileprivate var _payload: Data? = nil
 }
 
-//// opcode = 0x0013
+//// 인증 성공 시 서버가 보내는 응답 메시지
+/// @opcode: 0x0013
 struct Sirius_Msgdef_V1_AuthResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var sessionID: Sirius_Msgdef_UUID {
-    get {return _sessionID ?? Sirius_Msgdef_UUID()}
+  //// 생성된 세션의 고유 ID
+  var sessionID: Sirius_Msgdef_SRUUID {
+    get {return _sessionID ?? Sirius_Msgdef_SRUUID()}
     set {_sessionID = newValue}
   }
   /// Returns true if `sessionID` has been explicitly set.
@@ -97,7 +104,7 @@ struct Sirius_Msgdef_V1_AuthResponse: Sendable {
 
   init() {}
 
-  fileprivate var _sessionID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _sessionID: Sirius_Msgdef_SRUUID? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.

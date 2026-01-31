@@ -150,13 +150,13 @@ public struct DisplayInfo: SiriusMessage {
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.displayID = protobufMessage.displayID
-        self.kind = DisplayKind(from: protobufMessage.kind)
+        self.kind = DisplayKind(rawValue: protobufMessage.kind)
         self.displayName = protobufMessage.displayName
         self.state = try DisplayState(from: protobufMessage.state)
         self.bounds = SRRect(from: protobufMessage.bounds)
         self.refreshRate = protobufMessage.refreshRate
-        self.colorDepth = DisplayColorDepth(from: protobufMessage.colorDepth)
-        self.dynamicRange = DisplayDynamicRange(from: protobufMessage.dynamicRange)
+        self.colorDepth = DisplayColorDepth(rawValue: protobufMessage.colorDepth)
+        self.dynamicRange = DisplayDynamicRange(rawValue: protobufMessage.dynamicRange)
         self.colorProfile = protobufMessage.hasColorProfile ? DisplayColorProfile(rawValue: protobufMessage.colorProfile) : nil
         self.physicalSizeInfo = protobufMessage.hasPhysicalSizeInfo ? try DisplayPhysicalSizeInfo(from: protobufMessage.physicalSizeInfo) : nil
         self.metadata = protobufMessage.metadata
@@ -167,13 +167,13 @@ public struct DisplayInfo: SiriusMessage {
         var message = ProtobufMessage()
 
         message.displayID = self.displayID
-        message.kind = self.kind.toProtobufEnum()
+        message.kind = self.kind.rawValue
         message.displayName = self.displayName
         message.state = self.state.toProtobufMessage()
         message.bounds = self.bounds.toProtobufMessage()
         message.refreshRate = self.refreshRate
-        message.colorDepth = self.colorDepth.toProtobufEnum()
-        message.dynamicRange = self.dynamicRange.toProtobufEnum()
+        message.colorDepth = self.colorDepth.rawValue
+        message.dynamicRange = self.dynamicRange.rawValue
         if let colorProfile = self.colorProfile {
             message.colorProfile = colorProfile.rawValue
         }
@@ -354,35 +354,5 @@ public struct DisplayChangedEvent: SiriusMessage {
         message.display = self.display.toProtobufMessage()
 
         return message
-    }
-}
-
-private extension DisplayKind {
-    init(from protobufEnum: Sirius_Msgdef_V1_Channels_Projection_DisplayKind) {
-        self.init(rawValue: UInt32(protobufEnum.rawValue))
-    }
-    
-    func toProtobufEnum() -> Sirius_Msgdef_V1_Channels_Projection_DisplayKind {
-        return Sirius_Msgdef_V1_Channels_Projection_DisplayKind(rawValue: Int(self.rawValue)) ?? .unknown
-    }
-}
-
-private extension DisplayColorDepth {
-    init(from protobufEnum: Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth) {
-        self.init(rawValue: UInt32(protobufEnum.rawValue))
-    }
-    
-    func toProtobufEnum() -> Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth {
-        return Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth(rawValue: Int(self.rawValue)) ?? .unknown
-    }
-}
-
-private extension DisplayDynamicRange {
-    init(from protobufEnum: Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange) {
-        self.init(rawValue: UInt32(protobufEnum.rawValue))
-    }
-    
-    func toProtobufEnum() -> Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange {
-        return Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange(rawValue: Int(self.rawValue)) ?? .sdr
     }
 }

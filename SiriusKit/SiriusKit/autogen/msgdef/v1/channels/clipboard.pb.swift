@@ -48,6 +48,7 @@ struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: Sendable {
   fileprivate var _data: Data? = nil
 }
 
+/// @opcode: 0x8001
 struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -86,7 +87,7 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: SwiftProtobuf.Messa
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.contentType) }()
-      case 2: try { try decoder.decodeSingularFixed64Field(value: &self.size) }()
+      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.size) }()
       case 3: try { try decoder.decodeSingularBytesField(value: &self._data) }()
       default: break
       }
@@ -102,7 +103,7 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: SwiftProtobuf.Messa
       try visitor.visitSingularStringField(value: self.contentType, fieldNumber: 1)
     }
     if self.size != 0 {
-      try visitor.visitSingularFixed64Field(value: self.size, fieldNumber: 2)
+      try visitor.visitSingularUInt64Field(value: self.size, fieldNumber: 2)
     }
     try { if let v = self._data {
       try visitor.visitSingularBytesField(value: v, fieldNumber: 3)
@@ -129,7 +130,7 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: SwiftProtobuf.Mess
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.timestamp) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.timestamp) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._data) }()
       default: break
       }
@@ -142,7 +143,7 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: SwiftProtobuf.Mess
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.timestamp != 0 {
-      try visitor.visitSingularFixed64Field(value: self.timestamp, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.timestamp, fieldNumber: 1)
     }
     try { if let v = self._data {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)

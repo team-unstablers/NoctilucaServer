@@ -20,121 +20,27 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-///
-///## 자동 품질 모드에 대한 프리셋
-///- 자동 품질 모드는 서버 / 코덱이 클라이언트의 성능과 네트워크 상태를 고려하여 최적의 품질 설정을 자동으로 선택하도록 합니다.
-///
-///### 각 모드 설명
-///- AUTO_QUALITY_MODE_BALANCED_PRIORITY: 품질과 성능 간의 균형을 맞춥니다.
-///- AUTO_QUALITY_MODE_QUALITY_PRIORITY: 가능한 최고의 품질을 우선시합니다.
-///- AUTO_QUALITY_MODE_PERFORMANCE_PRIORITY: 가능한 최고의 성능을 우선시합니다.
-enum Sirius_Msgdef_V1_Channels_Projection_AutoQualityMode: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case balancedPriority // = 0
-  case qualityPriority // = 1
-  case performancePriority // = 2
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .balancedPriority
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .balancedPriority
-    case 1: self = .qualityPriority
-    case 2: self = .performancePriority
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .balancedPriority: return 0
-    case .qualityPriority: return 1
-    case .performancePriority: return 2
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_AutoQualityMode] = [
-    .balancedPriority,
-    .qualityPriority,
-    .performancePriority,
-  ]
-
-}
-
-///*
-///## 무손실 품질 모드에 대한 프리셋
-///- 무손실 압축을 사용할 때, 성능과 압축률 간의 균형을 맞추기 위한 프리셋입니다.
-///
-///### 각 모드 설명
-///- LOSSLESS_QUALITY_MODE_BALANCED_PRIORITY: 성능과 압축률 간의 균형을 맞춥니다.
-///- LOSSLESS_QUALITY_MODE_SPEED_PRIORITY: 성능을 우선시합니다. (압축률이 낮아질 수 있음)
-///- LOSSLESS_QUALITY_MODE_COMPRESSION_PRIORITY: 압축률을 우선시합니다. (성능이 낮아질 수 있음)
-enum Sirius_Msgdef_V1_Channels_Projection_LosslessQualityMode: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case balancedPriority // = 0
-  case speedPriority // = 1
-  case compressionPriority // = 2
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .balancedPriority
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .balancedPriority
-    case 1: self = .speedPriority
-    case 2: self = .compressionPriority
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .balancedPriority: return 0
-    case .speedPriority: return 1
-    case .compressionPriority: return 2
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_LosslessQualityMode] = [
-    .balancedPriority,
-    .speedPriority,
-    .compressionPriority,
-  ]
-
-}
-
+//// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
 struct Sirius_Msgdef_V1_Channels_Projection_AutoQuality: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var mode: Sirius_Msgdef_V1_Channels_Projection_AutoQualityMode = .balancedPriority
+  /// @constset: AutoQualityMode
+  var mode: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 }
 
-///
-///## 상수 비트레이트 품질 설정
-///- 지정된 비트레이트로 일정한 품질을 유지합니다.
-///
-///### NOTE:
-///- 상수 비트레이트 품질 설정 시, 구현체 / 정책 설정에 따라 네트워크 / 호스트 부하에 따른 자동 디그레이드 기능이 동작하지 않을 수 있습니다.
+//// 상수 비트레이트 (CBR) 품질 설정
 struct Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// 비트레이트 (kbps)
   var bitrateKbps: Int32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -142,19 +48,16 @@ struct Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality: Sendable {
   init() {}
 }
 
-///
-///## 가변 비트레이트 품질 설정
-///- 최대 비트레이트와 목표 비트레이트를 지정합니다.
-///
-///### NOTE:
-///- 가변 비트레이트 품질 설정 시, 구현체 / 정책 설정에 따라 네트워크 / 호스트 부하에 따른 자동 디그레이드 기능이 동작하지 않을 수 있습니다.
+//// 가변 비트레이트 (VBR) 품질 설정
 struct Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// 최대 비트레이트 (kbps)
   var maxBitrateKbps: Int32 = 0
 
+  //// 타겟 비트레이트 (kbps)
   var targetBitrateKbps: Int32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -162,13 +65,9 @@ struct Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality: Sendable {
   init() {}
 }
 
-///
-///## 고정 품질 설정
-///- 0부터 100까지의 값으로 품질을 지정합니다.
-///- 값이 낮을수록 더 높은 품질을 나타냅니다.
-///
-///### NOTE:
-///- 고정 품질 설정 시, 구현체 / 정책 설정에 따라 네트워크 / 호스트 부하에 따른 자동 디그레이드 기능이 동작하지 않을 수 있습니다.
+//// 고정 품질 (CQP/CRF) 설정
+//// - 0부터 100까지의 값으로 품질을 지정합니다.
+//// - 값이 낮을수록 더 높은 품질을 나타낼 수도 있고, 반대일 수도 있으나 일반적으로 100이 최고 품질입니다. (구현체 의존적)
 struct Sirius_Msgdef_V1_Channels_Projection_FixedQuality: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -181,40 +80,32 @@ struct Sirius_Msgdef_V1_Channels_Projection_FixedQuality: Sendable {
   init() {}
 }
 
-///
-///## 무손실 품질 설정
-///- 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
-///- LAN 환경과 같이 높은 대역폭이 보장되는 환경에서, Final Cut Pro, Adobe Photoshop 등과 같은 고품질 그래픽 작업에 적합합니다.
-///
-///### NOTE:
-///- 무손실 품질 설정 시, 기본적으로 자동 디그레이드 기능이 비활성화됩니다.
-///- 고품질 그래픽 작업 (Final Cut Pro, Adobe Photoshop 등)을 사용하려는 목적인 경우, 다음 설정이 추가적으로 필요할 수도 있습니다.
-///- 코덱의 뷰포트 해상도를 원본과 동일하게 설정하여 픽셀 단위의 왜곡을 방지합니다.
-///- 코덱의 color-format 옵션을 YUV444 (추가적으로 HDR 지원이 필요한 경우 YUV444 10bit 이상)로 설정하여 색상 손실을 방지합니다.
-///- 코덱의 프레임레이트 옵션을 원본과 동일하게 설정하여 프레임 손실을 방지합니다.
+//// 무손실 품질 설정
+//// - 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
 struct Sirius_Msgdef_V1_Channels_Projection_LosslessQuality: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var mode: Sirius_Msgdef_V1_Channels_Projection_LosslessQualityMode = .balancedPriority
+  /// @constset: LosslessQualityMode
+  var mode: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 }
 
+//// 비디오 코덱 설정 메시지
 struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// FourCC 코드값
-  //// - 바이트 오더는 반드시 빅 엔디안이어야 합니다.
+  //// FourCC 코드값 (Big-Endian)
+  /// @constset: CodecFourCC
   var fourCc: UInt32 = 0
 
   //// 코덱 품질 설정
-  //// -
   var quality: Sirius_Msgdef_V1_Channels_Projection_Codec.OneOf_Quality? = nil
 
   var constantBitrate: Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality {
@@ -267,6 +158,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
   /// Clears the value of `frameRate`. Subsequent reads from it will return its default value.
   mutating func clearFrameRate() {self._frameRate = nil}
 
+  //// 해상도
   var size: Sirius_Msgdef_V1_Channels_Projection_SRSize {
     get {return _size ?? Sirius_Msgdef_V1_Channels_Projection_SRSize()}
     set {_size = newValue}
@@ -276,6 +168,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
   /// Clears the value of `size`. Subsequent reads from it will return its default value.
   mutating func clearSize() {self._size = nil}
 
+  //// 코덱별 추가 옵션 문자열 (예: "color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high';")
   var options: String {
     get {return _options ?? String()}
     set {_options = newValue}
@@ -288,7 +181,6 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   //// 코덱 품질 설정
-  //// -
   enum OneOf_Quality: Equatable, Sendable {
     case constantBitrate(Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality)
     case variableBitrate(Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality)
@@ -309,14 +201,6 @@ struct Sirius_Msgdef_V1_Channels_Projection_Codec: Sendable {
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
-extension Sirius_Msgdef_V1_Channels_Projection_AutoQualityMode: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0AUTO_QUALITY_MODE_BALANCED_PRIORITY\0\u{1}AUTO_QUALITY_MODE_QUALITY_PRIORITY\0\u{1}AUTO_QUALITY_MODE_PERFORMANCE_PRIORITY\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Projection_LosslessQualityMode: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0LOSSLESS_QUALITY_MODE_BALANCED_PRIORITY\0\u{1}LOSSLESS_QUALITY_MODE_SPEED_PRIORITY\0\u{1}LOSSLESS_QUALITY_MODE_COMPRESSION_PRIORITY\0")
-}
-
 extension Sirius_Msgdef_V1_Channels_Projection_AutoQuality: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".AutoQuality"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}mode\0")
@@ -327,15 +211,15 @@ extension Sirius_Msgdef_V1_Channels_Projection_AutoQuality: SwiftProtobuf.Messag
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularEnumField(value: &self.mode) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.mode) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.mode != .balancedPriority {
-      try visitor.visitSingularEnumField(value: self.mode, fieldNumber: 1)
+    if self.mode != 0 {
+      try visitor.visitSingularUInt32Field(value: self.mode, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -357,7 +241,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality: SwiftProt
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularSFixed32Field(value: &self.bitrateKbps) }()
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.bitrateKbps) }()
       default: break
       }
     }
@@ -365,7 +249,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ConstantBitrateQuality: SwiftProt
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.bitrateKbps != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.bitrateKbps, fieldNumber: 1)
+      try visitor.visitSingularInt32Field(value: self.bitrateKbps, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -387,8 +271,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality: SwiftProt
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularSFixed32Field(value: &self.maxBitrateKbps) }()
-      case 2: try { try decoder.decodeSingularSFixed32Field(value: &self.targetBitrateKbps) }()
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.maxBitrateKbps) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.targetBitrateKbps) }()
       default: break
       }
     }
@@ -396,10 +280,10 @@ extension Sirius_Msgdef_V1_Channels_Projection_VariableBitrateQuality: SwiftProt
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.maxBitrateKbps != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.maxBitrateKbps, fieldNumber: 1)
+      try visitor.visitSingularInt32Field(value: self.maxBitrateKbps, fieldNumber: 1)
     }
     if self.targetBitrateKbps != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.targetBitrateKbps, fieldNumber: 2)
+      try visitor.visitSingularInt32Field(value: self.targetBitrateKbps, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -422,7 +306,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_FixedQuality: SwiftProtobuf.Messa
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularSFixed32Field(value: &self.quality) }()
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.quality) }()
       default: break
       }
     }
@@ -430,7 +314,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_FixedQuality: SwiftProtobuf.Messa
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.quality != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.quality, fieldNumber: 1)
+      try visitor.visitSingularInt32Field(value: self.quality, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -452,15 +336,15 @@ extension Sirius_Msgdef_V1_Channels_Projection_LosslessQuality: SwiftProtobuf.Me
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularEnumField(value: &self.mode) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.mode) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.mode != .balancedPriority {
-      try visitor.visitSingularEnumField(value: self.mode, fieldNumber: 1)
+    if self.mode != 0 {
+      try visitor.visitSingularUInt32Field(value: self.mode, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }

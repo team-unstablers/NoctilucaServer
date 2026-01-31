@@ -8,59 +8,6 @@
 import Foundation
 import SwiftProtobuf
 
-public struct KeyboardLayoutId: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayoutId
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let ansi = Self.fromProtobufEnum(.keyboardLayoutAnsi)
-    public static let iso = Self.fromProtobufEnum(.keyboardLayoutIso)
-    public static let jis = Self.fromProtobufEnum(.keyboardLayoutJis)
-    public static let ks = Self.fromProtobufEnum(.keyboardLayoutKs)
-    public static let virtual = Self.fromProtobufEnum(.keyboardLayoutVirtual)
-}
-
-
-public struct KeyboardModifier: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_KeyboardModifier
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let none = Self.fromProtobufEnum(.none)
-    public static let lshift = Self.fromProtobufEnum(.lshift)
-    public static let rshift = Self.fromProtobufEnum(.rshift)
-    public static let lctrl = Self.fromProtobufEnum(.lctrl)
-    public static let rctrl = Self.fromProtobufEnum(.rctrl)
-    public static let lalt = Self.fromProtobufEnum(.lalt)
-    public static let ralt = Self.fromProtobufEnum(.ralt)
-    public static let lmeta = Self.fromProtobufEnum(.lmeta)
-    public static let rmeta = Self.fromProtobufEnum(.rmeta)
-}
-
-
-public struct KeyboardEventType: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Hidio_KeyboardEventType
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let unknown = Self.fromProtobufEnum(.unknown)
-    public static let down = Self.fromProtobufEnum(.keyDown)
-    public static let up = Self.fromProtobufEnum(.keyUp)
-    public static let ucs4 = Self.fromProtobufEnum(.ucs4)
-}
-
 
 public struct KeyboardLayout: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayout
@@ -77,7 +24,7 @@ public struct KeyboardLayout: SiriusMessage {
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayout) throws {
-        self.layoutID = KeyboardLayoutId.fromProtobufEnum(protobufMessage.layoutID)
+        self.layoutID = .init(rawValue: protobufMessage.layoutID)
         self.localeID = protobufMessage.localeID
         self.flags = protobufMessage.flags
     }
@@ -85,7 +32,7 @@ public struct KeyboardLayout: SiriusMessage {
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        message.layoutID = self.layoutID.toProtobufEnum()
+        message.layoutID = self.layoutID.rawValue
         message.localeID = self.localeID
         message.flags = self.flags
 
@@ -186,7 +133,7 @@ public struct KeyboardEvent: HIDEvent, HIDEventConvertable {
         }
         
         let event = Self(
-            eventType: KeyboardEventType.fromProtobufEnum(message.eventType),
+            eventType: .init(rawValue: message.eventType),
             scanCode: message.scanCode,
             keyCode: message.keyCode,
             modifiers: message.modifiers,
@@ -200,7 +147,7 @@ public struct KeyboardEvent: HIDEvent, HIDEventConvertable {
         var container = Sirius_Msgdef_V1_Channels_Hidio_HIDEvent()
         var message = Sirius_Msgdef_V1_Channels_Hidio_KeyboardEvent()
 
-        message.eventType = self.eventType.toProtobufEnum()
+        message.eventType = self.eventType.rawValue
         message.scanCode = self.scanCode
         message.keyCode = self.keyCode
         message.modifiers = self.modifiers

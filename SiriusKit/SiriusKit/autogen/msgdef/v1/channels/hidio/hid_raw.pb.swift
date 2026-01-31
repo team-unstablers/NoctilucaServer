@@ -21,10 +21,6 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-///
-///## RAW EVENT FORMAT
-///- RawEvent 메시지는 HID 이벤트의 원시 형식을 나타냅니다.
-///- 추후 펜 태블릿, 조이스틱 등 다양한 입력 장치의 이벤트를 지원하기 위해 확장될 수 있습니다.
 struct Sirius_Msgdef_V1_Channels_Hidio_RawEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -78,10 +74,10 @@ extension Sirius_Msgdef_V1_Channels_Hidio_RawEvent: SwiftProtobuf.Message, Swift
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.id) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.type) }()
-      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.vendor) }()
-      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.product) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.id) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.type) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.vendor) }()
+      case 4: try { try decoder.decodeSingularUInt32Field(value: &self.product) }()
       case 5: try { try decoder.decodeSingularFixed32Field(value: &self.param1) }()
       case 6: try { try decoder.decodeSingularFixed32Field(value: &self.param2) }()
       case 7: try { try decoder.decodeSingularFixed32Field(value: &self.param3) }()
@@ -98,16 +94,16 @@ extension Sirius_Msgdef_V1_Channels_Hidio_RawEvent: SwiftProtobuf.Message, Swift
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.id != 0 {
-      try visitor.visitSingularFixed32Field(value: self.id, fieldNumber: 1)
+      try visitor.visitSingularUInt32Field(value: self.id, fieldNumber: 1)
     }
     if self.type != 0 {
-      try visitor.visitSingularFixed32Field(value: self.type, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.type, fieldNumber: 2)
     }
     if self.vendor != 0 {
-      try visitor.visitSingularFixed32Field(value: self.vendor, fieldNumber: 3)
+      try visitor.visitSingularUInt32Field(value: self.vendor, fieldNumber: 3)
     }
     if self.product != 0 {
-      try visitor.visitSingularFixed32Field(value: self.product, fieldNumber: 4)
+      try visitor.visitSingularUInt32Field(value: self.product, fieldNumber: 4)
     }
     if self.param1 != 0 {
       try visitor.visitSingularFixed32Field(value: self.param1, fieldNumber: 5)

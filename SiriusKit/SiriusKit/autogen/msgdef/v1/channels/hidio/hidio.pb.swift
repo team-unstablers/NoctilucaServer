@@ -20,7 +20,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-/// opcode = 0x8001
+/// @opcode: 0x8001
 struct Sirius_Msgdef_V1_Channels_Hidio_HIDIOPacket: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -122,8 +122,8 @@ extension Sirius_Msgdef_V1_Channels_Hidio_HIDIOPacket: SwiftProtobuf.Message, Sw
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.sequenceNumber) }()
-      case 2: try { try decoder.decodeSingularFixed64Field(value: &self.timestamp) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.sequenceNumber) }()
+      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.timestamp) }()
       case 3: try { try decoder.decodeRepeatedMessageField(value: &self.events) }()
       default: break
       }
@@ -132,10 +132,10 @@ extension Sirius_Msgdef_V1_Channels_Hidio_HIDIOPacket: SwiftProtobuf.Message, Sw
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.sequenceNumber != 0 {
-      try visitor.visitSingularFixed64Field(value: self.sequenceNumber, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.sequenceNumber, fieldNumber: 1)
     }
     if self.timestamp != 0 {
-      try visitor.visitSingularFixed64Field(value: self.timestamp, fieldNumber: 2)
+      try visitor.visitSingularUInt64Field(value: self.timestamp, fieldNumber: 2)
     }
     if !self.events.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.events, fieldNumber: 3)

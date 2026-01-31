@@ -21,7 +21,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-/// opcode = 0x8001
+/// @opcode: 0x8001
 struct Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -36,6 +36,15 @@ struct Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: Sendable {
   /// PTS (Presentation Timestamp) - 마이크로초 단위 권장
   var presentationTimestamp: UInt64 = 0
 
+  var updatedRegion: Sirius_Msgdef_V1_Channels_Projection_SRRect {
+    get {return _updatedRegion ?? Sirius_Msgdef_V1_Channels_Projection_SRRect()}
+    set {_updatedRegion = newValue}
+  }
+  /// Returns true if `updatedRegion` has been explicitly set.
+  var hasUpdatedRegion: Bool {return self._updatedRegion != nil}
+  /// Clears the value of `updatedRegion`. Subsequent reads from it will return its default value.
+  mutating func clearUpdatedRegion() {self._updatedRegion = nil}
+
   /// static const uint32_t FLAG_IS_KEYFRAME         = 0b00000001;
   /// static const uint32_t FLAG_H264_HEVC_IS_ANNEXB = 0b;
   var flags: UInt32 = 0
@@ -43,6 +52,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: Sendable {
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
+
+  fileprivate var _updatedRegion: Sirius_Msgdef_V1_Channels_Projection_SRRect? = nil
 }
 
 struct Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: Sendable {
@@ -63,7 +74,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: Sendable {
   init() {}
 }
 
-/// opcode = 0x8002
+/// @opcode: 0x8002
 struct Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -82,7 +93,7 @@ fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
 extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".FrameDataHeader"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}frameId\0\u{1}frameLength\0\u{1}presentationTimestamp\0\u{1}flags\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}frameId\0\u{1}frameLength\0\u{1}presentationTimestamp\0\u{1}updatedRegion\0\u{2}\u{b}flags\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -90,27 +101,35 @@ extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Me
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.frameID) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.frameLength) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.frameID) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.frameLength) }()
       case 3: try { try decoder.decodeSingularUInt64Field(value: &self.presentationTimestamp) }()
-      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._updatedRegion) }()
+      case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if self.frameID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.frameID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.frameID, fieldNumber: 1)
     }
     if self.frameLength != 0 {
-      try visitor.visitSingularFixed32Field(value: self.frameLength, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.frameLength, fieldNumber: 2)
     }
     if self.presentationTimestamp != 0 {
       try visitor.visitSingularUInt64Field(value: self.presentationTimestamp, fieldNumber: 3)
     }
+    try { if let v = self._updatedRegion {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 4)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -119,6 +138,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_FrameDataHeader: SwiftProtobuf.Me
     if lhs.frameID != rhs.frameID {return false}
     if lhs.frameLength != rhs.frameLength {return false}
     if lhs.presentationTimestamp != rhs.presentationTimestamp {return false}
+    if lhs._updatedRegion != rhs._updatedRegion {return false}
     if lhs.flags != rhs.flags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -135,9 +155,9 @@ extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: SwiftProtobuf.
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.type) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.type) }()
       case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
-      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -145,13 +165,13 @@ extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSet: SwiftProtobuf.
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.type != 0 {
-      try visitor.visitSingularFixed64Field(value: self.type, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.type, fieldNumber: 1)
     }
     if !self.data.isEmpty {
       try visitor.visitSingularBytesField(value: self.data, fieldNumber: 2)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 3)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 3)
     }
     try unknownFields.traverse(visitor: &visitor)
   }

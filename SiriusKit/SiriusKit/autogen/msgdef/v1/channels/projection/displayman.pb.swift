@@ -20,215 +20,8 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-enum Sirius_Msgdef_V1_Channels_Projection_DisplayKind: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-
-  //// 알 수 없는 디스플레이 종류.
-  case unknown // = 0
-
-  //// 내부 디스플레이 (노트북 내장 디스플레이 등)
-  case `internal` // = 1
-
-  //// 외부 디스플레이 (모니터 장비 등)
-  case external // = 2
-
-  //// 가상 디스플레이 (예: 무선 디스플레이 어댑터 등)
-  case virtual // = 3
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .unknown
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .unknown
-    case 1: self = .internal
-    case 2: self = .external
-    case 3: self = .virtual
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .unknown: return 0
-    case .internal: return 1
-    case .external: return 2
-    case .virtual: return 3
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_DisplayKind] = [
-    .unknown,
-    .internal,
-    .external,
-    .virtual,
-  ]
-
-}
-
-enum Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-
-  //// 알 수 없는 컬러 깊이
-  case unknown // = 0
-
-  //// 흑백(그레이스케일) 컬러 깊이
-  case grayscale // = 1
-
-  //// 인덱스 (팔레트가 정의된) 16색 컬러
-  case indexed16Color // = 2
-
-  //// 인덱스 (팔레트가 정의된) 256색 컬러
-  case indexed256Color // = 3
-
-  //// 8비트 컬러 (RGB8, 0~255)
-  case displayColorDepth8Bit // = 4
-
-  //// 10비트 컬러 (RGB10, 0~1023)
-  case displayColorDepth10Bit // = 5
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .unknown
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .unknown
-    case 1: self = .grayscale
-    case 2: self = .indexed16Color
-    case 3: self = .indexed256Color
-    case 4: self = .displayColorDepth8Bit
-    case 5: self = .displayColorDepth10Bit
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .unknown: return 0
-    case .grayscale: return 1
-    case .indexed16Color: return 2
-    case .indexed256Color: return 3
-    case .displayColorDepth8Bit: return 4
-    case .displayColorDepth10Bit: return 5
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth] = [
-    .unknown,
-    .grayscale,
-    .indexed16Color,
-    .indexed256Color,
-    .displayColorDepth8Bit,
-    .displayColorDepth10Bit,
-  ]
-
-}
-
-enum Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-
-  //// 표준 다이나믹 레인지 (SDR)
-  case sdr // = 0
-
-  //// 하이 다이나믹 레인지 (HDR)
-  case hdr // = 1
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .sdr
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .sdr
-    case 1: self = .hdr
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .sdr: return 0
-    case .hdr: return 1
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange] = [
-    .sdr,
-    .hdr,
-  ]
-
-}
-
-//// 상수 정의용. protobuf의 enum은 signed인 탓도 있으므로 이 타입을 직접 사용하지 마십시오.
-enum Sirius_Msgdef_V1_Channels_Projection_DisplayChangeEventType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-
-  //// 사용 금지
-  case none // = 0
-
-  //// 디스플레이가 연결되었습니다.
-  case connected // = 1
-
-  //// 디스플레이가 연결 해제되었습니다.
-  case disconnected // = 2
-
-  //// 디스플레이의 지오메트리 / 색상 정보 등이 변경되었습니다.
-  case modified // = 4
-
-  //// 디스플레이가 기본 디스플레이로 설정되었습니다.
-  case becamePrimary // = 8
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .none
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .none
-    case 1: self = .connected
-    case 2: self = .disconnected
-    case 4: self = .modified
-    case 8: self = .becamePrimary
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .none: return 0
-    case .connected: return 1
-    case .disconnected: return 2
-    case .modified: return 4
-    case .becamePrimary: return 8
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_DisplayChangeEventType] = [
-    .none,
-    .connected,
-    .disconnected,
-    .modified,
-    .becamePrimary,
-  ]
-
-}
-
 //// 디스플레이 목록을 요청합니다. (request-response 모델)
-/// opcode = 0x8201
+/// @opcode: 0x8041
 struct Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -300,7 +93,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: @unchecked Sendable {
   }
 
   //// 디스플레이 종류.
-  var kind: Sirius_Msgdef_V1_Channels_Projection_DisplayKind {
+  /// @constset: DisplayKind
+  var kind: UInt32 {
     get {return _storage._kind}
     set {_uniqueStorage()._kind = newValue}
   }
@@ -347,18 +141,22 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: @unchecked Sendable {
   }
 
   //// 디스플레이의 색상 깊이
-  var colorDepth: Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth {
+  /// @constset: DisplayColorDepth
+  var colorDepth: UInt32 {
     get {return _storage._colorDepth}
     set {_uniqueStorage()._colorDepth = newValue}
   }
 
   //// 디스플레이의 다이나믹 레인지
-  var dynamicRange: Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange {
+  /// @constset: DisplayDynamicRange
+  var dynamicRange: UInt32 {
     get {return _storage._dynamicRange}
     set {_uniqueStorage()._dynamicRange = newValue}
   }
 
   //// 디스플레이의 색상 프로파일
+  /// @constset: DisplayColorProfile
+  /// 'CUSTOM' 프로파일은 상기 사전 정의된 프로파일 외에, 사용자 / 모니터에서 정의한 별도의 색상 프로파일을 나타냅니다.
   var colorProfile: String {
     get {return _storage._colorProfile ?? String()}
     set {_uniqueStorage()._colorProfile = newValue}
@@ -402,7 +200,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: @unchecked Sendable {
 }
 
 //// 디스플레이 목록에 대한 응답 메시지.
-/// opcode = 0x8202
+/// @opcode: 0x8042
 struct Sirius_Msgdef_V1_Channels_Projection_DisplayListResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -418,7 +216,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayListResponse: Sendable {
 }
 
 //// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
-/// opcode = 0x8203
+/// @opcode: 0x8043
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -427,6 +225,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: Send
   var requestID: UInt64 = 0
 
   //// 0x0000인 경우 모든 이벤트를 구독합니다.
+  /// @optionset: DisplayChangeEventType
   var eventMask: UInt32 = 0
 
   /// reserved
@@ -438,7 +237,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: Send
 }
 
 //// SubscribeDisplayChangesRequest에 대한 응답 메시지.
-/// opcode = 0x8204
+/// @opcode: 0x8044
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -447,8 +246,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: Sen
   var requestID: UInt64 = 0
 
   //// 구독 식별자.
-  var subscriptionID: Sirius_Msgdef_UUID {
-    get {return _subscriptionID ?? Sirius_Msgdef_UUID()}
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
   }
   /// Returns true if `subscriptionID` has been explicitly set.
@@ -460,11 +259,11 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: Sen
 
   init() {}
 
-  fileprivate var _subscriptionID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
 //// 서버로부터 디스플레이 변경 이벤트를 구독 해제합니다.
-/// opcode = 0x8205
+/// @opcode: 0x8045
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -473,8 +272,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest: Se
   var requestID: UInt64 = 0
 
   //// 구독 식별자.
-  var subscriptionID: Sirius_Msgdef_UUID {
-    get {return _subscriptionID ?? Sirius_Msgdef_UUID()}
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
   }
   /// Returns true if `subscriptionID` has been explicitly set.
@@ -486,11 +285,11 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest: Se
 
   init() {}
 
-  fileprivate var _subscriptionID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
 //// UnsubscribeDisplayChangesRequest에 대한 응답 메시지.
-/// opcode = 0x8206
+/// @opcode: 0x8046
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -499,8 +298,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse: S
   var requestID: UInt64 = 0
 
   //// 구독 식별자.
-  var subscriptionID: Sirius_Msgdef_UUID {
-    get {return _subscriptionID ?? Sirius_Msgdef_UUID()}
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
   }
   /// Returns true if `subscriptionID` has been explicitly set.
@@ -515,17 +314,18 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse: S
 
   init() {}
 
-  fileprivate var _subscriptionID: Sirius_Msgdef_UUID? = nil
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
 //// 디스플레이 변경 이벤트.
-/// opcode = 0x8207
+/// @opcode: 0x8047
 struct Sirius_Msgdef_V1_Channels_Projection_DisplayChangedEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   //// 이벤트 유형 코드
+  /// @optionset: DisplayChangeEventType
   var eventType: UInt32 = 0
 
   //// 변경된 디스플레이 정보
@@ -549,22 +349,6 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayChangedEvent: Sendable {
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
-extension Sirius_Msgdef_V1_Channels_Projection_DisplayKind: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0DISPLAY_KIND_UNKNOWN\0\u{1}DISPLAY_KIND_INTERNAL\0\u{1}DISPLAY_KIND_EXTERNAL\0\u{1}DISPLAY_KIND_VIRTUAL\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0DISPLAY_COLOR_DEPTH_UNKNOWN\0\u{1}DISPLAY_COLOR_DEPTH_GRAYSCALE\0\u{1}DISPLAY_COLOR_DEPTH_INDEXED_16_COLOR\0\u{1}DISPLAY_COLOR_DEPTH_INDEXED_256_COLOR\0\u{1}DISPLAY_COLOR_DEPTH_8BIT\0\u{1}DISPLAY_COLOR_DEPTH_10BIT\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0DISPLAY_DYNAMIC_RANGE_SDR\0\u{1}DISPLAY_DYNAMIC_RANGE_HDR\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Projection_DisplayChangeEventType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0DISPLAY_CHANGE_EVENT_TYPE_NONE\0\u{1}DISPLAY_CHANGE_EVENT_TYPE_CONNECTED\0\u{1}DISPLAY_CHANGE_EVENT_TYPE_DISCONNECTED\0\u{2}\u{2}DISPLAY_CHANGE_EVENT_TYPE_MODIFIED\0\u{2}\u{4}DISPLAY_CHANGE_EVENT_TYPE_BECAME_PRIMARY\0")
-}
-
 extension Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".DisplayListRequest"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{2}\u{f}flags\0")
@@ -575,8 +359,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: SwiftProtobuf
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
-      case 16: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -584,10 +368,10 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: SwiftProtobuf
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 16)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -651,7 +435,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo: SwiftPro
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._physicalSize) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.dpi) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.dpi) }()
       default: break
       }
     }
@@ -666,7 +450,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo: SwiftPro
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
     if self.dpi != 0 {
-      try visitor.visitSingularFixed32Field(value: self.dpi, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.dpi, fieldNumber: 2)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -685,13 +469,13 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
 
   fileprivate class _StorageClass {
     var _displayID: UInt32 = 0
-    var _kind: Sirius_Msgdef_V1_Channels_Projection_DisplayKind = .unknown
+    var _kind: UInt32 = 0
     var _displayName: String = String()
     var _state: Sirius_Msgdef_V1_Channels_Projection_DisplayState? = nil
     var _bounds: Sirius_Msgdef_V1_Channels_Projection_SRRect? = nil
     var _refreshRate: Float = 0
-    var _colorDepth: Sirius_Msgdef_V1_Channels_Projection_DisplayColorDepth = .unknown
-    var _dynamicRange: Sirius_Msgdef_V1_Channels_Projection_DisplayDynamicRange = .sdr
+    var _colorDepth: UInt32 = 0
+    var _dynamicRange: UInt32 = 0
     var _colorProfile: String? = nil
     var _physicalSizeInfo: Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo? = nil
     var _metadata: Dictionary<String,String> = [:]
@@ -736,18 +520,18 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         // allocates stack space for every case branch when no optimizations are
         // enabled. https://github.com/apple/swift-protobuf/issues/1034
         switch fieldNumber {
-        case 1: try { try decoder.decodeSingularFixed32Field(value: &_storage._displayID) }()
-        case 2: try { try decoder.decodeSingularEnumField(value: &_storage._kind) }()
+        case 1: try { try decoder.decodeSingularUInt32Field(value: &_storage._displayID) }()
+        case 2: try { try decoder.decodeSingularUInt32Field(value: &_storage._kind) }()
         case 3: try { try decoder.decodeSingularStringField(value: &_storage._displayName) }()
         case 4: try { try decoder.decodeSingularMessageField(value: &_storage._state) }()
         case 5: try { try decoder.decodeSingularMessageField(value: &_storage._bounds) }()
         case 6: try { try decoder.decodeSingularFloatField(value: &_storage._refreshRate) }()
-        case 7: try { try decoder.decodeSingularEnumField(value: &_storage._colorDepth) }()
-        case 8: try { try decoder.decodeSingularEnumField(value: &_storage._dynamicRange) }()
+        case 7: try { try decoder.decodeSingularUInt32Field(value: &_storage._colorDepth) }()
+        case 8: try { try decoder.decodeSingularUInt32Field(value: &_storage._dynamicRange) }()
         case 9: try { try decoder.decodeSingularStringField(value: &_storage._colorProfile) }()
         case 10: try { try decoder.decodeSingularMessageField(value: &_storage._physicalSizeInfo) }()
         case 15: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &_storage._metadata) }()
-        case 16: try { try decoder.decodeSingularFixed32Field(value: &_storage._flags) }()
+        case 16: try { try decoder.decodeSingularUInt32Field(value: &_storage._flags) }()
         default: break
         }
       }
@@ -761,10 +545,10 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
       // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
       // https://github.com/apple/swift-protobuf/issues/1182
       if _storage._displayID != 0 {
-        try visitor.visitSingularFixed32Field(value: _storage._displayID, fieldNumber: 1)
+        try visitor.visitSingularUInt32Field(value: _storage._displayID, fieldNumber: 1)
       }
-      if _storage._kind != .unknown {
-        try visitor.visitSingularEnumField(value: _storage._kind, fieldNumber: 2)
+      if _storage._kind != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._kind, fieldNumber: 2)
       }
       if !_storage._displayName.isEmpty {
         try visitor.visitSingularStringField(value: _storage._displayName, fieldNumber: 3)
@@ -778,11 +562,11 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
       if _storage._refreshRate.bitPattern != 0 {
         try visitor.visitSingularFloatField(value: _storage._refreshRate, fieldNumber: 6)
       }
-      if _storage._colorDepth != .unknown {
-        try visitor.visitSingularEnumField(value: _storage._colorDepth, fieldNumber: 7)
+      if _storage._colorDepth != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._colorDepth, fieldNumber: 7)
       }
-      if _storage._dynamicRange != .sdr {
-        try visitor.visitSingularEnumField(value: _storage._dynamicRange, fieldNumber: 8)
+      if _storage._dynamicRange != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._dynamicRange, fieldNumber: 8)
       }
       try { if let v = _storage._colorProfile {
         try visitor.visitSingularStringField(value: v, fieldNumber: 9)
@@ -794,7 +578,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: _storage._metadata, fieldNumber: 15)
       }
       if _storage._flags != 0 {
-        try visitor.visitSingularFixed32Field(value: _storage._flags, fieldNumber: 16)
+        try visitor.visitSingularUInt32Field(value: _storage._flags, fieldNumber: 16)
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -836,7 +620,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayListResponse: SwiftProtobu
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.displays) }()
       default: break
       }
@@ -845,7 +629,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayListResponse: SwiftProtobu
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     if !self.displays.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.displays, fieldNumber: 2)
@@ -871,9 +655,9 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: S
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.eventMask) }()
-      case 16: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.eventMask) }()
+      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -881,13 +665,13 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: S
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     if self.eventMask != 0 {
-      try visitor.visitSingularFixed32Field(value: self.eventMask, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.eventMask, fieldNumber: 2)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 16)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -911,7 +695,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: 
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
       default: break
       }
@@ -924,7 +708,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: 
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     try { if let v = self._subscriptionID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -950,7 +734,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest:
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
       default: break
       }
@@ -963,7 +747,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest:
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     try { if let v = self._subscriptionID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -989,7 +773,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.requestID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
       case 3: try { try decoder.decodeSingularBoolField(value: &self.isSuccess) }()
       default: break
@@ -1003,7 +787,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.requestID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.requestID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
     try { if let v = self._subscriptionID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -1033,7 +817,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayChangedEvent: SwiftProtobu
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed32Field(value: &self.eventType) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.eventType) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._display) }()
       default: break
       }
@@ -1046,7 +830,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayChangedEvent: SwiftProtobu
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.eventType != 0 {
-      try visitor.visitSingularFixed32Field(value: self.eventType, fieldNumber: 1)
+      try visitor.visitSingularUInt32Field(value: self.eventType, fieldNumber: 1)
     }
     try { if let v = self._display {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)

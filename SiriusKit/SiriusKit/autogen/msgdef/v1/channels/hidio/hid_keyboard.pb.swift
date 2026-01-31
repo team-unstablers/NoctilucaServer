@@ -20,171 +20,14 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-enum Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayoutId: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case keyboardLayoutAnsi // = 0
-  case keyboardLayoutIso // = 1
-  case keyboardLayoutJis // = 2
-  case keyboardLayoutKs // = 3
-
-  /// 이 값은 가상 키보드 (iOS, iPhone 등의 태블릿 / 휴대폰의 소프트웨어 키보드)를 통해 키보드 이벤트를 보낼 것임을 나타내는 힌트 값입니다
-  case keyboardLayoutVirtual // = 15
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .keyboardLayoutAnsi
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .keyboardLayoutAnsi
-    case 1: self = .keyboardLayoutIso
-    case 2: self = .keyboardLayoutJis
-    case 3: self = .keyboardLayoutKs
-    case 15: self = .keyboardLayoutVirtual
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .keyboardLayoutAnsi: return 0
-    case .keyboardLayoutIso: return 1
-    case .keyboardLayoutJis: return 2
-    case .keyboardLayoutKs: return 3
-    case .keyboardLayoutVirtual: return 15
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayoutId] = [
-    .keyboardLayoutAnsi,
-    .keyboardLayoutIso,
-    .keyboardLayoutJis,
-    .keyboardLayoutKs,
-    .keyboardLayoutVirtual,
-  ]
-
-}
-
-enum Sirius_Msgdef_V1_Channels_Hidio_KeyboardModifier: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case none // = 0
-  case lshift // = 1
-  case rshift // = 2
-  case lctrl // = 4
-  case rctrl // = 8
-  case lalt // = 16
-  case ralt // = 32
-  case lmeta // = 64
-  case rmeta // = 128
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .none
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .none
-    case 1: self = .lshift
-    case 2: self = .rshift
-    case 4: self = .lctrl
-    case 8: self = .rctrl
-    case 16: self = .lalt
-    case 32: self = .ralt
-    case 64: self = .lmeta
-    case 128: self = .rmeta
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .none: return 0
-    case .lshift: return 1
-    case .rshift: return 2
-    case .lctrl: return 4
-    case .rctrl: return 8
-    case .lalt: return 16
-    case .ralt: return 32
-    case .lmeta: return 64
-    case .rmeta: return 128
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Hidio_KeyboardModifier] = [
-    .none,
-    .lshift,
-    .rshift,
-    .lctrl,
-    .rctrl,
-    .lalt,
-    .ralt,
-    .lmeta,
-    .rmeta,
-  ]
-
-}
-
-enum Sirius_Msgdef_V1_Channels_Hidio_KeyboardEventType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case unknown // = 0
-
-  /// 키 다운 이벤트
-  case keyDown // = 1
-
-  /// 키 업 이벤트
-  case keyUp // = 2
-
-  /// UCS4 문자 입력 이벤트 - keyCode 필드에 UCS4 문자가 포함됩니다.
-  case ucs4 // = 3
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .unknown
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .unknown
-    case 1: self = .keyDown
-    case 2: self = .keyUp
-    case 3: self = .ucs4
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .unknown: return 0
-    case .keyDown: return 1
-    case .keyUp: return 2
-    case .ucs4: return 3
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Hidio_KeyboardEventType] = [
-    .unknown,
-    .keyDown,
-    .keyUp,
-    .ucs4,
-  ]
-
-}
-
 //// Keyboard Layout 정의
 struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayout: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var layoutID: Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayoutId = .keyboardLayoutAnsi
+  /// @constset: KeyboardLayoutId
+  var layoutID: UInt32 = 0
 
   /// Locale ID
   /// - MS-LCID를 따릅니다.
@@ -199,15 +42,6 @@ struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayout: Sendable {
   init() {}
 }
 
-//// ## Keyboard Hack 정의
-//// - Keyboard Hack이란, 사용자 편의를 위해 특정 키보드 동작을 수정하거나 보완하는 설정을 의미합니다.
-//// - 각 Hack은 고유한 identifier를 가지며, 필요에 따라 추가적인 인자를 args 맵을 통해 전달할 수 있습니다.
-////
-//// <example>
-////   - `app.noctiluca.hidio.hack.general.capslock_as_ctrl`        - Caps Lock 키를 Ctrl 키로 동작하게 함
-////   - `app.noctiluca.hidio.hack.cjk.emulate_win32_ime_switch`    - Alt + Shift 키 조합을 사용하여 IME 전환 동작을 에뮬레이트함 (Alt + Shift 키를 누르면 macOS 호스트에서 IM이 전환됨)
-////   - `app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle` - 한/영 키 동작을 에뮬레이트함 (한/영 키를 누르면 macOS 호스트에서 한글 / 영문 입력이 전환됨)
-//// </example>
 struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardHack: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -222,20 +56,6 @@ struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardHack: Sendable {
   init() {}
 }
 
-///
-///### KEYBOARD SETUP EVENT
-///- KeyboardSetupEvent 메시지는 키보드 장치를 설정하는 데 사용됩니다.
-///- 클라이언트가 요청한 layoutId를 서버가 지원하지 않는 경우, 서버는 아래 동작을 취합니다.
-///- ANSI 레이아웃을 기본값으로 사용합니다.
-///- **HIDIO 채널이 아닌** 메인 채널을 통해 다음과 같은 메시지를 보냅니다.
-///<code>
-///<ServerNotice>
-///<NoticeSeverity>WARNING</NoticeSeverity>
-///<code:uint32>HIDIO_KEYBOARD_LAYOUT_NOT_SUPPORTED</code:uint32>
-///<message>Requested keyboard layout is not supported. Defaulting to ANSI layout.</message>
-///<timestamp:uint64>{now()}</timestamp:uint64>
-///</ServerNotice>
-///</code>
 struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardSetupEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -252,21 +72,19 @@ struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardSetupEvent: Sendable {
   init() {}
 }
 
-///
-///## KEYBOARD EVENT FORMAT
-///- KeyboardEvent 메시지는 키보드 입력 이벤트를 나타냅니다.
-///- eventType 필드는 키 다운, 키 업 등의 이벤트 유형을 나타냅니다.
 struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var eventType: Sirius_Msgdef_V1_Channels_Hidio_KeyboardEventType = .unknown
+  /// @constset: KeyboardEventType
+  var eventType: UInt32 = 0
 
   var scanCode: UInt32 = 0
 
   var keyCode: UInt32 = 0
 
+  /// @optionset: KeyboardModifier
   var modifiers: UInt32 = 0
 
   var flags: UInt32 = 0
@@ -280,18 +98,6 @@ struct Sirius_Msgdef_V1_Channels_Hidio_KeyboardEvent: Sendable {
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.hidio"
 
-extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayoutId: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0KEYBOARD_LAYOUT_ANSI\0\u{1}KEYBOARD_LAYOUT_ISO\0\u{1}KEYBOARD_LAYOUT_JIS\0\u{1}KEYBOARD_LAYOUT_KS\0\u{2}\u{c}KEYBOARD_LAYOUT_VIRTUAL\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardModifier: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0KEYBOARD_MODIFIER_NONE\0\u{1}KEYBOARD_MODIFIER_LSHIFT\0\u{1}KEYBOARD_MODIFIER_RSHIFT\0\u{2}\u{2}KEYBOARD_MODIFIER_LCTRL\0\u{2}\u{4}KEYBOARD_MODIFIER_RCTRL\0\u{2}\u{8}KEYBOARD_MODIFIER_LALT\0\u{2}\u{10}KEYBOARD_MODIFIER_RALT\0\u{2} KEYBOARD_MODIFIER_LMETA\0\u{2}@\u{1}KEYBOARD_MODIFIER_RMETA\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardEventType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0KEYBOARD_EVENT_TYPE_UNKNOWN\0\u{1}KEYBOARD_EVENT_TYPE_KEY_DOWN\0\u{1}KEYBOARD_EVENT_TYPE_KEY_UP\0\u{1}KEYBOARD_EVENT_TYPE_UCS4\0")
-}
-
 extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayout: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".KeyboardLayout"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}layoutId\0\u{1}localeId\0\u{2}\u{d}flags\0")
@@ -302,23 +108,23 @@ extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardLayout: SwiftProtobuf.Message,
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularEnumField(value: &self.layoutID) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.localeID) }()
-      case 15: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.layoutID) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.localeID) }()
+      case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.layoutID != .keyboardLayoutAnsi {
-      try visitor.visitSingularEnumField(value: self.layoutID, fieldNumber: 1)
+    if self.layoutID != 0 {
+      try visitor.visitSingularUInt32Field(value: self.layoutID, fieldNumber: 1)
     }
     if self.localeID != 0 {
-      try visitor.visitSingularFixed32Field(value: self.localeID, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.localeID, fieldNumber: 2)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 15)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -379,7 +185,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardSetupEvent: SwiftProtobuf.Mess
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.preferredLayouts) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.hacks) }()
-      case 15: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -393,7 +199,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardSetupEvent: SwiftProtobuf.Mess
       try visitor.visitRepeatedMessageField(value: self.hacks, fieldNumber: 2)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 15)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -417,31 +223,31 @@ extension Sirius_Msgdef_V1_Channels_Hidio_KeyboardEvent: SwiftProtobuf.Message, 
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularEnumField(value: &self.eventType) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.scanCode) }()
-      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.keyCode) }()
-      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.modifiers) }()
-      case 5: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.eventType) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.scanCode) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.keyCode) }()
+      case 4: try { try decoder.decodeSingularUInt32Field(value: &self.modifiers) }()
+      case 5: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.eventType != .unknown {
-      try visitor.visitSingularEnumField(value: self.eventType, fieldNumber: 1)
+    if self.eventType != 0 {
+      try visitor.visitSingularUInt32Field(value: self.eventType, fieldNumber: 1)
     }
     if self.scanCode != 0 {
-      try visitor.visitSingularFixed32Field(value: self.scanCode, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.scanCode, fieldNumber: 2)
     }
     if self.keyCode != 0 {
-      try visitor.visitSingularFixed32Field(value: self.keyCode, fieldNumber: 3)
+      try visitor.visitSingularUInt32Field(value: self.keyCode, fieldNumber: 3)
     }
     if self.modifiers != 0 {
-      try visitor.visitSingularFixed32Field(value: self.modifiers, fieldNumber: 4)
+      try visitor.visitSingularUInt32Field(value: self.modifiers, fieldNumber: 4)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 5)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }

@@ -12,22 +12,6 @@ public extension MessageOpcode {
     static let windowManipulationRequest: MessageOpcode = MessageOpcode(rawValue: 0x8043)
 }
 
-public struct WindowStateCommand: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_WindowStateCommand
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let unknown = Self.fromProtobufEnum(.unknown)
-    public static let close = Self.fromProtobufEnum(.close)
-    public static let minimize = Self.fromProtobufEnum(.minimize)
-    public static let maximize = Self.fromProtobufEnum(.maximize)
-    public static let restore = Self.fromProtobufEnum(.restore)
-}
-
 public struct WindowManipulationRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest
     
@@ -58,7 +42,7 @@ public struct WindowManipulationRequest: SiriusMessage {
         self.flags = protobufMessage.flags
         switch protobufMessage.operation {
         case .stateCommand(let val):
-            self.operation = .stateCommand(WindowStateCommand.fromProtobufEnum(val))
+            self.operation = .stateCommand(.init(rawValue: val))
             break
         case .focus(let val):
             self.operation = .focus(val)
@@ -85,7 +69,7 @@ public struct WindowManipulationRequest: SiriusMessage {
         message.flags = self.flags
         switch self.operation {
         case .stateCommand(let val):
-            message.operation = .stateCommand(val.toProtobufEnum())
+            message.operation = .stateCommand(val.rawValue)
             break
         case .focus(let val):
             message.operation = .focus(val)

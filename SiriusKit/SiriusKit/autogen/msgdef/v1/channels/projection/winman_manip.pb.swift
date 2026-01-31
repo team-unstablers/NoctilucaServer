@@ -20,65 +20,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// @gemini, 더 나은 이름이 없을까요? ㅠ_ㅠ
-enum Sirius_Msgdef_V1_Channels_Projection_WindowStateCommand: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-
-  //// 알 수 없는 오퍼레이션
-  case unknown // = 0
-
-  //// 윈도우를 닫습니다.
-  case close // = 1
-
-  //// 윈도우를 최소화합니다.
-  case minimize // = 2
-
-  //// 윈도우를 최대화합니다.
-  case maximize // = 3
-
-  //// 윈도우를 원래 크기로 복원합니다.
-  case restore // = 4
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .unknown
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .unknown
-    case 1: self = .close
-    case 2: self = .minimize
-    case 3: self = .maximize
-    case 4: self = .restore
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .unknown: return 0
-    case .close: return 1
-    case .minimize: return 2
-    case .maximize: return 3
-    case .restore: return 4
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_WindowStateCommand] = [
-    .unknown,
-    .close,
-    .minimize,
-    .maximize,
-    .restore,
-  ]
-
-}
-
-/// @gemini, 각 request-response pair에 identifier 필드가 있어야..겠죠..? ㅠ_ㅠ
-/// opcode = 0x8043
+/// @opcode: 0x8081
 struct Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -90,10 +32,11 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: Sendable 
 
   //// 닫기, 최소화, 최대화, 복원 등의 간단한 오퍼레이션을 수행합니다.
   //// @note 이 오퍼레이션은 성공하지 않을 수도 있습니다. (예: '정말 닫으시겠습니까?' 같은 confirm 대화상자가 뜨거나, Window Role 자체가 닫히는 것을 막는 경우 등)
-  var stateCommand: Sirius_Msgdef_V1_Channels_Projection_WindowStateCommand {
+  /// @constset: WindowStateCommand
+  var stateCommand: UInt32 {
     get {
       if case .stateCommand(let v)? = operation {return v}
-      return .unknown
+      return 0
     }
     set {operation = .stateCommand(newValue)}
   }
@@ -152,7 +95,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: Sendable 
   enum OneOf_Operation: Equatable, Sendable {
     //// 닫기, 최소화, 최대화, 복원 등의 간단한 오퍼레이션을 수행합니다.
     //// @note 이 오퍼레이션은 성공하지 않을 수도 있습니다. (예: '정말 닫으시겠습니까?' 같은 confirm 대화상자가 뜨거나, Window Role 자체가 닫히는 것을 막는 경우 등)
-    case stateCommand(Sirius_Msgdef_V1_Channels_Projection_WindowStateCommand)
+    /// @constset: WindowStateCommand
+    case stateCommand(UInt32)
     //// 이 윈도우의 포커스 여부를 설정합니다.
     //// - true로 설정하면 윈도우에 포커스가 주어집니다.
     //// - false로 설정하면 윈도우에서 포커스가 제거됩니다.
@@ -174,6 +118,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: Sendable 
   init() {}
 }
 
+/// @opcode: 0x8082
 struct Sirius_Msgdef_V1_Channels_Projection_WindowManipulationResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -203,10 +148,6 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowManipulationResponse: Sendable
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
-extension Sirius_Msgdef_V1_Channels_Projection_WindowStateCommand: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0WINDOW_STATE_COMMAND_UNKNOWN\0\u{1}WINDOW_STATE_COMMAND_CLOSE\0\u{1}WINDOW_STATE_COMMAND_MINIMIZE\0\u{1}WINDOW_STATE_COMMAND_MAXIMIZE\0\u{1}WINDOW_STATE_COMMAND_RESTORE\0")
-}
-
 extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".WindowManipulationRequest"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}windowId\0\u{1}stateCommand\0\u{1}focus\0\u{1}setGeometry\0\u{2}\u{9}setFlags\0\u{1}clearFlags\0\u{1}extraArgs\0\u{1}flags\0")
@@ -217,10 +158,10 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: SwiftP
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularFixed64Field(value: &self.windowID) }()
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.windowID) }()
       case 2: try {
-        var v: Sirius_Msgdef_V1_Channels_Projection_WindowStateCommand?
-        try decoder.decodeSingularEnumField(value: &v)
+        var v: UInt32?
+        try decoder.decodeSingularUInt32Field(value: &v)
         if let v = v {
           if self.operation != nil {try decoder.handleConflictingOneOf()}
           self.operation = .stateCommand(v)
@@ -249,7 +190,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: SwiftP
       }()
       case 13: try {
         var v: UInt64?
-        try decoder.decodeSingularFixed64Field(value: &v)
+        try decoder.decodeSingularUInt64Field(value: &v)
         if let v = v {
           if self.operation != nil {try decoder.handleConflictingOneOf()}
           self.operation = .setFlags(v)
@@ -257,14 +198,14 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: SwiftP
       }()
       case 14: try {
         var v: UInt64?
-        try decoder.decodeSingularFixed64Field(value: &v)
+        try decoder.decodeSingularUInt64Field(value: &v)
         if let v = v {
           if self.operation != nil {try decoder.handleConflictingOneOf()}
           self.operation = .clearFlags_p(v)
         }
       }()
       case 15: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.extraArgs) }()
-      case 16: try { try decoder.decodeSingularFixed32Field(value: &self.flags) }()
+      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -276,12 +217,12 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: SwiftP
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.windowID != 0 {
-      try visitor.visitSingularFixed64Field(value: self.windowID, fieldNumber: 1)
+      try visitor.visitSingularUInt64Field(value: self.windowID, fieldNumber: 1)
     }
     switch self.operation {
     case .stateCommand?: try {
       guard case .stateCommand(let v)? = self.operation else { preconditionFailure() }
-      try visitor.visitSingularEnumField(value: v, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: v, fieldNumber: 2)
     }()
     case .focus?: try {
       guard case .focus(let v)? = self.operation else { preconditionFailure() }
@@ -293,11 +234,11 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: SwiftP
     }()
     case .setFlags?: try {
       guard case .setFlags(let v)? = self.operation else { preconditionFailure() }
-      try visitor.visitSingularFixed64Field(value: v, fieldNumber: 13)
+      try visitor.visitSingularUInt64Field(value: v, fieldNumber: 13)
     }()
     case .clearFlags_p?: try {
       guard case .clearFlags_p(let v)? = self.operation else { preconditionFailure() }
-      try visitor.visitSingularFixed64Field(value: v, fieldNumber: 14)
+      try visitor.visitSingularUInt64Field(value: v, fieldNumber: 14)
     }()
     case nil: break
     }
@@ -305,7 +246,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest: SwiftP
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.extraArgs, fieldNumber: 15)
     }
     if self.flags != 0 {
-      try visitor.visitSingularFixed32Field(value: self.flags, fieldNumber: 16)
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -331,7 +272,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationResponse: Swift
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularBoolField(value: &self.isSuccess) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.code) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.code) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self._message) }()
       default: break
       }
@@ -347,7 +288,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowManipulationResponse: Swift
       try visitor.visitSingularBoolField(value: self.isSuccess, fieldNumber: 1)
     }
     if self.code != 0 {
-      try visitor.visitSingularFixed32Field(value: self.code, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.code, fieldNumber: 2)
     }
     try { if let v = self._message {
       try visitor.visitSingularStringField(value: v, fieldNumber: 3)

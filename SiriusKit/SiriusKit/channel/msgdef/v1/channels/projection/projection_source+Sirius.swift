@@ -8,51 +8,6 @@
 import Foundation
 import SwiftProtobuf
 
-public struct SingleWindowProjectionSourceFlags: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSourceFlags
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let none = Self.fromProtobufEnum(.singleWindowProjectionFlagNone)
-    public static let source = Self.fromProtobufEnum(.singleWindowProjectionFlagFollowSource)
-}
-
-
-public struct ProjectionSourceFlagSet: OptionSet, Codable, Hashable, Equatable {
-    public var rawValue: UInt32
-    
-    public init(rawValue: UInt32) {
-        self.rawValue = rawValue
-    }
-    
-    /// 플래그가 설정되어 있지 않음을 나타냅니다.
-    public static let none = Self([])
-    
-    /// 호스트 화면의 커서를 표시합니다.
-    /// - NOTE: 이 플래그는 서버 구현체 및 정책 구성에 따라 무시될 수 있습니다.
-    public static let showCursor = Self(rawValue: 0b0000_0001)
-    
-    /// 호스트의 콘솔 화면에 커튼 (화면 가림막)을 표시합니다.
-    /// - NOTE: 이 플래그는 서버 구현체 및 정책 구성에 따라 무시될 수 있습니다.
-    public static let showCurtain = Self(rawValue: 0b0000_0010)
-}
-
-public struct ProjectionSourceFlags: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let none = Self.fromProtobufEnum(.displayViewportFlagNone)
-}
-
 
 public struct EntireDisplayProjectionSource: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource
@@ -117,7 +72,7 @@ public struct SingleWindowProjectionSource: SiriusMessage {
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSource) throws {
         self.windowID = protobufMessage.hasWindowID ? protobufMessage.windowID : nil
-        self.flags = SingleWindowProjectionSourceFlags.fromProtobufEnum(protobufMessage.flags)
+        self.flags = .init(rawValue: protobufMessage.flags)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -126,7 +81,7 @@ public struct SingleWindowProjectionSource: SiriusMessage {
         if let val = self.windowID {
             message.windowID = val
         }
-        message.flags = self.flags.toProtobufEnum()
+        message.flags = self.flags.rawValue
 
         return message
     }
@@ -142,17 +97,17 @@ public struct ProjectionSource: SiriusMessage {
         case none
     }
 
-    public let flags: ProjectionSourceFlagSet
+    public let flags: ProjectionSourceFlags
 
     public let value: OneOf_Value
 
-    public init(value: OneOf_Value, flags: ProjectionSourceFlagSet) {
+    public init(value: OneOf_Value, flags: ProjectionSourceFlags) {
         self.value = value
         self.flags = flags
     }
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionSource) throws {
-        self.flags = ProjectionSourceFlagSet(rawValue: UInt32(protobufMessage.flags.rawValue))
+        self.flags = ProjectionSourceFlags(rawValue: UInt32(protobufMessage.flags))
         switch protobufMessage.value {
         case .entireDisplay(let val):
             self.value = .entireDisplay(try EntireDisplayProjectionSource(from: val))
@@ -172,7 +127,7 @@ public struct ProjectionSource: SiriusMessage {
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
-        message.flags = Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags(rawValue: Int(self.flags.rawValue)) ?? .displayViewportFlagNone
+        message.flags = self.flags.rawValue
         
         switch self.value {
         case .entireDisplay(let val):

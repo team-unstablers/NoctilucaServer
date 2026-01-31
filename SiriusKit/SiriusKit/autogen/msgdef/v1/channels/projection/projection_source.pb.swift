@@ -20,70 +20,6 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-enum Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSourceFlags: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case singleWindowProjectionFlagNone // = 0
-  case singleWindowProjectionFlagFollowSource // = 1
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .singleWindowProjectionFlagNone
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .singleWindowProjectionFlagNone
-    case 1: self = .singleWindowProjectionFlagFollowSource
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .singleWindowProjectionFlagNone: return 0
-    case .singleWindowProjectionFlagFollowSource: return 1
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSourceFlags] = [
-    .singleWindowProjectionFlagNone,
-    .singleWindowProjectionFlagFollowSource,
-  ]
-
-}
-
-enum Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
-  case displayViewportFlagNone // = 0
-  case UNRECOGNIZED(Int)
-
-  init() {
-    self = .displayViewportFlagNone
-  }
-
-  init?(rawValue: Int) {
-    switch rawValue {
-    case 0: self = .displayViewportFlagNone
-    default: self = .UNRECOGNIZED(rawValue)
-    }
-  }
-
-  var rawValue: Int {
-    switch self {
-    case .displayViewportFlagNone: return 0
-    case .UNRECOGNIZED(let i): return i
-    }
-  }
-
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags] = [
-    .displayViewportFlagNone,
-  ]
-
-}
-
 //// 전체 디스플레이를 프로젝션할 때 사용합니다.
 struct Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -100,7 +36,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource: Senda
   init() {}
 }
 
-//// 수동으로 직접 프로젝션할 뷰포트를 지정합니다.
+//// 특정 디스플레이 내의 수동 지정된 영역을 프로젝션할 때 사용합니다.
 struct Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -111,6 +47,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: Senda
   //// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
   var displayID: Int32 = 0
 
+  //// 프로젝션할 사각형 영역 (픽셀 단위)
   var region: Sirius_Msgdef_V1_Channels_Projection_SRRect {
     get {return _region ?? Sirius_Msgdef_V1_Channels_Projection_SRRect()}
     set {_region = newValue}
@@ -127,13 +64,13 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: Senda
   fileprivate var _region: Sirius_Msgdef_V1_Channels_Projection_SRRect? = nil
 }
 
-//// 단일 창을 프로젝션할 때 사용합니다.
+//// 단일 윈도우(창)를 프로젝션할 때 사용합니다.
 struct Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSource: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// TODO: Add more window identification methods (e.g., by process ID, by window title, etc.)
+  //// 프로젝션할 윈도우의 고유 ID (Handle)
   var windowID: Int64 {
     get {return _windowID ?? 0}
     set {_windowID = newValue}
@@ -143,7 +80,9 @@ struct Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSource: Sendab
   /// Clears the value of `windowID`. Subsequent reads from it will return its default value.
   mutating func clearWindowID() {self._windowID = nil}
 
-  var flags: Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSourceFlags = .singleWindowProjectionFlagNone
+  //// 윈도우 프로젝션 관련 플래그
+  /// @optionset: SingleWindowProjectionSourceFlags
+  var flags: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -152,6 +91,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSource: Sendab
   fileprivate var _windowID: Int64? = nil
 }
 
+//// 프로젝션 소스 정의 (디스플레이, 영역, 또는 단일 창 중 하나)
 struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSource: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -183,7 +123,9 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSource: Sendable {
     set {value = .singleWindow(newValue)}
   }
 
-  var flags: Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags = .displayViewportFlagNone
+  //// 프로젝션 소스 공통 플래그
+  /// @optionset: ProjectionSourceFlags
+  var flags: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -201,14 +143,6 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSource: Sendable {
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
-extension Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSourceFlags: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SINGLE_WINDOW_PROJECTION_FLAG_NONE\0\u{1}SINGLE_WINDOW_PROJECTION_FLAG_FOLLOW_SOURCE\0")
-}
-
-extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSourceFlags: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0DISPLAY_VIEWPORT_FLAG_NONE\0")
-}
-
 extension Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".EntireDisplayProjectionSource"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayId\0")
@@ -219,7 +153,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource: Sw
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularSFixed32Field(value: &self.displayID) }()
+      case 1: try { try decoder.decodeSingularSInt32Field(value: &self.displayID) }()
       default: break
       }
     }
@@ -227,7 +161,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_EntireDisplayProjectionSource: Sw
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.displayID != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.displayID, fieldNumber: 1)
+      try visitor.visitSingularSInt32Field(value: self.displayID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -249,7 +183,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: Sw
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularSFixed32Field(value: &self.displayID) }()
+      case 1: try { try decoder.decodeSingularSInt32Field(value: &self.displayID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._region) }()
       default: break
       }
@@ -262,7 +196,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayRegionProjectionSource: Sw
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     if self.displayID != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.displayID, fieldNumber: 1)
+      try visitor.visitSingularSInt32Field(value: self.displayID, fieldNumber: 1)
     }
     try { if let v = self._region {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
@@ -288,8 +222,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSource: Swi
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularSFixed64Field(value: &self._windowID) }()
-      case 16: try { try decoder.decodeSingularEnumField(value: &self.flags) }()
+      case 1: try { try decoder.decodeSingularSInt64Field(value: &self._windowID) }()
+      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -301,10 +235,10 @@ extension Sirius_Msgdef_V1_Channels_Projection_SingleWindowProjectionSource: Swi
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
     try { if let v = self._windowID {
-      try visitor.visitSingularSFixed64Field(value: v, fieldNumber: 1)
+      try visitor.visitSingularSInt64Field(value: v, fieldNumber: 1)
     } }()
-    if self.flags != .singleWindowProjectionFlagNone {
-      try visitor.visitSingularEnumField(value: self.flags, fieldNumber: 16)
+    if self.flags != 0 {
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -366,7 +300,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSource: SwiftProtobuf.M
           self.value = .singleWindow(v)
         }
       }()
-      case 16: try { try decoder.decodeSingularEnumField(value: &self.flags) }()
+      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -392,8 +326,8 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSource: SwiftProtobuf.M
     }()
     case nil: break
     }
-    if self.flags != .displayViewportFlagNone {
-      try visitor.visitSingularEnumField(value: self.flags, fieldNumber: 16)
+    if self.flags != 0 {
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
     }
     try unknownFields.traverse(visitor: &visitor)
   }

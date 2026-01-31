@@ -8,34 +8,6 @@
 import Foundation
 import SwiftProtobuf
 
-public struct AutoQualityMode: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_AutoQualityMode
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let balancedPriority = Self.fromProtobufEnum(.balancedPriority)
-    public static let qualityPriority = Self.fromProtobufEnum(.qualityPriority)
-    public static let performancePriority = Self.fromProtobufEnum(.performancePriority)
-}
-
-
-public struct LosslessQualityMode: SiriusEnum {
-    typealias ProtobufEnum = Sirius_Msgdef_V1_Channels_Projection_LosslessQualityMode
-    
-    public let rawValue: Int
-    
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-    
-    public static let balancedPriority = Self.fromProtobufEnum(.balancedPriority)
-    public static let speedPriority = Self.fromProtobufEnum(.speedPriority)
-    public static let compressionPriority = Self.fromProtobufEnum(.compressionPriority)
-}
 
 public struct Codec: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_Codec
@@ -96,12 +68,12 @@ public struct Codec: SiriusMessage {
             break
         case .lossless(let val):
             self.quality = .lossless(
-                mode: .fromProtobufEnum(val.mode)
+                mode: .init(rawValue: val.mode)
             )
             break
         case .auto(let val):
             self.quality = .auto(
-                mode: .fromProtobufEnum(val.mode)
+                mode: .init(rawValue: val.mode)
             )
             break
         case .none:
@@ -141,12 +113,12 @@ public struct Codec: SiriusMessage {
             break
         case .lossless(let mode):
             message.quality = .lossless(.with {
-                $0.mode = mode.toProtobufEnum()
+                $0.mode = mode.rawValue
             })
             break
         case .auto(let mode):
             message.quality = .auto(.with {
-                $0.mode = mode.toProtobufEnum()
+                $0.mode = mode.rawValue
             })
             break
         }

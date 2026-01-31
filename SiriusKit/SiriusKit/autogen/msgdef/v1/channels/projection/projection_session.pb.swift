@@ -20,14 +20,14 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-/// opcode = 0x8011
+/// @opcode: 0x8001
 struct Sirius_Msgdef_V1_Channels_Projection_ProjectionRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var identifier: Sirius_Msgdef_UUID {
-    get {return _identifier ?? Sirius_Msgdef_UUID()}
+  var identifier: Sirius_Msgdef_SRUUID {
+    get {return _identifier ?? Sirius_Msgdef_SRUUID()}
     set {_identifier = newValue}
   }
   /// Returns true if `identifier` has been explicitly set.
@@ -50,18 +50,18 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionRequest: Sendable {
 
   init() {}
 
-  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _identifier: Sirius_Msgdef_SRUUID? = nil
   fileprivate var _viewport: Sirius_Msgdef_V1_Channels_Projection_ProjectionSource? = nil
 }
 
-/// opcode = 0x8012
+/// @opcode: 0x8002
 struct Sirius_Msgdef_V1_Channels_Projection_StopProjectionRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var identifier: Sirius_Msgdef_UUID {
-    get {return _identifier ?? Sirius_Msgdef_UUID()}
+  var identifier: Sirius_Msgdef_SRUUID {
+    get {return _identifier ?? Sirius_Msgdef_SRUUID()}
     set {_identifier = newValue}
   }
   /// Returns true if `identifier` has been explicitly set.
@@ -73,18 +73,18 @@ struct Sirius_Msgdef_V1_Channels_Projection_StopProjectionRequest: Sendable {
 
   init() {}
 
-  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _identifier: Sirius_Msgdef_SRUUID? = nil
 }
 
-/// opcode = 0x8013
+/// @opcode: 0x8003
 struct Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   //// 프로젝션 세션 식별자
-  var identifier: Sirius_Msgdef_UUID {
-    get {return _identifier ?? Sirius_Msgdef_UUID()}
+  var identifier: Sirius_Msgdef_SRUUID {
+    get {return _identifier ?? Sirius_Msgdef_SRUUID()}
     set {_identifier = newValue}
   }
   /// Returns true if `identifier` has been explicitly set.
@@ -108,17 +108,17 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport: Sendabl
 
   init() {}
 
-  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _identifier: Sirius_Msgdef_SRUUID? = nil
 }
 
-/// opcode = 0x8021
+/// @opcode: 0x8021
 struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreatedEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var identifier: Sirius_Msgdef_UUID {
-    get {return _identifier ?? Sirius_Msgdef_UUID()}
+  var identifier: Sirius_Msgdef_SRUUID {
+    get {return _identifier ?? Sirius_Msgdef_SRUUID()}
     set {_identifier = newValue}
   }
   /// Returns true if `identifier` has been explicitly set.
@@ -148,19 +148,19 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreatedEvent: Senda
 
   init() {}
 
-  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _identifier: Sirius_Msgdef_SRUUID? = nil
   fileprivate var _source: Sirius_Msgdef_V1_Channels_Projection_ProjectionSource? = nil
   fileprivate var _codec: Sirius_Msgdef_V1_Channels_Projection_Codec? = nil
 }
 
-/// opcode = 0x8022
+/// @opcode: 0x8022
 struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var identifier: Sirius_Msgdef_UUID {
-    get {return _identifier ?? Sirius_Msgdef_UUID()}
+  var identifier: Sirius_Msgdef_SRUUID {
+    get {return _identifier ?? Sirius_Msgdef_SRUUID()}
     set {_identifier = newValue}
   }
   /// Returns true if `identifier` has been explicitly set.
@@ -183,18 +183,18 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEvent
 
   init() {}
 
-  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _identifier: Sirius_Msgdef_SRUUID? = nil
   fileprivate var _message: String? = nil
 }
 
-/// opcode = 0x8023
+/// @opcode: 0x8023
 struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionChangedEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var identifier: Sirius_Msgdef_UUID {
-    get {return _identifier ?? Sirius_Msgdef_UUID()}
+  var identifier: Sirius_Msgdef_SRUUID {
+    get {return _identifier ?? Sirius_Msgdef_SRUUID()}
     set {_identifier = newValue}
   }
   /// Returns true if `identifier` has been explicitly set.
@@ -226,19 +226,19 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionChangedEvent: Senda
 
   init() {}
 
-  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _identifier: Sirius_Msgdef_SRUUID? = nil
   fileprivate var _source: Sirius_Msgdef_V1_Channels_Projection_ProjectionSource? = nil
   fileprivate var _codec: Sirius_Msgdef_V1_Channels_Projection_Codec? = nil
 }
 
-/// opcode = 0x8024
+/// @opcode: 0x8024
 struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionEndedEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var identifier: Sirius_Msgdef_UUID {
-    get {return _identifier ?? Sirius_Msgdef_UUID()}
+  var identifier: Sirius_Msgdef_SRUUID {
+    get {return _identifier ?? Sirius_Msgdef_SRUUID()}
     set {_identifier = newValue}
   }
   /// Returns true if `identifier` has been explicitly set.
@@ -261,7 +261,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionEndedEvent: Sendabl
 
   init() {}
 
-  fileprivate var _identifier: Sirius_Msgdef_UUID? = nil
+  fileprivate var _identifier: Sirius_Msgdef_SRUUID? = nil
   fileprivate var _message: String? = nil
 }
 
@@ -358,10 +358,10 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport: Swif
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
-      case 2: try { try decoder.decodeSingularFixed32Field(value: &self.receivedFrameCount) }()
-      case 3: try { try decoder.decodeSingularFixed32Field(value: &self.decodedFrameCount) }()
-      case 4: try { try decoder.decodeSingularFixed32Field(value: &self.droppedFrameCount) }()
-      case 5: try { try decoder.decodeSingularFixed32Field(value: &self.averageDecodeTimeMs) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.receivedFrameCount) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.decodedFrameCount) }()
+      case 4: try { try decoder.decodeSingularUInt32Field(value: &self.droppedFrameCount) }()
+      case 5: try { try decoder.decodeSingularUInt32Field(value: &self.averageDecodeTimeMs) }()
       default: break
       }
     }
@@ -376,16 +376,16 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionPerformanceReport: Swif
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
     if self.receivedFrameCount != 0 {
-      try visitor.visitSingularFixed32Field(value: self.receivedFrameCount, fieldNumber: 2)
+      try visitor.visitSingularUInt32Field(value: self.receivedFrameCount, fieldNumber: 2)
     }
     if self.decodedFrameCount != 0 {
-      try visitor.visitSingularFixed32Field(value: self.decodedFrameCount, fieldNumber: 3)
+      try visitor.visitSingularUInt32Field(value: self.decodedFrameCount, fieldNumber: 3)
     }
     if self.droppedFrameCount != 0 {
-      try visitor.visitSingularFixed32Field(value: self.droppedFrameCount, fieldNumber: 4)
+      try visitor.visitSingularUInt32Field(value: self.droppedFrameCount, fieldNumber: 4)
     }
     if self.averageDecodeTimeMs != 0 {
-      try visitor.visitSingularFixed32Field(value: self.averageDecodeTimeMs, fieldNumber: 5)
+      try visitor.visitSingularUInt32Field(value: self.averageDecodeTimeMs, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -456,7 +456,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEv
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
-      case 2: try { try decoder.decodeSingularSFixed32Field(value: &self.reason) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.reason) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self._message) }()
       default: break
       }
@@ -472,7 +472,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEv
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
     if self.reason != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.reason, fieldNumber: 2)
+      try visitor.visitSingularInt32Field(value: self.reason, fieldNumber: 2)
     }
     try { if let v = self._message {
       try visitor.visitSingularStringField(value: v, fieldNumber: 3)
@@ -500,7 +500,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionChangedEvent: Sw
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
-      case 2: try { try decoder.decodeSingularSFixed32Field(value: &self.reason) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.reason) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._source) }()
       case 4: try { try decoder.decodeSingularMessageField(value: &self._codec) }()
       default: break
@@ -517,7 +517,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionChangedEvent: Sw
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
     if self.reason != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.reason, fieldNumber: 2)
+      try visitor.visitSingularInt32Field(value: self.reason, fieldNumber: 2)
     }
     try { if let v = self._source {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
@@ -549,7 +549,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionEndedEvent: Swif
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._identifier) }()
-      case 2: try { try decoder.decodeSingularSFixed32Field(value: &self.reason) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.reason) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self._message) }()
       default: break
       }
@@ -565,7 +565,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionEndedEvent: Swif
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
     if self.reason != 0 {
-      try visitor.visitSingularSFixed32Field(value: self.reason, fieldNumber: 2)
+      try visitor.visitSingularInt32Field(value: self.reason, fieldNumber: 2)
     }
     try { if let v = self._message {
       try visitor.visitSingularStringField(value: v, fieldNumber: 3)
