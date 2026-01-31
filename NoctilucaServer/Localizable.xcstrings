@@ -1265,6 +1265,94 @@
         }
       }
     },
+    "settings.projection.audio_codec_priority.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에서 사용할 오디오 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_codec_priority.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 코덱 우선순위 설정"
+          }
+        }
+      }
+    },
+    "settings.projection.audio_codec.no_options" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 코덱에는 설정할 수 있는 옵션이 없습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_codec.opus.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "높은 음질과 낮은 지연 시간을 제공하는 현대적인 오디오 코덱입니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_codec.pcma.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유럽 등지에서 주로 사용되는 G.711 변형입니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_codec.pcmu.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전통적인 전화망에서 사용되는 표준 코덱입니다. 호환성이 높습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_encoder.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 인코더 설정"
+          }
+        }
+      }
+    },
+    "settings.projection.audio.enable" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션 활성화"
+          }
+        }
+      }
+    },
     "settings.projection.codec_add.add" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1348,7 +1436,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\nRLE보다 압축 효율이 높지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
+            "value" : "JPEG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
           }
         }
       }
@@ -1381,7 +1469,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 기반 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다."
+            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 방식의 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다."
           }
         }
       }
@@ -1397,28 +1485,6 @@
         }
       }
     },
-    "settings.projection.codec_priority.add" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "추가"
-          }
-        }
-      }
-    },
-    "settings.projection.codec_priority.delete" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "삭제"
-          }
-        }
-      }
-    },
     "settings.projection.codec_priority.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1426,17 +1492,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."
-          }
-        }
-      }
-    },
-    "settings.projection.codec_priority.edit" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "편집"
           }
         }
       }
@@ -4097,6 +4152,18 @@
           }
         }
       }
+    },
+    "삭제" : {
+
+    },
+    "추가" : {
+
+    },
+    "편집" : {
+
+    },
+    "항목을 찾을 수 없습니다." : {
+
     }
   },
   "version" : "1.1"

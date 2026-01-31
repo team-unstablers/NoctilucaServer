@@ -20,118 +20,50 @@ struct CodecSpecificationListContainer: View {
     
     @State
     private var selection = Set<Int>()
-    
-    @State
-    private var isEditSheetPresented = false
-    
-    @State
-    private var isAddSheetPresented = false
 
     var body: some View {
-        VStack(alignment: .leading) {
-            VStack(alignment: .leading) {
-                Text(markdown: String(localized: "settings.projection.codec_priority.title", defaultValue: "코덱 우선순위 설정"))
-                Text(markdown: String(localized: "settings.projection.codec_priority.description", defaultValue: "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            VStack {
-                List(selection: $selection) {
-                    ForEach(codecSpecifications, id: \.self) { specification in
-                        HStack {
-                            CodecSpecificationListEntry(specification: specification)
-                            if (selection.first == specification.hashValue) {
-                                Spacer()
-                                Button(String(localized: "settings.projection.codec_priority.edit", defaultValue: "편집")) {
-                                    isEditSheetPresented = true
-                                }
-                            }
-                        }
-                            .tag(specification.hashValue)
-                            .focusable(true)
+        EditableList(
+            items: $codecSpecifications,
+            id: \.hashValue,
+            selection: $selection,
+            title: String(localized: "settings.projection.codec_priority.title", defaultValue: "코덱 우선순위 설정"),
+            description: String(localized: "settings.projection.codec_priority.description", defaultValue: "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."),
+            rowContent: { specification in
+                CodecSpecificationListEntry(specification: specification)
+            },
+            addSheet: { onComplete in
+                CodecSpecificationAddSheet { specification in
+                    if !codecSpecifications.contains(specification) {
+                        onComplete(specification)
                     }
-                    .onMove(perform: moveCodecSpecification)
                 }
-                .listStyle(.inset)
-                .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
-            }
-            
-            HStack {
-                Spacer()
-                Button(String(localized: "settings.projection.codec_priority.delete", defaultValue: "삭제"), role: .destructive) {
-                    removeSelected()
-                }
-                .disabled(selection.isEmpty)
-
-                Button(String(localized: "settings.projection.codec_priority.add", defaultValue: "추가")) {
-                    isAddSheetPresented = true
-                }
-            }
-        }
-        .sheet(isPresented: $isEditSheetPresented) {
-            if let firstSelected = selection.first,
-               let specification = codecSpecifications.first(where: { $0.hashValue == firstSelected }) {
-                switch specification.fourCC {
-                case .zrle:
-                    RLECodecSpecificationSheet(specification: specification) { action in
-                        if case .save(let newSpecification) = action {
-                            if let index = codecSpecifications.firstIndex(of: specification) {
-                                codecSpecifications[index] = newSpecification
+                .fixedSize()
+            },
+            editSheet: { specification, onComplete in
+                Group {
+                    switch specification.fourCC {
+                    case .zrle:
+                        RLECodecSpecificationSheet(specification: specification) { action in
+                            if case .save(let newSpecification) = action {
+                                onComplete(newSpecification)
                             }
                         }
-                        isEditSheetPresented = false
-                    }
-                case .mjpg:
-                    MJPGCodecSpecificationSheet(specification: specification) { action in
-                        if case .save(let newSpecification) = action {
-                            if let index = codecSpecifications.firstIndex(of: specification) {
-                                codecSpecifications[index] = newSpecification
+                    case .mjpg:
+                        MJPGCodecSpecificationSheet(specification: specification) { action in
+                            if case .save(let newSpecification) = action {
+                                onComplete(newSpecification)
                             }
                         }
-                        isEditSheetPresented = false
-                    }
-                default:
-                    CodecSpecificationSheet(specification: specification) { action in
-                        if case .save(let newSpecification) = action {
-                            if let index = codecSpecifications.firstIndex(of: specification) {
-                                codecSpecifications[index] = newSpecification
+                    default:
+                        CodecSpecificationSheet(specification: specification) { action in
+                            if case .save(let newSpecification) = action {
+                                onComplete(newSpecification)
                             }
                         }
-                        isEditSheetPresented = false
                     }
                 }
             }
-        }
-        .sheet(isPresented: $isAddSheetPresented) {
-            CodecSpecificationAddSheet { specification in
-                if !codecSpecifications.contains(specification) {
-                    codecSpecifications.append(specification)
-                }
-                isAddSheetPresented = false
-            }
-            .fixedSize()
-        }
-        
-
-        
-        /*
-        if let selected = selection.first,
-           let handle = pluginRegistry.bundles[selected]
-        {
-            PluginBundleDetailView(metadata: handle.metadata)
-        }
-         */
-    }
-    
-    
-    private func moveCodecSpecification(from source: IndexSet, to destination: Int) {
-        codecSpecifications.move(fromOffsets: source, toOffset: destination)
-    }
-    
-    private func removeSelected() {
-        guard !selection.isEmpty else { return }
-        codecSpecifications.removeAll { selection.contains($0.hashValue) }
-        selection.removeAll()
+        )
     }
 }
 

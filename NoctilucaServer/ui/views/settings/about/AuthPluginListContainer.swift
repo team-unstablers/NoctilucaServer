@@ -27,14 +27,14 @@ struct AuthPluginListContainer: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            List(selection: $selection) {
-                ForEach(plugins, id: \.id) { plugin  in
+            EditableList(
+                items: .constant(plugins),
+                id: \.id,
+                selection: $selection,
+                rowContent: { plugin in
                     AuthPluginListEntry(plugin: plugin)
-                        .tag(plugin.id)
                 }
-            }
-            .listStyle(.inset)
-            .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
+            )
         }
         
         if let selected = selection.first,

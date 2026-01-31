@@ -25,21 +25,20 @@ struct PluginBundleListContainer: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            List(selection: $selection) {
-                ForEach(Array(pluginRegistry.bundles.values), id: \.metadata.id) { handle in
-                    let metadata = handle.metadata
-                    PluginBundleListEntry(metadata: metadata)
-                        .tag(metadata.id)
+            EditableList(
+                items: .constant(Array(pluginRegistry.bundles.values)),
+                id: \.metadata.id,
+                selection: $selection,
+                rowContent: { handle in
+                    PluginBundleListEntry(metadata: handle.metadata)
                 }
+            )
+            
+            if let selected = selection.first,
+               let handle = pluginRegistry.bundles[selected]
+            {
+                PluginBundleDetailView(metadata: handle.metadata)
             }
-            .listStyle(.inset)
-            .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
-        }
-        
-        if let selected = selection.first,
-           let handle = pluginRegistry.bundles[selected]
-        {
-            PluginBundleDetailView(metadata: handle.metadata)
         }
     }
 }
