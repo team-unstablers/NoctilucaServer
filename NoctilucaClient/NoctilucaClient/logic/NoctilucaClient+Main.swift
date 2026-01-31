@@ -42,7 +42,6 @@ extension NoctilucaClient {
         switch method {
         case .gameController:
             connectGameControllerKeyboard(hidioController)
-            updateInputWarning(nil)
         case .cocoaEventTap:
 #if os(macOS)
             guard TCCUtil.shared.isAccessGranted(for: .inputMonitoring) else {
@@ -61,10 +60,8 @@ extension NoctilucaClient {
                 }
             )
             hidioController.connect(eventTapDevice)
-            updateInputWarning(nil)
 #else
             connectGameControllerKeyboard(hidioController)
-            updateInputWarning(nil)
 #endif
         }
     }
@@ -95,22 +92,16 @@ extension NoctilucaClient {
     }
 
     private func handleEventTapError(_ error: Error) {
+        /*
         updateInputWarning(InputWarning(
             kind: .eventTapUnavailable,
             title: "Cocoa Event Tap 초기화 실패",
             message: "Cocoa Event Tap 초기화에 실패했습니다. 현재 GameController로 입력을 전송 중입니다."
         ))
+         */
 
         if let hidioController {
             connectGameControllerKeyboard(hidioController)
-        }
-    }
-
-    private func updateInputWarning(_ warning: InputWarning?) {
-        Task {
-            await MainActor.run {
-                self.uiEvents.send(.inputWarningUpdated(warning))
-            }
         }
     }
 
@@ -149,10 +140,6 @@ extension NoctilucaClient {
 
         let session = try await channel.createSession(projectionSettings: sessionSettings?.projection)
         self.logger.info("initializeProjection(): created sample session")
-        
-        await MainActor.run {
-            self.uiEvents.send(.FIXME_projectionStarted(session))
-        }
     }
     
     

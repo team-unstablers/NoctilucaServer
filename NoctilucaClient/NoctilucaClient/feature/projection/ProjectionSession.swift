@@ -8,6 +8,7 @@
 import Darwin
 
 import Foundation
+import Combine
 
 import CoreGraphics
 import CoreMedia
@@ -16,8 +17,34 @@ import AVFoundation
 
 import SiriusKitClient
 
+enum ProjectionSessionEvent: Sendable {
+    /// 프로젝션이 시작되었습니다.
+    case projectionStarted
+    
+    /// 프로젝션이 중지될 예정입니다.
+    case projectionWillStop
+    
+    /// 프로젝션이 중지되었습니다.
+    // TODO: 이거 reason 있어야 하지 않아?
+    case projectionStopped
+    
+    /// 오류가 발생했습니다.
+    /// - Parameters:
+    ///  - error: 발생한 오류
+    ///  - fatal: 치명적인 오류인지 여부
+    case errorOccurred(Error, fatal: Bool)
+    
+    /// 성능 보고서를 발행하였습니다.
+    case performanceReportEmitted(ProjectionPerformanceReport)
+    
+    case sizeChanged(CGSize)
+    
+    // TODO: reconfiguration 이벤트 있어야 하지 않아? 디코더 교체나 그런건 언제든 있을 수 있는건데...
+    // TODO: 서버에서 degradation notice같은거 보내야 하지 않아?
+}
+
 class ProjectionSession: Identifiable {
-    private let logger = SiriusLogger(category: "ProjectionSession", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = NoctilucaLogger(category: "ProjectionSession")
 
     let id: UUID
     let dataChannel: ProjectionDataChannel
@@ -37,7 +64,17 @@ class ProjectionSession: Identifiable {
     private(set) var codec: Codec?
     var formatDescription: CMFormatDescription?
 
-    var size: CGSize = .zero
+    var size: CGSize = .zero {
+        didSet {
+            if oldValue != size {
+                Task { @MainActor in
+                    events.send(.sizeChanged(size))
+                }
+            }
+        }
+    }
+    
+    let events = PassthroughSubject<ProjectionSessionEvent, Never>()
 
     init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
         self.id = id
@@ -45,7 +82,7 @@ class ProjectionSession: Identifiable {
         self.controlChannel = controlChannel
 
         self.decoder = VTVideoDecoder()
-        self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, controlChannel: controlChannel)
+        self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, parent: self)
 
         self.dataChannel.delegate = self
         self.decoder.delegate = self
@@ -107,13 +144,33 @@ class ProjectionSession: Identifiable {
     }
     
     func start() async throws {
-        try self.decoder.start()
-        self.performanceReporter?.start()
+        do {
+            try self.decoder.start()
+            self.performanceReporter?.start()
+            
+            await MainActor.run {
+                self.events.send(.projectionStarted)
+            }
+        } catch {
+            await MainActor.run {
+                self.events.send(.errorOccurred(error, fatal: true))
+            }
+            
+            throw error
+        }
     }
     
     func stop() async throws {
+        await MainActor.run {
+            self.events.send(.projectionWillStop)
+        }
+
         self.performanceReporter?.stop()
         try self.decoder.stop()
+        
+        await MainActor.run {
+            self.events.send(.projectionStopped)
+        }
     }
 }
 
@@ -122,17 +179,25 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveCodecParameterSets codecParameterSets: consuming SiriusKitClient.CodecParameterSetMessage) {
         guard let codec = self.codec?.fourCC else { return }
         
-        switch codec {
-        case .hvc1:
-            self.formatDescription = try! CMFormatDescription(hevcParameterSets: codecParameterSets.parameterSets.map { $0.data })
-            
-        case .avc1:
-            self.formatDescription = try! CMFormatDescription(h264ParameterSets: codecParameterSets.parameterSets.map { $0.data })
-            
-        case .zrle:
-            return
-        default:
-            return
+        do {
+            switch codec {
+            case .hvc1:
+                self.formatDescription = try CMFormatDescription(hevcParameterSets: codecParameterSets.parameterSets.map { $0.data })
+                
+            case .avc1:
+                self.formatDescription = try CMFormatDescription(h264ParameterSets: codecParameterSets.parameterSets.map { $0.data })
+                
+            case .zrle:
+                return
+            default:
+                return
+            }
+        } catch {
+            logger.error("Failed to create format description: \(error.localizedDescription)")
+            Task { @MainActor in
+                // 다음 키프레임을 받으면 되므로 fatal까진 아님
+                self.events.send(.errorOccurred(error, fatal: false))
+            }
         }
     }
     
@@ -146,7 +211,12 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
                 formatDescription: self.formatDescription
             ))
         } catch {
-            print(error)
+            logger.error("decoder decode error: \(error.localizedDescription)")
+            Task { @MainActor in
+                // 대부분의 경우 다음 키프레임을 받으면 되므로 fatal까진 아님
+                self.events.send(.errorOccurred(error, fatal: false))
+            }
+            
             self.performanceReporter?.recordDroppedFrame()
         }
     }
@@ -248,6 +318,11 @@ extension ProjectionSession: TiledVideoDecoderDelegate {
             displayLayer.enqueue(sampleBuffer)
         } catch {
             logger.error("Tile composition failed: \(error.localizedDescription)")
+            Task { @MainActor in
+                // 대부분의 경우 다음 키프레임을 받으면 되므로 fatal까진 아님
+                self.events.send(.errorOccurred(error, fatal: false))
+            }
+            
             performanceReporter?.recordDroppedFrame()
         }
     }
@@ -256,7 +331,13 @@ extension ProjectionSession: TiledVideoDecoderDelegate {
 private final class ProjectionPerformanceReporter {
     private let logger = SiriusLogger(category: "ProjectionPerformanceReporter", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
     private let sessionID: UUID
-    private weak var controlChannel: ProjectionChannel?
+    
+    private weak var parent: ProjectionSession?
+    
+    private var controlChannel: ProjectionChannel? {
+        parent?.controlChannel
+    }
+    
     private let syncQueue = DispatchQueue(label: "projection.performanceReporter.sync")
     
     private var received: UInt32 = 0
@@ -266,9 +347,9 @@ private final class ProjectionPerformanceReporter {
     
     private var timerTask: Task<Void, Never>?
     
-    init(sessionID: UUID, controlChannel: ProjectionChannel) {
+    init(sessionID: UUID, parent: ProjectionSession) {
         self.sessionID = sessionID
-        self.controlChannel = controlChannel
+        self.parent = parent
     }
     
     func start() {
@@ -332,6 +413,12 @@ private final class ProjectionPerformanceReporter {
             droppedFrameCount: dropped,
             averageDecodeTimeMs: avgDecodeMs
         )
+        
+        defer {
+            Task { @MainActor in
+                self.parent?.events.send(.performanceReportEmitted(report))
+            }
+        }
         
         do {
             logger.info("Sending performance report for session \(self.sessionID): received=\(received), decoded=\(decoded), dropped=\(dropped), avgDecodeMs=\(avgDecodeMs)")

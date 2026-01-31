@@ -79,10 +79,9 @@ enum NoctilucaClientUIEvent: Sendable {
     case errorOccurred(NoctilucaClientError)
 
     case pingRTTUpdated(TimeInterval)
-
-    case FIXME_projectionStarted(ProjectionSession)
-
-    case inputWarningUpdated(InputWarning?)
+   
+    case channelCreated(SiriusFeature, Channel)
+    case channelClosed(UUID)
 }
 
 struct InputWarning: Sendable, Equatable {
@@ -147,6 +146,7 @@ class NoctilucaClient: ObservableObject {
         self.authenticator = ClientAuthenticator(registry: .shared)
         
         self.session.delegate = self
+        self.session.channelManager.delegate = self
     }
 
     func configureAuthCredentials(sessionEntries: [ClientAuthEntry], globalEntries: [ClientAuthEntry]) {
@@ -344,6 +344,21 @@ extension NoctilucaClient: SiriusClientDelegate {
         
         Task {
             try await self.sendClientHello()
+        }
+    }
+}
+
+
+extension NoctilucaClient: ChannelManagerDelegate {
+    func channelManager(_ manager: ChannelManager, didRegisterChannel channel: Channel, for feature: SiriusFeature) {
+        Task { @MainActor in
+            self.uiEvents.send(.channelCreated(feature, channel))
+        }
+    }
+    
+    func channelManager(_ manager: ChannelManager, willUnregisterChannel channel: Channel) {
+        Task { @MainActor in
+            self.uiEvents.send(.channelClosed(channel.identifier))
         }
     }
 }

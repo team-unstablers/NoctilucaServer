@@ -12,19 +12,32 @@ enum ChannelManagerError: Error {
     case channelAlreadyRegistered
 }
 
+public protocol ChannelManagerDelegate: AnyObject {
+    func channelManager(_ manager: ChannelManager, didRegisterChannel channel: Channel, for feature: SiriusFeature)
+    func channelManager(_ manager: ChannelManager, willUnregisterChannel channel: Channel)
+}
+
 public class ChannelManager {
+    private let logger = SiriusLogger(category: "ChannelManager")
+    
     internal let session: (any SiriusSession)
     
     private(set) public var mainChannel: MainChannel?
     private(set) public var channels: [UUID: Channel] = [:]
     
+    public weak var delegate: ChannelManagerDelegate?
+    
     init(session: (any SiriusSession)) {
         self.session = session
     }
     
-    func registerChannel(_ channel: Channel) throws {
+    func registerChannel(_ channel: Channel, for feature: SiriusFeature) throws {
         guard !channels.keys.contains(channel.identifier) else {
             throw ChannelManagerError.channelAlreadyRegistered
+        }
+        
+        defer {
+            delegate?.channelManager(self, didRegisterChannel: channel, for: feature)
         }
         
         channel.lifecycleDelegate = self
@@ -33,6 +46,10 @@ public class ChannelManager {
     }
     
     func unregisterChannel(identifier: UUID) {
+        if let channel = self.channels[identifier] {
+            delegate?.channelManager(self, willUnregisterChannel: channel)
+        }
+        
         self.channels.removeValue(forKey: identifier)
     }
     
@@ -61,7 +78,7 @@ public class ChannelManager {
     public func openChannel(for feature: SiriusFeature, identifier: ChannelIdentifier, args: [String] = []) async throws -> Channel {
         guard session.featureProvider.supports(feature) else {
             // 이거 에러가 너무 제너릭하지 않아?
-            fatalError("Feature \(feature) is not supported by the session's feature provider")
+            logger.error("Feature \(feature) is not supported by the session's feature provider")
             throw ChannelManagerError.channelOpenFailed
         }
         
@@ -83,11 +100,11 @@ public class ChannelManager {
             )
             channel.session = self.session
             
-            print("Opened channel \(channel.identifier) for feature \(feature)")
+            logger.info("Opened channel \(channel.identifier) for feature \(feature)")
 
-            try self.registerChannel(channel)
+            try self.registerChannel(channel, for: feature)
             
-            print("Registered channel \(channel.identifier)")
+            logger.info("Registered channel \(channel.identifier)")
 
             return channel
         }
@@ -128,7 +145,7 @@ public class ChannelManager {
             )
             channel.session = self.session
                 
-            try self.registerChannel(channel)
+            try self.registerChannel(channel, for: feature)
             return true
         }
     }
