@@ -13,11 +13,12 @@ public enum MainChannelEvent {
     case receivedServerNotice(ServerNotice)
     case receivedClientHello(ClientHello)
     case receivedServerHello(ServerHello)
-    
+    case receivedGoodbye(Goodbye)
+
     case receivedAuthChallenge(AuthChallenge)
     case receivedAuthRequest(AuthRequest)
     case receivedAuthResponse(AuthResponse)
-    
+
     case receivedPing
     case receivedPong
 }
@@ -57,7 +58,11 @@ public class MainChannel: Channel {
                 let message = try ServerHello.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedServerHello(message))
                 break
-            
+            case .goodbye:
+                let message = try Goodbye.fromProtobufBytes(frame.data)
+                self.continuation.yield(.receivedGoodbye(message))
+                break
+
             case .authChallenge:
                 let message = try AuthChallenge.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedAuthChallenge(message))
@@ -122,5 +127,9 @@ public extension MainChannel {
     
     func sendAuthResponse(_ payload: AuthResponse) async throws {
         try await self.send(opcode: .authResponse, message: payload)
+    }
+
+    func sendGoodbye(_ payload: Goodbye) async throws {
+        try await self.send(opcode: .goodbye, message: payload)
     }
 }
