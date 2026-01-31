@@ -100,6 +100,11 @@ class NoctilucaClientSession: Identifiable {
                     try await handleClientHello(message)
                 case .receivedAuthRequest(let message):
                     try await handleAuthRequest(message)
+                case .receivedGoodbye(let message):
+                    logger.info("Received Goodbye from client: code=\(message.code.rawValue), message=\(message.message ?? "(none)")")
+                    // Goodbye 수신 시에는 재전송 없이 정리만 수행
+                    await self.close()
+                    return
                 case .receivedPing:
                     try await self.mainChannel.sendPong()
                 default:
@@ -147,7 +152,7 @@ class NoctilucaClientSession: Identifiable {
     /// NOTE: 중첩된 경우, 기존 것을 취소하고 새로 시작한다.
     func startPhaseShiftAssertion(expect phase: NoctilucaClientSessionPhase, within seconds: UInt64) {
         self.phaseShiftAssertionTask?.cancel()
-        
+
         self.phaseShiftAssertionTask = Task {
             do {
                 try await Task.sleep(for: .seconds(seconds))
@@ -155,10 +160,10 @@ class NoctilucaClientSession: Identifiable {
                 // interrupted
                 return
             }
-            
+
             if self.phase != phase {
                 self.logger.fatal("Phase shift assertion failed: expected phase \(phase) within \(seconds) seconds, but current phase is \(self.phase)")
-                await self.close()
+                await self.closeWithGoodbye(code: .protocolError, message: "Phase shift timeout")
             }
         }
     }
@@ -169,20 +174,35 @@ class NoctilucaClientSession: Identifiable {
             // 간이 lock 역할을 한다
             return
         }
-        
+
         try? self.shiftPhase(to: .panic)
-        
+
         logger.fatal("panic(): \(reason)")
         logger.fatal("panic(): dropping the client session \(self.id)")
-        
-        await self.close()
+
+        await self.closeWithGoodbye(code: .protocolError, message: reason)
     }
     
+    /// Goodbye 메시지를 전송하고 연결을 종료한다.
+    func closeWithGoodbye(code: ClosureCode, message: String? = nil) async {
+        guard self.phase != .closed else { return }
+
+        do {
+            try await self.mainChannel?.sendGoodbye(Goodbye(code: code, message: message))
+            // 상대방이 수신할 시간을 주기 위해 약간의 지연을 둔다
+            try? await Task.sleep(for: .milliseconds(100))
+        } catch {
+            logger.warning("Failed to send Goodbye: \(error)")
+        }
+
+        await self.close()
+    }
+
     func close() async {
         guard self.phase != .closed else {
             return
         }
-        
+
         if self.phase == .ready {
             Task { @MainActor in
                 AppNotification.connectionClosed(endpoint: remoteAddress).post()
@@ -190,17 +210,17 @@ class NoctilucaClientSession: Identifiable {
         }
 
         self.phase = .closed
-        
+
         // FIXME
         for channel in self.session.channelManager.channels.values {
             if channel is ProjectionChannel {
                 await (channel as! ProjectionChannel).destroy()
             }
         }
-        
+
         self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
-        
+
         await self.session.close()
     }
 }
