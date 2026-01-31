@@ -214,12 +214,12 @@ extension ProjectionChannel {
         // HDR 지원 모니터는 10bit일 가능성이 높음
         if let pixelEncoding = mode.pixelEncoding {
             let encodingString = pixelEncoding as String; if encodingString.contains("10") {
-                return .color10Bit
+                return .bit10
             }
         }
 
         // 대부분의 경우 8bit
-        return .color8Bit
+        return .bit8
     }
 
     private func getDynamicRange(screen: NSScreen) -> DisplayDynamicRange {

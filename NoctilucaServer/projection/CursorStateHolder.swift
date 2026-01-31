@@ -21,6 +21,7 @@ class CursorStateHolder: ObservableObject {
     @Published
     private(set) var cursorHash: Int = 0
     private(set) var cursorImage: NSImage? = nil
+    private(set) var cursorHotspot: NSPoint? = nil
     
     init() {
         do {
@@ -38,6 +39,7 @@ class CursorStateHolder: ObservableObject {
         if cursorHash != self.cursorHash {
             self.cursorHash  = cursorHash
             self.cursorImage = NSCursor.currentSystem?.image
+            self.cursorHotspot = NSCursor.currentSystem?.hotSpot
         }
     }
 }

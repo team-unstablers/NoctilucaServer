@@ -208,17 +208,22 @@ class ProjectionChannel: Channel {
     }
     
     func sendCursorEvent() async throws {
-        guard let cursorImage = await cursorStateHolder.cursorImage,
+        guard let cursorImage   = await cursorStateHolder.cursorImage,
+              let cursorHotspot = await cursorStateHolder.cursorHotspot,
               let png = cursorImage.pngData()
         else {
             return
         }
         
+        
         try await self.send(opcode: .cursorEvent, message: CursorEvent(
-            cursorType: UInt64(cursorStateHolder.cursorHash),
-            mimeType: "image/png",
-            size: SRSize(width: cursorImage.size.width, height: cursorImage.size.height),
-            imageData: png
+            event: .imageEvent(CursorImageEvent(
+                cursorType: UInt64(cursorStateHolder.cursorHash),
+                mimeType: "image/png",
+                size: SRSize(width: cursorImage.size.width, height: cursorImage.size.height),
+                hotspot: SRPoint(x: cursorHotspot.x, y: cursorHotspot.y),
+                imageData: png
+            ))
         ))
     }
     

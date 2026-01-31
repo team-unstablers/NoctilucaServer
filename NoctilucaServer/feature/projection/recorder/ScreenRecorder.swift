@@ -44,7 +44,7 @@ extension ScreenRecorderSource {
 struct ScreenRecorderArgs {
     let source: ScreenRecorderSource
     let codec: Codec
-    let flags: ProjectionSourceFlagSet
+    let flags: ProjectionSourceFlags
 }
 
 enum ScreenRecorderPrepareError: LocalizedError {

@@ -70,7 +70,7 @@ class HIDIOChannel: Channel {
         switch keyboardEvent.eventType {
         case .ucs4:
             injectUcs4Key(keyboardEvent)
-        case .down, .up:
+        case .keyDown, .keyUp:
             injectNormalKey(keyboardEvent)
         default:
             logger.warning("unhandled keyboard event type: \(keyboardEvent.eventType)")
@@ -84,7 +84,7 @@ class HIDIOChannel: Channel {
         }
         
         switch event.eventType {
-        case .down:
+        case .keyDown:
             eventInjector.postKeyDown(carbonKeyCode)
         case .keyUp:
             eventInjector.postKeyUp(carbonKeyCode)
