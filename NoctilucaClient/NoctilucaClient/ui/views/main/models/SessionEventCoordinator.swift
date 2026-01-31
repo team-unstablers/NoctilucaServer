@@ -92,6 +92,13 @@ class SessionEventCoordinator: ObservableObject {
 
         case .FIXME_projectionStarted(let projectionSession):
             self.mainWindowViewModel.displayLayer = projectionSession.displayLayer
+            
+        case .receivedGoodbye(let code, let reason):
+            // TODO
+            break
+            
+        default:
+            break
         }
     }
 

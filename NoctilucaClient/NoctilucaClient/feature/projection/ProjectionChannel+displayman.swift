@@ -30,7 +30,7 @@ extension ProjectionChannel {
     }
 
     /// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
-    func subscribeDisplayChanges(eventMask: DisplayChangeEventType = .none) async throws -> SubscribeDisplayChangesResponse {
+    func subscribeDisplayChanges(eventMask: DisplayChangeEventType = []) async throws -> SubscribeDisplayChangesResponse {
         let requestID = nextRequestID()
 
         try await self.send(opcode: .subscribeDisplayChangesRequest, message: SubscribeDisplayChangesRequest(

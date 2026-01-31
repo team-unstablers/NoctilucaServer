@@ -146,7 +146,7 @@ class HIDIOController {
     
     func keyDown(keyCode: LinuxKeycode) {
         let event = KeyboardEvent(
-            eventType: .down,
+            eventType: .keyDown,
             scanCode: 0,
             keyCode: UInt32(keyCode.rawValue),
             modifiers: 0,
@@ -170,7 +170,7 @@ class HIDIOController {
     
     func keyUp(keyCode: LinuxKeycode) {
         let event = KeyboardEvent(
-            eventType: .up,
+            eventType: .keyUp,
             scanCode: 0,
             keyCode: UInt32(keyCode.rawValue),
             modifiers: 0,

@@ -88,7 +88,10 @@ class ProjectionChannel: Channel, ObservableObject {
 
     @Published
     private(set) var cursorImage: CGImage? = nil
-
+    
+    @Published
+    private(set) var cursorHotspot: CGPoint? = nil
+    
     
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -227,7 +230,7 @@ class ProjectionChannel: Channel, ObservableObject {
 
         // 디스플레이 변경 이벤트 구독
         do {
-            let _ = try await subscribeDisplayChanges(eventMask: .none)
+            let _ = try await subscribeDisplayChanges(eventMask: [.becamePrimary, .connected, .disconnected, .modified])
             self.logger.info("Subscribed to display change events")
         } catch {
             self.logger.warning("Failed to subscribe to display change events: \(error)")
@@ -282,7 +285,7 @@ class ProjectionChannel: Channel, ObservableObject {
             identifier: identifier,
             viewport: ProjectionSource(
                 value: .entireDisplay(EntireDisplayProjectionSource(displayID: displayID)),
-                flags: .none
+                flags: []
             ),
             preferredCodecs: preferredCodecs
         ))
@@ -351,9 +354,21 @@ class ProjectionChannel: Channel, ObservableObject {
     }
     
     private func handleCursorEvent(_ event: CursorEvent) async throws {
-        self.logger.info("Received cursorEvent: cursorType=\(event.cursorType)")
-
-        guard let dataProvider = CGDataProvider(data: event.imageData as CFData) else {
+        switch event.event {
+        case .imageEvent(let imageEvent):
+            try await handleCursorImageEvent(imageEvent)
+        case .moveEvent(let moveEvent):
+            logger.warning("WARN: Cursor move event received: newPosition=\(moveEvent.position.cgPoint)")
+        default:
+            break
+        }
+        
+    }
+    
+    private func handleCursorImageEvent(_ event: CursorImageEvent) async throws {
+        guard let data = event.imageData,
+              let dataProvider = CGDataProvider(data: data as CFData)
+        else {
             return
         }
 
@@ -366,6 +381,7 @@ class ProjectionChannel: Channel, ObservableObject {
 
         await MainActor.run {
             self.cursorImage = cursorImage
+            self.cursorHotspot = event.hotspot.cgPoint
         }
     }
 
