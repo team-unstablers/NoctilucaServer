@@ -191,12 +191,14 @@ struct RemoteSessionProjectionView: View {
                 }
             }
 #if os(iOS)
+            /*
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 HIDIOUIKitKeyboardHelperView(
                     keyboard: uiKitKeyboard,
                     isVisible: shouldPresentKeyboard
                 )
             }
+             */
 #endif
 #if os(macOS)
             .onTapGesture {
