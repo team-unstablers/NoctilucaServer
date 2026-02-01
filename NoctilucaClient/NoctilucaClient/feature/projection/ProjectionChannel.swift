@@ -54,6 +54,8 @@ class ProjectionChannel: Channel {
     var pendingDisplayListRequests: [UInt64: (DisplayListResponse) -> Void] = [:]
     var pendingSubscribeDisplayChangesRequests: [UInt64: (SubscribeDisplayChangesResponse) -> Void] = [:]
     var displayChangesSubscriptionID: UUID? = nil
+    
+    let displayLayoutManager = DisplayLayoutManager()
 
     let events = PassthroughSubject<ProjectionChannelEvent, Never>()
     
@@ -95,7 +97,7 @@ class ProjectionChannel: Channel {
 
         case .displayChangedEvent:
             let event = try DisplayChangedEvent.fromProtobufBytes(frame.data)
-            self.handleDisplayChangedEvent(event)
+            try await self.handleDisplayChangedEvent(event)
 
         // MARK: - Audio projection opcodes
 

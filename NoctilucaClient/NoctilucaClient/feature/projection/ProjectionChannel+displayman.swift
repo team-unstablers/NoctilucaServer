@@ -28,6 +28,14 @@ extension ProjectionChannel {
             }
         }
     }
+    
+    func updateDisplayLayout() async throws {
+        let response = try await requestDisplayList()
+        
+        for displayInfo in response.displays {
+            await displayLayoutManager.update(displayInfo)
+        }
+    }
 
     /// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
     func subscribeDisplayChanges(eventMask: DisplayChangeEventType = []) async throws -> SubscribeDisplayChangesResponse {
@@ -63,9 +71,11 @@ extension ProjectionChannel {
     }
 
     /// DisplayChangedEvent를 처리합니다. 디바운스 Subject로 전달합니다.
-    func handleDisplayChangedEvent(_ event: DisplayChangedEvent) {
+    func handleDisplayChangedEvent(_ event: DisplayChangedEvent) async throws {
         self.logger.info("Received DisplayChangedEvent: eventType=\(event.eventType.rawValue), displayID=\(event.display.displayID)")
+        await displayLayoutManager.consumeDisplayChangeEvent(event)
     }
+    
     
     /// 서버에서 디스플레이 목록을 조회하고 메인 디스플레이 ID를 반환합니다.
     func fetchPrimaryDisplayID() async throws -> Int32 {
