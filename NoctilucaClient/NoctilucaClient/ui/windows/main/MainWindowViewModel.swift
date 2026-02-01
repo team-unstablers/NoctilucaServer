@@ -28,8 +28,6 @@ class MainWindowViewModel: ObservableObject {
 
     var client: NoctilucaClient?
 
-    var sessionEventCoordinator: SessionEventCoordinator!
-
     @Published
     var averagePingRTT: TimeInterval = 0.0
 
@@ -53,7 +51,6 @@ class MainWindowViewModel: ObservableObject {
 
     init() {
         self.contactSheetCoordinator = ContactSheetCoordinator()
-        self.sessionEventCoordinator = SessionEventCoordinator(self)
         setupContactSheetCoordinator()
     }
 
@@ -111,11 +108,11 @@ class MainWindowViewModel: ObservableObject {
             client.applyPointerInputMode(settingsStore.settings.input.pointerInputMode)
         }
         
+        let remoteSession = RemoteSession(client)
+        
         do {
-            try await client.setup()
-            self.sessionEventCoordinator.bind(to: client)
-            
-            try await client.startup()
+            try await remoteSession.setup()
+            try await remoteSession.startup()
         } catch {
             self.phase = .newConnection
             await clientManager.killClient(id: client.id)
