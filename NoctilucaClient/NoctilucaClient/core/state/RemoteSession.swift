@@ -9,6 +9,7 @@ import Combine
 
 import SiriusKitClient
 
+@MainActor
 class RemoteSession: ObservableObject {
     private let logger = NoctilucaLogger(category: "RemoteSession")
     private var eventSubscription: AnyCancellable? = nil
@@ -50,6 +51,7 @@ class RemoteSession: ObservableObject {
         self.subscribeClientEvents()
     }
     
+    @MainActor
     deinit {
         self.unsubscribeClientEvents()
         
@@ -75,7 +77,9 @@ class RemoteSession: ObservableObject {
         self.eventSubscription = client.uiEvents
             .receive(on: RunLoop.main)
             .sink { [weak self] event in
-                self?.handleEvent(event)
+                Task { @MainActor in
+                    self?.handleEvent(event)
+                }
             }
 
         // manually update current phase
@@ -126,7 +130,6 @@ class RemoteSession: ObservableObject {
         }
     }
 
-    @MainActor
     func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction) async {
         guard let authChallenge else {
             return

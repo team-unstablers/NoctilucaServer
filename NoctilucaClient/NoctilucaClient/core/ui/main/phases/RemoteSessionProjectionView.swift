@@ -31,14 +31,14 @@ struct RemoteSessionProjectionView: View {
         }
     }
     
-    @StateObject
+    @ObservedObject
     var remoteSession: RemoteSession
     
     var client: NoctilucaClient {
         remoteSession.client
     }
     
-    @StateObject
+    @ObservedObject
     var projection: RemoteSession.Projection
     
     @State
@@ -51,10 +51,10 @@ struct RemoteSessionProjectionView: View {
     var sourceSize: CGSize = .zero
     
     init(remoteSession: RemoteSession, projection: RemoteSession.Projection, source: AttachSource) {
-        self._remoteSession = StateObject(wrappedValue: remoteSession)
-        self._projection = StateObject(wrappedValue: projection)
+        self.remoteSession = remoteSession
+        self.projection = projection
         
-        self.sourceDescriptor = source
+        self._sourceDescriptor = State(initialValue: source)
     }
     
     @State
@@ -82,16 +82,26 @@ struct RemoteSessionProjectionView: View {
         switch descriptor {
         case .sessionID(let sessionID):
             guard let source = projection.projectionSessions[sessionID] else {
+                Self.logger.error("failed to resolve source \(descriptor.debugDescription)")
                 return
             }
             
             self.source = source
+            self.sourceSize = source.size
+            if source.size.width > 0, source.size.height > 0 {
+                self.projectionAspectRatio = source.size.width / source.size.height
+            }
         case .displayID(let displayID):
             guard let source = projection.projectionSessions.values.first(where: { $0.displayID == displayID }) else {
+                Self.logger.error("failed to resolve source \(descriptor.debugDescription)")
                 return
             }
             
             self.source = source
+            self.sourceSize = source.size
+            if source.size.width > 0, source.size.height > 0 {
+                self.projectionAspectRatio = source.size.width / source.size.height
+            }
         }
     }
     
@@ -106,29 +116,21 @@ struct RemoteSessionProjectionView: View {
                         .offset(offset)
                 }
                 
-                // TODO: 추후엔 Metal shader로 그리는 것이 바람직함
-                let cursor = projection.cursorState
-                if let cursorImage = cursor.image {
+                // Metal Cursor Overlay
+                // ZStack 위에 투명하게 얹음.
+                // allowsHitTesting(false) 필수: 마우스 클릭이 아래 뷰(입력 캡처)로 전달되어야 함.
+                // 커서 이미지가 있을 때만 렌더링하여 불필요한 리소스 소모 방지
+                if projection.cursorState.image != nil {
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     
-                    let width = cursorImage.size.width
-                    let height = cursorImage.size.height
-                    
-                    // TODO: use hotspot info from server
-                    let hotspot = cursorImage.hotspot
-                    
-                    // SwiftUI .position places the CENTER of the view at the point.
-                    // We want the TOP-LEFT (0,0) of the cursor image to be at the point.
-                    // So we shift the position by +width/2, +height/2.
-                    let position = CGPoint(
-                        x: rect.minX + (cursor.position.x * rect.width) + (width / 2),
-                        y: rect.minY + (cursor.position.y * rect.height) + (height / 2)
-                    )
-                    
-                    Image(decorative: cursorImage.image, scale: 1.0, orientation: .up)
-                        .position(position)
-                        .scaleEffect(scale)
+                    MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize)
                         .offset(offset)
+                        .background(.red.opacity(0.3))
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                        .allowsHitTesting(false)
+                        // 화면 줌인/아웃 시 커서도 같이 확대/축소 및 이동
+                        .scaleEffect(scale)
                 }
                 
 #if os(iOS)
@@ -159,12 +161,31 @@ struct RemoteSessionProjectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
 #endif
             }
+            .onAppear {
+                if (source == nil) {
+                    self.resolveSource(self.sourceDescriptor)
+                }
+            }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .if(source == nil) {
+                // source를 좀 더 적극적으로 resolve 시도한다.
+                $0.onReceive(client.projectionChannel.events) { event in
+                    switch event {
+                    case .sessionCreated(_):
+                        self.resolveSource(sourceDescriptor)
+                    default:
+                        break
+                    }
+                }
+            }
             .if(source != nil) {
                 $0.onReceive(source!.events) { event in
                     switch event {
                     case .sizeChanged(let size):
                         sourceSize = size
+                        if size.width > 0, size.height > 0 {
+                            projectionAspectRatio = size.width / size.height
+                        }
                     default:
                         break
                     }

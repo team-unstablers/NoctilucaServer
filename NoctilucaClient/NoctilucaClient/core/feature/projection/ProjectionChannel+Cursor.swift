@@ -20,11 +20,15 @@ extension ProjectionChannel {
         case .imageEvent(let imageEvent):
             try await handleCursorImageEvent(imageEvent)
         case .moveEvent(let moveEvent):
-            logger.warning("WARN: Cursor move event received: newPosition=\(moveEvent.position.cgPoint)")
+            await handleCursorMoveEvent(moveEvent)
         default:
             break
         }
-        
+    }
+    
+    @MainActor
+    func handleCursorMoveEvent(_ event: CursorMoveEvent) {
+        self.events.send(.cursorMoved(event))
     }
     
     func handleCursorImageEvent(_ event: CursorImageEvent) async throws {

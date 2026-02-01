@@ -77,6 +77,7 @@ class ProjectionSession: Identifiable {
     
     let events = PassthroughSubject<ProjectionSessionEvent, Never>()
 
+    @MainActor
     init(id: UUID, displayID: Int, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
         self.id = id
         self.displayID = displayID

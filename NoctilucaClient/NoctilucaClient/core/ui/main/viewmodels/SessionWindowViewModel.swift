@@ -44,6 +44,7 @@ class SessionWindowViewModel: ObservableObject {
     private var settingsCancellables: Set<AnyCancellable> = []
     private var sessionCancellables: Set<AnyCancellable> = []
 
+    @Published
     private(set) var remoteSession: RemoteSession? = nil
 
     private var client: NoctilucaClient? {

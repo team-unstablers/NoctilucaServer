@@ -89,12 +89,18 @@ extension ProjectionChannel {
 
         let channel = clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
 
-        let session = ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self)
+        let session = await ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self)
 
         try await session.prepare(codec: createdEvent.codec)
         try await session.start()
 
         self.sessions[identifier] = session
+        
+        defer {
+            Task { @MainActor in
+                self.events.send(.sessionCreated(session))
+            }
+        }
 
         // 오디오 프로젝션 요청
         if projectionSettings?.isAudioProjectionEnabled ?? true {
