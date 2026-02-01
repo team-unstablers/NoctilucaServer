@@ -46,6 +46,55 @@ fileprivate func displayReconfigurationCallback(
     }
 }
 
+/// '제정신인' 디스플레이 정보를 나타냅니다.
+///
+/// # 왜 '제정신'인가
+///
+/// NOCScreen은 X11 좌표계를 기준으로 계산됩니다.
+/// - NOCScreen의 (0, 0)은 그냥 전체 뷰포트의 (0, 0)입니다. NSScreen의 (0, 0)은 메인 디스플레이의 좌측 상단입니다.
+/// - NOCScreen의 y축은 아래로 증가합니다. 반면 NSScreen의 y축은 위로 증가합니다.
+///
+struct NOCScreen: Identifiable, Hashable, Equatable {
+    /// 디스플레이 ID.
+    let id: CGDirectDisplayID
+    
+    /// 디스플레이의 프레임.
+    /// origin = 좌측 상단
+    /// size = 디스플레이 해상도 (픽셀 단위)
+    let frame: CGRect
+    
+    /// 디스플레이의 스케일 팩터 (@1x, @2x, ...)
+    let scaleFactor: CGFloat
+    
+    init(id: CGDirectDisplayID, frame: CGRect, scaleFactor: CGFloat) {
+        self.id = id
+        self.frame = frame
+        self.scaleFactor = scaleFactor
+    }
+    
+    init?(from nsScreen: NSScreen, anchor mainScreen: NSScreen) {
+        guard let displayID = nsScreen.compatibleDisplayID else {
+            // fatalError("[WTF] NOCScreen.init(from:): NSScreen.compatibleDisplayID is nil")
+            return nil
+        }
+        
+        let nsFrame = nsScreen.frame
+        let mainFrame = mainScreen.frame
+        
+        // NSScreen 좌표계를 NOCScreen 좌표계로 변환
+        let nocOrigin = CGPoint(
+            x: nsFrame.origin.x,
+            y: mainFrame.size.height - (nsFrame.origin.y + nsFrame.size.height)
+        )
+       
+        let nocFrame = CGRect(origin: nocOrigin, size: nsFrame.size)
+        
+        self.id = displayID
+        self.frame = nocFrame
+        self.scaleFactor = nsScreen.backingScaleFactor
+    }
+}
+
 /// 디스플레이 구성이 변경될 때 알림을 제공하는 모니터입니다.
 @MainActor
 class DisplayLayoutManager: ObservableObject, CInteropHandle {
@@ -55,6 +104,9 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
 
     @Published
     private(set) var displayLayouts: [CGDirectDisplayID: NSScreen] = [:]
+    
+    // TODO: 추후 displayLayouts을 얘가 잡아먹어야 함
+    private(set) var nocDisplayLayouts: [CGDirectDisplayID: NOCScreen] = [:]
 
     @Published
     private(set) var monitoringState: DisplayLayoutManagerMonitoringState = .idle
@@ -126,6 +178,7 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
 
         let previousLayouts = self.displayLayouts
         var newLayouts: [CGDirectDisplayID: NSScreen] = [:]
+        var newNocLayouts: [CGDirectDisplayID: NOCScreen] = [:]
 
         for screen in NSScreen.screens {
             guard let displayID = screen.compatibleDisplayID else {
@@ -135,9 +188,11 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
             }
 
             newLayouts[displayID] = screen
+            newNocLayouts[displayID] = NOCScreen(from: screen, anchor: NSScreen.main!)
         }
 
-        self.displayLayouts = newLayouts
+        self.displayLayouts    = newLayouts
+        self.nocDisplayLayouts = newNocLayouts
 
         // 이벤트 발행
         self.publishDisplayChangeEvents(previousLayouts: previousLayouts, newLayouts: newLayouts)
@@ -246,5 +301,43 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
             self.logger.error("stopMonitoring(): failed to remove display reconfiguration callback: \(retval)")
             return
         }
+    }
+}
+
+extension DisplayLayoutManager {
+    /// NSEvent를 통해 취득한 마우스 커서의 위치의 좌표계를 X11 좌표계로 변환합니다.
+    nonisolated static func resolveX11CursorPosition(_ position: CGPoint) -> CGPoint {
+        guard let mainScreen = NSScreen.main else {
+            return position
+        }
+        
+        let mainFrame = mainScreen.frame
+        
+        let x11Position = CGPoint(
+            x: position.x,
+            y: mainFrame.size.height - position.y
+        )
+        
+        return x11Position
+    }
+    
+    
+    /// 주어진 전체 디스플레이 좌표계의 좌표에 대해 해당하는 디스플레이와 상대 좌표를 반환합니다.
+    /// Note: X11 좌표계를 기대합니다
+    func resolveRelativePoint(point: CGPoint) -> (CGDirectDisplayID, CGPoint)? {
+        // 잠깐, 이게 아닌 것 같은데..?
+        guard let entry = nocDisplayLayouts.first(where: { $0.value.frame.contains(point) }) else {
+            return nil
+        }
+        
+        let displayID = entry.key
+        let rect = entry.value.frame
+        
+        let relativePoint = CGPoint(
+            x: point.x - rect.origin.x,
+            y: point.y - rect.origin.y
+        )
+        
+        return (displayID, relativePoint)
     }
 }

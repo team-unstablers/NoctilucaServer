@@ -62,8 +62,6 @@ class HIDIOChannel: Channel {
                 break
             }
         }
-        
-        await cursorStateHolder.updateCursorHash()
     }
     
     func inject(keyboardEvent: KeyboardEvent) {

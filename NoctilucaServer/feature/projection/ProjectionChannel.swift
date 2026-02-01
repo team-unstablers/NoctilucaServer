@@ -207,7 +207,27 @@ class ProjectionChannel: Channel {
         ))
     }
     
-    func sendCursorEvent() async throws {
+    func sendCursorPositionEvent(_ position: CGPoint) async throws {
+        /// STOP!: position은 (하단, 좌측) 기준입니다. 이를 (상단, 좌측) 기준으로 변환해야 합니다.
+        ///        아니, 그건 그런데, 이거 position이 그래픽 세션의 전체 뷰포트 (모든 모니터를 합친) 인지, 아니면 특정 모니터 기준인지도 확실하지가 않은데...
+        let displayLayoutManager = DisplayLayoutManager.shared
+        
+        let x11Position = DisplayLayoutManager.resolveX11CursorPosition(position)
+        guard let (displayID, relativeX11Position) = await displayLayoutManager.resolveRelativePoint(point: x11Position) else {
+            self.logger.warning("Failed to resolve cursor position \(position) to display")
+            return
+        }
+        
+        
+        try await self.send(opcode: .cursorEvent, message: CursorEvent(
+            event: .moveEvent(CursorMoveEvent(
+                displayID: displayID,
+                position: SRPoint(x: relativeX11Position.x, y: relativeX11Position.y)
+            ))
+        ))
+    }
+    
+    func sendCursorImageEvent() async throws {
         guard let cursorImage   = await cursorStateHolder.cursorImage,
               let cursorHotspot = await cursorStateHolder.cursorHotspot,
               let png = cursorImage.pngData()
