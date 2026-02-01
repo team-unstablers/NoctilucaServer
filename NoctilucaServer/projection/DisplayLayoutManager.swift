@@ -13,6 +13,29 @@ import CoreGraphics
 
 import SiriusKit
 
+final class ThreadSafeLayoutStorage: @unchecked Sendable {
+    private var layouts: [CGDirectDisplayID: NOCScreen] = [:]
+    private let lock = NSLock()
+    
+    func update(_ newLayouts: [CGDirectDisplayID: NOCScreen]) {
+        lock.lock()
+        defer { lock.unlock() }
+        layouts = newLayouts
+    }
+    
+    func get(_ displayID: CGDirectDisplayID) -> NOCScreen? {
+        lock.lock()
+        defer { lock.unlock() }
+        return layouts[displayID]
+    }
+    
+    func getAll() -> [CGDirectDisplayID: NOCScreen] {
+        lock.lock()
+        defer { lock.unlock() }
+        return layouts
+    }
+}
+
 enum DisplayLayoutManagerMonitoringState {
     case idle
     case monitoring
@@ -98,15 +121,17 @@ struct NOCScreen: Identifiable, Hashable, Equatable {
 /// 디스플레이 구성이 변경될 때 알림을 제공하는 모니터입니다.
 @MainActor
 class DisplayLayoutManager: ObservableObject, CInteropHandle {
-    static let shared = DisplayLayoutManager()
+    nonisolated static let shared = DisplayLayoutManager()
 
     let logger = NoctilucaLogger(category: "DisplayReconfigurationMonitor")
 
     @Published
-    private(set) var displayLayouts: [CGDirectDisplayID: NSScreen] = [:]
+    private(set) var displayLayouts: [CGDirectDisplayID: NSScreen] = [: ]
     
     // TODO: 추후 displayLayouts을 얘가 잡아먹어야 함
     private(set) var nocDisplayLayouts: [CGDirectDisplayID: NOCScreen] = [:]
+
+    nonisolated let layoutStorage = ThreadSafeLayoutStorage()
 
     @Published
     private(set) var monitoringState: DisplayLayoutManagerMonitoringState = .idle
@@ -131,7 +156,7 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
         displayChangeSubject.eraseToAnyPublisher()
     }
     
-    init() {
+    nonisolated init() {
         self.logger.debug("new DisplayReconfigurationMonitor created")
     }
     
@@ -193,6 +218,8 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
 
         self.displayLayouts    = newLayouts
         self.nocDisplayLayouts = newNocLayouts
+        
+        self.layoutStorage.update(newNocLayouts)
 
         // 이벤트 발행
         self.publishDisplayChangeEvents(previousLayouts: previousLayouts, newLayouts: newLayouts)
@@ -305,6 +332,16 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
 }
 
 extension DisplayLayoutManager {
+    /// 주어진 디스플레이 ID와 퍼센트 좌표를 기반으로 X11(Global Top-Left) 좌표계의 절대 좌표를 반환합니다.
+    nonisolated func globalPoint(fromPercent point: CGPoint, on displayID: CGDirectDisplayID) -> CGPoint? {
+        guard let screen = self.layoutStorage.get(displayID) else { return nil }
+        
+        let x = screen.frame.origin.x + (screen.frame.width * point.x)
+        let y = screen.frame.origin.y + (screen.frame.height * point.y)
+        
+        return CGPoint(x: x, y: y)
+    }
+
     /// NSEvent를 통해 취득한 마우스 커서의 위치의 좌표계를 X11 좌표계로 변환합니다.
     nonisolated static func resolveX11CursorPosition(_ position: CGPoint) -> CGPoint {
         guard let mainScreen = NSScreen.main else {
@@ -324,9 +361,17 @@ extension DisplayLayoutManager {
     
     /// 주어진 전체 디스플레이 좌표계의 좌표에 대해 해당하는 디스플레이와 상대 좌표를 반환합니다.
     /// Note: X11 좌표계를 기대합니다
-    func resolveRelativePoint(point: CGPoint) -> (CGDirectDisplayID, CGPoint)? {
-        // 잠깐, 이게 아닌 것 같은데..?
-        guard let entry = nocDisplayLayouts.first(where: { $0.value.frame.contains(point) }) else {
+    nonisolated func resolveRelativePoint(point: CGPoint) -> (CGDirectDisplayID, CGPoint)? {
+        // Thread-safe access via layoutStorage
+        // We need to iterate over all layouts to find the containing frame
+        // This is a bit inefficient but safe.
+        // Since ThreadSafeLayoutStorage doesn't expose iteration, we might need to add it or expose the dictionary copy.
+        // For now, let's assume get() is not enough.
+        
+        // Let's modify ThreadSafeLayoutStorage to support iteration or getting all layouts.
+        let layouts = self.layoutStorage.getAll()
+        
+        guard let entry = layouts.first(where: { $0.value.frame.contains(point) }) else {
             return nil
         }
         

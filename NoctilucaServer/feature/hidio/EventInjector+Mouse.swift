@@ -23,46 +23,59 @@ extension EventInjector {
     private func postMouseMoveEventOnQueue(_ event: MouseMoveEvent, scaleX: Double, scaleY: Double) {
         switch event.moveType {
         case .absolute:
-            break
+            switch event.position {
+            case .percent(let position):
+                self.performMouseMoveAbsoluteOnQueue(percentage: position, scope: event.scope)
+            case .pixel:
+                // TODO: Implement absolute pixel movement if needed (usually weird in multi-monitor)
+                break
+            }
         case .relative:
-            // not supported yet
-            return
+            switch event.position {
+            case .pixel(let position):
+                self.performMouseMoveRelativeOnQueue(pixel: position)
+            case .percent(let position):
+                self.performMouseMoveRelativeOnQueue(percentage: position)
+            }
         default:
             return
         }
-        
-        switch event.position {
-        case .percent(let position):
-            self.performMouseMoveAbsoluteOnQueue(percentage: position)
-        case .pixel(let position):
-            // not supported yet
-            return
-        default:
-            return
-        }
-        
-
-        // TODO: support scope
     }
     
     func performMouseMoveAbsolute(percentage position: CursorPositionPercent) {
         enqueue { [weak self] in
-            self?.performMouseMoveAbsoluteOnQueue(percentage: position)
+            // Defaulting to Main Display for backward compatibility
+            self?.performMouseMoveAbsoluteOnQueue(
+                percentage: position,
+                scope: .displayId(Int32(CGMainDisplayID()))
+            )
         }
     }
     
-    private func performMouseMoveAbsoluteOnQueue(percentage position: CursorPositionPercent) {
+    private func performMouseMoveAbsoluteOnQueue(percentage position: CursorPositionPercent, scope: CursorPositionScope) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
         
-        let screen = NSScreen.main!
-        let screenFrame = screen.frame
+        let displayID: CGDirectDisplayID
+        switch scope {
+        case .displayId(let id):
+            if id == -1 {
+                displayID = CGMainDisplayID()
+            } else {
+                displayID = CGDirectDisplayID(UInt32(bitPattern: id))
+            }
+        default:
+            displayID = CGMainDisplayID()
+        }
         
-        let position = CGPoint(
-            x: screenFrame.origin.x + CGFloat(position.x) * screenFrame.size.width,
-            y: screenFrame.origin.y + CGFloat(position.y) * screenFrame.size.height
-        )
+        guard let globalPoint = DisplayLayoutManager.shared.globalPoint(
+            fromPercent: CGPoint(x: CGFloat(position.x), y: CGFloat(position.y)),
+            on: displayID
+        ) else {
+            return
+        }
         
+        let position = globalPoint
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -145,10 +158,20 @@ extension EventInjector {
             return
         }
         
-        let screen = NSScreen.main!
-        let screenFrame = screen.frame
-        
         let currentPosition = event.location
+        
+        // Find which screen contains currentPosition
+        // We use DisplayLayoutManager to find the screen (NOCScreen) for X11-like global coordinates
+        // Assuming currentPosition is in global coordinates (Top-Left 0,0)
+        
+        let screenFrame: CGRect
+        if let (displayID, _) = DisplayLayoutManager.shared.resolveRelativePoint(point: currentPosition),
+           let screen = DisplayLayoutManager.shared.layoutStorage.get(displayID) {
+            screenFrame = screen.frame
+        } else {
+            // Fallback to Main Display
+            screenFrame = NSScreen.main?.frame ?? CGRect(x: 0, y: 0, width: 1920, height: 1080)
+        }
         
         let position = CGPoint(
             x: currentPosition.x + (CGFloat(position.x) * screenFrame.size.width),
