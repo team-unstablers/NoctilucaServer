@@ -69,6 +69,29 @@ Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는
 
 # AGENT RULES
 
+<conditional-rule applies-to="Google Gemini" excludes="OpenAI Codex, Anthropic Claude Code">
+
+# [GEMINI ONLY] 적극적 문맥 수집 전략 (Aggressive Context Gathering)
+
+당신(Gemini)은 **100만 토큰 이상의 거대한 컨텍스트 윈도우**를 가지고 있습니다.
+토큰을 아끼기 위해 불확실한 추측을 하는 것보다, **차라리 너무 많이 읽는 것이 훨씬 낫습니다.**
+
+## 1. 무관용 읽기 원칙 (Zero Assumption & Deep Dive)
+- **추측 금지:** 파일명이나 임포트 구문만 보고 내부 구현을 단정 짓지 마십시오. "이거겠지?" 싶은 순간, **무조건 `read_file`로 열어서 내용을 확인하십시오.**
+- **연관 파일 통째로 읽기 ("3-Hop Rule"):** 특정 기능을 분석하거나 수정할 때, 타겟 파일 하나만 달랑 읽고 멈추지 마십시오.
+  1. **Target:** 분석할 대상 파일
+  2. **Dependencies:** 그 파일이 상속받거나 사용하는 부모 클래스, 프로토콜, Extension 파일들
+  3. **Usages:** 그 파일이 어디서, 어떻게 호출되는지 (검색 결과)
+  - 위 파일들을 찔끔찔끔 읽지 말고, `read_file`을 병렬로 호출하여 **한꺼번에, 공격적으로** 읽어들이십시오.
+- **Swift/iOS 특화:** Swift 코드는 Extension으로 흩어져 있는 경우가 많습니다. `MyClass.swift`를 읽을 때 `MyClass+*.swift`가 존재한다면 반드시 같이 찾아서 읽으십시오.
+
+## 2. 불확실성 해소 (Ask, Don't Guess)
+- `search_file_content` 결과가 없거나 모호한 경우, 적당히 가설을 세워 진행하려 하지 마십시오.
+- **즉시 멈추고 질문하십시오:** "X 로직을 찾으려 했으나 검색되지 않습니다. 혹시 별도의 서브모듈이나 다른 경로에 있나요?"라고 사용자에게 물어보십시오.
+- 모르는 것은 문제가 아니지만, **파일을 안 읽어서 모르는데 아는 척하는 것은 엄격히 금지**됩니다.
+
+</conditional-rule>
+
 ## 1. Interaction & Language
 - 작업을 진행할 때 확실하지 않거나 궁금한 점이 있으면, 되도록 **추측하지 말고 사용자에게 질문**해서 명확히 하는 것을 우선해 주세요.
 - 사용자가 한국어 화자인 만큼, 모든 대화와 Plan 작성은 **반드시 한국어**로 진행해 주세요.

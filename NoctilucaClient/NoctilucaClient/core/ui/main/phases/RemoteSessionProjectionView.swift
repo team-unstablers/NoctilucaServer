@@ -115,17 +115,16 @@ struct RemoteSessionProjectionView: View {
                         .scaleEffect(scale)
                         .offset(offset)
                 }
-                
+               
                 // Metal Cursor Overlay
                 // ZStack 위에 투명하게 얹음.
                 // allowsHitTesting(false) 필수: 마우스 클릭이 아래 뷰(입력 캡처)로 전달되어야 함.
                 // 커서 이미지가 있을 때만 렌더링하여 불필요한 리소스 소모 방지
+                let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                 if projection.cursorState.image != nil {
-                    let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     
                     MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize)
                         .offset(offset)
-                        .background(.red.opacity(0.3))
                         .frame(width: rect.width, height: rect.height)
                         .position(x: rect.midX, y: rect.midY)
                         .allowsHitTesting(false)
@@ -136,12 +135,12 @@ struct RemoteSessionProjectionView: View {
 #if os(iOS)
                 HIDIOUIKitMouseView(
                     client: remoteSession.client,
-                    sessionSize: sourceSize,
                     mode: $settingsStore.settings.input.touchInputMode,
                     trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
-                    cursorPosition: $cursorPosition,
-                    aspectRatio: $projectionAspectRatio
                 )
+                    .offset(offset)
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX, y: rect.midY)
                 
                 HIDIOUIKitKeyboardInputHost(
                     client: remoteSession.client,

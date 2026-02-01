@@ -25,8 +25,6 @@ final class HIDIOUIKitPointer: HIDIOVirtualDevice {
     private weak var router: PointerInputRouter?
 
     private var geometry: CGSize = .zero
-    private var normalizedCursorPosition: CGPoint = CGPoint(x: 0.5, y: 0.5)
-    var onCursorPositionChanged: ((CGPoint) -> Void)?
 
     func connect(to controller: HIDIOController) {
         self.controller = controller
@@ -48,8 +46,6 @@ final class HIDIOUIKitPointer: HIDIOVirtualDevice {
             return
         }
 
-        updateNormalizedCursorPosition(normalized)
-
         if let router {
             router.moveMouseAbsolutePercentage(from: .touch, to: normalized)
         } else {
@@ -70,9 +66,7 @@ final class HIDIOUIKitPointer: HIDIOVirtualDevice {
             logger.debug("Invalid geometry, skipping relative percentage move")
             return
         }
-
-        updateNormalizedCursorPosition(addDelta: normalized)
-
+        
         if let router {
             router.moveMouseRelativePercentage(from: .touch, by: normalized)
         } else {
@@ -118,16 +112,6 @@ final class HIDIOUIKitPointer: HIDIOVirtualDevice {
         }
 
         return CGPoint(x: delta.x / geometry.width, y: delta.y / geometry.height)
-    }
-
-    private func updateNormalizedCursorPosition(_ position: CGPoint) {
-        normalizedCursorPosition = clampNormalized(position)
-        onCursorPositionChanged?(normalizedCursorPosition)
-    }
-
-    private func updateNormalizedCursorPosition(addDelta delta: CGPoint) {
-        let updated = CGPoint(x: normalizedCursorPosition.x + delta.x, y: normalizedCursorPosition.y + delta.y)
-        updateNormalizedCursorPosition(updated)
     }
 
     private func clampNormalized(_ position: CGPoint) -> CGPoint {

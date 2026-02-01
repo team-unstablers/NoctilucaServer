@@ -14,42 +14,26 @@ import SiriusKitClient
 struct HIDIOUIKitMouseView: View {
     let client: NoctilucaClient
     
-    let sessionSize: CGSize
-    
-    
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
-    @Binding var cursorPosition: CGPoint
-    @Binding var aspectRatio: CGFloat
 
-    @State private var pointer = HIDIOUIKitPointer()
+    @State
+    private var pointer = HIDIOUIKitPointer()
 
     var body: some View {
-        VStack(alignment: .center) {
-            Spacer()
-            HIDIOUIKitMouseCaptureView(
-                pointer: pointer,
-                mode: $mode,
-                trackpadMoveMultiplier: $trackpadMoveMultiplier
-            )
-                .aspectRatio(aspectRatio, contentMode: .fit)
-                .onAppear {
-                    pointer.onCursorPositionChanged = { position in
-                        cursorPosition = position
-                    }
-                    connectPointerIfNeeded(client)
-                    
-                    aspectRatio = sessionSize.width / sessionSize.height
-                }
-                .onDisappear {
-                    disconnectPointer(client)
-                }
-                .onChange(of: sessionSize) { _, newSize in
-                    aspectRatio = newSize.width / newSize.height
-                }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        HIDIOUIKitMouseCaptureView(
+            pointer: pointer,
+            mode: $mode,
+            trackpadMoveMultiplier: $trackpadMoveMultiplier
+        )
+            .onAppear {
+                connectPointerIfNeeded(client)
+            }
+        /*
+            .onDisappear {
+                disconnectPointer(client)
+            }
+         */
     }
 
     private func connectPointerIfNeeded(_ client: NoctilucaClient) {
