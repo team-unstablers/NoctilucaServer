@@ -34,34 +34,12 @@ struct CredentialsListContainer: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("자격 증명 목록")
-                Text(scope == .global ? "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다." : "선택된 호스트에 대한 자격 증명을 구성합니다.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            if !canManageEntries {
-                Text("연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다.")
-                    .foregroundStyle(.secondary)
-            } else {
-                credentialsListBody
-            }
-
-            HStack {
-                Spacer()
+        Group {
 #if os(macOS)
-                Button("삭제", role: .destructive) {
-                    removeSelected()
-                }
-                .disabled(selection.isEmpty)
+            macOSBody
+#else
+            iOSBody
 #endif
-                Button("추가") {
-                    isAddSheetPresented = true
-                }
-                .disabled(!canManageEntries)
-            }
         }
         .onAppear(perform: reloadEntries)
         .onChange(of: scope) { _, _ in
@@ -74,6 +52,68 @@ struct CredentialsListContainer: View {
             guard !isLoading else { return }
             saveEntries()
         }
+    }
+
+#if os(macOS)
+    @ViewBuilder
+    private var macOSBody: some View {
+        if !canManageEntries {
+            VStack(alignment: .leading, spacing: 12) {
+                headerView
+                Text("연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다.")
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+        } else {
+            EditableList(
+                items: $entries,
+                id: \.id,
+                selection: $selection,
+                title: LocalizedStringKey("자격 증명 목록"),
+                description: LocalizedStringKey(scope == .global ? "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다." : "선택된 호스트에 대한 자격 증명을 구성합니다."),
+                emptyText: LocalizedStringKey("(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요."),
+                rowContent: { entry in
+                    CredentialEntryRow(entry: entry)
+                },
+                addSheet: { onComplete in
+                    CredentialAddSheet(scope: scope) { entry in
+                        onComplete(entry)
+                    }
+                }
+            )
+        }
+    }
+#endif
+
+    private var headerView: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("자격 증명 목록")
+            Text(scope == .global ? "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다." : "선택된 호스트에 대한 자격 증명을 구성합니다.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var iOSBody: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            headerView
+
+            if !canManageEntries {
+                Text("연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다.")
+                    .foregroundStyle(.secondary)
+            } else {
+                credentialsListBody
+            }
+
+            HStack {
+                Spacer()
+                Button("추가") {
+                    isAddSheetPresented = true
+                }
+                .disabled(!canManageEntries)
+            }
+        }
         .sheet(isPresented: $isAddSheetPresented) {
             CredentialAddSheet(scope: scope) { entry in
                 entries.append(entry)
@@ -84,27 +124,7 @@ struct CredentialsListContainer: View {
     @ViewBuilder
     private var credentialsListBody: some View {
 #if os(macOS)
-        List(selection: $selection) {
-            if entries.isEmpty {
-                VStack(alignment: .leading) {
-                    Text("(구성된 자격 증명이 없습니다)")
-                        .font(.headline)
-                    Text("추가 버튼을 눌러 자격 증명을 등록하세요.")
-                        .font(.subheadline.monospaced())
-                        .lineLimit(1)
-                }
-                .foregroundStyle(.secondary)
-            } else {
-                ForEach(entries) { entry in
-                    CredentialEntryRow(entry: entry)
-                        .tag(entry.id)
-                        .focusable(true)
-                }
-                .onMove(perform: moveEntries)
-            }
-        }
-        .listStyle(.inset)
-        .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
+        EmptyView()
 #else
         VStack(alignment: .leading, spacing: 8) {
             if entries.isEmpty {
@@ -134,12 +154,6 @@ struct CredentialsListContainer: View {
 
     private func moveEntries(from source: IndexSet, to destination: Int) {
         entries.move(fromOffsets: source, toOffset: destination)
-    }
-
-    private func removeSelected() {
-        guard !selection.isEmpty else { return }
-        entries.removeAll { selection.contains($0.id) }
-        selection.removeAll()
     }
 
     private func remove(_ entry: ClientAuthEntry) {
