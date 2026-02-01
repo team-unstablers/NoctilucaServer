@@ -75,12 +75,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private let twoFingerTapRecognizer = UITapGestureRecognizer()
     private let panRecognizer = UIPanGestureRecognizer()
     private let twoFingerPanRecognizer = UIPanGestureRecognizer()
-    private let longPressRecognizer = UILongPressGestureRecognizer()
     private let chordedDragRecognizer = ChordedDragGestureRecognizer()
 
-    private var lastLongPressLocation: CGPoint = .zero
-    private var isLongPressDragging: Bool = false
     private var isChordedDragging: Bool = false
+    private var isScrolling: Bool = false
     
     // Unified Inertia Engine
     private var inertiaDisplayLink: CADisplayLink?
@@ -137,23 +135,16 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         twoFingerPanRecognizer.maximumNumberOfTouches = 2
         twoFingerPanRecognizer.addTarget(self, action: #selector(handleTwoFingerPan(_:)))
 
-        longPressRecognizer.minimumPressDuration = 0.15
-        longPressRecognizer.allowableMovement = 10
-        longPressRecognizer.addTarget(self, action: #selector(handleLongPress(_:)))
-
-        chordedDragRecognizer.maximumSecondTouchInterval = 0.12
         chordedDragRecognizer.maximumFirstTouchMovement = 8
         chordedDragRecognizer.addTarget(self, action: #selector(handleChordedDrag(_:)))
 
         tapRecognizer.require(toFail: twoFingerTapRecognizer)
-        tapRecognizer.require(toFail: longPressRecognizer)
-        panRecognizer.require(toFail: chordedDragRecognizer)
+        // panRecognizer.require(toFail: chordedDragRecognizer) // Removed to allow sequential chorded drag
 
         tapRecognizer.delegate = self
         twoFingerTapRecognizer.delegate = self
         panRecognizer.delegate = self
         twoFingerPanRecognizer.delegate = self
-        longPressRecognizer.delegate = self
         chordedDragRecognizer.delegate = self
         
         // All recognizers are enabled by default; delegate controls participation.
@@ -161,7 +152,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         addGestureRecognizer(tapRecognizer)
         addGestureRecognizer(twoFingerPanRecognizer)
         addGestureRecognizer(panRecognizer)
-        addGestureRecognizer(longPressRecognizer)
         addGestureRecognizer(chordedDragRecognizer)
     }
 
@@ -220,7 +210,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         case .touch:
             // In Touch mode, single finger pan/tap is handled directly by touchesBegan/Moved/Ended
             if gestureRecognizer == tapRecognizer || 
-               gestureRecognizer == longPressRecognizer || 
                gestureRecognizer == chordedDragRecognizer ||
                gestureRecognizer == panRecognizer { // Disable PanRecognizer for single touch
                 return false
@@ -264,7 +253,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
 
     @objc private func handlePan(_ recognizer: UIPanGestureRecognizer) {
-        if isLongPressDragging || isChordedDragging {
+        if isChordedDragging {
             return
         }
 
@@ -305,40 +294,25 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
         switch recognizer.state {
         case .began:
+            // Prevent scroll if we are already dragging
+            if isChordedDragging {
+                return
+            }
+            isScrolling = true
             stopScrollInertia()
             recognizer.setTranslation(.zero, in: self)
         case .changed:
+            guard isScrolling else { return }
             // Y is inverted for scroll naturally
             let delta = CGPoint(x: translation.x, y: -translation.y)
             recognizer.setTranslation(.zero, in: self)
             pointer.scroll(delta: normalizedScrollDelta(delta))
         case .ended, .cancelled, .failed:
-            let velocity = recognizer.velocity(in: self)
-            startScrollInertia(with: velocity)
-        default:
-            break
-        }
-    }
-
-    @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
-        guard inputMode == .trackpad else {
-            return
-        }
-
-        let location = recognizer.location(in: self)
-        switch recognizer.state {
-        case .began:
-            isLongPressDragging = true
-            lastLongPressLocation = location
-            stopMoveInertia()
-            pointer.buttonDown(.left)
-        case .changed:
-            let delta = CGPoint(x: location.x - lastLongPressLocation.x, y: location.y - lastLongPressLocation.y)
-            lastLongPressLocation = location
-            pointer.moveRelativePercentage(by: scaledDelta(delta))
-        case .ended, .cancelled, .failed:
-            isLongPressDragging = false
-            pointer.buttonUp(.left)
+            if isScrolling {
+                isScrolling = false
+                let velocity = recognizer.velocity(in: self)
+                startScrollInertia(with: velocity)
+            }
         default:
             break
         }
@@ -351,10 +325,16 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
         switch recognizer.state {
         case .began:
+            // Prevent drag if we are scrolling
+            if isScrolling {
+                return
+            }
             isChordedDragging = true
             stopMoveInertia()
+            stopScrollInertia()
             pointer.buttonDown(.left)
         case .changed:
+            guard isChordedDragging else { return }
             let delta = CGPoint(x: recognizer.translation.x, y: recognizer.translation.y)
             pointer.moveRelativePercentage(by: scaledDelta(delta))
         case .ended, .cancelled, .failed:
@@ -493,7 +473,11 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         // A reference height of 800 points is used.
         let referenceHeight: CGFloat = 800.0
         let scale = referenceHeight / max(1.0, bounds.height)
-        return CGPoint(x: delta.x * scale, y: delta.y * scale)
+        
+        // Apply sensitivity multiplier
+        let sensitivity: CGFloat = 3.5
+        
+        return CGPoint(x: delta.x * scale * sensitivity, y: delta.y * scale * sensitivity)
     }
 
     private func scaledDelta(_ delta: CGPoint) -> CGPoint {
