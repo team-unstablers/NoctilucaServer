@@ -31,6 +31,7 @@ class CursorEventSubscription {
     func setup() {
         let positionSubscription = cursorStateHolder.$cursorPosition
             .receive(on: RunLoop.main)
+            .debounce(for: .milliseconds(1000 / 60), scheduler: RunLoop.main)
             .sink { [weak self] position in
                 guard let channel = self?.channel else {
                     return
