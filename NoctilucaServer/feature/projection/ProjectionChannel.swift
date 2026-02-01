@@ -151,7 +151,7 @@ class ProjectionChannel: Channel {
             
             self.logger.info("Opened ProjectionDataChannel with id: \(channel.identifier)")
             
-            let projectionSession = ProjectionSession(
+            let projectionSession = await ProjectionSession(
                 id: identifier,
                 dataChannel: channel,
                 preferredRecorderType: projectionSettings.preferredScreenRecorder

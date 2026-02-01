@@ -9,6 +9,7 @@ import Quartz
 
 import SiriusKit
 
+@MainActor
 class ScreenLockObserver: ObservableObject {
     static let shared = ScreenLockObserver()
     
@@ -25,6 +26,7 @@ class ScreenLockObserver: ObservableObject {
         forceUpdate()
     }
 
+    @MainActor
     deinit {
         stopObserve()
     }

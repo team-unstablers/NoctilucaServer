@@ -42,15 +42,15 @@ class ProjectionSession: Identifiable {
     var targetBitrate = 0
     var maxBitrate = 0
 
-    init(id: UUID, dataChannel: ProjectionDataChannel, preferredRecorderType: ScreenRecorderType) {
+    init(id: UUID, dataChannel: ProjectionDataChannel, preferredRecorderType: ScreenRecorderType) async {
         self.id = id
         self.dataChannel = dataChannel
         self.preferredRecorderType = preferredRecorderType
         
-        self.recorder = ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
+        self.recorder = await ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
         self.encoder = VTVideoEncoder()
         
-        self.screenLockCancellable = ScreenLockObserver.shared.$isScreenLocked
+        self.screenLockCancellable = await ScreenLockObserver.shared.$isScreenLocked
             .receive(on: RunLoop.main)
             .removeDuplicates()
             .dropFirst()
@@ -66,7 +66,7 @@ class ProjectionSession: Identifiable {
     private func reconfigureRecorder() async {
         try? await self.recorder.stop()
         
-        self.recorder = ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
+        self.recorder = await ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
         self.recorder.delegate = self
         
         do {

@@ -8,6 +8,7 @@
 import Foundation
 
 class ScreenRecorderFactory {
+    @MainActor
     static func create(preferred type: ScreenRecorderType, queue: DispatchQueue) -> any ScreenRecorder {
         if ScreenLockObserver.shared.isScreenLocked {
             // When the screen is locked, use AVFoundation-based recorder.
