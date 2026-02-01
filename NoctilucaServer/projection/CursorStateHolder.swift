@@ -48,7 +48,7 @@ class CursorStateHolder: ObservableObject {
     private func startObserveCursorEvent() {
         self.stopObserveCursorEvent()
         
-        self.observerToken = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .cursorUpdate]) { event in
+        self.observerToken = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .cursorUpdate, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]) { event in
             self.updateCursorPosition()
             self.updateCursorHash()
         }
