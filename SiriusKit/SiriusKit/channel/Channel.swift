@@ -108,9 +108,11 @@ open class Channel {
                 try await self.handleFrame(frame: frame)
             case .closed:
                 self.handleStreamClose()
+                self.lifecycleDelegate?.channelDidClose(self)
                 return
             case .error(let error):
                 self.handleStreamError(error: error)
+                self.lifecycleDelegate?.channel(self, didEncounterError: error)
                 return
             }
             

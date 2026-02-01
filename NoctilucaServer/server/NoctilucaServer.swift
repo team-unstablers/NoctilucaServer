@@ -241,6 +241,7 @@ extension NoctilucaServer: SiriusServerDelegate {
     
     func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
         let session = NoctilucaClientSession(session: session, server: context)
+        session.delegate = self
         session.initialize()
         
         Task { @MainActor in
@@ -252,3 +253,10 @@ extension NoctilucaServer: SiriusServerDelegate {
     }
 }
 
+extension NoctilucaServer: NoctilucaClientSessionDelegate {
+    func noctilucaClientSessionDidClose(_ session: NoctilucaClientSession) {
+        Task { @MainActor in
+            self.clients[session.id] = nil
+        }
+    }
+}

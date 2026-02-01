@@ -50,6 +50,10 @@ enum NoctilucaClientSessionPhase {
     }
 }
 
+protocol NoctilucaClientSessionDelegate: AnyObject {
+    func noctilucaClientSessionDidClose(_ session: NoctilucaClientSession)
+}
+
 class NoctilucaClientSession: Identifiable {
     let logger = SiriusLogger(category: "NoctilucaClientSession", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
     
@@ -60,6 +64,8 @@ class NoctilucaClientSession: Identifiable {
     
     var mainChannel: MainChannel!
     
+    weak var delegate: NoctilucaClientSessionDelegate?
+
     private(set) var phase: NoctilucaClientSessionPhase = .initial
     
     var clientInfo: ClientInfo? = nil
@@ -70,6 +76,7 @@ class NoctilucaClientSession: Identifiable {
     
     private var eventLoopTask: Task<Void, Never>?
     private var phaseShiftAssertionTask: Task<Void, Never>?
+    private var didNotifyClose: Bool = false
     
     init(session: ClientSession, server: ServerContext) {
         self.session = session
@@ -119,6 +126,9 @@ class NoctilucaClientSession: Identifiable {
             // 예상치 못한 오류
             await self.panic("Error in mainChannelEventLoop: \(error)")
         }
+
+        // 메인 채널 이벤트 루프 종료 시 정리
+        await self.close()
     }
     
     @inline(__always) // 이게 효과가 있을지?
@@ -210,6 +220,7 @@ class NoctilucaClientSession: Identifiable {
         }
 
         self.phase = .closed
+        self.notifyCloseIfNeeded()
 
         // FIXME
         for channel in self.session.channelManager.channels.values {
@@ -222,6 +233,12 @@ class NoctilucaClientSession: Identifiable {
         self.eventLoopTask?.cancel()
 
         await self.session.close()
+    }
+
+    private func notifyCloseIfNeeded() {
+        guard !didNotifyClose else { return }
+        didNotifyClose = true
+        delegate?.noctilucaClientSessionDidClose(self)
     }
 }
 
