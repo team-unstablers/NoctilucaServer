@@ -87,7 +87,7 @@ extension ProjectionChannel {
             }
         }
 
-        let channel = clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
+        let channel = await clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
 
         let session = await ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self)
 
@@ -150,4 +150,3 @@ extension ProjectionChannel {
         pendingAudioSessions.removeAll()
     }
 }
-

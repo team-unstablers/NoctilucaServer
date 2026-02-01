@@ -146,7 +146,6 @@ class NoctilucaClient: ObservableObject {
         self.authenticator = ClientAuthenticator(registry: .shared)
         
         self.session.delegate = self
-        self.session.channelManager.delegate = self
     }
 
     func configureAuthCredentials(sessionEntries: [ClientAuthEntry], globalEntries: [ClientAuthEntry]) {
@@ -154,6 +153,7 @@ class NoctilucaClient: ObservableObject {
     }
     
     func setup() async throws {
+        await session.channelManager.setDelegate(self)
         try await session.setup()
     }
     

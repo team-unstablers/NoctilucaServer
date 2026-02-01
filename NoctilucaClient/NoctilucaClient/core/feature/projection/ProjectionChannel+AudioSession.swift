@@ -29,7 +29,7 @@ extension ProjectionChannel {
             return
         }
 
-        guard let channel = clientSession.channelManager.channels[event.identifier] as? ProjectionDataChannel else {
+        guard let channel = await clientSession.channelManager.channels[event.identifier] as? ProjectionDataChannel else {
             self.logger.error("No ProjectionDataChannel found for audio session identifier: \(event.identifier)")
             return
         }
@@ -67,4 +67,3 @@ extension ProjectionChannel {
         self.audioSessions.removeValue(forKey: event.identifier)
     }
 }
-
