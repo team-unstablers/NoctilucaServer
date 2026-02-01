@@ -92,10 +92,6 @@ struct MainWindowContentView: View {
         switch viewModel.phase {
         case .newConnection:
             MainWindowNewConnectionPhaseContentView()
-#if os(iOS)
-                .safeAreaPadding(.vertical)
-                .padding(.top, horizontalSizeClass == .compact ? 0 : 32)
-#endif
         case .connecting, .connected:
             if let remoteSession = viewModel.remoteSession {
                 MainWindowContentViewInternal(remoteSession: remoteSession)

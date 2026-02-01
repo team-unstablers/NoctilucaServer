@@ -104,7 +104,7 @@ struct ToolbarModifierIPad: ViewModifier {
     private var settingsStore: SettingsStore
     
     @State
-    var principalFrame: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
+    var principalFrame: CGRect = .init(x: 320, y: 240, width: 1, height: 1)
     
     @State
     var toolbarStyle: MainWindowToolbarStyle = .compact
@@ -122,10 +122,10 @@ struct ToolbarModifierIPad: ViewModifier {
                     MainToolbarAddressBar(
                         viewModel: viewModel,
                         settingsStore: settingsStore,
-                        focusBinding: $isAddressBarFocused
+                        focusBinding: .none
                     )
-                    .opacity(1.0)
-                    // .background(.red)
+                    .allowsHitTesting(false)
+                    .opacity(isAddressBarFocused ? 0.001 : 1.0)
                 }
                 .if(toolbarStyle == .standard) {
                     $0
@@ -141,7 +141,47 @@ struct ToolbarModifierIPad: ViewModifier {
                 // .background(.blue)
                 .frame(maxHeight: 0)
             }
-            .ignoresSafeArea(.container, edges: .bottom)
+            .if(shouldPresentAddressBar) {
+                $0.overlay {
+                    ZStack {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                isAddressBarFocused = false
+                            }
+                        
+                        HStack {
+                            MainToolbarAddressBar(
+                                viewModel: viewModel,
+                                settingsStore: settingsStore,
+                                focusBinding: $isAddressBarFocused
+                            )
+                            .onAppear {
+                                isAddressBarFocused = true
+                            }
+                            .onChange(of: isAddressBarFocused) { oldValue, newValue in
+                                if (newValue == false) {
+                                    shouldPresentAddressBar = false
+                                }
+                            }
+                        }
+                        .if(toolbarStyle == .standard) {
+                            $0
+                                .frame(maxWidth: 400)
+                                .position(x: principalFrame.midX, y: principalFrame.midY)
+                        }
+                        .if(toolbarStyle == .compact) {
+                            $0
+                                .frame(maxWidth: 400)
+                                .position(x: principalFrame.midX, y: principalFrame.midY)
+                        }
+                    }
+                    .ignoresSafeArea(.all)
+                    .background(.ultraThinMaterial)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        .ignoresSafeArea(.container, edges: .bottom)
         // .ignoresSafeArea(.all)
         .onGeometryChange(for: CGSize.self) {
             return $0.size
@@ -152,7 +192,7 @@ struct ToolbarModifierIPad: ViewModifier {
                 toolbarStyle = .standard
             }
         }
-        .if(!isAddressBarFocused) {
+        .if(!shouldPresentAddressBar) {
             $0.toolbar {
                 ToolbarItem(placement: .principal) {
                     Button {
