@@ -10,11 +10,12 @@ import UIKit
 
 import SwiftUI
 
+@MainActor
 final class RootViewController: UIHostingController<AnyView> {
     
     /// FIXME: 둘이 합치던가 하세요
     var mainUIViewModel: MobileUIMainViewModel? = nil
-    var mainWindowViewModel: MainWindowViewModel? = nil
+    var mainWindowViewModel: SessionWindowViewModel? = nil
     var settingsStore: SettingsStore? = nil
     
     /// 포인터 락 여부를 설정합니다.
@@ -31,7 +32,7 @@ final class RootViewController: UIHostingController<AnyView> {
     
     init() {
         let mainUIViewModel = MobileUIMainViewModel()
-        let mainWindowViewModel = MainWindowViewModel()
+        let mainWindowViewModel = SessionWindowViewModel()
         let settingsStore = SettingsStore.shared
         
         self.mainUIViewModel = mainUIViewModel

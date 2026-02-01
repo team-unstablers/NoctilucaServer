@@ -70,18 +70,15 @@ extension ProjectionChannel {
     }
 
 
-    func createSession(projectionSettings: SessionSettings.Projection?) async throws -> ProjectionSession {
+    func createSession(for displayID: Int = -1, projectionSettings: SessionSettings.Projection?) async throws -> ProjectionSession {
         guard let clientSession = self.clientSession else {
             fatalError()
         }
 
         let identifier = UUID()
 
-        // 디스플레이 목록 조회 및 메인 디스플레이 찾기
-        let displayID = try await fetchPrimaryDisplayID()
-
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
-        try await sendProjectionRequest(identifier: identifier, displayID: displayID, preferredCodecs: preferredCodecs)
+        try await sendProjectionRequest(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
 
         let createdEvent = await withCheckedContinuation { cont in
             self.pendingSessions[identifier] = { event in
@@ -92,21 +89,13 @@ extension ProjectionChannel {
 
         let channel = clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
 
-        let session = ProjectionSession(id: identifier, dataChannel: channel, controlChannel: self)
+        let session = ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self)
 
         try await session.prepare(codec: createdEvent.codec)
         try await session.start()
 
         self.sessions[identifier] = session
 
-        // 디스플레이 변경 이벤트 구독
-        do {
-            let _ = try await subscribeDisplayChanges(eventMask: [.becamePrimary, .connected, .disconnected, .modified])
-            self.logger.info("Subscribed to display change events")
-        } catch {
-            self.logger.warning("Failed to subscribe to display change events: \(error)")
-        }
-        
         // 오디오 프로젝션 요청
         if projectionSettings?.isAudioProjectionEnabled ?? true {
             do {

@@ -54,6 +54,7 @@ class ProjectionSession: Identifiable {
     private var tileCompositor: TileCompositor?
     private var performanceReporter: ProjectionPerformanceReporter?
 
+    let displayID: Int
     var displayLayer = AVSampleBufferDisplayLayer()
 
     private var renderTimebase: CMTimebase?
@@ -76,8 +77,10 @@ class ProjectionSession: Identifiable {
     
     let events = PassthroughSubject<ProjectionSessionEvent, Never>()
 
-    init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
+    init(id: UUID, displayID: Int, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
         self.id = id
+        self.displayID = displayID
+        
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel
 

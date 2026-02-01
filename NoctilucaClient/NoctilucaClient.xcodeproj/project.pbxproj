@@ -55,10 +55,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		F61DD7E72EF2AE1600AC9B35 /* Exceptions for "NoctilucaClient" folder in "NoctilucaClient" target */ = {
+		F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "NoctilucaClient" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				resources/Info.plist,
 			);
 			target = F6BD3E952EDA1AF6000011DF /* NoctilucaClient */;
 		};
@@ -73,7 +73,7 @@
 		F6BD3E982EDA1AF6000011DF /* NoctilucaClient */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				F61DD7E72EF2AE1600AC9B35 /* Exceptions for "NoctilucaClient" folder in "NoctilucaClient" target */,
+				F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "NoctilucaClient" target */,
 			);
 			path = NoctilucaClient;
 			sourceTree = "<group>";
@@ -463,7 +463,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = NoctilucaClient/Info.plist;
+				INFOPLIST_FILE = NoctilucaClient/resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -486,7 +486,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/NoctilucaClient-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/resources/NoctilucaClient-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -518,7 +518,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = NoctilucaClient/Info.plist;
+				INFOPLIST_FILE = NoctilucaClient/resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -541,7 +541,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/NoctilucaClient-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/resources/NoctilucaClient-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

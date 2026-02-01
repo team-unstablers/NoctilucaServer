@@ -9,13 +9,14 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
-    private let viewModel: MainWindowViewModel
+    private let viewModel: SessionWindowViewModel
     private let toolbarController: MainToolbar
     var onClose: ((AppKitMainWindowController) -> Void)?
     
     init(settingsStore: SettingsStore) {
-        self.viewModel = MainWindowViewModel()
+        self.viewModel = SessionWindowViewModel()
         
         viewModel.bind(settingsStore: settingsStore)
         viewModel.loadContacts()
@@ -59,7 +60,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
 
 private struct MainWindowRootView: View {
     @ObservedObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
     
     @EnvironmentObject
     var contactSheetCoordinator: ContactSheetCoordinator

@@ -19,30 +19,27 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 # MULTI-PLATFORM SUPPORT
 
 - 이 앱은 macOS / iOS 멀티 플랫폼을 지원합니다.
-- platform-specific 코드(AppKit / UIKit 등)를 작성할 때는 아래 규칙 중 하나를 따르세요.
-
-## `#if os(...)` 매크로 사용
-- 파일 분리까지 하기에는 너무 거창할 때 사용합니다.
-
-## `{FileName}+{iOS|macOS}.swift` 파일 분리
-- 규모가 큰 경우 이 방식으로 분리합니다.
+- platform-specific 코드(AppKit / UIKit 등)는 `app/macos` 및 `app/ios` 디렉토리로 분리되어 있습니다.
 
 # DIRECTORY STRUCTURE
 
 - `NoctilucaClient/`
-  - `logic/`: `NoctilucaClient` 세션/페이즈 관리, 핸드셰이크 및 인증 처리
-  - `feature/hidio/`: 키보드/마우스 입력 전송 채널 및 가상 디바이스 구현
-  - `feature/projection/`: 프로젝션 제어/데이터 채널, 세션 관리, 디코더(VTVideoDecoder)
-- `feature/projection/decoder/specification/`: 코덱 옵션/스펙 보조 타입
-- `models/settings/`: 앱 설정(JSON) + 보안 설정(Keychain)
-- `models/session-settings/`: 세션 설정 모델 + Keychain 기반 자격 증명 저장
-- `ui/`: AppKit/SwiftUI/UIView 기반 UI, 설정 창/세션 화면/모바일 UI
-  - `utils/`: 로깅/JSON 유틸
-  - `auth/`: PAM 인증 페이로드 인코딩/검증
+  - `core/`: 모든 플랫폼에서 공유하는 핵심 로직 및 UI
+    - `logic/`: `NoctilucaClient` 세션/페이즈 관리, 핸드셰이크 및 인증 처리
+    - `feature/`: 기능별 구현 (HIDIO, Projection 등)
+    - `models/`: 데이터 모델 (설정, 연락처 등)
+    - `state/`: 전역 상태 관리 (`RemoteSession` 등)
+    - `auth/`: 인증 플러그인 및 구현체
+    - `ui/`: 플랫폼 공용 SwiftUI 뷰 및 컴포넌트
+    - `utils/`, `compat/`, `extensions/`: 유틸리티 및 호환성 코드
+  - `app/`: 플랫폼별 애플리케이션 코드
+    - `ios/`: iOS 전용 (AppDelegate, Mobile UI, Input View 등)
+    - `macos/`: macOS 전용 (AppDelegate, AppKit Window/View, TCC 등)
+  - `resources/`: 공용 리소스 (Assets, Icons, Info.plist, Bridging Header)
 
 # RUNTIME FLOW (HIGH-LEVEL)
 
-1. UI(`MainWindowViewModel`)에서 `SiriusClientBuilder`로 세션 생성
+1. UI(`SessionWindowViewModel`)에서 `RemoteSession` 생성/연결 트리거 → `NoctilucaClientManager`로 세션 생성
 2. `NoctilucaClient`가 MainChannel 이벤트 루프를 돌며 `ServerHello`/`AuthChallenge`/`AuthResponse` 처리
 3. 인증 완료 시 HIDIO/Projection 채널을 열고 프로젝션 세션 생성
 4. `ProjectionDataChannel`에서 코덱 파라미터 세트/프레임 수신
@@ -50,215 +47,65 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 
 # ENTRY POINTS & APP LIFECYCLE
 
-- macOS
-  - `NoctilucaClient/AppDelegate+macOS.swift`: `@main` AppKit(NSApplicationDelegate), 메뉴/창 관리 + GCKeyboard lifecycle 리스너 등록
-  - 메인 창: `ui/windows/AppKitMainWindow.swift` (`AppKitMainWindowController` → SwiftUI `MainWindowRootView`)
-  - 설정 창: `ui/windows/AppKitSettingsWindowController.swift` (singleton, `AppKitSettingsWindow` 호스팅)
-  - `NoctilucaClient/NoctilucaClientApp+macOS.swift`: AppKit entrypoint 안내용 placeholder
-- iOS
-  - `NoctilucaClient/NoctilucaClientApp+iOS.swift`: `@main` App, EmptyView + Scene 활성화
-  - `NoctilucaClient/AppDelegate+iOS.swift`: `MobileUIMainSceneDelegate` 지정
-  - Scene: `MobileUIMainSceneDelegate` → `MobileUIMainView` (NavigationStack 기반)
-  - 설정 창: `UIKitSettingsWindow`
+- macOS (`app/macos`)
+  - `AppDelegate+macOS.swift`: `@main` AppKit(NSApplicationDelegate)
+  - `ui/main/AppKitMainWindowController.swift`: 메인 윈도우 컨트롤러
+- iOS (`app/ios`)
+  - `NoctilucaClientApp+iOS.swift`: `@main` SwiftUI App
+  - `ui/main/mobile/MobileUIMainSceneDelegate.swift`: Scene Delegate
 
 # CORE MODULES (CODE MAP)
 
-- Session / Protocol
-  - `logic/NoctilucaClient.swift`: 페이즈 관리, MainChannel 이벤트 루프, ping/pong RTT 측정
-  - `logic/NoctilucaClient+Auth.swift`: ClientHello/AuthChallenge/AuthResponse 처리
-  - `logic/NoctilucaClient+Main.swift`: HIDIO/Projection 채널 초기화 및 세션 시작
-- Feature Provider
-  - `feature/NoctilucaFeatureProvider.swift`: Sirius feature → 채널 타입 매핑
-- Projection (Video)
-  - `feature/projection/ProjectionChannel.swift`: Projection 요청/세션 생성 및 관리
-  - `feature/projection/ProjectionDataChannel.swift`: 프레임/파라미터 세트 수신
-  - `feature/projection/ProjectionSession.swift`: 디코더 + 렌더링 + 성능 리포팅
-  - `feature/projection/decoder/VideoDecoder.swift`: 디코더 인터페이스 및 데이터 모델
-  - `feature/projection/decoder/VTVideoDecoder.swift`: VideoToolbox 기반 디코더 구현
-  - `feature/projection/decoder/specification/*`: 코덱 스펙, HDR/10-bit 지원 판정, 해상도 레벨
-- Audio Projection
-  - `feature/projection/AudioProjectionSession.swift`: 오디오 디코딩 + AVAudioEngine 재생
-  - `feature/projection/decoder/AudioDecoder.swift`: 오디오 디코더 인터페이스 및 데이터 모델
-  - `feature/projection/decoder/PCMAudioDecoder.swift`: G.711 (PCMU/PCMA) → PCM 디코더
-  - `feature/projection/decoder/OpusAudioDecoder.swift`: Opus → PCM 디코더
-- HIDIO (Input)
-  - `feature/hidio/HIDIOChannel.swift`: HIDIO 채널
-  - `feature/hidio/HIDIOController.swift`: 키보드/마우스 이벤트 패킷 전송
-  - `feature/hidio/devices/*`: GCKeyboard 기반 가상 디바이스 및 키코드 매핑
-  - `feature/hidio/devices/HIDIOUIKitKeyboard.swift`: iOS 온스크린 키보드 입력(US ASCII) → LinuxKeycode 매핑 디바이스
-- UI
-  - `ui/views/main/*`: 주소창/연결 상태/스트리밍 화면
-  - `ui/views/main/HIDIOUIKitKeyboardView.swift`: iOS 키보드 입력 호스트 + modifier helper view
-  - `ui/views/session*`: 세션 설정 UI
-  - `ui/views/settings/*`: 앱 설정 UI
-  - `ui/windows/*`: 플랫폼별 창/툴바 구성
-
-# PROTOCOL / CHANNEL FLOW (DETAIL)
-
-- 세션 생성
-  - `MainWindowViewModel.startSession(...)` → `SiriusClientBuilder`
-  - `.useTransportProtocol(.quic(host:port))` + `.useFeatureProvider(NoctilucaFeatureProvider())`
-- 메인 채널
-  - `NoctilucaClient`가 `MainChannel` 이벤트 수신
-  - `ServerHello` 수신 → `awaitingAuthentication`
-  - `AuthChallenge` 수신 → 자동 인증(세션 → 글로벌) → 실패 시 UI 입력 → `AuthRequest` 전송
-  - `AuthResponse` 수신 → `.ready` 전환, 추가 채널 생성 허용
-- HIDIO 채널
-  - `HIDIOChannel`은 클라이언트에서만 open
-  - `HIDIOController`가 `HIDIOPacket`으로 키 이벤트 전송
-  - `GCKeyboard` 입력을 `LinuxKeycode`로 변환 (`LinuxKeycode+GameController`)
-- Projection 채널
-  - `ProjectionChannel.createSession()`에서 `ProjectionRequest` 송신
-  - 서버가 `ProjectionSessionCreatedEvent`를 반환하면 `ProjectionDataChannel` 생성됨
-  - `ProjectionSession`이 디코더 준비/시작 + 성능 리포트 주기 전송
-
-# PROJECTION DATA FORMAT / DECODER DETAILS
-
-- ProjectionDataChannel 프레임 포맷 (big-endian)
-  - `<headerLength: uint32> <frameLength: uint32> <headerBytes> <frameBytes>`
-  - `FrameDataHeader`는 Protobuf (Sirius msgdef)
-- 코덱 파라미터 세트
-  - `CodecParameterSetMessage` 수신 시 `CMFormatDescription` 생성
-- VTVideoDecoder
-  - `VTDecompressionSession` 생성 (하드웨어 가속 요구 설정 포함)
-  - `Codec` 옵션을 기반으로 `CVPixelBuffer` 포맷 결정 (YUV420/444, 8/10-bit, full/limited range)
-  - `CMSampleBufferCreateReady`로 샘플버퍼 생성 후 디코딩
-  - 출력 콜백에서 `DecodedFrame` 생성 및 delegate 전달
-  - `VTSessionSetProperty(...GeneratePerFrameHDRDisplayMetadata)` 활성화
+- Session / Protocol (`core/logic`)
+  - `NoctilucaClient.swift`: 페이즈 관리, MainChannel 이벤트 루프, ping/pong RTT 측정
+  - `NoctilucaClient+Auth.swift`: ClientHello/AuthChallenge/AuthResponse 처리
+  - `NoctilucaClient+Main.swift`: HIDIO/Projection 채널 초기화 및 세션 시작
+- Feature Provider (`core/feature`)
+  - `NoctilucaFeatureProvider.swift`: Sirius feature → 채널 타입 매핑
+- Projection (Video) (`core/feature/projection`)
+  - `ProjectionChannel.swift`: Projection 요청/세션 생성 및 관리
+  - `ProjectionDataChannel.swift`: 프레임/파라미터 세트 수신
+  - `ProjectionSession.swift`: 디코더 + 렌더링 + 성능 리포팅
+  - `decoder/VideoDecoder.swift`: 디코더 인터페이스 및 데이터 모델
+  - `decoder/VTVideoDecoder.swift`: VideoToolbox 기반 디코더 구현
+- Audio Projection (`core/feature/projection`)
+  - `AudioProjectionSession.swift`: 오디오 디코딩 + AVAudioEngine 재생
+  - `decoder/AudioDecoder.swift`: 오디오 디코더 인터페이스
+- HIDIO (Input) (`core/feature/hidio`)
+  - `HIDIOChannel.swift`: HIDIO 채널
+  - `HIDIOController.swift`: 키보드/마우스 이벤트 패킷 전송
+  - `devices/*`: 가상 입력 디바이스 구현체
 
 # UI OVERVIEW
 
-- 메인 페이즈
-  - `MainWindowContentView`가 `newConnection`/`connecting`/`connected` 상태에 따라 화면 분기
-  - `MainWindowMainPhaseContentView`에서 `AVSampleBufferDisplayLayer`를 표시하고 확대/이동 제스처 지원
-- 주소창/툴바
-  - `AddressBar` + `AddressBarCandidateBox` + `AddressBarIndicatorView`
-  - RTT 기반 품질 표시, 보안 상태 아이콘, 후보 목록 (quick connect / contact)
-  - macOS: AppKit NSToolbar (`MainToolbar`) + 신호등 정렬 스위즐(`NSWindow+NoctilucaLayoutSwizzle`)
-  - iOS: `View+iOSToolbar.swift`로 디바이스별 툴바 오버레이
-- 인증 UI
-  - `AuthChallengeSheetView`에서 서버 허용 + 클라이언트 지원 메소드 기반 입력
-  - 입력 상태/검증은 `AuthChallengeSheetViewModel`로 분리
-  - macOS: sheet, iOS: fullScreenCover
-- 디버그
-  - `PerformanceOverlay`에서 협상된 코덱/RTT 표시
-
-# SETTINGS & STORAGE
-
-- 앱 설정 모델: `models/settings/AppSettings.swift`
-  - 일반/세션 기본값/입력/보안/기타/플러그인 섹션
-  - JSON 저장 위치: `Application Support/<bundle id>/settings.json`
-  - 보안 항목은 `SRKeychain`을 통해 Keychain 저장
-- 세션 설정 모델: `models/session-settings/SessionSettings.swift`
-  - 글로벌 프리셋(AppSettings.sessionDefaults) + 연락처별 세션 설정
-  - 연락처 저장 위치: `Application Support/<bundle id>/contacts/<id>.json`
-  - 자격 증명은 `[ClientAuthEntry]`를 Keychain에 저장하고 settings에는 keychain ref만 보관
-
-# DATA MODEL / HELPERS
-
-- `NoctilucaMeta`: 앱 이름/버전/빌드/라이선스 및 identifier 헬퍼
-- `DeviceKind`: iPhone/iPad/mac 구분
-- `JSON` 유틸: snake_case 변환 포함 인코딩/디코딩 헬퍼
-- `Binding+Convert`: 숫자 타입 바인딩 변환
-- `SoftwareLicense`: 라이선스 enum 정의
-
-# AUTH / PAYLOAD
-
-- 클라이언트 인증 코어: `auth/ClientAuthenticator.swift`, `auth/ClientAuthPluginRegistry.swift`, `auth/ClientAuthPluginV1.swift`
-  - 자동 인증 순서: 세션 스코프 크레덴셜 → 글로벌 크레덴셜 → UI 입력
-- 빌트인 플러그인
-  - `auth/pam/PAMAuthClientPlugin.swift`
-  - `auth/simple-password/SimplePasswordAuthClientPlugin.swift`
-- PAM 페이로드 (`auth/pam/PAMAuthPayload.swift`)
-  - 포맷: `[u32 usernameLen][u32 passwordLen][username][password]`
-- Simple-password 페이로드
-  - raw password UTF-8 bytes (서버에서 sha512+bcrypt 처리)
-
-# KNOWN TODO / FIXME (요약)
-
-- `ContentView.swift`: `FIXME__ContentViewModel`는 임시 연결 UI
-- `NoctilucaClient.swift`: `FIXME_projectionStarted` 이벤트로 디코더 시작 알림 임시 전달
-- `VTVideoDecoder.swift`: 하드웨어 디코딩 실패 시 소프트웨어 폴백 미구현
-- `ProjectionSession.swift`: 샘플 타이밍/PTS 정규화 로직 일부 주석 처리
-- `SecuritySessionSettingsTab.swift`: 인증서 고정 UI/정보 표시 미구현
-- UI 전반: AddressBar 후보/키 입력 처리 등 TODO/FIXME 다수
+- 메인 페이즈 (`core/ui/main`)
+  - `MainWindowContentView`: 연결 상태에 따른 화면 분기
+  - `phases/*`: 각 연결 단계별 UI
+- 주소창/툴바 (`core/ui/main/address-bar`)
+  - `AddressBar`: 연결 주소 입력 및 상태 표시
+- 설정 (`core/ui/settings`, `core/ui/session-settings`)
+  - 앱 설정 및 세션별 설정 UI
 
 # XCODE / BUILD NOTES
 
 - **클라이언트 빌드 시 반드시 xcworkspace를 사용하여 빌드하십시오.**
-  - 워크스페이스 경로: `../NoctilucaServer.xcworkspace`
-  - 예시: `xcodebuild -workspace ../NoctilucaServer.xcworkspace -scheme NoctilucaClient ...`
-- `NoctilucaClient.xcodeproj`가 기본 프로젝트 (scheme: `NoctilucaClient`, product: `Noctiluca Navigator.app`)
-- `NoctilucaClient 2.xcodeproj`는 사용자 데이터만 포함 (실사용 전 확인 필요)
-
-# CONFIG / STATE
-
-- 설정 파일: `Application Support/<bundle id>/settings.json`
-- 보안 항목: `SRKeychain`을 사용해 Keychain 저장
-- 연락처 저장소: `Application Support/<bundle id>/contacts/<id>.json`
+- 디렉토리 구조 변경으로 인해 Xcode 프로젝트 그룹이 실제 폴더 구조(`core`, `app`, `resources`)와 일치해야 합니다.
 
 # RELATED PROJECTS
 
 - `../SiriusKit`: Sirius 프로토콜 정의 및 전송 계층 구현
-  - `CodecOption`/`CodecOptionsParser` 등 공용 타입은 SiriusKit 쪽을 기준으로 사용
 - `../NoctilucaServer`: 서버 애플리케이션(호스트) 구현
-  - 프로젝션/입력/인증 흐름의 실제 서버 동작은 이쪽을 기준으로 확인
-
-## Recommended Core Paths
-
-SiriusKit (프로토콜/채널/전송 기준):
-- `../SiriusKit/SiriusKit/client/SiriusClient.swift`
-- `../SiriusKit/SiriusKit/client/SiriusClientBuilder.swift`
-- `../SiriusKit/SiriusKit/channel/MainChannel.swift`
-- `../SiriusKit/SiriusKit/channel/Channel.swift`
-- `../SiriusKit/SiriusKit/channel/ChannelManager.swift`
-- `../SiriusKit/SiriusKit/channel/messages/SiriusFrame.swift`
-- `../SiriusKit/SiriusKit/channel/msgdef/v1/channels/projection/CodecOption.swift`
-- `../SiriusKit/SiriusKit/channel/msgdef/v1/channels/projection/CodecOptionsParser.swift`
-- `../SiriusKit/SiriusKit/transport/client/quic/ClientRoleQUICTransport.swift`
-- `../SiriusKit/SiriusKit/transport/quic/QUICConstants.swift`
-
-NoctilucaServer (서버 동작/핸들러 기준):
-- `../NoctilucaServer/NoctilucaServer.swift`
-- `../NoctilucaServer/NoctilucaServerApp.swift`
-- `../NoctilucaServer/client-session/NoctilucaClientSession.swift`
-- `../NoctilucaServer/client-session/NoctilucaClientSession+Auth.swift`
-- `../NoctilucaServer/feature/projection/ProjectionChannel.swift`
-- `../NoctilucaServer/feature/projection/ProjectionDataChannel.swift`
-- `../NoctilucaServer/feature/projection/encoder/VTVideoEncoder.swift`
-- `../NoctilucaServer/feature/projection/recorder/ScreenCaptureKitScreenRecorder.swift`
-- `../NoctilucaServer/feature/hidio/HIDIOChannel.swift`
-- `../NoctilucaServer/auth/Authenticator.swift`
-- `../NoctilucaServer/auth/AuthPluginRegistry.swift`
 
 ## Context Resolve Rule
 
 컨텍스트 해석(Context Resolve)이 필요한 경우에는 **반드시**  
-`../SiriusKit`와 `../NoctilucaServer`를 함께 확인한 뒤 진행하세요.  
-아래 체크리스트를 충족하지 못하면 **코드 변경을 진행하지 않습니다.**
-
-Context Resolve Checklist:
-1. 관련 메시지/옵션 정의는 `../SiriusKit`의 msgdef/채널 래퍼에서 확인했다.
-2. 클라이언트 측 호출 흐름은 `../SiriusKit`의 client/channel 구현과 대조했다.
-3. 서버 측 처리 로직은 `../NoctilucaServer`의 client-session/feature 구현과 대조했다.
-4. 위 1~3의 결과가 클라이언트 변경과 충돌하지 않는지 점검했다.
+`../SiriusKit`와 `../NoctilucaServer`를 함께 확인한 뒤 진행하세요.
 
 ## Recent Notes
 
-- **오디오 프로젝션 기능 구현 완료**:
-  - `AudioDecoder` 프로토콜 및 `PCMAudioDecoder`(G.711), `OpusAudioDecoder` 구현
-  - `AudioProjectionSession`이 `AVAudioEngine`으로 디코딩된 오디오 재생
-  - `ProjectionDataChannel`에 `didReceiveAudioFrame` delegate 메서드 추가
-  - `ProjectionChannel`에 오디오 세션 이벤트 핸들러 추가 (`audioSessions` 관리)
-  - 초기 버퍼링 옵션 지원 (`enableInitialBuffering`, `initialBufferCount`)
-- `CodecOptionsParser.parse(optionsString:)`는 이제 `[CodecOptionKey: CodecOptionValue]` 대신
-  `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다.
-- `CodecOption`/`CodecOptionsParser` 정의가 `SiriusKit/channel/msgdef/v1/channels/projection`로 이동했고,
-  클라이언트에서도 사용할 수 있도록 `public`으로 노출되었습니다.
-- ZRLE(타일 + RLE + Zstd) 소프트웨어 디코더(`ZRLEVideoDecoder`)가 추가되었습니다. (`codec.fourCC == .zrle`일 때 사용)
-- 디코더 설계 문서: `DECODER_PLAN.md` (VideoToolbox 기반 디코딩 계층 설계 초안)
-- `ProjectionSession`은 매 1초마다 `ProjectionPerformanceReport`를 전송해 디코드 성능을 리포트합니다.
-- UI/세션/디코더 주변에 FIXME/TODO가 다수 존재하므로 변경 시 범위 확인 필요
+- **2026-02-01**: RemoteApp 지원 준비를 위해 **디렉토리 구조 리팩토링**을 수행했습니다. (`core`, `app`, `resources` 분리)
+- **오디오 프로젝션 기능 구현 완료**: `AudioProjectionSession`, `AudioDecoder` 등
+- **ZRLE 디코더 추가**: `ZRLEVideoDecoder` (RLE + Zstd)
 
 </section>
 <section id="agent-rules">

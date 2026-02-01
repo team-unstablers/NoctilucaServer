@@ -20,7 +20,7 @@ enum MainWindowToolbarStyle {
 
 struct UIKitMainWindow: View {
     @EnvironmentObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
     
     @EnvironmentObject
     var contactSheetCoordinator: ContactSheetCoordinator
@@ -75,8 +75,10 @@ struct UIKitMainWindow: View {
 typealias MainWindow = UIKitMainWindow
 
 #Preview {
+    let viewModel = SessionWindowViewModel()
     UIKitMainWindow()
-        .environmentObject(MainWindowViewModel())
+        .environmentObject(viewModel)
+        .environmentObject(viewModel.contactSheetCoordinator)
         .environmentObject(SettingsStore.shared)
 }
 

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MainToolbarAddressBar: View {
     @ObservedObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
 
     @ObservedObject
     var settingsStore: SettingsStore
@@ -19,7 +19,17 @@ struct MainToolbarAddressBar: View {
     @FocusState
     private var internalFocus: Bool
     
-    init(viewModel: MainWindowViewModel,
+    var pingRTT: Double? {
+        guard let session = viewModel.remoteSession,
+              let pingRTT = session.pingRTT
+        else {
+            return nil
+        }
+        
+        return pingRTT
+    }
+    
+    init(viewModel: SessionWindowViewModel,
          settingsStore: SettingsStore,
          focusBinding: FocusState<Bool>.Binding? = nil) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
@@ -55,7 +65,12 @@ struct MainToolbarAddressBar: View {
             return nil
         }
         
-        switch viewModel.averagePingRTT {
+        guard let pingRTT = pingRTT else {
+            return .unknown
+        }
+
+        
+        switch pingRTT {
         // ~50ms: excellent
         case 0..<0.050:
             return .excellent
@@ -84,7 +99,7 @@ struct MainToolbarAddressBar: View {
                 endpointURL: viewModel.endpointURL,
                 securityIndicator: securityIndicator,
                 qualityIndicator: qualityIndicator,
-                rtt: viewModel.averagePingRTT,
+                rtt: pingRTT ?? 0.0,
                 action: action,
                 isFocused: resolvedFocusBinding
             ) { action in
@@ -96,7 +111,7 @@ struct MainToolbarAddressBar: View {
                     case .connect(let endpointURL):
                         viewModel.contactSheetCoordinator.presentQuickConnect(endpointURL: endpointURL)
                     case .contact, .quickConnect:
-                        Task {
+                        Task { @MainActor in
                             try await self.viewModel.startSession(endpoint: endpoint)
                         }
                     }
@@ -111,7 +126,7 @@ struct MainToolbarAddressBar: View {
 
 struct UIKitStyledMainToolbarAddressBar: View {
     @ObservedObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
     
     @EnvironmentObject
     private var settingsStore: SettingsStore
@@ -151,7 +166,7 @@ struct UIKitStyledMainToolbarAddressBar: View {
 }
 
 #Preview {
-    let viewModel = MainWindowViewModel()
+    let viewModel = SessionWindowViewModel()
     
     VStack {
         Spacer()

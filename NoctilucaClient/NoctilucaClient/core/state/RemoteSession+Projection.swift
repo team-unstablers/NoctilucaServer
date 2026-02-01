@@ -66,6 +66,12 @@ extension RemoteSession {
             
             // cache the channel ID
             self.channelID = channel.identifier
+
+            subscribeEvents()
+        }
+
+        deinit {
+            unsubscribeEvents()
         }
         
         private func subscribeEvents() {

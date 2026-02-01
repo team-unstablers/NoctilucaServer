@@ -96,7 +96,7 @@ final class NOCAudioEngine: @unchecked Sendable {
                 activeNodes -= 1
             }
             
-            logger.debug("Node detached. Active nodes: \(activeNodes)")
+            logger.debug("Node detached. Active nodes: \(self.activeNodes)")
             
             if activeNodes == 0 && engine.isRunning {
                 logger.info("No active nodes. Pausing AVAudioEngine to save resources.")

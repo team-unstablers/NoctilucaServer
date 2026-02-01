@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MainWindowNewConnectionPhaseContentView: View {
     @EnvironmentObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
     
     @EnvironmentObject
     var contactSheetCoordinator: ContactSheetCoordinator
@@ -73,7 +73,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             ContactItemView(item: item) { action in
                                 switch action {
                                 case .launch:
-                                    Task {
+                                    Task { @MainActor in
                                         try? await viewModel.startSession(endpoint: .contact(item: item))
                                     }
                                 case .edit:
@@ -93,7 +93,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
 }
 
 #Preview("NewConnectionPhase") {
-    let viewModel = MainWindowViewModel()
+    let viewModel = SessionWindowViewModel()
 
     /*
     MainWindowContentView(viewModel: viewModel)
@@ -101,6 +101,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
 
     MainWindowNewConnectionPhaseContentView()
         .environmentObject(viewModel)
+        .environmentObject(viewModel.contactSheetCoordinator)
         .environmentObject(SettingsStore.shared)
         .frame(minWidth: 640, minHeight: 480)
 }

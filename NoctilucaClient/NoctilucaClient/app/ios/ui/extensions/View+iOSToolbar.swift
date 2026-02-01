@@ -31,7 +31,7 @@ struct ToolbarModifierIPhone: ViewModifier {
     var mobileUIMainViewModel: MobileUIMainViewModel
 
     @EnvironmentObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
     
     @EnvironmentObject
     private var settingsStore: SettingsStore
@@ -79,7 +79,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                 } else {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
-                            Task {
+                            Task { @MainActor in
                                 await viewModel.stopSession()
                             }
                         } label: {
@@ -98,7 +98,7 @@ struct ToolbarModifierIPad: ViewModifier {
     var mobileUIMainViewModel: MobileUIMainViewModel
     
     @EnvironmentObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
     
     @EnvironmentObject
     private var settingsStore: SettingsStore
@@ -231,7 +231,7 @@ struct ToolbarModifierIPad: ViewModifier {
                 } else {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
-                            Task {
+                            Task { @MainActor in
                                 await viewModel.stopSession()
                             }
                         } label: {

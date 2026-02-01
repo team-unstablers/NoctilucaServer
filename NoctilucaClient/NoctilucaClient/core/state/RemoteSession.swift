@@ -1,5 +1,5 @@
 //
-//  SessionEventCoordinator.swift
+//  RemoteSession.swift
 //  NoctilucaClient
 //
 //  Created by Gyuhwan Park on 1/28/26.
@@ -13,7 +13,7 @@ class RemoteSession: ObservableObject {
     private let logger = NoctilucaLogger(category: "RemoteSession")
     private var eventSubscription: AnyCancellable? = nil
 
-    private var client: NoctilucaClient
+    private(set) var client: NoctilucaClient
 
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial
@@ -22,7 +22,7 @@ class RemoteSession: ObservableObject {
     private(set) var authChallenge: AuthChallenge? = nil
 
     @Published
-    private(set) var shouldPresentAuthChallengeSheet: Bool = false
+    var shouldPresentAuthChallengeSheet: Bool = false
 
     @Published
     private(set) var pingRTT: TimeInterval? = nil
@@ -30,7 +30,11 @@ class RemoteSession: ObservableObject {
     @Published
     private(set) var projection: Projection? = nil
     
-    private var errorEvents = PassthroughSubject<NoctilucaClientError, Never>()
+    private let errorEvents = PassthroughSubject<NoctilucaClientError, Never>()
+
+    var errorPublisher: AnyPublisher<NoctilucaClientError, Never> {
+        errorEvents.eraseToAnyPublisher()
+    }
 
     var availableAuthMethods: [ClientAuthMethod] {
         guard let authChallenge else {
@@ -122,7 +126,8 @@ class RemoteSession: ObservableObject {
         }
     }
 
-    private func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction) async {
+    @MainActor
+    func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction) async {
         guard let authChallenge else {
             return
         }

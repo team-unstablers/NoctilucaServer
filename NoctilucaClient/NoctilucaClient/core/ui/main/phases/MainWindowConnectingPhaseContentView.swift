@@ -13,7 +13,7 @@ import AppKit
 
 struct MainWindowConnectingPhaseContentView: View {
     @EnvironmentObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
 
     @State
     var isLogAreaVisible: Bool = false
@@ -82,7 +82,7 @@ struct MainWindowConnectingPhaseContentView: View {
 }
 
 #Preview("ConnectingPhase") {
-    let viewModel = MainWindowViewModel()
+    let viewModel = SessionWindowViewModel()
 
     MainWindowConnectingPhaseContentView()
         .environmentObject(viewModel)

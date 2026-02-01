@@ -16,24 +16,27 @@ struct MainWindowContentView: View {
 #endif
 
     @EnvironmentObject
-    var viewModel: MainWindowViewModel
+    var viewModel: SessionWindowViewModel
 
     var body: some View {
         content
-            // HACK: 레이스 컨디션 일어나서 sheet이 표시되어도 내용이 비어있는 경우가 발생함
-            .if(viewModel.sessionEventCoordinator.authChallenge != nil) {
-                $0.dialog(isPresented: $viewModel.sessionEventCoordinator.shouldPresentAuthChallengeSheet) {
-                    if let authChallenge = viewModel.sessionEventCoordinator.authChallenge {
+            .if(viewModel.remoteSession != nil) {
+                if let remoteSession = viewModel.remoteSession,
+                   let authChallenge = remoteSession.authChallenge {
+                    // FIXME: 추후 고쳐야 함
+                    $0.dialog(isPresented: .init(get: { remoteSession.shouldPresentAuthChallengeSheet }, set: { remoteSession.shouldPresentAuthChallengeSheet = $0 })) {
                         AuthChallengeSheetView(
                             authChallenge: authChallenge,
-                            availableMethods: viewModel.sessionEventCoordinator.availableAuthMethods.filter { $0 != .sshKey }
+                            availableMethods: remoteSession.availableAuthMethods.filter { $0 != .sshKey }
                         ) { action in
-                            Task {
-                                await viewModel.sessionEventCoordinator.handleAuthChallengeResponse(action)
+                            Task { @MainActor in
+                                await viewModel.handleAuthChallengeResponse(action)
                             }
                         }
                         .id(authChallenge.nonce)
                     }
+                } else {
+                    $0
                 }
             }
     }
@@ -50,7 +53,20 @@ struct MainWindowContentView: View {
         case .connecting:
             MainWindowConnectingPhaseContentView()
         case .connected:
-            MainWindowMainPhaseContentView()
+            if let remoteSession = viewModel.remoteSession,
+               let projection = remoteSession.projection
+            {
+                let displayLayoutManager = remoteSession.client.projectionChannel.displayLayoutManager
+                // TODO: -1 쓰지 마세요1!!
+                let primaryDisplayID = displayLayoutManager.primaryDisplayID ?? -1
+                
+                RemoteSessionProjectionView(
+                    remoteSession: remoteSession,
+                    projection: projection,
+                    source: .displayID(primaryDisplayID)
+                )
+                    .environmentObject(remoteSession)
+            }
         default:
             EmptyView()
         }

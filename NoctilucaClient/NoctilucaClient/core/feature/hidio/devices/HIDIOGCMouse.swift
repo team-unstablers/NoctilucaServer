@@ -151,7 +151,9 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
                 controller.moveMouseRelative(to: delta)
             }
             
-            self?.centerCursor()
+            Task { @MainActor in
+                self?.centerCursor()
+            }
         }
         
         func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
@@ -233,7 +235,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     func lock() throws {
         self.setupMouseInputHandler()
         
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.hideCursor()
         }
     }
@@ -241,7 +243,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     func unlock() throws {
         self.destroyMouseInputHandler()
         
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.showCursor()
         }
     }
@@ -259,6 +261,7 @@ fileprivate extension HIDIOGCMouse {
         return nil
     }
     
+    @MainActor
     func hideCursor() {
         guard let displayID = currentDisplayID() else {
             return
@@ -268,6 +271,7 @@ fileprivate extension HIDIOGCMouse {
         CGDisplayHideCursor(displayID)
     }
     
+    @MainActor
     func showCursor() {
         guard let displayID = currentDisplayID() else {
             return
@@ -277,6 +281,7 @@ fileprivate extension HIDIOGCMouse {
         CGDisplayShowCursor(displayID)
     }
     
+    @MainActor
     func centerCursor() {
         guard let keyWindow = NSApp.keyWindow,
               let screen = keyWindow.screen
@@ -311,6 +316,7 @@ fileprivate extension HIDIOGCMouse {
         return rootViewController
     }
     
+    @MainActor
     func hideCursor() {
         guard let rootViewController = self.rootViewController() else {
             return
@@ -319,6 +325,7 @@ fileprivate extension HIDIOGCMouse {
         rootViewController.isPointerLocked = true
     }
     
+    @MainActor
     func showCursor() {
         guard let rootViewController = self.rootViewController() else {
             return
@@ -327,6 +334,7 @@ fileprivate extension HIDIOGCMouse {
         rootViewController.isPointerLocked = false
     }
     
+    @MainActor
     func centerCursor() {
         // iOS는 rootViewController에서 isPointerLocked만 설정해두면 됨
     }

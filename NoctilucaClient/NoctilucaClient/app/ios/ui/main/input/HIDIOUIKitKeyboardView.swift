@@ -13,9 +13,13 @@ import UIKit
 import SiriusKitClient
 
 struct HIDIOUIKitKeyboardInputHost: View {
-    let client: NoctilucaClient?
-    @ObservedObject var keyboard: HIDIOUIKitKeyboard
-    @Binding var isPresented: Bool
+    let client: NoctilucaClient
+    
+    @ObservedObject
+    var keyboard: HIDIOUIKitKeyboard
+    
+    @Binding
+    var isPresented: Bool
 
     var body: some View {
         ZStack {
@@ -45,19 +49,10 @@ struct HIDIOUIKitKeyboardInputHost: View {
                 keyboard.resetModifiers()
             }
         }
-        .if(client != nil) {
-            $0.onReceive(client!.uiEvents) { event in
-                guard case .FIXME_projectionStarted = event else {
-                    return
-                }
-
-                updateConnection(isEnabled: isPresented)
-            }
-        }
     }
 
     private func updateConnection(isEnabled: Bool) {
-        guard let controller = client?.hidioController else {
+        guard let controller = client.hidioController else {
             return
         }
 

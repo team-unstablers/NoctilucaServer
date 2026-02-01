@@ -12,7 +12,11 @@ import UIKit
 import SiriusKitClient
 
 struct HIDIOUIKitMouseView: View {
-    let client: NoctilucaClient?
+    let client: NoctilucaClient
+    
+    let sessionSize: CGSize
+    
+    
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
     @Binding var cursorPosition: CGPoint
@@ -22,37 +26,28 @@ struct HIDIOUIKitMouseView: View {
 
     var body: some View {
         VStack(alignment: .center) {
-            if let client {
-                Spacer()
-                HIDIOUIKitMouseCaptureView(
-                    pointer: pointer,
-                    mode: $mode,
-                    trackpadMoveMultiplier: $trackpadMoveMultiplier
-                )
-                    .aspectRatio(aspectRatio, contentMode: .fit)
-                    .onAppear {
-                        pointer.onCursorPositionChanged = { position in
-                            cursorPosition = position
-                        }
-                        connectPointerIfNeeded(client)
+            Spacer()
+            HIDIOUIKitMouseCaptureView(
+                pointer: pointer,
+                mode: $mode,
+                trackpadMoveMultiplier: $trackpadMoveMultiplier
+            )
+                .aspectRatio(aspectRatio, contentMode: .fit)
+                .onAppear {
+                    pointer.onCursorPositionChanged = { position in
+                        cursorPosition = position
                     }
-                    .onDisappear {
-                        disconnectPointer(client)
-                    }
-                    .onReceive(client.uiEvents) { event in
-                        guard case .FIXME_projectionStarted(let projectionSession) = event else {
-                            return
-                        }
-
-                        connectPointerIfNeeded(client)
-                        
-                        let size = projectionSession.size
-                        aspectRatio = size.width / size.height
-                    }
-                Spacer()
-            } else {
-                EmptyView()
-            }
+                    connectPointerIfNeeded(client)
+                    
+                    aspectRatio = sessionSize.width / sessionSize.height
+                }
+                .onDisappear {
+                    disconnectPointer(client)
+                }
+                .onChange(of: sessionSize) { _, newSize in
+                    aspectRatio = newSize.width / newSize.height
+                }
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

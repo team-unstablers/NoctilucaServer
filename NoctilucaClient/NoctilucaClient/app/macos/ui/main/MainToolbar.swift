@@ -10,8 +10,9 @@ import SwiftUI
 import AppKit
 import Combine
 
+@MainActor
 final class MainToolbar: NSObject, NSToolbarDelegate {
-    private let viewModel: MainWindowViewModel
+    private let viewModel: SessionWindowViewModel
     private let addressBarView: NSHostingView<MainToolbarAddressBar>
     private let minWidth: CGFloat
     private let maxWidth: CGFloat
@@ -24,10 +25,10 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
     }
     
     @ViewBuilder
-    static func makeAddressBarView(viewModel: MainWindowViewModel, settingsStore: SettingsStore) -> some View {
+    static func makeAddressBarView(viewModel: SessionWindowViewModel, settingsStore: SettingsStore) -> some View {
     }
     
-    init(viewModel: MainWindowViewModel, settingsStore: SettingsStore, minWidth: CGFloat = 480, maxWidth: CGFloat = 640) {
+    init(viewModel: SessionWindowViewModel, settingsStore: SettingsStore, minWidth: CGFloat = 480, maxWidth: CGFloat = 640) {
         let rootView = Self.makeAddressBarView(viewModel: viewModel, settingsStore: settingsStore)
         
         self.viewModel = viewModel
@@ -220,7 +221,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 appDelegate.showSettingsWindow(nil)
             }
         case .nocStopSession:
-            Task {
+            Task { @MainActor in
                 await viewModel.stopSession()
             }
         case .nocAddSession:

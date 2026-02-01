@@ -1,5 +1,5 @@
 //
-//  MainWindowViewModel.swift
+//  SessionWindowViewModel.swift
 //  NoctilucaClient
 //
 //  Created by Gyuhwan Park on 12/11/25.
@@ -13,7 +13,8 @@ import Combine
 
 import SiriusKitClient
 
-class MainWindowViewModel: ObservableObject {
+@MainActor
+class SessionWindowViewModel: ObservableObject {
     @Published
     var phase: MainWindowPhase = .newConnection
 
@@ -25,14 +26,6 @@ class MainWindowViewModel: ObservableObject {
 
     @Published
     var shouldDisplayErrorAlert: Bool = false
-
-    var client: NoctilucaClient?
-
-    @Published
-    var averagePingRTT: TimeInterval = 0.0
-
-    @Published
-    var displayLayer: AVSampleBufferDisplayLayer? = nil
 
     @Published
     var inputWarning: InputWarning? = nil
@@ -46,8 +39,16 @@ class MainWindowViewModel: ObservableObject {
     @Published
     var contactSheetCoordinator: ContactSheetCoordinator
 
+
     private var settingsStore: SettingsStore?
     private var settingsCancellables: Set<AnyCancellable> = []
+    private var sessionCancellables: Set<AnyCancellable> = []
+
+    private(set) var remoteSession: RemoteSession? = nil
+
+    private var client: NoctilucaClient? {
+        remoteSession?.client
+    }
 
     init() {
         self.contactSheetCoordinator = ContactSheetCoordinator()
@@ -61,23 +62,21 @@ class MainWindowViewModel: ObservableObject {
             }
         }
     }
-    
-    
+
     func startSession(endpoint: EndpointKind, settingsOverride: SessionSettings? = nil) async throws {
-        if self.client != nil {
-            // TODO: confirm before stopping existing session
-            await self.stopSession()
+        if remoteSession != nil {
+            await stopSession()
         }
-        
+
         // FIXME: IPv6 지원하지 않는다
         let endpointURL = endpoint.endpointURL
         let host = endpointURL.split(separator: ":").first
         let port = UInt16(endpointURL.split(separator: ":").last ?? "") ?? 8282
-        
+
         guard let host else {
             return
         }
-        
+
         self.endpointURL = endpointURL
         self.phase = .connecting
 
@@ -94,8 +93,7 @@ class MainWindowViewModel: ObservableObject {
                 self.sessionSettings = settingsStore?.settings.sessionDefaults ?? SessionSettings(scope: .global)
             }
         }
-        
-        
+
         let clientManager = NoctilucaClientManager.shared
         let client = try await clientManager.createClient(to: String(host), port: port, settings: self.sessionSettings)
 
@@ -107,40 +105,36 @@ class MainWindowViewModel: ObservableObject {
             client.applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
             client.applyPointerInputMode(settingsStore.settings.input.pointerInputMode)
         }
-        
+
         let remoteSession = RemoteSession(client)
-        
+        attachRemoteSession(remoteSession)
+
         do {
             try await remoteSession.setup()
             try await remoteSession.startup()
         } catch {
-            self.phase = .newConnection
+            phase = .newConnection
+            detachRemoteSession()
             await clientManager.killClient(id: client.id)
-            
             throw error
         }
-        
-        self.client = client
     }
-    
+
     func stopSession() async {
-        guard let client = self.client else {
+        guard let remoteSession else {
             return
         }
-        self.client = nil
+
+        let client = remoteSession.client
+        detachRemoteSession()
 
         await NoctilucaClientManager.shared.killClient(id: client.id)
-        
-        self.endpointURL = ""
-        self.sessionSettings = nil
-        self.inputWarning = nil
-        
-        if let displayLayer = self.displayLayer {
-            displayLayer.flushAndRemoveImage()
-            self.displayLayer = nil
-        }
-        
-        self.phase = .newConnection
+
+        endpointURL = ""
+        sessionSettings = nil
+        inputWarning = nil
+
+        phase = .newConnection
     }
 
     func bind(settingsStore: SettingsStore) {
@@ -149,13 +143,14 @@ class MainWindowViewModel: ObservableObject {
         }
 
         self.settingsStore = settingsStore
-        self.contactSheetCoordinator.settingsStore = settingsStore
+        contactSheetCoordinator.settingsStore = settingsStore
         settingsCancellables.forEach { $0.cancel() }
         settingsCancellables.removeAll()
 
         settingsStore.$settings
             .map { $0!.input.redirectionMethod }
             .removeDuplicates()
+            .receive(on: RunLoop.main)
             .sink { [weak self] method in
                 self?.applyInputRedirectionMethod(method)
             }
@@ -164,6 +159,7 @@ class MainWindowViewModel: ObservableObject {
         settingsStore.$settings
             .map { $0!.input.pointerInputMode }
             .removeDuplicates()
+            .receive(on: RunLoop.main)
             .sink { [weak self] mode in
                 self?.applyPointerInputMode(mode)
             }
@@ -173,7 +169,11 @@ class MainWindowViewModel: ObservableObject {
     func loadContacts() {
         ContactsStore.shared.loadContacts()
     }
-    
+
+    func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction) async {
+        await remoteSession?.handleAuthChallengeResponse(action)
+    }
+
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {
         switch phase {
         case .initial:
@@ -190,10 +190,10 @@ class MainWindowViewModel: ObservableObject {
             }
         }
     }
-    
+
     func handleClientError(_ error: NoctilucaClientError) {
-        self.errors.append(error)
-        self.shouldDisplayErrorAlert = true
+        errors.append(error)
+        shouldDisplayErrorAlert = true
     }
 
     private func configureAuthCredentials(
@@ -241,7 +241,7 @@ class MainWindowViewModel: ObservableObject {
     }
 
     func handleInputWarningUpdated(_ warning: InputWarning?) {
-        self.inputWarning = warning
+        inputWarning = warning
     }
 
     func retryInputRedirection() {
@@ -267,14 +267,41 @@ class MainWindowViewModel: ObservableObject {
 
         client.applyPointerInputMode(mode)
     }
-    
+
     func dismissLastError() {
-        if !self.errors.isEmpty {
-            self.errors.removeLast()
+        if !errors.isEmpty {
+            errors.removeLast()
         }
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.shouldDisplayErrorAlert = !self.errors.isEmpty
         }
+    }
+
+    private func attachRemoteSession(_ session: RemoteSession) {
+        remoteSession = session
+
+        sessionCancellables.forEach { $0.cancel() }
+        sessionCancellables.removeAll()
+
+        session.$phase
+            .receive(on: RunLoop.main)
+            .sink { [weak self] phase in
+                self?.handleClientPhaseChanged(phase)
+            }
+            .store(in: &sessionCancellables)
+
+        session.errorPublisher
+            .receive(on: RunLoop.main)
+            .sink { [weak self] error in
+                self?.handleClientError(error)
+            }
+            .store(in: &sessionCancellables)
+    }
+
+    private func detachRemoteSession() {
+        sessionCancellables.forEach { $0.cancel() }
+        sessionCancellables.removeAll()
+        remoteSession = nil
     }
 }
