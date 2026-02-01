@@ -40,6 +40,10 @@ extension EventInjector {
         default:
             return
         }
+        
+        Task { @MainActor in
+            CursorStateHolder.shared.updateCursorPosition()
+        }
     }
     
     func performMouseMoveAbsolute(percentage position: CursorPositionPercent) {
@@ -75,7 +79,7 @@ extension EventInjector {
             return
         }
         
-        let position = globalPoint
+        let position = DisplayLayoutManager.shared.clampToNearestScreen(globalPoint)
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -115,12 +119,12 @@ extension EventInjector {
         }
         
         let currentPosition = event.location
-
-        let position = CGPoint(
+        
+        let position = DisplayLayoutManager.shared.clampToNearestScreen(CGPoint(
             x: currentPosition.x + CGFloat(position.x),
             y: currentPosition.y + CGFloat(position.y)
-        )
-
+        ))
+        
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
         } else if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_RIGHT > 0) {
@@ -136,7 +140,7 @@ extension EventInjector {
         else {
             return
         }
-
+        
         cgEvent.sanitizeModifierFlags(with: keyDownState)
         cgEvent.post(tap: .cgSessionEventTap)
 
@@ -173,10 +177,10 @@ extension EventInjector {
             screenFrame = NSScreen.main?.frame ?? CGRect(x: 0, y: 0, width: 1920, height: 1080)
         }
         
-        let position = CGPoint(
+        let position = DisplayLayoutManager.shared.clampToNearestScreen(CGPoint(
             x: currentPosition.x + (CGFloat(position.x) * screenFrame.size.width),
             y: currentPosition.y + (CGFloat(position.y) * screenFrame.size.height)
-        )
+        ))
 
         
 

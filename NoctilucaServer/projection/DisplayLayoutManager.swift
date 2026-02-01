@@ -385,4 +385,56 @@ extension DisplayLayoutManager {
         
         return (displayID, relativePoint)
     }
+
+    /// 주어진 좌표를 가장 가까운 화면의 영역 안으로 제한합니다.
+    /// 화면 밖으로 커서가 나가는 것을 방지하고, Dock 등이 정상적으로 호출되도록 합니다.
+    nonisolated func clampToNearestScreen(_ point: CGPoint) -> CGPoint {
+        let layouts = self.layoutStorage.getAll()
+        
+        // 1. 이미 화면 안에 있는지 확인 (가장 일반적인 케이스)
+        // 화면 안에 있더라도 Dock 호출을 위해 경계값 처리가 필요할 수 있으므로
+        // hit test에 성공한 화면을 기준으로 clamp를 수행합니다.
+        for screen in layouts.values {
+            if screen.frame.contains(point) {
+                return self.clamp(point: point, to: screen.frame)
+            }
+        }
+        
+        // 2. 화면 밖인 경우, 가장 가까운 화면을 찾음
+        var nearestScreen: NOCScreen?
+        var minDistance = CGFloat.greatestFiniteMagnitude
+        
+        for screen in layouts.values {
+            let distance = distanceToRect(point: point, rect: screen.frame)
+            if distance < minDistance {
+                minDistance = distance
+                nearestScreen = screen
+            }
+        }
+        
+        guard let screen = nearestScreen else {
+             return point
+        }
+        
+        return self.clamp(point: point, to: screen.frame)
+    }
+
+    nonisolated private func clamp(point: CGPoint, to rect: CGRect) -> CGPoint {
+        // user requirement: max x/y coordinates should be width - 0.1 / height - 0.1
+        let minX = rect.minX
+        let minY = rect.minY
+        let maxX = rect.maxX - 0.1
+        let maxY = rect.maxY - 0.1
+        
+        let x = max(minX, min(point.x, maxX))
+        let y = max(minY, min(point.y, maxY))
+        
+        return CGPoint(x: x, y: y)
+    }
+
+    nonisolated private func distanceToRect(point: CGPoint, rect: CGRect) -> CGFloat {
+        let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
+        let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
+        return sqrt(dx*dx + dy*dy)
+    }
 }
