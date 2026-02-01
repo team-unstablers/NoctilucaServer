@@ -22,10 +22,6 @@ final class NOCAudioEngine: @unchecked Sendable {
     private var activeNodes: Int = 0
 
     private init() {
-        // Prepare the engine immediately? Or lazily?
-        // AVAudioEngine usually doesn't need explicit prepare if we connect nodes,
-        // but explicit prepare is good practice.
-        engine.prepare()
         logger.info("NOCAudioEngine initialized")
     }
 
@@ -60,6 +56,7 @@ final class NOCAudioEngine: @unchecked Sendable {
                     if self.activeNodes == 1 {
                         if !self.engine.isRunning {
                             self.logger.info("Starting AVAudioEngine...")
+                            engine.prepare()
                             try self.engine.start()
                             self.logger.info("AVAudioEngine started.")
                         }
@@ -95,7 +92,7 @@ final class NOCAudioEngine: @unchecked Sendable {
             if activeNodes > 0 {
                 activeNodes -= 1
             }
-            
+           
             logger.debug("Node detached. Active nodes: \(self.activeNodes)")
             
             if activeNodes == 0 && engine.isRunning {
