@@ -59,7 +59,7 @@ class HIDIOController {
     private func publisherTaskMain() async {
         // TODO: 폴링 레이트 설정 가능해야 함
         // 120Hz로 폴링
-        let pollingRate = 120.0
+        let pollingRate = 60.0
         
         for await chunks in self.eventStream.chunked(by: .repeating(every: .milliseconds(1000 / pollingRate), clock: .suspending)) {
             
