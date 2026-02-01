@@ -28,7 +28,6 @@ class AudioProjectionSession: Identifiable {
 
     // MARK: - AVAudioEngine
 
-    private var audioEngine: AVAudioEngine?
     private var sourceNode: AVAudioSourceNode?
 
     /// Output format for the audio engine (48kHz, stereo, Float32)
@@ -91,8 +90,8 @@ class AudioProjectionSession: Identifiable {
         )
         try selectedDecoder.prepare(with: configuration)
 
-        // Setup audio engine
-        try setupAudioEngine()
+        // Setup source node (formerly setupAudioEngine)
+        try setupSourceNode()
 
         logger.info("AudioProjectionSession prepared with codec: \(codec.fourCC.stringRepresentation)")
     }
@@ -102,7 +101,7 @@ class AudioProjectionSession: Identifiable {
         guard let decoder = decoder else {
             throw AudioDecoderError.notPrepared
         }
-        guard let audioEngine = audioEngine else {
+        guard let sourceNode = sourceNode, let outputFormat = outputFormat else {
             throw AudioDecoderError.notPrepared
         }
 
@@ -113,7 +112,8 @@ class AudioProjectionSession: Identifiable {
         try decoder.start()
 
         do {
-            try audioEngine.start()
+            // Attach to shared engine
+            try await NOCAudioEngine.shared.attach(sourceNode, format: outputFormat)
         } catch {
             logger.error("Failed to start audio engine: \(error.localizedDescription)")
             throw error
@@ -128,7 +128,9 @@ class AudioProjectionSession: Identifiable {
     func stop() throws {
         isStarted = false
 
-        audioEngine?.stop()
+        if let sourceNode = sourceNode {
+            NOCAudioEngine.shared.detach(sourceNode)
+        }
 
         try decoder?.stop()
         decoder = nil
@@ -140,9 +142,7 @@ class AudioProjectionSession: Identifiable {
 
     // MARK: - Audio Engine Setup
 
-    private func setupAudioEngine() throws {
-        let engine = AVAudioEngine()
-
+    private func setupSourceNode() throws {
         // Create output format (48kHz, stereo, Float32, NON-INTERLEAVED)
         // AVAudioEngine prefers non-interleaved format internally
         guard let format = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 2) else {
@@ -167,19 +167,9 @@ class AudioProjectionSession: Identifiable {
             )
         }
 
-        // Attach source node to engine
-        engine.attach(sourceNode)
-
-        // Connect source to main mixer
-        engine.connect(sourceNode, to: engine.mainMixerNode, format: format)
-
-        // Prepare the engine
-        engine.prepare()
-
-        self.audioEngine = engine
         self.sourceNode = sourceNode
 
-        logger.info("Audio engine setup complete (AVAudioSourceNode mode)")
+        logger.info("Audio source node setup complete")
     }
 
     // MARK: - Render Callback
