@@ -58,7 +58,11 @@ extension SiriusClient: ClientRoleTransportDelegate {
         logger.info("SiriusClient with ID: \(self.id.uuidString) established connection.")
         do {
             try await self.channelManager.clientOpenMainChannel()
-            delegate?.siriusClient(self, didCreateMainChannel: channelManager.mainChannel!)
+            guard let mainChannel = await channelManager.mainChannel else {
+                logger.error("Main channel was not created after connection establishment.")
+                return
+            }
+            delegate?.siriusClient(self, didCreateMainChannel: mainChannel)
         } catch {
             logger.error("Failed to open main channel: \(error)")
         }

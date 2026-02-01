@@ -51,10 +51,14 @@ extension ClientSession: ServerRoleClientTransportDelegate {
     func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: Stream) async throws {
         logger.info("ClientSession \(self.id) received remote stream open.")
         
-        if channelManager.mainChannel == nil {
+        if await channelManager.mainChannel == nil {
             // 첫번째 스트림은 반드시 메인 채널로 사용한다
             try await channelManager.handleStreamOpen(stream: stream)
-            self.delegate?.clientSessionDidCreateMainChannel(self, mainChannel: channelManager.mainChannel!)
+            guard let mainChannel = await channelManager.mainChannel else {
+                logger.error("Main channel was not created after stream open.")
+                return
+            }
+            self.delegate?.clientSessionDidCreateMainChannel(self, mainChannel: mainChannel)
             
             return
         }

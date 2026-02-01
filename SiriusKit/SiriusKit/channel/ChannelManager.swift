@@ -17,7 +17,7 @@ public protocol ChannelManagerDelegate: AnyObject {
     func channelManager(_ manager: ChannelManager, willUnregisterChannel channel: Channel)
 }
 
-public class ChannelManager {
+public actor ChannelManager {
     private let logger = SiriusLogger(category: "ChannelManager")
     
     internal let session: (any SiriusSession)
@@ -25,10 +25,14 @@ public class ChannelManager {
     private(set) public var mainChannel: MainChannel?
     private(set) public var channels: [UUID: Channel] = [:]
     
-    public weak var delegate: ChannelManagerDelegate?
+    private weak var delegate: ChannelManagerDelegate?
     
     init(session: (any SiriusSession)) {
         self.session = session
+    }
+
+    public func setDelegate(_ delegate: ChannelManagerDelegate?) {
+        self.delegate = delegate
     }
     
     func registerChannel(_ channel: Channel, for feature: SiriusFeature) throws {
@@ -153,11 +157,11 @@ public class ChannelManager {
 }
 
 extension ChannelManager: ChannelLifecycleDelegate {
-    func channelDidClose(_ channel: Channel) {
-        self.unregisterChannel(identifier: channel.identifier)
+    nonisolated func channelDidClose(_ channel: Channel) {
+        Task { await self.unregisterChannel(identifier: channel.identifier) }
     }
     
-    func channel(_ channel: Channel, didEncounterError error: any Error) {
-        self.unregisterChannel(identifier: channel.identifier)
+    nonisolated func channel(_ channel: Channel, didEncounterError error: any Error) {
+        Task { await self.unregisterChannel(identifier: channel.identifier) }
     }
 }
