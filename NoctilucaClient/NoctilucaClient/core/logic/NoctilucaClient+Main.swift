@@ -45,11 +45,13 @@ extension NoctilucaClient {
         case .cocoaEventTap:
 #if os(macOS)
             guard TCCUtil.shared.isAccessGranted(for: .inputMonitoring) else {
+                /*
                 updateInputWarning(InputWarning(
                     kind: .inputMonitoringRequired,
                     title: "Input Monitoring 권한 필요",
                     message: "Cocoa Event Tap을 사용하려면 입력 모니터링 권한이 필요합니다. 현재 GameController로 입력을 전송 중입니다."
                 ))
+                 */
                 connectGameControllerKeyboard(hidioController)
                 return
             }

@@ -118,7 +118,7 @@ class ProjectionChannel: Channel {
         }
     }
     
-     /// 다음 request ID를 생성합니다.
+    /// 다음 request ID를 생성합니다.
     func nextRequestID() -> UInt64 {
         requestCounter.loadThenWrappingIncrement(ordering: .relaxed)
     }   

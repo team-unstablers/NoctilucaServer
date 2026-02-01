@@ -62,6 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc
+    @MainActor
     func openNewMainWindow(_ sender: Any?) {
         let controller = AppKitMainWindowController(settingsStore: settingsStore)
         controller.onClose = { [weak self] closedController in

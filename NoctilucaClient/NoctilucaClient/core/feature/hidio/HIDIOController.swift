@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Atomics
 
 import AsyncAlgorithms
 
@@ -25,6 +26,7 @@ class HIDIOController {
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation
     
     private var publisherTask: Task<Void, Never>? = nil
+    private let requestCounter = ManagedAtomic<UInt64>(0)
     
     private var pressedKeys: Set<LinuxKeycode> = []
     private(set) var isCaptureLockEnabled: Bool = false
@@ -48,6 +50,11 @@ class HIDIOController {
     deinit {
         self.publisherTask?.cancel()
     }
+    
+    /// 다음 request ID를 생성합니다.
+    func nextRequestID() -> UInt64 {
+        requestCounter.loadThenWrappingIncrement(ordering: .relaxed)
+    }   
         
     private func publisherTaskMain() async {
         // TODO: 폴링 레이트 설정 가능해야 함
@@ -65,9 +72,9 @@ class HIDIOController {
             }
             
             let packet = HIDIOPacket(
-                sequenceNumber: 0,
-                timestamp: 0,
-                events: chunks
+                sequenceNumber: nextRequestID(),
+                timestamp: UInt64(Date().timeIntervalSince1970 * 1000),
+                events: Array(chunks)
             )
             
             do {

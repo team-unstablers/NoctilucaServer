@@ -69,9 +69,9 @@ struct CredentialsListContainer: View {
                 items: $entries,
                 id: \.id,
                 selection: $selection,
-                title: LocalizedStringKey("자격 증명 목록"),
-                description: LocalizedStringKey(scope == .global ? "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다." : "선택된 호스트에 대한 자격 증명을 구성합니다."),
-                emptyText: LocalizedStringKey("(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요."),
+                title: "자격 증명 목록",
+                description: scope == .global ? "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다." : "선택된 호스트에 대한 자격 증명을 구성합니다.",
+                emptyText: "(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요.",
                 rowContent: { entry in
                     CredentialEntryRow(entry: entry)
                 },
