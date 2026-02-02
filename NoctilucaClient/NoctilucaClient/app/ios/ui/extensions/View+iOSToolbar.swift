@@ -86,6 +86,20 @@ struct ToolbarModifierIPhone: ViewModifier {
                             Image(systemName: "xmark")
                         }
                     }
+                    
+                    if viewModel.phase == .connected {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                viewModel.shouldPresentDisplaySwitchSheet = true
+                            } label: {
+                                Image(systemName: "display.2")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .foregroundStyle(.foreground, .clear)
+                                    .frame(width: 28, height: 28)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -241,6 +255,20 @@ struct ToolbarModifierIPad: ViewModifier {
                             }
                         } label: {
                             Image(systemName: "xmark")
+                        }
+                    }
+                    
+                    if viewModel.phase == .connected {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                viewModel.shouldPresentDisplaySwitchSheet = true
+                            } label: {
+                                Image(systemName: "display.2")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .foregroundStyle(.foreground, .clear)
+                                    .frame(width: 28, height: 28)
+                            }
                         }
                     }
                 }
