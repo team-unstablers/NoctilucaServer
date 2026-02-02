@@ -44,8 +44,10 @@ extension RemoteSession {
     }
     
     class Projection: ObservableObject {
+        private let logger = NoctilucaLogger(category: "RemoteSession.Projection")
+        
         private weak var parent: RemoteSession?
-        private var channel: ProjectionChannel
+        private(set) var channel: ProjectionChannel
         
         let channelID: UUID
         
@@ -149,6 +151,33 @@ extension RemoteSession {
                 // update state
                 self.cursorState.image = cursorImage
             }
+        }
+        
+         
+        // TODO: 디스플레이마다 해상도 다른데 어떻게 할려고?
+        // 디스플레이가 2대 이상이면 하드웨어 인코더가 터질텐데 어떻게 할려고???
+        func startProjection(for displayID: Int) async throws {
+            if projectionSessions.values.contains(where: { $0.displayID == displayID }) {
+                // 이미 해당 디스플레이에 대한 프로젝션 세션이 존재함
+                logger.info("Projection session for displayID \(displayID) already exists.")
+                return
+            }
+            
+            _ = try await parent?.client.projectionChannel.createSession(
+                for: displayID,
+                projectionSettings: parent?.client.sessionSettings?.projection
+            )
+        }
+        
+        func startAudioProjection() async throws {
+            // TODO: 마이크 세션같은게 있을 수도 있기 때문에
+            guard audioSessions.values.isEmpty else {
+                // 이미 오디오 프로젝션 세션이 존재함
+                logger.info("Audio projection session already exists.")
+                return
+            }
+            
+            _ = try await parent?.client.projectionChannel.createAudioSession(for: .sessionAudio, projectionSettings: parent?.client.sessionSettings?.projection)
         }
     }
 }

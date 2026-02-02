@@ -158,6 +158,9 @@ class RemoteSession: ObservableObject {
             }
             
             self.projection = Projection(self, channel: projectionChannel)
+            Task { [weak self] in
+                try? await self?.projection?.startAudioProjection()
+            }
         default:
             break
         }

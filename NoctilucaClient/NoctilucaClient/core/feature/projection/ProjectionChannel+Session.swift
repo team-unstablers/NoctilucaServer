@@ -101,31 +101,31 @@ extension ProjectionChannel {
                 self.events.send(.sessionCreated(session))
             }
         }
-
-        // 오디오 프로젝션 요청
-        if projectionSettings?.isAudioProjectionEnabled ?? true {
-            do {
-                let audioSpecs = projectionSettings?.audioCodecSpecifications ?? [.opus]
-                let preferredCodecs = audioSpecs.map { $0.toSiriusKitCodec() }
-                
-                try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
-                    identifier: UUID(),
-                    source: .sessionAudio,
-                    preferredCodecs: preferredCodecs
-                ))
-                self.logger.info("Sent AudioProjectionRequest")
-            } catch {
-                self.logger.error("Failed to send AudioProjectionRequest: \(error)")
-                // 오디오 요청 실패는 비디오 세션에 영향을 주지 않도록 무시
-            }
-        } else {
-            self.logger.info("Audio projection is disabled in settings, skipping request.")
-        }
-
+        
         return session
     }
     
-        /// 모든 projection session을 중지하고 리소스를 정리합니다.
+    // TODO: AudioProjectionSession을 반환해야 함
+    func createAudioSession(for source: AudioSource, projectionSettings: SessionSettings.Projection?) async throws {
+        do {
+            let audioSpecs = projectionSettings?.audioCodecSpecifications ?? [.opus]
+            let preferredCodecs = audioSpecs.map { $0.toSiriusKitCodec() }
+            
+            // TODO: 성공 여부를 감시해야 함
+            // 단순히 send() 하는 것만으론 부족하다!
+            try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
+                identifier: UUID(),
+                source: source,
+                preferredCodecs: preferredCodecs
+            ))
+            self.logger.info("Sent AudioProjectionRequest")
+        } catch {
+            self.logger.error("Failed to send AudioProjectionRequest: \(error)")
+            // 오디오 요청 실패는 비디오 세션에 영향을 주지 않도록 무시
+        }
+    }
+    
+    /// 모든 projection session을 중지하고 리소스를 정리합니다.
     func stopAllSessions() async {
         // 모든 비디오 세션 중지
         for (_, session) in sessions {

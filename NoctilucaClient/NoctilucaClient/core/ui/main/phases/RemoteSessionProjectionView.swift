@@ -14,22 +14,24 @@ import SiriusKitClient
 import AppKit
 #endif
 
+enum ProjectionSourceDescriptor: CustomDebugStringConvertible, Equatable, Hashable {
+    case sessionID(UUID)
+    case displayID(Int)
+    
+    var debugDescription: String {
+        switch self {
+        case .sessionID(let sessionID):
+            return "Session ID (\(sessionID))"
+        case .displayID(let displayID):
+            return "Display ID #\(displayID)"
+        }
+    }
+}
+
 struct RemoteSessionProjectionView: View {
     static let logger = NoctilucaLogger(category: "RemoteSessionProjectionView")
     
-    enum AttachSource: CustomDebugStringConvertible {
-        case sessionID(UUID)
-        case displayID(Int)
-        
-        var debugDescription: String {
-            switch self {
-            case .sessionID(let sessionID):
-                return "Session ID (\(sessionID))"
-            case .displayID(let displayID):
-                return "Display ID #\(displayID)"
-            }
-        }
-    }
+
     
     @ObservedObject
     var remoteSession: RemoteSession
@@ -41,22 +43,15 @@ struct RemoteSessionProjectionView: View {
     @ObservedObject
     var projection: RemoteSession.Projection
     
-    @State
-    var sourceDescriptor: AttachSource
+    @Binding
+    var sourceDescriptor: ProjectionSourceDescriptor
     
     @State
     var source: ProjectionSession?
     
     @State
     var sourceSize: CGSize = .zero
-    
-    init(remoteSession: RemoteSession, projection: RemoteSession.Projection, source: AttachSource) {
-        self.remoteSession = remoteSession
-        self.projection = projection
-        
-        self._sourceDescriptor = State(initialValue: source)
-    }
-    
+   
     @State
     private var scale: CGFloat = 1.0
     @State
@@ -76,7 +71,7 @@ struct RemoteSessionProjectionView: View {
     @EnvironmentObject private var settingsStore: SettingsStore
 #endif
     
-    func resolveSource(_ descriptor: AttachSource) {
+    func resolveSource(_ descriptor: ProjectionSourceDescriptor) {
         Self.logger.info("resolving projection session from source descriptor \(descriptor.debugDescription)")
         
         switch descriptor {
@@ -92,6 +87,7 @@ struct RemoteSessionProjectionView: View {
                 self.projectionAspectRatio = source.size.width / source.size.height
             }
         case .displayID(let displayID):
+            Self.logger.debug("resolveSource: \(projection.projectionSessions)")
             guard let source = projection.projectionSessions.values.first(where: { $0.displayID == displayID }) else {
                 Self.logger.error("failed to resolve source \(descriptor.debugDescription)")
                 return
@@ -159,6 +155,9 @@ struct RemoteSessionProjectionView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
 #endif
+            }
+            .onChange(of: sourceDescriptor) { _, newValue in
+                self.resolveSource(newValue)
             }
             .onAppear {
                 if (source == nil) {

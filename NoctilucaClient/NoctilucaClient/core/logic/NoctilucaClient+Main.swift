@@ -143,9 +143,9 @@ extension NoctilucaClient {
         _ = try await projectionChannel.subscribeDisplayChanges(eventMask: [.becamePrimary, .connected, .disconnected, .modified])
         
         // TODO: 이거 디스플레이 없는 컴퓨터에서 터지면 어쩌죠..?
-        let primaryDisplayID = await projectionChannel.displayLayoutManager.primaryDisplayID ?? -1
+        // let primaryDisplayID = await projectionChannel.displayLayoutManager.primaryDisplayID ?? -1
         
-        _ = try await channel.createSession(for: primaryDisplayID, projectionSettings: sessionSettings?.projection)
+        // _ = try await channel.createSession(for: primaryDisplayID, projectionSettings: sessionSettings?.projection)
         self.logger.info("initializeProjection(): created sample session")
     }
     
