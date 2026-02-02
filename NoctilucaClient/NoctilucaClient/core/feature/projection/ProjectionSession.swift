@@ -173,9 +173,13 @@ class ProjectionSession: Identifiable {
         self.performanceReporter?.stop()
         try self.decoder?.stop()
         
+        try await self.controlChannel?.send(opcode: .stopProjectionRequest, message: StopProjectionRequest(identifier: self.id))
+        
         await MainActor.run {
             self.events.send(.projectionStopped)
         }
+        
+        try? await self.dataChannel.close()
     }
 }
 

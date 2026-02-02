@@ -45,12 +45,10 @@ class ProjectionChannel: Channel {
     /// Request ID 생성을 위한 atomic 카운터
     private let requestCounter = ManagedAtomic<UInt64>(0)
 
-    var pendingSessions: [UUID: (ProjectionSessionCreatedEvent) -> Void] = [:]
     var sessions: [UUID: ProjectionSession] = [:]
-
-    var pendingAudioSessions: [UUID: (AudioSessionCreatedEvent) -> Void] = [:]
     var audioSessions: [UUID: AudioProjectionSession] = [:]
 
+    private var pendingSessions: [UUID:   (any DecodableSiriusMessage) -> Void] = [:]
     private var pendingRequests: [UInt64: (any DecodableSiriusMessage) -> Void] = [:]
     
     var displayChangesSubscriptionID: UUID? = nil
@@ -131,14 +129,39 @@ class ProjectionChannel: Channel {
              self.logger.warning("No pending request found for requestID: \(requestID)")
         }
     }
+    
+    
+   func sendSessionRequest<T: DecodableSiriusMessage>(
+        sessionID: UUID,
+        opcode: MessageOpcode,
+        message: any DecodableSiriusMessage
+    ) async throws -> T {
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
+            guard let self = self else {
+                continuation.resume(throwing: ProjectionChannelError.channelClosed)
+                return
+            }
+            
+            self.pendingSessions[sessionID] = { response in
+                if let typedResponse = response as? T {
+                    continuation.resume(returning: typedResponse)
+                } else {
+                    self.logger.error("Type mismatch for request \(sessionID): expected \(T.self), got \(type(of: response))")
+                    continuation.resume(throwing: ChannelError.invalidFrame)
+                }
+            }
+            
+            Task {
+                try await self.send(opcode: opcode, message: message)
+            }
+        }
+    }
 
     func sendRequest<T: DecodableSiriusMessage>(
         requestID: UInt64,
         opcode: MessageOpcode,
         message: any DecodableSiriusMessage
     ) async throws -> T {
-        try await self.send(opcode: opcode, message: message)
-
         return try await withCheckedThrowingContinuation { [weak self] continuation in
             guard let self = self else {
                 continuation.resume(throwing: ProjectionChannelError.channelClosed)
@@ -153,6 +176,10 @@ class ProjectionChannel: Channel {
                     continuation.resume(throwing: ChannelError.invalidFrame)
                 }
             }
+            
+            Task {
+                try await self.send(opcode: opcode, message: message)
+            }
         }
-    }   
+    }
 }

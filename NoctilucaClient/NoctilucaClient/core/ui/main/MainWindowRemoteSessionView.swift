@@ -10,6 +10,8 @@ import SwiftUI
 import SiriusKitClient
 
 struct MainWindowRemoteSessionView: View {
+    static let logger = NoctilucaLogger(category: "MainWindowRemoteSessionView")
+    
     @EnvironmentObject
     var viewModel: SessionWindowViewModel
 
@@ -18,6 +20,9 @@ struct MainWindowRemoteSessionView: View {
     
     @ObservedObject
     var projection: RemoteSession.Projection
+    
+    @State
+    var referenceTicket: RemoteSession.SessionReferenceTicket?
     
     @State
     var sourceDescriptor: ProjectionSourceDescriptor = .displayID(-1)
@@ -47,7 +52,11 @@ struct MainWindowRemoteSessionView: View {
                 
                 DisplaySwitcherSheet(displays: displays, currentActive: currentActive) { newSourceDisplayID in
                     Task {
-                        try? await self.updateProjectionTarget(newSourceDisplayID)
+                        do {
+                            try await self.updateProjectionTarget(newSourceDisplayID)
+                        } catch {
+                            Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
+                        }
                     }
                 }
                     .presentationDragIndicator(.visible)
@@ -68,9 +77,10 @@ struct MainWindowRemoteSessionView: View {
     }
     
     func updateProjectionTarget(_ displayID: Int) async throws {
-        try await projection.startProjection(for: displayID)
+        let ticket = try await projection.subscribeProjectionSession(for: displayID)
         
         await MainActor.run {
+            self.referenceTicket = ticket
             self.sourceDescriptor = .displayID(displayID)
         }
     }

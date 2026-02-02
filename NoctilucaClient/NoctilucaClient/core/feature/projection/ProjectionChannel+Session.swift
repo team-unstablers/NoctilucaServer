@@ -12,15 +12,23 @@ import SiriusKitClient
 
 extension ProjectionChannel {
     
-    private func sendProjectionRequest(identifier: UUID, displayID: Int32, preferredCodecs: [Codec]) async throws {
-        try await self.send(opcode: .projectionRequest, message: ProjectionRequest(
-            identifier: identifier,
-            viewport: ProjectionSource(
-                value: .entireDisplay(EntireDisplayProjectionSource(displayID: displayID)),
-                flags: []
+    /// 프로젝션 세션 생성 요청을 보냅니다.
+    private func requestSession(identifier: UUID, displayID: Int32, preferredCodecs: [Codec]) async throws -> ProjectionSessionCreatedEvent {
+        
+        let response = try await self.sendSessionRequest(
+            sessionID: identifier,
+            opcode: .projectionRequest,
+            message: ProjectionRequest(
+                identifier: identifier,
+                viewport: ProjectionSource(
+                    value: .entireDisplay(EntireDisplayProjectionSource(displayID: displayID)),
+                    flags: []
+                ),
+                preferredCodecs: preferredCodecs
             ),
-            preferredCodecs: preferredCodecs
-        ))
+        ) as ProjectionSessionCreatedEvent
+        
+        return response
     }
     
     private func buildPreferredCodecs(from projectionSettings: SessionSettings.Projection?) -> [Codec] {
@@ -78,20 +86,13 @@ extension ProjectionChannel {
         let identifier = UUID()
 
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
-        try await sendProjectionRequest(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
-
-        let createdEvent = await withCheckedContinuation { [weak self] cont in
-            self?.pendingSessions[identifier] = { event in
-                self?.pendingSessions.removeValue(forKey: identifier)
-                cont.resume(returning: event)
-            }
-        }
+        let response = try await requestSession(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
 
         let channel = await clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
 
         let session = await ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self)
 
-        try await session.prepare(codec: createdEvent.codec)
+        try await session.prepare(codec: response.codec)
         try await session.start()
 
         self.sessions[identifier] = session
@@ -136,7 +137,6 @@ extension ProjectionChannel {
             }
         }
         sessions.removeAll()
-        pendingSessions.removeAll()
 
         // 모든 오디오 세션 중지
         for (_, session) in audioSessions {
@@ -147,6 +147,5 @@ extension ProjectionChannel {
             }
         }
         audioSessions.removeAll()
-        pendingAudioSessions.removeAll()
     }
 }

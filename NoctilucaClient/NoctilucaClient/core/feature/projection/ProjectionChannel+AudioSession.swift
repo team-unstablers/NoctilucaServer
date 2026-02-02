@@ -17,11 +17,13 @@ extension ProjectionChannel {
         self.logger.info("Audio session created: identifier=\(event.identifier), codec=\(event.codec.fourCC.stringRepresentation)")
 
         // Check if there's a pending continuation
+        /*
         if let continuation = self.pendingAudioSessions[event.identifier] {
             self.pendingAudioSessions.removeValue(forKey: event.identifier)
             continuation(event)
             return
         }
+         */
 
         // No pending request - auto-create session from server event
         guard let clientSession = self.clientSession else {

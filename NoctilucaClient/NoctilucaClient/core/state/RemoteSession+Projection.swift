@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import Atomics
+
 import Combine
 
 import CoreGraphics
@@ -43,6 +45,21 @@ extension RemoteSession {
         var position: CGPoint = .zero
     }
     
+    /// 이 티켓은 다른 곳으로 복사할 수 없습니다
+    class SessionReferenceTicket {
+        let id: UUID
+        let releaseAction: () -> Void
+        
+        fileprivate init(id: UUID, releaseAction: @escaping () -> Void) {
+            self.id = id
+            self.releaseAction = releaseAction
+        }
+        
+        deinit {
+            releaseAction()
+        }
+    }
+    
     class Projection: ObservableObject {
         private let logger = NoctilucaLogger(category: "RemoteSession.Projection")
         
@@ -55,6 +72,7 @@ extension RemoteSession {
 
         @Published
         private(set) var projectionSessions: [UUID: ProjectionSession] = [:]
+        private(set) var projectionSessionReferences: [UUID: ManagedAtomic<Int>] = [:]
         
         @Published
         private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
@@ -153,20 +171,59 @@ extension RemoteSession {
             }
         }
         
-         
+        /// 프로젝션 세션을 '구독'합니다.
+        ///
+        /// # ABOUT 'REFERENCE TICKET'
+        ///
+        /// - 이 function을 호출하면, '레퍼런스 티켓'을 발급받습니다.
+        /// - 레퍼런스 티켓은 '프로젝션 세션'으로의 레퍼런스입니다.
+        /// - 각 프로젝션 세션은 자신을 레퍼런싱하는 '레퍼런스 티켓'이 사라지면 자동으로 종료됩니다.
+        ///
         // TODO: 디스플레이마다 해상도 다른데 어떻게 할려고?
         // 디스플레이가 2대 이상이면 하드웨어 인코더가 터질텐데 어떻게 할려고???
-        func startProjection(for displayID: Int) async throws {
-            if projectionSessions.values.contains(where: { $0.displayID == displayID }) {
+        @MainActor
+        func subscribeProjectionSession(for displayID: Int) async throws -> SessionReferenceTicket {
+            if let sessionKey = projectionSessions.first(where: { $0.value.displayID == displayID })?.key {
                 // 이미 해당 디스플레이에 대한 프로젝션 세션이 존재함
                 logger.info("Projection session for displayID \(displayID) already exists.")
-                return
+                guard let referenceCounter = projectionSessionReferences[sessionKey] else {
+                    // ASSERTION: 레퍼런스 카운터는 반드시 존재해야만 한다
+                    fatalError("ASSERTION FAILED: reference counter for existing projection session is missing.")
+                }
+                
+                // += 1
+                referenceCounter.wrappingIncrement(ordering: .relaxed)
+                
+                return SessionReferenceTicket(id: UUID()) {
+                    referenceCounter.wrappingDecrement(ordering: .relaxed)
+                    
+                    Task {
+                        await self.handleSessionReferenceDecrement(for: sessionKey)
+                    }
+                }
             }
             
-            _ = try await parent?.client.projectionChannel.createSession(
+            guard let session = try await parent?.client.projectionChannel.createSession(
                 for: displayID,
                 projectionSettings: parent?.client.sessionSettings?.projection
-            )
+            ) else {
+                // TODO: throw error
+                fatalError("Failed to create projection session for displayID \(displayID).")
+            }
+            
+            let sessionID = session.id
+            
+            // 레퍼런스 카운터 초기화
+            let referenceCounter = ManagedAtomic<Int>(1)
+            projectionSessionReferences[sessionID] = referenceCounter
+            
+            return SessionReferenceTicket(id: UUID()) {
+                referenceCounter.wrappingDecrement(ordering: .relaxed)
+                
+                Task {
+                    await self.handleSessionReferenceDecrement(for: sessionID)
+                }
+            }
         }
         
         func startAudioProjection() async throws {
@@ -178,6 +235,34 @@ extension RemoteSession {
             }
             
             _ = try await parent?.client.projectionChannel.createAudioSession(for: .sessionAudio, projectionSettings: parent?.client.sessionSettings?.projection)
+        }
+        
+    }
+}
+
+fileprivate extension RemoteSession.Projection {
+    @MainActor
+    func handleSessionReferenceDecrement(for sessionID: UUID) async {
+        guard let referenceCounter = projectionSessionReferences[sessionID] else {
+            return
+        }
+        
+        let count = referenceCounter.load(ordering: .relaxed)
+        
+        if count == 0 {
+            // 레퍼런스 카운터가 0이 되었으므로 세션 종료
+            logger.info("Reference count for projection session \(sessionID) reached zero. Stopping session.")
+            
+            if let session = projectionSessions.removeValue(forKey: sessionID) {
+                do {
+                    try await session.stop()
+                } catch {
+                    logger.error("Failed to stop projection session \(sessionID): \(error)")
+                }
+            }
+            
+            // 레퍼런스 카운터 제거
+            projectionSessionReferences.removeValue(forKey: sessionID)
         }
     }
 }
