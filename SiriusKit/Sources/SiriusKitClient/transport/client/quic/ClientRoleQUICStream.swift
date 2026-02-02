@@ -9,8 +9,9 @@ import Foundation
 import Network
 
 import Atomics
+import SiriusKitCore
 
-class ClientRoleQUICStream: Stream {
+class ClientRoleQUICStream: SiriusKitCore.Stream {
     let connection: NWConnection
     let transport: ClientRoleQUICTransport
     private let queue: DispatchQueue

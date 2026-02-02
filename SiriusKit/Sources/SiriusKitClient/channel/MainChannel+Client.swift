@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKitCore
 
 extension MainChannel {
     fileprivate static let pingFrame = SiriusFrame(opcode: .ping, length: 0, data: Data())

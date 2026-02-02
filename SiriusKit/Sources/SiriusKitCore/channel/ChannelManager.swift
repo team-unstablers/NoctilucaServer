@@ -29,7 +29,7 @@ public actor ChannelManager {
 
     private weak var delegate: ChannelManagerDelegate?
 
-    init(session: (any SiriusSession), channelOpenTimeout: TimeInterval = 5) {
+    package init(session: (any SiriusSession), channelOpenTimeout: TimeInterval = 5) {
         self.session = session
         self.channelOpenTimeout = channelOpenTimeout
     }
@@ -67,7 +67,7 @@ public actor ChannelManager {
     }
 
     /// Main Channel을 엽니다. (client role 전용)
-    internal func clientOpenMainChannel() async throws {
+    package func clientOpenMainChannel() async throws {
         let result = await session.transport.openStream()
 
         switch result {
@@ -123,7 +123,7 @@ public actor ChannelManager {
         }
     }
 
-    internal func handleStreamOpen(stream: Stream) async throws {
+    package func handleStreamOpen(stream: Stream) async throws {
         if mainChannel == nil {
             // 첫번째 스트림은 반드시 메인 채널로 사용한다
             // 프로토콜 상 약속이므로 ChannelOpenTask를 사용할 필요가 없다

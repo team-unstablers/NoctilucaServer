@@ -34,7 +34,7 @@ open class Channel {
     private static let sharedLogger = SiriusLogger(category: "Channel")
     private var logger: SiriusLogger { Self.sharedLogger }
 
-    internal weak var session: (any SiriusSession)?
+    package weak var session: (any SiriusSession)?
     let stream: Stream
 
     private var streamEventLoopTask: Task<Void, any Error>?
@@ -46,7 +46,7 @@ open class Channel {
 
     /// 스트림의 쓰기 백프레셔.
     public var writeBackPressure: UInt64 {
-        return stream.writeBackPressure.load(ordering: .relaxed)
+        return stream.readWriteBackPressure()
     }
 
     required public init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {

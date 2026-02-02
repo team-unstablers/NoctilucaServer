@@ -7,6 +7,7 @@
 
 import Foundation
 import Network
+import SiriusKitCore
 
 public enum SiriusServerBuilderError: Error {
     case invalidConfiguration(String)

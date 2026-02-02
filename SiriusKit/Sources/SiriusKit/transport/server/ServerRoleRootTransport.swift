@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 11/20/25.
 //
 
+import SiriusKitCore
 protocol ServerRoleRootTransportError: Error {}
 
 protocol ServerRoleRootTransportDelegate: AnyObject {

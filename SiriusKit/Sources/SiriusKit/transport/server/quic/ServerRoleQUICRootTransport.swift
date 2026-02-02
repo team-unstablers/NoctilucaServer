@@ -7,6 +7,7 @@
 
 import Foundation
 import Network
+import SiriusKitCore
 
 enum ServerRoleQUICRootTransportError: Error {
     case identityLoadFailed

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKitCore
 
 extension MainChannel {
     fileprivate static let pongFrame = SiriusFrame(opcode: .pong, length: 0, data: Data())

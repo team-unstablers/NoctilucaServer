@@ -12,6 +12,7 @@ import CryptoKit
 
 internal import SwiftASN1
 internal import X509
+import SiriusKitCore
 
 #if DEBUG
 

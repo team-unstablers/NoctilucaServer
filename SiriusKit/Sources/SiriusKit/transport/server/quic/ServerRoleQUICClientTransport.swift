@@ -7,6 +7,7 @@
 
 import Foundation
 import Network
+import SiriusKitCore
 
 enum ServerRoleQUICClientTransportError: Error {
 }
@@ -59,7 +60,7 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
         await self.serverTransport.unregisterClientTransport(self)
     }
 
-    func openStream() async -> Result<Stream, TransportLayerError> {
+    func openStream() async -> Result<SiriusKitCore.Stream, TransportLayerError> {
         return await withCheckedContinuation { continuation in
             guard let connection = NWConnection(from: self.connectionGroup) else {
                 continuation.resume(returning: .failure(.openStreamFailed(error: nil)))

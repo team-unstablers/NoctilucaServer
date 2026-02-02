@@ -8,11 +8,15 @@
 
 import Foundation
 
-struct SiriusQUICAlpn: RawRepresentable, Equatable, Hashable {
-    typealias RawValue = String
-    var rawValue: String
+public struct SiriusQUICAlpn: RawRepresentable, Equatable, Hashable {
+    public typealias RawValue = String
+    public var rawValue: String
+    
+    public init(rawValue: String) {
+        self.rawValue = rawValue
+    }
 
-    static let siriusV1 = SiriusQUICAlpn(rawValue: "pl.unstabler.sirius")
+    public static let siriusV1 = SiriusQUICAlpn(rawValue: "pl.unstabler.sirius")
 }
 
 /// Sirius-over-QUIC의 기본값 포트

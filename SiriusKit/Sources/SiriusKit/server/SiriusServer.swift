@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKitCore
 
 public protocol SiriusServerDelegate: AnyObject {
     func siriusServerDidStart(_ server: SiriusServer)

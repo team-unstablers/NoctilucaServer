@@ -7,6 +7,7 @@
 
 import Foundation
 import Security
+import SiriusKitCore
 
 typealias ClientRoleTransportIdentifier = TransportLayerIdentifier
 
@@ -38,7 +39,7 @@ struct NegotiationResponse {
 
 protocol ClientRoleTransportDelegate: AnyObject {
     func clientTransportDidEstablishConnection(_ transport: any ClientRoleTransport) async
-    func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: Stream) async throws
+    func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: SiriusKitCore.Stream) async throws
     func clientTransportDidClose(_ transport: any ClientRoleTransport) async
     func clientTransport(_ transport: any ClientRoleTransport, didEncounterError error: any Error) async
 

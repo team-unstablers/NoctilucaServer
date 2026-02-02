@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKitCore
 
 public protocol ClientSessionDelegate: AnyObject {
     func clientSessionDidCloseTransport(_ session: ClientSession)
@@ -18,13 +19,13 @@ public class ClientSession: SiriusSession {
     public let id: UUID
 
     let clientTransport: any ServerRoleClientTransport
-    var transport: any TransportLayer { clientTransport }
+    package var transport: any TransportLayer { clientTransport }
 
     public var remoteAddress: String? {
         clientTransport.remoteAddress
     }
 
-    let featureProvider: (any FeatureProvider)
+    package let featureProvider: (any FeatureProvider)
 
     public var channelManager: ChannelManager!
     public var shouldAcceptChannelCreation: Bool = false
@@ -47,7 +48,7 @@ public class ClientSession: SiriusSession {
 }
 
 extension ClientSession: ServerRoleClientTransportDelegate {
-    func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: Stream) async throws {
+    func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async throws {
         logger.info("ClientSession \(self.id) received remote stream open.")
 
         if await channelManager.mainChannel == nil {
@@ -65,7 +66,7 @@ extension ClientSession: ServerRoleClientTransportDelegate {
         try await channelManager.handleStreamOpen(stream: stream)
     }
 
-    func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: Stream) async {
+    func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async {
         //
     }
 

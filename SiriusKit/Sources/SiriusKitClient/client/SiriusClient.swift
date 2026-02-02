@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKitCore
 
 public protocol SiriusClientDelegate: AnyObject {
     func siriusClient(_ client: SiriusClient, didCreateMainChannel mainChannel: MainChannel)
@@ -18,9 +19,9 @@ public class SiriusClient: SiriusSession {
     public let id: UUID
 
     let clientTransport: any ClientRoleTransport
-    var transport: any TransportLayer { clientTransport }
+    package var transport: any TransportLayer { clientTransport }
 
-    let featureProvider: (any FeatureProvider)
+    package let featureProvider: (any FeatureProvider)
 
     public var channelManager: ChannelManager!
     public var shouldAcceptChannelCreation: Bool = false
@@ -68,7 +69,7 @@ extension SiriusClient: ClientRoleTransportDelegate {
         }
     }
 
-    func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: Stream) async throws {
+    func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: SiriusKitCore.Stream) async throws {
         try await channelManager.handleStreamOpen(stream: stream)
     }
 

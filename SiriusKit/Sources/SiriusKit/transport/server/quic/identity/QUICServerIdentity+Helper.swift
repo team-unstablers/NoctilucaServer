@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 11/23/25.
 //
 
+import SiriusKitCore
 public enum QUICServerIdentitySource {
     case keychain(label: String)
     case certFile(pemPath: String, keyPath: String)

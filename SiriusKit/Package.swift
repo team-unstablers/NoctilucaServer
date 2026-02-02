@@ -28,19 +28,27 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SiriusKit",
+            name: "SiriusKitCore",
             dependencies: [
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
                 .product(name: "Atomics", package: "swift-atomics"),
             ],
-            path: "Sources/SiriusKit",
-            exclude: [
-                "client",
-                "channel/MainChannel+Client.swift",
-                "transport/client",
+            path: "Sources/SiriusKitCore",
+            plugins: [
+                .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
+            ]
+        ),
+        .target(
+            name: "SiriusKit",
+            dependencies: [
+                "SiriusKitCore",
+                .product(name: "X509", package: "swift-certificates"),
+                .product(name: "SwiftASN1", package: "swift-asn1"),
+                .product(name: "Atomics", package: "swift-atomics"),
             ],
+            path: "Sources/SiriusKit",
             plugins: [
                 .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
             ]
@@ -48,19 +56,10 @@ let package = Package(
         .target(
             name: "SiriusKitClient",
             dependencies: [
-                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
-                .product(name: "X509", package: "swift-certificates"),
-                .product(name: "SwiftASN1", package: "swift-asn1"),
+                "SiriusKitCore",
                 .product(name: "Atomics", package: "swift-atomics"),
             ],
-            path: "Sources/SiriusKit",
-            exclude: [
-                "server",
-                "channel/MainChannel+Server.swift",
-                "transport/server",
-                "transport/server/quic/identity",
-                "SiriusKit.docc",
-            ],
+            path: "Sources/SiriusKitClient",
             plugins: [
                 .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
             ]

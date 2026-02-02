@@ -8,6 +8,7 @@
 import Foundation
 import Network
 import Security
+import SiriusKitCore
 
 actor ClientRoleQUICTransport: ClientRoleTransport {
     nonisolated let id: ClientRoleTransportIdentifier = ClientRoleTransportIdentifier()
@@ -77,7 +78,7 @@ actor ClientRoleQUICTransport: ClientRoleTransport {
         }
     }
 
-    func openStream() async -> Result<Stream, TransportLayerError> {
+    func openStream() async -> Result<SiriusKitCore.Stream, TransportLayerError> {
         guard let connectionGroup = self.connectionGroup else {
             return .failure(.connectionFailed(error: nil))
         }

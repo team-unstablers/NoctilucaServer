@@ -8,7 +8,7 @@
 import Foundation
 import Network
 
-extension IPv4Address {
+package extension IPv4Address {
     func asString() -> String {
         let data = self.rawValue
 
@@ -16,7 +16,7 @@ extension IPv4Address {
     }
 }
 
-extension IPv6Address {
+package extension IPv6Address {
     func asString() -> String {
         // rawValue(Data)를 안전하게 접근
         return self.rawValue.withUnsafeBytes { rawBuffer in
@@ -35,7 +35,7 @@ extension IPv6Address {
     }
 }
 
-extension NWEndpoint.Host {
+package extension NWEndpoint.Host {
     func asString() -> String {
         switch self {
         case .ipv4(let ipv4):
@@ -50,7 +50,7 @@ extension NWEndpoint.Host {
     }
 }
 
-extension NWEndpoint {
+package extension NWEndpoint {
     func asString() -> String {
         switch self {
         case .hostPort(let host, let port):
