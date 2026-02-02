@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 extension MessageOpcode {
     static let channelStartRequest: MessageOpcode = MessageOpcode(rawValue: 0x0021)
@@ -75,8 +75,6 @@ public struct ChannelStartResponse: SiriusMessage {
 public struct ChannelCloseRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_ChannelCloseRequest
     
-
-
     init() {
     }
 
@@ -84,8 +82,7 @@ public struct ChannelCloseRequest: SiriusMessage {
     }
 
     func toProtobufMessage() -> ProtobufMessage {
-        var message = ProtobufMessage()
-
+        let message = ProtobufMessage()
 
         return message
     }

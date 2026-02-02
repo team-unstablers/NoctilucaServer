@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 internal class ChannelOpenTask {
     var logger: SiriusLogger?

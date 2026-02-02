@@ -10,8 +10,8 @@ import Security
 
 import CryptoKit
 
-import SwiftASN1
-import X509
+internal import SwiftASN1
+internal import X509
 
 internal typealias SRSwiftX509Certificate = Certificate
 internal typealias SRCryptoKitP256PrivateKey = P256.Signing.PrivateKey

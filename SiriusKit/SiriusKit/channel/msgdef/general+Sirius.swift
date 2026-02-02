@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 extension MessageOpcode {
     static let serverNotice: MessageOpcode = MessageOpcode(rawValue: 0x0001)

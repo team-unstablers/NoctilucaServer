@@ -8,7 +8,7 @@
 import Foundation
 import Network
 
-import Atomics
+internal import Atomics
 
 class ServerRoleQUICStream: Stream {
     let connection: NWConnection

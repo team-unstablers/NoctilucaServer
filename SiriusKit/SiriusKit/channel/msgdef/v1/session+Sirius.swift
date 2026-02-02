@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 extension MessageOpcode {
     static let authChallenge: MessageOpcode = MessageOpcode(rawValue: 0x0011)

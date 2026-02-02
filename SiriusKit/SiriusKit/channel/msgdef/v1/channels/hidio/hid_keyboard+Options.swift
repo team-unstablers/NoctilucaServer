@@ -14,7 +14,7 @@ public struct KeyboardModifier: OptionSet {
         self.rawValue = rawValue
     }
 
-    public static let none = KeyboardModifier(rawValue: 0x0000)
+    public static let none = KeyboardModifier([])
     public static let lShift = KeyboardModifier(rawValue: 0x0001)
     public static let rShift = KeyboardModifier(rawValue: 0x0002)
     public static let lCtrl = KeyboardModifier(rawValue: 0x0004)

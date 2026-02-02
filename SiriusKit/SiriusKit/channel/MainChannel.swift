@@ -7,7 +7,7 @@
 
 import Foundation
 
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 public enum MainChannelEvent {
     case receivedServerNotice(ServerNotice)

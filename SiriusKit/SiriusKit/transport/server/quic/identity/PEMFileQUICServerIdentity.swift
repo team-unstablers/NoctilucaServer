@@ -9,8 +9,8 @@ import Foundation
 import Security
 import CryptoKit
 
-import SwiftASN1
-import X509
+internal import SwiftASN1
+internal import X509
 
 public class PEMFileQUICServerIdentity: QUICServerIdentity {
     private let certPath: String

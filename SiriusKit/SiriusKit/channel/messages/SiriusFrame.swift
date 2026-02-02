@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 public struct SiriusFrame {
     public let opcode: MessageOpcode

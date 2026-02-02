@@ -10,8 +10,8 @@ import Security
 
 import CryptoKit
 
-import SwiftASN1
-import X509 // swift-certificates
+internal import SwiftASN1
+internal import X509 // swift-certificates
 
 // TODO: LLM이 생성한 사용하지 않는 케이스 제거 검토
 enum QUICServerIdentitySanityCheckError: Error {

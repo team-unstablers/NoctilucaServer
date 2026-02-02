@@ -7,7 +7,7 @@
 
 import Foundation
 
-import Atomics
+internal import Atomics
 
 typealias StreamIdentifier = UUID
 

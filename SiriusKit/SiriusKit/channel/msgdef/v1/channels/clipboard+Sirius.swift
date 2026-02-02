@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 public struct ClipboardData: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData

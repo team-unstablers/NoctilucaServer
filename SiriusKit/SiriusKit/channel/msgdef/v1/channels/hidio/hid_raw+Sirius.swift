@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 public struct RawEvent: HIDEvent, HIDEventConvertable {
     public static let kind: HIDIOEventKind = .raw

@@ -6,9 +6,9 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
-import Atomics
+internal import Atomics
 
 public typealias ChannelIdentifier = UUID
 

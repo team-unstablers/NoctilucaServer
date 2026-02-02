@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 public extension MessageOpcode {
     static let displayListRequest: MessageOpcode = MessageOpcode(rawValue: 0x8201)

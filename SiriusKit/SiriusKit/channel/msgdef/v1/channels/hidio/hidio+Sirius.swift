@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftProtobuf
+internal import SwiftProtobuf
 
 extension MessageOpcode {
     public static let hidioPacket: MessageOpcode = MessageOpcode(rawValue: 0x8001)
