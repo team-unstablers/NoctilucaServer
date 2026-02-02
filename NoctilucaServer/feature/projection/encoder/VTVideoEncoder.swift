@@ -27,6 +27,7 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
             self.shouldEmitParameterSets = true
         }
     }
+    private var compressionSessionRefCon: UnsafeMutableRawPointer?
     
     fileprivate var shouldEmitParameterSets = true
     
@@ -93,6 +94,7 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
                 VTCompressionSessionInvalidate(session)
             }
             compressionSession = nil
+            releaseCompressionSessionRefConIfNeeded()
             isStarted = false
         }
         continuation.finish()
@@ -327,6 +329,12 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
 // MARK: - Compression Session
 
 private extension VTVideoEncoder {
+    func releaseCompressionSessionRefConIfNeeded() {
+        guard let refCon = compressionSessionRefCon else { return }
+        Unmanaged<VTVideoEncoder>.fromOpaque(refCon).release()
+        compressionSessionRefCon = nil
+    }
+
     func ensureCompressionSession(for sampleBuffer: CMSampleBuffer) throws -> VTCompressionSession {
         if let session = compressionSession {
             return session
@@ -379,6 +387,8 @@ private extension VTVideoEncoder {
         
         
         var session: VTCompressionSession?
+        let encoderRefCon = Unmanaged.passRetained(self)
+        let refCon = UnsafeMutableRawPointer(encoderRefCon.toOpaque())
         let status = VTCompressionSessionCreate(
             allocator: kCFAllocatorDefault,
             width: sourceWidth,
@@ -388,15 +398,24 @@ private extension VTVideoEncoder {
             imageBufferAttributes: attributes.isEmpty ? nil : attributes as CFDictionary,
             compressedDataAllocator: nil,
             outputCallback: compressionOutputCallback,
-            refcon: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()),
+            refcon: refCon,
             compressionSessionOut: &session
         )
         
         guard status == noErr, let createdSession = session else {
+            encoderRefCon.release()
             throw VideoEncoderError.compressionSessionFailed(status)
         }
         
-        try applySessionProperties(createdSession)
+        do {
+            try applySessionProperties(createdSession)
+        } catch {
+            VTCompressionSessionInvalidate(createdSession)
+            encoderRefCon.release()
+            throw error
+        }
+
+        compressionSessionRefCon = refCon
         compressionSession = createdSession
         VTCompressionSessionPrepareToEncodeFrames(createdSession)
         return createdSession
@@ -829,4 +848,3 @@ private func compressionOutputCallback(
     
     encoder.continuation.yield(with: .success(.frameEncoded(consume encodedFrame)))
 }
-
