@@ -202,6 +202,8 @@ class ProjectionSession: Identifiable {
         // recorder/encoder 정리
         try await self.recorder.stop()
         try self.encoder.stop()
+        
+        try? await dataChannel.close()
     }
 }
 

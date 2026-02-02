@@ -88,6 +88,11 @@ class ProjectionChannel: Channel {
         case .projectionRequest:
             let projectionRequest = try ProjectionRequest.fromProtobufBytes(frame.data)
             await self.handleProjectionRequest(consume projectionRequest)
+        case .stopProjectionRequest:
+            let stopRequest = try StopProjectionRequest.fromProtobufBytes(frame.data)
+            if let session = self.sessions.removeValue(forKey: stopRequest.identifier) {
+                try? await session.stop()
+            }
         case .projectionPerformanceReport:
             let report = try ProjectionPerformanceReport.fromProtobufBytes(frame.data)
             await self.handlePerformanceReport(report)
