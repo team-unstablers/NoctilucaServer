@@ -5,3 +5,5 @@ parent_config: ../.swiftlint.yml
 excluded:
   - SiriusKit/autogen
   - SiriusKit/channel/msgdef
+  - dependencies
+  - SiriusKitTests

@@ -117,8 +117,8 @@ public class SRKeychain {
             }
             
             return .success(identity)
-        } catch SRKeychainError {
-            return .failure(error)
+        } catch {
+            return .failure(.itemNotFound)
         }
     }
     

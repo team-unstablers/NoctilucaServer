@@ -124,6 +124,8 @@ public extension QUICServerIdentity {
         guard CFGetTypeID(identityCF) == SecIdentityGetTypeID() else {
             throw QUICServerIdentitySanityCheckError.identityCastFailed
         }
+        
+        // swiftlint:disable:next force_cast
         let identity = identityCF as! SecIdentity
         
         var certificate: SecCertificate?
@@ -149,6 +151,8 @@ public extension QUICServerIdentity {
         guard CFGetTypeID(identityCF) == SecIdentityGetTypeID() else {
             throw QUICServerIdentitySanityCheckError.identityCastFailed
         }
+        
+        // swiftlint:disable:next force_cast
         let identity = identityCF as! SecIdentity
         
         var certificate: SecCertificate?
@@ -206,6 +210,8 @@ public extension QUICServerIdentity {
         guard CFGetTypeID(identityCF) == SecIdentityGetTypeID() else {
             throw QUICServerIdentitySanityCheckError.identityCastFailed
         }
+        
+        // swiftlint:disable:next force_cast
         let identity = identityCF as! SecIdentity
         
         var certificate: SecCertificate?

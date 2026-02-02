@@ -38,28 +38,28 @@ public struct SiriusServerBuilder {
     }
     
     public func useFeatureProvider(_ featureProvider: any FeatureProvider) -> Self {
-        var _self = self
-        _self.featureProvider = featureProvider
+        var this = self
+        this.featureProvider = featureProvider
         
-        return _self
+        return this
     }
     
     // useFeatureProvider 대신 .registerFeature(..., implementation: ...) 같은건 어떄?
     
     public func useTransportProtocol(_ transportProtocol: TransportProtocol) -> Self {
-        var _self = self
-        _self.transportProtocol = transportProtocol
+        var this = self
+        this.transportProtocol = transportProtocol
         
-        return _self
+        return this
     }
     
     // TODO: maximum connections, idle timeout, etc.
     
     public func withExtraConfiguration(_ value: String, forKey key: String) -> Self {
-        var _self = self
-        _self.extraConfigurations[key] = value
+        var this = self
+        this.extraConfigurations[key] = value
         
-        return _self
+        return this
     }
     
     internal func validate() -> Result<Void, SiriusServerBuilderError> {
