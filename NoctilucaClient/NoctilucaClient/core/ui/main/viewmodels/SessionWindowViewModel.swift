@@ -39,6 +39,9 @@ class SessionWindowViewModel: ObservableObject {
     @Published
     var contactSheetCoordinator: ContactSheetCoordinator
 
+    @Published
+    var shouldPresentDisplaySwitchSheet: Bool = false
+    
 
     private var settingsStore: SettingsStore?
     private var settingsCancellables: Set<AnyCancellable> = []
