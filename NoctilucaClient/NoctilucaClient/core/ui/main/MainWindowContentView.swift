@@ -44,27 +44,13 @@ fileprivate struct MainWindowContentViewInternal: View {
         case .connected:
             if let remoteSession = viewModel.remoteSession {
                 if let projection = remoteSession.projection {
-                    if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
-                        RemoteSessionProjectionView(
-                            remoteSession: remoteSession,
-                            projection: projection,
-                            source: .displayID(primaryDisplayID)
-                        )
-                        .environmentObject(remoteSession)
-                    } else {
-                        ProgressView("Waiting for display configuration...")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .task {
-                                // 혹시 정보가 누락되었을 경우를 대비해 재요청
-                                try? await remoteSession.client.projectionChannel.updateDisplayLayout()
-                            }
-                    }
+                    MainWindowRemoteSessionView(remoteSession: remoteSession, projection: projection)
                 } else {
-                    ProgressView("Initializing projection...")
+                    ProgressView("프로젝션 채널 초기화 중...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else {
-                ProgressView("Preparing session...")
+                ProgressView("세션 준비 중...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         default:
