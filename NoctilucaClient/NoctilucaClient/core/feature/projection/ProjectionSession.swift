@@ -48,7 +48,7 @@ class ProjectionSession: Identifiable {
 
     let id: UUID
     let dataChannel: ProjectionDataChannel
-    let controlChannel: ProjectionChannel
+    private(set) weak var controlChannel: ProjectionChannel?
 
     private(set) var decoder: any VideoDecoder
     private var tileCompositor: TileCompositor?
