@@ -23,6 +23,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		F63182DC2F304BB400DC690C /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = F63182DB2F304BB000DC690C /* .swiftlint.yml */; };
+		F63182DD2F304BB400DC690C /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = F63182DB2F304BB000DC690C /* .swiftlint.yml */; };
 		F6BD3B9B2ED8AF93000011DF /* X509 in Frameworks */ = {isa = PBXBuildFile; productRef = F6BD3B962ED8AF93000011DF /* X509 */; };
 		F6BD3B9C2ED8AF93000011DF /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = F6BD3B942ED8AF93000011DF /* SwiftProtobuf */; };
 		F6D090702EEE92E000D2C686 /* Atomics in Frameworks */ = {isa = PBXBuildFile; productRef = F6D0906F2EEE92E000D2C686 /* Atomics */; };
@@ -50,6 +52,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F63182DB2F304BB000DC690C /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		F66965292ECF26FD0032EF4E /* SiriusKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiriusKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6BD3B082ED335B4000011DF /* SiriusKitTestsHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SiriusKitTestsHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6BD3BA12ED8AF93000011DF /* SiriusKitClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiriusKitClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -173,6 +176,7 @@
 		F669651F2ECF26FD0032EF4E = {
 			isa = PBXGroup;
 			children = (
+				F63182DB2F304BB000DC690C /* .swiftlint.yml */,
 				F69147952ED1E6B000A320E2 /* llm-tasks */,
 				F669656B2ECF28AC0032EF4E /* dependencies */,
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
@@ -234,6 +238,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				F63182D72F304B5200DC690C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
@@ -283,6 +288,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				F63182D92F304B5A00DC690C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F669652B2ECF26FD0032EF4E /* SiriusKit */,
@@ -360,6 +366,7 @@
 				F6EEA5E02ECF2D8200D8E961 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
 				F6F8A7002ED31E250073B591 /* XCRemoteSwiftPackageReference "swift-certificates" */,
 				F6D0906D2EEE92C800D2C686 /* XCRemoteSwiftPackageReference "swift-atomics" */,
+				F63182D52F304B2B00DC690C /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669652A2ECF26FD0032EF4E /* Products */;
@@ -380,6 +387,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F63182DD2F304BB400DC690C /* .swiftlint.yml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -394,6 +402,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F63182DC2F304BB400DC690C /* .swiftlint.yml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -466,6 +475,14 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F63182D72F304B5200DC690C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = F63182D62F304B5200DC690C /* SwiftLintBuildToolPlugin */;
+		};
+		F63182D92F304B5A00DC690C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = F63182D82F304B5A00DC690C /* SwiftLintBuildToolPlugin */;
+		};
 		F6BD3B172ED335C4000011DF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F6BD3B072ED335B4000011DF /* SiriusKitTestsHelper */;
@@ -965,6 +982,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F63182D52F304B2B00DC690C /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SimplyDanny/SwiftLintPlugins";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.63.2;
+			};
+		};
 		F6BD3B952ED8AF93000011DF /* XCRemoteSwiftPackageReference "swift-protobuf" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-protobuf.git";
@@ -1008,6 +1033,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F63182D62F304B5200DC690C /* SwiftLintBuildToolPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F63182D52F304B2B00DC690C /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */;
+			productName = "plugin:SwiftLintBuildToolPlugin";
+		};
+		F63182D82F304B5A00DC690C /* SwiftLintBuildToolPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F63182D52F304B2B00DC690C /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */;
+			productName = "plugin:SwiftLintBuildToolPlugin";
+		};
 		F6BD3B942ED8AF93000011DF /* SwiftProtobuf */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F6BD3B952ED8AF93000011DF /* XCRemoteSwiftPackageReference "swift-protobuf" */;

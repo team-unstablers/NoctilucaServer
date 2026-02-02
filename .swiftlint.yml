@@ -1,0 +1,91 @@
+# SwiftLint Configuration for Noctiluca Monorepo
+# https://github.com/realm/SwiftLint
+
+# ============================================================================
+# Excluded Directories
+# ============================================================================
+excluded:
+  - Pods
+  - .build
+  - DerivedData
+  - .swiftpm
+  - Carthage
+  - vendor
+
+# ============================================================================
+# Opt-in Rules
+# ============================================================================
+opt_in_rules:
+  - empty_count                    # .isEmpty 사용 권장
+  - fatal_error_message            # fatalError에 메시지 필수
+  - first_where                    # .first(where:) 사용 권장
+  - force_unwrapping               # 강제 언래핑 경고
+  - sorted_first_last              # .min()/.max() 사용 권장
+  - contains_over_first_not_nil    # .contains(where:) 사용 권장
+  - explicit_init                  # 타입명() 직접 사용 권장
+  - redundant_nil_coalescing       # 불필요한 ?? nil 제거
+
+# ============================================================================
+# Rule Configuration
+# ============================================================================
+
+# Line length: 120 warning, 200 error
+line_length:
+  warning: 120
+  error: 200
+  ignores_urls: true
+  ignores_function_declarations: false
+  ignores_comments: true
+
+# Function body length: 50 warning, 100 error
+function_body_length:
+  warning: 50
+  error: 100
+
+# Type body length: 기본값 유지 (250 warning, 350 error)
+# type_body_length:
+#   warning: 250
+#   error: 350
+
+# Identifier name (기본값 유지하되 일부 허용)
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 60
+    error: 80
+  excluded:
+    - id
+    - x
+    - y
+    - z
+    - i
+    - j
+    - k
+    - n
+    - to
+    - db
+    - ip
+    - ok
+    - up
+
+# Nesting level
+nesting:
+  type_level:
+    warning: 2
+    error: 3
+  function_level:
+    warning: 3
+    error: 5
+
+# Large tuple
+large_tuple:
+  warning: 3
+  error: 4
+
+# File length
+file_length:
+  warning: 500
+  error: 1000
+  ignore_comment_only_lines: true

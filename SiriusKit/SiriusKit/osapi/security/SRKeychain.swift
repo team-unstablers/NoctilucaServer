@@ -101,24 +101,25 @@ public class SRKeychain {
     public func queryIdentity(by label: String) -> Result<SecIdentity, SRKeychainError> {
         let certQueryResult = self.queryItem(by: label, clazz: .certificate)
         
-        if case .failure(let error) = certQueryResult {
-            return .failure(error)
-        }
-        
-        let certificate = try! certQueryResult.get() as! SecCertificate
-       
-        var identity: SecIdentity?
-        let identityStatus = SecIdentityCreateWithCertificate(nil, certificate, &identity)
-        
-        guard identityStatus == errSecSuccess, let identity else {
-            if identityStatus == errSecItemNotFound {
-                return .failure(.itemNotFound)
+        do {
+            // swiftlint:disable:next force_cast
+            let certificate = try certQueryResult.get() as! SecCertificate
+            
+            var identity: SecIdentity?
+            let identityStatus = SecIdentityCreateWithCertificate(nil, certificate, &identity)
+            
+            guard identityStatus == errSecSuccess, let identity else {
+                if identityStatus == errSecItemNotFound {
+                    return .failure(.itemNotFound)
+                }
+                
+                return .failure(.unexpectedStatus(identityStatus))
             }
             
-            return .failure(.unexpectedStatus(identityStatus))
+            return .success(identity)
+        } catch SRKeychainError {
+            return .failure(error)
         }
-        
-        return .success(identity)
     }
     
     public func queryIdentityExistance(by label: String) -> Result<Bool, SRKeychainError> {

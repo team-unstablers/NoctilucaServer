@@ -4,8 +4,10 @@
 //
 //  Created by Gyuhwan Park on 11/20/25.
 //
+// swiftlint:disable identifier_name
 
 import Foundation
+
 
 /**
  # Sirius Protocol Version

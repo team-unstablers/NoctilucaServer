@@ -81,6 +81,7 @@ open class Channel {
     }
 
     public func send(opcode: MessageOpcode, message: (any DecodableSiriusMessage)) async throws {
+        // swiftlint:disable:next force_cast
         let protobufMessage = (message as! any SiriusMessage).toProtobufMessage()
         let messageData = try protobufMessage.serializedData()
         

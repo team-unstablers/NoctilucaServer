@@ -195,7 +195,7 @@ let hidioChannel = try await client.channelManager.openChannel(
 # RECENT NOTES / CAUTIONS
 
 - `CodecOptionsParser.parse(...)`는 이제 `CodecOptions`를 반환합니다. (`!required` 지원)
-- `ChannelOpenTask.blockUntilReceiveData()`는 타임아웃이 아직 없습니다. (TODO)
+- `ChannelOpenTask.blockUntilReceiveData()`는 기본 5초 타임아웃이며, 0 이하면 무제한 대기합니다.
 - QUIC 스트림 수신 로직은 현재 프레임 단위 고정 길이 수신을 가정합니다. (fragmented read TODO)
 - `TransportLayer`의 기본 구현은 비어있으며, QUIC 또는 커스텀 구현이 필요합니다.
 
