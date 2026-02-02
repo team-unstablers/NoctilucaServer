@@ -9,13 +9,30 @@ import SiriusKit
 
 import CoreMedia
 
+protocol ProjectionDataChannelDelegate: AnyObject {
+    func projectionDataChannelDidClose(_ channel: ProjectionDataChannel)
+    func projectionDataChannel(_ channel: ProjectionDataChannel, didEncounterError error: any Error)
+}
+
 class ProjectionDataChannel: Channel {
+    weak var projectionDelegate: ProjectionDataChannelDelegate?
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
     }
     
     override func handleFrame(frame: SiriusFrame) async throws {
         // 서버 사이드 구현이므로 별도 처리를 하지 않는다 (= 클라이언트로 보내기만 하는 역할.)
+    }
+
+    override func handleStreamClose() {
+        super.handleStreamClose()
+        projectionDelegate?.projectionDataChannelDidClose(self)
+    }
+
+    override func handleStreamError(error: any Error) {
+        super.handleStreamError(error: error)
+        projectionDelegate?.projectionDataChannel(self, didEncounterError: error)
     }
     
     func send(parameterSetMessage: CodecParameterSetMessage) async throws {

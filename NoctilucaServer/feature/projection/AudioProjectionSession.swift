@@ -114,7 +114,8 @@ class AudioProjectionSession: Identifiable {
             inputFormatDescription: nil
         ))
 
-        self.encoderEventLoopTask = Task {
+        self.encoderEventLoopTask = Task { [weak self] in
+            guard let self else { return }
             try await self.encoderEventLoopMain()
         }
     }
@@ -132,6 +133,19 @@ class AudioProjectionSession: Identifiable {
         // Clean up recorder/encoder
         try await self.recorder.stop()
         try self.encoder?.stop()
+    }
+
+    deinit {
+        encoderEventLoopTask?.cancel()
+        encoderEventLoopTask = nil
+        recorder.delegate = nil
+
+        let recorder = recorder
+        let encoder = encoder
+        Task {
+            try? await recorder.stop()
+            try? encoder?.stop()
+        }
     }
 }
 

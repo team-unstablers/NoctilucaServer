@@ -56,6 +56,28 @@ class ProjectionChannel: Channel {
         self.displaySubscription?.destroy()
         self.displaySubscription = nil
     }
+
+    private func handleProjectionDataChannelTermination(identifier: UUID, error: (any Error)? = nil) async {
+        if let error {
+            self.logger.warning("ProjectionDataChannel \(identifier) terminated with error: \(error)")
+        }
+
+        if let session = self.sessions.removeValue(forKey: identifier) {
+            do {
+                try await session.stop()
+            } catch {
+                self.logger.error("Failed to stop projection session \(session.id): \(error)")
+            }
+        }
+
+        if let audioSession = self.audioSessions.removeValue(forKey: identifier) {
+            do {
+                try await audioSession.stop()
+            } catch {
+                self.logger.error("Failed to stop audio projection session \(audioSession.id): \(error)")
+            }
+        }
+    }
     
     override func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
@@ -150,6 +172,7 @@ class ProjectionChannel: Channel {
             let channel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
             
             self.logger.info("Opened ProjectionDataChannel with id: \(channel.identifier)")
+            channel.projectionDelegate = self
             
             let projectionSession = await ProjectionSession(
                 id: identifier,
@@ -284,6 +307,7 @@ class ProjectionChannel: Channel {
             let channel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
 
             self.logger.info("Opened ProjectionDataChannel for audio with id: \(channel.identifier)")
+            channel.projectionDelegate = self
 
             let projectionSession = AudioProjectionSession(
                 id: identifier,
@@ -321,6 +345,20 @@ class ProjectionChannel: Channel {
             }
         }
         return nil
+    }
+}
+
+extension ProjectionChannel: ProjectionDataChannelDelegate {
+    func projectionDataChannelDidClose(_ channel: ProjectionDataChannel) {
+        Task { [weak self] in
+            await self?.handleProjectionDataChannelTermination(identifier: channel.identifier)
+        }
+    }
+
+    func projectionDataChannel(_ channel: ProjectionDataChannel, didEncounterError error: any Error) {
+        Task { [weak self] in
+            await self?.handleProjectionDataChannelTermination(identifier: channel.identifier, error: error)
+        }
     }
 }
 

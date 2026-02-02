@@ -218,7 +218,7 @@ class ScreenCaptureKitAudioRecorder: NSObject, AudioRecorder {
     
     func stop() async throws {
         if let stream = self.stream {
-            try? stream.removeStreamOutput(self, type: .screen)
+            try? stream.removeStreamOutput(self, type: .audio)
             try await stream.stopCapture()
         }
         self.stream = nil
