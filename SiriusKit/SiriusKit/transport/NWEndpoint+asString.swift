@@ -11,7 +11,7 @@ import Network
 extension IPv4Address {
     func asString() -> String {
         let data = self.rawValue
-        
+
         return "\(data[0]).\(data[1]).\(data[2]).\(data[3])"
     }
 }
@@ -21,15 +21,15 @@ extension IPv6Address {
         // rawValue(Data)를 안전하게 접근
         return self.rawValue.withUnsafeBytes { rawBuffer in
             guard let baseAddress = rawBuffer.baseAddress else { return "" }
-            
+
             // IPv6 주소를 담을 버퍼 (INET6_ADDRSTRLEN은 보통 46)
             var buffer = [CChar](repeating: 0, count: Int(INET6_ADDRSTRLEN))
-            
+
             // inet_ntop: 바이너리 주소를 텍스트로 변환 (0 압축 자동 처리)
             guard let result = inet_ntop(AF_INET6, baseAddress, &buffer, socklen_t(INET6_ADDRSTRLEN)) else {
                 return ""
             }
-            
+
             return String(cString: result)
         }
     }
@@ -65,6 +65,6 @@ extension NWEndpoint {
         default:
             return "(unknown)"
         }
-        
+
     }
 }

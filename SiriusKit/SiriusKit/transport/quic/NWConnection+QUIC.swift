@@ -11,7 +11,7 @@ extension NWConnection {
     var quicMetadata: NWProtocolQUIC.Metadata? {
         return self.metadata(definition: NWProtocolQUIC.definition) as? NWProtocolQUIC.Metadata
     }
-    
+
     var quicStreamIdentifier: UInt64? {
         return quicMetadata?.streamIdentifier
     }

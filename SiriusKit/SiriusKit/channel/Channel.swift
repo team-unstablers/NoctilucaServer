@@ -30,20 +30,20 @@ open class Channel {
     public protocol HasFeature {
         var feature: SiriusFeature { get }
     }
-    
+
     private static let sharedLogger = SiriusLogger(category: "Channel")
     private var logger: SiriusLogger { Self.sharedLogger }
-    
+
     internal weak var session: (any SiriusSession)?
     let stream: Stream
-    
-    private var streamEventLoopTask: Task<Void, any Error>? = nil
-    
+
+    private var streamEventLoopTask: Task<Void, any Error>?
+
     public let identifier: ChannelIdentifier
     public let direction: ChannelDirection
-    
+
     internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
-    
+
     /// 스트림의 쓰기 백프레셔.
     public var writeBackPressure: UInt64 {
         return stream.writeBackPressure.load(ordering: .relaxed)
@@ -53,7 +53,7 @@ open class Channel {
         self.stream = streamHolder.stream
         self.identifier = identifier
         self.direction = direction
-        
+
         self.streamEventLoopTask = Task {
             do {
                 try await self.streamEventLoop()
@@ -67,14 +67,14 @@ open class Channel {
     public func close() async throws {
         try await self.stream.close()
     }
-    
+
     public func send(frame: consuming SiriusFrame) async throws {
 #if DEBUG
         // self.logger.trace("[\(self.identifier)] frame SEND - opcode \(frame.opcode.hexString), length \(frame.data.count)")
 #endif
-        
+
         let result = await self.stream.write(frame: frame.data, opcode: frame.opcode, length: frame.length)
-        
+
         if case .failure(let error) = result {
             throw error
         }
@@ -84,18 +84,17 @@ open class Channel {
         // swiftlint:disable:next force_cast
         let protobufMessage = (message as! any SiriusMessage).toProtobufMessage()
         let messageData = try protobufMessage.serializedData()
-        
+
 #if DEBUG
         // self.logger.trace("[\(self.identifier)] frame SEND - opcode \(opcode.hexString), length \(messageData.count)")
 #endif
 
         let result = await self.stream.write(frame: messageData, opcode: opcode)
-        
+
         if case .failure(let error) = result {
             throw error
         }
     }
-    
 
     private func streamEventLoop() async throws {
         for await event in self.stream.events {
@@ -105,7 +104,7 @@ open class Channel {
 #if DEBUG
                 // self.logger.trace("[\(self.identifier)] frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
 #endif
-                
+
                 try await self.handleFrame(frame: frame)
             case .closed:
                 self.handleStreamClose()
@@ -116,19 +115,19 @@ open class Channel {
                 self.lifecycleDelegate?.channel(self, didEncounterError: error)
                 return
             }
-            
+
         }
     }
-    
+
     open func handleFrame(frame: SiriusFrame) async throws {
         // to be overridden by subclasses
     }
-    
+
     open func handleStreamClose() {
         // default implementation
-        
+
     }
-    
+
     open func handleStreamError(error: (any Error)) {
         // to be overridden by subclasses
     }

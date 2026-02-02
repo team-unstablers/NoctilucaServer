@@ -10,7 +10,7 @@ public extension Channel {
         guard let session = self.session as? ClientSession else {
             return nil
         }
-        
+
         return session
     }
 }

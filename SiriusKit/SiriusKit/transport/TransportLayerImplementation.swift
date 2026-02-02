@@ -9,14 +9,14 @@ import Foundation
 
 public enum TransportLayerImplementation: String, Hashable, Codable, CustomStringConvertible {
     case appleQUIC = "apple_quic"
-    
+
     public var description: String {
         switch self {
         case .appleQUIC:
             return "QUIC (SiriusKit + Apple Network.framework)"
         }
     }
-    
+
     public static var allCases: [TransportLayerImplementation] {
         return [.appleQUIC]
     }

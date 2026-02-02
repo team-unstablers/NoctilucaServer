@@ -20,14 +20,14 @@ extension UUID {
             uuidBytes[12], uuidBytes[13], uuidBytes[14], uuidBytes[15]
         ))
     }
-    
+
     func asMsgDef() -> Sirius_Msgdef_SRUUID {
         var container = Sirius_Msgdef_SRUUID()
-        
+
         withUnsafeBytes(of: self.uuid) { bytes in
             container.value = Data(bytes: bytes.baseAddress!, count: bytes.count)
         }
-        
+
         return container
     }
 }

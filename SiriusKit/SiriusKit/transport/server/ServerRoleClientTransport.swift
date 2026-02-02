@@ -13,14 +13,14 @@ protocol ServerRoleClientTransportDelegate: AnyObject {
     /// - NOTE: 리모트에서 스트림을 열었을 때에만 호출됩니다.
     func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: Stream) async throws
     func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: Stream) async
-    
+
     func clientTransportDidClose(_ transport: any ServerRoleClientTransport) async
     func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async
 }
 
 protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerRoleClientTransportIdentifier {
     var delegate: ServerRoleClientTransportDelegate? { get set }
-    
+
     var remoteAddress: String? { get }
 }
 
@@ -28,7 +28,7 @@ extension ServerRoleClientTransport {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
-    
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

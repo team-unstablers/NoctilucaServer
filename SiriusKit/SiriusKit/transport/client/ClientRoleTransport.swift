@@ -41,14 +41,14 @@ protocol ClientRoleTransportDelegate: AnyObject {
     func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: Stream) async throws
     func clientTransportDidClose(_ transport: any ClientRoleTransport) async
     func clientTransport(_ transport: any ClientRoleTransport, didEncounterError error: any Error) async
-    
+
     func clientTransport(_ transport: any ClientRoleTransport, didReceiveServerIdentity identity: ServerIdentityInfo, decisionHandler: @escaping (TrustDecision) -> Void)
     func clientTransport(_ transport: any ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void)
 }
 
 protocol ClientRoleTransport: TransportLayer, Hashable where ID == ClientRoleTransportIdentifier {
     var delegate: ClientRoleTransportDelegate? { get set }
-    
+
     func connect() async throws
 }
 
@@ -56,7 +56,7 @@ extension ClientRoleTransport {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
-    
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

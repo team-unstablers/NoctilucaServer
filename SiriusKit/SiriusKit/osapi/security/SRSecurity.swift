@@ -25,7 +25,7 @@ enum SRSecurityError: Error {
 enum SRCertificateTrustScope {
     case user
     case admin
-    
+
     var asSecTrustSettingsDomain: SecTrustSettingsDomain {
         switch self {
         case .user:
@@ -40,81 +40,81 @@ enum SRCertificateTrustScope {
 /// 'S'i'R'ius Keychain - macOS Security.framework 의 Security 관련 기능을 wrap합니다.
 class SRSecurity {
     static let shared = SRSecurity()
-    
+
     func createCertificate(using certificate: SRSwiftX509Certificate) -> Result<SecCertificate, SRSecurityError> {
         var derSerializer = DER.Serializer()
-        
+
         do {
             try certificate.serialize(into: &derSerializer)
-            
+
             let derData = derSerializer.serializedBytes
             let certData = Data(derData)
-            
+
             guard let secCertificate = SecCertificateCreateWithData(nil, certData as CFData) else {
                 return .failure(.createItemFailed(error: nil))
             }
-            
+
             return .success(secCertificate)
         } catch {
             return .failure(.createItemFailed(error: error))
         }
     }
-    
+
     func createTrust(from certificate: SecCertificate) -> Result<SecTrust, SRSecurityError> {
         var trust: SecTrust?
-        
+
         let status = SecTrustCreateWithCertificates(certificate, SecPolicyCreateBasicX509(), &trust)
-        
+
         guard status == errSecSuccess, let trustedTrust = trust else {
             return .failure(.createItemFailed(error: nil))
         }
-        
+
         return .success(trustedTrust)
     }
-    
+
     func createPrivateKey(from privateKey: SRCryptoKitP256PrivateKey, with applicationLabel: Data) -> Result<SecKey, SRSecurityError> {
         let x963KeyData = privateKey.x963Representation
-        
+
         let attributes: [String: Any] = [
             kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
             kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
             kSecAttrKeySizeInBits as String: 256,
-            kSecAttrApplicationLabel as String: applicationLabel, // <--- 여기가 핵심 연결 고리!
+            kSecAttrApplicationLabel as String: applicationLabel // <--- 여기가 핵심 연결 고리!
         ]
-        
+
         var error: Unmanaged<CFError>?
-        
+
         guard let secKey = SecKeyCreateWithData(x963KeyData as CFData, attributes as CFDictionary, &error) else {
             return .failure(.createItemFailed(error: error?.takeRetainedValue()))
         }
-        
+
         return .success(secKey)
     }
-    
+
     func createIdentity(certificate: SecCertificate, privateKey: SecKey) -> Result<SecIdentity, SRSecurityError> {
         guard let identity = SecIdentityCreate(nil, certificate, privateKey) else {
             return .failure(.createItemFailed(error: nil))
         }
-        
+
         return .success(identity)
     }
-    
+
 #if os(macOS)
     func trustCertificate(_ certificate: SecCertificate, scope: SRCertificateTrustScope) -> Result<Void, SRSecurityError> {
         let trustSettings: [String: Any] = [
             kSecTrustSettingsResult as String: SecTrustSettingsResult.trustRoot.rawValue
         ]
-        
+
         let status = SecTrustSettingsSetTrustSettings(
             certificate,
             scope.asSecTrustSettingsDomain,
             trustSettings as CFTypeRef
         )
-        
+
         guard status == errSecSuccess else {
             return .failure(.operationFailed(error: nil))
         }
-        
+
         return .success(())
     }
 #endif

@@ -26,14 +26,14 @@ public enum MainChannelEvent {
 public class MainChannel: Channel {
     public let events: AsyncStream<MainChannelEvent>
     let continuation: AsyncStream<MainChannelEvent>.Continuation
-    
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         var continuationLocal: AsyncStream<MainChannelEvent>.Continuation!
-        
+
         self.events = AsyncStream<MainChannelEvent>(MainChannelEvent.self, bufferingPolicy: .unbounded) { continuation in
             continuationLocal = continuation
         }
-        
+
         self.continuation = continuationLocal
 
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -43,46 +43,35 @@ public class MainChannel: Channel {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
-            
+
         do {
             switch frame.opcode {
             case .serverNotice:
                 let message = try ServerNotice.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedServerNotice(message))
-                break
-            case .clientHello:
+                case .clientHello:
                 let message = try ClientHello.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedClientHello(message))
-                break
-            case .serverHello:
+                case .serverHello:
                 let message = try ServerHello.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedServerHello(message))
-                break
-            case .goodbye:
+                case .goodbye:
                 let message = try Goodbye.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedGoodbye(message))
-                break
-
-            case .authChallenge:
+                case .authChallenge:
                 let message = try AuthChallenge.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedAuthChallenge(message))
-                break
-            case .authRequest:
+                case .authRequest:
                 let message = try AuthRequest.fromProtobufBytes(frame.data)
                 self.continuation.yield(.receivedAuthRequest(message))
-                break
-            case .authResponse:
+                case .authResponse:
                 let message = try AuthResponse.fromProtobufBytes(frame.data)
                 continuation.yield(.receivedAuthResponse(message))
-                break
-                
-            case .ping:
+                case .ping:
                 self.continuation.yield(.receivedPing)
-                break
-            case .pong:
+                case .pong:
                 self.continuation.yield(.receivedPong)
-                break
-                
+
             default:
                 // TODO: 접속을 끊어야 하는지, 아니면 뭘 어떻게 해야 할지?
                 break
@@ -97,11 +86,11 @@ public class MainChannel: Channel {
             // ?
         }
     }
-    
+
     override public func handleStreamClose() {
         self.continuation.finish()
     }
-    
+
 }
 
 public extension MainChannel {
@@ -112,19 +101,19 @@ public extension MainChannel {
     func sendServerHello(_ payload: ServerHello) async throws {
         try await self.send(opcode: .serverHello, message: payload)
     }
-    
+
     func sendClientHello(_ payload: ClientHello) async throws {
         try await self.send(opcode: .clientHello, message: payload)
     }
-    
+
     func sendAuthChallenge(_ payload: AuthChallenge) async throws {
         try await self.send(opcode: .authChallenge, message: payload)
     }
-    
+
     func sendAuthRequest(_ payload: AuthRequest) async throws {
         try await self.send(opcode: .authRequest, message: payload)
     }
-    
+
     func sendAuthResponse(_ payload: AuthResponse) async throws {
         try await self.send(opcode: .authResponse, message: payload)
     }

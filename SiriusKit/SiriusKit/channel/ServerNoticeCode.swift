@@ -9,15 +9,15 @@ import Foundation
 
 public struct ServerNoticeCode: RawRepresentable, Equatable, Hashable {
     public typealias RawValue = UInt32
-    
+
     public let rawValue: UInt32
-    
+
     public init(rawValue: UInt32) {
         self.rawValue = rawValue
     }
-    
+
     // - MARK: MISC
-    
+
     /// ??? 왜 이딴거 정의해요
     ///
     /// # JACKPOT (0x0777)
@@ -32,9 +32,9 @@ public struct ServerNoticeCode: RawRepresentable, Equatable, Hashable {
     /// - ... 장난입니다. **이스터 에그 목적 외에는 절대 사용하지 마세요.**
     /// - 이 이스터 에그는 엔터프라이즈 환경에서 동작해선 안됩니다. 그 사람들은 진지하니까요.
     public static let jackpot = ServerNoticeCode(rawValue: 0x0777)
-    
+
     // - MARK: CLIENT FAULT (0x4000 ~ 0x4FFF)
-    
+
     /// 서버가 미래 버전의 Sirius 프로토콜에 추가되었거나, 아직 지원하지 않는 유형의 메시지를 받았을 때 사용됩니다.
     public static let unsupportedOpcode = ServerNoticeCode(rawValue: 0x4005)
     public static let unsupportedAuthMethod = ServerNoticeCode(rawValue: 0x4006)
@@ -42,10 +42,10 @@ public struct ServerNoticeCode: RawRepresentable, Equatable, Hashable {
 
     /// 클라이언트가 주어진 시간 내에 응답하지 않았습니다.
     public static let timeout = ServerNoticeCode(rawValue: 0x4008)
-    
+
     // - MARK: SERVER FAULT (0x5000 ~ 0x5FFF)
-    
+
     /// 서버 내부에서 예기치 못한 오류가 발생했을 때 사용됩니다.
     public static let internalServerError = ServerNoticeCode(rawValue: 0x5000)
-    
+
 }

@@ -10,7 +10,7 @@ import Foundation
 public protocol FeatureProvider: AnyObject {
     // Returns true if the feature is supported
     func supports(_ feature: SiriusFeature) -> Bool
-    
+
     func createChannel(
         for feature: SiriusFeature,
         using streamHolder: StreamHolder,

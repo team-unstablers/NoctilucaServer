@@ -10,7 +10,7 @@ public extension Channel {
         guard let session = self.session as? SiriusClient else {
             return nil
         }
-        
+
         return session
     }
 }

@@ -11,14 +11,14 @@ public class SiriusKitMeta {
     private static var frameworkBundle: Bundle {
         return Bundle(for: SiriusKitMeta.self)
     }
-    
+
     public static var displayVersion: String {
         return frameworkBundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
-    
+
     public static var buildVersion: String {
         return frameworkBundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
     }
-    
+
     public static var currentProtocolVersion: SiriusProtocolVersion = .v1_0
 }
