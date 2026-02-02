@@ -136,6 +136,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         twoFingerPanRecognizer.addTarget(self, action: #selector(handleTwoFingerPan(_:)))
 
         chordedDragRecognizer.maximumFirstTouchMovement = 8
+        chordedDragRecognizer.minimumFirstTouchHoldDuration = 0.08
         chordedDragRecognizer.addTarget(self, action: #selector(handleChordedDrag(_:)))
 
         tapRecognizer.require(toFail: twoFingerTapRecognizer)

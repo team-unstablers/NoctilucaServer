@@ -10,10 +10,12 @@ import UIKit
 
 final class ChordedDragGestureRecognizer: UIGestureRecognizer {
     var maximumFirstTouchMovement: CGFloat = 8.0
+    var minimumFirstTouchHoldDuration: TimeInterval = 0.12
 
     private var firstTouch: UITouch?
     private var secondTouch: UITouch?
     private var firstTouchStartLocation: CGPoint = .zero
+    private var firstTouchStartTimestamp: TimeInterval = 0.0
     private var lastSecondTouchLocation: CGPoint = .zero
 
     private(set) var translation: CGPoint = .zero
@@ -23,6 +25,7 @@ final class ChordedDragGestureRecognizer: UIGestureRecognizer {
         firstTouch = nil
         secondTouch = nil
         firstTouchStartLocation = .zero
+        firstTouchStartTimestamp = 0.0
         lastSecondTouchLocation = .zero
         translation = .zero
     }
@@ -36,6 +39,7 @@ final class ChordedDragGestureRecognizer: UIGestureRecognizer {
         if firstTouch == nil, let touch = touches.first {
             firstTouch = touch
             firstTouchStartLocation = touch.location(in: view)
+            firstTouchStartTimestamp = touch.timestamp
             return
         }
 
@@ -43,6 +47,14 @@ final class ChordedDragGestureRecognizer: UIGestureRecognizer {
             // Check if this is the first touch being re-added (unlikely but safe to check)
             if touch == firstTouch { return }
             
+            if minimumFirstTouchHoldDuration > 0 {
+                let elapsed = touch.timestamp - firstTouchStartTimestamp
+                if elapsed < minimumFirstTouchHoldDuration {
+                    state = .failed
+                    return
+                }
+            }
+
             // Allow second touch to be added even if first touch moved significantly?
             // For continuous drag, we should probably allow it.
             // The distance check from firstTouchStartLocation might be too strict for re-entry.
