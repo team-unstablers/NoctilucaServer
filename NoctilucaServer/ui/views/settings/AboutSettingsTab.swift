@@ -20,9 +20,11 @@ struct AboutSettingsTab: View {
                             .font(.subheadline)
                     }
                 }
-                SettingsEntry(title: String(localized: "settings.about.transport_layer.title", defaultValue: "사용 중인 트랜스포트 레이어 구현체")) {
+                SettingsEntry(title: String(localized: "settings.about.transport_layer.title", defaultValue: "사용 가능한 트랜스포트 레이어 구현체")) {
                     VStack(alignment: .trailing) {
-                        Text("QUIC (SiriusKit + Apple)")
+                        ForEach(TransportLayerImplementation.allCases, id: \.self) { implementation in
+                            Text(implementation.description)
+                        }
                     }
                 }
                 SettingsEntry(title: String(localized: "settings.about.features.title", defaultValue: "사용 가능한 기능 목록")) {

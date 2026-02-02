@@ -569,9 +569,6 @@
     "ProjectionData" : {
 
     },
-    "QUIC (SiriusKit + Apple)" : {
-
-    },
     "settings.about.auth_plugins.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -787,7 +784,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "사용 중인 트랜스포트 레이어 구현체"
+            "value" : "사용 가능한 트랜스포트 레이어 구현체"
           }
         }
       }

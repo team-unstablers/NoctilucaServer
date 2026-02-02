@@ -34,7 +34,7 @@ struct AboutSettingsTab: View {
                     .foregroundStyle(.secondary)
                 }
                 HStack(alignment: .top) {
-                    Text("사용 중인 트랜스포트 레이어 구현체")
+                    Text("사용 가능한 트랜스포트 레이어 구현체")
                     Spacer()
                     VStack(alignment: .trailing) {
                         ForEach(TransportLayerImplementation.allCases, id: \.self) { implementation in
