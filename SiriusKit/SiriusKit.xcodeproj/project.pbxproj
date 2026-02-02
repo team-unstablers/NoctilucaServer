@@ -6,22 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		F6EEA0E42ECF29B300D8E961 /* msgdef_swift */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = F6EEA0E52ECF29B300D8E961 /* Build configuration list for PBXAggregateTarget "msgdef_swift" */;
-			buildPhases = (
-				F6EEA0E82ECF29B700D8E961 /* ShellScript */,
-			);
-			dependencies = (
-			);
-			name = msgdef_swift;
-			packageProductDependencies = (
-			);
-			productName = msgdef_swift;
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
 		F63182DC2F304BB400DC690C /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = F63182DB2F304BB000DC690C /* .swiftlint.yml */; };
 		F63182DD2F304BB400DC690C /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = F63182DB2F304BB000DC690C /* .swiftlint.yml */; };
@@ -344,9 +328,6 @@
 					F6BD3B072ED335B4000011DF = {
 						CreatedOnToolsVersion = 26.1;
 					};
-					F6EEA0E42ECF29B300D8E961 = {
-						CreatedOnToolsVersion = 26.1;
-					};
 					F6F8A6E82ED3129F0073B591 = {
 						CreatedOnToolsVersion = 26.1;
 						TestTargetID = F6BD3B072ED335B4000011DF;
@@ -375,7 +356,6 @@
 			targets = (
 				F66965282ECF26FD0032EF4E /* SiriusKit */,
 				F6BD3B932ED8AF93000011DF /* SiriusKitClient */,
-				F6EEA0E42ECF29B300D8E961 /* msgdef_swift */,
 				F6F8A6E82ED3129F0073B591 /* SiriusKitTests */,
 				F6BD3B072ED335B4000011DF /* SiriusKitTestsHelper */,
 			);
@@ -414,34 +394,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		F6EEA0E82ECF29B700D8E961 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/dependencies/libsirius/msgdef/CMakeLists.txt",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/general.proto",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/session.proto",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels.proto",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/hidio.proto",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/clipboard.proto",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/projection.proto",
-				"$(SRCROOT)/dependencies/libsirius/msgdef/v1/channels/display/winman.proto",
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin\n\nLIBSIRIUS_ROOT=$SRCROOT/dependencies/libsirius\nMSGDEF_SWIFT_PREFIX=$SRCROOT/SiriusKit/autogen/\n\ncd $LIBSIRIUS_ROOT\n\ncmake -B cmake-build-debug -S . -DSIRIUS_MSGDEF_SWIFT_INSTALL_PREFIX=\"$MSGDEF_SWIFT_PREFIX\" -DSIRIUS_PROTOC_SIRIUSKIT_PLUGIN=\"/Users/cheesekun/works/noctiluca/protoc-gen-siriuskit/.build/arm64-apple-macosx/debug/protoc-gen-siriuskit\"\n\nmkdir -p $LIBSIRIUS_ROOT/cmake-build-debug/msgdef/swift/siriuskit\n\ncmake --build cmake-build-debug --target sirius_msgdef_swift\ncmake --build cmake-build-debug --target install_msgdef_swift\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		F66965252ECF26FD0032EF4E /* Sources */ = {
@@ -850,26 +802,6 @@
 			};
 			name = Release;
 		};
-		F6EEA0E62ECF29B300D8E961 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = XHA76UVA95;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		F6EEA0E72ECF29B300D8E961 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = XHA76UVA95;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 		F6F8A6F12ED3129F0073B591 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -957,15 +889,6 @@
 			buildConfigurations = (
 				F6BD3B9F2ED8AF93000011DF /* Debug */,
 				F6BD3BA02ED8AF93000011DF /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		F6EEA0E52ECF29B300D8E961 /* Build configuration list for PBXAggregateTarget "msgdef_swift" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F6EEA0E62ECF29B300D8E961 /* Debug */,
-				F6EEA0E72ECF29B300D8E961 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
