@@ -131,9 +131,14 @@ class ProjectionSession: Identifiable {
     }
 
     func prepare(_ request: ProjectionRequest, codec: Codec) async throws {
+        guard let recorderSource = request.viewport.toScreenRecorderSource() else {
+            // TODO: throw .invalidSource
+            fatalError()
+        }
+        
         let recorderArgs = ScreenRecorderArgs(
             // FIXME
-            source: .entireDisplay(displayID: -1),
+            source: recorderSource,
             codec: codec,
             flags: request.viewport.flags
         )
@@ -286,6 +291,29 @@ private extension ProjectionSession {
         if self.maxBitrate != planner.maxBitrateKbps() {
             self.maxBitrate = planner.maxBitrateKbps()
             _ = self.encoder.updateMaxBitrate(bitrateKbps: self.maxBitrate)
+        }
+    }
+}
+
+extension ProjectionSource {
+    func toScreenRecorderSource() -> ScreenRecorderSource? {
+        switch self.value {
+        case .entireDisplay(let displaySource):
+            let displayID = displaySource.displayID
+            return .entireDisplay(displayID: Int64(displayID))
+        case .region(let regionSource):
+            let displayID = regionSource.displayID
+            let region = regionSource.region
+            
+            return .displayRegion(displayID: Int64(displayID), region: region.cgRect)
+        case .singleWindow(let windowSource):
+            // FIXME: force unwrap
+            guard let windowID = windowSource.windowID else {
+                return nil
+            }
+            return .window(windowID: windowID)
+        default:
+            return nil
         }
     }
 }
