@@ -51,7 +51,7 @@ class ProjectionChannel: Channel {
     var pendingAudioSessions: [UUID: (AudioSessionCreatedEvent) -> Void] = [:]
     var audioSessions: [UUID: AudioProjectionSession] = [:]
 
-    private var pendingRequests: [UInt64: (any SiriusMessage) -> Void] = [:]
+    private var pendingRequests: [UInt64: (any DecodableSiriusMessage) -> Void] = [:]
     
     var displayChangesSubscriptionID: UUID? = nil
     
@@ -123,7 +123,7 @@ class ProjectionChannel: Channel {
         requestCounter.loadThenWrappingIncrement(ordering: .relaxed)
     }
     
-    func dispatchResponse(requestID: UInt64, message: any SiriusMessage) {
+    func dispatchResponse(requestID: UInt64, message: any DecodableSiriusMessage) {
         if let handler = self.pendingRequests[requestID] {
             handler(message)
             self.pendingRequests.removeValue(forKey: requestID)
@@ -132,10 +132,10 @@ class ProjectionChannel: Channel {
         }
     }
 
-    func sendRequest<T: SiriusMessage>(
+    func sendRequest<T: DecodableSiriusMessage>(
         requestID: UInt64,
-        opcode: SiriusFrameOpcode,
-        message: any SiriusMessage
+        opcode: MessageOpcode,
+        message: any DecodableSiriusMessage
     ) async throws -> T {
         try await self.send(opcode: opcode, message: message)
 
