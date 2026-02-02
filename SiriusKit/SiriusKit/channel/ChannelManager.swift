@@ -9,6 +9,7 @@ import Foundation
 
 enum ChannelManagerError: Error {
     case channelOpenFailed
+    case channelOpenTimedOut
     case channelAlreadyRegistered
 }
 
@@ -21,14 +22,16 @@ public actor ChannelManager {
     private let logger = SiriusLogger(category: "ChannelManager")
     
     internal let session: (any SiriusSession)
+    private let channelOpenTimeout: TimeInterval
     
     private(set) public var mainChannel: MainChannel?
     private(set) public var channels: [UUID: Channel] = [:]
     
     private weak var delegate: ChannelManagerDelegate?
     
-    init(session: (any SiriusSession)) {
+    init(session: (any SiriusSession), channelOpenTimeout: TimeInterval = 5) {
         self.session = session
+        self.channelOpenTimeout = channelOpenTimeout
     }
 
     public func setDelegate(_ delegate: ChannelManagerDelegate?) {
@@ -92,7 +95,13 @@ public actor ChannelManager {
         case .failure(let error):
             throw error
         case .success(let stream):
-            let openTask = LocalChannelOpenTask(for: feature, using: stream, identifier: identifier, args: args)
+            let openTask = LocalChannelOpenTask(
+                for: feature,
+                using: stream,
+                identifier: identifier,
+                args: args,
+                timeout: channelOpenTimeout
+            )
             try await openTask.perform()
             
             let channel = session.featureProvider.createChannel(
@@ -132,7 +141,7 @@ public actor ChannelManager {
         }
         
         // 그럼 나머지는?
-        let openTask = RemoteChannelOpenTask(stream: stream)
+        let openTask = RemoteChannelOpenTask(stream: stream, timeout: channelOpenTimeout)
         try await openTask.perform { request in
             let feature = SiriusFeature(rawValue: request.featureID!)
             

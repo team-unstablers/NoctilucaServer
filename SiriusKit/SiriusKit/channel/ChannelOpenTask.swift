@@ -12,9 +12,11 @@ internal class ChannelOpenTask {
     var logger: SiriusLogger?
     
     let stream: Stream
+    let timeout: TimeInterval
     
-    init(stream: Stream) {
+    init(stream: Stream, timeout: TimeInterval) {
         self.stream = stream
+        self.timeout = timeout
     }
     
     func send(opcode: MessageOpcode, message: (any SiriusMessage)) async throws {
@@ -30,19 +32,49 @@ internal class ChannelOpenTask {
         }
     }
 
-    func blockUntilReceiveData() async throws -> SiriusFrame {
-        self.logger?.warning("FIXME: blockUntilReceiveData() should have timeout parameter")
+    func blockUntilReceiveData(timeout: TimeInterval? = nil) async throws -> SiriusFrame {
+        let effectiveTimeout = timeout ?? self.timeout
+        if effectiveTimeout <= 0 || !effectiveTimeout.isFinite {
+            return try await Self.waitForFrame(stream: stream, logger: logger)
+        }
         
+        return try await withThrowingTaskGroup(of: SiriusFrame.self) { group in
+            group.addTask { [stream = self.stream, logger = self.logger] in
+                return try await Self.waitForFrame(stream: stream, logger: logger)
+            }
+            group.addTask { [logger = self.logger] in
+                let timeoutNanoseconds = UInt64(effectiveTimeout * 1_000_000_000)
+                try await Task.sleep(nanoseconds: timeoutNanoseconds)
+                let timeoutMs = Int(effectiveTimeout * 1000)
+                logger?.warning("channel open timed out while waiting for frame (timeout_ms=\(timeoutMs))")
+                throw ChannelManagerError.channelOpenTimedOut
+            }
+
+            do {
+                guard let frame = try await group.next() else {
+                    throw ChannelManagerError.channelOpenFailed
+                }
+
+                group.cancelAll()
+                return frame
+            } catch {
+                group.cancelAll()
+                throw error
+            }
+        }
+    }
+
+    private static func waitForFrame(stream: Stream, logger: SiriusLogger?) async throws -> SiriusFrame {
         for await event in stream.events {
             switch (event) {
             case .frame(let frame):
-                self.logger?.trace("frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
+                logger?.trace("frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
                 return frame
             case .error(let error):
-                self.logger?.error("caught error while waiting for data: \(error)")
+                logger?.error("caught error while waiting for data: \(error)")
                 throw ChannelManagerError.channelOpenFailed
             case .closed:
-                self.logger?.error("stream closed while waiting for data")
+                logger?.error("stream closed while waiting for data")
                 throw ChannelManagerError.channelOpenFailed
             }
         }
@@ -53,8 +85,8 @@ internal class ChannelOpenTask {
 
 internal class RemoteChannelOpenTask: ChannelOpenTask {
     
-    override init(stream: Stream) {
-        super.init(stream: stream)
+    override init(stream: Stream, timeout: TimeInterval) {
+        super.init(stream: stream, timeout: timeout)
         
         self.logger = SiriusLogger(category: "RemoteChannelOpenTask")
     }
@@ -62,7 +94,15 @@ internal class RemoteChannelOpenTask: ChannelOpenTask {
     func perform(_ channelCreationBlock: ((ChannelStartRequest) async throws -> Bool)) async throws {
         self.logger?.info("performing remote channel open task - waiting for channel start request")
         
-        let frame = try await self.blockUntilReceiveData()
+        let frame: SiriusFrame
+        do {
+            frame = try await self.blockUntilReceiveData()
+        } catch {
+            if case ChannelManagerError.channelOpenTimedOut = error {
+                try? await stream.close()
+            }
+            throw error
+        }
         
         guard frame.isValid(),
               frame.opcode == .channelStartRequest,
@@ -93,13 +133,14 @@ internal class LocalChannelOpenTask: ChannelOpenTask {
     init(for feature: SiriusFeature,
          using stream: Stream,
          identifier: ChannelIdentifier,
-         args: [String])
+         args: [String],
+         timeout: TimeInterval)
     {
         self.feature = feature
         self.identifier = identifier
         self.args = args
         
-        super.init(stream: stream)
+        super.init(stream: stream, timeout: timeout)
         
         self.logger = SiriusLogger(category: "LocalChannelOpenTask")
     }
@@ -115,7 +156,15 @@ internal class LocalChannelOpenTask: ChannelOpenTask {
         
         try await self.send(opcode: .channelStartRequest, message: request)
         
-        let frame = try await self.blockUntilReceiveData()
+        let frame: SiriusFrame
+        do {
+            frame = try await self.blockUntilReceiveData()
+        } catch {
+            if case ChannelManagerError.channelOpenTimedOut = error {
+                try? await stream.close()
+            }
+            throw error
+        }
 
         guard frame.isValid(),
               frame.opcode == .channelStartResponse,
@@ -129,5 +178,3 @@ internal class LocalChannelOpenTask: ChannelOpenTask {
         }
     }
 }
-
-
