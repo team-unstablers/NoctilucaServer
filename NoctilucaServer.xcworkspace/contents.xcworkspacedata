@@ -17,9 +17,6 @@
       location = "group:SamplePluginBundle/SamplePluginBundle.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:SiriusKit/SiriusKit.xcodeproj">
-   </FileRef>
-   <FileRef
       location = "group:NoctilucaPluginKit/NoctilucaPluginKit.xcodeproj">
    </FileRef>
    <FileRef

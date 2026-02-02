@@ -43,51 +43,9 @@
 		F6F8A6E92ED3129F0073B591 /* SiriusKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SiriusKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		F6BD3BA22ED8AF93000011DF /* Exceptions for "SiriusKit" folder in "SiriusKitClient" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"channel/MainChannel+Server.swift",
-				"server/Channel+getClientSession.swift",
-				server/ClientSession.swift,
-				server/SiriusServer.swift,
-				server/SiriusServerBuilder.swift,
-				SiriusKit.docc,
-				transport/server/quic/identity/InMemoryQUICServerIdentity.swift,
-				transport/server/quic/identity/KeychainQUICServerIdentity.swift,
-				transport/server/quic/identity/PEMFileQUICServerIdentity.swift,
-				transport/server/quic/identity/QUICServerIdentity.swift,
-				"transport/server/quic/identity/QUICServerIdentity+Helper.swift",
-				transport/server/quic/ServerRoleQUICClientTransport.swift,
-				transport/server/quic/ServerRoleQUICRootTransport.swift,
-				transport/server/quic/ServerRoleQUICStream.swift,
-				transport/server/ServerRoleClientTransport.swift,
-				transport/server/ServerRoleRootTransport.swift,
-			);
-			target = F6BD3B932ED8AF93000011DF /* SiriusKitClient */;
-		};
-		F6BD3E8C2EDA1A7D000011DF /* Exceptions for "SiriusKit" folder in "SiriusKit" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"channel/MainChannel+Client.swift",
-				"client/Channel+getClientSession.swift",
-				client/SiriusClient.swift,
-				client/SiriusClientBuilder.swift,
-				transport/client/ClientRoleTransport.swift,
-				transport/client/quic/ClientRoleQUICStream.swift,
-				transport/client/quic/ClientRoleQUICTransport.swift,
-			);
-			target = F66965282ECF26FD0032EF4E /* SiriusKit */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F669652B2ECF26FD0032EF4E /* SiriusKit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				F6BD3E8C2EDA1A7D000011DF /* Exceptions for "SiriusKit" folder in "SiriusKit" target */,
-				F6BD3BA22ED8AF93000011DF /* Exceptions for "SiriusKit" folder in "SiriusKitClient" target */,
-			);
 			path = SiriusKit;
 			sourceTree = "<group>";
 		};
