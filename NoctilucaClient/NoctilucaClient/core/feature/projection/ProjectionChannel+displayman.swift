@@ -16,17 +16,15 @@ extension ProjectionChannel {
     /// DisplayListRequest를 전송하고 응답을 기다립니다.
     func requestDisplayList() async throws -> DisplayListResponse {
         let requestID = nextRequestID()
-
-        try await self.send(opcode: .displayListRequest, message: DisplayListRequest(
+        
+        return try await self.sendRequest(
             requestID: requestID,
-            flags: 0
-        ))
-
-        return try await withCheckedThrowingContinuation { continuation in
-            self.pendingDisplayListRequests[requestID] = { response in
-                continuation.resume(returning: response)
-            }
-        }
+            opcode: .displayListRequest,
+            message: DisplayListRequest(
+                requestID: requestID,
+                flags: 0
+            )
+        )
     }
     
     func updateDisplayLayout() async throws {
@@ -40,18 +38,19 @@ extension ProjectionChannel {
     /// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
     func subscribeDisplayChanges(eventMask: DisplayChangeEventType = []) async throws -> SubscribeDisplayChangesResponse {
         let requestID = nextRequestID()
-
-        try await self.send(opcode: .subscribeDisplayChangesRequest, message: SubscribeDisplayChangesRequest(
+        
+        let response: SubscribeDisplayChangesResponse = try await self.sendRequest(
             requestID: requestID,
-            eventMask: eventMask,
-            flags: 0
-        ))
-
-        return try await withCheckedThrowingContinuation { continuation in
-            self.pendingSubscribeDisplayChangesRequests[requestID] = { response in
-                continuation.resume(returning: response)
-            }
-        }
+            opcode: .subscribeDisplayChangesRequest,
+            message: SubscribeDisplayChangesRequest(
+                requestID: requestID,
+                eventMask: eventMask,
+                flags: 0
+            )
+        )
+        
+        self.displayChangesSubscriptionID = response.subscriptionID
+        return response
     }
 
     /// 디스플레이 변경 이벤트 구독을 해제합니다.
@@ -129,30 +128,6 @@ extension ProjectionChannel {
             // let _ = try await self.createSession(projectionSettings: self.currentProjectionSettings)
         } catch {
             self.logger.error("Failed to restart projection session: \(error)")
-        }
-    }
-}
-
-// MARK: - Internal Displayman Response Handlers
-
-extension ProjectionChannel {
-
-    func handleDisplayListResponse(_ response: DisplayListResponse) {
-        if let continuation = self.pendingDisplayListRequests[response.requestID] {
-            self.pendingDisplayListRequests.removeValue(forKey: response.requestID)
-            continuation(response)
-        } else {
-            self.logger.warning("No pending DisplayListRequest found for requestID: \(response.requestID)")
-        }
-    }
-
-    func handleSubscribeDisplayChangesResponse(_ response: SubscribeDisplayChangesResponse) {
-        if let continuation = self.pendingSubscribeDisplayChangesRequests[response.requestID] {
-            self.pendingSubscribeDisplayChangesRequests.removeValue(forKey: response.requestID)
-            self.displayChangesSubscriptionID = response.subscriptionID
-            continuation(response)
-        } else {
-            self.logger.warning("No pending SubscribeDisplayChangesRequest found for requestID: \(response.requestID)")
         }
     }
 }

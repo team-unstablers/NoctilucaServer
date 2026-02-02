@@ -48,11 +48,10 @@ class ProjectionSession: Identifiable {
 
     let id: UUID
     let dataChannel: ProjectionDataChannel
-    private(set) weak var controlChannel: ProjectionChannel?
+    weak var controlChannel: ProjectionChannel?
 
-    private(set) var decoder: any VideoDecoder
+    private(set) var decoder: (any VideoDecoder)?
     private var tileCompositor: TileCompositor?
-    private var performanceReporter: ProjectionPerformanceReporter?
 
     let displayID: Int
     var displayLayer = AVSampleBufferDisplayLayer()

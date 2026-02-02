@@ -80,9 +80,9 @@ extension ProjectionChannel {
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
         try await sendProjectionRequest(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
 
-        let createdEvent = await withCheckedContinuation { cont in
-            self.pendingSessions[identifier] = { event in
-                self.pendingSessions.removeValue(forKey: identifier)
+        let createdEvent = await withCheckedContinuation { [weak self] cont in
+            self?.pendingSessions[identifier] = { event in
+                self?.pendingSessions.removeValue(forKey: identifier)
                 cont.resume(returning: event)
             }
         }

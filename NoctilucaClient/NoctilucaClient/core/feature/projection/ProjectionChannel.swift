@@ -51,8 +51,8 @@ class ProjectionChannel: Channel {
     var pendingAudioSessions: [UUID: (AudioSessionCreatedEvent) -> Void] = [:]
     var audioSessions: [UUID: AudioProjectionSession] = [:]
 
-    var pendingDisplayListRequests: [UInt64: (DisplayListResponse) -> Void] = [:]
-    var pendingSubscribeDisplayChangesRequests: [UInt64: (SubscribeDisplayChangesResponse) -> Void] = [:]
+    private var pendingRequests: [UInt64: (any SiriusMessage) -> Void] = [:]
+    
     var displayChangesSubscriptionID: UUID? = nil
     
     let displayLayoutManager = DisplayLayoutManager()
@@ -89,11 +89,11 @@ class ProjectionChannel: Channel {
 
         case .displayListResponse:
             let response = try DisplayListResponse.fromProtobufBytes(frame.data)
-            self.handleDisplayListResponse(response)
+            self.dispatchResponse(requestID: response.requestID, message: response)
 
         case .subscribeDisplayChangesResponse:
             let response = try SubscribeDisplayChangesResponse.fromProtobufBytes(frame.data)
-            self.handleSubscribeDisplayChangesResponse(response)
+            self.dispatchResponse(requestID: response.requestID, message: response)
 
         case .displayChangedEvent:
             let event = try DisplayChangedEvent.fromProtobufBytes(frame.data)
@@ -121,5 +121,38 @@ class ProjectionChannel: Channel {
     /// 다음 request ID를 생성합니다.
     func nextRequestID() -> UInt64 {
         requestCounter.loadThenWrappingIncrement(ordering: .relaxed)
+    }
+    
+    func dispatchResponse(requestID: UInt64, message: any SiriusMessage) {
+        if let handler = self.pendingRequests[requestID] {
+            handler(message)
+            self.pendingRequests.removeValue(forKey: requestID)
+        } else {
+             self.logger.warning("No pending request found for requestID: \(requestID)")
+        }
+    }
+
+    func sendRequest<T: SiriusMessage>(
+        requestID: UInt64,
+        opcode: SiriusFrameOpcode,
+        message: any SiriusMessage
+    ) async throws -> T {
+        try await self.send(opcode: opcode, message: message)
+
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
+            guard let self = self else {
+                continuation.resume(throwing: ProjectionChannelError.channelClosed)
+                return
+            }
+            
+            self.pendingRequests[requestID] = { response in
+                if let typedResponse = response as? T {
+                    continuation.resume(returning: typedResponse)
+                } else {
+                    self.logger.error("Type mismatch for request \(requestID): expected \(T.self), got \(type(of: response))")
+                    continuation.resume(throwing: ChannelError.invalidFrame)
+                }
+            }
+        }
     }   
 }
