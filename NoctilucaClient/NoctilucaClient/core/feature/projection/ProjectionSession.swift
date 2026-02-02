@@ -52,6 +52,8 @@ class ProjectionSession: Identifiable {
 
     private(set) var decoder: (any VideoDecoder)?
     private var tileCompositor: TileCompositor?
+    
+    private var performanceReporter: ProjectionPerformanceReporter?
 
     let displayID: Int
     var displayLayer = AVSampleBufferDisplayLayer()
@@ -88,13 +90,13 @@ class ProjectionSession: Identifiable {
         self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, parent: self)
 
         self.dataChannel.delegate = self
-        self.decoder.delegate = self
+        self.decoder?.delegate = self
     }
 
     deinit {
         performanceReporter?.stop()
         tileCompositor?.invalidate()
-        try? decoder.stop()
+        try? decoder?.stop()
     }
 
     func prepare(codec: Codec) async throws {
@@ -105,7 +107,7 @@ class ProjectionSession: Identifiable {
         self.size  = size.cgSize
 
         // 기존 디코더 정리 (새 디코더로 교체 전)
-        try? decoder.stop()
+        try? decoder?.stop()
         tileCompositor?.invalidate()
         tileCompositor = nil
 
@@ -139,16 +141,16 @@ class ProjectionSession: Identifiable {
         default:
             if !(decoder is VTVideoDecoder) {
                 decoder = VTVideoDecoder()
-                decoder.delegate = self
+                decoder?.delegate = self
             }
             tileCompositor = nil
         }
-        try decoder.prepare(with: .init(codec: codec))
+        try decoder?.prepare(with: .init(codec: codec))
     }
     
     func start() async throws {
         do {
-            try self.decoder.start()
+            try self.decoder?.start()
             self.performanceReporter?.start()
             
             await MainActor.run {
@@ -169,7 +171,7 @@ class ProjectionSession: Identifiable {
         }
 
         self.performanceReporter?.stop()
-        try self.decoder.stop()
+        try self.decoder?.stop()
         
         await MainActor.run {
             self.events.send(.projectionStopped)
@@ -208,7 +210,7 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
         self.performanceReporter?.recordReceivedFrame()
         do {
             // FIXME
-            try self.decoder.decode(EncodedFrameInput(
+            try self.decoder?.decode(EncodedFrameInput(
                 header: frame.header,
                 data: frame.data,
                 formatDescription: self.formatDescription

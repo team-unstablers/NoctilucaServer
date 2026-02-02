@@ -14,10 +14,10 @@
       location = "group:libbcrypt/libbcrypt.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:SamplePluginBundle/SamplePluginBundle.xcodeproj">
+      location = "group:SiriusKit">
    </FileRef>
    <FileRef
-      location = "group:SiriusKit/SiriusKit.xcodeproj">
+      location = "group:SamplePluginBundle/SamplePluginBundle.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:NoctilucaPluginKit/NoctilucaPluginKit.xcodeproj">

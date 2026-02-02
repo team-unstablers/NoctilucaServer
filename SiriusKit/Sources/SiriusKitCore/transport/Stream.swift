@@ -1,0 +1,80 @@
+//
+//  Stream.swift
+//  SiriusKit
+//
+//  Created by Gyuhwan Park on 11/20/25.
+//
+
+import Foundation
+
+package import Atomics
+
+public typealias StreamIdentifier = UUID
+
+public enum StreamError: Error {
+    case notImplemented
+    case endOfStream
+}
+
+public enum StreamEvent {
+    case frame(SiriusFrame)
+    case closed
+    case error(Error)
+}
+
+open class Stream {
+    public let events: AsyncStream<StreamEvent>
+    public let continuation: AsyncStream<StreamEvent>.Continuation
+
+    package let writeBackPressure = ManagedAtomic<UInt64>(0)
+
+    package init() {
+        var continuationLocal: AsyncStream<StreamEvent>.Continuation!
+
+        self.events = AsyncStream<StreamEvent>(StreamEvent.self, bufferingPolicy: .unbounded) { continuation in
+            continuationLocal = continuation
+        }
+
+        self.continuation = continuationLocal
+    }
+
+    public var id: StreamIdentifier = .zero
+    
+    open func readWriteBackPressure() -> UInt64 {
+        return writeBackPressure.load(ordering: .relaxed)
+    }
+
+    open func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
+        let opcodeRaw = opcode.rawValue.bigEndian
+        let length = (length ?? UInt32(data.count)).bigEndian
+
+        var frameData = Data()
+
+        // TODO: Data+append(uint32: UInt32) extension
+
+        withUnsafeBytes(of: opcodeRaw) { opcodeBytes in
+            frameData.append(contentsOf: opcodeBytes)
+        }
+
+        withUnsafeBytes(of: length) { lengthBytes in
+            frameData.append(contentsOf: lengthBytes)
+        }
+
+        frameData.append(data)
+
+        return await write(frameData)
+    }
+
+    open func write(_ data: Data) async -> Result<UInt32, StreamError> {
+        // To be implemented by subclasses
+        return .failure(.notImplemented)
+    }
+
+    open func close() async throws {
+        // To be implemented by subclasses
+    }
+}
+
+public struct StreamHolder {
+    package let stream: Stream
+}

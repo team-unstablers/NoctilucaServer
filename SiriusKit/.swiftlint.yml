@@ -3,7 +3,7 @@ parent_config: ../.swiftlint.yml
 # SiriusKit 전용 설정
 # 자동 생성된 protobuf 코드 제외
 excluded:
-  - SiriusKit/autogen
-  - SiriusKit/channel/msgdef
+  - Sources/SiriusKitCore/autogen
+  - Sources/SiriusKitCore/channel/msgdef
   - dependencies
-  - SiriusKitTests
+  - Tests/SiriusKitTests

@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; };
-		F61DD5B32EF0271300AC9B35 /* SiriusKitClient.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F627116D2F08626200E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F627116C2F08626200E8A3D7 /* libzstd */; };
 		F639712A2F1CCCFD00F01622 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F63971292F1CCCFD00F01622 /* Xuanxue */; };
 		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
@@ -16,6 +14,7 @@
 		F6B2AB7C2F2A71AE00B7CF41 /* WebPDecoder.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB7B2F2A71AE00B7CF41 /* WebPDecoder.xcframework */; };
 		F6B2AB822F2A736F00B7CF41 /* SharpYuv.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB812F2A736F00B7CF41 /* SharpYuv.xcframework */; };
 		F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */; };
+		F6F98E7D2F306B6C0024513A /* SiriusKitClient in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7C2F306B6C0024513A /* SiriusKitClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +35,6 @@
 			dstSubfolderSpec = 10;
 			files = (
 				F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */,
-				F61DD5B32EF0271300AC9B35 /* SiriusKitClient.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -95,8 +93,8 @@
 				F6B2AB822F2A736F00B7CF41 /* SharpYuv.xcframework in Frameworks */,
 				F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F627116D2F08626200E8A3D7 /* libzstd in Frameworks */,
+				F6F98E7D2F306B6C0024513A /* SiriusKitClient in Frameworks */,
 				F639712A2F1CCCFD00F01622 /* Xuanxue in Frameworks */,
-				F61DD5B22EF0271300AC9B35 /* SiriusKitClient.framework in Frameworks */,
 				F6B2AB7C2F2A71AE00B7CF41 /* WebPDecoder.xcframework in Frameworks */,
 				F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */,
 			);
@@ -184,6 +182,7 @@
 				F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */,
 				F627116C2F08626200E8A3D7 /* libzstd */,
 				F63971292F1CCCFD00F01622 /* Xuanxue */,
+				F6F98E7C2F306B6C0024513A /* SiriusKitClient */,
 			);
 			productName = NoctilucaClient;
 			productReference = F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */;
@@ -622,6 +621,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
 			productName = AsyncAlgorithms;
+		};
+		F6F98E7C2F306B6C0024513A /* SiriusKitClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SiriusKitClient;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
