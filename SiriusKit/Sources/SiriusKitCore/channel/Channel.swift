@@ -105,7 +105,11 @@ open class Channel {
                 // self.logger.trace("[\(self.identifier)] frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
 #endif
 
-                try await self.handleFrame(frame: frame)
+                do {
+                    try await self.handleFrame(frame: frame)
+                } catch {
+                    self.logger.error("[\(self.identifier)] streamEventLoop(): error occurred while handling frame: \(error)")
+                }
             case .closed:
                 self.handleStreamClose()
                 self.lifecycleDelegate?.channelDidClose(self)
@@ -130,6 +134,7 @@ open class Channel {
 
     open func handleStreamError(error: (any Error)) {
         // to be overridden by subclasses
+        logger.error("[\(self.identifier)] stream encountered error: \(error)")
     }
 }
 
