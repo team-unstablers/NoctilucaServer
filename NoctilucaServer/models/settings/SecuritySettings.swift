@@ -52,6 +52,8 @@ extension AppSettings {
     
     /// 트랜스포트 레이어
     struct Transport: Category {
+        var implementation: String = "msquic"
+        
         /// 서버 버전을 알리지 않기
         /// - 서버 버전을 클라이언트에게 알리지 않는다.
         /// - 보안성이 강화될 수 있을지도 모르지만.. 호환성이 떨어질 수 있다.
@@ -68,6 +70,7 @@ extension AppSettings {
         init() {}
 
         enum CodingKeys: String, CodingKey {
+            case implementation
             case disableServerVersionAnnouncement
             case disableSupportedFeaturesAnnouncement
             case motd
@@ -80,7 +83,9 @@ extension AppSettings {
             guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
                 return
             }
-
+            
+            implementation = container.decodeSafe(String.self, forKey: .implementation, default: implementation)
+            
             disableServerVersionAnnouncement = container.decodeSafe(
                 Bool.self,
                 forKey: .disableServerVersionAnnouncement,
@@ -97,6 +102,7 @@ extension AppSettings {
 
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(implementation, forKey: .implementation)
             try container.encode(disableServerVersionAnnouncement, forKey: .disableServerVersionAnnouncement)
             try container.encode(disableSupportedFeaturesAnnouncement, forKey: .disableSupportedFeaturesAnnouncement)
             try container.encode(motd, forKey: .motd)

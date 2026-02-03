@@ -41,6 +41,6 @@ struct SettingsPicker<Value: Hashable, Content: View, HeaderContent: View>: View
         } label: {
             label()
         }
-        .pickerStyle(.inline)
+        .pickerStyle(.radioGroup)
     }
 }

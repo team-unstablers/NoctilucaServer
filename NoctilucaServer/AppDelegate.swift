@@ -9,6 +9,8 @@ import AppKit
 import Combine
 import UserNotifications
 
+import SwiftMsQuicHelper
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let server = NoctilucaServer.shared
@@ -23,13 +25,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     static func main() {
         let app = NSApplication.shared
+        
         let delegate = AppDelegate()
         app.delegate = delegate
         _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // load MsQuic
+        _ = MsQuicLoader.shared
+
+#if !DEBUG
         NSApp.setActivationPolicy(.accessory)
+#endif
         TCCUtil.shared.requestAccess(for: .notifications)
         
         UNUserNotificationCenter.current().delegate = self

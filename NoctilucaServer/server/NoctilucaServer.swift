@@ -179,10 +179,11 @@ class NoctilucaServer: ObservableObject {
                 throw NoctilucaServerError.noIdentityConfigured
             }
             
+            let implementation = settings.transport.implementation
             
             let result = try SiriusServerBuilder()
                 .useFeatureProvider(featureProvider)
-                .useTransportProtocol(.quic(port: settings.quicTransport.listenPort, identitySource: identity.identitySource))
+                .useTransportProtocol(.quic(implementation: implementation, port: settings.quicTransport.listenPort, identitySource: identity.identitySource))
                 .withExtraConfiguration("someValue", forKey: "someKey")
                 .build()
             

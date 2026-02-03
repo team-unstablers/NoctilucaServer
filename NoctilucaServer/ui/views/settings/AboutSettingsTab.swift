@@ -22,8 +22,8 @@ struct AboutSettingsTab: View {
                 }
                 SettingsEntry(title: String(localized: "settings.about.transport_layer.title", defaultValue: "사용 가능한 트랜스포트 레이어 구현체")) {
                     VStack(alignment: .trailing) {
-                        ForEach(TransportLayerImplementation.allCases, id: \.self) { implementation in
-                            Text(implementation.description)
+                        ForEach(TransportLayerImplementation.bundledImplementations, id: \.self) { implementation in
+                            Text(implementation.displayName)
                         }
                     }
                 }
@@ -58,3 +58,4 @@ struct AboutSettingsTab: View {
         .formStyle(.grouped)
     }
 }
+

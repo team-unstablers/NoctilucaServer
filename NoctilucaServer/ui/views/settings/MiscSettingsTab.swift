@@ -1,11 +1,54 @@
 import SwiftUI
 
+import SiriusKit
+
 struct MiscSettingsTab: View {
     @Binding
     var settings: AppSettings
 
     var body: some View {
         Form {
+            Section {
+                SettingsPicker(selection: $settings.transport.implementation) {
+                    SettingsPickerItem(value: TransportLayerImplementation.msQuic.identifier) {
+                        Text(markdown: String(
+                            localized: "settings.misc.transport_layer_implemenation.msquic.display_name",
+                            defaultValue: "QUIC (MsQuic)"
+                        ))
+                        Text(markdown: String(
+                            localized: "settings.misc.transport_layer_implemenation.msquic.description",
+                            defaultValue: "오픈 소스 QUIC 구현체를 사용합니다."
+                        ))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    SettingsPickerItem(value: TransportLayerImplementation.appleQuic.identifier) {
+                        Text(markdown: String(
+                            localized: "settings.misc.transport_layer_implemenation.apple_quic.display_name",
+                            defaultValue: "QUIC (Network.framework) **(권장하지 않음)**"
+                        ))
+                        Text(markdown: String(
+                            localized: "settings.misc.transport_layer_implemenation.apple_quic.description",
+                            defaultValue: "macOS에서 기본으로 제공되는 Apple의 QUIC 구현체를 사용합니다.\n일부 기능이 제대로 동작하지 않거나, 낮은 성능을 낼 수 있습니다."
+                        ))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                } label: {
+                    Text("트랜스포트 레이어 구현체")
+                    Text("서버 가동 시 사용할 트랜스포트 레이어 구현체를 선택합니다. 구현체에 따라 성능이나 세부 동작이 다를 수 있습니다.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text(markdown: String(localized: "settings.misc.transport_layer_misc.title", defaultValue: "기타 트랜스포트 레이어 설정"))
+            } footer: {
+                Text(markdown: String(
+                    localized: "settings.misc.transport_layer_implementation.oss_notice",
+                    defaultValue: "**오픈 소스 고지**: Noctiluca 제품군에서는 MsQuic에 다음과 같은 수정을 가하여 사용하고 있습니다:\n- Swift 언어에서 쉽게 사용할 수 있도록 [`swift-msquic`](https://github.com/team-unstablers/swift-msquic) 래퍼 모듈을 작성하였습니다.\n- iOS에서 [`dlopen(3)`](https://man.freebsd.org/cgi/man.cgi?dlopen(3))을 사용하지 않도록 수정하였습니다. 수정을 가한 포크 버전은 GitHub [team-unstablers/msquic](https://github.com/team-unstablers/msquic) 에 공개되어 있습니다."
+                ))
+            }
+            
             Section(String(localized: "settings.misc.telemetry.title", defaultValue: "텔레메트리 및 진단 정보")) {
                 Toggle(isOn: $settings.telemetry.enableTelemetry) {
                     Text(markdown: String(localized: "settings.misc.telemetry.enable.title", defaultValue: "Noctiluca의 개발을 익명으로 돕기"))
