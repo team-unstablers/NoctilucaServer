@@ -88,6 +88,7 @@ actor ClientRoleQUICTransport: ClientRoleTransport {
                 continuation.resume(returning: .failure(.openStreamFailed(error: nil)))
                 return
             }
+            
 
             let stream = ClientRoleQUICStream(connection, transport: self, queue: self.queue)
             stream.setup { [weak self, weak stream] in
@@ -159,8 +160,14 @@ actor ClientRoleQUICTransport: ClientRoleTransport {
 
     private func createQuicParameters() async throws -> NWParameters {
         let options = NWProtocolQUIC.Options()
+        
         options.alpn = [self.alpn.rawValue]
         options.direction = .bidirectional
+        
+        /*
+        options.initialMaxStreamsBidirectional = 128
+        options.initialMaxStreamDataUnidirectional = 128
+         */
 
         sec_protocol_options_set_min_tls_protocol_version(
             options.securityProtocolOptions,
@@ -201,7 +208,9 @@ actor ClientRoleQUICTransport: ClientRoleTransport {
             self.verifyQueue
         )
 
-        return NWParameters(quic: options)
+        let parameters = NWParameters(quic: options)
+        parameters.multipathServiceType = .disabled
+        return parameters
     }
 
     private func makeIdentityInfo(metadata: sec_protocol_metadata_t) -> ServerIdentityInfo? {

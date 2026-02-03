@@ -33,6 +33,7 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
             return
         }
 
+        try? await sendFIN()
         connection.cancel()
         await finalize(event: .closed)
     }
@@ -51,6 +52,18 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
                     continuation.resume(returning: .failure(.notImplemented)) // Map error appropriately
                 } else {
                     continuation.resume(returning: .success(UInt32(data.count)))
+                }
+            })
+        }
+    }
+    
+    private func sendFIN() async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            connection.send(content: nil, contentContext: .finalMessage, isComplete: true, completion: .contentProcessed { error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
                 }
             })
         }
@@ -79,7 +92,7 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
                 try await self.receiveLoop()
             } catch {
                 if let streamError = error as? StreamError, case .endOfStream = streamError {
-                    await self.finalize(event: .closed)
+                    try? await self.close()
                     return
                 }
 
@@ -97,7 +110,7 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
 
             let opcode = rawHeader.subdata(in: 0..<2).withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
             let length = rawHeader.subdata(in: 2..<6).withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-
+            
             // TODO: fragmented read
             let payload = (length > 0) ?
                 try (await self.read(minSize: Int(length), maxSize: Int(length))).get() :
@@ -114,8 +127,12 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
 
     private func read(minSize: Int, maxSize: Int) async -> Result<Data, Error> {
         return await withCheckedContinuation { cont in
-            self.connection.receive(minimumIncompleteLength: minSize, maximumLength: maxSize) { content, _, _, error in
-                if let error = error {
+            self.connection.receive(minimumIncompleteLength: minSize, maximumLength: maxSize) { content, context, complete, error in
+                print(context?.identifier)
+                
+                if complete {
+                    cont.resume(returning: .failure(StreamError.endOfStream))
+                } else if let error = error {
                     cont.resume(returning: .failure(error)) // Map error appropriately
                 } else if let content = content {
                     // print("QUICStream \(self.id) received data of size: \(content.count), eos: \(eos)")
@@ -132,6 +149,7 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
             return
         }
 
+        self.connection.cancel()
         receiveTask?.cancel()
 
         self.continuation.yield(with: .success(event))

@@ -34,7 +34,6 @@ class ClientRoleQUICStream: SiriusKitCore.Stream {
             return
         }
 
-        connection.cancel()
         await finalize(event: .closed)
     }
 
@@ -47,11 +46,32 @@ class ClientRoleQUICStream: SiriusKitCore.Stream {
         }
 
         return await withCheckedContinuation { continuation in
-            connection.send(content: data, completion: .contentProcessed { error in
+            // swiftlint:disable:next force_cast
+            var metadata = self.connection.metadata(definition: NWProtocolQUIC.definition) as! NWProtocolQUIC.Metadata
+            var context = NWConnection.ContentContext(
+                identifier: "quic",
+                priority: 1.0,
+                antecedent: .defaultMessage,
+                metadata: [metadata]
+            )
+            
+            connection.send(content: data, contentContext: context, completion: .contentProcessed { error in
                 if let error = error {
                     continuation.resume(returning: .failure(.notImplemented)) // Map error appropriately
                 } else {
                     continuation.resume(returning: .success(UInt32(data.count)))
+                }
+            })
+        }
+    }
+    
+    private func sendFIN() async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            connection.send(content: nil, contentContext: .finalMessage, isComplete: true, completion: .contentProcessed { error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
                 }
             })
         }
@@ -103,7 +123,7 @@ class ClientRoleQUICStream: SiriusKitCore.Stream {
 
             let opcode = rawHeader.subdata(in: 0..<2).withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
             let length = rawHeader.subdata(in: 2..<6).withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-
+            
             // TODO: fragmented read
             let payload = (length > 0) ?
                 try (await self.read(minSize: Int(length), maxSize: Int(length))).get() :
@@ -112,6 +132,7 @@ class ClientRoleQUICStream: SiriusKitCore.Stream {
             let frame = SiriusFrame(opcode: MessageOpcode(rawValue: opcode),
                                     length: length,
                                     data: payload)
+            
 
             self.continuation.yield(with: .success(.frame(frame)))
         }
@@ -120,8 +141,10 @@ class ClientRoleQUICStream: SiriusKitCore.Stream {
 
     private func read(minSize: Int, maxSize: Int) async -> Result<Data, Error> {
         return await withCheckedContinuation { cont in
-            self.connection.receive(minimumIncompleteLength: minSize, maximumLength: maxSize) { content, _, _, error in
-                if let error = error {
+            self.connection.receive(minimumIncompleteLength: minSize, maximumLength: maxSize) { content, context, complete, error in
+                if complete {
+                    cont.resume(returning: .failure(StreamError.endOfStream))
+                } else if let error = error {
                     cont.resume(returning: .failure(error)) // Map error appropriately
                 } else if let content = content {
                     cont.resume(returning: .success(content))
@@ -137,6 +160,7 @@ class ClientRoleQUICStream: SiriusKitCore.Stream {
             return
         }
 
+        self.connection.cancel()
         receiveTask?.cancel()
 
         self.continuation.yield(with: .success(event))

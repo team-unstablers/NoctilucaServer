@@ -34,6 +34,7 @@ actor ServerRoleQUICRootTransport: ServerRoleRootTransport {
 
     func startup() async throws {
         let parameters = try await self.createQuicParameters()
+        
         return try await withCheckedThrowingContinuation { continuation in
 
             do {
@@ -116,6 +117,11 @@ actor ServerRoleQUICRootTransport: ServerRoleRootTransport {
         // ALPN 설정 (클라이언트와 이 문자열이 일치해야 통신 가능)
         options.alpn = [SiriusQUICAlpn.siriusV1.rawValue]
         options.direction = .bidirectional
+        
+        /*
+        options.initialMaxStreamsBidirectional = 128
+        options.initialMaxStreamDataUnidirectional = 128
+         */
 
         // 보안 신원(Identity) 로드 - 실제 구현 시 .p12 파일 등에서 로드해야 함
         guard try await self.identity.sanityCheck() else {
