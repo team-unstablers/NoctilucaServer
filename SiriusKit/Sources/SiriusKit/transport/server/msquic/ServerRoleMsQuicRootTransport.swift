@@ -131,13 +131,23 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
         // 연결 수락 핸들러 설정
         listener.onNewConnection { [weak self] _, connectionInfo in
-            guard let self = self else { return nil }
+            guard let self = self else {
+                throw QuicError.invalidState
+            }
 
-            return try await self.handleNewConnection(connectionInfo: connectionInfo)
+            do {
+                return try self.handleNewConnection(
+                    connectionInfo: connectionInfo,
+                    configuration: configuration
+                )
+            } catch {
+                Task { await self.notifyAcceptFailure(error) }
+                throw error
+            }
         }
 
         // 리스너 시작
-        let localAddress = QuicAddress(port: port)
+        let localAddress = QuicAddress(port: port, family: .unspecified)
         try listener.start(
             alpnBuffers: [SiriusQUICAlpn.siriusV1.rawValue],
             localAddress: localAddress
@@ -175,11 +185,10 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
     // MARK: - Connection Handling
 
-    private func handleNewConnection(connectionInfo: QuicListenerEvent.NewConnectionInfo) async throws -> QuicConnection? {
-        guard let configuration = self.configuration else {
-            return nil
-        }
-
+    private nonisolated func handleNewConnection(
+        connectionInfo: QuicListenerEvent.NewConnectionInfo,
+        configuration: QuicConfiguration
+    ) throws -> QuicConnection? {
         // 새 QuicConnection 래퍼 생성
         let quicConnection: QuicConnection
         do {
@@ -188,8 +197,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
                 configuration: configuration
             )
         } catch {
-            delegate?.serverTransportDidFailToAcceptConnection(self, error: error)
-            return nil
+            throw error
         }
 
         // ServerRoleMsQuicClientTransport 생성
@@ -199,14 +207,13 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
             id: ServerRoleClientTransportIdentifier()
         )
 
-        await registerClientTransport(clientTransport)
+        installConnectionHandlers(connection: quicConnection, clientTransport: clientTransport)
+        Task { await self.registerClientTransport(clientTransport) }
 
         return quicConnection
     }
 
     internal func registerClientTransport(_ transport: ServerRoleMsQuicClientTransport) async {
-        await transport.setup()
-
         // 델리게이트 콜백 (QUICClientTransportDelegate 설정할 타이밍 제공)
         delegate?.serverTransportDidAcceptConnection(self, clientTransport: transport)
 
@@ -217,5 +224,34 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
     internal func unregisterClientTransport(_ transport: ServerRoleMsQuicClientTransport) async {
         self.clients.removeAll { $0.id == transport.id }
+    }
+
+    private nonisolated func installConnectionHandlers(
+        connection: QuicConnection,
+        clientTransport: ServerRoleMsQuicClientTransport
+    ) {
+        connection.onEvent { [weak clientTransport] _, event in
+            guard let clientTransport = clientTransport else { return .success }
+
+            switch event {
+            case .shutdownInitiatedByPeer, .shutdownInitiatedByTransport:
+                Task {
+                    await clientTransport.handleConnectionShutdown()
+                }
+            default:
+                break
+            }
+
+            return .success
+        }
+
+        connection.onPeerStreamStarted { [weak clientTransport] _, quicStream in
+            guard let clientTransport = clientTransport else { return }
+            await clientTransport.handlePeerStream(quicStream)
+        }
+    }
+
+    private func notifyAcceptFailure(_ error: Error) async {
+        delegate?.serverTransportDidFailToAcceptConnection(self, error: error)
     }
 }

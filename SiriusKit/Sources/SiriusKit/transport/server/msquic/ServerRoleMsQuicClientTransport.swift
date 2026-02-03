@@ -90,29 +90,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     // MARK: - Internal Setup
 
     internal func setup() async {
-        // 연결 이벤트 핸들러 설정
-        connection.onEvent { [weak self] _, event in
-            guard let self = self else { return .success }
-
-            switch event {
-            case .shutdownInitiatedByPeer, .shutdownInitiatedByTransport:
-                Task {
-                    await self.handleConnectionShutdown()
-                }
-            default:
-                break
-            }
-
-            return .success
-        }
-
-        // 피어 스트림 핸들러 설정
-        connection.onPeerStreamStarted { [weak self] x, quicStream in
-            guard let self = self else { return }
-            print(quicStream)
-            
-            await self.handlePeerStream(quicStream)
-        }
+        // 연결 핸들러는 리스너 콜백에서 즉시 설치됨 (동기 수락 요구사항 대응)
     }
 
     internal func start() async {
@@ -122,7 +100,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
 
     // MARK: - Stream Handling
 
-    private func handlePeerStream(_ quicStream: QuicStream) async {
+    internal func handlePeerStream(_ quicStream: QuicStream) async {
         let stream = ServerRoleMsQuicStream(
             quicStream: quicStream,
             transport: self,
@@ -140,7 +118,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         }
     }
 
-    private func handleConnectionShutdown() async {
+    internal func handleConnectionShutdown() async {
         await disconnect()
     }
 
