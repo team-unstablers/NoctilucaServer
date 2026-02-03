@@ -25,6 +25,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-asn1.git", from: "1.5.1"),
         .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.0"),
         .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.2"),
+        .package(url: "https://github.com/team-unstablers/swift-msquic", from: "1.0.5"),
+        // .package(path: "../../swift-msquic"),
     ],
     targets: [
         .target(
@@ -47,6 +49,7 @@ let package = Package(
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
                 .product(name: "Atomics", package: "swift-atomics"),
+                .product(name: "SwiftMsQuic", package: "swift-msquic"),
             ],
             path: "Sources/SiriusKit",
             plugins: [
@@ -58,6 +61,7 @@ let package = Package(
             dependencies: [
                 "SiriusKitCore",
                 .product(name: "Atomics", package: "swift-atomics"),
+                .product(name: "SwiftMsQuic", package: "swift-msquic"),
             ],
             path: "Sources/SiriusKitClient",
             plugins: [

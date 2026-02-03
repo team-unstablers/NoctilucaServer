@@ -20,7 +20,7 @@ public struct SiriusClientBuilder {
         func buildTransport() -> any ClientRoleTransport {
             switch self {
             case .quic(let host, let port):
-                return ClientRoleQUICTransport(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!)
+                return ClientRoleMsQuicTransport(host: host, port: port)
             }
         }
     }

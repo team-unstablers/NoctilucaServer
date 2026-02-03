@@ -15,16 +15,26 @@ public enum SiriusServerBuilderError: Error {
 
 public struct SiriusServerBuilder {
     public enum TransportProtocol {
-        case quic(port: UInt16,
+        case quic(implementation: String,
+                  port: UInt16,
                   identitySource: QUICServerIdentitySource)
 
         func buildServerTransport() -> ServerRoleRootTransport {
             switch self {
-            case .quic(let port, let identitySource):
+            case .quic(let implementation, let port, let identitySource):
                 let port = NWEndpoint.Port(rawValue: port)!
                 let identity = identitySource.build()
+                
+                switch implementation {
+                case TransportLayerImplementation.appleQuic.identifier:
+                    return ServerRoleQUICRootTransport(port: port, using: identity)
+                case TransportLayerImplementation.msQuic.identifier:
+                    return ServerRoleMsQuicRootTransport(port: port.rawValue, using: identity)
+                default:
+                    // WARN: unsupported implementation type
+                    return ServerRoleMsQuicRootTransport(port: port.rawValue, using: identity)
+                }
 
-                return ServerRoleQUICRootTransport(port: port, using: identity)
             }
         }
     }
