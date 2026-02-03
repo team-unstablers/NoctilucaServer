@@ -188,4 +188,7 @@ Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는
 # EXTERNAL DOCUMENTATIONS
 
 - `sosumi` MCP가 구성되어 있는 경우, 이 MCP를 통해 Apple Developer Documentation을 읽을 수 있습니다. 이를 적극적으로 활용하십시오.
+
+# USING XCODEBUILD
+- 빌드 시에는 'NoctilucaServer.xcworkspace'를 사용하십시오.
 </section>
