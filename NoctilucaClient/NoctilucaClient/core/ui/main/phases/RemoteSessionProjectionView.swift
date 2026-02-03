@@ -200,9 +200,11 @@ struct RemoteSessionProjectionView: View {
              */
 #endif
 #if os(macOS)
+            /*
             .onTapGesture {
                 client.hidioController.enableCaptureLock()
             }
+             */
 #endif
         }
     }

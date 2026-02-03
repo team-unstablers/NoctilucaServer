@@ -37,9 +37,7 @@ struct AboutSettingsTab: View {
                     Text("사용 가능한 트랜스포트 레이어 구현체")
                     Spacer()
                     VStack(alignment: .trailing) {
-                        ForEach(TransportLayerImplementation.allCases, id: \.self) { implementation in
-                            Text(implementation.description)
-                        }
+                        Text(TransportLayerImplementation.msQuic.displayName)
                     }
                     .foregroundStyle(.secondary)
                 }
@@ -50,7 +48,6 @@ struct AboutSettingsTab: View {
                         Text("HIDIO")
                         Text("Projection")
                         Text("ProjectionData")
-                        Text("ConcurrentSession")
                     }
                     .foregroundStyle(.secondary)
                 }
