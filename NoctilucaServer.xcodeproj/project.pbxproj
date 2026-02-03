@@ -15,7 +15,6 @@
 		F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F62711432F0852DE00E8A3D7 /* libzstd */; };
 		F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; };
 		F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		F63971242F1CCA4400F01622 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F63971232F1CCA4400F01622 /* Xuanxue */; };
 		F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */; };
@@ -132,7 +131,6 @@
 				F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F62689452F1E50F60030D59B /* Gesu in Frameworks */,
 				F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */,
-				F63971242F1CCA4400F01622 /* Xuanxue in Frameworks */,
 				F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */,
 				F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */,
 				F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */,
@@ -226,7 +224,6 @@
 			name = NoctilucaServer;
 			packageProductDependencies = (
 				F62711432F0852DE00E8A3D7 /* libzstd */,
-				F63971232F1CCA4400F01622 /* Xuanxue */,
 				F62689442F1E50F60030D59B /* Gesu */,
 				F6F98E7A2F306B5D0024513A /* SiriusKit */,
 			);
@@ -646,7 +643,7 @@
 			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.2;
+				minimumVersion = 1.0.3;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -660,11 +657,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
-		};
-		F63971232F1CCA4400F01622 /* Xuanxue */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F63971222F1CCA4400F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */;
-			productName = Xuanxue;
 		};
 		F6F98E7A2F306B5D0024513A /* SiriusKit */ = {
 			isa = XCSwiftPackageProductDependency;

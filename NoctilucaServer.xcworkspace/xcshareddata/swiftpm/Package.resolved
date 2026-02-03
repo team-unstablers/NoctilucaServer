@@ -1,5 +1,5 @@
 {
-  "originHash" : "ba78b36172338d7726d2a7f00066948311b5b1f8c814b33c349c1a20fb81d1d8",
+  "originHash" : "39a49f116a766059adcaf025cd5540fbc232d8e41dd0bab6e03541402a697406",
   "pins" : [
     {
       "identity" : "swift-asn1",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/team-unstablers/Xuanxue.git",
       "state" : {
-        "revision" : "eecd56e4c3d00f7b628fe309958dba75c4924714",
-        "version" : "1.0.2"
+        "revision" : "3f87e6fb1156000abad64f3e0e8dc00578e49a45",
+        "version" : "1.0.3"
       }
     },
     {
