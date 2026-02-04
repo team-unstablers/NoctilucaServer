@@ -158,11 +158,16 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
     func shutdown() async throws {
         // 1. 모든 클라이언트 연결 종료
+        // 순환 참조를 먼저 끊고, 이후 종료 작업을 진행합니다.
         let clientSnapshot = self.clients
         self.clients.removeAll()
 
-        for client in clientSnapshot {
-            await client.disconnect()
+        await withTaskGroup(of: Void.self) { group in
+            for client in clientSnapshot {
+                group.addTask {
+                    await client.disconnect()
+                }
+            }
         }
 
         // 2. Listener 중지 (역순 해제)
