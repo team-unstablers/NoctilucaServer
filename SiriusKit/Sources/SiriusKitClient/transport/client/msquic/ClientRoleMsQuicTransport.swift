@@ -26,6 +26,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     nonisolated let id: ClientRoleTransportIdentifier = ClientRoleTransportIdentifier()
     nonisolated(unsafe) weak var delegate: ClientRoleTransportDelegate?
 
+    private let logger = SiriusLogger(category: "ClientRoleMsQuicTransport")
+
     private let host: String
     private let port: UInt16
     private let alpn: SiriusQUICAlpn
@@ -123,7 +125,11 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
         // 연결 종료
         if let connection = self.connection {
-            await connection.shutdown()
+            do {
+                try await connection.shutdown(timeoutMs: 5000, force: true)
+            } catch {
+                logger.warning("MsQuic connection shutdown timed out; forcing close. error=\(error)")
+            }
             self.connection = nil
         }
 

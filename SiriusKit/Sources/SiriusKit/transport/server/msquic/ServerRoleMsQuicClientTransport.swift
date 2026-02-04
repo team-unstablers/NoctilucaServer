@@ -8,6 +8,8 @@
 import Foundation
 import MsQuic
 import SwiftMsQuicHelper
+
+internal import Atomics
 import SiriusKitCore
 
 enum ServerRoleMsQuicClientTransportError: Error {
@@ -23,11 +25,13 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     nonisolated let id: ServerRoleClientTransportIdentifier
     nonisolated(unsafe) weak var delegate: ServerRoleClientTransportDelegate?
 
+    private static let logger = SiriusLogger(category: "ServerRoleMsQuicClientTransport")
+
     let connection: QuicConnection
-    let serverTransport: ServerRoleMsQuicRootTransport
+    private weak var serverTransport: ServerRoleMsQuicRootTransport?
 
     private var streams: [StreamIdentifier: ServerRoleMsQuicStream] = [:]
-    private var isFinalized: Bool = false
+    nonisolated(unsafe) private let isFinalized = ManagedAtomic(false)
 
     nonisolated var remoteAddress: String? {
         // MsQuic connection에서 원격 주소를 얻는 것은 현재 지원하지 않음
@@ -41,14 +45,18 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         self.serverTransport = serverTransport
     }
 
+    deinit {
+        if !isFinalized.load(ordering: .acquiring) {
+            Self.logger.warning("MsQuic client transport deinitialized without disconnect. id=\(self.id)")
+        }
+    }
+
     // MARK: - TransportLayer Protocol
 
     func disconnect() async {
-        guard !isFinalized else {
+        if isFinalized.exchange(true, ordering: .acquiring) {
             return
         }
-
-        self.isFinalized = true
 
         // 모든 스트림 종료
         let snapshot = Array(self.streams.values)
@@ -59,10 +67,16 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         }
 
         // 연결 종료
-        await connection.shutdown()
+        do {
+            try await connection.shutdown(timeoutMs: 5000, force: true)
+        } catch {
+            Self.logger.warning("MsQuic connection shutdown timed out; forcing close. error=\(error)")
+        }
 
         await delegate?.clientTransportDidClose(self)
-        await serverTransport.unregisterClientTransport(self)
+        if let serverTransport = serverTransport {
+            await serverTransport.unregisterClientTransport(self)
+        }
     }
 
     func openStream() async -> Result<SiriusKitCore.Stream, TransportLayerError> {
