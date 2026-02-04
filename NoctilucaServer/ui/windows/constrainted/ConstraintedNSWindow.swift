@@ -11,7 +11,7 @@ import Cocoa
 
 @MainActor
 protocol ConstraintedNSWindow: AnyObject {
-    init(to screen: NSScreen)
+    init(to screen: NOCScreen)
 }
 
 extension ConstraintedNSWindow {

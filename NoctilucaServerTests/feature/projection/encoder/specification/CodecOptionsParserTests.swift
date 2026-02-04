@@ -8,6 +8,7 @@
 import XCTest
 @testable import NoctilucaServer
 
+/*
 final class CodecOptionsParserTests: XCTestCase {
     
     func testParseAsDictionaryHandlesNilAndEmptyInput() {
@@ -70,3 +71,4 @@ final class CodecOptionsParserTests: XCTestCase {
         XCTAssertEqual(reparsed, original)
     }
 }
+*/

@@ -72,14 +72,22 @@ extension EventInjector {
             displayID = CGMainDisplayID()
         }
         
-        guard let globalPoint = DisplayLayoutManager.shared.globalPoint(
-            fromPercent: CGPoint(x: CGFloat(position.x), y: CGFloat(position.y)),
-            on: displayID
-        ) else {
+        let displayLayoutManager = DisplayLayoutManager.shared
+        let layouts = displayLayoutManager.displayLayouts.snapshot()
+        let mainScreen = layouts[CGMainDisplayID()]
+        let targetScreen = layouts[displayID] ?? mainScreen
+        
+        guard let screen = targetScreen else {
             return
         }
         
-        let position = DisplayLayoutManager.shared.clampToNearestScreen(globalPoint)
+        let x11Point = CGPoint(
+            x: screen.frame.minX + (screen.frame.width * CGFloat(position.x)),
+            y: screen.frame.minY + (screen.frame.height * CGFloat(position.y))
+        )
+        
+        let clampedX11 = CursorState.clampToNearestScreen(x11Point, layouts: layouts)
+        let position = mainScreen.map { CursorState.toCoreGraphicsCoordinate(clampedX11, mainScreen: $0) } ?? clampedX11
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -118,12 +126,24 @@ extension EventInjector {
             return
         }
         
-        let currentPosition = event.location
+        let displayLayoutManager = DisplayLayoutManager.shared
+        let layouts = displayLayoutManager.displayLayouts.snapshot()
+        let mainScreen = layouts[CGMainDisplayID()]
         
-        let position = DisplayLayoutManager.shared.clampToNearestScreen(CGPoint(
-            x: currentPosition.x + CGFloat(position.x),
-            y: currentPosition.y + CGFloat(position.y)
-        ))
+        let currentCGPosition = event.location
+        let currentX11Position = mainScreen.map {
+            CursorState.toX11Coordinate(currentCGPosition, mainScreen: $0)
+        } ?? currentCGPosition
+        
+        let targetX11Position = CGPoint(
+            x: currentX11Position.x + CGFloat(position.x),
+            y: currentX11Position.y + CGFloat(position.y)
+        )
+        
+        let clampedX11Position = CursorState.clampToNearestScreen(targetX11Position, layouts: layouts)
+        let position = mainScreen.map {
+            CursorState.toCoreGraphicsCoordinate(clampedX11Position, mainScreen: $0)
+        } ?? clampedX11Position
         
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -162,25 +182,33 @@ extension EventInjector {
             return
         }
         
-        let currentPosition = event.location
+        let displayLayoutManager = DisplayLayoutManager.shared
+        let layouts = displayLayoutManager.displayLayouts.snapshot()
+        let mainScreen = layouts[CGMainDisplayID()]
         
-        // Find which screen contains currentPosition
-        // We use DisplayLayoutManager to find the screen (NOCScreen) for X11-like global coordinates
-        // Assuming currentPosition is in global coordinates (Top-Left 0,0)
+        let currentCGPosition = event.location
+        let currentX11Position = mainScreen.map {
+            CursorState.toX11Coordinate(currentCGPosition, mainScreen: $0)
+        } ?? currentCGPosition
         
         let screenFrame: CGRect
-        if let (displayID, _) = DisplayLayoutManager.shared.resolveRelativePoint(point: currentPosition),
-           let screen = DisplayLayoutManager.shared.layoutStorage.get(displayID) {
+        if let screen = layouts.first(where: { $0.value.frame.contains(currentX11Position) })?.value {
             screenFrame = screen.frame
+        } else if let mainScreen {
+            screenFrame = mainScreen.frame
         } else {
-            // Fallback to Main Display
-            screenFrame = NSScreen.main?.frame ?? CGRect(x: 0, y: 0, width: 1920, height: 1080)
+            screenFrame = CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
         }
         
-        let position = DisplayLayoutManager.shared.clampToNearestScreen(CGPoint(
-            x: currentPosition.x + (CGFloat(position.x) * screenFrame.size.width),
-            y: currentPosition.y + (CGFloat(position.y) * screenFrame.size.height)
-        ))
+        let targetX11Position = CGPoint(
+            x: currentX11Position.x + (CGFloat(position.x) * screenFrame.size.width),
+            y: currentX11Position.y + (CGFloat(position.y) * screenFrame.size.height)
+        )
+        
+        let clampedX11Position = CursorState.clampToNearestScreen(targetX11Position, layouts: layouts)
+        let position = mainScreen.map {
+            CursorState.toCoreGraphicsCoordinate(clampedX11Position, mainScreen: $0)
+        } ?? clampedX11Position
 
         
 

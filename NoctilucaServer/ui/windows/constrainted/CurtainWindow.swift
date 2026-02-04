@@ -11,9 +11,9 @@ import Cocoa
 /// 커튼 윈도우
 class CurtainWindow: NSWindow, ConstraintedNSWindow {
     // 초기화 메서드를 커스텀하여 편하게 만들기 (선택 사항)
-    required init(to screen: NSScreen) {
+    required init(to screen: NOCScreen) {
         super.init(
-            contentRect: screen.frame,
+            contentRect: screen.backingNSScreen?.frame ?? .zero,
             styleMask: [.borderless], // 테두리 없음!
             backing: .buffered,
             defer: false

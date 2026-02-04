@@ -14,7 +14,7 @@ class CursorEventSubscription {
     let id: UUID = UUID()
     
     private let cursorStateHolder = CursorStateHolder.shared
-    private var positionSubscription: AnyCancellable? = nil
+    private var stateSubscription: AnyCancellable? = nil
     private var cursorSubscription: AnyCancellable? = nil
 
     weak var channel: ProjectionChannel? = nil
@@ -23,22 +23,26 @@ class CursorEventSubscription {
     }
     
     deinit {
-        self.positionSubscription?.cancel()
+        self.stateSubscription?.cancel()
         self.cursorSubscription?.cancel()
     }
     
     @MainActor
     func setup() {
-        let positionSubscription = cursorStateHolder.$cursorPosition
+        let stateSubscription = cursorStateHolder.$cursorState
             .receive(on: RunLoop.main)
             .throttle(for: .milliseconds(1000 / 60), scheduler: RunLoop.main, latest: true)
-            .sink { [weak self] position in
+            .sink { [weak self] state in
                 guard let channel = self?.channel else {
                     return
                 }
                 
+                guard let state else {
+                    return
+                }
+                
                 Task {
-                    try? await channel.sendCursorPositionEvent(position)
+                    try? await channel.sendCursorPositionEvent(state)
                 }
             }
         
@@ -55,13 +59,13 @@ class CursorEventSubscription {
             }
         
         
-        self.positionSubscription = positionSubscription
-        self.cursorSubscription   = cursorSubscription
+        self.stateSubscription = stateSubscription
+        self.cursorSubscription = cursorSubscription
     }
     
     func destroy() {
-        self.positionSubscription?.cancel()
-        self.positionSubscription = nil
+        self.stateSubscription?.cancel()
+        self.stateSubscription = nil
         
         self.cursorSubscription?.cancel()
         self.cursorSubscription = nil

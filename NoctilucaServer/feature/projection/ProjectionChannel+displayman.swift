@@ -17,7 +17,7 @@ extension ProjectionChannel {
 
     func handleDisplayListRequest(_ request: DisplayListRequest) async throws {
         let displayLayoutManager = await DisplayLayoutManager.shared
-        let layouts = await displayLayoutManager.displayLayouts
+        let layouts = displayLayoutManager.displayLayouts
 
         var displays: [DisplayInfo] = []
 
@@ -107,12 +107,13 @@ extension ProjectionChannel {
                 metadata: [:],
                 flags: 0
             )
-        } else if let screen = event.screen {
-            displayInfo = buildDisplayInfo(from: screen, displayID: event.displayID)
         } else {
-            // screen이 없는데 disconnected도 아닌 경우 - 이론적으로는 발생하지 않아야 함
-            logger.warning("sendDisplayChangedEvent(): screen is nil but event is not disconnected: \(event.eventType)")
-            return
+            let displayID = event.displayID
+            guard let nocScreen = DisplayLayoutManager.shared.displayLayouts[displayID] else {
+                return
+            }
+            
+            displayInfo = buildDisplayInfo(from: nocScreen, displayID: event.displayID)
         }
 
         try await self.send(opcode: .displayChangedEvent, message: DisplayChangedEvent(
@@ -123,12 +124,14 @@ extension ProjectionChannel {
 
     // MARK: - Build DisplayInfo
 
-    private func buildDisplayInfo(from screen: NSScreen, displayID: CGDirectDisplayID) -> DisplayInfo {
+    private func buildDisplayInfo(from screen: NOCScreen, displayID: CGDirectDisplayID) -> DisplayInfo {
         // 디스플레이 종류 판별
         let kind = getDisplayKind(displayID: displayID)
+        
+        let nsScreen = screen.backingNSScreen
 
         // 디스플레이 이름
-        let displayName = screen.localizedName
+        let displayName = nsScreen?.localizedName ?? ""
 
         // 상태 정보
         let isPrimary = CGDisplayIsMain(displayID) != 0
@@ -147,10 +150,18 @@ extension ProjectionChannel {
         let colorDepth = getColorDepth(displayID: displayID)
 
         // 다이나믹 레인지 (HDR 지원 여부)
-        let dynamicRange = getDynamicRange(screen: screen)
+        let dynamicRange = if let nsScreen {
+            getDynamicRange(screen: nsScreen)
+        } else {
+            DisplayDynamicRange.sdr
+        }
 
         // 색상 프로파일
-        let colorProfile = getColorProfile(screen: screen)
+        let colorProfile = if let nsScreen {
+            getColorProfile(screen: nsScreen)
+        } else {
+            DisplayColorProfile.sRGB
+        }
 
         // 물리적 크기 정보
         let physicalSizeInfo = getPhysicalSizeInfo(displayID: displayID)

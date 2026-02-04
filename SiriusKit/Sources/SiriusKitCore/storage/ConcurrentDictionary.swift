@@ -71,6 +71,14 @@ public final class ConcurrentDictionary<Key: Hashable, Value> {
     public func reserveCapacity(_ minimumCapacity: Int) {
         lock.withLock { dictionary.reserveCapacity(minimumCapacity) }
     }
+    
+    public func replaceSnapshot(_ snapshot: [Key: Value]) {
+        lock.withLock { dictionary = snapshot }
+    }
+    
+    public func snapshot() -> [Key: Value] {
+        lock.withLock { dictionary }
+    }
 }
 
 @available(iOS 16.0, macOS 13.0, *)

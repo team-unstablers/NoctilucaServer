@@ -13,29 +13,6 @@ import CoreGraphics
 
 import SiriusKit
 
-final class ThreadSafeLayoutStorage: @unchecked Sendable {
-    private var layouts: [CGDirectDisplayID: NOCScreen] = [:]
-    private let lock = NSLock()
-    
-    func update(_ newLayouts: [CGDirectDisplayID: NOCScreen]) {
-        lock.lock()
-        defer { lock.unlock() }
-        layouts = newLayouts
-    }
-    
-    func get(_ displayID: CGDirectDisplayID) -> NOCScreen? {
-        lock.lock()
-        defer { lock.unlock() }
-        return layouts[displayID]
-    }
-    
-    func getAll() -> [CGDirectDisplayID: NOCScreen] {
-        lock.lock()
-        defer { lock.unlock() }
-        return layouts
-    }
-}
-
 enum DisplayLayoutManagerMonitoringState {
     case idle
     case monitoring
@@ -46,6 +23,24 @@ struct DisplayChangeEvent {
     let displayID: CGDirectDisplayID
     let eventType: DisplayChangeEventType
     let screen: NSScreen?
+}
+
+fileprivate extension CGDisplayChangeSummaryFlags {
+    var asSiriusEventType: DisplayChangeEventType {
+        if self.contains(.addFlag) || self.contains(.enabledFlag) {
+            return .connected
+        }
+        
+        if self.contains(.removeFlag) || self.contains(.disabledFlag) {
+            return .disconnected
+        }
+        
+        if self.contains(.setMainFlag) {
+            return .becamePrimary
+        }
+        
+        return .modified
+    }
 }
 
 fileprivate func displayReconfigurationCallback(
@@ -64,97 +59,39 @@ fileprivate func displayReconfigurationCallback(
 
     let monitor = DisplayLayoutManager.fromCInteropHandle(userInfo)
 
+    monitor.updateDisplayLayouts()
     Task { @MainActor in
-        monitor.updateDisplayLayouts(displayID: displayID, flags: flags)
-    }
-}
-
-/// '제정신인' 디스플레이 정보를 나타냅니다.
-///
-/// # 왜 '제정신'인가
-///
-/// NOCScreen은 X11 좌표계를 기준으로 계산됩니다.
-/// - NOCScreen의 (0, 0)은 그냥 전체 뷰포트의 (0, 0)입니다. NSScreen의 (0, 0)은 메인 디스플레이의 좌측 상단입니다.
-/// - NOCScreen의 y축은 아래로 증가합니다. 반면 NSScreen의 y축은 위로 증가합니다.
-///
-struct NOCScreen: Identifiable, Hashable, Equatable {
-    /// 디스플레이 ID.
-    let id: CGDirectDisplayID
-    
-    /// 디스플레이의 프레임.
-    /// origin = 좌측 상단
-    /// size = 디스플레이 해상도 (픽셀 단위)
-    let frame: CGRect
-    
-    /// 디스플레이의 스케일 팩터 (@1x, @2x, ...)
-    let scaleFactor: CGFloat
-    
-    init(id: CGDirectDisplayID, frame: CGRect, scaleFactor: CGFloat) {
-        self.id = id
-        self.frame = frame
-        self.scaleFactor = scaleFactor
-    }
-    
-    init?(from nsScreen: NSScreen, anchor mainScreen: NSScreen) {
-        guard let displayID = nsScreen.compatibleDisplayID else {
-            // fatalError("[WTF] NOCScreen.init(from:): NSScreen.compatibleDisplayID is nil")
-            return nil
-        }
-        
-        let nsFrame = nsScreen.frame
-        let mainFrame = mainScreen.frame
-        
-        // NSScreen 좌표계를 NOCScreen 좌표계로 변환
-        let nocOrigin = CGPoint(
-            x: nsFrame.origin.x,
-            y: mainFrame.size.height - (nsFrame.origin.y + nsFrame.size.height)
-        )
-       
-        let nocFrame = CGRect(origin: nocOrigin, size: nsFrame.size)
-        
-        self.id = displayID
-        self.frame = nocFrame
-        self.scaleFactor = nsScreen.backingScaleFactor
+        monitor.publishDisplayChangeEvent(DisplayChangeEvent(
+            displayID: displayID,
+            eventType: flags.asSiriusEventType,
+            screen: NSScreen.screens.first { $0.compatibleDisplayID == displayID }
+        ))
     }
 }
 
 /// 디스플레이 구성이 변경될 때 알림을 제공하는 모니터입니다.
-@MainActor
 class DisplayLayoutManager: ObservableObject, CInteropHandle {
     nonisolated static let shared = DisplayLayoutManager()
 
     let logger = NoctilucaLogger(category: "DisplayReconfigurationMonitor")
 
     @Published
-    private(set) var displayLayouts: [CGDirectDisplayID: NSScreen] = [: ]
+    private(set) var globalFrame: CGRect = .zero
+    @Published
+    private(set) var intermediateGlobalFrame: CGRect = .zero
     
-    // TODO: 추후 displayLayouts을 얘가 잡아먹어야 함
-    private(set) var nocDisplayLayouts: [CGDirectDisplayID: NOCScreen] = [:]
-
-    nonisolated let layoutStorage = ThreadSafeLayoutStorage()
+    private(set) var displayLayouts = ConcurrentDictionary<CGDirectDisplayID, NOCScreen>()
+    
+    let displayChangeSubject = PassthroughSubject<DisplayChangeEvent, Never>()
+    let displayLayoutChangeSubject = PassthroughSubject<[CGDirectDisplayID: NOCScreen], Never>()
 
     @Published
     private(set) var monitoringState: DisplayLayoutManagerMonitoringState = .idle
 
     private var updateDisplayLayoutsTask: Task<Void, Never>? = nil
 
-    /// 디바운스 중인 이벤트들을 저장합니다.
-    private var pendingEvents: [(displayID: CGDirectDisplayID, flags: CGDisplayChangeSummaryFlags)] = []
-
-    private let displayChangeSubject = PassthroughSubject<DisplayChangeEvent, Never>()
-
-    /// 디스플레이 변경 이벤트를 발행하는 퍼블리셔입니다.
-    /// 1초의 디바운스가 적용됩니다.
-    var displayChangePublisher: AnyPublisher<DisplayChangeEvent, Never> {
-        displayChangeSubject
-            .debounce(for: .seconds(1.0), scheduler: RunLoop.main)
-            .eraseToAnyPublisher()
-    }
-
-    /// 디바운스 없이 즉시 이벤트를 받는 퍼블리셔입니다.
-    var displayChangePublisherImmediate: AnyPublisher<DisplayChangeEvent, Never> {
-        displayChangeSubject.eraseToAnyPublisher()
-    }
+    /// 전송 대기 이벤트
+    private var pendingEvents: [DisplayChangeEvent] = []
     
     nonisolated init() {
         self.logger.debug("new DisplayReconfigurationMonitor created")
@@ -170,40 +107,30 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
     func updateDisplayLayouts() {
         // debounce
         self.updateDisplayLayoutsTask?.cancel()
-
         self.updateDisplayLayoutsTask = Task { @MainActor in
             do {
                 try await Task.sleep(for: .milliseconds(1000))
                 self.updateDisplayLayoutsInner()
+                
+                for event in pendingEvents {
+                    displayChangeSubject.send(event)
+                }
+                
+                pendingEvents.removeAll()
+                displayLayoutChangeSubject.send(displayLayouts.snapshot())
             } catch {
-                // pass
+                // cancelled
             }
         }
     }
-
-    func updateDisplayLayouts(displayID: CGDirectDisplayID, flags: CGDisplayChangeSummaryFlags) {
-        // 이벤트를 저장
-        self.pendingEvents.append((displayID: displayID, flags: flags))
-
-        // debounce
-        self.updateDisplayLayoutsTask?.cancel()
-
-        self.updateDisplayLayoutsTask = Task { @MainActor in
-            do {
-                try await Task.sleep(for: .milliseconds(1000))
-                self.updateDisplayLayoutsInner()
-            } catch {
-                // pass
-            }
-        }
-    }
-
+    
+    @MainActor
     private func updateDisplayLayoutsInner() {
         self.logger.info("updateDisplayLayouts(): updating display layouts...")
-
-        let previousLayouts = self.displayLayouts
-        var newLayouts: [CGDirectDisplayID: NSScreen] = [:]
-        var newNocLayouts: [CGDirectDisplayID: NOCScreen] = [:]
+        var newLayouts: [CGDirectDisplayID: NOCScreen] = [:]
+        
+        let intermediateGlobalFrame = NOCScreen.produceIntermediateGlobalFrame(from: NSScreen.screens)
+        let globalFrame = NOCScreen.produceGlobalFrame(from: NSScreen.screens)
 
         for screen in NSScreen.screens {
             guard let displayID = screen.compatibleDisplayID else {
@@ -212,96 +139,19 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
                 continue
             }
 
-            newLayouts[displayID] = screen
-            newNocLayouts[displayID] = NOCScreen(from: screen, anchor: NSScreen.main!)
+            newLayouts[displayID] = NOCScreen(from: screen, intermediateGlobalFrame: intermediateGlobalFrame)
         }
 
-        self.displayLayouts    = newLayouts
-        self.nocDisplayLayouts = newNocLayouts
-        
-        self.layoutStorage.update(newNocLayouts)
-
-        // 이벤트 발행
-        self.publishDisplayChangeEvents(previousLayouts: previousLayouts, newLayouts: newLayouts)
-        self.pendingEvents.removeAll()
-    }
-
-    private func publishDisplayChangeEvents(
-        previousLayouts: [CGDirectDisplayID: NSScreen],
-        newLayouts: [CGDirectDisplayID: NSScreen]
-    ) {
-        // 대기 중인 이벤트가 없으면 전체 레이아웃 변경을 감지
-        if pendingEvents.isEmpty {
-            // 새로 연결된 디스플레이
-            for (displayID, screen) in newLayouts where previousLayouts[displayID] == nil {
-                let event = DisplayChangeEvent(
-                    displayID: displayID,
-                    eventType: .connected,
-                    screen: screen
-                )
-                displayChangeSubject.send(event)
-            }
-
-            // 연결 해제된 디스플레이
-            for displayID in previousLayouts.keys where newLayouts[displayID] == nil {
-                let event = DisplayChangeEvent(
-                    displayID: displayID,
-                    eventType: .disconnected,
-                    screen: nil
-                )
-                displayChangeSubject.send(event)
-            }
-            return
-        }
-
-        // 대기 중인 이벤트들을 처리
-        var processedDisplayIDs = Set<CGDirectDisplayID>()
-
-        for (displayID, flags) in pendingEvents {
-            // 이미 처리한 디스플레이는 스킵
-            guard !processedDisplayIDs.contains(displayID) else {
-                continue
-            }
-            processedDisplayIDs.insert(displayID)
-
-            let eventType = self.eventTypeFromFlags(flags)
-            let screen = newLayouts[displayID]
-
-            let event = DisplayChangeEvent(
-                displayID: displayID,
-                eventType: eventType,
-                screen: screen
-            )
-
-            self.logger.debug("publishDisplayChangeEvents(): displayID=\(displayID), eventType=\(eventType)")
-            displayChangeSubject.send(event)
-        }
-    }
-
-    private func eventTypeFromFlags(_ flags: CGDisplayChangeSummaryFlags) -> DisplayChangeEventType {
-        var eventType: DisplayChangeEventType = []
-
-        if flags.contains(.addFlag) {
-            eventType.insert(.connected)
-        }
-        if flags.contains(.removeFlag) {
-            eventType.insert(.disconnected)
-        }
-        if flags.contains(.movedFlag) || flags.contains(.setModeFlag) || flags.contains(.setMainFlag) {
-            eventType.insert(.modified)
-        }
-        if flags.contains(.setMainFlag) {
-            eventType.insert(.becamePrimary)
-        }
-
-        // 플래그가 비어있으면 modified로 처리
-        if eventType.isEmpty {
-            eventType = .modified
-        }
-
-        return eventType
+        self.displayLayouts.replaceSnapshot(newLayouts)
+        self.intermediateGlobalFrame = intermediateGlobalFrame
+        self.globalFrame = globalFrame
     }
     
+    @MainActor
+    fileprivate func publishDisplayChangeEvent(_ event: DisplayChangeEvent) {
+        pendingEvents.append(consume event)
+    }
+   
     func startMonitoring() {
         self.logger.debug("startMonitoring(): registering display reconfiguration callback...")
         
@@ -331,110 +181,3 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
     }
 }
 
-extension DisplayLayoutManager {
-    /// 주어진 디스플레이 ID와 퍼센트 좌표를 기반으로 X11(Global Top-Left) 좌표계의 절대 좌표를 반환합니다.
-    nonisolated func globalPoint(fromPercent point: CGPoint, on displayID: CGDirectDisplayID) -> CGPoint? {
-        guard let screen = self.layoutStorage.get(displayID) else { return nil }
-        
-        let x = screen.frame.origin.x + (screen.frame.width * point.x)
-        let y = screen.frame.origin.y + (screen.frame.height * point.y)
-        
-        return CGPoint(x: x, y: y)
-    }
-
-    /// NSEvent를 통해 취득한 마우스 커서의 위치의 좌표계를 X11 좌표계로 변환합니다.
-    nonisolated static func resolveX11CursorPosition(_ position: CGPoint) -> CGPoint {
-        guard let mainScreen = NSScreen.main else {
-            return position
-        }
-        
-        let mainFrame = mainScreen.frame
-        
-        let x11Position = CGPoint(
-            x: position.x,
-            y: mainFrame.size.height - position.y
-        )
-        
-        return x11Position
-    }
-    
-    
-    /// 주어진 전체 디스플레이 좌표계의 좌표에 대해 해당하는 디스플레이와 상대 좌표를 반환합니다.
-    /// Note: X11 좌표계를 기대합니다
-    nonisolated func resolveRelativePoint(point: CGPoint) -> (CGDirectDisplayID, CGPoint)? {
-        // Thread-safe access via layoutStorage
-        // We need to iterate over all layouts to find the containing frame
-        // This is a bit inefficient but safe.
-        // Since ThreadSafeLayoutStorage doesn't expose iteration, we might need to add it or expose the dictionary copy.
-        // For now, let's assume get() is not enough.
-        
-        // Let's modify ThreadSafeLayoutStorage to support iteration or getting all layouts.
-        let layouts = self.layoutStorage.getAll()
-        
-        guard let entry = layouts.first(where: { $0.value.frame.contains(point) }) else {
-            return nil
-        }
-        
-        let displayID = entry.key
-        let rect = entry.value.frame
-        
-        let relativePoint = CGPoint(
-            x: point.x - rect.origin.x,
-            y: point.y - rect.origin.y
-        )
-        
-        return (displayID, relativePoint)
-    }
-
-    /// 주어진 좌표를 가장 가까운 화면의 영역 안으로 제한합니다.
-    /// 화면 밖으로 커서가 나가는 것을 방지하고, Dock 등이 정상적으로 호출되도록 합니다.
-    nonisolated func clampToNearestScreen(_ point: CGPoint) -> CGPoint {
-        let layouts = self.layoutStorage.getAll()
-        
-        // 1. 이미 화면 안에 있는지 확인 (가장 일반적인 케이스)
-        // 화면 안에 있더라도 Dock 호출을 위해 경계값 처리가 필요할 수 있으므로
-        // hit test에 성공한 화면을 기준으로 clamp를 수행합니다.
-        for screen in layouts.values {
-            if screen.frame.contains(point) {
-                return self.clamp(point: point, to: screen.frame)
-            }
-        }
-        
-        // 2. 화면 밖인 경우, 가장 가까운 화면을 찾음
-        var nearestScreen: NOCScreen?
-        var minDistance = CGFloat.greatestFiniteMagnitude
-        
-        for screen in layouts.values {
-            let distance = distanceToRect(point: point, rect: screen.frame)
-            if distance < minDistance {
-                minDistance = distance
-                nearestScreen = screen
-            }
-        }
-        
-        guard let screen = nearestScreen else {
-             return point
-        }
-        
-        return self.clamp(point: point, to: screen.frame)
-    }
-
-    nonisolated private func clamp(point: CGPoint, to rect: CGRect) -> CGPoint {
-        // user requirement: max x/y coordinates should be width - 0.1 / height - 0.1
-        let minX = rect.minX
-        let minY = rect.minY
-        let maxX = rect.maxX - 0.1
-        let maxY = rect.maxY - 0.1
-        
-        let x = max(minX, min(point.x, maxX))
-        let y = max(minY, min(point.y, maxY))
-        
-        return CGPoint(x: x, y: y)
-    }
-
-    nonisolated private func distanceToRect(point: CGPoint, rect: CGRect) -> CGFloat {
-        let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
-        let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
-        return sqrt(dx*dx + dy*dy)
-    }
-}

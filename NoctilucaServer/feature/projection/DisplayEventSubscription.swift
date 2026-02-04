@@ -32,7 +32,7 @@ class DisplayEventSubscription {
     @MainActor
     func setup() {
         // displayChangePublisher는 이미 1초 디바운스가 적용되어 있음
-        let subscription = displayLayoutManager.displayChangePublisher
+        let subscription = displayLayoutManager.displayChangeSubject
             .receive(on: RunLoop.main)
             .sink { [weak self] event in
                 guard let self = self,

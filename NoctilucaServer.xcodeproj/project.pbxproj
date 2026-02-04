@@ -17,6 +17,7 @@
 		F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F69644AD2F32C4F20093CFC2 /* Xuanxue */; };
 		F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */; };
 		F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB7E2F2A736300B7CF41 /* SharpYuv.xcframework */; };
 		F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; };
@@ -126,6 +127,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */,
+				F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */,
 				F627113F2F084EC200E8A3D7 /* libz.1.tbd in Frameworks */,
 				F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */,
 				F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */,
@@ -226,6 +228,7 @@
 				F62711432F0852DE00E8A3D7 /* libzstd */,
 				F62689442F1E50F60030D59B /* Gesu */,
 				F6F98E7A2F306B5D0024513A /* SiriusKit */,
+				F69644AD2F32C4F20093CFC2 /* Xuanxue */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -657,6 +660,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
+		};
+		F69644AD2F32C4F20093CFC2 /* Xuanxue */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F63971222F1CCA4400F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */;
+			productName = Xuanxue;
 		};
 		F6F98E7A2F306B5D0024513A /* SiriusKit */ = {
 			isa = XCSwiftPackageProductDependency;

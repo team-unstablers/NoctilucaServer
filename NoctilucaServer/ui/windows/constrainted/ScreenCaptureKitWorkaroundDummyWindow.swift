@@ -11,9 +11,9 @@ import Cocoa
 /// ScreenCaptureKit의 제약을 우회하기 위한 더미 윈도우입니다.
 /// - 특정 버전 이상의 macOS에서의 ScreenCaptureKit은, 화면 캡쳐의 exclusion 대상에 윈도우가 하나도 없을 경우 캡쳐를 허용하지 않는 제약이 있습니다.
 class ScreenCaptureKitWorkaroundDummyWindow: NSWindow, ConstraintedNSWindow {
-    required init(to screen: NSScreen) {
+    required init(to screen: NOCScreen) {
         // 1x1 픽셀을 각 화면의 좌상단에 위치시킴
-        let origin = screen.frame.origin
+        let origin = screen.backingNSScreen?.frame.origin ?? CGPoint.zero
         let rect = NSRect(x: origin.x, y: origin.y, width: 1, height: 1)
         
         super.init(

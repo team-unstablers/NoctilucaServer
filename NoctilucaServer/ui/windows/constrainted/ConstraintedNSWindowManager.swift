@@ -29,13 +29,14 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
             return
         }
         
-        self.subscription = displayLayoutManager.$displayLayouts
+        self.subscription = displayLayoutManager.displayLayoutChangeSubject
+            .debounce(for: .milliseconds(1000), scheduler: RunLoop.main)
             .receive(on: RunLoop.main)
-            .sink { [weak self] displayLayouts in
-                self?.updateWindows(for: displayLayouts)
+            .sink { [weak self] snapshot in
+                self?.updateWindows(for: snapshot)
             }
         
-        self.updateWindows(for: displayLayoutManager.displayLayouts)
+        self.updateWindows(for: displayLayoutManager.displayLayouts.snapshot())
     }
     
     func shutdown() {
@@ -43,7 +44,7 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         self.subscription = nil
     }
     
-    func updateWindows(for displayLayouts: [CGDirectDisplayID: NSScreen]) {
+    func updateWindows(for displayLayouts: [CGDirectDisplayID: NOCScreen]) {
         // 1. Remove windows for disconnected displays
         let currentDisplayIDs = Set(displayLayouts.keys)
         let existingDisplayIDs = Set(windows.keys)
