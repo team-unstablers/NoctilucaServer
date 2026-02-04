@@ -25,6 +25,9 @@ opt_in_rules:
   - explicit_init                  # 타입명() 직접 사용 권장
   - redundant_nil_coalescing       # 불필요한 ?? nil 제거
 
+disabled_rules:
+  - trailing_whitespace
+
 # ============================================================================
 # Rule Configuration
 # ============================================================================
