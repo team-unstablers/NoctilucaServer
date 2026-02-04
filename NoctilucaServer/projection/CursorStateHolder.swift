@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 
 import AppKit
 
@@ -19,28 +18,47 @@ struct CursorState: Hashable, Equatable {
 }
 
 @MainActor
-class CursorStateHolder: ObservableObject {
+class CursorStateHolder {
     static let shared = CursorStateHolder()
-    
+
     let logger = NoctilucaLogger(category: "CursorStateHolder")
-    
-    @Published
+
+    // 직접 접근용 프로퍼티
     private(set) var cursorHash: Int = 0
     private(set) var cursorImage: NSImage? = nil
     private(set) var cursorHotspot: NSPoint? = nil
-    
-    @Published
     private(set) var cursorState: CursorState? = nil
-    
+
+    // AsyncStream (throttle은 소비자 측에서 적용)
+    let cursorStateEvents: AsyncStream<CursorState>
+    private let cursorStateContinuation: AsyncStream<CursorState>.Continuation
+
+    let cursorHashEvents: AsyncStream<Int>
+    private let cursorHashContinuation: AsyncStream<Int>.Continuation
+
     private var observerToken: Any? = nil
-    
+
     init() {
+        // cursorState용 AsyncStream
+        var cursorStateContinuationLocal: AsyncStream<CursorState>.Continuation!
+        self.cursorStateEvents = AsyncStream<CursorState>(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            cursorStateContinuationLocal = continuation
+        }
+        self.cursorStateContinuation = cursorStateContinuationLocal
+
+        // cursorHash용 AsyncStream
+        var cursorHashContinuationLocal: AsyncStream<Int>.Continuation!
+        self.cursorHashEvents = AsyncStream<Int>(bufferingPolicy: .unbounded) { continuation in
+            cursorHashContinuationLocal = continuation
+        }
+        self.cursorHashContinuation = cursorHashContinuationLocal
+
         do {
             try CoreGraphicsPrivate.open()
         } catch {
             logger.error("failed to load CoreGraphics library")
         }
-        
+
         self.startObserveCursorEvent()
         self.updateCursorPosition()
         self.updateCursorHash()
@@ -49,6 +67,8 @@ class CursorStateHolder: ObservableObject {
     @MainActor
     deinit {
         self.stopObserveCursorEvent()
+        self.cursorStateContinuation.finish()
+        self.cursorHashContinuation.finish()
     }
     
     private func startObserveCursorEvent() {
@@ -71,9 +91,10 @@ class CursorStateHolder: ObservableObject {
     func updateCursorPosition() {
         let position = NSEvent.mouseLocation as CGPoint
         let state = CursorState.fromNSEvent(position)
-        
+
         if self.cursorState != state {
             self.cursorState = state
+            self.cursorStateContinuation.yield(state)
         }
     }
     
@@ -81,11 +102,12 @@ class CursorStateHolder: ObservableObject {
         guard let cursorHash = CoreGraphicsPrivate.CGSCurrentCursorSeed?() else {
             return
         }
-        
+
         if cursorHash != self.cursorHash {
-            self.cursorHash  = cursorHash
+            self.cursorHash = cursorHash
             self.cursorImage = NSCursor.currentSystem?.image
             self.cursorHotspot = NSCursor.currentSystem?.hotSpot
+            self.cursorHashContinuation.yield(cursorHash)
         }
     }
 }

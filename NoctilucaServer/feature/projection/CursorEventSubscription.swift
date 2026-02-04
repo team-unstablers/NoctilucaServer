@@ -6,68 +6,57 @@
 //
 
 import Foundation
-import Combine
+import AsyncAlgorithms
 
 import SiriusKit
 
 class CursorEventSubscription {
     let id: UUID = UUID()
-    
+
     private let cursorStateHolder = CursorStateHolder.shared
-    private var stateSubscription: AnyCancellable? = nil
-    private var cursorSubscription: AnyCancellable? = nil
+    private var stateTask: Task<Void, Never>?
+    private var hashTask: Task<Void, Never>?
 
     weak var channel: ProjectionChannel? = nil
-    
+
     init() {
     }
-    
+
     deinit {
-        self.stateSubscription?.cancel()
-        self.cursorSubscription?.cancel()
+        self.stateTask?.cancel()
+        self.hashTask?.cancel()
     }
-    
+
     @MainActor
     func setup() {
-        let stateSubscription = cursorStateHolder.$cursorState
-            .receive(on: RunLoop.main)
-            .throttle(for: .milliseconds(1000 / 60), scheduler: RunLoop.main, latest: true)
-            .sink { [weak self] state in
-                guard let channel = self?.channel else {
-                    return
-                }
-                
-                guard let state else {
-                    return
-                }
-                
-                Task {
-                    try? await channel.sendCursorPositionEvent(state)
-                }
+        // cursorState 소비 - AsyncAlgorithms throttle 적용 (60Hz = ~16.67ms)
+        self.stateTask = Task { [weak self] in
+            guard let self = self else { return }
+
+            let throttled = self.cursorStateHolder.cursorStateEvents
+                .throttle(for: .milliseconds(1000 / 60), latest: true)
+
+            for await state in throttled {
+                guard let channel = self.channel else { continue }
+                try? await channel.sendCursorPositionEvent(state)
             }
-        
-        let cursorSubscription = cursorStateHolder.$cursorHash
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                guard let channel = self?.channel else {
-                    return
-                }
-                
-                Task {
-                    try? await channel.sendCursorImageEvent()
-                }
+        }
+
+        // cursorHash 소비 (throttle 없음)
+        self.hashTask = Task { [weak self] in
+            guard let self = self else { return }
+
+            for await _ in self.cursorStateHolder.cursorHashEvents {
+                guard let channel = self.channel else { continue }
+                try? await channel.sendCursorImageEvent()
             }
-        
-        
-        self.stateSubscription = stateSubscription
-        self.cursorSubscription = cursorSubscription
+        }
     }
-    
+
     func destroy() {
-        self.stateSubscription?.cancel()
-        self.stateSubscription = nil
-        
-        self.cursorSubscription?.cancel()
-        self.cursorSubscription = nil
+        self.stateTask?.cancel()
+        self.stateTask = nil
+        self.hashTask?.cancel()
+        self.hashTask = nil
     }
 }

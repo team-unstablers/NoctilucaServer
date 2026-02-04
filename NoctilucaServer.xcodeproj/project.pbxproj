@@ -18,6 +18,7 @@
 		F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F69644AD2F32C4F20093CFC2 /* Xuanxue */; };
+		F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */; };
 		F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */; };
 		F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB7E2F2A736300B7CF41 /* SharpYuv.xcframework */; };
 		F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; };
@@ -137,6 +138,7 @@
 				F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */,
 				F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */,
 				F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */,
+				F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -229,6 +231,7 @@
 				F62689442F1E50F60030D59B /* Gesu */,
 				F6F98E7A2F306B5D0024513A /* SiriusKit */,
 				F69644AD2F32C4F20093CFC2 /* Xuanxue */,
+				F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -268,6 +271,7 @@
 			packageReferences = (
 				F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */,
 				F63971222F1CCA4400F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */,
+				F69648392F33AAF50093CFC2 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669650C2ECF26770032EF4E /* Products */;
@@ -649,6 +653,14 @@
 				minimumVersion = 1.0.3;
 			};
 		};
+		F69648392F33AAF50093CFC2 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -665,6 +677,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F63971222F1CCA4400F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */;
 			productName = Xuanxue;
+		};
+		F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F69648392F33AAF50093CFC2 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
 		};
 		F6F98E7A2F306B5D0024513A /* SiriusKit */ = {
 			isa = XCSwiftPackageProductDependency;
