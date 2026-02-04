@@ -11,6 +11,9 @@ import Security
 import SwiftMsQuicHelper
 import SiriusKitCore
 
+import CryptoKit
+internal import X509
+
 private func generateAsciiPassword(count: Int) throws -> Data {
     let charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?/"
     var password = try SRSecurity.shared.createSecureRandomBytes(count: 16)
@@ -18,7 +21,7 @@ private func generateAsciiPassword(count: Int) throws -> Data {
     for i in 0..<count {
         let randomIndex = Int(password[i] % UInt8(charset.count))
         let char = charset[charset.index(charset.startIndex, offsetBy: randomIndex)]
-        // swiftlint:disable:next force_cast
+        // swiftlint:disable:next force_unwrapping
         password[i] = char.asciiValue!
     }
     
@@ -50,16 +53,31 @@ final class MsQuicServerIdentityAdapter {
     /// MsQuic용 QuicCredentialConfig를 생성합니다.
     func createCredentialConfig() async throws -> QuicCredentialConfig {
         let secIdentity = try await identity.getServerIdentity()
-        var password = try generateAsciiPassword(count: 16)
+        let password = try generateAsciiPassword(count: 16)
         
         let pemCert = try Self.exportCertificate(identity: secIdentity)
-        let pemKey = try Self.exportPrivateKey(identity: secIdentity, password: password)
+        let privateKey = try secIdentity.extractPrivateKey()
         
-        return QuicCredentialConfig(type: .certificatePem(
-            key: consume pemKey,
-            cert: consume pemCert,
-            password: consume password
-        ))
+        let keyAlgorithm = try privateKey.extractKeyAlgorithm()
+        switch keyAlgorithm {
+        case kSecAttrKeyTypeECSECPrimeRandom:
+            let pemKey = try Self.exportPrivateKey(p256: privateKey)
+            
+            return QuicCredentialConfig(type: .certificatePem(
+                key: consume pemKey,
+                cert: consume pemCert,
+                password: nil
+            ))
+            
+        default:
+            let pemKey = try Self.exportPrivateKey(privateKey, password: password)
+            
+            return QuicCredentialConfig(type: .certificatePem(
+                key: consume pemKey,
+                cert: consume pemCert,
+                password: consume password
+            ))
+        }
     }
     
     // TODO: support certificate chain
@@ -89,14 +107,7 @@ final class MsQuicServerIdentityAdapter {
     }
     
     /// exports private key to PEM format from SecIdentity
-    private static func exportPrivateKey(identity: SecIdentity, password: Data) throws -> Data {
-        var privateKey: SecKey?
-        let status = SecIdentityCopyPrivateKey(identity, &privateKey)
-        
-        guard status == errSecSuccess, let key = privateKey else {
-            throw AdapterError.identityNotAvailable
-        }
-        
+    private static func exportPrivateKey(_ privateKey: SecKey, password: Data) throws -> Data {
         var keyParams = SecItemImportExportKeyParameters()
         keyParams.version = UInt32(SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION)
         let passphrase = password as CFData
@@ -104,20 +115,20 @@ final class MsQuicServerIdentityAdapter {
         
         var keyData: CFData?
         let exportStatus = SecItemExport(
-            key,
+            privateKey,
             .formatWrappedPKCS8,
             [],
             &keyParams,
             &keyData
         )
         
-        guard exportStatus == errSecSuccess, let data = keyData as Data? else {
+        guard exportStatus == errSecSuccess, let data = keyData else {
             throw AdapterError.pemExportFailed(exportStatus)
         }
         
         let pemHeader = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
         let pemFooter = "\n-----END ENCRYPTED PRIVATE KEY-----"
-        let base64Body = data.base64EncodedString(options: .lineLength64Characters)
+        let base64Body = (keyData as? Data)!.base64EncodedString(options: .lineLength64Characters)
         
         let pemString = pemHeader + base64Body + pemFooter
         
@@ -126,5 +137,47 @@ final class MsQuicServerIdentityAdapter {
         }
         
         return pemData
+    }
+    
+    // FIXME: 지금의 내 기술력으론 PEM에 암호화를 걸 수가 없다.. ㅠ_ㅠ
+    private static func exportPrivateKey(p256 privateKey: SecKey) throws -> Data {
+        var error: Unmanaged<CFError>?
+        guard let data = SecKeyCopyExternalRepresentation(privateKey, &error) else {
+            throw AdapterError.pemExportFailed(error?.takeUnretainedValue().asOSStatus() ?? -1)
+        }
+        
+        let ckPrivateKey = try P256.Signing.PrivateKey(x963Representation: data as Data)
+        return ckPrivateKey.pemRepresentation.data(using: .utf8)!
+    }
+}
+
+fileprivate extension SecIdentity {
+    func extractPrivateKey() throws -> SecKey {
+        var privateKey: SecKey?
+        let status = SecIdentityCopyPrivateKey(self, &privateKey)
+        
+        guard status == errSecSuccess, let key = privateKey else {
+            throw MsQuicServerIdentityAdapter.AdapterError.identityNotAvailable
+        }
+        
+        return key
+    }
+}
+
+fileprivate extension SecKey {
+    func extractKeyAlgorithm() throws -> CFString {
+        let cfKeyAttributes = SecKeyCopyAttributes(self)
+        
+        guard let cfKeyAttributes,
+              let keyAttributes = cfKeyAttributes as? [String: Any]
+        else {
+            throw MsQuicServerIdentityAdapter.AdapterError.identityNotAvailable
+        }
+        
+        guard let keyType = keyAttributes[kSecAttrKeyType as String] as? String else {
+            throw MsQuicServerIdentityAdapter.AdapterError.identityNotAvailable
+        }
+        
+        return keyType as CFString
     }
 }

@@ -67,7 +67,8 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
                 kSecAttrKeySizeInBits as String: 256,
                 kSecAttrLabel as String: args.identityLabel,
                 kSecAttrApplicationLabel as String: applicationLabel,
-                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+                kSecAttrIsExtractable as String: true
             ]).get()
 
             // 4. 신뢰 설정 적용
