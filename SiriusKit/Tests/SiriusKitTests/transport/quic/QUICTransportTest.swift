@@ -51,6 +51,10 @@ final class QUICTransportTest {
     @Test("QUIC 프로토콜의 서버가 정상적으로 기동되는가")
     func serverStartsSuccessfully() async throws {
         class TestServerDelegate: ServerRoleRootTransportDelegate {
+            func serverTransport(_ serverTransport: any SiriusKit.ServerRoleRootTransport, didEncounterError error: any Error) {
+                
+            }
+            
             var didStartListening = false
             
             func serverTransportDidStartListening(_ serverTransport: SiriusKit.ServerRoleRootTransport) {

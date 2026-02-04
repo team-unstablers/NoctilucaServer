@@ -69,6 +69,8 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
         self.receiveTask = Task {
             do {
                 try await self.receiveLoop()
+            } catch QuicError.aborted {
+                try? await self.close()
             } catch {
                 if let streamError = error as? StreamError, case .endOfStream = streamError {
                     try? await self.close()

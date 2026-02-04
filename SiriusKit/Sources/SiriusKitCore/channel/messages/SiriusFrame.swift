@@ -25,7 +25,7 @@ public struct SiriusFrame {
     }
 }
 
-extension Data {
+package extension Data {
     func toSiriusFrame() -> SiriusFrame? {
         // assert: self.count() >= (sizeof(UInt16) + sizeof(UInt32))
         guard self.count >= 6 else {
