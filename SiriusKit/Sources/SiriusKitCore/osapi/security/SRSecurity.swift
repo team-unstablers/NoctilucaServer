@@ -40,6 +40,21 @@ package enum SRCertificateTrustScope {
 /// 'S'i'R'ius Keychain - macOS Security.framework 의 Security 관련 기능을 wrap합니다.
 package class SRSecurity {
     package static let shared = SRSecurity()
+    
+    package func createSecureRandomBytes(count: Int) throws -> Data {
+        var buffer = Data(count: count)
+        
+        let status = buffer.withUnsafeMutableBytes { ptr in
+            SecRandomCopyBytes(kSecRandomDefault, count, ptr.baseAddress!)
+        }
+        
+        guard status == errSecSuccess else {
+            // TODO: OSStatus를 따로 넘기거나 하는게 좋을 것 같은데
+            throw SRSecurityError.operationFailed(error: nil)
+        }
+        
+        return consume buffer
+    }
 
     package func createCertificate(using certificate: SRSwiftX509Certificate) -> Result<SecCertificate, SRSecurityError> {
         var derSerializer = DER.Serializer()
