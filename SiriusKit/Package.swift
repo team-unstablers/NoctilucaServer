@@ -25,7 +25,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-asn1.git", from: "1.5.1"),
         .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.0"),
         .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.2"),
-        .package(url: "https://github.com/team-unstablers/swift-msquic", from: "1.0.5"),
+        .package(url: "https://github.com/team-unstablers/swift-msquic", from: "1.0.5+inmemory_pem"),
         // .package(path: "../../swift-msquic"),
     ],
     targets: [

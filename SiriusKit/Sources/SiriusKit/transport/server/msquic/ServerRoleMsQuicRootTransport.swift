@@ -79,11 +79,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         }
 
         // 2. TLS 인증서 어댑터 생성
-        do {
-            self.identityAdapter = try await MsQuicServerIdentityAdapter(identity: identity)
-        } catch {
-            throw ServerRoleMsQuicRootTransportError.identityAdapterFailed(error)
-        }
+        self.identityAdapter = MsQuicServerIdentityAdapter(identity: identity)
 
         guard let identityAdapter = self.identityAdapter else {
             throw ServerRoleMsQuicRootTransportError.identityAdapterFailed(
@@ -111,13 +107,21 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         }
 
         // 4. TLS Credential 로드
-        let credential = identityAdapter.createCredentialConfig()
         do {
-            try configuration.loadCredential(credential)
+            let credential = try await identityAdapter.createCredentialConfig()
+            do {
+                try configuration.loadCredential(credential)
+            } catch {
+                throw ServerRoleMsQuicRootTransportError.credentialLoadFailed
+            }
         } catch {
-            throw ServerRoleMsQuicRootTransportError.credentialLoadFailed
+            if error is ServerRoleMsQuicRootTransportError {
+                throw error
+            }
+            
+            throw ServerRoleMsQuicRootTransportError.identityAdapterFailed(error)
         }
-
+        
         // 5. Listener 생성 및 시작
         do {
             self.listener = try QuicListener(registration: registration)
