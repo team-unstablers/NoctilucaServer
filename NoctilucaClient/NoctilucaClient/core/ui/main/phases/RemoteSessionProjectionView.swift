@@ -126,6 +126,7 @@ struct RemoteSessionProjectionView: View {
                         .allowsHitTesting(false)
                         // 화면 줌인/아웃 시 커서도 같이 확대/축소 및 이동
                         .scaleEffect(scale)
+                        .opacity(projection.cursorState.displayID == source?.displayID ? 1.0 : 0.0)
                 }
                 
 #if os(iOS)
