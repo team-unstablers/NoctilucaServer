@@ -34,7 +34,7 @@ class CursorEventSubscription {
             guard let self = self else { return }
 
             let throttled = self.cursorStateHolder.cursorStateEvents
-                .throttle(for: .milliseconds(1000 / 60), latest: true)
+                ._throttle(for: .milliseconds(1000 / 60), latest: true)
 
             for await state in throttled {
                 guard let channel = self.channel else { continue }
