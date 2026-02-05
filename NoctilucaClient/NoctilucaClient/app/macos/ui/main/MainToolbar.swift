@@ -69,6 +69,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         toolbar.centeredItemIdentifiers = [.nocAddressBar]
         toolbar.allowsUserCustomization = false
         toolbar.autosavesConfiguration = false
+        toolbar.displayMode = .iconOnly
         self.toolbar = toolbar
         
         window.toolbarStyle = .unified
