@@ -72,6 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             do {
                 try await server.startup()
             } catch {
+                // FIXME: 알림을 쏘십시오...
                 print(error.localizedDescription)
             }
         }
@@ -83,6 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             do {
                 try await server.shutdown()
             } catch {
+                // FIXME: 알림을 쏘십시오...
                 print(error.localizedDescription)
             }
         }
