@@ -70,6 +70,10 @@ private final class MouseInputCaptureView: NSView {
         true
     }
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
     func updatePointer(_ pointer: HIDIOAppKitPointer) {
         self.pointer = pointer
     }
@@ -84,7 +88,7 @@ private final class MouseInputCaptureView: NSView {
         let options: NSTrackingArea.Options = [
             .mouseEnteredAndExited,
             .mouseMoved,
-            .activeInKeyWindow,
+            .activeInActiveApp,
             .inVisibleRect
         ]
 
@@ -110,6 +114,7 @@ private final class MouseInputCaptureView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        handleMoveEvent(event)
         pointer.buttonDown(.left)
     }
 
@@ -118,6 +123,7 @@ private final class MouseInputCaptureView: NSView {
     }
 
     override func rightMouseDown(with event: NSEvent) {
+        handleMoveEvent(event)
         pointer.buttonDown(.right)
     }
 
@@ -130,6 +136,7 @@ private final class MouseInputCaptureView: NSView {
             return
         }
 
+        handleMoveEvent(event)
         pointer.buttonDown(button)
     }
 
@@ -149,6 +156,7 @@ private final class MouseInputCaptureView: NSView {
             delta = CGPoint(x: event.deltaX * 10.0, y: event.deltaY * 10.0)
         }
 
+        handleMoveEvent(event)
         pointer.scroll(delta: delta)
     }
 
