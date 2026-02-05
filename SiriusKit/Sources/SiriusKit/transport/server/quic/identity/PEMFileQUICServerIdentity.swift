@@ -8,6 +8,7 @@
 import Foundation
 import Security
 import CryptoKit
+import _CryptoExtras
 
 internal import SwiftASN1
 internal import X509
@@ -75,30 +76,26 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
         }
 
         let certData = try loadPEMData(atPath: certPath, type: "CERTIFICATE")
-        let keyData = try loadPEMData(atPath: keyPath, type: "PRIVATE KEY")
+        let (privateKey, keyType) = try loadPrivateKeyFromPEM(atPath: keyPath)
 
         guard let secCertificate = SecCertificateCreateWithData(nil, certData as CFData) else {
             throw QUICServerIdentityCreationError.certificateCreationFailed
         }
 
         let keyAttributes: [String: Any] = [
-            kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+            kSecAttrKeyType as String: keyType.secKeyType,
             kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-            kSecAttrKeySizeInBits as String: 256
+            kSecAttrKeySizeInBits as String: keyType.keySizeInBits
         ]
         var error: Unmanaged<CFError>?
 
-        // SecKeyCreateWithData는 PKCS#8 DER을 직접 받지 못하므로, 우선 X9.63 형식으로 시도하고
-        // 실패 시 PKCS#8을 CryptoKit으로 파싱해 X9.63으로 변환한 뒤 재시도한다.
         let secPrivateKey: SecKey?
-        if let directKey = SecKeyCreateWithData(keyData as CFData, keyAttributes as CFDictionary, &error) {
-            secPrivateKey = directKey
-        } else if let parsed = try? P256.Signing.PrivateKey(derRepresentation: keyData) {
-            error = nil
-            let x963 = parsed.x963Representation
+        switch privateKey {
+        case .p256(let key):
+            let x963 = key.x963Representation
             secPrivateKey = SecKeyCreateWithData(x963 as CFData, keyAttributes as CFDictionary, &error)
-        } else {
-            secPrivateKey = nil
+        case .rsa(let key):
+            secPrivateKey = SecKeyCreateWithData(key.derRepresentation as CFData, keyAttributes as CFDictionary, &error)
         }
 
         // FIXME: 신뢰 여부를 확인할 수 있었으면 좋겠는데..
@@ -132,10 +129,56 @@ func pemEncode(type: String, serializer: (inout DER.Serializer) throws -> Void) 
 
 func loadPEMData(atPath path: String, type: String) throws -> Data {
     let pemString = try String(contentsOfFile: path, encoding: .utf8)
+    guard let data = extractPEMData(from: pemString, type: type) else {
+        throw QUICServerIdentityCreationError.identityNotFound
+    }
+
+    return data
+}
+
+func loadPrivateKeyFromPEM(atPath path: String) throws -> (IdentityPrivateKey, IdentityKeyType) {
+    let pemString = try String(contentsOfFile: path, encoding: .utf8)
+
+    if let data = extractPEMData(from: pemString, type: "PRIVATE KEY") {
+        let key = try PKCS8Parser.parse(data)
+        return (key, try identityKeyType(for: key))
+    }
+
+    if let data = extractPEMData(from: pemString, type: "RSA PRIVATE KEY") {
+        let rsaKey = try _RSA.Signing.PrivateKey(derRepresentation: data)
+        let key = IdentityPrivateKey.rsa(rsaKey)
+        return (key, try identityKeyType(for: key))
+    }
+
+    if let data = extractPEMData(from: pemString, type: "EC PRIVATE KEY") {
+        let ecKey = try P256.Signing.PrivateKey(derRepresentation: data)
+        return (.p256(ecKey), .p256)
+    }
+
+    throw QUICServerIdentityCreationError.identityNotFound
+}
+
+private func identityKeyType(for key: IdentityPrivateKey) throws -> IdentityKeyType {
+    switch key {
+    case .p256:
+        return .p256
+    case .rsa(let rsaKey):
+        switch rsaKey.keySizeInBits {
+        case 2048:
+            return .rsa2048
+        case 4096:
+            return .rsa4096
+        default:
+            throw PKCS8ParseError.unsupportedAlgorithm
+        }
+    }
+}
+
+private func extractPEMData(from pemString: String, type: String) -> Data? {
     guard let beginRange = pemString.range(of: "-----BEGIN \(type)-----"),
           let endRange = pemString.range(of: "-----END \(type)-----")
     else {
-        throw QUICServerIdentityCreationError.identityNotFound
+        return nil
     }
 
     let body = pemString[beginRange.upperBound..<endRange.lowerBound]
@@ -144,9 +187,5 @@ func loadPEMData(atPath path: String, type: String) throws -> Data {
         .replacingOccurrences(of: "\n", with: "")
         .replacingOccurrences(of: " ", with: "")
 
-    guard let data = Data(base64Encoded: stripped) else {
-        throw QUICServerIdentityCreationError.identityNotFound
-    }
-
-    return data
+    return Data(base64Encoded: stripped)
 }
