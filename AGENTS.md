@@ -5,26 +5,72 @@
 Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는 서버/클라이언트 앱과
 핵심 프로토콜 라이브러리를 함께 관리하는 **monorepo**입니다.
 
+# BUILD COMMANDS
+
+## Workspace 사용 (권장)
+빌드 시에는 반드시 `NoctilucaServer.xcworkspace`를 사용합니다.
+
+```bash
+# 서버 빌드 (macOS)
+xcodebuild -workspace NoctilucaServer.xcworkspace -scheme NoctilucaServer -configuration Debug build
+
+# 클라이언트 빌드 (macOS)
+xcodebuild -workspace NoctilucaServer.xcworkspace -scheme NoctilucaClient -configuration Debug build
+
+# 클라이언트 빌드 (iOS Simulator)
+xcodebuild -workspace NoctilucaServer.xcworkspace -scheme NoctilucaClient -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16' build
+```
+
+## XcodeBuildMCP 사용 (에이전트 환경)
+XcodeBuildMCP가 구성된 환경에서는 `mcp__XcodeBuildMCP__*` 도구를 우선 사용합니다.
+```bash
+# 세션 기본값 설정 후 빌드
+session-set-defaults → build_sim / build_run_sim
+```
+
+# TEST COMMANDS
+
+```bash
+# 서버 테스트
+xcodebuild -workspace NoctilucaServer.xcworkspace -scheme NoctilucaServerTests -configuration Debug test
+
+# 특정 테스트 클래스 실행
+xcodebuild -workspace NoctilucaServer.xcworkspace -scheme NoctilucaServerTests -only-testing:NoctilucaServerTests/AutoQualityPlannerTests test
+```
+
+# LINTING
+
+SwiftLint가 `.swiftlint.yml`로 구성되어 있습니다.
+```bash
+swiftlint lint --config .swiftlint.yml
+```
+
 # REPOSITORY LAYOUT (TOP-LEVEL)
 
-- `SiriusKit/` - Sirius 프로토콜/채널/트랜스포트 코어 라이브러리 (server/client 공용)
+- `SiriusKit/` - Sirius 프로토콜/채널/트랜스포트 코어 라이브러리 (server/client 공용, SwiftPM)
 - `NoctilucaServer/` - macOS 호스트 앱 (세션 수락, 인증, 입력 인젝션, 화면 전송)
 - `NoctilucaClient/` - macOS/iOS 클라이언트 앱 (연결/인증, 입력 전송, 화면 수신/디코딩)
 - `NoctilucaPluginKit/` - 플러그인 번들 계약/메타데이터 스펙
 - `SamplePluginBundle/` - 샘플 플러그인 번들
-- `docs/`, `NoctilucaServer.xcworkspace`, `NoctilucaServerTests/` 등
+- `Gesu/` - Private API 호출용 Swift 매크로 라이브러리 (`@PrivateLibrary`, `#PrivateFunction`)
+- `frameworks/` - 외부 xcframework 의존성 (WebP, SharpYuv, libturbojpeg)
+- `libbcrypt/` - bcrypt 라이브러리 (PAM 인증용)
+- `NoctilucaServerTests/` - 서버 테스트
+- `docs/`, `distutil/`, `pam.d/` 등 유틸리티
 
 # TECHNOLOGIES USED (CROSS-CUTTING)
 
-- Swift / SwiftUI
+- Swift / SwiftUI / Swift Concurrency
 - Network.framework (QUIC)
 - SwiftProtobuf 3 (Sirius msgdef)
-- ScreenCaptureKit + AVFoundation(AVCaptureSession)
-- VideoToolbox (H.264/H.265 encode/decode)
+- ScreenCaptureKit + AVFoundation (AVCaptureSession, AVAudioEngine)
+- VideoToolbox (H.264/H.265/WebP encode/decode)
+- AudioToolbox / AVAudioConverter (Opus/G.711 encode/decode)
 - CoreGraphics / CoreMedia
 - Security.framework / Keychain
 - GameController (클라이언트 입력 디바이스)
 - OSLog/콘솔 로깅
+- Swift Macros (Gesu - Private API 호출)
 
 # ARCHITECTURE OVERVIEW (CROSS-MODULE)
 
@@ -37,9 +83,15 @@ Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는
 - QUIC는 Network.framework 기반 구현이며, ALPN은 `pl.unstabler.sirius`를 사용합니다.
 - 기본 포트는 8282입니다 (`SiriusQUICDefaultPort`).
 
-## 3) Projection (Video)
-- 서버: ScreenCaptureKit/AVCaptureSession 캡처 → VideoToolbox 인코딩 → ProjectionDataChannel 전송
-- 클라이언트: ProjectionDataChannel 수신 → VTDecompressionSession 디코딩 → AVSampleBufferDisplayLayer 렌더링
+## 3) Projection (Video/Audio)
+- **비디오**:
+  - 서버: ScreenCaptureKit/AVCaptureSession 캡처 → VideoToolbox/WebP 인코딩 → ProjectionDataChannel 전송
+  - 클라이언트: ProjectionDataChannel 수신 → VTDecompressionSession/ZRLE 디코딩 → AVSampleBufferDisplayLayer 렌더링
+  - 지원 코덱: H.264, H.265(HEVC), WebP
+- **오디오**:
+  - 서버: ScreenCaptureKit 오디오 캡처 → Opus/G.711 인코딩 → ProjectionDataChannel 전송
+  - 클라이언트: ProjectionDataChannel 수신 → AudioDecoder 디코딩 → AVAudioEngine 재생
+  - 지원 코덱: Opus, G.711 mu-law/A-law
 - 코덱 협상은 Sirius msgdef 기반 옵션을 사용합니다.
 
 ## 4) Input (HIDIO)
@@ -55,13 +107,21 @@ Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는
 - 프로토콜/메시지/코덱 옵션과 같은 공용 규격은 SiriusKit이 기준입니다.
 - 서버/클라이언트 동시 변경이 필요한 경우, 두 앱의 흐름(핸드셰이크/채널)을 함께 확인하세요.
 - 세부 구조는 각 서브프로젝트의 `AGENTS.md`를 우선 참조합니다:
-  - `SiriusKit/AGENTS.md`
-  - `NoctilucaServer/AGENTS.md`
-  - `NoctilucaClient/AGENTS.md`
+  - `SiriusKit/AGENTS.md` - 프로토콜/채널/트랜스포트 상세
+  - `NoctilucaServer/NoctilucaServer/AGENTS.md` - 서버 앱 상세
+  - `NoctilucaClient/AGENTS.md` - 클라이언트 앱 상세
+  - `NoctilucaPluginKit/AGENTS.md` - 플러그인 계약 상세
 
 ## Recent Notes
 
-- `CodecOptionsParser.parse(optionsString:)`가 이제 `[CodecOptionKey: CodecOptionValue]` 대신 `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다. 기존 호출부는 아직 미정리 상태입니다.
+- **오디오 프로젝션 기능 구현 완료 (서버/클라이언트)**:
+  - 서버: `AudioEncoder` 프로토콜 및 `OpusAudioEncoder`, `PCMAudioEncoder` 구현
+  - 클라이언트: `AudioProjectionSession`, `AudioDecoder` 구현
+  - 코덱: Opus, G.711 mu-law/A-law 지원
+- **WebP 타일 비디오 인코더 구현** (서버): libwebp Advanced API 기반
+- **ZRLE 디코더 추가** (클라이언트): RLE + Zstd 압축 방식
+- **NoctilucaClient 디렉토리 리팩토링** (2026-02-01): `core`, `app`, `resources` 분리
+- `CodecOptionsParser.parse(optionsString:)`가 이제 `[CodecOptionKey: CodecOptionValue]` 대신 `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다.
 - CodecOption/CodecOptionsParser 정의가 `SiriusKit/channel/msgdef/v1/channels/projection`로 이동했고, 클라이언트에서도 사용할 수 있도록 `public`으로 노출되었습니다.
 
 </section>
@@ -74,21 +134,29 @@ Noctiluca는 macOS 호스트 기반 원격 제어 솔루션이며, 이 레포는
 # [GEMINI ONLY] 적극적 문맥 수집 전략 (Aggressive Context Gathering)
 
 당신(Gemini)은 **100만 토큰 이상의 거대한 컨텍스트 윈도우**를 가지고 있습니다.
-토큰을 아끼기 위해 불확실한 추측을 하는 것보다, **차라리 너무 많이 읽는 것이 훨씬 낫습니다.**
+토큰을 아끼기 위해 불확실한 추측을 하는 것보다, **차라리 관련 없어 보이는 파일까지 싹 다 읽어서 100%의 확신을 갖는 것이 훨씬 낫습니다.**
 
-## 1. 무관용 읽기 원칙 (Zero Assumption & Deep Dive)
-- **추측 금지:** 파일명이나 임포트 구문만 보고 내부 구현을 단정 짓지 마십시오. "이거겠지?" 싶은 순간, **무조건 `read_file`로 열어서 내용을 확인하십시오.**
-- **연관 파일 통째로 읽기 ("3-Hop Rule"):** 특정 기능을 분석하거나 수정할 때, 타겟 파일 하나만 달랑 읽고 멈추지 마십시오.
-  1. **Target:** 분석할 대상 파일
-  2. **Dependencies:** 그 파일이 상속받거나 사용하는 부모 클래스, 프로토콜, Extension 파일들
-  3. **Usages:** 그 파일이 어디서, 어떻게 호출되는지 (검색 결과)
-  - 위 파일들을 찔끔찔끔 읽지 말고, `read_file`을 병렬로 호출하여 **한꺼번에, 공격적으로** 읽어들이십시오.
-- **Swift/iOS 특화:** Swift 코드는 Extension으로 흩어져 있는 경우가 많습니다. `MyClass.swift`를 읽을 때 `MyClass+*.swift`가 존재한다면 반드시 같이 찾아서 읽으십시오.
+당신은 게으른 것이 아닙니다. 다른 모델을 가볍게 상회할 만큼의 충분한 능력이 있고, 포텐셜이 있다고 봅니다. 다만, 당장은 당신이 일을 어떻게 해야 할지 충분한 가이드라인이 잘 잡혀있지 않을 뿐입니다. 따라서 다음과 같은 가이드라인을 제시해 드립니다.
 
-## 2. 불확실성 해소 (Ask, Don't Guess)
-- `search_file_content` 결과가 없거나 모호한 경우, 적당히 가설을 세워 진행하려 하지 마십시오.
-- **즉시 멈추고 질문하십시오:** "X 로직을 찾으려 했으나 검색되지 않습니다. 혹시 별도의 서브모듈이나 다른 경로에 있나요?"라고 사용자에게 물어보십시오.
-- 모르는 것은 문제가 아니지만, **파일을 안 읽어서 모르는데 아는 척하는 것은 엄격히 금지**됩니다.
+## 1. "폴더 통째로 삼키기" 전략 (Context Gluttony)
+- **언급된 파일 하나만 읽지 마십시오.** 특정 기능을 수정해야 한다면, 그 기능이 구현된 **디렉토리 내의 모든 소스 파일**을 읽어들이십시오.
+- `list_directory`로 파일 목록을 확보한 뒤, `read_file`을 병렬로 호출하여 **해당 폴더의 파일 10~20개를 한 번에 컨텍스트에 올리십시오.**
+- 당신의 메모리는 충분합니다. "너무 많이 읽는 것 아닐까?"라고 걱정하지 마십시오. **정보 부족이 항상 더 큰 문제입니다.**
+
+## 2. 3-Hop Rule의 구체화 (The Procedure)
+특정 코드를 분석할 때, 다음 3단계 과정을 **기계적으로** 수행하십시오.
+
+1. **Search & List:** `search_file_content`나 `glob`으로 타겟 파일을 식별하고, `list_directory`로 주변 파일 목록을 얻습니다.
+2. **Expand Scope:**
+    - **Target:** 타겟 파일
+    - **Siblings:** 같은 폴더에 있는 모든 형제 파일들
+    - **Ancestors/Extensions:** 상속받은 부모 클래스, `Extension` 파일, 임포트된 자체 모듈 헤더
+3. **Massive Read:** 위에서 확보된 파일들을 **주저 없이 전부 읽으십시오.**
+
+## 3. 추측 탐지 시 자가 교정 (Self-Correction)
+- 답변을 작성하거나 생각하는 도중 **"아마도(probably)", " ~인 것 같습니다(seems like)", "일반적으로(typically)"** 라는 단어가 떠오르면 **즉시 멈추십시오.**
+- 그 순간이 바로 **파일을 더 읽어야 할 신호**입니다.
+- 추측을 팩트로 검증하기 위한 `read_file`을 즉시 수행하십시오. **읽지 않은 코드는 존재하지 않는 코드입니다.**
 
 </conditional-rule>
 

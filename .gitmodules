@@ -1,3 +1,6 @@
 [submodule "libbcrypt/dependencies/libbcrypt"]
 	path = libbcrypt/dependencies/libbcrypt
 	url = git@github.com:team-unstablers/libbcrypt.git
+[submodule "SiriusKit/libsirius"]
+	path = SiriusKit/libsirius
+	url = git@github.com:team-unstablers/libsirius.git
