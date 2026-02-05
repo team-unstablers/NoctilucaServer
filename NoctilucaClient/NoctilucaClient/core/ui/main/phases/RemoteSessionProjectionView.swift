@@ -126,9 +126,14 @@ struct RemoteSessionProjectionView: View {
                         .allowsHitTesting(false)
                         // 화면 줌인/아웃 시 커서도 같이 확대/축소 및 이동
                         .scaleEffect(scale)
-                        .opacity(projection.cursorState.displayID == source?.displayID ? 1.0 : 0.0)
                 }
                 
+#if os(macOS)
+                HIDIOAppKitMouseView(client: remoteSession.client)
+                    .offset(offset)
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX, y: rect.midY)
+#endif
 #if os(iOS)
                 HIDIOUIKitMouseView(
                     client: remoteSession.client,
@@ -156,6 +161,7 @@ struct RemoteSessionProjectionView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
 #endif
+
             }
             .onChange(of: sourceDescriptor) { _, newValue in
                 self.resolveSource(newValue)

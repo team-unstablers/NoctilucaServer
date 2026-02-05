@@ -26,7 +26,7 @@ extension NoctilucaClient {
         pointerRouter.updateInputMode(pendingPointerInputMode)
         
         // Enable capture lock to ensure mouse cursor is hidden/locked when connected
-        controller.enableCaptureLock()
+        // controller.enableCaptureLock()
 
         connectGameControllerMouse(controller)
         applyInputRedirectionMethod(pendingInputRedirectionMethod)
@@ -56,12 +56,14 @@ extension NoctilucaClient {
                 return
             }
 
+            /*
             let eventTapDevice = HIDIOCocoaEventTapKeyboard(
                 onError: { [weak self] error in
                     self?.handleEventTapError(error)
                 }
             )
             hidioController.connect(eventTapDevice)
+             */
 #else
             connectGameControllerKeyboard(hidioController)
 #endif
