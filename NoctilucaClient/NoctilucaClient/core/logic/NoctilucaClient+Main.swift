@@ -17,15 +17,8 @@ extension NoctilucaClient {
             return
         }
         
-        let controller = HIDIOController(channel: channel)
-        self.hidioController = controller
-        self.logger.info("initializeHIDIO(): created HIDIOController")
-
-        /*
-        let pointerRouter = PointerInputRouter(controller: controller)
-        controller.pointerInputRouter = pointerRouter
-        pointerRouter.updateInputMode(pendingPointerInputMode)
-         */
+        self.logger.info("initializeHIDIO(): created HIDIOChannel")
+        self.hidioChannel = channel
     }
 
     func initializeProjection() async throws {

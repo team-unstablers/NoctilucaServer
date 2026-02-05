@@ -1,0 +1,76 @@
+//
+//  HIDIO.swift
+//  NoctilucaClient
+//
+//  Created by Gyuhwan Park on 2/6/26.
+//
+
+import Foundation
+import Combine
+
+import SiriusKitCore
+
+extension RemoteSession {
+    class HIDIO: ObservableObject {
+        private let parent: Weak<RemoteSession>
+        private let channel: Weak<HIDIOChannel>
+        
+        private(set) var session: HIDIOSession!
+        
+        @Published
+        private(set) var sessionState: HIDIOSessionState = .inactive
+        
+        @Published
+        private(set) var sessionMode: HIDIOSessionMode = .shared
+        
+        var channelID: UUID {
+            channel.ref.identifier
+        }
+        
+        var controller: HIDIOController {
+            channel.ref.controller
+        }
+        
+        init(_ parent: RemoteSession, channel: HIDIOChannel) {
+            self.parent  = Weak(parent)
+            self.channel = Weak(channel)
+            
+            self.session = HIDIOSession(controller)
+            
+            session.delegate = self
+            
+            
+            try? self.session.startSession()
+            self.installEscapeHook()
+        }
+        
+        private func installEscapeHook() {
+            let escapeSequence = SettingsStore.shared.settings.input.unlockKeySequence
+            let hook = HIDIOKeystrokeHook(condition: escapeSequence) {
+                Task { @MainActor in
+                    try? self.session.switchMode(to: .shared, reason: .userInitiated)
+                }
+            }
+            
+            controller.installHook(hook, for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
+        }
+        
+        deinit {
+            self.session.stopSession()
+        }
+    }
+}
+
+extension RemoteSession.HIDIO: HIDIOSessionDelegate {
+    func hidioSession(_ session: HIDIOSession, didChangeState state: HIDIOSessionState) {
+        Task { @MainActor in
+            self.sessionState = state
+        }
+    }
+    
+    func hidioSession(_ session: HIDIOSession, didSwitchMode mode: HIDIOSessionMode, reason: HIDIOSessionModeSwitchReason) {
+        Task { @MainActor in
+            self.sessionMode = mode
+        }
+    }
+}

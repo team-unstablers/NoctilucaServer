@@ -78,10 +78,12 @@ protocol HIDIOSessionDelegate: AnyObject {
     func hidioSession(_ session: HIDIOSession, didSwitchMode mode: HIDIOSessionMode, reason: HIDIOSessionModeSwitchReason)
 }
 
-@MainActor
 class HIDIOSession: ObservableObject {
     protocol Driver {
         init(_ session: HIDIOSession)
+        
+        var currentKeyboard: HIDIOVirtualDevice? { get }
+        var currentMouse: HIDIOVirtualDevice? { get }
         
         /// 세션을 시작합니다.
         func startSession() throws -> HIDIOSessionMode
@@ -106,6 +108,14 @@ class HIDIOSession: ObservableObject {
     private(set) var controller: HIDIOController
     
     private var driver: Driver!
+    
+    var currentMouse: HIDIOVirtualDevice? {
+        driver.currentMouse
+    }
+    
+    var currentKeyboard: HIDIOVirtualDevice? {
+        driver.currentKeyboard
+    }
     
     /// NOTE: delegate 호출은 Driver에서 담당합니다. 이 클래스에서는 호출하지 않습니다.
     weak var delegate: HIDIOSessionDelegate?

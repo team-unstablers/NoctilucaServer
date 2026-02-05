@@ -12,29 +12,10 @@ import SwiftUI
 import SiriusKitClient
 
 struct HIDIOAppKitMouseView: View {
-    let client: NoctilucaClient
-    
-    @State
-    private var pointer = HIDIOAppKitPointer()
+    let pointer: HIDIOAppKitPointer
 
     var body: some View {
         HIDIOAppKitMouseCaptureView(pointer: pointer)
-            .onAppear {
-                connectPointerIfNeeded(client)
-            }
-    }
-    
-    private func connectPointerIfNeeded(_ client: NoctilucaClient) {
-        guard let controller = client.hidioController else {
-            return
-        }
-
-        controller.connect(pointer)
-    }
-
-    private func disconnectPointer(_ client: NoctilucaClient) {
-        client.hidioController?.disconnect(.appKitMouse)
-        pointer.disconnect()
     }
 }
 

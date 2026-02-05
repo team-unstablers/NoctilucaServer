@@ -134,6 +134,7 @@ extension AppSettings {
     }
 
     struct Input: Category {
+        var enableExclusiveMode: Bool = true
         var unlockKeySequence: KeySequence = KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
         var redirectionMethod: InputRedirectionMethod = .gameController
         var modifierKeyOverrides: ModifierKeyOverrides = .init()
@@ -149,6 +150,7 @@ extension AppSettings {
         init() {}
 
         enum CodingKeys: String, CodingKey {
+            case enableExclusiveMode
             case unlockKeySequence
             case redirectionMethod
             case modifierKeyOverrides
@@ -169,6 +171,7 @@ extension AppSettings {
                 return
             }
             
+            enableExclusiveMode = container.decodeSafe(Bool.self, forKey: .enableExclusiveMode, default: true)
             unlockKeySequence = container.decodeSafe(KeySequence.self, forKey: .unlockKeySequence, default: unlockKeySequence)
             redirectionMethod = container.decodeSafe(InputRedirectionMethod.self, forKey: .redirectionMethod, default: redirectionMethod)
             modifierKeyOverrides = container.decodeSafe(ModifierKeyOverrides.self, forKey: .modifierKeyOverrides, default: modifierKeyOverrides)
@@ -194,6 +197,7 @@ extension AppSettings {
 
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(enableExclusiveMode, forKey: .enableExclusiveMode)
             try container.encode(unlockKeySequence, forKey: .unlockKeySequence)
             try container.encode(redirectionMethod, forKey: .redirectionMethod)
             try container.encode(modifierKeyOverrides, forKey: .modifierKeyOverrides)

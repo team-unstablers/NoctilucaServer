@@ -38,7 +38,7 @@ extension HIDIOVirtualDeviceIdentifier {
 /// - 이 장치가 HIDIOController에 연결되어 있는 동안, 윈도우의 루트 뷰 컨트롤러에 커서 락이 걸립니다. (= 마우스 커서가 숨겨지고, 중앙에 고정됩니다)
 ///
 ///
-class HIDIOGCMouse: HIDIOLockableVirtualDevice {
+class HIDIOGCMouse: HIDIOVirtualDevice {
     private static var _shared: HIDIOGCMouse? = nil
     
     static func shared() -> HIDIOGCMouse? {
@@ -225,27 +225,15 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
         
         if self.mouse != nil {
             self.setupMouseInputHandler()
+            self.hideCursor()
         }
     }
     
     func disconnect() {
         self.controller = nil
-    }
-    
-    func lock() throws {
-        self.setupMouseInputHandler()
         
-        Task { @MainActor in
-            self.hideCursor()
-        }
-    }
-    
-    func unlock() throws {
         self.destroyMouseInputHandler()
-        
-        Task { @MainActor in
-            self.showCursor()
-        }
+        self.showCursor()
     }
 }
 
@@ -261,7 +249,6 @@ fileprivate extension HIDIOGCMouse {
         return nil
     }
     
-    @MainActor
     func hideCursor() {
         guard let displayID = currentDisplayID() else {
             return
@@ -271,7 +258,6 @@ fileprivate extension HIDIOGCMouse {
         CGDisplayHideCursor(displayID)
     }
     
-    @MainActor
     func showCursor() {
         guard let displayID = currentDisplayID() else {
             return
@@ -281,14 +267,12 @@ fileprivate extension HIDIOGCMouse {
         CGDisplayShowCursor(displayID)
     }
     
-    @MainActor
     func centerCursor() {
         guard let keyWindow = NSApp.keyWindow,
               let screen = keyWindow.screen
         else {
             return
         }
-        
         
         // keyWindow의 중앙
         let center = NSPoint(

@@ -34,7 +34,7 @@ class HIDIOController {
     
     private let settingsStore: SettingsStore = .shared
     
-    private let channel: HIDIOChannel
+    private let channel: Weak<HIDIOChannel>
     private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
 
     var pointerInputRouter: PointerInputRouter?
@@ -49,7 +49,7 @@ class HIDIOController {
     private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
 
     init(channel: HIDIOChannel) {
-        self.channel = channel
+        self.channel = Weak(channel)
         
         var continuation: AsyncStream<HIDEvent>.Continuation!
         self.eventStream = AsyncStream<HIDEvent> { cont in
@@ -93,7 +93,7 @@ class HIDIOController {
             )
             
             do {
-                try await channel.send(opcode: .hidioPacket, message: consume packet)
+                try await channel.ref.send(opcode: .hidioPacket, message: consume packet)
             } catch {
                 logger.error("Failed to send HID event batch: \(error)")
             }
@@ -122,10 +122,6 @@ class HIDIOController {
         guard let device = self.devices[identifier] else {
             return
         }
-        
-        if let lockableDevice = device as? HIDIOLockableVirtualDevice {
-            try? lockableDevice.unlock()
-        }
 
         device.disconnect()
         self.devices.removeValue(forKey: identifier)
@@ -135,10 +131,6 @@ class HIDIOController {
         let devicesToDisconnect = self.devices.filter { type(of: $0.value).kind == kind }
         
         for (identifier, device) in devicesToDisconnect {
-            if let lockableDevice = device as? HIDIOLockableVirtualDevice {
-                try? lockableDevice.unlock()
-            }
-
             device.disconnect()
             self.devices.removeValue(forKey: identifier)
         }

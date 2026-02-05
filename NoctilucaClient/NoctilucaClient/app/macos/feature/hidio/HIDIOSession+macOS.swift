@@ -11,7 +11,6 @@ import Foundation
 import SiriusKitClient
 
 extension HIDIOSession {
-    @MainActor
     class MacOSDriver: Driver {
         private let logger = NoctilucaLogger(category: "HIDIOSession.MacOSDriver")
         private weak var _session: HIDIOSession?
@@ -33,8 +32,8 @@ extension HIDIOSession {
             session.delegate
         }
         
-        private var currentKeyboard: HIDIOVirtualDevice?
-        private var currentMouse: HIDIOVirtualDevice?
+        var currentKeyboard: HIDIOVirtualDevice?
+        var currentMouse: HIDIOVirtualDevice?
 
         required init(_ session: HIDIOSession) {
             self._session = session
@@ -61,7 +60,6 @@ extension HIDIOSession {
             controller.disconnectAll(kind: .keyboard)
             controller.disconnectAll(kind: .mouse)
             controller.disconnectAll(kind: .pointer)
-            controller.disableCaptureLock()
             
             self.currentKeyboard = nil
             self.currentMouse = nil
@@ -100,7 +98,6 @@ extension HIDIOSession {
             controller.disconnectAll(kind: .keyboard)
             controller.disconnectAll(kind: .mouse)
             controller.disconnectAll(kind: .pointer)
-            controller.disableCaptureLock()
             
             self.currentKeyboard = nil
             self.currentMouse = nil
@@ -115,7 +112,7 @@ extension HIDIOSession {
                 }
                 
                 // 2. shared mode에서는 AppKit / NSEvent 기반 마우스를 연결한다
-                let mouse = HIDIOAppKitMouse()
+                let mouse = HIDIOAppKitPointer()
                 self.currentMouse = mouse
                 controller.connect(mouse)
             } else if (mode == .exclusive) {
@@ -123,8 +120,9 @@ extension HIDIOSession {
                 do {
                     // TODO: 얘 ctor에 a11y tcc 체크하고, 없으면 터져야 함
                     // FIXME: 아니 왜 토글 숏컷이나 그런게 얘 ctor에 있어요;;;
-                    let keyboard = try HIDIOCocoaEventTapKeyboard()
+                    let keyboard = try HIDIOCocoaEventTapKeyboard.acquire()
                     self.currentKeyboard = keyboard
+                    controller.connect(keyboard)
                     
                     // 2. exclusive mode에서는 relative 마우스를 연결한다
                     if let mouse = HIDIOGCMouse.shared() {
@@ -133,11 +131,9 @@ extension HIDIOSession {
                     } else {
                         logger.warning("Failed to acquire shared GCMouse instance; is there any mouse device connected?")
                     }
-                    
-                    controller.enableCaptureLock()
                 } catch {
                     logger.error("Failed to create CocoaEventTapKeyboard: \(error); falling back to shared mode")
-                    try? await switchMode(to: .shared, reason: .unsupportedMode)
+                    try? switchMode(to: .shared, reason: .unsupportedMode)
                     
                     // 롤백한 뒤 오류 던짐
                     throw error

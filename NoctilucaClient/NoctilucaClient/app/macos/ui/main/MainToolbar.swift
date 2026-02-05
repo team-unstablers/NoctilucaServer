@@ -139,6 +139,12 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 systemSymbolName: "xmark",
                 label: "Stop Session"
             )
+        case .nocEnableExclusiveInputMode:
+            return makeSymbolItem(
+                identifier: .nocEnableExclusiveInputMode,
+                systemSymbolName: "lock.display",
+                label: "Toggle Exclusive Input Mode"
+            )
         default:
             return nil
         }
@@ -171,7 +177,10 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         case .connecting, .connected:
             return [
                 .nocStopSession,
-                .nocAddressBar
+                .flexibleSpace,
+                .nocAddressBar,
+                .flexibleSpace,
+                .nocEnableExclusiveInputMode
             ]
         }
     }
@@ -227,6 +236,8 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
             }
         case .nocAddSession:
             viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
+        case .nocEnableExclusiveInputMode:
+            try? viewModel.remoteSession?.hidio?.session.switchMode(to: .exclusive, reason: .userInitiated)
         default:
             break
         }
@@ -238,5 +249,6 @@ extension NSToolbarItem.Identifier {
     static let nocSettings = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.Settings")
     static let nocAddSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.AddSession")
     static let nocStopSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.StopSession")
+    static let nocEnableExclusiveInputMode = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.EnableExclusiveInputMode")
 }
 #endif
