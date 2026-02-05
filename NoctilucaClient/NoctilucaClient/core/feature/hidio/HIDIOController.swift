@@ -12,7 +12,24 @@ import AsyncAlgorithms
 
 import SiriusKitClient
 
+
 class HIDIOController {
+    class KeyPressState {
+        private(set) var pressedKeys: Set<LinuxKeycode> = []
+        
+        func keyDown(_ keyCode: LinuxKeycode) {
+            pressedKeys.insert(keyCode)
+        }
+        
+        func keyUp(_ keyCode: LinuxKeycode) {
+            pressedKeys.remove(keyCode)
+        }
+        
+        func reset() {
+            pressedKeys.removeAll()
+        }
+    }
+    
     private let logger = NoctilucaLogger(category: "HIDIOController")
     
     private let settingsStore: SettingsStore = .shared
@@ -28,9 +45,8 @@ class HIDIOController {
     private var publisherTask: Task<Void, Never>? = nil
     private let requestCounter = ManagedAtomic<UInt64>(0)
     
-    private var pressedKeys: Set<LinuxKeycode> = []
-    private(set) var isCaptureLockEnabled: Bool = false
-    private var unlockSequenceMatcher = KeySequenceMatcher()
+    private(set) var keyPressState = KeyPressState()
+    private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
 
     init(channel: HIDIOChannel) {
         self.channel = channel
@@ -161,18 +177,9 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
+        self.keyPressState.keyDown(keyCode)
         
-        self.pressedKeys.insert(keyCode)
-        
-        let keySequence = settingsStore.settings.input.unlockKeySequence
-        unlockSequenceMatcher.update(sequence: keySequence)
-        if unlockSequenceMatcher.handleKeyDown(
-            keyCode: keyCode,
-            pressedKeys: self.pressedKeys,
-            isActive: isCaptureLockEnabled
-        ) {
-            disableCaptureLock()
-        }
+        self.evaluateHooks()
     }
     
     func keyUp(keyCode: LinuxKeycode) {
@@ -185,12 +192,7 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
-        
-        self.pressedKeys.remove(keyCode)
-
-        let keySequence = settingsStore.settings.input.unlockKeySequence
-        unlockSequenceMatcher.update(sequence: keySequence)
-        unlockSequenceMatcher.handleKeyUp(pressedKeys: self.pressedKeys)
+        self.keyPressState.keyUp(keyCode)
     }
     
     func moveMouseAbsolutePercentage(to position: CGPoint) {
@@ -251,5 +253,25 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
+    }
+}
+
+extension HIDIOController {
+    func installHook(_ hook: HIDIOKeystrokeHook, for identifier: HIDIOKeystrokeHookIdentifier) {
+        self.keystrokeHooks[identifier] = hook
+    }
+    
+    func removeHook(for identifier: HIDIOKeystrokeHookIdentifier) {
+        self.keystrokeHooks.removeValue(forKey: identifier)
+    }
+    
+    private func evaluateHooks() {
+        let state = self.keyPressState
+        
+        for hook in self.keystrokeHooks.values {
+            if hook.evaluate(state) {
+                hook.action()
+            }
+        }
     }
 }
