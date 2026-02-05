@@ -105,11 +105,6 @@ class SessionWindowViewModel: ObservableObject {
             configureAuthCredentials(for: client, endpoint: endpoint, sessionSettings: sessionSettings)
         }
 
-        if let settingsStore {
-            client.applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
-            client.applyPointerInputMode(settingsStore.settings.input.pointerInputMode)
-        }
-
         let remoteSession = RemoteSession(client)
         attachRemoteSession(remoteSession)
 
@@ -150,24 +145,6 @@ class SessionWindowViewModel: ObservableObject {
         contactSheetCoordinator.settingsStore = settingsStore
         settingsCancellables.forEach { $0.cancel() }
         settingsCancellables.removeAll()
-
-        settingsStore.$settings
-            .map { $0!.input.redirectionMethod }
-            .removeDuplicates()
-            .receive(on: RunLoop.main)
-            .sink { [weak self] method in
-                self?.applyInputRedirectionMethod(method)
-            }
-            .store(in: &settingsCancellables)
-
-        settingsStore.$settings
-            .map { $0!.input.pointerInputMode }
-            .removeDuplicates()
-            .receive(on: RunLoop.main)
-            .sink { [weak self] mode in
-                self?.applyPointerInputMode(mode)
-            }
-            .store(in: &settingsCancellables)
     }
 
     func loadContacts() {
@@ -246,30 +223,6 @@ class SessionWindowViewModel: ObservableObject {
 
     func handleInputWarningUpdated(_ warning: InputWarning?) {
         inputWarning = warning
-    }
-
-    func retryInputRedirection() {
-        guard let settingsStore else {
-            return
-        }
-
-        applyInputRedirectionMethod(settingsStore.settings.input.redirectionMethod)
-    }
-
-    private func applyInputRedirectionMethod(_ method: AppSettings.InputRedirectionMethod) {
-        guard let client else {
-            return
-        }
-
-        client.applyInputRedirectionMethod(method)
-    }
-
-    private func applyPointerInputMode(_ mode: AppSettings.PointerInputMode) {
-        guard let client else {
-            return
-        }
-
-        client.applyPointerInputMode(mode)
     }
 
     func dismissLastError() {
