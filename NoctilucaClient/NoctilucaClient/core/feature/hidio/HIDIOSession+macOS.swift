@@ -25,6 +25,10 @@ extension HIDIOSession {
             session.controller
         }
         
+        private var mode: HIDIOSessionMode {
+            session.mode
+        }
+        
         private var delegate: HIDIOSessionDelegate? {
             session.delegate
         }
@@ -61,6 +65,34 @@ extension HIDIOSession {
             
             self.currentKeyboard = nil
             self.currentMouse = nil
+        }
+        
+        func activateSession() {
+            // 원격 세션 창이 다시 활성화 되었습니다, 키보드를 다시 연결합니다.
+            if let keyboard = currentKeyboard {
+                controller.connect(keyboard)
+            }
+            
+            if mode == .exclusive {
+                // exclusive 모드인 경우 마우스도 다시 연결합니다.
+                if let mouse = currentMouse {
+                    controller.connect(mouse)
+                }
+            }
+        }
+        
+        func deactivateSession() {
+            // 원격 세션 창이 비활성화 되었습니다, 키보드를 해제합니다.
+            if let keyboard = currentKeyboard {
+                controller.disconnectAll(kind: .keyboard)
+            }
+            
+            if mode != .shared {
+                // exclusive 모드인 경우 마우스도 해제합니다.
+                if let mouse = currentMouse {
+                    controller.disconnectAll(kind: .mouse)
+                }
+            }
         }
         
         @MainActor

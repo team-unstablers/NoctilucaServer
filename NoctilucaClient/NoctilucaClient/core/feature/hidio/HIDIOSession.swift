@@ -87,6 +87,14 @@ class HIDIOSession: ObservableObject {
         func startSession() throws -> HIDIOSessionMode
         /// 세션을 종료합니다.
         func stopSession()
+        
+        /// 세션을 활성화합니다.
+        /// 이 이벤트는 원격 세션 창이 포커스될 때 호출됩니다.
+        func activateSession()
+        /// 세션을 비활성화합니다.
+        /// 이 이벤트는 원격 세션 창이 포커스를 잃을 때 호출됩니다.
+        func deactivateSession()
+        
         /// 입력 모드를 전환합니다.
         func switchMode(to mode: HIDIOSessionMode, reason: HIDIOSessionModeSwitchReason) throws
         /// 전환 가능한 모드 집합을 반환합니다.
@@ -121,6 +129,19 @@ class HIDIOSession: ObservableObject {
     /// HIDIO 입력 리디렉션 세션을 종료합니다.
     func stopSession()  {
         driver.stopSession()
+    }
+    
+    /// HIDIO 입력 리디렉션 세션을 활성화합니다.
+    func activateSession() {
+        driver.activateSession()
+    }
+    
+    /// HIDIO 입력 리디렉션 세션을 비활성화합니다.
+    /// Note:
+    ///  - 이 메소드는 원격 세션 창이 포커스를 잃을 때 호출되어야 합니다.
+    ///  - 이 메소드는 사용자 경험을 위해 mode가 `.shared`인 경우, 마우스에 대한 입력 잠금을 해제하지 않습니다.
+    func deactivateSession() {
+        driver.deactivateSession()
     }
     
     /// 입력 모드를 전환합니다.
