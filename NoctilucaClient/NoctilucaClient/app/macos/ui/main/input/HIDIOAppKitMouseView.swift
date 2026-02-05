@@ -94,11 +94,19 @@ private final class MouseInputCaptureView: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        guard let normalized = normalizedLocation(for: event) else {
-            return
-        }
+        handleMoveEvent(event)
+    }
 
-        pointer.moveAbsolute(to: normalized)
+    override func mouseDragged(with event: NSEvent) {
+        handleMoveEvent(event)
+    }
+
+    override func rightMouseDragged(with event: NSEvent) {
+        handleMoveEvent(event)
+    }
+
+    override func otherMouseDragged(with event: NSEvent) {
+        handleMoveEvent(event)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -154,6 +162,14 @@ private final class MouseInputCaptureView: NSView {
             x: location.x / bounds.width,
             y: 1.0 - location.y / bounds.height
         )
+    }
+
+    private func handleMoveEvent(_ event: NSEvent) {
+        guard let normalized = normalizedLocation(for: event) else {
+            return
+        }
+
+        pointer.moveAbsolute(to: normalized)
     }
 
     private func mapButtonNumber(_ number: Int) -> MouseButtonType? {
