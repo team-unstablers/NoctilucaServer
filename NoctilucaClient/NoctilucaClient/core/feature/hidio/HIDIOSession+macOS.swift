@@ -1,0 +1,136 @@
+//
+//  Untitled.swift
+//  NoctilucaClient
+//
+//  Created by Gyuhwan Park on 2/6/26.
+//
+
+#if os(macOS)
+import Foundation
+
+import SiriusKitClient
+
+extension HIDIOSession {
+    @MainActor
+    class MacOSDriver: Driver {
+        private let logger = NoctilucaLogger(category: "HIDIOSession.MacOSDriver")
+        private weak var _session: HIDIOSession?
+        
+        private var session: HIDIOSession {
+            // Force unwrap is safe here because the lifecycle of Driver is tied to HIDIOSession
+            _session!
+        }
+        
+        private var controller: HIDIOController {
+            session.controller
+        }
+        
+        private var delegate: HIDIOSessionDelegate? {
+            session.delegate
+        }
+        
+        private var currentKeyboard: HIDIOVirtualDevice?
+        private var currentMouse: HIDIOVirtualDevice?
+
+        required init(_ session: HIDIOSession) {
+            self._session = session
+        }
+        
+        @MainActor
+        func startSession() throws -> HIDIOSessionMode {
+            // 기본은 shared mode.
+            try switchMode(to: .shared, reason: .userInitiated)
+            
+            defer {
+                delegate?.hidioSession(session, didChangeState: .active)
+            }
+            
+            return .shared
+        }
+        
+        @MainActor
+        func stopSession() {
+            defer {
+                delegate?.hidioSession(session, didChangeState: .inactive)
+            }
+
+            controller.disconnectAll(kind: .keyboard)
+            controller.disconnectAll(kind: .mouse)
+            controller.disconnectAll(kind: .pointer)
+            controller.disableCaptureLock()
+            
+            self.currentKeyboard = nil
+            self.currentMouse = nil
+        }
+        
+        @MainActor
+        func switchMode(to mode: HIDIOSessionMode, reason: HIDIOSessionModeSwitchReason) throws {
+            controller.disconnectAll(kind: .keyboard)
+            controller.disconnectAll(kind: .mouse)
+            controller.disconnectAll(kind: .pointer)
+            controller.disableCaptureLock()
+            
+            self.currentKeyboard = nil
+            self.currentMouse = nil
+
+            if (mode == .shared) {
+                // 1. shared mode에서는 GCKeyboard를 연결한다
+                if let keyboard = HIDIOGCKeyboard.shared() {
+                    self.currentKeyboard = keyboard
+                    controller.connect(keyboard)
+                } else {
+                    logger.warning("Failed to acquire shared GCKeyboard instance; is there any keyboard device connected?")
+                }
+                
+                // 2. shared mode에서는 AppKit / NSEvent 기반 마우스를 연결한다
+                let mouse = HIDIOAppKitMouse()
+                self.currentMouse = mouse
+                controller.connect(mouse)
+            } else if (mode == .exclusive) {
+                // 1. exclusive mode에서는 CocoaEventTapKeyboard를 연결한다
+                do {
+                    // TODO: 얘 ctor에 a11y tcc 체크하고, 없으면 터져야 함
+                    // FIXME: 아니 왜 토글 숏컷이나 그런게 얘 ctor에 있어요;;;
+                    let keyboard = try HIDIOCocoaEventTapKeyboard()
+                    self.currentKeyboard = keyboard
+                    
+                    // 2. exclusive mode에서는 relative 마우스를 연결한다
+                    if let mouse = HIDIOGCMouse.shared() {
+                        self.currentMouse = mouse
+                        controller.connect(mouse)
+                    } else {
+                        logger.warning("Failed to acquire shared GCMouse instance; is there any mouse device connected?")
+                    }
+                    
+                    controller.enableCaptureLock()
+                } catch {
+                    logger.error("Failed to create CocoaEventTapKeyboard: \(error); falling back to shared mode")
+                    try? await switchMode(to: .shared, reason: .unsupportedMode)
+                    
+                    // 롤백한 뒤 오류 던짐
+                    throw error
+                }
+            }
+            
+            delegate?.hidioSession(session, didSwitchMode: mode, reason: reason)
+        }
+        
+        @MainActor
+        func switchableModes() -> Set<HIDIOSessionMode> {
+            var switchableModes: Set<HIDIOSessionMode> = []
+            let currentMode = session.mode
+            
+            if currentMode != .shared {
+                switchableModes.insert(.shared)
+            }
+            
+            if TCCUtil.shared.isAccessGranted(for: .accessibility),
+               currentMode != .exclusive {
+                switchableModes.insert(.exclusive)
+            }
+            
+            return switchableModes
+        }
+    }
+}
+#endif
