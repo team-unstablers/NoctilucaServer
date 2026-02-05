@@ -12,14 +12,16 @@ import SiriusKitClient
 
 extension HIDIOVirtualDeviceIdentifier {
     /// UIKit 제스처로 포인터 입력을 처리하는 가상 디바이스.
+    @available(macOS, unavailable)
     static let uiKitPointer = Self(rawValue: UUID(uuidString: "9A6A06A9-1D1F-4A24-8D5A-902F879A3F4E")!)
 }
 
-final class HIDIOUIKitPointer: HIDIOVirtualDevice {
+@available(macOS, unavailable)
+final class HIDIOUIKitMouse: HIDIOVirtualDevice {
     static let kind: HIDIOVirtualDeviceKind = .mouse
     static let identifier: HIDIOVirtualDeviceIdentifier = .uiKitPointer
 
-    private let logger = NoctilucaLogger(category: "HIDIOUIKitPointer")
+    private let logger = NoctilucaLogger(category: "HIDIOUIKitMouse")
 
     private weak var controller: HIDIOController?
     private weak var router: PointerInputRouter?
