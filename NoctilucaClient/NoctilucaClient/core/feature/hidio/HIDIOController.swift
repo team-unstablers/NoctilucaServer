@@ -78,7 +78,6 @@ class HIDIOController {
         let pollingRate = 60.0
         
         for await chunks in self.eventStream.chunked(by: .repeating(every: .milliseconds(1000 / pollingRate), clock: .suspending)) {
-            
             if chunks.isEmpty {
                 continue
             }
@@ -108,10 +107,6 @@ class HIDIOController {
         device.connect(to: self)
         
         self.devices[identifier] = device
-
-        if isCaptureLockEnabled, let lockableDevice = device as? HIDIOLockableVirtualDevice {
-            try? lockableDevice.lock()
-        }
     }
     
     func device(for identifier: HIDIOVirtualDeviceIdentifier) -> HIDIOVirtualDevice? {
@@ -146,24 +141,6 @@ class HIDIOController {
 
             device.disconnect()
             self.devices.removeValue(forKey: identifier)
-        }
-    }
-    
-    func enableCaptureLock() {
-        isCaptureLockEnabled = true
-        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
-        
-        for (_, device) in lockableDevices {
-            try? device.lock()
-        }
-    }
-    
-    func disableCaptureLock() {
-        isCaptureLockEnabled = false
-        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
-        
-        for (_, device) in lockableDevices {
-            try? device.unlock()
         }
     }
     
