@@ -75,21 +75,11 @@ class HIDIOController {
     private func publisherTaskMain() async {
         // TODO: 폴링 레이트 설정 가능해야 함
         // 120Hz로 폴링
-        let pollingRate = 120.0
-        
-        for await chunks in self.eventStream.chunked(by: .repeating(every: .milliseconds(1000 / pollingRate), clock: .continuous)) {
-            if chunks.isEmpty {
-                continue
-            }
-            
-            if chunks.count >= 2 {
-                logger.info("Sending HID event batch with \(chunks.count) events")
-            }
-            
+        for await event in self.eventStream {
             let packet = HIDIOPacket(
                 sequenceNumber: nextRequestID(),
                 timestamp: UInt64(Date().timeIntervalSince1970 * 1000),
-                events: Array(chunks)
+                events: [event]
             )
             
             do {
