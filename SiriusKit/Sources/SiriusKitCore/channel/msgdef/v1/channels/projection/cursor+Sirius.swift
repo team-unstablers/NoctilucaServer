@@ -10,12 +10,12 @@ internal import SwiftProtobuf
 
 
 public extension MessageOpcode {
-    static let subscribeCursorEventsRequest: MessageOpcode = .init(rawValue: 0x8601)
-    static let subscribeCursorEventsResponse: MessageOpcode = .init(rawValue: 0x8602)
-    static let unsubscribeCursorEventsRequest: MessageOpcode = .init(rawValue: 0x8603)
-    static let unsubscribeCursorEventsResponse: MessageOpcode = .init(rawValue: 0x8604)
-    
-    static let cursorEvent: MessageOpcode = .init(rawValue: 0x8611)
+    static let subscribeCursorEventsRequest: MessageOpcode = .init(rawValue: 0x80A1)
+    static let subscribeCursorEventsResponse: MessageOpcode = .init(rawValue: 0x80A2)
+    static let unsubscribeCursorEventsRequest: MessageOpcode = .init(rawValue: 0x80A3)
+    static let unsubscribeCursorEventsResponse: MessageOpcode = .init(rawValue: 0x80A4)
+
+    static let cursorEvent: MessageOpcode = .init(rawValue: 0x80A5)
 }
 
 public struct SubscribeCursorEventsRequest: SiriusMessage {

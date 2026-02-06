@@ -8,6 +8,10 @@
 import Foundation
 internal import SwiftProtobuf
 
+public extension MessageOpcode {
+    static let clipboardEvent: MessageOpcode = MessageOpcode(rawValue: 0x8001)
+}
+
 public struct ClipboardData: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData
     

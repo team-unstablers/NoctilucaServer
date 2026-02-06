@@ -80,4 +80,9 @@ public struct SiriusFeature: RawRepresentable, Equatable, Hashable {
      ProjectionData: 화면 캡쳐 데이터를 전송합니다.
      */
     public static let projectionData = SiriusFeature(rawValue: UUID(uuidString: "CDE57E7B-9528-47F7-8FEC-14389301A990")!)
+
+    /**
+     Clipboard: 클립보드 내용을 서버와 클라이언트 간에 동기화합니다.
+     */
+    public static let clipboard = SiriusFeature(rawValue: UUID(uuidString: "8A3D9F2E-6B1C-4E75-B8A0-D4F2C7E19A3B")!)
 }

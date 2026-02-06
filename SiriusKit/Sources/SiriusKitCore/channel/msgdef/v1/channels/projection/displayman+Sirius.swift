@@ -9,13 +9,13 @@ import Foundation
 internal import SwiftProtobuf
 
 public extension MessageOpcode {
-    static let displayListRequest: MessageOpcode = MessageOpcode(rawValue: 0x8201)
-    static let displayListResponse: MessageOpcode = MessageOpcode(rawValue: 0x8202)
-    static let subscribeDisplayChangesRequest: MessageOpcode = MessageOpcode(rawValue: 0x8203)
-    static let subscribeDisplayChangesResponse: MessageOpcode = MessageOpcode(rawValue: 0x8204)
-    static let unsubscribeDisplayChangesRequest: MessageOpcode = MessageOpcode(rawValue: 0x8205)
-    static let unsubscribeDisplayChangesResponse: MessageOpcode = MessageOpcode(rawValue: 0x8206)
-    static let displayChangedEvent: MessageOpcode = MessageOpcode(rawValue: 0x8207)
+    static let displayListRequest: MessageOpcode = MessageOpcode(rawValue: 0x8041)
+    static let displayListResponse: MessageOpcode = MessageOpcode(rawValue: 0x8042)
+    static let subscribeDisplayChangesRequest: MessageOpcode = MessageOpcode(rawValue: 0x8043)
+    static let subscribeDisplayChangesResponse: MessageOpcode = MessageOpcode(rawValue: 0x8044)
+    static let unsubscribeDisplayChangesRequest: MessageOpcode = MessageOpcode(rawValue: 0x8045)
+    static let unsubscribeDisplayChangesResponse: MessageOpcode = MessageOpcode(rawValue: 0x8046)
+    static let displayChangedEvent: MessageOpcode = MessageOpcode(rawValue: 0x8047)
 }
 
 public struct DisplayListRequest: SiriusMessage {

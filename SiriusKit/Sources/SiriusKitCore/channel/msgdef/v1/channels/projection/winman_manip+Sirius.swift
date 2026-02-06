@@ -9,7 +9,8 @@ import Foundation
 internal import SwiftProtobuf
 
 public extension MessageOpcode {
-    static let windowManipulationRequest: MessageOpcode = MessageOpcode(rawValue: 0x8043)
+    static let windowManipulationRequest: MessageOpcode = MessageOpcode(rawValue: 0x8081)
+    static let windowManipulationResponse: MessageOpcode = MessageOpcode(rawValue: 0x8082)
 }
 
 public struct WindowManipulationRequest: SiriusMessage {

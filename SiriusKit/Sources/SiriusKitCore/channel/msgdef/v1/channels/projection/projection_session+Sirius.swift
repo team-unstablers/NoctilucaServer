@@ -9,9 +9,9 @@ import Foundation
 internal import SwiftProtobuf
 
 public extension MessageOpcode {
-    static let projectionRequest: MessageOpcode = MessageOpcode(rawValue: 0x8011)
-    static let stopProjectionRequest: MessageOpcode = MessageOpcode(rawValue: 0x8012)
-    static let projectionPerformanceReport: MessageOpcode = MessageOpcode(rawValue: 0x8013)
+    static let projectionRequest: MessageOpcode = MessageOpcode(rawValue: 0x8001)
+    static let stopProjectionRequest: MessageOpcode = MessageOpcode(rawValue: 0x8002)
+    static let projectionPerformanceReport: MessageOpcode = MessageOpcode(rawValue: 0x8003)
     static let projectionSessionCreatedEvent: MessageOpcode = MessageOpcode(rawValue: 0x8021)
     static let projectionSessionCreationFailedEvent: MessageOpcode = MessageOpcode(rawValue: 0x8022)
     static let projectionSessionChangedEvent: MessageOpcode = MessageOpcode(rawValue: 0x8023)

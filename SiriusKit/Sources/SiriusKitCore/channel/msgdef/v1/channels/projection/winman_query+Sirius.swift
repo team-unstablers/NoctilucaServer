@@ -9,8 +9,19 @@ import Foundation
 internal import SwiftProtobuf
 
 public extension MessageOpcode {
-    static let windowListRequest: MessageOpcode = MessageOpcode(rawValue: 0x8101)
-    static let windowListResponse: MessageOpcode = MessageOpcode(rawValue: 0x8042)
+    static let windowListRequest: MessageOpcode = MessageOpcode(rawValue: 0x8061)
+    static let windowListResponse: MessageOpcode = MessageOpcode(rawValue: 0x8062)
+    static let getWindowInfoRequest: MessageOpcode = MessageOpcode(rawValue: 0x8063)
+    static let getWindowInfoResponse: MessageOpcode = MessageOpcode(rawValue: 0x8064)
+    static let getWindowIconRequest: MessageOpcode = MessageOpcode(rawValue: 0x8065)
+    static let getWindowIconResponse: MessageOpcode = MessageOpcode(rawValue: 0x8066)
+    static let getWindowThumbnailRequest: MessageOpcode = MessageOpcode(rawValue: 0x8067)
+    static let getWindowThumbnailResponse: MessageOpcode = MessageOpcode(rawValue: 0x8068)
+    static let subscribeWindowEventsRequest: MessageOpcode = MessageOpcode(rawValue: 0x8069)
+    static let subscribeWindowEventsResponse: MessageOpcode = MessageOpcode(rawValue: 0x806A)
+    static let unsubscribeWindowEventsRequest: MessageOpcode = MessageOpcode(rawValue: 0x806B)
+    static let unsubscribeWindowEventsResponse: MessageOpcode = MessageOpcode(rawValue: 0x806C)
+    static let windowChangedEvent: MessageOpcode = MessageOpcode(rawValue: 0x806D)
 }
 
 public struct WindowListRequestFlagSet: OptionSet, Hashable, Equatable {
