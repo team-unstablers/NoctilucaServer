@@ -122,7 +122,6 @@ struct RemoteSessionProjectionView: View {
                 // allowsHitTesting(false) 필수: 마우스 클릭이 아래 뷰(입력 캡처)로 전달되어야 함.
                 // 커서 이미지가 있을 때만 렌더링하여 불필요한 리소스 소모 방지
                 if projection.cursorState.image != nil {
-                    
                     MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize)
                         .offset(offset)
                         .frame(width: rect.width, height: rect.height)

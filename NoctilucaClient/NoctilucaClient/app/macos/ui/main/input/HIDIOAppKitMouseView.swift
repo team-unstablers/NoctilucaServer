@@ -59,6 +59,16 @@ private final class MouseInputCaptureView: NSView {
         self.pointer = pointer
     }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        guard let window, window.firstResponder !== self else {
+            return
+        }
+
+        window.makeFirstResponder(self)
+    }
+
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
 
@@ -76,6 +86,22 @@ private final class MouseInputCaptureView: NSView {
         let newTrackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
         addTrackingArea(newTrackingArea)
         trackingArea = newTrackingArea
+    }
+
+    override func keyDown(with _: NSEvent) {
+        // Swallow key events while capturing input to avoid system beeps and focus traversal.
+    }
+
+    override func keyUp(with _: NSEvent) {
+        // Swallow key events while capturing input to avoid system beeps and focus traversal.
+    }
+
+    override func insertTab(_ : Any?) {
+        // Prevent key view loop focus changes when Tab is pressed.
+    }
+
+    override func insertBacktab(_ : Any?) {
+        // Prevent key view loop focus changes when Shift-Tab is pressed.
     }
 
     override func mouseMoved(with event: NSEvent) {
