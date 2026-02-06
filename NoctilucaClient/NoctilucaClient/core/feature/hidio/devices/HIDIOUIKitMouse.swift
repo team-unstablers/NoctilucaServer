@@ -24,18 +24,15 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
     private let logger = NoctilucaLogger(category: "HIDIOUIKitMouse")
 
     private weak var controller: HIDIOController?
-    private weak var router: PointerInputRouter?
 
     private var geometry: CGSize = .zero
 
     func connect(to controller: HIDIOController) {
         self.controller = controller
-        self.router = controller.pointerInputRouter
     }
 
     func disconnect() {
         self.controller = nil
-        self.router = nil
     }
 
     func updateGeometry(_ size: CGSize) {
@@ -48,19 +45,11 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
             return
         }
 
-        if let router {
-            router.moveMouseAbsolutePercentage(from: .touch, to: normalized)
-        } else {
-            controller?.moveMouseAbsolutePercentage(to: normalized)
-        }
+        controller?.moveMouseAbsolutePercentage(to: normalized)
     }
 
     func moveRelative(by delta: CGPoint) {
-        if let router {
-            router.moveMouseRelative(from: .touch, by: delta)
-        } else {
-            controller?.moveMouseRelative(to: delta)
-        }
+        controller?.moveMouseRelative(to: delta)
     }
 
     func moveRelativePercentage(by delta: CGPoint) {
@@ -69,35 +58,19 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
             return
         }
         
-        if let router {
-            router.moveMouseRelativePercentage(from: .touch, by: normalized)
-        } else {
-            controller?.moveMouseRelativePercentage(to: normalized)
-        }
+        controller?.moveMouseRelativePercentage(to: normalized)
     }
 
     func buttonDown(_ button: MouseButtonType) {
-        if let router {
-            router.mouseButtonDown(from: .touch, button: button)
-        } else {
-            controller?.mouseButtonDown(button: button)
-        }
+        controller?.mouseButtonDown(button: button)
     }
 
     func buttonUp(_ button: MouseButtonType) {
-        if let router {
-            router.mouseButtonUp(from: .touch, button: button)
-        } else {
-            controller?.mouseButtonUp(button: button)
-        }
+        controller?.mouseButtonUp(button: button)
     }
 
     func scroll(delta: CGPoint) {
-        if let router {
-            router.mouseWheel(from: .touch, delta: delta)
-        } else {
-            controller?.mouseWheel(delta: delta)
-        }
+        controller?.mouseWheel(delta: delta)
     }
 
     private func normalizedPoint(_ point: CGPoint) -> CGPoint? {

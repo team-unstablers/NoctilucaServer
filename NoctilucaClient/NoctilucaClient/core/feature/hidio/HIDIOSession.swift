@@ -109,6 +109,12 @@ class HIDIOSession: ObservableObject {
     
     private var driver: Driver!
     
+#if os(iOS)
+    var defaultSubMouse: HIDIOVirtualDevice {
+        (driver as! IOSDriver).defaultSubMouse
+    }
+#endif
+    
     var currentMouse: HIDIOVirtualDevice? {
         driver.currentMouse
     }

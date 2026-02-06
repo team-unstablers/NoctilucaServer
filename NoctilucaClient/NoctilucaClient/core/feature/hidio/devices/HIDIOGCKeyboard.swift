@@ -20,7 +20,7 @@ extension HIDIOVirtualDeviceIdentifier {
 class HIDIOGCKeyboard: HIDIOVirtualDevice {
     private static var _shared: HIDIOGCKeyboard? = nil
     
-    static func shared() -> HIDIOGCKeyboard? {
+    static func shared() -> HIDIOGCKeyboard {
         if _shared == nil {
             let shared = HIDIOGCKeyboard()
             shared.setup()
@@ -28,7 +28,7 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
             _shared = shared
         }
         
-        return _shared
+        return _shared!
     }
     
     static let kind: HIDIOVirtualDeviceKind = .keyboard

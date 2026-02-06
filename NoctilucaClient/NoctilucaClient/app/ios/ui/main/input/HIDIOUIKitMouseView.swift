@@ -12,46 +12,23 @@ import UIKit
 import SiriusKitClient
 
 struct HIDIOUIKitMouseView: View {
-    let client: NoctilucaClient
+    let mouse: HIDIOUIKitMouse
     
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
 
-    @State
-    private var pointer = HIDIOUIKitPointer()
-
     var body: some View {
         HIDIOUIKitMouseCaptureView(
-            pointer: pointer,
+            pointer: mouse,
             mode: $mode,
             trackpadMoveMultiplier: $trackpadMoveMultiplier
         )
-            .onAppear {
-                connectPointerIfNeeded(client)
-            }
-        /*
-            .onDisappear {
-                disconnectPointer(client)
-            }
-         */
-    }
-
-    private func connectPointerIfNeeded(_ client: NoctilucaClient) {
-        guard let controller = client.hidioController else {
-            return
-        }
-
-        controller.connect(pointer)
-    }
-
-    private func disconnectPointer(_ client: NoctilucaClient) {
-        client.hidioController?.disconnect(.uiKitPointer)
-        pointer.disconnect()
     }
 }
 
 private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
-    let pointer: HIDIOUIKitPointer
+    let pointer: HIDIOUIKitMouse
+    
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
 
@@ -67,7 +44,7 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
 }
 
 private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
-    private let pointer: HIDIOUIKitPointer
+    private let pointer: HIDIOUIKitMouse
     private var inputMode: AppSettings.TouchInputMode = .touch
     private var trackpadMoveMultiplier: CGFloat = 1.0
 
@@ -87,7 +64,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private var moveInertiaVelocity: CGPoint = .zero
     private var scrollInertiaVelocity: CGPoint = .zero
 
-    init(pointer: HIDIOUIKitPointer) {
+    init(pointer: HIDIOUIKitMouse) {
         self.pointer = pointer
         super.init(frame: .zero)
         backgroundColor = .clear

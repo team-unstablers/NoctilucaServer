@@ -180,11 +180,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
                 /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
                 let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
 #endif
-                if let router = self?.controller?.pointerInputRouter {
-                    router.mouseWheel(from: .hardware, delta: delta)
-                } else {
-                    controller.mouseWheel(delta: delta)
-                }
+                controller.mouseWheel(delta: delta)
             }
         }
     }

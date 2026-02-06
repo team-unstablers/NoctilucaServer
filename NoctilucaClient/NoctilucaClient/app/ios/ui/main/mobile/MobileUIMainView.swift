@@ -10,6 +10,9 @@ import SwiftUI
 
 struct MobileUIMainView: View {
     @EnvironmentObject
+    var settingsStore: SettingsStore
+    
+    @EnvironmentObject
     var viewModel: MobileUIMainViewModel
     
     var body: some View {
@@ -26,7 +29,7 @@ struct MobileUIMainView: View {
                         case .projection:
                             ProjectionSettingsTab()
                         case .input:
-                            InputSettingsTab()
+                            InputSettingsTab(settings: $settingsStore.settings)
                         case .security:
                             SecuritySettingsTab()
                         case .misc:

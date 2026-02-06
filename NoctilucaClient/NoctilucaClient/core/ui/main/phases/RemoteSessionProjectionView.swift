@@ -142,14 +142,16 @@ struct RemoteSessionProjectionView: View {
                 }
 #endif
 #if os(iOS)
-                HIDIOUIKitMouseView(
-                    client: remoteSession.client,
-                    mode: $settingsStore.settings.input.touchInputMode,
-                    trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
-                )
+                if let mouse = hidio.session.defaultSubMouse as? HIDIOUIKitMouse {
+                    HIDIOUIKitMouseView(
+                        mouse: mouse,
+                        mode: $settingsStore.settings.input.touchInputMode,
+                        trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
+                    )
                     .offset(offset)
                     .frame(width: rect.width, height: rect.height)
                     .position(x: rect.midX, y: rect.midY)
+                }
                 
                 HIDIOUIKitKeyboardInputHost(
                     client: remoteSession.client,

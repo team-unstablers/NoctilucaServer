@@ -77,7 +77,7 @@ struct InputSettingsTab: View {
                 Text("마우스 입력과 관련된 설정을 구성합니다.")
             } footer: {
 #if os(iOS)
-                switch settingsStore.settings.input.touchInputMode {
+                switch settings.input.touchInputMode {
                 case .touch:
                     Text("참고:\n- 터치 모드는 탭 시 해당 위치로 이동 후 클릭합니다.\n- 드래그는 한 손가락으로 바로 클릭+드래그로 처리됩니다.")
                 case .trackpad:
