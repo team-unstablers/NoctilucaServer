@@ -60,6 +60,7 @@ extension HIDIOSession {
             controller.disconnectAll(kind: .keyboard)
             controller.disconnectAll(kind: .mouse)
             controller.disconnectAll(kind: .pointer)
+            controller.resetKeyPressState()
             
             self.currentKeyboard = nil
             self.currentMouse = nil
@@ -91,6 +92,8 @@ extension HIDIOSession {
                     controller.disconnectAll(kind: .mouse)
                 }
             }
+
+            controller.resetKeyPressState()
         }
         
         @MainActor
@@ -98,6 +101,7 @@ extension HIDIOSession {
             controller.disconnectAll(kind: .keyboard)
             controller.disconnectAll(kind: .mouse)
             controller.disconnectAll(kind: .pointer)
+            controller.resetKeyPressState()
             
             self.currentKeyboard = nil
             self.currentMouse = nil

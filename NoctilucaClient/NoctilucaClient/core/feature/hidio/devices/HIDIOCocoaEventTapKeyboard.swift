@@ -99,6 +99,7 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice, CInteropHandle {
     }
 
     func disconnect() {
+        controller = nil
         stopEventTap()
     }
 
@@ -121,14 +122,14 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice, CInteropHandle {
         guard let runLoop = eventTapRunLoop else {
             return
         }
-        
+        CGEvent.tapEnable(tap: eventTap, enable: false)
         CFRunLoopStop(runLoop)
     }
 
     fileprivate func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         switch type {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
-            startEventTapIfNeeded()
+            CGEvent.tapEnable(tap: eventTap, enable: true)
             return Unmanaged.passUnretained(event)
         case .keyDown, .keyUp, .flagsChanged:
             break
@@ -215,6 +216,10 @@ extension HIDIOCocoaEventTapKeyboard {
         }
         
         self.eventTapRunLoop = eventTapRunLoop
+        defer {
+            self.eventTapRunLoop = nil
+            self.eventTapThread = nil
+        }
 
         CGEvent.tapEnable(tap: eventTap, enable: true)
         CFRunLoopRun()

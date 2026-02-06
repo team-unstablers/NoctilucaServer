@@ -135,6 +135,14 @@ class HIDIOController {
             self.devices.removeValue(forKey: identifier)
         }
     }
+
+    func resetKeyPressState() {
+        let pressedKeys = Array(keyPressState.pressedKeys)
+        for key in pressedKeys {
+            keyUp(keyCode: key)
+        }
+        keyPressState.reset()
+    }
     
     func keyDown(keyCode: LinuxKeycode) {
         let event = KeyboardEvent(
