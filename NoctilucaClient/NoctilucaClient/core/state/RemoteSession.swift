@@ -31,6 +31,9 @@ class RemoteSession: ObservableObject {
     @Published
     private(set) var projection: Projection? = nil
     
+    @Published
+    private(set) var hidio: HIDIO? = nil
+    
     private let errorEvents = PassthroughSubject<NoctilucaClientError, Never>()
 
     var errorPublisher: AnyPublisher<NoctilucaClientError, Never> {
@@ -161,6 +164,13 @@ class RemoteSession: ObservableObject {
             Task { [weak self] in
                 try? await self?.projection?.startAudioProjection()
             }
+            
+        case .hidio:
+            guard let hidioChannel = channel as? HIDIOChannel else {
+                return
+            }
+            
+            self.hidio = HIDIO(self, channel: hidioChannel)
         default:
             break
         }
@@ -169,6 +179,10 @@ class RemoteSession: ObservableObject {
     private func handleChannelClose(_ channelID: UUID) {
         if channelID == projection?.channelID {
             self.projection = nil
+        }
+        
+        if channelID == hidio?.channelID {
+            self.hidio = nil
         }
     }
 }

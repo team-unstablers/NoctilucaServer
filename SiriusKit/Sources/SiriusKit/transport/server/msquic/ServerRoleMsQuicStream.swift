@@ -42,7 +42,6 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
         }
 
         // Graceful shutdown
-        quicStream.shutdownSend()
         await quicStream.shutdown()
         await finalize(event: .closed)
     }

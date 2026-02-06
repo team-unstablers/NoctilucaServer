@@ -120,7 +120,7 @@ class NoctilucaClient: ObservableObject {
     var sessionID: UUID?
     var mainChannel: MainChannel!
     
-    var hidioController: HIDIOController!
+    var hidioChannel: HIDIOChannel!
     var projectionChannel: ProjectionChannel!
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
@@ -306,9 +306,9 @@ class NoctilucaClient: ObservableObject {
 
         self.phase = .closed
 
-        self.hidioController?.disconnectAll(kind: .keyboard)
-        self.hidioController?.disconnectAll(kind: .mouse)
-        self.hidioController?.disconnectAll(kind: .pointer)
+        self.hidioChannel?.controller.disconnectAll(kind: .keyboard)
+        self.hidioChannel?.controller.disconnectAll(kind: .mouse)
+        self.hidioChannel?.controller.disconnectAll(kind: .pointer)
 
         // Projection 정리
         await self.projectionChannel?.stopAllSessions()

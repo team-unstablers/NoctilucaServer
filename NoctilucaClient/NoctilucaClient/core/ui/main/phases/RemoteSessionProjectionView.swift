@@ -31,8 +31,6 @@ enum ProjectionSourceDescriptor: CustomDebugStringConvertible, Equatable, Hashab
 struct RemoteSessionProjectionView: View {
     static let logger = NoctilucaLogger(category: "RemoteSessionProjectionView")
     
-
-    
     @ObservedObject
     var remoteSession: RemoteSession
     
@@ -42,6 +40,9 @@ struct RemoteSessionProjectionView: View {
     
     @ObservedObject
     var projection: RemoteSession.Projection
+    
+    @ObservedObject
+    var hidio: RemoteSession.HIDIO
     
     @Binding
     var sourceDescriptor: ProjectionSourceDescriptor
@@ -105,20 +106,22 @@ struct RemoteSessionProjectionView: View {
         // TODO: preparingView unless(remoteSession.projection)
         GeometryReader { geometry in
             ZStack(alignment: .topLeading) {
+                let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
+                
                 if let displayLayer = source?.displayLayer {
                     SampleBufferDisplayView(displayLayer: displayLayer)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .scaleEffect(scale)
                         .offset(offset)
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                        .scaleEffect(scale)
                 }
                
                 // Metal Cursor Overlay
                 // ZStack 위에 투명하게 얹음.
                 // allowsHitTesting(false) 필수: 마우스 클릭이 아래 뷰(입력 캡처)로 전달되어야 함.
                 // 커서 이미지가 있을 때만 렌더링하여 불필요한 리소스 소모 방지
-                let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                 if projection.cursorState.image != nil {
-                    
                     MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize)
                         .offset(offset)
                         .frame(width: rect.width, height: rect.height)
@@ -126,18 +129,29 @@ struct RemoteSessionProjectionView: View {
                         .allowsHitTesting(false)
                         // 화면 줌인/아웃 시 커서도 같이 확대/축소 및 이동
                         .scaleEffect(scale)
-                        .opacity(projection.cursorState.displayID == source?.displayID ? 1.0 : 0.0)
                 }
                 
+#if os(macOS)
+                if hidio.sessionMode == .shared,
+                   let mouse = hidio.session.currentMouse as? HIDIOAppKitPointer
+                {
+                    HIDIOAppKitMouseView(pointer: mouse)
+                        .offset(offset)
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                }
+#endif
 #if os(iOS)
-                HIDIOUIKitMouseView(
-                    client: remoteSession.client,
-                    mode: $settingsStore.settings.input.touchInputMode,
-                    trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
-                )
+                if let mouse = hidio.session.defaultSubMouse as? HIDIOUIKitMouse {
+                    HIDIOUIKitMouseView(
+                        mouse: mouse,
+                        mode: $settingsStore.settings.input.touchInputMode,
+                        trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
+                    )
                     .offset(offset)
                     .frame(width: rect.width, height: rect.height)
                     .position(x: rect.midX, y: rect.midY)
+                }
                 
                 HIDIOUIKitKeyboardInputHost(
                     client: remoteSession.client,
@@ -156,6 +170,7 @@ struct RemoteSessionProjectionView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
 #endif
+
             }
             .onChange(of: sourceDescriptor) { _, newValue in
                 self.resolveSource(newValue)

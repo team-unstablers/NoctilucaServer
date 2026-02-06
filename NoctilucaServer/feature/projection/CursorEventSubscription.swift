@@ -11,6 +11,7 @@ import AsyncAlgorithms
 import SiriusKit
 
 class CursorEventSubscription {
+    private let logger = NoctilucaLogger(category: "CursorEventSubscription")
     let id: UUID = UUID()
 
     private let cursorStateHolder = CursorStateHolder.shared
@@ -33,7 +34,7 @@ class CursorEventSubscription {
         self.stateTask = Task { [weak self] in
             guard let self = self else { return }
 
-            let throttled = self.cursorStateHolder.cursorStateEvents
+            let throttled = self.cursorStateHolder.makeCursorStateStream()
                 ._throttle(for: .milliseconds(1000 / 60), latest: true)
 
             for await state in throttled {
@@ -46,9 +47,21 @@ class CursorEventSubscription {
         self.hashTask = Task { [weak self] in
             guard let self = self else { return }
 
-            for await _ in self.cursorStateHolder.cursorHashEvents {
+            for await _ in self.cursorStateHolder.makeCursorHashStream() {
                 guard let channel = self.channel else { continue }
-                try? await channel.sendCursorImageEvent()
+                do {
+                    try await channel.sendCursorImageEvent()
+                } catch {
+                    self.logger.error("Failed to send cursor image update: \(error)")
+                }
+            }
+        }
+        
+        Task {
+            try? await channel?.sendCursorImageEvent()
+            
+            if let state = self.cursorStateHolder.cursorState {
+                try? await channel?.sendCursorPositionEvent(state)
             }
         }
     }

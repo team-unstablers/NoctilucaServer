@@ -9,6 +9,7 @@ import Foundation
 import Security
 
 import CryptoKit
+import _CryptoExtras
 
 internal import SwiftASN1
 internal import X509
@@ -41,19 +42,27 @@ internal class InMemoryQUICServerIdentity: QUICServerIdentity {
             let secCertificate = try security.createCertificate(using: certificate).get()
             let applicationLabel = try secCertificate.extractApplicationLabel()
 
-            let secPrivateKey = try security.createPrivateKey(from: privateKey, with: applicationLabel).get()
+            let secPrivateKey: SecKey
+            let keyAttributes: [String: Any] = [
+                kSecAttrKeyType as String: args.keyType.secKeyType,
+                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+                kSecAttrKeySizeInBits as String: args.keyType.keySizeInBits,
+                kSecAttrLabel as String: args.identityLabel,
+                kSecAttrApplicationLabel as String: applicationLabel,
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+                kSecAttrIsExtractable as String: true
+            ]
+
+            switch privateKey {
+            case .p256(let key):
+                secPrivateKey = try security.createPrivateKey(from: key, with: applicationLabel).get()
+            case .rsa(let key):
+                secPrivateKey = try security.createRSAPrivateKey(from: key, with: applicationLabel).get()
+            }
 
             // keychain에 저장한다
             try keychain.addTemporaryItem(secCertificate, clazz: .certificate, label: args.identityLabel).get()
-            try keychain.addTemporaryItem(secPrivateKey, clazz: .privateKey, label: args.identityLabel, extras: [
-                // 근데 여기서 필요 없는 프로퍼티가 있지 않을까?
-                kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-                kSecAttrKeySizeInBits as String: 256,
-                kSecAttrLabel as String: args.identityLabel,
-                kSecAttrApplicationLabel as String: applicationLabel,
-                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
-            ]).get()
+            try keychain.addTemporaryItem(secPrivateKey, clazz: .privateKey, label: args.identityLabel, extras: keyAttributes).get()
 
             // 4. 신뢰 설정 적용
             try security.trustCertificate(secCertificate, scope: .user).get()

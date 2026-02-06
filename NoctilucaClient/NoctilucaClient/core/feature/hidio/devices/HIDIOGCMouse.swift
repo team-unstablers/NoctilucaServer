@@ -38,7 +38,7 @@ extension HIDIOVirtualDeviceIdentifier {
 /// - 이 장치가 HIDIOController에 연결되어 있는 동안, 윈도우의 루트 뷰 컨트롤러에 커서 락이 걸립니다. (= 마우스 커서가 숨겨지고, 중앙에 고정됩니다)
 ///
 ///
-class HIDIOGCMouse: HIDIOLockableVirtualDevice {
+class HIDIOGCMouse: HIDIOVirtualDevice {
     private static var _shared: HIDIOGCMouse? = nil
     
     static func shared() -> HIDIOGCMouse? {
@@ -58,22 +58,8 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
     private let logger = NoctilucaLogger(category: "HIDIOGCMouse")
     
     private var cancellables: Set<AnyCancellable> = []
-
-    private var mouse: GCMouse? {
-        willSet {
-            if newValue == nil {
-                self.destroyMouseInputHandler()
-            }
-        }
-        didSet {
-            if mouse != nil {
-                self.setupMouseInputHandler()
-            }
-        }
-    }
     
     private var controller: HIDIOController?
-    private var isHardwareConnected: Bool = false
     
     init() {
     }
@@ -87,8 +73,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
                 self?.logger.debug("GCMouse did connect: \(mouse)")
-                self?.isHardwareConnected = true
-                self?.controller?.pointerInputRouter?.updateHardwareMouseConnected(true)
+                self?.updateHandler()
             }
             .store(in: &cancellables)
         
@@ -96,8 +81,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
                 self?.logger.debug("GCMouse did disconnect: \(mouse)")
-                self?.isHardwareConnected = false
-                self?.controller?.pointerInputRouter?.updateHardwareMouseConnected(false)
+                self?.updateHandler()
             }
             .store(in: &cancellables)
  
@@ -106,7 +90,7 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
                 self?.logger.debug("GCMouse mouse did become current: \(mouse)")
-                self?.mouse = mouse
+                self?.updateHandler()
             }
             .store(in: &cancellables)
         
@@ -114,17 +98,24 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
                 self?.logger.debug("GCMouse mouse did stop being current: \(mouse)")
-                self?.mouse = nil
+                self?.updateHandler()
             }
             .store(in: &cancellables)
 
         if let currentMouse = GCMouse.current {
             self.logger.debug("Found existing current GCMouse: \(currentMouse)")
-            self.mouse = currentMouse
-            self.isHardwareConnected = true
         } else if let firstMouse = GCMouse.mice().first {
             self.logger.debug("Found existing GCMouse (not current): \(firstMouse)")
-            self.isHardwareConnected = true
+        }
+        
+        self.updateHandler()
+    }
+    
+    fileprivate func updateHandler() {
+        if self.controller != nil {
+            self.setupMouseInputHandler()
+        } else {
+            self.destroyMouseInputHandler()
         }
     }
     
@@ -133,119 +124,86 @@ class HIDIOGCMouse: HIDIOLockableVirtualDevice {
             return
         }
         
-        guard let mouseInput = self.mouse?.mouseInput else {
-            return
-        }
-        
-        mouseInput.mouseMovedHandler = { [weak self] mouse, deltaX, deltaY in
-            guard let controller = self?.controller else {
+        for mouse in GCMouse.mice() {
+            guard let mouseInput = mouse.mouseInput else {
                 return
             }
             
-            self?.logger.debug("Mouse moved: deltaX=\(deltaX), deltaY=\(deltaY)")
-            let delta = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
-
-            if let router = self?.controller?.pointerInputRouter {
-                router.moveMouseRelative(from: .hardware, by: delta)
-            } else {
-                controller.moveMouseRelative(to: delta)
-            }
-            
-            Task { @MainActor in
-                self?.centerCursor()
-            }
-        }
-        
-        func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
-            button.preferredSystemGestureState = .alwaysReceive
-            button.valueChangedHandler = { [weak self] button, value, pressed in
+            mouseInput.mouseMovedHandler = { [weak self] mouse, deltaX, deltaY in
                 guard let controller = self?.controller else {
                     return
                 }
                 
-                self?.logger.debug("Mouse button changed: value=\(value), pressed=\(pressed)")
+                let delta = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
+                controller.moveMouseRelative(to: delta)
                 
-                if pressed {
-                    if let router = self?.controller?.pointerInputRouter {
-                        router.mouseButtonDown(from: .hardware, button: buttonType)
-                    } else {
-                        controller.mouseButtonDown(button: buttonType)
+                Task { @MainActor [weak self] in
+                    self?.centerCursor()
+                }
+            }
+            
+            func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
+                button.preferredSystemGestureState = .alwaysReceive
+                button.valueChangedHandler = { [weak self] button, value, pressed in
+                    guard let controller = self?.controller else {
+                        return
                     }
-                } else {
-                    if let router = self?.controller?.pointerInputRouter {
-                        router.mouseButtonUp(from: .hardware, button: buttonType)
+                    
+                    if pressed {
+                        controller.mouseButtonDown(button: buttonType)
                     } else {
                         controller.mouseButtonUp(button: buttonType)
                     }
                 }
-            }
-        }
-        
-        setupButtonHandler(button: mouseInput.leftButton, as: .left)
-        
-        if let rightButton = mouseInput.rightButton {
-            setupButtonHandler(button: rightButton, as: .right)
-        }
-
-        
-        mouseInput.scroll.valueChangedHandler = { [weak self] wheel, xValue, yValue in
-            guard let controller = self?.controller else {
-                return
+                
             }
             
-            self?.logger.debug("Mouse wheel changed: xValue=\(xValue), yValue=\(yValue)")
+            setupButtonHandler(button: mouseInput.leftButton, as: .left)
             
+            if let rightButton = mouseInput.rightButton {
+                setupButtonHandler(button: rightButton, as: .right)
+            }
+            
+            
+            mouseInput.scroll.valueChangedHandler = { [weak self] wheel, xValue, yValue in
+                guard let controller = self?.controller else {
+                    return
+                }
+                
+                self?.logger.debug("Mouse wheel changed: xValue=\(xValue), yValue=\(yValue)")
+                
 #if os(macOS)
-            /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
-            let delta = CGPoint(x: CGFloat(xValue), y: CGFloat(-yValue))
+                let multiplier: Float = 16.0
+                /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
+                let delta = CGPoint(x: CGFloat(xValue * multiplier), y: CGFloat(yValue * multiplier))
 #else
-            /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
-            let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
+                /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
+                let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
 #endif
-            if let router = self?.controller?.pointerInputRouter {
-                router.mouseWheel(from: .hardware, delta: delta)
-            } else {
                 controller.mouseWheel(delta: delta)
             }
         }
     }
     
     fileprivate func destroyMouseInputHandler() {
-        self.mouse?.mouseInput?.mouseMovedHandler = nil
-        
-        self.mouse?.mouseInput?.leftButton.valueChangedHandler = nil
-        self.mouse?.mouseInput?.rightButton?.valueChangedHandler = nil
-        
-        self.mouse?.mouseInput?.scroll.valueChangedHandler = nil
+        for mouse in GCMouse.mice() {
+            mouse.mouseInput?.mouseMovedHandler = nil
+            
+            mouse.mouseInput?.leftButton.valueChangedHandler = nil
+            mouse.mouseInput?.rightButton?.valueChangedHandler = nil
+            
+            mouse.mouseInput?.scroll.valueChangedHandler = nil
+        }
     }
     
     func connect(to controller: HIDIOController) {
         self.controller = controller
-        controller.pointerInputRouter?.updateHardwareMouseConnected(isHardwareConnected)
-        
-        if self.mouse != nil {
-            self.setupMouseInputHandler()
-        }
+        self.setupMouseInputHandler()
     }
     
     func disconnect() {
         self.controller = nil
-    }
-    
-    func lock() throws {
-        self.setupMouseInputHandler()
-        
-        Task { @MainActor in
-            self.hideCursor()
-        }
-    }
-    
-    func unlock() throws {
         self.destroyMouseInputHandler()
-        
-        Task { @MainActor in
-            self.showCursor()
-        }
     }
 }
 
@@ -288,7 +246,6 @@ fileprivate extension HIDIOGCMouse {
         else {
             return
         }
-        
         
         // keyWindow의 중앙
         let center = NSPoint(

@@ -43,8 +43,10 @@ fileprivate struct MainWindowContentViewInternal: View {
                 }
         case .connected:
             if let remoteSession = viewModel.remoteSession {
-                if let projection = remoteSession.projection {
-                    MainWindowRemoteSessionView(remoteSession: remoteSession, projection: projection)
+                if let projection = remoteSession.projection,
+                   let hidio = remoteSession.hidio
+                {
+                    MainWindowRemoteSessionView(remoteSession: remoteSession, projection: projection, hidio: hidio)
                 } else {
                     ProgressView("프로젝션 채널 초기화 중...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

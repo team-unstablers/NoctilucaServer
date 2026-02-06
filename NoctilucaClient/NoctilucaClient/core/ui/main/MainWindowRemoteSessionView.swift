@@ -21,6 +21,9 @@ struct MainWindowRemoteSessionView: View {
     @ObservedObject
     var projection: RemoteSession.Projection
     
+    @ObservedObject
+    var hidio: RemoteSession.HIDIO
+
     @State
     var referenceTicket: RemoteSession.SessionReferenceTicket?
     
@@ -33,6 +36,7 @@ struct MainWindowRemoteSessionView: View {
                 RemoteSessionProjectionView(
                     remoteSession: remoteSession,
                     projection: projection,
+                    hidio: hidio,
                     sourceDescriptor: $sourceDescriptor
                 )
             } else {

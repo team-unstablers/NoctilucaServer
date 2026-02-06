@@ -9,6 +9,7 @@ import Foundation
 import Security
 
 import CryptoKit
+import _CryptoExtras
 
 internal import SwiftASN1
 internal import X509 // swift-certificates
@@ -41,6 +42,75 @@ enum QUICServerIdentityCreationError: Error {
     case fileWriteFailed
 }
 
+public enum IdentityKeyType {
+    case p256
+    case rsa2048
+    case rsa4096
+
+    var secKeyType: CFString {
+        switch self {
+        case .p256:
+            return kSecAttrKeyTypeECSECPrimeRandom
+        case .rsa2048, .rsa4096:
+            return kSecAttrKeyTypeRSA
+        }
+    }
+
+    var keySizeInBits: Int {
+        switch self {
+        case .p256:
+            return 256
+        case .rsa2048:
+            return 2048
+        case .rsa4096:
+            return 4096
+        }
+    }
+}
+
+enum IdentityPrivateKey {
+    case p256(P256.Signing.PrivateKey)
+    case rsa(_RSA.Signing.PrivateKey)
+
+    var derRepresentation: Data {
+        switch self {
+        case .p256(let key):
+            return key.derRepresentation
+        case .rsa(let key):
+            return key.pkcs8DERRepresentation
+        }
+    }
+
+    var certificatePrivateKey: Certificate.PrivateKey {
+        switch self {
+        case .p256(let key):
+            return Certificate.PrivateKey(key)
+        case .rsa(let key):
+            return Certificate.PrivateKey(key)
+        }
+    }
+
+    var certificatePublicKey: Certificate.PublicKey {
+        switch self {
+        case .p256(let key):
+            return Certificate.PublicKey(key.publicKey)
+        case .rsa(let key):
+            return Certificate.PublicKey(key.publicKey)
+        }
+    }
+
+    static func generate(keyType: IdentityKeyType) throws -> IdentityPrivateKey {
+        switch keyType {
+        case .p256:
+            return .p256(P256.Signing.PrivateKey())
+        case .rsa2048:
+            return .rsa(try _RSA.Signing.PrivateKey(keySize: .bits2048))
+        case .rsa4096:
+            return .rsa(try _RSA.Signing.PrivateKey(keySize: .bits4096))
+        }
+    }
+}
+
 public struct QUICServerIdentityInfo {
     public let commonName: String
     public let fingerprint: Data
@@ -51,6 +121,7 @@ public struct QUICServerIdentityInfo {
 public struct QUICServerIdentityCreationArgs {
     // Keychain의 경우 식별자 역할, P12 파일의 경우 파일 이름 역할을 합니다.
     public let identityLabel: String
+    public let keyType: IdentityKeyType
 
     public let commonName: String
     public let organizationName: String
@@ -58,8 +129,9 @@ public struct QUICServerIdentityCreationArgs {
     public let countryName: String
     public let validityPeriodInDays: Int
 
-    public init(identityLabel: String, commonName: String, organizationName: String, organizationalUnitName: String, countryName: String, validityPeriodInDays: Int) {
+    public init(identityLabel: String, keyType: IdentityKeyType = .p256, commonName: String, organizationName: String, organizationalUnitName: String, countryName: String, validityPeriodInDays: Int) {
         self.identityLabel = identityLabel
+        self.keyType = keyType
         self.commonName = commonName
         self.organizationName = organizationName
         self.organizationalUnitName = organizationalUnitName
@@ -77,10 +149,18 @@ public protocol QUICServerIdentity {
 // MARK: - Internal helpers
 
 enum SelfSignedCertificateBuilder {
-    static func createCertificateAndKey(args: QUICServerIdentityCreationArgs) throws -> (Certificate, P256.Signing.PrivateKey) {
+    static func createCertificateAndKey(args: QUICServerIdentityCreationArgs) throws -> (Certificate, IdentityPrivateKey) {
         // 1. Key Pair 생성 (P256 권장, QUIC/TLS 1.3 친화적)
         // RSA를 꼭 써야 한다면 RSA 키 생성 로직을 유지하되, 여기서는 최신 트렌드인 P256을 예시로 듭니다.
-        let key = P256.Signing.PrivateKey()
+        let key = try IdentityPrivateKey.generate(keyType: args.keyType)
+
+        let signatureAlgorithm: Certificate.SignatureAlgorithm
+        switch key {
+        case .p256:
+            signatureAlgorithm = .ecdsaWithSHA256
+        case .rsa:
+            signatureAlgorithm = .sha256WithRSAEncryption
+        }
 
         // 2. 인증서 정보 구성
         let subjectName = try DistinguishedName {
@@ -97,18 +177,18 @@ enum SelfSignedCertificateBuilder {
         let certificate = try Certificate(
             version: .v3,
             serialNumber: Certificate.SerialNumber(),
-            publicKey: Certificate.PublicKey(key.publicKey),
+            publicKey: key.certificatePublicKey,
             notValidBefore: now,
             notValidAfter: expiry,
             issuer: subjectName,
             subject: subjectName,
-            signatureAlgorithm: .ecdsaWithSHA256,
+            signatureAlgorithm: signatureAlgorithm,
             extensions: Certificate.Extensions {
                 Critical(BasicConstraints.notCertificateAuthority)
                 KeyUsage(digitalSignature: true, keyEncipherment: true, keyAgreement: true)
                 try ExtendedKeyUsage([.serverAuth])
             },
-            issuerPrivateKey: Certificate.PrivateKey(key)
+            issuerPrivateKey: key.certificatePrivateKey
         )
 
         return (certificate, key)

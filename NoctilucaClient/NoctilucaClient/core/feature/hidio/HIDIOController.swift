@@ -12,28 +12,42 @@ import AsyncAlgorithms
 
 import SiriusKitClient
 
+
 class HIDIOController {
+    class KeyPressState {
+        private(set) var pressedKeys: Set<LinuxKeycode> = []
+        
+        func keyDown(_ keyCode: LinuxKeycode) {
+            pressedKeys.insert(keyCode)
+        }
+        
+        func keyUp(_ keyCode: LinuxKeycode) {
+            pressedKeys.remove(keyCode)
+        }
+        
+        func reset() {
+            pressedKeys.removeAll()
+        }
+    }
+    
     private let logger = NoctilucaLogger(category: "HIDIOController")
     
     private let settingsStore: SettingsStore = .shared
     
-    private let channel: HIDIOChannel
+    private let channel: Weak<HIDIOChannel>
     private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
 
-    var pointerInputRouter: PointerInputRouter?
-    
     private let eventStream: AsyncStream<HIDEvent>
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation
     
     private var publisherTask: Task<Void, Never>? = nil
     private let requestCounter = ManagedAtomic<UInt64>(0)
     
-    private var pressedKeys: Set<LinuxKeycode> = []
-    private(set) var isCaptureLockEnabled: Bool = false
-    private var unlockSequenceMatcher = KeySequenceMatcher()
+    private(set) var keyPressState = KeyPressState()
+    private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
 
     init(channel: HIDIOChannel) {
-        self.channel = channel
+        self.channel = Weak(channel)
         
         var continuation: AsyncStream<HIDEvent>.Continuation!
         self.eventStream = AsyncStream<HIDEvent> { cont in
@@ -59,26 +73,15 @@ class HIDIOController {
     private func publisherTaskMain() async {
         // TODO: 폴링 레이트 설정 가능해야 함
         // 120Hz로 폴링
-        let pollingRate = 60.0
-        
-        for await chunks in self.eventStream.chunked(by: .repeating(every: .milliseconds(1000 / pollingRate), clock: .suspending)) {
-            
-            if chunks.isEmpty {
-                continue
-            }
-            
-            if chunks.count >= 2 {
-                logger.info("Sending HID event batch with \(chunks.count) events")
-            }
-            
+        for await event in self.eventStream {
             let packet = HIDIOPacket(
                 sequenceNumber: nextRequestID(),
                 timestamp: UInt64(Date().timeIntervalSince1970 * 1000),
-                events: Array(chunks)
+                events: [event]
             )
             
             do {
-                try await channel.send(opcode: .hidioPacket, message: consume packet)
+                try await channel.ref.send(opcode: .hidioPacket, message: consume packet)
             } catch {
                 logger.error("Failed to send HID event batch: \(error)")
             }
@@ -92,10 +95,6 @@ class HIDIOController {
         device.connect(to: self)
         
         self.devices[identifier] = device
-
-        if isCaptureLockEnabled, let lockableDevice = device as? HIDIOLockableVirtualDevice {
-            try? lockableDevice.lock()
-        }
     }
     
     func device(for identifier: HIDIOVirtualDeviceIdentifier) -> HIDIOVirtualDevice? {
@@ -111,10 +110,6 @@ class HIDIOController {
         guard let device = self.devices[identifier] else {
             return
         }
-        
-        if let lockableDevice = device as? HIDIOLockableVirtualDevice {
-            try? lockableDevice.unlock()
-        }
 
         device.disconnect()
         self.devices.removeValue(forKey: identifier)
@@ -124,31 +119,17 @@ class HIDIOController {
         let devicesToDisconnect = self.devices.filter { type(of: $0.value).kind == kind }
         
         for (identifier, device) in devicesToDisconnect {
-            if let lockableDevice = device as? HIDIOLockableVirtualDevice {
-                try? lockableDevice.unlock()
-            }
-
             device.disconnect()
             self.devices.removeValue(forKey: identifier)
         }
     }
-    
-    func enableCaptureLock() {
-        isCaptureLockEnabled = true
-        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
-        
-        for (_, device) in lockableDevices {
-            try? device.lock()
+
+    func resetKeyPressState() {
+        let pressedKeys = Array(keyPressState.pressedKeys)
+        for key in pressedKeys {
+            keyUp(keyCode: key)
         }
-    }
-    
-    func disableCaptureLock() {
-        isCaptureLockEnabled = false
-        let lockableDevices = self.devices.compactMapValues { $0 as? HIDIOLockableVirtualDevice }
-        
-        for (_, device) in lockableDevices {
-            try? device.unlock()
-        }
+        keyPressState.reset()
     }
     
     func keyDown(keyCode: LinuxKeycode) {
@@ -161,18 +142,9 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
+        self.keyPressState.keyDown(keyCode)
         
-        self.pressedKeys.insert(keyCode)
-        
-        let keySequence = settingsStore.settings.input.unlockKeySequence
-        unlockSequenceMatcher.update(sequence: keySequence)
-        if unlockSequenceMatcher.handleKeyDown(
-            keyCode: keyCode,
-            pressedKeys: self.pressedKeys,
-            isActive: isCaptureLockEnabled
-        ) {
-            disableCaptureLock()
-        }
+        self.evaluateHooks()
     }
     
     func keyUp(keyCode: LinuxKeycode) {
@@ -185,41 +157,36 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
-        
-        self.pressedKeys.remove(keyCode)
-
-        let keySequence = settingsStore.settings.input.unlockKeySequence
-        unlockSequenceMatcher.update(sequence: keySequence)
-        unlockSequenceMatcher.handleKeyUp(pressedKeys: self.pressedKeys)
+        self.keyPressState.keyUp(keyCode)
     }
     
-    func moveMouseAbsolutePercentage(to position: CGPoint) {
+    func moveMouseAbsolutePercentage(to position: CGPoint, on scope: CursorPositionScope = .displayId(-1)) {
         let event = MouseMoveEvent(
             moveType: .absolute,
             // TODO: setMouseScope(...) 같은거 필요하고, 프로젝션 윈도우에서 능동적으로 호출해야 함
-            scope: .displayId(-1),
+            scope: scope,
             position: .percent(CursorPositionPercent(x: Float(position.x), y: Float(position.y)))
         )
         
         self.eventStreamContinuation.yield(event)
     }
     
-    func moveMouseRelative(to position: CGPoint) {
+    func moveMouseRelative(to position: CGPoint, on scope: CursorPositionScope = .displayId(-1)) {
         let event = MouseMoveEvent(
             moveType: .relative,
             // TODO: setMouseScope(...) 같은거 필요하고, 프로젝션 윈도우에서 능동적으로 호출해야 함
-            scope: .displayId(-1),
+            scope: scope,
             position: .pixel(CursorPositionPixel(x: Int32(position.x), y: Int32(position.y)))
         )
         
         self.eventStreamContinuation.yield(event)
     }
     
-    func moveMouseRelativePercentage(to position: CGPoint) {
+    func moveMouseRelativePercentage(to position: CGPoint, on scope: CursorPositionScope = .displayId(-1)) {
         let event = MouseMoveEvent(
             moveType: .relative,
             // TODO: setMouseScope(...) 같은거 필요하고, 프로젝션 윈도우에서 능동적으로 호출해야 함
-            scope: .displayId(-1),
+            scope: scope,
             position: .percent(CursorPositionPercent(x: Float(position.x), y: Float(position.y)))
         )
         
@@ -251,5 +218,25 @@ class HIDIOController {
         )
         
         self.eventStreamContinuation.yield(event)
+    }
+}
+
+extension HIDIOController {
+    func installHook(_ hook: HIDIOKeystrokeHook, for identifier: HIDIOKeystrokeHookIdentifier) {
+        self.keystrokeHooks[identifier] = hook
+    }
+    
+    func removeHook(for identifier: HIDIOKeystrokeHookIdentifier) {
+        self.keystrokeHooks.removeValue(forKey: identifier)
+    }
+    
+    private func evaluateHooks() {
+        let state = self.keyPressState
+        
+        for hook in self.keystrokeHooks.values {
+            if hook.evaluate(state) {
+                hook.action()
+            }
+        }
     }
 }

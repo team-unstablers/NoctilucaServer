@@ -29,30 +29,13 @@ class CursorStateHolder {
     private(set) var cursorHotspot: NSPoint? = nil
     private(set) var cursorState: CursorState? = nil
 
-    // AsyncStream (throttle은 소비자 측에서 적용)
-    let cursorStateEvents: AsyncStream<CursorState>
-    private let cursorStateContinuation: AsyncStream<CursorState>.Continuation
-
-    let cursorHashEvents: AsyncStream<Int>
-    private let cursorHashContinuation: AsyncStream<Int>.Continuation
+    // 멀티캐스트를 위한 Continuation 목록
+    private var stateContinuations: [UUID: AsyncStream<CursorState>.Continuation] = [:]
+    private var hashContinuations: [UUID: AsyncStream<Int>.Continuation] = [:]
 
     private var observerToken: Any? = nil
 
     init() {
-        // cursorState용 AsyncStream
-        var cursorStateContinuationLocal: AsyncStream<CursorState>.Continuation!
-        self.cursorStateEvents = AsyncStream<CursorState>(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            cursorStateContinuationLocal = continuation
-        }
-        self.cursorStateContinuation = cursorStateContinuationLocal
-
-        // cursorHash용 AsyncStream
-        var cursorHashContinuationLocal: AsyncStream<Int>.Continuation!
-        self.cursorHashEvents = AsyncStream<Int>(bufferingPolicy: .unbounded) { continuation in
-            cursorHashContinuationLocal = continuation
-        }
-        self.cursorHashContinuation = cursorHashContinuationLocal
-
         do {
             try CoreGraphicsPrivate.open()
         } catch {
@@ -67,8 +50,51 @@ class CursorStateHolder {
     @MainActor
     deinit {
         self.stopObserveCursorEvent()
-        self.cursorStateContinuation.finish()
-        self.cursorHashContinuation.finish()
+        
+        for continuation in stateContinuations.values {
+            continuation.finish()
+        }
+        for continuation in hashContinuations.values {
+            continuation.finish()
+        }
+    }
+    
+    /// 새로운 CursorState 스트림을 생성합니다. (Multicast 지원)
+    func makeCursorStateStream() -> AsyncStream<CursorState> {
+        return AsyncStream(CursorState.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let id = UUID()
+            self.stateContinuations[id] = continuation
+            
+            // 초기값 전송
+            if let currentState = self.cursorState {
+                continuation.yield(currentState)
+            }
+            
+            continuation.onTermination = { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.stateContinuations.removeValue(forKey: id)
+                }
+            }
+        }
+    }
+    
+    /// 새로운 CursorHash 스트림을 생성합니다. (Multicast 지원)
+    func makeCursorHashStream() -> AsyncStream<Int> {
+        return AsyncStream(Int.self, bufferingPolicy: .unbounded) { continuation in
+            let id = UUID()
+            self.hashContinuations[id] = continuation
+            
+            // 초기값 전송
+            if self.cursorHash != 0 {
+                continuation.yield(self.cursorHash)
+            }
+            
+            continuation.onTermination = { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.hashContinuations.removeValue(forKey: id)
+                }
+            }
+        }
     }
     
     private func startObserveCursorEvent() {
@@ -94,7 +120,9 @@ class CursorStateHolder {
 
         if self.cursorState != state {
             self.cursorState = state
-            self.cursorStateContinuation.yield(state)
+            for continuation in stateContinuations.values {
+                continuation.yield(state)
+            }
         }
     }
     
@@ -107,7 +135,10 @@ class CursorStateHolder {
             self.cursorHash = cursorHash
             self.cursorImage = NSCursor.currentSystem?.image
             self.cursorHotspot = NSCursor.currentSystem?.hotSpot
-            self.cursorHashContinuation.yield(cursorHash)
+            
+            for continuation in hashContinuations.values {
+                continuation.yield(cursorHash)
+            }
         }
     }
 }

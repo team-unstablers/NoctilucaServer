@@ -9,6 +9,7 @@ import Foundation
 import Security
 
 import CryptoKit
+import _CryptoExtras
 
 internal import SwiftASN1
 package import X509
@@ -101,6 +102,26 @@ package class SRSecurity {
         var error: Unmanaged<CFError>?
 
         guard let secKey = SecKeyCreateWithData(x963KeyData as CFData, attributes as CFDictionary, &error) else {
+            return .failure(.createItemFailed(error: error?.takeRetainedValue()))
+        }
+
+        return .success(secKey)
+    }
+
+    package func createRSAPrivateKey(from privateKey: _RSA.Signing.PrivateKey, with applicationLabel: Data) -> Result<SecKey, SRSecurityError> {
+        let keyData = privateKey.derRepresentation
+
+        let attributes: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+            kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+            kSecAttrKeySizeInBits as String: privateKey.keySizeInBits,
+            kSecAttrApplicationLabel as String: applicationLabel,
+            kSecAttrIsExtractable as String: true
+        ]
+
+        var error: Unmanaged<CFError>?
+
+        guard let secKey = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, &error) else {
             return .failure(.createItemFailed(error: error?.takeRetainedValue()))
         }
 

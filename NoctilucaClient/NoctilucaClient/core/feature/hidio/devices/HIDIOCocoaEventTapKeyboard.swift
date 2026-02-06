@@ -13,59 +13,80 @@ import CoreGraphics
 
 import SiriusKitClient
 
+private func HIDIOCocoaEventTapKeyboardCallback(_ proxy: CGEventTapProxy, _ eventType: CGEventType, _ event: CGEvent, _ userInfo: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
+    
+    guard let userInfo else {
+        return Unmanaged.passUnretained(event)
+    }
+    
+    let instance = HIDIOCocoaEventTapKeyboard.fromCInteropHandle(userInfo)
+    return instance.handleEvent(proxy: proxy, type: eventType, event: event)
+}
+
 extension HIDIOVirtualDeviceIdentifier {
     /// Cocoa Event Tap을 사용한 키보드 가상 디바이스. (macOS 전용)
     static let cocoaEventTapKeyboard = Self(rawValue: UUID(uuidString: "AFB5D1BE-0126-4C92-96AE-83BB2E2B8A88")!)
 }
 
-final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
-    struct ToggleShortcut {
-        let keyCode: CGKeyCode
-        let requiredFlags: CGEventFlags
-
-        static let `default` = ToggleShortcut(
-            keyCode: CGKeyCode(kVK_Escape),
-            requiredFlags: [.maskControl, .maskAlternate, .maskCommand]
-        )
-
-        func matches(event: CGEvent, type: CGEventType) -> Bool {
-            guard type == .keyDown else {
-                return false
-            }
-
-            let eventKeyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
-            guard eventKeyCode == keyCode else {
-                return false
-            }
-
-            return event.flags.contains(requiredFlags)
+final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice, CInteropHandle {
+    private static let logger = NoctilucaLogger(category: "HIDIOCocoaEventTapKeyboard")
+    private static var _shared: HIDIOCocoaEventTapKeyboard?
+    
+    /// 이 키보드 인스턴스를 취득하려고 시도합니다.
+    @MainActor
+    static func acquire(force: Bool = false) throws -> HIDIOCocoaEventTapKeyboard {
+        if _shared == nil {
+            let instance = try HIDIOCocoaEventTapKeyboard()
+            
+            _shared = instance
+            return instance
         }
+        
+        guard let instance = _shared else {
+            logger.error("Inconsistent state: _shared is nil after checking nil.")
+            throw HIDIOVirtualDeviceError.initializationFailed(nil)
+        }
+        
+        instance.disconnect()
+        return instance
     }
-
+    
     static let kind: HIDIOVirtualDeviceKind = .keyboard
     static let identifier: HIDIOVirtualDeviceIdentifier = .cocoaEventTapKeyboard
 
-    private let toggleShortcut: ToggleShortcut
-
     private weak var controller: HIDIOController?
-    private let stateLock = NSLock()
 
-    private var captureModeEnabled: Bool = false
+    private var eventTap: CFMachPort!
+    private var eventTapRunLoopSource: CFRunLoopSource!
 
-    private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
-    private var runLoop: CFRunLoop?
-    private var thread: Thread?
+    private var eventTapThread: Thread?
+    private var eventTapRunLoop: CFRunLoop?
 
-    var onError: ((Error) -> Void)?
-    var onCaptureModeChanged: ((Bool) -> Void)?
 
-    init(toggleShortcut: ToggleShortcut = .default,
-         onError: ((Error) -> Void)? = nil,
-         onCaptureModeChanged: ((Bool) -> Void)? = nil) {
-        self.toggleShortcut = toggleShortcut
-        self.onError = onError
-        self.onCaptureModeChanged = onCaptureModeChanged
+    private init() throws {
+        let eventMask = CGEventMask(
+            (1 << CGEventType.keyDown.rawValue) |
+            (1 << CGEventType.keyUp.rawValue)   |
+            (1 << CGEventType.flagsChanged.rawValue) |
+            (1 << CGEventType.tapDisabledByTimeout.rawValue) |
+            (1 << CGEventType.tapDisabledByUserInput.rawValue)
+        )
+
+        guard let eventTap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: eventMask,
+            callback: HIDIOCocoaEventTapKeyboardCallback,
+            userInfo: self.asCInteropHandle
+        ),
+              let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+        else {
+            throw HIDIOVirtualDeviceError.initializationFailed(nil)
+        }
+        
+        self.eventTap = eventTap
+        self.eventTapRunLoopSource = runLoopSource
     }
 
     deinit {
@@ -78,118 +99,37 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
     }
 
     func disconnect() {
+        controller = nil
         stopEventTap()
     }
 
-    func lock() throws {
-        startEventTapIfNeeded()
-        setCaptureModeEnabled(true)
-    }
-
-    func unlock() throws {
-        setCaptureModeEnabled(false)
-    }
-
-    func setCaptureModeEnabled(_ enabled: Bool) {
-        stateLock.lock()
-        captureModeEnabled = enabled
-        stateLock.unlock()
-
-        onCaptureModeChanged?(enabled)
-    }
-
-    func toggleCaptureMode() {
-        stateLock.lock()
-        captureModeEnabled.toggle()
-        let enabled = captureModeEnabled
-        stateLock.unlock()
-
-        onCaptureModeChanged?(enabled)
-    }
-
-    private func isCaptureModeEnabled() -> Bool {
-        stateLock.lock()
-        let enabled = captureModeEnabled
-        stateLock.unlock()
-        return enabled
-    }
-
+    /// NOTE: 이걸 호출하기 시작하는 순간부터 키보드 입력은 잠깁니다!!
     private func startEventTapIfNeeded() {
-        guard thread == nil else {
+        guard eventTapThread == nil else {
             return
         }
-
-        let thread = Thread { [weak self] in
-            self?.runEventTapLoop()
+        
+        let eventTapThread = Thread {
+            self.eventTapThreadMain()
         }
-        thread.name = "HIDIOCocoaEventTapKeyboard"
-        self.thread = thread
-        thread.start()
+        
+        self.eventTapThread = eventTapThread
+        eventTapThread.start()
     }
 
+    /// 이걸 호출하는 순간부터 키보드 입력이 풀립니다!!
     private func stopEventTap() {
-        guard let runLoop else {
+        guard let runLoop = eventTapRunLoop else {
             return
         }
-
+        CGEvent.tapEnable(tap: eventTap, enable: false)
         CFRunLoopStop(runLoop)
-        thread = nil
     }
 
-    private func runEventTapLoop() {
-        let eventMask = CGEventMask(
-            (1 << CGEventType.keyDown.rawValue)
-                | (1 << CGEventType.keyUp.rawValue)
-                | (1 << CGEventType.flagsChanged.rawValue)
-                | (1 << CGEventType.tapDisabledByTimeout.rawValue)
-                | (1 << CGEventType.tapDisabledByUserInput.rawValue)
-        )
-
-        let eventTap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: eventMask,
-            callback: HIDIOCocoaEventTapKeyboard.eventTapCallback,
-            userInfo: Unmanaged.passUnretained(self).toOpaque()
-        )
-
-        guard let eventTap else {
-            onError?(HIDIOVirtualDeviceError.initializationFailed(nil))
-            return
-        }
-
-        self.eventTap = eventTap
-        self.runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
-        self.runLoop = CFRunLoopGetCurrent()
-
-        if let runLoopSource, let runLoop {
-            CFRunLoopAddSource(runLoop, runLoopSource, .commonModes)
-            CGEvent.tapEnable(tap: eventTap, enable: true)
-            CFRunLoopRun()
-            CFRunLoopRemoveSource(runLoop, runLoopSource, .commonModes)
-        }
-
-        self.runLoopSource = nil
-        self.eventTap = nil
-        self.runLoop = nil
-    }
-
-    private static let eventTapCallback: CGEventTapCallBack = { proxy, type, event, userInfo in
-        guard let userInfo else {
-            return Unmanaged.passUnretained(event)
-        }
-
-        let device = Unmanaged<HIDIOCocoaEventTapKeyboard>.fromOpaque(userInfo).takeUnretainedValue()
-        return device.handleEvent(proxy: proxy, type: type, event: event)
-    }
-
-    private func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+    fileprivate func handleEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         switch type {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
-            if let eventTap {
-                CGEvent.tapEnable(tap: eventTap, enable: true)
-            }
+            CGEvent.tapEnable(tap: eventTap, enable: true)
             return Unmanaged.passUnretained(event)
         case .keyDown, .keyUp, .flagsChanged:
             break
@@ -197,25 +137,17 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
             return Unmanaged.passUnretained(event)
         }
 
-        if toggleShortcut.matches(event: event, type: type) {
-            toggleCaptureMode()
-            return Unmanaged.passUnretained(event)
-        }
-
         if let keyEvent = buildKeyEvent(from: event, type: type) {
             dispatchKeyEvent(keyEvent)
         }
 
-        if isCaptureModeEnabled() {
-            return nil
-        }
-
-        return Unmanaged.passUnretained(event)
+        return nil
     }
 
     private struct KeyEvent {
         let keyCode: LinuxKeycode
         let isDown: Bool
+        // TODO: add timestamp, flags, modifiers if needed
     }
 
     private func buildKeyEvent(from event: CGEvent, type: CGEventType) -> KeyEvent? {
@@ -262,14 +194,36 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOLockableVirtualDevice {
         guard let controller else {
             return
         }
-
-        Task {
-            if event.isDown {
-                try? await controller.keyDown(keyCode: event.keyCode)
-            } else {
-                try? await controller.keyUp(keyCode: event.keyCode)
-            }
+        
+        if event.isDown {
+            controller.keyDown(keyCode: event.keyCode)
+        } else {
+            controller.keyUp(keyCode: event.keyCode)
         }
+    }
+}
+
+extension HIDIOCocoaEventTapKeyboard {
+    func eventTapThreadMain() {
+        guard let eventTapRunLoop = CFRunLoopGetCurrent() else {
+            Self.logger.error("Failed to get current run loop for event tap thread.")
+            return
+        }
+        
+        CFRunLoopAddSource(eventTapRunLoop, eventTapRunLoopSource, .commonModes)
+        defer {
+            CFRunLoopRemoveSource(eventTapRunLoop, eventTapRunLoopSource, .commonModes)
+        }
+        
+        self.eventTapRunLoop = eventTapRunLoop
+        defer {
+            self.eventTapRunLoop = nil
+            self.eventTapThread = nil
+        }
+
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+        CFRunLoopRun()
+        CGEvent.tapEnable(tap: eventTap, enable: false)
     }
 }
 

@@ -125,11 +125,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
         // 연결 종료
         if let connection = self.connection {
-            do {
-                try await connection.shutdown(timeoutMs: 5000, force: true)
-            } catch {
-                logger.warning("MsQuic connection shutdown timed out; forcing close. error=\(error)")
-            }
+            await connection.shutdown()
             self.connection = nil
         }
 

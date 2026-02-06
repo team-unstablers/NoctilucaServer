@@ -42,7 +42,7 @@ struct AppKitSettingsWindow: View {
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
-                InputSettingsTab()
+                InputSettingsTab(settings: $settingsStore.settings)
                     .tabItem {
                         Text("입력")
                     }
