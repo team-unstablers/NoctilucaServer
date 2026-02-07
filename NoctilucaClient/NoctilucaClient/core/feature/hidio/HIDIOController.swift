@@ -155,9 +155,22 @@ class HIDIOController {
             modifiers: 0,
             flags: 0
         )
-        
+
         self.eventStreamContinuation.yield(event)
         self.keyPressState.keyUp(keyCode)
+    }
+
+    /// UCS4 코드포인트를 직접 전송합니다. CJK 등 keycode 매핑이 불가능한 문자에 사용됩니다.
+    func sendUCS4(_ codepoint: UInt32) {
+        let event = KeyboardEvent(
+            eventType: .ucs4,
+            scanCode: 0,
+            keyCode: codepoint,
+            modifiers: 0,
+            flags: 0
+        )
+
+        self.eventStreamContinuation.yield(event)
     }
     
     func moveMouseAbsolutePercentage(to position: CGPoint, on scope: CursorPositionScope = .displayId(-1)) {

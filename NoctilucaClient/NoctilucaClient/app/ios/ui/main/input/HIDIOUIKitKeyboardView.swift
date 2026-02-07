@@ -161,7 +161,9 @@ final class HIDIOUIKitKeyboardTextField: UITextField {
     }
 
     override func deleteBackward() {
-        onDeleteBackward?()
+        if markedTextRange == nil {
+            onDeleteBackward?()
+        }
         super.deleteBackward()
     }
 }
@@ -172,7 +174,11 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
     let onDeleteBackward: () -> Void
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(isFirstResponder: $isFirstResponder)
+        Coordinator(
+            isFirstResponder: $isFirstResponder,
+            onInsertText: onInsertText,
+            onDeleteBackward: onDeleteBackward
+        )
     }
 
     func makeUIView(context: Context) -> HIDIOUIKitKeyboardTextField {
@@ -187,7 +193,6 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
         textField.smartDashesType = .no
         textField.smartQuotesType = .no
         textField.smartInsertDeleteType = .no
-        textField.keyboardType = .asciiCapable
         textField.returnKeyType = .default
         textField.enablesReturnKeyAutomatically = false
         textField.backgroundColor = .clear
@@ -199,6 +204,13 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
         textField.inputAssistantItem.leadingBarButtonGroups = []
         textField.inputAssistantItem.trailingBarButtonGroups = []
         textField.textContentType = .none
+
+        textField.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.textFieldEditingChanged(_:)),
+            for: .editingChanged
+        )
+
         return textField
     }
 
@@ -214,16 +226,21 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
                 uiView.resignFirstResponder()
             }
         }
-        if uiView.text?.isEmpty == false {
-            uiView.text = ""
-        }
     }
 
     final class Coordinator: NSObject, UITextFieldDelegate {
         @Binding var isFirstResponder: Bool
+        let onInsertText: (String) -> Void
+        let onDeleteBackward: () -> Void
 
-        init(isFirstResponder: Binding<Bool>) {
+        init(
+            isFirstResponder: Binding<Bool>,
+            onInsertText: @escaping (String) -> Void,
+            onDeleteBackward: @escaping () -> Void
+        ) {
             _isFirstResponder = isFirstResponder
+            self.onInsertText = onInsertText
+            self.onDeleteBackward = onDeleteBackward
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -235,6 +252,13 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
         }
 
         func textFieldDidEndEditing(_ textField: UITextField) {
+            // 포커스 해제 전에 남아있는 확정 텍스트를 전송
+            if textField.markedTextRange == nil,
+               let text = textField.text, !text.isEmpty {
+                onInsertText(text)
+                textField.text = ""
+            }
+
             if isFirstResponder {
                 DispatchQueue.main.async {
                     self.isFirstResponder = false
@@ -245,13 +269,33 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
         func textField(_ textField: UITextField,
                        shouldChangeCharactersIn range: NSRange,
                        replacementString string: String) -> Bool {
-            if string.isEmpty {
-                (textField as? HIDIOUIKitKeyboardTextField)?.onDeleteBackward?()
-                return false
+            // IME 조합 중에는 시스템이 텍스트를 관리하도록 허용
+            if textField.markedTextRange != nil {
+                return true
             }
 
-            (textField as? HIDIOUIKitKeyboardTextField)?.onInsertText?(string)
+            // 삭제는 HIDIOUIKitKeyboardTextField.deleteBackward()에서 처리
+            if string.isEmpty {
+                return true
+            }
+
+            // 확정된 텍스트를 직접 처리 (ASCII → keycodes, 비-ASCII → ucs4)
+            onInsertText(string)
             return false
+        }
+
+        /// IME 조합 완료 후 텍스트 필드에 남아있는 확정 텍스트를 추출하여 전송
+        @objc func textFieldEditingChanged(_ textField: UITextField) {
+            guard textField.markedTextRange == nil else {
+                return
+            }
+
+            guard let text = textField.text, !text.isEmpty else {
+                return
+            }
+
+            onInsertText(text)
+            textField.text = ""
         }
     }
 }

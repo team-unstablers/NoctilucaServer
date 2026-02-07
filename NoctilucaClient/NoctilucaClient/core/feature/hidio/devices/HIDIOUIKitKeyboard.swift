@@ -94,11 +94,22 @@ final class HIDIOUIKitKeyboard: ObservableObject, HIDIOVirtualDevice {
 
     func handleInsertText(_ text: String) {
         for character in text {
-            guard let mapped = HIDIOUIKitKeyboardKeyMapper.map(character: character) else {
-                continue
+            if let mapped = HIDIOUIKitKeyboardKeyMapper.map(character: character) {
+                sendMappedKey(mapped)
+            } else {
+                sendUCS4(character)
             }
+        }
+    }
 
-            sendMappedKey(mapped)
+    /// keycode 매핑이 불가능한 문자를 UCS4 코드포인트로 직접 전송합니다.
+    private func sendUCS4(_ character: Character) {
+        guard let controller else {
+            return
+        }
+
+        for scalar in character.unicodeScalars {
+            controller.sendUCS4(scalar.value)
         }
     }
 
