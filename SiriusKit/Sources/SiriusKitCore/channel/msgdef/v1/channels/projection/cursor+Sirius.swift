@@ -18,27 +18,39 @@ public extension MessageOpcode {
     static let cursorEvent: MessageOpcode = .init(rawValue: 0x80A5)
 }
 
+public struct SubscribeCursorEventsFlags: OptionSet {
+    public let rawValue: UInt32
+    
+    public init(rawValue: UInt32) {
+        self.rawValue = rawValue
+    }
+    
+    /// 커서 이미지를 캐싱하지 않을 것임을 서버에 알립니다.
+    /// 서버 구현체는 이 플래그가 설정된 경우, 커서 이미지를 항상 전송해야 합니다.
+    public static let disableImageCache = SubscribeCursorEventsFlags(rawValue: 1 << 0)
+}
+
 public struct SubscribeCursorEventsRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_SubscribeCursorEventsRequest
     
     public let requestID: UInt64
-    public let flags: UInt32
+    public let flags: SubscribeCursorEventsFlags
     
-    public init(requestID: UInt64, flags: UInt32) {
+    public init(requestID: UInt64, flags: SubscribeCursorEventsFlags) {
         self.requestID = requestID
         self.flags = flags
     }
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.requestID = protobufMessage.requestID
-        self.flags = protobufMessage.flags
+        self.flags = SubscribeCursorEventsFlags(rawValue: protobufMessage.flags)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
         message.requestID = self.requestID
-        message.flags = self.flags
+        message.flags = self.flags.rawValue
 
         return message
     }
