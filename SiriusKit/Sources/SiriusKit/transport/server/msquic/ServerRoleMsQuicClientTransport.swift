@@ -7,6 +7,7 @@
 
 import Foundation
 import MsQuic
+import os
 import SwiftMsQuicHelper
 
 internal import Atomics
@@ -31,18 +32,23 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     private weak var serverTransport: ServerRoleMsQuicRootTransport?
 
     private var streams: [StreamIdentifier: ServerRoleMsQuicStream] = [:]
-    nonisolated(unsafe) private let isFinalized = ManagedAtomic(false)
+    private let isFinalized = ManagedAtomic(false)
+    private let remoteAddressLock: OSAllocatedUnfairLock<String?>
 
     nonisolated var remoteAddress: String? {
-        // MsQuic connection에서 원격 주소를 얻는 것은 현재 지원하지 않음
-        // 필요시 QuicConnection에 해당 기능 추가 필요
-        return nil
+        remoteAddressLock.withLock { $0 }
     }
 
-    init(connection: QuicConnection, serverTransport: ServerRoleMsQuicRootTransport, id: ServerRoleClientTransportIdentifier) {
+    init(
+        connection: QuicConnection,
+        serverTransport: ServerRoleMsQuicRootTransport,
+        remoteAddress: String?,
+        id: ServerRoleClientTransportIdentifier
+    ) {
         self.id = id
         self.connection = connection
         self.serverTransport = serverTransport
+        self.remoteAddressLock = OSAllocatedUnfairLock(initialState: remoteAddress)
     }
 
     deinit {
@@ -134,6 +140,20 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
 
     internal func handleConnectionShutdown() async {
         await disconnect()
+    }
+
+    internal func handlePeerAddressChanged(_ address: QuicAddress) {
+        let updatedAddress = address.description
+        let previousAddress = self.remoteAddressLock.withLock { state -> String? in
+            let previous = state
+            state = updatedAddress
+            return previous
+        }
+        guard previousAddress != updatedAddress else {
+            return
+        }
+
+        Self.logger.debug("MsQuic peer address changed. id=\(self.id), old=\(previousAddress ?? "(unknown)"), new=\(updatedAddress)")
     }
 
     internal func registerStream(_ stream: ServerRoleMsQuicStream) {

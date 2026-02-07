@@ -213,6 +213,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         let clientTransport = ServerRoleMsQuicClientTransport(
             connection: quicConnection,
             serverTransport: self,
+            remoteAddress: connectionInfo.remoteAddress.description,
             id: ServerRoleClientTransportIdentifier()
         )
 
@@ -247,6 +248,10 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
                 Task {
                     await clientTransport.handleConnectionShutdown()
                 }
+            case .peerAddressChanged(let address):
+                Task {
+                    await clientTransport.handlePeerAddressChanged(address)
+                }
             default:
                 break
             }
@@ -254,7 +259,8 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
             return .success
         }
 
-        connection.onPeerStreamStarted { [weak clientTransport] _, quicStream in
+        connection.onPeerStreamStarted { [weak clientTransport] _, quicStream, flags in
+            // TODO: flags은 무조건 bidirectional 해야 한다
             guard let clientTransport = clientTransport else { return }
             await clientTransport.handlePeerStream(quicStream)
         }
