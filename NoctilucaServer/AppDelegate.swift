@@ -90,6 +90,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        Task {
+            do {
+                try await server.shutdown()
+            } catch {
+                print("shutdown failed: \(error.localizedDescription)")
+            }
+            await MainActor.run {
+                NSApp.reply(toApplicationShouldTerminate: true)
+            }
+        }
+        return .terminateLater
+    }
+
     @objc
     func quitApplication(_ sender: Any?) {
         NSApp.terminate(nil)
