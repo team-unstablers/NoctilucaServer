@@ -99,7 +99,14 @@ struct PerformanceOverlay: View {
                 Text("Resolution: \(Int(codec.size?.width ?? -1)) x \(Int(codec.size?.height ?? -1))")
 
                 let optionsString = CodecOptionsParser.serialize(options: codec.options)
-                Text("Options: \(optionsString ?? "(none)")")
+                Text("Options:")
+                Text(optionsString.split(separator: "; ").joined(separator: ";\n"))
+                    .padding(4)
+                    .background(Color.black.opacity(0.65))
+                    .padding(4)
+                    .font(.system(size: 12).monospaced())
+                    .foregroundStyle(.white)
+                
             }
         }
         .font(.caption.monospacedDigit())
