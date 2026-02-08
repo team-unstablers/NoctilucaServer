@@ -121,7 +121,12 @@ class ProjectionSession: Identifiable {
     
     private func senderEventLoopMain() async throws {
         while !Task.isCancelled {
-            let frame = await frameQueue.next()
+            let frame: EncodedFrame
+            do {
+                frame = try await frameQueue.next()
+            } catch is CancellationError {
+                return
+            }
             
             try await self.dataChannel.send(videoFrame: frame)
         }
@@ -158,6 +163,8 @@ class ProjectionSession: Identifiable {
         
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
+        await frameQueue.clear()
+        await frameQueue.cancelWaiter()
         
         try? self.encoder.stop()
 
@@ -199,8 +206,20 @@ class ProjectionSession: Identifiable {
     }
     
     func start() async throws {
-        try await self.recorder.start()
-        try self.encoder.start()
+        do {
+            try await self.recorder.start()
+            try self.encoder.start()
+        } catch {
+            self.logger.error("Failed to start projection session \(self.id): \(error)")
+
+            do {
+                try await self.stop()
+            } catch {
+                self.logger.error("Failed to cleanup projection session after start failure \(self.id): \(error)")
+            }
+
+            throw error
+        }
     }
     
     func stop() async throws {
@@ -211,15 +230,51 @@ class ProjectionSession: Identifiable {
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
 
+        await frameQueue.clear()
+        await frameQueue.cancelWaiter()
+
         // Combine 구독 취소
         screenLockCancellable?.cancel()
         screenLockCancellable = nil
 
+        var firstError: Error?
+
         // recorder/encoder 정리
-        try await self.recorder.stop()
-        try self.encoder.stop()
+        do {
+            try await self.recorder.stop()
+        } catch {
+            self.logger.error("Failed to stop recorder for projection session \(self.id): \(error)")
+            if firstError == nil { firstError = error }
+        }
+
+        do {
+            try self.encoder.stop()
+        } catch {
+            self.logger.error("Failed to stop encoder for projection session \(self.id): \(error)")
+            if firstError == nil { firstError = error }
+        }
+
+        do {
+            try await dataChannel.close()
+        } catch {
+            self.logger.warning("Failed to close projection data channel \(self.dataChannel.identifier): \(error)")
+            if firstError == nil { firstError = error }
+        }
+
+        if let firstError {
+            throw firstError
+        }
+    }
+
+    deinit {
+        encoderEventLoopTask?.cancel()
+        senderEventLoopTask?.cancel()
+        screenLockCancellable?.cancel()
         
-        try? await dataChannel.close()
+        let frameQueue = self.frameQueue
+        Task {
+            await frameQueue.cancelWaiter()
+        }
     }
 }
 

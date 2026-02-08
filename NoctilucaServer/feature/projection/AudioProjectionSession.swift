@@ -66,7 +66,12 @@ class AudioProjectionSession: Identifiable {
     
     private func senderEventLoopMain() async throws {
         while !Task.isCancelled {
-            let frame = await frameQueue.next()
+            let frame: EncodedAudioFrame
+            do {
+                frame = try await frameQueue.next()
+            } catch is CancellationError {
+                return
+            }
             
             try await self.dataChannel.send(audioFrame: frame)
         }
@@ -110,6 +115,8 @@ class AudioProjectionSession: Identifiable {
         
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
+        await frameQueue.clear()
+        await frameQueue.cancelWaiter()
         
         try? self.encoder?.stop()
 
@@ -151,6 +158,8 @@ class AudioProjectionSession: Identifiable {
         
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
+        await frameQueue.clear()
+        await frameQueue.cancelWaiter()
 
         // Clean up recorder/encoder
         try await self.recorder.stop()
@@ -165,6 +174,11 @@ class AudioProjectionSession: Identifiable {
         senderEventLoopTask = nil
 
         recorder.delegate = nil
+        
+        let frameQueue = self.frameQueue
+        Task {
+            await frameQueue.cancelWaiter()
+        }
 
         let recorder = recorder
         let encoder = encoder

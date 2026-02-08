@@ -16,7 +16,7 @@ actor FrameQueue<Frame> {
     private var capacity: Int
     private var queue: [Frame] = []
     
-    private var waiter: CheckedContinuation<Frame, Never>? = nil
+    private var waiter: CheckedContinuation<Frame, any Error>? = nil
     
     init(capacity: Int) {
         self.capacity = capacity
@@ -59,19 +59,28 @@ actor FrameQueue<Frame> {
         
         queue.removeAll()
     }
+
+    func cancelWaiter() {
+        guard let waiter = self.waiter else {
+            return
+        }
+
+        self.waiter = nil
+        waiter.resume(throwing: CancellationError())
+    }
     
     func isEmpty() -> Bool {
         return queue.isEmpty
     }
-    
-    func next() async -> Frame {
+
+    func next() async throws -> Frame {
         if !queue.isEmpty {
             let frame = queue.removeFirst()
             
             return frame
         }
         
-        return await withCheckedContinuation { continuation in
+        return try await withCheckedThrowingContinuation { continuation in
             // There should be only one waiter at a time
             assert(self.waiter == nil, "There is already a waiter waiting for the next frame.")
             self.waiter = continuation
