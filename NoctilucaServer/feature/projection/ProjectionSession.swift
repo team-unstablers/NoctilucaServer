@@ -196,11 +196,13 @@ class ProjectionSession: Identifiable {
         }
         
         
-        self.encoderEventLoopTask = Task {
+        self.encoderEventLoopTask = Task { [weak self] in
+            guard let self else { return }
             try await self.encoderEventLoopMain()
         }
-        
-        self.senderEventLoopTask = Task {
+
+        self.senderEventLoopTask = Task { [weak self] in
+            guard let self else { return }
             try await self.senderEventLoopMain()
         }
     }
@@ -270,7 +272,10 @@ class ProjectionSession: Identifiable {
         encoderEventLoopTask?.cancel()
         senderEventLoopTask?.cancel()
         screenLockCancellable?.cancel()
-        
+
+        // VTVideoEncoder의 Unmanaged refCon retain cycle을 끊는다 (동기 메서드)
+        try? encoder.stop()
+
         let frameQueue = self.frameQueue
         Task {
             await frameQueue.cancelWaiter()

@@ -141,7 +141,8 @@ class AudioProjectionSession: Identifiable {
             try await self.encoderEventLoopMain()
         }
         
-        self.senderEventLoopTask = Task {
+        self.senderEventLoopTask = Task { [weak self] in
+            guard let self else { return }
             try await self.senderEventLoopMain()
         }
     }
@@ -169,22 +170,24 @@ class AudioProjectionSession: Identifiable {
     deinit {
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
-        
+
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
 
         recorder.delegate = nil
-        
+
+        // encoder.stop()은 동기 메서드이므로 직접 호출 (Task 불필요)
+        try? encoder?.stop()
+
         let frameQueue = self.frameQueue
         Task {
             await frameQueue.cancelWaiter()
         }
 
+        // recorder.stop()은 async이므로 fire-and-forget Task가 불가피
         let recorder = recorder
-        let encoder = encoder
         Task {
             try? await recorder.stop()
-            try? encoder?.stop()
         }
     }
 }

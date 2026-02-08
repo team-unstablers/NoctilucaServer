@@ -16,12 +16,19 @@ actor FrameQueue<Frame> {
     private var capacity: Int
     private var queue: [Frame] = []
     
-    private var waiter: CheckedContinuation<Frame, any Error>? = nil
+    private nonisolated(unsafe) var waiter: CheckedContinuation<Frame, any Error>? = nil
     
     init(capacity: Int) {
         self.capacity = capacity
-        
+
         self.logger.debug("Initialized with capacity: \(capacity)")
+    }
+
+    deinit {
+        if let waiter = self.waiter {
+            self.waiter = nil
+            waiter.resume(throwing: CancellationError())
+        }
     }
     
     func setCapacity(_ capacity: Int) {

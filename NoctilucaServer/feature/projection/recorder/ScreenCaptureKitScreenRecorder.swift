@@ -296,7 +296,11 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
     
     func stop() async throws {
         if let stream = self.stream {
-            try? stream.removeStreamOutput(self, type: .screen)
+            do {
+                try stream.removeStreamOutput(self, type: .screen)
+            } catch {
+                logger.warning("Failed to remove stream output: \(error)")
+            }
             try await stream.stopCapture()
         }
         self.stream = nil

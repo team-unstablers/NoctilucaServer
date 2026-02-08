@@ -57,11 +57,12 @@ class CursorEventSubscription {
             }
         }
         
-        Task {
-            try? await channel?.sendCursorImageEvent()
-            
+        Task { [weak self] in
+            guard let self else { return }
+            try? await self.channel?.sendCursorImageEvent()
+
             if let state = self.cursorStateHolder.cursorState {
-                try? await channel?.sendCursorPositionEvent(state)
+                try? await self.channel?.sendCursorPositionEvent(state)
             }
         }
     }
