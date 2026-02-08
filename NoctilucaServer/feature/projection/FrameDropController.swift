@@ -21,6 +21,10 @@ class FrameDropController {
     private var needsKeyframeAfterPtsDrop: Bool = false
     private let ptsDropKeyframeThreshold: Int = 3
 
+    // MARK: - 프레임 레이트 제한
+    private var maxFrameRate: Float? = nil   // nil = 제한 없음
+    private var lastAcceptedPts: CMTime? = nil
+
     // MARK: - 큐 드랍 기반 플러시 상태
     private var consecutiveQueueDrops: Int = 0
     private let queueDropFlushThreshold: Int = 3
@@ -31,16 +35,33 @@ class FrameDropController {
         self.currentFrameRate = frameRate
     }
 
+    /// 최대 프레임 레이트를 설정합니다. nil이면 제한을 해제합니다.
+    func configureMaxFrameRate(_ fps: Float?) {
+        self.maxFrameRate = fps
+        self.lastAcceptedPts = nil
+    }
+
     /// PTS 기반 드랍 판정 (인코딩 전)
     /// - Returns: (shouldDrop: Bool, needsKeyframe: Bool)
     func shouldDropByPts(_ sampleBuffer: CMSampleBuffer) -> (shouldDrop: Bool, needsKeyframe: Bool) {
         let pts = sampleBuffer.presentationTimeStamp
+
+        // Rate limiting: maxFrameRate 설정 시, 최소 간격 미만이면 드랍
+        if let maxFps = maxFrameRate, let lastPts = lastAcceptedPts {
+            let minInterval = 1.0 / Double(maxFps)
+            let elapsed = pts.seconds - lastPts.seconds
+            if elapsed >= 0 && elapsed < minInterval {
+                return (shouldDrop: true, needsKeyframe: false)
+            }
+        }
+
         let systemNow = CMTime(value: Int64(mach_absolute_time()), timescale: 1_000_000_000)
         let latency = systemNow.seconds - pts.seconds
 
         // 음수 latency(미래 프레임)는 드랍하지 않음
         guard latency > 0 else {
             consecutivePtsDropCount = 0
+            lastAcceptedPts = pts
             return (shouldDrop: false, needsKeyframe: consumeKeyframeRequest())
         }
 
@@ -60,6 +81,7 @@ class FrameDropController {
         }
 
         consecutivePtsDropCount = 0
+        lastAcceptedPts = pts
         return (shouldDrop: false, needsKeyframe: consumeKeyframeRequest())
     }
 

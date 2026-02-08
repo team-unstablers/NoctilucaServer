@@ -37,8 +37,10 @@ class ProjectionSession: Identifiable {
     private var pressureAccumulator: Float = 0.0
     private var pressureWindowCount: Int = 0
     private let pressureWindowSize: Int = 30 // ~0.5s at 60fps
-    
+
     private let frameDropController = FrameDropController()
+    private var originalFrameRate: Float = 30.0
+    private var currentAppliedFrameRate: Float? = nil
 
     private var screenLockCancellable: AnyCancellable!
     
@@ -177,6 +179,8 @@ class ProjectionSession: Identifiable {
         
         let (qualityPlanner, frameRate) = Self.makeQualityPlanner(codec: codec)
         self.qualityPlanner = qualityPlanner
+        self.originalFrameRate = frameRate
+        self.currentAppliedFrameRate = nil
         frameDropController.configure(frameRate: frameRate)
 
         if let planner = self.qualityPlanner {
@@ -232,6 +236,7 @@ extension ProjectionSession: ScreenRecorderDelegate {
         // PTS 기반 드랍 판정 (인코딩 전)
         let ptsDropResult = frameDropController.shouldDropByPts(frameData)
         if ptsDropResult.shouldDrop {
+            logger.trace("FRAME DROP: PTS-based drop occurred.")
             return
         }
 
@@ -273,7 +278,7 @@ private extension ProjectionSession {
     
     static func makeQualityPlanner(codec: Codec) -> (planner: QualityPlanner, frameRate: Float) {
         // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
-        var frameRate = codec.frameRate ?? 30.0
+        var frameRate = codec.frameRate ?? 60.0
         let resolution = codec.size ?? SRSize(width: 2880, height: 2560)
 
         // FIXME: 무조건 AutoQuality를 쓰는건 아니잖아요.
@@ -312,17 +317,41 @@ private extension ProjectionSession {
 
     func applyDegradations(_ degradations: [QualityDegradation]) {
         var qualityFactor: Float = 1.0
+        var maxQuantizeLevel: Int = 0
+        var targetFrameRate: Float? = nil
 
         for degradation in degradations {
             switch degradation {
             case .lowerQuality(let factor):
                 qualityFactor *= factor
-            case .lowerResolution, .lowerFrameRate:
-                break // resolution/fps 디그레이드는 별도 구현 필요
+            case .increaseQuantization(let level):
+                maxQuantizeLevel = max(maxQuantizeLevel, level)
+            case .lowerFrameRate(let fps):
+                targetFrameRate = min(targetFrameRate ?? fps, fps)
+            case .lowerResolution:
+                break // 아직 미구현
             }
         }
 
         _ = self.encoder.updateQuality(qualityFactor)
+        _ = self.encoder.updateQuantizeLevel(maxQuantizeLevel)
+
+        let effectiveFps = targetFrameRate ?? originalFrameRate
+        applyFrameRateChange(effectiveFps)
+    }
+
+    func applyFrameRateChange(_ fps: Float) {
+        guard currentAppliedFrameRate != fps else { return }
+        currentAppliedFrameRate = fps
+
+        if fps >= originalFrameRate {
+            // 제한 해제
+            frameDropController.configureMaxFrameRate(nil)
+        } else {
+            frameDropController.configureMaxFrameRate(fps)
+        }
+        frameDropController.configure(frameRate: fps)
+        _ = encoder.updateExpectedFrameRate(fps)
     }
 }
 

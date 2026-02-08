@@ -32,6 +32,7 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     fileprivate var shouldEmitParameterSets = true
     
     private var isStarted = false
+    private var isVBRMode = false
     private var pendingForceKeyframe = false
     private var targetBitrateKbps: Int
     private var maxBitrateKbps: Int
@@ -170,11 +171,17 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
                 success = true
                 return
             }
-            success = self.applyAverageBitrate(bitrateKbps, to: session)
+            if self.isVBRMode {
+                if #available(macOS 26.0, *) {
+                    success = self.applyVariableBitrate(bitrateKbps, to: session)
+                }
+            } else {
+                success = self.applyAverageBitrate(bitrateKbps, to: session)
+            }
         }
         return success
     }
-    
+
     @discardableResult
     func updateMaxBitrate(bitrateKbps: Int) -> Bool {
         var success = false
@@ -189,13 +196,33 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
                 success = true
                 return
             }
-            success = self.applyMaxBitrate(bitrateKbps, to: session)
+            if self.isVBRMode {
+                if #available(macOS 26.0, *) {
+                    success = self.applyVBVMaxBitrate(bitrateKbps, to: session)
+                }
+            } else {
+                success = self.applyMaxBitrate(bitrateKbps, to: session)
+            }
         }
         return success
     }
     
+    @discardableResult
+    func updateExpectedFrameRate(_ fps: Float) -> Bool {
+        var success = false
+        workerQueue.sync {
+            guard let session = self.compressionSession, fps > 0 else {
+                success = false
+                return
+            }
+            success = self.setProperty(session, key: kVTCompressionPropertyKey_ExpectedFrameRate,
+                                       value: NSNumber(value: fps))
+        }
+        return success
+    }
+
     // MARK: - Capability Check
-    
+
     static func isSupported(codec: CodecSpecification) -> Bool {
         // 1. 코덱 타입 확인
         guard let codecType = try? codec.fourCC.codecType() else {
@@ -473,12 +500,23 @@ private extension VTVideoEncoder {
     }
     
     func applyQualitySettings(_ session: VTCompressionSession) throws {
-        if targetBitrateKbps > 0 {
-            applyAverageBitrate(targetBitrateKbps, to: session)
-        }
-        
-        if maxBitrateKbps > 0 {
-            applyMaxBitrate(maxBitrateKbps, to: session)
+        if #available(macOS 26.0, *) {
+            isVBRMode = true
+            logger.info("Using VBR rate control mode")
+            if targetBitrateKbps > 0 {
+                applyVariableBitrate(targetBitrateKbps, to: session)
+            }
+            if maxBitrateKbps > 0 {
+                applyVBVMaxBitrate(maxBitrateKbps, to: session)
+            }
+        } else {
+            isVBRMode = false
+            if targetBitrateKbps > 0 {
+                applyAverageBitrate(targetBitrateKbps, to: session)
+            }
+            if maxBitrateKbps > 0 {
+                applyMaxBitrate(maxBitrateKbps, to: session)
+            }
         }
 
         /*
@@ -704,17 +742,35 @@ private extension CodecParameterSetMessage {
 }
 
 private extension VTVideoEncoder {
+    // MARK: - ABR (Average Bit Rate) mode — macOS 10.8+
+
     @discardableResult
     func applyAverageBitrate(_ bitrateKbps: Int, to session: VTCompressionSession) -> Bool {
         let bitsPerSecond = bitrateBitsPerSecond(fromKbps: bitrateKbps)
         return setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: bitsPerSecond))
     }
-    
+
     @discardableResult
     func applyMaxBitrate(_ bitrateKbps: Int, to session: VTCompressionSession) -> Bool {
         let bytesPerSecond = bitrateBytesPerSecond(fromKbps: bitrateKbps)
-        let limits: NSArray = [NSNumber(value: bytesPerSecond), NSNumber(value: 1)]
+        let limits: NSArray = [NSNumber(value: bytesPerSecond), NSNumber(value: 1.0)]
         return setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: limits)
+    }
+
+    // MARK: - VBR (Variable Bit Rate) mode — macOS 26.0+
+
+    @available(macOS 26.0, *)
+    @discardableResult
+    func applyVariableBitrate(_ bitrateKbps: Int, to session: VTCompressionSession) -> Bool {
+        let bitsPerSecond = bitrateBitsPerSecond(fromKbps: bitrateKbps)
+        return setProperty(session, key: kVTCompressionPropertyKey_VariableBitRate, value: NSNumber(value: bitsPerSecond))
+    }
+
+    @available(macOS 26.0, *)
+    @discardableResult
+    func applyVBVMaxBitrate(_ bitrateKbps: Int, to session: VTCompressionSession) -> Bool {
+        let bitsPerSecond = bitrateBitsPerSecond(fromKbps: bitrateKbps)
+        return setProperty(session, key: kVTCompressionPropertyKey_VBVMaxBitRate, value: NSNumber(value: bitsPerSecond))
     }
     
     func bitrateBitsPerSecond(fromKbps bitrateKbps: Int) -> Int {

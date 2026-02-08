@@ -18,6 +18,9 @@ enum QualityDegradation: Hashable {
     case lowerFrameRate(to: Float)
     /// 인코딩 품질을 낮춥니다. factor는 0.0~1.0이며, 1.0이 원래 품질입니다.
     case lowerQuality(factor: Float)
+    /// 양자화 레벨을 증가시킵니다. level은 0(없음)~5(최대) 사이의 절대값입니다.
+    /// 여러 단계가 동시에 활성화된 경우 max()로 가장 높은 레벨만 적용합니다.
+    case increaseQuantization(level: Int)
 }
 
 protocol QualityPlanner {

@@ -192,7 +192,7 @@ class AutoQualityPlanner: QualityPlanner {
     private let emaAlpha: Float = 0.5
     private let backpressureThreshold: Float = 0.5
 
-    private let minMultiplier: Float = 0.5
+    private let minMultiplier: Float = 0.4
     private let maxMultiplier: Float = 1.5
     
     required init(codec: CodecFourCC, resolution: CGSize, frameRate: Float) {
@@ -202,15 +202,15 @@ class AutoQualityPlanner: QualityPlanner {
         
         self.strategy = .balanced
         self.preset = AutoQualityPreset.preset(for: codec, resolution: resolution, frameRate: frameRate)
-        self.degradationSteps = AutoQualityPlanner.makeDegradationSteps(for: .balanced, resolution: resolution, frameRate: frameRate)
-        
+        self.degradationSteps = AutoQualityPlanner.makeDegradationSteps(for: .balanced, codec: codec, resolution: resolution, frameRate: frameRate)
+
         self.state = .initial
     }
-    
+
     convenience init(codec: CodecFourCC, resolution: CGSize, frameRate: Float, strategy: AutoQualityStrategy) {
         self.init(codec: codec, resolution: resolution, frameRate: frameRate)
         self.strategy = strategy
-        self.degradationSteps = AutoQualityPlanner.makeDegradationSteps(for: strategy, resolution: resolution, frameRate: frameRate)
+        self.degradationSteps = AutoQualityPlanner.makeDegradationSteps(for: strategy, codec: codec, resolution: resolution, frameRate: frameRate)
     }
     
     func feed(report: ProjectionPerformanceReport) {
@@ -308,6 +308,7 @@ class AutoQualityPlanner: QualityPlanner {
 private extension AutoQualityPlanner {
     static func makeDegradationSteps(
         for strategy: AutoQualityStrategy,
+        codec: CodecFourCC,
         resolution: CGSize,
         frameRate: Float
     ) -> [QualityDegradation] {
@@ -324,13 +325,31 @@ private extension AutoQualityPlanner {
         let fps90d = QualityDegradation.lowerFrameRate(to: fps90)
         let fps75d = QualityDegradation.lowerFrameRate(to: fps75)
 
-        switch strategy {
-        case .performanceFirst:
-            return [q85, res85, q70, res70, res50, fps90d, fps75d]
-        case .qualityFirst:
-            return [fps90d, fps75d, q85, res85, q70, res70]
-        case .balanced:
-            return [q85, res85, fps90d, q70, res70, fps75d]
+        let quant1 = QualityDegradation.increaseQuantization(level: 1)
+        let quant2 = QualityDegradation.increaseQuantization(level: 2)
+        let quant3 = QualityDegradation.increaseQuantization(level: 3)
+
+        let isImageCodec = (codec == .mjpg || codec == .webp || codec == .zrle)
+
+        if isImageCodec {
+            switch strategy {
+            case .balanced:
+                return [quant1, q85, res85, fps90d, quant2, q70, res70, fps75d, quant3]
+            case .performanceFirst:
+                return [quant1, q85, quant2, res85, q70, quant3, res70, res50, fps90d, fps75d]
+            case .qualityFirst:
+                return [fps90d, fps75d, quant1, q85, res85, quant2, q70, res70]
+            }
+        } else {
+            // VT 코덱 (H.264/H.265) — 기존 유지
+            switch strategy {
+            case .balanced:
+                return [q85, res85, fps90d, q70, res70, fps75d]
+            case .performanceFirst:
+                return [q85, res85, q70, res70, res50, fps90d, fps75d]
+            case .qualityFirst:
+                return [fps90d, fps75d, q85, res85, q70, res70]
+            }
         }
     }
     
@@ -343,7 +362,7 @@ private extension AutoQualityPlanner {
         let step = critical ? 2 : 1
         degradationIndex = min(degradationIndex + step, degradationSteps.count)
 
-        let factor: Float = critical ? 0.8 : 0.9
+        let factor: Float = critical ? 0.65 : 0.8
         multiplier = clampMultiplier(multiplier * factor)
         cooldownTicks = cooldownWindow
         clientScore = 0
@@ -356,7 +375,7 @@ private extension AutoQualityPlanner {
             degradationIndex -= 1
         }
 
-        multiplier = clampMultiplier(multiplier * 1.02)
+        multiplier = clampMultiplier(multiplier * 1.05)
         cooldownTicks = cooldownWindow
         clientScore = 0
         serverScore = 0

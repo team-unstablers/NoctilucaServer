@@ -70,7 +70,7 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         case .variableBitrate(let targetBitrateKbps, _):
             self.targetBitrateKbps = Int(targetBitrateKbps)
         case .auto:
-            self.targetBitrateKbps = 16 // Default
+            self.targetBitrateKbps = 64 // Default
         }
 
         self.configuration = configuration

@@ -244,9 +244,14 @@ final class ZRLEVideoEncoder: VideoEncoder {
 
     @discardableResult
     func updateQuality(_ quality: Float) -> Bool {
-        let clamped = min(max(quality, 0.0), 1.0)
-        // 0.0 → quantizeLevel 5 (가장 거침), 1.0 → quantizeLevel 0 (무손실)
-        self.quantizeLevel = Int((1.0 - clamped) * 5.0)
+        // ZRLE의 Zstd compression level은 사용자 설정값을 유지.
+        // 품질 조정은 양자화(updateQuantizeLevel)가 전담.
+        return true
+    }
+
+    @discardableResult
+    func updateQuantizeLevel(_ level: Int) -> Bool {
+        self.quantizeLevel = max(0, min(5, level))
         return true
     }
 }

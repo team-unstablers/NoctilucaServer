@@ -52,24 +52,25 @@ struct CodecResolutionLevel: RawRepresentable, Codable, Hashable, Equatable {
     }
     
     /// 이.. 이딴식으로 이걸 구현해도 되는건가...
+    /// 4:3 기준으로 처리한다 - 16:9나 16:10보다 픽셀 수가 많기 때문에 대체로 다 걸림
     var pixelCount: Int {
         switch self {
         case .unlimited:
             // FIXME
-            return 131072 * 131072
+            return Int.max
         case .sd480p:
-            return 720 * 720
+            return 720 * 480
         case .hd720p:
-            return 1280 * 1280
+            return 1280 * 960
         case .hd1080p:
-            return 1920 * 1920
+            return 1920 * 1440
         case .hd2k:
-            return 2560 * 2560
+            return 2560 * 1920
         case .hd4k:
-            return 3840 * 3840
-        
+            return 3840 * 2880
+            
         default:
-            return 131072 * 131072
+            return Int.max
         }
     }
 }

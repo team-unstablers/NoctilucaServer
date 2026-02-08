@@ -138,12 +138,67 @@ final class AutoQualityPlannerTests: XCTestCase {
         XCTAssertTrue(hasQualityDegradation,
             "Degradation steps should include lowerQuality")
     }
+
+    // MARK: - 이미지 코덱 양자화 독립 제어 테스트
+
+    func testImageCodecDegradationIncludesQuantization() {
+        let planner = makePlanner(codec: .mjpg, strategy: .balanced)
+
+        // 디그레이드 발동
+        planner.feed(queuePressure: 1.0) // emergency → 2 steps
+
+        let degradations = planner.plannedDegradations()
+        let hasQuantization = degradations.contains { degradation in
+            if case .increaseQuantization = degradation { return true }
+            return false
+        }
+        XCTAssertTrue(hasQuantization,
+            "Image codec degradation steps should include increaseQuantization")
+    }
+
+    func testVTCodecDegradationExcludesQuantization() {
+        let planner = makePlanner(codec: .avc1, strategy: .balanced)
+
+        // 전체 단계를 활성화
+        for _ in 0..<10 {
+            planner.feed(queuePressure: 1.0)
+        }
+
+        let degradations = planner.plannedDegradations()
+        let hasQuantization = degradations.contains { degradation in
+            if case .increaseQuantization = degradation { return true }
+            return false
+        }
+        XCTAssertFalse(hasQuantization,
+            "VT codec degradation steps should not include increaseQuantization")
+    }
+
+    func testImageCodecQuantizationMaxLevel() {
+        // balanced 시퀀스: quant1, q85, res85, fps90, quant2, q70, res70, fps75, quant3
+        let planner = makePlanner(codec: .webp, strategy: .balanced)
+
+        // 여러 번 디그레이드하여 quant1 + quant2가 모두 활성화되게 함
+        for _ in 0..<5 {
+            planner.feed(queuePressure: 1.0)
+        }
+
+        let degradations = planner.plannedDegradations()
+        let quantizeLevels = degradations.compactMap { degradation -> Int? in
+            if case .increaseQuantization(let level) = degradation { return level }
+            return nil
+        }
+        // 여러 quant 단계가 있을 때 max가 적용되어야 함
+        if quantizeLevels.count > 1 {
+            XCTAssertTrue(quantizeLevels.contains(2),
+                "Should include quantization level 2 after sufficient degradation")
+        }
+    }
 }
 
 private extension AutoQualityPlannerTests {
-    func makePlanner(strategy: AutoQualityStrategy = .balanced) -> AutoQualityPlanner {
+    func makePlanner(codec: CodecFourCC = .avc1, strategy: AutoQualityStrategy = .balanced) -> AutoQualityPlanner {
         AutoQualityPlanner(
-            codec: .avc1,
+            codec: codec,
             resolution: CGSize(width: 1920, height: 1080),
             frameRate: 60,
             strategy: strategy

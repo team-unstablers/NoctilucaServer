@@ -278,8 +278,12 @@ final class MJPGVideoEncoder: VideoEncoder {
         let clamped = min(max(quality, 0.0), 1.0)
         // 0.0 → 15 (최저), 1.0 → 45 (최고)
         self.compressionLevel = Int32(15.0 + clamped * 30.0)
-        // 0.0 → quantizeLevel 5 (가장 거침), 1.0 → quantizeLevel 0 (무손실)
-        self.quantizeLevel = Int((1.0 - clamped) * 5.0)
+        return true
+    }
+
+    @discardableResult
+    func updateQuantizeLevel(_ level: Int) -> Bool {
+        self.quantizeLevel = max(0, min(5, level))
         return true
     }
 }
