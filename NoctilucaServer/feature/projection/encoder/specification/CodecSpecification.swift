@@ -142,6 +142,7 @@ extension CodecSpecification {
         .option(.colorFormat, .kColorFormatYUV444)
         .option(.compressionLevel, .init(rawValue: "80"))
         .option(.tileSize, .kTileSize256x256)
+        .option(.quantizeLevel, .kQuantizeLevelNone)
         .also { $0.frameRate = 30 }
  
     
@@ -149,6 +150,7 @@ extension CodecSpecification {
         .option(.colorFormat, .kColorFormatYUV420)
         .option(.tileSize, .kTileSize256x256)
         .option(.compressionLevel, .init(rawValue: "28"))
+        .option(.quantizeLevel, .kQuantizeLevelNone)
 }
 
 extension CodecSpecification {
@@ -162,7 +164,9 @@ extension CodecSpecification {
             return "Run-Length Encoding (RLE) + Zstd"
         case .mjpg:
             return "Motion JPEG"
-            
+        case .webp:
+            return "WebP"
+
         default:
             return "Unknown Codec (\(fourCC.stringRepresentation))"
         }
@@ -226,7 +230,7 @@ extension CodecSpecification {
     
     var description: String {
         switch self.fourCC {
-        case .zrle, .mjpg:
+        case .zrle, .mjpg, .webp:
             return "압축 레벨 \(self.option(.compressionLevel)?.rawValue ?? "1")"
         default:
             return commonDescription

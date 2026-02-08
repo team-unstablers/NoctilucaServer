@@ -46,6 +46,25 @@ func applyQuantizationSIMD(
     }
 }
 
+/// 타일 배열에 양자화를 in-place로 적용
+/// - Parameters:
+///   - tiles: 양자화할 타일 CVPixelBuffer 배열
+///   - quantizeLevel: 양자화 레벨 (0=없음, 1~5=하위 비트 제거)
+func applyQuantizationToTiles(_ tiles: [CVPixelBuffer], quantizeLevel: Int) {
+    guard quantizeLevel > 0 else { return }
+    let shift = min(max(quantizeLevel, 0), 7)
+    let mask: UInt8 = ~((1 << shift) - 1)
+
+    for tile in tiles {
+        CVPixelBufferLockBaseAddress(tile, [])
+        defer { CVPixelBufferUnlockBaseAddress(tile, []) }
+
+        guard let base = CVPixelBufferGetBaseAddress(tile) else { continue }
+        let totalBytes = CVPixelBufferGetHeight(tile) * CVPixelBufferGetBytesPerRow(tile)
+        applyQuantizationSIMD(base.assumingMemoryBound(to: UInt8.self), count: totalBytes, mask: mask)
+    }
+}
+
 enum RLECompressorError: LocalizedError {
     case unsupportedPixelFormat(OSType)
 

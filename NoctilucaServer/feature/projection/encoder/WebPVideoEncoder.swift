@@ -19,7 +19,11 @@ final class WebPVideoEncoder: VideoEncoder {
 
     private var colorFormat: CodecOptionValue = .kColorFormatYUV420
     private var compressionLevel: Int32 = 90
+    private var quantizeLevel: Int = 0
     private var tileSize: Int = 256
+
+    private let maxEncoderFrameRate: Float = 15.0
+    private var lastEncodeTime: CFAbsoluteTime = 0
 
     private var isStarted = false
 
@@ -95,6 +99,14 @@ final class WebPVideoEncoder: VideoEncoder {
             self.compressionLevel = 90
         }
 
+        // 양자화 레벨 (0...5)
+        let quantizeString = configuration.codec.option(.quantizeLevel)?.rawValue ?? "0"
+        if let parsedQuantize = Int(quantizeString) {
+            self.quantizeLevel = max(0, min(5, parsedQuantize))
+        } else {
+            self.quantizeLevel = 0
+        }
+
         // 타일 사이즈
         let tileSizeString = configuration.codec.option(.tileSize)?.rawValue ?? "256"
         if let parsedTileSize = Int(tileSizeString), parsedTileSize > 0 {
@@ -142,6 +154,14 @@ final class WebPVideoEncoder: VideoEncoder {
 
         do {
             try workerQueue.sync {
+                // 인코더 레벨 프레임 레이트 제한
+                let now = CFAbsoluteTimeGetCurrent()
+                let minInterval = 1.0 / Double(maxEncoderFrameRate)
+                if now - lastEncodeTime < minInterval {
+                    return
+                }
+                lastEncodeTime = now
+
                 // RGB888 or RGB565
                 let pixelBuffer: CVPixelBuffer
                 if let imageBuffer = sampleBuffer.imageBuffer {
@@ -159,9 +179,12 @@ final class WebPVideoEncoder: VideoEncoder {
                     throw VideoEncoderError.invalidSampleBuffer
                 }
 
-                // 64x64로 타일 인코딩을 행한다
+                // 타일 인코딩을 행한다
                 let rgbTiles = frameTiler.tile(pixelBuffer)
                 guard !rgbTiles.isEmpty else { return }
+
+                // 양자화 적용 (diff 전에 적용하여 동일 타일 증가)
+                applyQuantizationToTiles(rgbTiles, quantizeLevel: self.quantizeLevel)
 
                 // 기존 프레임과의 diff를 행한다
                 let diffIndices = frameTileDiffer.feed(rgbTiles)
@@ -279,6 +302,8 @@ final class WebPVideoEncoder: VideoEncoder {
         let clamped = min(max(quality, 0.0), 1.0)
         // 0.0 → 40 (최저), 1.0 → 85 (최고)
         self.compressionLevel = Int32(40.0 + clamped * 45.0)
+        // 0.0 → quantizeLevel 5 (가장 거침), 1.0 → quantizeLevel 0 (무손실)
+        self.quantizeLevel = Int((1.0 - clamped) * 5.0)
         return true
     }
 }

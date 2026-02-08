@@ -20,6 +20,9 @@ final class ZRLEVideoEncoder: VideoEncoder {
     private var quantizeLevel: Int = 2
     private var tileSize: Int = 64
 
+    private let maxEncoderFrameRate: Float = 15.0
+    private var lastEncodeTime: CFAbsoluteTime = 0
+
     private var isStarted = false
 
     let events: AsyncStream<VideoEncoderEvent>
@@ -94,7 +97,7 @@ final class ZRLEVideoEncoder: VideoEncoder {
             self.compressionLevel = 3
         }
 
-        // 양자화 레벨 (0...3)
+        // 양자화 레벨 (0...5)
         let quantizeString = configuration.codec.option(.quantizeLevel)?.rawValue ?? "2"
         if let parsedQuantize = Int(quantizeString) {
             self.quantizeLevel = max(0, min(5, parsedQuantize))
@@ -149,6 +152,14 @@ final class ZRLEVideoEncoder: VideoEncoder {
         
         do {
             try workerQueue.sync {
+                // 인코더 레벨 프레임 레이트 제한
+                let now = CFAbsoluteTimeGetCurrent()
+                let minInterval = 1.0 / Double(maxEncoderFrameRate)
+                if now - lastEncodeTime < minInterval {
+                    return
+                }
+                lastEncodeTime = now
+
                 // RGB888 or RGB565
                 let rgbSampleBuffer = try sampleBuffer.convertToRGBIfNeeded(required: colorFormat, ciContext: ciContext)
             
