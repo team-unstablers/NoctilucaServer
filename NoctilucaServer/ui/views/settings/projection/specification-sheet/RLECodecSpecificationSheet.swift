@@ -66,10 +66,10 @@ struct RLECodecSpecificationSheet: View {
 
                     Slider(
                         value: .convert($specification.options[.quantizeLevel]),
-                        in: 0...3,
+                        in: 0...5,
                         step: 1,
                         minimumValueLabel: Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.min", defaultValue: "0 (없음)")),
-                        maximumValueLabel: Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.max", defaultValue: "3 (강함)"))
+                        maximumValueLabel: Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.max", defaultValue: "5 (최대)"))
                     ) {
                         Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.title", defaultValue: "양자화 레벨"))
                         if let quantizeLevel = Int(specification.options[.quantizeLevel]?.rawValue ?? "2") {
@@ -82,6 +82,10 @@ struct RLECodecSpecificationSheet: View {
                                 Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.medium_description", defaultValue: "중간 양자화를 적용합니다. 그라데이션 영역에서 압축률이 향상됩니다."))
                             case 3:
                                 Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.strong_description", defaultValue: "강한 양자화를 적용합니다. 압축률이 크게 향상되지만, 색상 밴딩이 발생할 수 있습니다."))
+                            case 4:
+                                Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.very_strong_description", defaultValue: "매우 강한 양자화를 적용합니다. 눈에 띄는 색상 손실이 발생할 수 있습니다."))
+                            case 5:
+                                Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.maximum_description", defaultValue: "최대 양자화를 적용합니다. 심각한 색상 손실이 발생하지만, 압축률이 극대화됩니다."))
                             default:
                                 Text(markdown: String(localized: "settings.projection.rle_sheet.quantize_level.value_description", defaultValue: "양자화 레벨을 \(quantizeLevel)으로 설정합니다."))
                             }

@@ -2516,6 +2516,116 @@
         }
       }
     },
+    "settings.projection.mjpg_sheet.quantize_level.light_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가벼운 양자화를 적용합니다. 색상 품질을 유지하면서 압축률을 약간 향상시킵니다."
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.max" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "5 (최대)"
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.maximum_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 양자화를 적용합니다. 심각한 색상 손실이 발생하지만, 압축률이 극대화됩니다."
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.medium_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "중간 양자화를 적용합니다. 그라데이션 영역에서 압축률이 향상됩니다."
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.min" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "0 (없음)"
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.none_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양자화를 사용하지 않습니다. 원본 색상을 유지합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.strong_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "강한 양자화를 적용합니다. 압축률이 크게 향상되지만, 색상 밴딩이 발생할 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양자화 레벨"
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.value_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양자화 레벨을 %lld으로 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.quantize_level.very_strong_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "매우 강한 양자화를 적용합니다. 눈에 띄는 색상 손실이 발생할 수 있습니다."
+          }
+        }
+      }
+    },
     "settings.projection.mjpg_sheet.resolution.4k" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -2984,7 +3094,18 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "3 (강함)"
+            "value" : "5 (최대)"
+          }
+        }
+      }
+    },
+    "settings.projection.rle_sheet.quantize_level.maximum_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 양자화를 적용합니다. 심각한 색상 손실이 발생하지만, 압축률이 극대화됩니다."
           }
         }
       }
@@ -3051,6 +3172,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "양자화 레벨을 %lld으로 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.rle_sheet.quantize_level.very_strong_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "매우 강한 양자화를 적용합니다. 눈에 띄는 색상 손실이 발생할 수 있습니다."
           }
         }
       }
@@ -3139,6 +3271,523 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "비디오 인코더 설정"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.assertion_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "ASSERTION FAILED: This sheet is only for WebP codec specification."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.cancel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "취소"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.auto_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최적의 색상 포맷을 자동으로 선택합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "색상 포맷을 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "색상 포맷"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.yuv420" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YUV 4:2:0"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.yuv420_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YUV 4:2:0 색상 포맷을 사용합니다. 대부분의 기기에서 호환됩니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.yuv444" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YUV 4:4:4"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.color_format.yuv444_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YUV 4:4:4 색상 포맷을 사용합니다.\n텍스트 가독성이 향상되지만, 대역폭 사용량이 늘어나고 호환성이 떨어질 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.compression_quality.high_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**원격 제어에서 통상적으로 사용되지 않는 높은 품질 %lld로 설정합니다.** 매우 높은 화질을 제공하지만, 대역폭 사용량이 증가합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.compression_quality.lossless_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**무손실에 가까운 압축을 사용합니다.** 매우 높은 화질을 제공하지만, 대역폭 사용량이 비정상적으로 증가합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.compression_quality.max" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "100 (고화질)"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.compression_quality.min" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "30 (저화질)"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.compression_quality.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "WebP 압축 품질"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.compression_quality.value_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축 품질을 %lld으로 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.framerate.60fps" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "60 FPS"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.framerate.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.framerate.auto_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트의 협상 내용을 기반으로 프레임 속도를 결정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.framerate.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프레임 속도"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.framerate.value_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프레임 속도를 최대 %lld FPS로 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ 코덱 설정"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.header_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "WebP 코덱은 타일 인코딩을 사용합니다.\nJPEG보다 높은 압축 효율을 제공하지만, 인코딩 시 더 많은 리소스를 사용합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.light_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가벼운 양자화를 적용합니다. 색상 품질을 유지하면서 압축률을 약간 향상시킵니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.max" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "5 (최대)"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.maximum_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 양자화를 적용합니다. 심각한 색상 손실이 발생하지만, 압축률이 극대화됩니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.medium_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "중간 양자화를 적용합니다. 그라데이션 영역에서 압축률이 향상됩니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.min" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "0 (없음)"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.none_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양자화를 사용하지 않습니다. 원본 색상을 유지합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.strong_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "강한 양자화를 적용합니다. 압축률이 크게 향상되지만, 색상 밴딩이 발생할 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양자화 레벨"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.value_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양자화 레벨을 %lld으로 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.quantize_level.very_strong_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "매우 강한 양자화를 적용합니다. 눈에 띄는 색상 손실이 발생할 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.resolution.4k" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "4K"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.resolution.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.resolution.auto_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트의 협상 내용을 기반으로 최대 해상도를 결정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.resolution.level_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 해상도를 %@으로 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.resolution.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 해상도"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.save" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "저장"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.64x64" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "64x64"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.64x64_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일 크기로 64x64를 사용합니다.\n해상도가 낮거나, 화면 변화가 적은 경우에 적합합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.128x128" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "128x128"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.128x128_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일 크기로 128x128를 사용합니다.\n대부분의 상황에서 균형 잡힌 성능을 제공합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.256x256" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "256x256"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.256x256_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일 크기로 256x256를 사용합니다.\n해상도가 높거나, 화면 변화가 많은 경우에 적합합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일 크기를 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일 크기"
           }
         }
       }

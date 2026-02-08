@@ -54,6 +54,12 @@ struct CodecSpecificationListContainer: View {
                                 onComplete(newSpecification)
                             }
                         }
+                    case .webp:
+                        WebPCodecSpecificationSheet(specification: specification) { action in
+                            if case .save(let newSpecification) = action {
+                                onComplete(newSpecification)
+                            }
+                        }
                     default:
                         CodecSpecificationSheet(specification: specification) { action in
                             if case .save(let newSpecification) = action {

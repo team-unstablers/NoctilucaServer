@@ -89,6 +89,34 @@ struct MJPGCodecSpecificationSheet: View {
                         }
                     }
                     
+                    Slider(
+                        value: .convert($specification.options[.quantizeLevel]),
+                        in: 0...5,
+                        step: 1,
+                        minimumValueLabel: Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.min", defaultValue: "0 (없음)")),
+                        maximumValueLabel: Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.max", defaultValue: "5 (최대)"))
+                    ) {
+                        Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.title", defaultValue: "양자화 레벨"))
+                        if let quantizeLevel = Int(specification.options[.quantizeLevel]?.rawValue ?? "0") {
+                            switch quantizeLevel {
+                            case 0:
+                                Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.none_description", defaultValue: "양자화를 사용하지 않습니다. 원본 색상을 유지합니다."))
+                            case 1:
+                                Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.light_description", defaultValue: "가벼운 양자화를 적용합니다. 색상 품질을 유지하면서 압축률을 약간 향상시킵니다."))
+                            case 2:
+                                Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.medium_description", defaultValue: "중간 양자화를 적용합니다. 그라데이션 영역에서 압축률이 향상됩니다."))
+                            case 3:
+                                Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.strong_description", defaultValue: "강한 양자화를 적용합니다. 압축률이 크게 향상되지만, 색상 밴딩이 발생할 수 있습니다."))
+                            case 4:
+                                Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.very_strong_description", defaultValue: "매우 강한 양자화를 적용합니다. 눈에 띄는 색상 손실이 발생할 수 있습니다."))
+                            case 5:
+                                Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.maximum_description", defaultValue: "최대 양자화를 적용합니다. 심각한 색상 손실이 발생하지만, 압축률이 극대화됩니다."))
+                            default:
+                                Text(markdown: String(localized: "settings.projection.mjpg_sheet.quantize_level.value_description", defaultValue: "양자화 레벨을 \(quantizeLevel)으로 설정합니다."))
+                            }
+                        }
+                    }
+
                     Toggle(isOn: .constant(false)) {
                         Text(markdown: String(localized: "settings.projection.mjpg_sheet.dqt.title", defaultValue: "상수 압축 품질 대신 양자화 테이블 사용 (작업 중)"))
                         Text(markdown: String(localized: "settings.projection.mjpg_sheet.dqt.description", defaultValue: "DQT 및 자체 품질 결정 알고리즘을 사용하여 각 타일마다 적절한 압축 품질을 동적으로 결정합니다."))
