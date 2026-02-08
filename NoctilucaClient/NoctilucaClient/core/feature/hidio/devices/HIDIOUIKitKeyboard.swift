@@ -91,6 +91,10 @@ final class HIDIOUIKitKeyboard: ObservableObject, HIDIOVirtualDevice {
     func handleDeleteBackward() {
         sendKey(.KEY_BACKSPACE)
     }
+    
+    func handleReturnKey() {
+        sendKey(.KEY_ENTER)
+    }
 
     func handleInsertText(_ text: String) {
         for character in text {
