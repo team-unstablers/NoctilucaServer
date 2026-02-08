@@ -9,6 +9,7 @@ import Darwin
 
 import Foundation
 import Combine
+import Atomics
 
 import CoreGraphics
 import CoreMedia
@@ -62,6 +63,14 @@ class ProjectionSession: Identifiable {
     private var firstRemotePTS: CMTime?
     private var firstLocalRenderTime: CMTime?
     private let hostClock = CMClockGetHostTimeClock()
+
+    /// 현재 입력 데이터 레이트 (bytes per second)
+    let currentDataRate = ManagedAtomic<Int>(0)
+
+    /// 현재 입력 데이터 레이트 (Kbps)
+    var currentDataRateKbps: Double {
+        Double(currentDataRate.load(ordering: .relaxed)) * 8.0 / 1000.0
+    }
 
     private(set) var codec: Codec?
     var formatDescription: CMFormatDescription?
@@ -211,7 +220,7 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
     }
     
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveFrame frame: consuming EncodedFrameInput) {
-        self.performanceReporter?.recordReceivedFrame()
+        self.performanceReporter?.recordReceivedFrame(byteCount: frame.data.count)
         do {
             // FIXME
             try self.decoder?.decode(EncodedFrameInput(
@@ -353,6 +362,7 @@ private final class ProjectionPerformanceReporter {
     private var decoded: UInt32 = 0
     private var dropped: UInt32 = 0
     private var decodeTimeSumMs: Double = 0
+    private var receivedBytes: UInt64 = 0
     
     private var timerTask: Task<Void, Never>?
     
@@ -377,9 +387,10 @@ private final class ProjectionPerformanceReporter {
         timerTask = nil
     }
     
-    func recordReceivedFrame() {
+    func recordReceivedFrame(byteCount: Int) {
         syncQueue.sync {
             self.received &+= 1
+            self.receivedBytes &+= UInt64(byteCount)
         }
     }
     
@@ -396,21 +407,26 @@ private final class ProjectionPerformanceReporter {
         }
     }
     
-    private func snapshotAndReset() -> (UInt32, UInt32, UInt32, UInt32) {
+    private func snapshotAndReset() -> (UInt32, UInt32, UInt32, UInt32, UInt64) {
         return syncQueue.sync {
             let avgDecodeMs: UInt32 = decoded > 0 ? UInt32((decodeTimeSumMs / Double(decoded)).rounded()) : 0
-            let snapshot = (received, decoded, dropped, avgDecodeMs)
+            let snapshot = (received, decoded, dropped, avgDecodeMs, receivedBytes)
             received = 0
             decoded = 0
             dropped = 0
             decodeTimeSumMs = 0
+            receivedBytes = 0
             return snapshot
         }
     }
     
     private func flush() async {
         guard let controlChannel else { return }
-        let (received, decoded, dropped, avgDecodeMs) = snapshotAndReset()
+        let (received, decoded, dropped, avgDecodeMs, bytes) = snapshotAndReset()
+
+        // 1초 간격 flush이므로 bytes == bytes/sec
+        parent?.currentDataRate.store(Int(bytes), ordering: .relaxed)
+
         if received == 0 && decoded == 0 && dropped == 0 {
             return
         }
