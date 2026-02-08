@@ -65,6 +65,8 @@ struct RemoteSessionProjectionView: View {
     private var cursorPosition: CGPoint = CGPoint(x: 0.5, y: 0.5)
     @State
     private var projectionAspectRatio: CGFloat = 16.0 / 9.0
+    @State
+    private var lastPerformanceReport: ProjectionPerformanceReport?
     
 #if os(iOS)
     @State private var shouldPresentKeyboard: Bool = false
@@ -152,13 +154,13 @@ struct RemoteSessionProjectionView: View {
                     .frame(width: rect.width, height: rect.height)
                     .position(x: rect.midX, y: rect.midY)
                 }
-                
+
                 HIDIOUIKitKeyboardInputHost(
                     client: remoteSession.client,
                     keyboard: uiKitKeyboard,
                     isPresented: $shouldPresentKeyboard
                 )
-                
+
                 Button {
                     shouldPresentKeyboard.toggle()
                 } label: {
@@ -171,6 +173,16 @@ struct RemoteSessionProjectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
 #endif
 
+                PerformanceOverlay(
+                    codec: source?.codec,
+                    rtt: remoteSession.pingRTT ?? 0,
+                    receivedFps: lastPerformanceReport?.receivedFrameCount ?? 0,
+                    droppedFrames: lastPerformanceReport?.droppedFrameCount ?? 0,
+                    avgDecodeMs: lastPerformanceReport?.averageDecodeTimeMs ?? 0,
+                    dataRateKbps: source?.currentDataRateKbps ?? 0,
+                    decoderType: source?.decoderTypeName ?? "N/A"
+                )
+                .padding(8)
             }
             .onChange(of: sourceDescriptor) { _, newValue in
                 self.resolveSource(newValue)
@@ -200,6 +212,8 @@ struct RemoteSessionProjectionView: View {
                         if size.width > 0, size.height > 0 {
                             projectionAspectRatio = size.width / size.height
                         }
+                    case .performanceReportEmitted(let report):
+                        lastPerformanceReport = report
                     default:
                         break
                     }

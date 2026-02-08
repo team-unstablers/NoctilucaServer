@@ -72,6 +72,19 @@ class ProjectionSession: Identifiable {
         Double(currentDataRate.load(ordering: .relaxed)) * 8.0 / 1000.0
     }
 
+    var decoderTypeName: String {
+        guard let decoder else { return "N/A" }
+        switch decoder {
+        case is VTVideoDecoder: return "VT (HW)"
+        case is ZRLEVideoDecoder: return "ZRLE"
+#if !targetEnvironment(simulator)
+        case is WebPVideoDecoder: return "WebP"
+#endif
+        case is MJPGVideoDecoder: return "MJPG"
+        default: return "Unknown"
+        }
+    }
+
     private(set) var codec: Codec?
     var formatDescription: CMFormatDescription?
 
