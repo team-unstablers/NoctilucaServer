@@ -56,7 +56,7 @@ extension ProjectionChannel {
         try await self.send(opcode: .subscribeCursorEventsRequest, message: SubscribeCursorEventsRequest(
             // FIXME
             requestID: nextRequestID(),
-            flags: 0
+            flags: []
         ))
     }
     
