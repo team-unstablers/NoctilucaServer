@@ -17,4 +17,10 @@ public extension CodecOptionValue {
 
     /// 양자화 레벨 3 (강한 양자화)
     static let kQuantizeLevel3 = Self(rawValue: "3")
+
+    /// 양자화 레벨 4 (매우 강한 양자화)
+    static let kQuantizeLevel4 = Self(rawValue: "4")
+
+    /// 양자화 레벨 5 (최대 양자화)
+    static let kQuantizeLevel5 = Self(rawValue: "5")
 }
