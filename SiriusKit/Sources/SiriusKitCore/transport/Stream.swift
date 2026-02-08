@@ -7,8 +7,6 @@
 
 import Foundation
 
-package import Atomics
-
 public typealias StreamIdentifier = UUID
 
 public enum StreamError: Error {
@@ -26,8 +24,6 @@ open class Stream {
     public let events: AsyncStream<StreamEvent>
     public let continuation: AsyncStream<StreamEvent>.Continuation
 
-    package let writeBackPressure = ManagedAtomic<UInt64>(0)
-
     package init() {
         var continuationLocal: AsyncStream<StreamEvent>.Continuation!
 
@@ -39,10 +35,6 @@ open class Stream {
     }
 
     public var id: StreamIdentifier = .zero
-    
-    open func readWriteBackPressure() -> UInt64 {
-        return writeBackPressure.load(ordering: .relaxed)
-    }
 
     open func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
         let opcodeRaw = opcode.rawValue.bigEndian

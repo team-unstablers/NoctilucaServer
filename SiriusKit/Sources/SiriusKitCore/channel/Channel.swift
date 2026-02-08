@@ -44,11 +44,6 @@ open class Channel {
 
     internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
 
-    /// 스트림의 쓰기 백프레셔.
-    public var writeBackPressure: UInt64 {
-        return stream.readWriteBackPressure()
-    }
-
     required public init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         self.stream = streamHolder.stream
         self.identifier = identifier
