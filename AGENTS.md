@@ -57,6 +57,7 @@ swiftlint lint --config .swiftlint.yml
 - `libbcrypt/` - bcrypt 라이브러리 (PAM 인증용)
 - `NoctilucaServerTests/` - 서버 테스트
 - `docs/`, `distutil/`, `pam.d/` 등 유틸리티
+- `NoctilucaClientQt/` - Linux / Windows용 C++/Qt 클라이언트 및 libsirius (SiriusKit의 client-role only C++ 구현체)
 
 # TECHNOLOGIES USED (CROSS-CUTTING)
 
