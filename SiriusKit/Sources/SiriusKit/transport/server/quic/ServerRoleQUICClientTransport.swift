@@ -81,6 +81,10 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
             stream.start()
         }
     }
+    
+    func issueResumeTicket() async throws {
+        // NO-OP: Network.framework (NWConnection)에서는 resumption ticket 발행을 직접 지원하지 않음
+    }
 
     internal func setup() {
         self.connectionGroup.stateUpdateHandler = { [weak self] state in

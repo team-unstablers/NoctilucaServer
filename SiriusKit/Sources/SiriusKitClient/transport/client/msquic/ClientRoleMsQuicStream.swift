@@ -47,13 +47,6 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
     }
 
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
-        let byteCount = UInt64(data.count)
-        writeBackPressure.wrappingIncrement(by: byteCount, ordering: .relaxed)
-
-        defer {
-            self.writeBackPressure.wrappingDecrement(by: byteCount, ordering: .relaxed)
-        }
-
         do {
             try await quicStream.send(data)
             return .success(UInt32(data.count))

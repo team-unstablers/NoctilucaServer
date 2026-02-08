@@ -4,9 +4,22 @@
 //
 //  Created by Gyuhwan Park on 1/10/26.
 //
+// swiftlint:disable force_cast
 
 import Foundation
 import Network
+
+package extension IPAddress {
+    func asString() -> String {
+        if self is IPv4Address {
+            return (self as! IPv4Address).asString()
+        } else if self is IPv6Address {
+            return (self as! IPv6Address).asString()
+        } else {
+            return "(unknown)"
+        }
+    }
+}
 
 package extension IPv4Address {
     func asString() -> String {

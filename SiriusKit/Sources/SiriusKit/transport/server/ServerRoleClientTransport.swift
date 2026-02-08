@@ -23,6 +23,8 @@ protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerR
     var delegate: ServerRoleClientTransportDelegate? { get set }
 
     var remoteAddress: String? { get }
+    
+    func issueResumeTicket() async throws
 }
 
 extension ServerRoleClientTransport {

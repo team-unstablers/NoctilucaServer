@@ -18,6 +18,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             minimumLevel: .trace
         )
         
+        AddressMonitor.shared.start()
+        
         return true
     }
     

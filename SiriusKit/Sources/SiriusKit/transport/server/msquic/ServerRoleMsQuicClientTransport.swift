@@ -106,6 +106,14 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
             return .failure(.openStreamFailed(error: error))
         }
     }
+    
+    func issueResumeTicket() async throws {
+        // 랜덤 데이터를 생성한다. (512바이트)
+        let resumptionData = try SRSecurity.shared.createSecureRandomBytes(count: 512)
+        
+        assert(resumptionData.count < QUIC_MAX_RESUMPTION_APP_DATA_LENGTH, "Resumption data exceeds maximum allowed length.")
+        try connection.sendResumptionTicket(resumptionData: resumptionData)
+    }
 
     // MARK: - Internal Setup
 

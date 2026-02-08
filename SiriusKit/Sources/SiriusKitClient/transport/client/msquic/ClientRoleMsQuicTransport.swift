@@ -6,6 +6,10 @@
 //
 
 import Foundation
+import Combine
+
+import Network
+
 import MsQuic
 import SwiftMsQuicHelper
 import SiriusKitCore
@@ -38,6 +42,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
     private var streams: [StreamIdentifier: ClientRoleMsQuicStream] = [:]
     private var isFinalized: Bool = false
+    
+    private var addressMonitorCancellation: AnyCancellable?
 
     /// 인증서 검증을 비활성화할지 여부 (개발용)
     /// 프로덕션에서는 false로 설정하고 delegate를 통해 검증해야 함
@@ -51,7 +57,10 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
     // MARK: - ClientRoleTransport Protocol
 
+    // swiftlint: disable function_body_length
     func connect() async throws {
+        setupAddressMonitor()
+
         // 1. MsQuic API 초기화 (전역적으로 한 번만 호출됨)
         _ = SwiftMsQuicAPI.open()
 
@@ -65,8 +74,10 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
         // 3. Configuration 생성
         var settings = QuicSettings()
-        settings.idleTimeoutMs = 30000
+        settings.idleTimeoutMs = 15000
+        settings.keepAliveIntervalMs = 15000
         settings.peerBidiStreamCount = 128
+        settings.migrationEnabled = true
 
         let configuration = try QuicConfiguration(
             registration: registration,
@@ -89,13 +100,14 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
         // 5. Connection 생성 및 시작
         let connection = try QuicConnection(registration: registration)
+        try connection.setStreamSchedulingScheme(.roundRobin)
+        
         self.connection = connection
 
         // 6. 이벤트 핸들러 설정
         await setupEventHandlers(connection)
 
         // 7. 연결 시작
-        
         try await connection.start(
             configuration: configuration,
             serverName: host,
@@ -130,6 +142,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
 
         // 리소스 정리
+        self.addressMonitorCancellation?.cancel()
+        self.addressMonitorCancellation = nil
         self.configuration = nil
         self.registration = nil
 
@@ -179,6 +193,31 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         self.streams.removeValue(forKey: stream.id)
     }
 
+    // MARK: - Connection Migration
+
+    /// 네트워크 주소 변경을 감지하여 QUIC 커넥션 마이그레이션을 수행합니다.
+    private func setupAddressMonitor() {
+        self.addressMonitorCancellation = AddressMonitor.shared
+            .$currentAddresses
+            .dropFirst()
+            .map { $0.compactMap { $0.asString() } }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.global())
+            .sink { [weak self] addresses in
+                guard let self = self else { return }
+                self.logger.debug("Network addresses changed: \(addresses)")
+
+                Task {
+                    do {
+                        // XXX: 6to4 등으로 IPv4 <-> IPv6 패밀리 전환이 일어나면 실패할 수 있음
+                        try await self.connection?.setLocalAddress(QuicAddress(port: 0, family: .unspecified))
+                    } catch {
+                        self.logger.error("Failed to update local address: \(error)")
+                    }
+                }
+            }
+    }
+
     // MARK: - Event Handlers
 
     private func setupEventHandlers(_ connection: QuicConnection) async {
@@ -199,6 +238,17 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
                 Task {
                     await self.handleConnectionClosed()
                 }
+            case .peerAddressChanged(let address):
+                self.logger.info("Peer address changed to: \(address.description)")
+
+            case .localAddressChanged(let address):
+                self.logger.info("Local address changed to: \(address.description)")
+                
+            case .resumptionTicketReceived(let ticket):
+                self.logger.info("Received resumption ticket of size: \(ticket.count) bytes")
+                // 여기서 말하는 재접속은 'connection migration'이 아닌, 완전한 재접속을 의미하는 듯 하다
+                // TODO: 다음 접속에 재사용할 수 있도록 인터페이스를 제공한다
+                
             default:
                 break
             }

@@ -45,6 +45,18 @@ public class ClientSession: SiriusSession {
     public func close() async {
         await self.clientTransport.disconnect()
     }
+    
+    /// 트랜스포트 레이어 레벨의 세션 재개 티켓을 클라이언트에게 발행합니다.
+    /// Note: 트랜스포트 레이어 구현체에 따라 이 동작은 No-op일 수도 있습니다.
+    ///
+    /// 만일을 대비하여, 메인 페이즈에 진입한 후에 이 메서드를 호출하는 것을 권장합니다.
+    public func issueResumeTicket() async {
+        do {
+            try await clientTransport.issueResumeTicket()
+        } catch {
+            logger.error("Failed to issue resume ticket: \(error)")
+        }
+    }
 }
 
 extension ClientSession: ServerRoleClientTransportDelegate {

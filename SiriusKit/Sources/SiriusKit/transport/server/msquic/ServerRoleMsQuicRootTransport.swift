@@ -89,8 +89,12 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
         // 3. Configuration 생성 (ALPN 설정)
         var settings = QuicSettings()
-        settings.idleTimeoutMs = 5000
+        settings.idleTimeoutMs = 15000
+        settings.keepAliveIntervalMs = 15000
         settings.peerBidiStreamCount = 128
+        settings.migrationEnabled = true
+        settings.sendBufferingEnabled = true
+        settings.serverResumptionLevel = UInt8(Int(exactly: QUIC_SERVER_RESUME_AND_ZERORTT.rawValue)!)
 
         do {
             self.configuration = try QuicConfiguration(
@@ -205,6 +209,8 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
                 handle: connectionInfo.connection,
                 configuration: configuration
             )
+            
+            try quicConnection.setStreamSchedulingScheme(.roundRobin)
         } catch {
             throw error
         }

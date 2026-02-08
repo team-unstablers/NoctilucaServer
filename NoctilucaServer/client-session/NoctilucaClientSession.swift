@@ -151,6 +151,11 @@ class NoctilucaClientSession: Identifiable {
         if newPhase == .ready {
             // 인증 완료된 상태이므로 추가 채널을 만들 수 있도록 한다.
             self.session.shouldAcceptChannelCreation = true
+            
+            Task {
+                // 인증 완료되었으므로 빠르게 재접속할 수 있게 티켓을 발행한다
+                await self.session.issueResumeTicket()
+            }
         }
         
         self.phase = newPhase
