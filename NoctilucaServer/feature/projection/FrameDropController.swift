@@ -21,8 +21,11 @@ class FrameDropController {
     private var needsKeyframeAfterPtsDrop: Bool = false
     private let ptsDropKeyframeThreshold: Int = 3
 
-    // MARK: - Backpressure 드랍 상태
-    private var flushAll: Bool = false
+    // MARK: - 큐 드랍 기반 플러시 상태
+    private var consecutiveQueueDrops: Int = 0
+    private let queueDropFlushThreshold: Int = 3
+    private var flushCooldown: Int = 0
+    private let flushCooldownFrames: Int = 10
 
     func configure(frameRate: Float) {
         self.currentFrameRate = frameRate
@@ -60,30 +63,31 @@ class FrameDropController {
         return (shouldDrop: false, needsKeyframe: consumeKeyframeRequest())
     }
 
-    /// Backpressure 기반 드랍 판정 (인코딩 후)
-    /// - Returns: (shouldDrop: Bool, needsKeyframe: Bool)
-    func shouldDropByBackpressure(
-        writeBackPressure: Int,
-        maxBitrateKbps: Int
-    ) -> (shouldDrop: Bool, needsKeyframe: Bool) {
-        if flushAll {
-            if writeBackPressure == 0 {
-                flushAll = false
-                return (shouldDrop: true, needsKeyframe: true)
-            }
-            logger.info("Flushing frame due to backpressure")
-            return (shouldDrop: true, needsKeyframe: false)
+    /// 큐 드랍 기반 플러시 판정 (인코딩 후)
+    /// 연속 드랍이 임계치를 초과하면 큐 클리어 + 키프레임 요청
+    func shouldFlushQueue(
+        queueDropOccurred: Bool
+    ) -> (shouldFlush: Bool, needsKeyframe: Bool) {
+        if flushCooldown > 0 {
+            flushCooldown -= 1
+            consecutiveQueueDrops = 0
+            return (shouldFlush: false, needsKeyframe: false)
         }
 
-        // 최대 1초치의 버퍼까지만 허용
-        let threshold = ((maxBitrateKbps / 8) * 1000) * 1
-        if writeBackPressure > threshold {
-            logger.warning("High write backpressure (\(writeBackPressure) bytes), dropping frame")
-            flushAll = true
-            return (shouldDrop: true, needsKeyframe: false)
+        if queueDropOccurred {
+            consecutiveQueueDrops += 1
+        } else {
+            consecutiveQueueDrops = 0
         }
 
-        return (shouldDrop: false, needsKeyframe: false)
+        if consecutiveQueueDrops >= queueDropFlushThreshold {
+            logger.warning("Consecutive queue drops (\(self.consecutiveQueueDrops)), requesting flush + keyframe")
+            consecutiveQueueDrops = 0
+            flushCooldown = flushCooldownFrames
+            return (shouldFlush: true, needsKeyframe: true)
+        }
+
+        return (shouldFlush: false, needsKeyframe: false)
     }
 
     private func consumeKeyframeRequest() -> Bool {

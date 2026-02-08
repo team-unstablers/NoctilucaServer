@@ -26,8 +26,11 @@ class AudioProjectionSession: Identifiable {
     var recorder: any AudioRecorder
     var encoder: (any AudioEncoder)?
     var codec: SiriusKit.AudioCodec?
+    
+    private let frameQueue = FrameQueue<EncodedAudioFrame>(capacity: 4)
 
     private var encoderEventLoopTask: Task<Void, Error>?
+    private var senderEventLoopTask: Task<Void, Error>?
 
     init(id: UUID, dataChannel: ProjectionDataChannel) {
         self.id = id
@@ -58,7 +61,15 @@ class AudioProjectionSession: Identifiable {
     }
 
     private func processEncodedFrame(_ frame: consuming EncodedAudioFrame) async throws {
-        try await self.dataChannel.send(audioFrame: frame)
+        await frameQueue.enqueue(frame)
+    }
+    
+    private func senderEventLoopMain() async throws {
+        while !Task.isCancelled {
+            let frame = await frameQueue.next()
+            
+            try await self.dataChannel.send(audioFrame: frame)
+        }
     }
 
     func prepare(_ request: AudioProjectionRequest, codec: SiriusKit.AudioCodec) async throws {
@@ -96,6 +107,10 @@ class AudioProjectionSession: Identifiable {
         // Cancel existing encoder event loop task and clean up encoder
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
+        
+        senderEventLoopTask?.cancel()
+        senderEventLoopTask = nil
+        
         try? self.encoder?.stop()
 
         // Create appropriate encoder based on codec
@@ -118,6 +133,10 @@ class AudioProjectionSession: Identifiable {
             guard let self else { return }
             try await self.encoderEventLoopMain()
         }
+        
+        self.senderEventLoopTask = Task {
+            try await self.senderEventLoopMain()
+        }
     }
 
     func start() async throws {
@@ -129,6 +148,9 @@ class AudioProjectionSession: Identifiable {
         // Cancel task
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
+        
+        senderEventLoopTask?.cancel()
+        senderEventLoopTask = nil
 
         // Clean up recorder/encoder
         try await self.recorder.stop()
@@ -138,6 +160,10 @@ class AudioProjectionSession: Identifiable {
     deinit {
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
+        
+        senderEventLoopTask?.cancel()
+        senderEventLoopTask = nil
+
         recorder.delegate = nil
 
         let recorder = recorder

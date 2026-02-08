@@ -97,7 +97,7 @@ final class ZRLEVideoEncoder: VideoEncoder {
         // 양자화 레벨 (0...3)
         let quantizeString = configuration.codec.option(.quantizeLevel)?.rawValue ?? "2"
         if let parsedQuantize = Int(quantizeString) {
-            self.quantizeLevel = max(0, min(3, parsedQuantize))
+            self.quantizeLevel = max(0, min(5, parsedQuantize))
         } else {
             self.quantizeLevel = 2
         }
@@ -225,9 +225,17 @@ final class ZRLEVideoEncoder: VideoEncoder {
     func updateTargetBitrate(_ bitrateKbps: Int) -> Bool {
         return true
     }
-    
+
     @discardableResult
     func updateMaxBitrate(bitrateKbps: Int) -> Bool {
+        return true
+    }
+
+    @discardableResult
+    func updateQuality(_ quality: Float) -> Bool {
+        let clamped = min(max(quality, 0.0), 1.0)
+        // 0.0 → quantizeLevel 5 (가장 거침), 1.0 → quantizeLevel 0 (무손실)
+        self.quantizeLevel = Int((1.0 - clamped) * 5.0)
         return true
     }
 }

@@ -244,9 +244,17 @@ final class MJPGVideoEncoder: VideoEncoder {
     func updateTargetBitrate(_ bitrateKbps: Int) -> Bool {
         return true
     }
-    
+
     @discardableResult
     func updateMaxBitrate(bitrateKbps: Int) -> Bool {
+        return true
+    }
+
+    @discardableResult
+    func updateQuality(_ quality: Float) -> Bool {
+        let clamped = min(max(quality, 0.0), 1.0)
+        // 0.0 → 15 (최저), 1.0 → 45 (최고)
+        self.compressionLevel = Int32(15.0 + clamped * 30.0)
         return true
     }
 }

@@ -171,22 +171,27 @@ class AutoQualityPlanner: QualityPlanner {
     private var emaDropRatio: Float?
     private var emaDecodeMs: Float?
     private var emaBackpressure: Float?
-    
-    // scoring / pacing
-    private var score: Int = 0
+
+    // scoring / pacing (피드 소스 분리)
+    private var clientScore: Int = 0   // feed(report:)에서 증감
+    private var serverScore: Int = 0   // feed(queuePressure:)에서 증감
     private var cooldownTicks: Int = 0
     private let cooldownWindow: Int = 3
-    
+
     // thresholds
     private let dropThreshold: Float = 0.05
     private let dropCriticalThreshold: Float = 0.15
     private let recoveryDropThreshold: Float = 0.01
     private let decodeBudgetSlack: Float = 0.7
-    
+
+    // 긴급 디그레이드 threshold
+    private let emergencyDropThreshold: Float = 0.30    // 드랍 30% 이상
+    private let emergencyPressureThreshold: Float = 0.9 // 큐 90% 이상 가득 참
+
     // EMA smoothing (~3 ticks window)
     private let emaAlpha: Float = 0.5
     private let backpressureThreshold: Float = 0.5
-    
+
     private let minMultiplier: Float = 0.5
     private let maxMultiplier: Float = 1.5
     
@@ -212,55 +217,71 @@ class AutoQualityPlanner: QualityPlanner {
         let received = Int(report.receivedFrameCount)
         let dropped = Int(report.droppedFrameCount)
         let decodeMsRaw = Float(report.averageDecodeTimeMs)
-        
+
         guard received > 0 else {
             // No traffic: slowly encourage recovery
-            adjustScore(forStable: true)
+            clientScore -= 1
             maybeAdjustPlan()
             return
         }
-        
-        // EMA smoothing over ~3 ticks
+
         let dropRatio = Float(dropped) / Float(received)
+
+        // 긴급 경로: raw 값이 극단적이면 즉시 디그레이드
+        if dropRatio >= emergencyDropThreshold && cooldownTicks == 0 {
+            applyDegradation(critical: true)
+            emaDropRatio = nil
+            emaDecodeMs = nil
+            return
+        }
+
+        // EMA smoothing over ~3 ticks
         emaDropRatio = smooth(emaDropRatio, with: dropRatio)
         emaDecodeMs = smooth(emaDecodeMs, with: decodeMsRaw)
-        
+
         let smoothedDrop = emaDropRatio ?? dropRatio
         let smoothedDecode = emaDecodeMs ?? decodeMsRaw
-        
+
         let frameBudgetMs: Float = {
             let fps = max(frameRate, 1)
             return (1000.0 / fps) * decodeBudgetSlack
         }()
         let decodeOverBudget = smoothedDecode > frameBudgetMs
-        
+
         if smoothedDrop >= dropCriticalThreshold {
-            score += 2
+            clientScore += 2
         } else if smoothedDrop >= dropThreshold {
-            score += 1
+            clientScore += 1
         }
-        
+
         if decodeOverBudget {
-            score += 1
+            clientScore += 1
         }
-        
+
         if smoothedDrop < recoveryDropThreshold && decodeOverBudget == false {
-            adjustScore(forStable: true)
+            clientScore -= 1
         }
-        
+
         maybeAdjustPlan()
     }
     
-    func feed(backpressure: Bool) {
-        // Smooth backpressure (0/1) and apply threshold
-        let value: Float = backpressure ? 1.0 : 0.0
-        emaBackpressure = smooth(emaBackpressure, with: value)
-        let smoothed = emaBackpressure ?? value
-        
+    func feed(queuePressure: Float) {
+        let clamped = min(max(queuePressure, 0.0), 1.0)
+
+        // 긴급 경로: 큐가 거의 가득 차면 즉시 디그레이드
+        if clamped >= emergencyPressureThreshold && cooldownTicks == 0 {
+            applyDegradation(critical: true)
+            emaBackpressure = nil
+            return
+        }
+
+        emaBackpressure = smooth(emaBackpressure, with: clamped)
+        let smoothed = emaBackpressure ?? clamped
+
         if smoothed >= backpressureThreshold {
-            score += 2
+            serverScore += 2
         } else {
-            adjustScore(forStable: true)
+            serverScore -= 1
         }
         maybeAdjustPlan()
     }
@@ -292,21 +313,24 @@ private extension AutoQualityPlanner {
     ) -> [QualityDegradation] {
         let fps90 = max(frameRate * 0.9, 1)
         let fps75 = max(frameRate * 0.75, 1)
-        
+
+        let q85 = QualityDegradation.lowerQuality(factor: 0.85)
+        let q70 = QualityDegradation.lowerQuality(factor: 0.70)
+
         let res85 = QualityDegradation.lowerResolution(scale: 0.85)
         let res70 = QualityDegradation.lowerResolution(scale: 0.7)
         let res50 = QualityDegradation.lowerResolution(scale: 0.5)
-        
+
         let fps90d = QualityDegradation.lowerFrameRate(to: fps90)
         let fps75d = QualityDegradation.lowerFrameRate(to: fps75)
-        
+
         switch strategy {
         case .performanceFirst:
-            return [res85, res70, res50, fps90d, fps75d]
+            return [q85, res85, q70, res70, res50, fps90d, fps75d]
         case .qualityFirst:
-            return [fps90d, fps75d, res85, res70]
+            return [fps90d, fps75d, q85, res85, q70, res70]
         case .balanced:
-            return [res85, fps90d, res70, fps75d]
+            return [q85, res85, fps90d, q70, res70, fps75d]
         }
     }
     
@@ -318,51 +342,50 @@ private extension AutoQualityPlanner {
         state = .adjustingDown
         let step = critical ? 2 : 1
         degradationIndex = min(degradationIndex + step, degradationSteps.count)
-        
+
         let factor: Float = critical ? 0.8 : 0.9
         multiplier = clampMultiplier(multiplier * factor)
         cooldownTicks = cooldownWindow
-        score = 0
+        clientScore = 0
+        serverScore = 0
     }
-    
+
     func applyRecovery() {
         state = .adjustingUp
         if degradationIndex > 0 {
             degradationIndex -= 1
         }
-        
+
         multiplier = clampMultiplier(multiplier * 1.02)
         cooldownTicks = cooldownWindow
-        score = 0
-        
+        clientScore = 0
+        serverScore = 0
+
         if degradationIndex == 0 {
             state = .stable
         }
     }
-    
+
     func smooth(_ current: Float?, with newValue: Float) -> Float {
         guard let current else { return newValue }
         return (emaAlpha * newValue) + ((1 - emaAlpha) * current)
     }
-    
-    func adjustScore(forStable stable: Bool) {
-        if stable {
-            score -= 1
-        }
-    }
-    
+
     func maybeAdjustPlan() {
         if cooldownTicks > 0 {
             cooldownTicks -= 1
             return
         }
-        
-        if score >= 3 {
-            applyDegradation(critical: score >= 4)
+
+        // 둘 중 하나라도 threshold 초과 시 디그레이드
+        let maxScore = max(clientScore, serverScore)
+        if maxScore >= 3 {
+            applyDegradation(critical: maxScore >= 4)
             return
         }
-        
-        if score <= -3 {
+
+        // 회복은 양쪽 모두 안정적이어야 함
+        if clientScore <= -3 && serverScore <= -3 {
             applyRecovery()
             return
         }

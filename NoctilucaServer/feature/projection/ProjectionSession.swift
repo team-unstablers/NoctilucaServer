@@ -28,11 +28,15 @@ class ProjectionSession: Identifiable {
     var encoder: any VideoEncoder
     var codec: Codec?
     
+    private let frameQueue = FrameQueue<EncodedFrame>(capacity: 4)
+    
     private var encoderEventLoopTask: Task<Void, Error>?
+    private var senderEventLoopTask: Task<Void, Error>?
+    
     private var qualityPlanner: (any QualityPlanner)?
-    private var backpressureWindowCount: Int = 0
-    private var backpressureTrueCount: Int = 0
-    private let backpressureWindowSize = 30 // ~0.5s at 60fps, FIXME
+    private var pressureAccumulator: Float = 0.0
+    private var pressureWindowCount: Int = 0
+    private let pressureWindowSize: Int = 30 // ~0.5s at 60fps
     
     private let frameDropController = FrameDropController()
 
@@ -83,7 +87,7 @@ class ProjectionSession: Identifiable {
             case .parameterSetChanged(let parameterSetMessage):
                 try await dataChannel.send(parameterSetMessage: parameterSetMessage)
             case .frameEncoded(let encodedFrame):
-                try await processEncodedFrame(encodedFrame)
+                await processEncodedFrame(encodedFrame)
             case .errorOccurred(let error):
                 // TODO: handle errors
                 self.logger.error("Encoder error occurred in projection session \(self.id): \(error)")
@@ -94,40 +98,37 @@ class ProjectionSession: Identifiable {
         }
     }
     
-    private func processEncodedFrame(_ frame: consuming EncodedFrame) async throws {
-        // self.logger.trace("write backpressure: \(self.dataChannel.writeBackPressure)")
+    private func processEncodedFrame(_ frame: consuming EncodedFrame) async {
+        let dropped = await frameQueue.enqueue(frame)
 
-        if let planner = self.qualityPlanner {
-            let backpressure = self.dataChannel.writeBackPressure > 0
-            accumulateBackpressure(backpressure, planner: planner)
+        // 큐 드랍 기반 플러시 판정
+        let flushResult = frameDropController.shouldFlushQueue(queueDropOccurred: dropped)
+        if flushResult.shouldFlush {
+            await frameQueue.clear()
         }
-
-        let maxBitrateKbps = self.qualityPlanner?.maxBitrateKbps() ?? 2400
-        let dropResult = frameDropController.shouldDropByBackpressure(
-            writeBackPressure: Int(self.dataChannel.writeBackPressure),
-            maxBitrateKbps: maxBitrateKbps
-        )
-
-        if dropResult.needsKeyframe {
+        if flushResult.needsKeyframe {
             self.encoder.forceKeyframe()
         }
 
-        if dropResult.shouldDrop {
-            return
+        // 큐 압력을 QualityPlanner에 피드
+        if let planner = self.qualityPlanner {
+            let pressure = await frameQueue.pressure
+            accumulateQueuePressure(pressure, planner: planner)
         }
-
-        try await self.dataChannel.send(videoFrame: frame)
+    }
+    
+    private func senderEventLoopMain() async throws {
+        while !Task.isCancelled {
+            let frame = await frameQueue.next()
+            
+            try await self.dataChannel.send(videoFrame: frame)
+        }
     }
     
     func handlePerformanceReport(_ report: ProjectionPerformanceReport) {
         guard let planner = self.qualityPlanner else { return }
         planner.feed(report: report)
         applyQualityPlan()
-        
-        let degradations = planner.plannedDegradations()
-        if degradations.isEmpty == false {
-            self.logger.info("Planned degradations for session \(self.id): \(degradations)")
-        }
     }
 
     func prepare(_ request: ProjectionRequest, codec: Codec) async throws {
@@ -152,6 +153,10 @@ class ProjectionSession: Identifiable {
         // 기존 encoder event loop task 취소 및 encoder 정리
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
+        
+        senderEventLoopTask?.cancel()
+        senderEventLoopTask = nil
+        
         try? self.encoder.stop()
 
         switch codec.fourCC {
@@ -183,6 +188,10 @@ class ProjectionSession: Identifiable {
         self.encoderEventLoopTask = Task {
             try await self.encoderEventLoopMain()
         }
+        
+        self.senderEventLoopTask = Task {
+            try await self.senderEventLoopMain()
+        }
     }
     
     func start() async throws {
@@ -194,6 +203,9 @@ class ProjectionSession: Identifiable {
         // Task 취소
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
+        
+        senderEventLoopTask?.cancel()
+        senderEventLoopTask = nil
 
         // Combine 구독 취소
         screenLockCancellable?.cancel()
@@ -246,17 +258,16 @@ extension ProjectionSession: ScreenRecorderDelegate {
 }
 
 private extension ProjectionSession {
-    func accumulateBackpressure(_ backpressure: Bool, planner: any QualityPlanner) {
-        backpressureWindowCount += 1
-        if backpressure { backpressureTrueCount += 1 }
-        
-        if backpressureWindowCount >= backpressureWindowSize {
-            let ratio = Double(backpressureTrueCount) / Double(max(1, backpressureWindowCount))
-            let aggregated = ratio >= 0.3
-            planner.feed(backpressure: aggregated)
+    func accumulateQueuePressure(_ pressure: Float, planner: any QualityPlanner) {
+        pressureWindowCount += 1
+        pressureAccumulator += pressure
+
+        if pressureWindowCount >= pressureWindowSize {
+            let avgPressure = pressureAccumulator / Float(pressureWindowCount)
+            planner.feed(queuePressure: avgPressure)
             applyQualityPlan()
-            backpressureWindowCount = 0
-            backpressureTrueCount = 0
+            pressureWindowCount = 0
+            pressureAccumulator = 0.0
         }
     }
     
@@ -281,19 +292,37 @@ private extension ProjectionSession {
     
     func applyQualityPlan() {
         guard let planner = self.qualityPlanner else { return }
-        
-        
+
         if self.targetBitrate != planner.targetBitrateKbps() {
             logger.debug("Applying quality plan: target bitrate = \(planner.targetBitrateKbps()) kbps, max bitrate = \(planner.maxBitrateKbps()) kbps")
-            
+
             self.targetBitrate = planner.targetBitrateKbps()
             _ = self.encoder.updateTargetBitrate(self.targetBitrate)
         }
-        
+
         if self.maxBitrate != planner.maxBitrateKbps() {
             self.maxBitrate = planner.maxBitrateKbps()
             _ = self.encoder.updateMaxBitrate(bitrateKbps: self.maxBitrate)
         }
+
+        // degradation 적용
+        let degradations = planner.plannedDegradations()
+        applyDegradations(degradations)
+    }
+
+    func applyDegradations(_ degradations: [QualityDegradation]) {
+        var qualityFactor: Float = 1.0
+
+        for degradation in degradations {
+            switch degradation {
+            case .lowerQuality(let factor):
+                qualityFactor *= factor
+            case .lowerResolution, .lowerFrameRate:
+                break // resolution/fps 디그레이드는 별도 구현 필요
+            }
+        }
+
+        _ = self.encoder.updateQuality(qualityFactor)
     }
 }
 

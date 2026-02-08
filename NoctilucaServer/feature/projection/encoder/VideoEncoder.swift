@@ -76,6 +76,11 @@ protocol VideoEncoder: AnyObject {
     @discardableResult
     func updateMaxBitrate(bitrateKbps: Int) -> Bool
     
+    /// 인코딩 품질을 업데이트합니다 (0.0 = 최저 ~ 1.0 = 최고).
+    /// 코덱에 따라 compressionLevel, quantizeLevel 등에 매핑됩니다.
+    @discardableResult
+    func updateQuality(_ quality: Float) -> Bool
+
     /// 주어진 코덱 사양을 이 인코더가 처리할 수 있는지 확인합니다.
     static func isSupported(codec: CodecSpecification) -> Bool
 }
@@ -83,6 +88,10 @@ protocol VideoEncoder: AnyObject {
 extension VideoEncoder {
     static func isSupported(codec: CodecSpecification) -> Bool {
         return false
+    }
+
+    func updateQuality(_ quality: Float) -> Bool {
+        return true
     }
 }
 

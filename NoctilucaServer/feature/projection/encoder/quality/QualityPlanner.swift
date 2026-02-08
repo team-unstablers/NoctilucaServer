@@ -16,6 +16,8 @@ enum QualityDegradation: Hashable {
     case lowerResolution(scale: Float)
     /// 프레임 레이트를 낮춥니다. to는 목표 프레임 레이트입니다.
     case lowerFrameRate(to: Float)
+    /// 인코딩 품질을 낮춥니다. factor는 0.0~1.0이며, 1.0이 원래 품질입니다.
+    case lowerQuality(factor: Float)
 }
 
 protocol QualityPlanner {
@@ -27,8 +29,8 @@ protocol QualityPlanner {
     /// 퍼포먼스 리포트를 보고합니다.
     func feed(report: ProjectionPerformanceReport)
     
-    /// 소켓 백프레셔 상태를 보고합니다.
-    func feed(backpressure: Bool)
+    /// 큐 압력 비율 (0.0 = 비어있음 ~ 1.0 = 가득 참)을 보고합니다.
+    func feed(queuePressure: Float)
     
     func targetBitrateKbps() -> Int
     func maxBitrateKbps() -> Int
