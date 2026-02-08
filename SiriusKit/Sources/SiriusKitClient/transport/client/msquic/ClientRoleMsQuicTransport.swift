@@ -207,7 +207,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
 
         // 피어 스트림 핸들러
-        connection.onPeerStreamStarted { [weak self] _, quicStream in
+        connection.onPeerStreamStarted { [weak self] _, quicStream, flags in
+            // TODO: reject unidirectional stream
             guard let self = self else { return }
             await self.handlePeerStream(quicStream)
         }
