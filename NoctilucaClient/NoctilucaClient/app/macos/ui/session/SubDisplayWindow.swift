@@ -16,7 +16,7 @@ import SiriusKitClient
 class SubDisplayWindow: NSWindow {
     let targetDisplayID: Int
 
-    init(displayID: Int, remoteSession: RemoteSession) {
+    init(displayID: Int, remoteSession: RemoteSession, subscription: ProjectionSessionSubscription) {
         self.targetDisplayID = displayID
 
         super.init(
@@ -38,7 +38,8 @@ class SubDisplayWindow: NSWindow {
             remoteSession: remoteSession,
             projection: projection,
             hidio: hidio,
-            sourceDescriptor: .constant(.displayID(displayID))
+            sourceDescriptor: .constant(.displayID(displayID)),
+            subscription: subscription
         )
 
         self.contentView = NSHostingView(rootView: rootView)

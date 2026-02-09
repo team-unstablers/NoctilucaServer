@@ -15,7 +15,7 @@ class SubDisplayWindowManager: NSObject, NSWindowDelegate {
 
     struct WindowState {
         let window: SubDisplayWindow
-        let ticket: RemoteSession.SessionReferenceTicket
+        let subscription: ProjectionSessionSubscription
     }
 
     private(set) var windows: [Int: WindowState] = [:]
@@ -33,11 +33,11 @@ class SubDisplayWindowManager: NSObject, NSWindowDelegate {
 
         guard let projection = remoteSession.projection else { return }
 
-        let ticket = try await projection.subscribeProjectionSession(for: displayID)
-        let window = SubDisplayWindow(displayID: displayID, remoteSession: remoteSession)
+        let subscription = try await projection.subscribeProjectionSession(for: displayID)
+        let window = SubDisplayWindow(displayID: displayID, remoteSession: remoteSession, subscription: subscription)
         window.delegate = self
 
-        windows[displayID] = WindowState(window: window, ticket: ticket)
+        windows[displayID] = WindowState(window: window, subscription: subscription)
         window.makeKeyAndOrderFront(nil)
     }
 

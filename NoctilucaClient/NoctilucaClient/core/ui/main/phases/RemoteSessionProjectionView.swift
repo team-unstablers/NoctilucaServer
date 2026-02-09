@@ -46,9 +46,10 @@ struct RemoteSessionProjectionView: View {
     
     @Binding
     var sourceDescriptor: ProjectionSourceDescriptor
-    
-    @State
-    var source: ProjectionSession?
+
+    var subscription: ProjectionSessionSubscription?
+
+    var source: ProjectionSession? { subscription?.session }
     
     @State
     var sourceSize: CGSize = .zero
@@ -75,43 +76,21 @@ struct RemoteSessionProjectionView: View {
     @EnvironmentObject private var windowViewModel: SessionWindowViewModel
 #endif
     
-    func resolveSource(_ descriptor: ProjectionSourceDescriptor) {
-        Self.logger.info("resolving projection session from source descriptor \(descriptor.debugDescription)")
-        
-        switch descriptor {
-        case .sessionID(let sessionID):
-            guard let source = projection.projectionSessions[sessionID] else {
-                Self.logger.error("failed to resolve source \(descriptor.debugDescription)")
-                return
-            }
-            
-            self.source = source
-            self.sourceSize = source.size
-            if source.size.width > 0, source.size.height > 0 {
-                self.projectionAspectRatio = source.size.width / source.size.height
-            }
-        case .displayID(let displayID):
-            Self.logger.debug("resolveSource: \(projection.projectionSessions)")
-            guard let source = projection.projectionSessions.values.first(where: { $0.displayID == displayID }) else {
-                Self.logger.error("failed to resolve source \(descriptor.debugDescription)")
-                return
-            }
-            
-            self.source = source
-            self.sourceSize = source.size
-            if source.size.width > 0, source.size.height > 0 {
-                self.projectionAspectRatio = source.size.width / source.size.height
-            }
+    private func syncSourceMetadata() {
+        guard let source else { return }
+        self.sourceSize = source.size
+        if source.size.width > 0, source.size.height > 0 {
+            self.projectionAspectRatio = source.size.width / source.size.height
         }
     }
-    
+
     var body: some View {
         // TODO: preparingView unless(remoteSession.projection)
         GeometryReader { geometry in
             ZStack(alignment: .topLeading) {
                 let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                 
-                if let displayLayer = source?.displayLayer {
+                if let displayLayer = subscription?.displayLayer {
                     SampleBufferDisplayView(displayLayer: displayLayer)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .offset(offset)
@@ -200,34 +179,11 @@ struct RemoteSessionProjectionView: View {
                 )
                 .padding(8)
             }
-            .onChange(of: sourceDescriptor) { _, newValue in
-                self.resolveSource(newValue)
-            }
             .onAppear {
-                if (source == nil) {
-                    self.resolveSource(self.sourceDescriptor)
-                }
+                syncSourceMetadata()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .if(source == nil) {
-                $0
-                    // source를 좀 더 적극적으로 resolve 시도한다.
-                    .onReceive(client.projectionChannel.events) { event in
-                        switch event {
-                        case .sessionCreated(_):
-                            self.resolveSource(sourceDescriptor)
-                        default:
-                            break
-                        }
-                    }
-                    // projectionSessions 딕셔너리가 업데이트되면 재시도한다.
-                    // (SubDisplayWindow 등에서 뷰 생성 시점에 .sessionCreated 이벤트를
-                    //  놓칠 수 있는 race condition 방지)
-                    .onReceive(projection.$projectionSessions) { _ in
-                        self.resolveSource(sourceDescriptor)
-                    }
-            }
-            .if(source != nil) {
+            .if(subscription != nil) {
                 $0.onReceive(source!.events) { event in
                     switch event {
                     case .sizeChanged(let size):

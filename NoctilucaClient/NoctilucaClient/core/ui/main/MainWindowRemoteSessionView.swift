@@ -25,7 +25,7 @@ struct MainWindowRemoteSessionView: View {
     var hidio: RemoteSession.HIDIO
 
     @State
-    var referenceTicket: RemoteSession.SessionReferenceTicket?
+    var subscription: ProjectionSessionSubscription?
     
     @State
     var sourceDescriptor: ProjectionSourceDescriptor = .displayID(-1)
@@ -37,7 +37,8 @@ struct MainWindowRemoteSessionView: View {
                     remoteSession: remoteSession,
                     projection: projection,
                     hidio: hidio,
-                    sourceDescriptor: $sourceDescriptor
+                    sourceDescriptor: $sourceDescriptor,
+                    subscription: subscription
                 )
             } else {
                 ProgressView("디스플레이 구성을 로드하고 있습니다")
@@ -86,10 +87,10 @@ struct MainWindowRemoteSessionView: View {
     }
     
     func updateProjectionTarget(_ displayID: Int) async throws {
-        let ticket = try await projection.subscribeProjectionSession(for: displayID)
-        
+        let subscription = try await projection.subscribeProjectionSession(for: displayID)
+
         await MainActor.run {
-            self.referenceTicket = ticket
+            self.subscription = subscription
             self.sourceDescriptor = .displayID(displayID)
         }
     }

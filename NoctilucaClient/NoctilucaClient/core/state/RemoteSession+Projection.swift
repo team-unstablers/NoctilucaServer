@@ -182,7 +182,7 @@ extension RemoteSession {
         // TODO: 디스플레이마다 해상도 다른데 어떻게 할려고?
         // 디스플레이가 2대 이상이면 하드웨어 인코더가 터질텐데 어떻게 할려고???
         @MainActor
-        func subscribeProjectionSession(for displayID: Int) async throws -> SessionReferenceTicket {
+        func subscribeProjectionSession(for displayID: Int) async throws -> ProjectionSessionSubscription {
             if let sessionKey = projectionSessions.first(where: { $0.value.displayID == displayID })?.key {
                 // 이미 해당 디스플레이에 대한 프로젝션 세션이 존재함
                 logger.info("Projection session for displayID \(displayID) already exists.")
@@ -190,19 +190,25 @@ extension RemoteSession {
                     // ASSERTION: 레퍼런스 카운터는 반드시 존재해야만 한다
                     fatalError("ASSERTION FAILED: reference counter for existing projection session is missing.")
                 }
-                
+
+                guard let session = projectionSessions[sessionKey] else {
+                    fatalError("ASSERTION FAILED: projection session for key \(sessionKey) is missing.")
+                }
+
                 // += 1
                 referenceCounter.wrappingIncrement(ordering: .relaxed)
-                
-                return SessionReferenceTicket(id: UUID()) {
+
+                let ticket = SessionReferenceTicket(id: UUID()) {
                     referenceCounter.wrappingDecrement(ordering: .relaxed)
-                    
+
                     Task {
                         await self.handleSessionReferenceDecrement(for: sessionKey)
                     }
                 }
+
+                return ProjectionSessionSubscription(session: session, ticket: ticket)
             }
-            
+
             guard let session = try await parent?.client.projectionChannel.createSession(
                 for: displayID,
                 projectionSettings: parent?.client.sessionSettings?.projection
@@ -210,20 +216,22 @@ extension RemoteSession {
                 // TODO: throw error
                 fatalError("Failed to create projection session for displayID \(displayID).")
             }
-            
+
             let sessionID = session.id
-            
+
             // 레퍼런스 카운터 초기화
             let referenceCounter = ManagedAtomic<Int>(1)
             projectionSessionReferences[sessionID] = referenceCounter
-            
-            return SessionReferenceTicket(id: UUID()) {
+
+            let ticket = SessionReferenceTicket(id: UUID()) {
                 referenceCounter.wrappingDecrement(ordering: .relaxed)
-                
+
                 Task {
                     await self.handleSessionReferenceDecrement(for: sessionID)
                 }
             }
+
+            return ProjectionSessionSubscription(session: session, ticket: ticket)
         }
         
         func startAudioProjection() async throws {
