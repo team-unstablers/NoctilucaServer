@@ -38,6 +38,9 @@ class ProjectionSession: Identifiable {
     private var pressureWindowCount: Int = 0
     private let pressureWindowSize: Int = 30 // ~0.5s at 60fps
 
+    private var lastSentDegradationNotice: DegradationNotice?
+    private var recentEncodingFailure: Bool = false
+
     private let frameDropController = FrameDropController()
     private var originalFrameRate: Float = 30.0
     private var currentAppliedFrameRate: Float? = nil
@@ -90,6 +93,8 @@ class ProjectionSession: Identifiable {
                 try await dataChannel.send(parameterSetMessage: parameterSetMessage)
             case .frameEncoded(let encodedFrame):
                 await processEncodedFrame(encodedFrame)
+            case .frameSkipped:
+                recentEncodingFailure = true
             case .errorOccurred(let error):
                 // TODO: handle errors
                 self.logger.error("Encoder error occurred in projection session \(self.id): \(error)")
@@ -188,7 +193,15 @@ class ProjectionSession: Identifiable {
         self.qualityPlanner = qualityPlanner
         self.originalFrameRate = frameRate
         self.currentAppliedFrameRate = nil
+        self.lastSentDegradationNotice = nil
+        self.recentEncodingFailure = false
         frameDropController.configure(frameRate: frameRate)
+
+        if let autoPlanner = qualityPlanner as? AutoQualityPlanner {
+            autoPlanner.onQualityAdjustment = { [weak self] event in
+                self?.handleQualityAdjustment(event, planner: autoPlanner)
+            }
+        }
 
         if let planner = self.qualityPlanner {
             _ = self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
@@ -398,6 +411,78 @@ private extension ProjectionSession {
 
         let effectiveFps = targetFrameRate ?? originalFrameRate
         applyFrameRateChange(effectiveFps)
+    }
+
+    func handleQualityAdjustment(_ event: QualityAdjustmentEvent, planner: AutoQualityPlanner) {
+        let notice = buildDegradationNotice(from: event, planner: planner)
+
+        // 이전에 보낸 notice와 동일하면 전송하지 않음
+        if let last = lastSentDegradationNotice,
+           last.reason.rawValue == notice.reason.rawValue,
+           last.type.rawValue == notice.type.rawValue,
+           last.additionalInfo.rawValue == notice.additionalInfo.rawValue {
+            return
+        }
+
+        lastSentDegradationNotice = notice
+        recentEncodingFailure = false
+
+        let dataChannel = self.dataChannel
+        Task {
+            do {
+                try await dataChannel.send(degradationNotice: notice)
+            } catch {
+                self.logger.warning("Failed to send DegradationNotice: \(error)")
+            }
+        }
+    }
+
+    func buildDegradationNotice(from event: QualityAdjustmentEvent, planner: AutoQualityPlanner) -> DegradationNotice {
+        // 완전 회복 시 빈 notice
+        if event.direction == .recovered && event.degradationIndex == 0 {
+            return DegradationNotice(
+                reason: DegradationReason(rawValue: 0),
+                type: DegradationType(rawValue: 0),
+                additionalInfo: DegradationAdditionalInfo(rawValue: 0)
+            )
+        }
+
+        // reason 매핑
+        var reason: DegradationReason = []
+        switch event.trigger {
+        case .clientFeedback:
+            reason.insert(.poorClientDecodingPerformance)
+        case .networkThroughput:
+            reason.insert(.poorNetworkThroughput)
+        case .both:
+            reason.insert(.poorClientDecodingPerformance)
+            reason.insert(.poorNetworkThroughput)
+        }
+
+        if recentEncodingFailure {
+            reason.insert(.poorServerEncodingPerformance)
+        }
+
+        // type 매핑: 현재 활성화된 degradation steps로부터 판별
+        var type: DegradationType = [.bitrateDegradation] // multiplier 감소는 항상 발생
+        let degradations = planner.plannedDegradations()
+        for degradation in degradations {
+            switch degradation {
+            case .lowerResolution:
+                type.insert(.resolutionDegradation)
+            case .lowerFrameRate:
+                type.insert(.framerateDegradation)
+            case .lowerQuality, .increaseQuantization:
+                // 이미 bitrateDegradation에 포함
+                break
+            }
+        }
+
+        return DegradationNotice(
+            reason: reason,
+            type: type,
+            additionalInfo: DegradationAdditionalInfo(rawValue: 0)
+        )
     }
 
     func applyFrameRateChange(_ fps: Float) {

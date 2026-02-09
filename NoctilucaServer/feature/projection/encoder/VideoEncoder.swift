@@ -36,9 +36,13 @@ enum VideoEncoderEvent {
     /// 프레임이 인코딩되어 준비되었음을 알립니다.
     case frameEncoded(EncodedFrame)
     
+    /// 인코더가 프레임을 완성하지 못하고 건너뛴 경우를 알립니다.
+    /// 서버 인코딩 성능 부족 시그널로 사용됩니다.
+    case frameSkipped
+
     /// 인코딩 도중에 오류가 발생했음을 알립니다.
     case errorOccurred(Error)
-    
+
     /// 인코더가 정지되었음을 알립니다.
     case stopped
 }

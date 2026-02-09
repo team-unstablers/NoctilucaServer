@@ -38,6 +38,10 @@ class ProjectionDataChannel: Channel {
     func send(parameterSetMessage: CodecParameterSetMessage) async throws {
         try await self.send(opcode: .codecParameterSets, message: parameterSetMessage)
     }
+
+    func send(degradationNotice: DegradationNotice) async throws {
+        try await self.send(opcode: .degradationNotice, message: degradationNotice)
+    }
     
     func send(videoFrame frame: EncodedFrame) async throws {
         let serializedHeader = frame.header.serialize()

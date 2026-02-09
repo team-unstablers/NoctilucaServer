@@ -828,11 +828,7 @@ private func compressionOutputCallback(
     }
     
     guard let sampleBuffer = sampleBuffer, CMSampleBufferDataIsReady(sampleBuffer) else {
-        /*
-        encoder.continuation.yield(with: .success(.errorOccurred(
-            VideoEncoderError.invalidSampleBuffer
-        )))
-         */
+        encoder.continuation.yield(with: .success(.frameSkipped))
         return
     }
     

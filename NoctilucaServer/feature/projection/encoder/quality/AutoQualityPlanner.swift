@@ -152,19 +152,39 @@ enum AutoQualityStrategy {
     case performanceFirst
 }
 
+struct QualityAdjustmentEvent {
+    enum Direction {
+        case degraded
+        case recovered
+    }
+
+    enum Trigger {
+        case clientFeedback
+        case networkThroughput
+        case both
+    }
+
+    let direction: Direction
+    let trigger: Trigger
+    let isCritical: Bool
+    let degradationIndex: Int
+}
+
 class AutoQualityPlanner: QualityPlanner {
     var allowDegradation: Bool = true
-    
+
     let codec: CodecFourCC
     let resolution: CGSize
     let frameRate: Float
-    
+
     let preset: AutoQualityPreset
     var strategy: AutoQualityStrategy
-    
+
+    var onQualityAdjustment: ((QualityAdjustmentEvent) -> Void)?
+
     private var state: AutoQualityState
     private var multiplier: Float = 1.0
-    private var degradationIndex: Int = 0
+    private(set) var degradationIndex: Int = 0
     private var degradationSteps: [QualityDegradation]
     
     // EMA state
@@ -229,7 +249,7 @@ class AutoQualityPlanner: QualityPlanner {
 
         // 긴급 경로: raw 값이 극단적이면 즉시 디그레이드
         if dropRatio >= emergencyDropThreshold && cooldownTicks == 0 {
-            applyDegradation(critical: true)
+            applyDegradation(critical: true, trigger: .clientFeedback)
             emaDropRatio = nil
             emaDecodeMs = nil
             return
@@ -270,7 +290,7 @@ class AutoQualityPlanner: QualityPlanner {
 
         // 긴급 경로: 큐가 거의 가득 차면 즉시 디그레이드
         if clamped >= emergencyPressureThreshold && cooldownTicks == 0 {
-            applyDegradation(critical: true)
+            applyDegradation(critical: true, trigger: .networkThroughput)
             emaBackpressure = nil
             return
         }
@@ -357,7 +377,7 @@ private extension AutoQualityPlanner {
         return min(max(value, minMultiplier), maxMultiplier)
     }
     
-    func applyDegradation(critical: Bool) {
+    func applyDegradation(critical: Bool, trigger: QualityAdjustmentEvent.Trigger) {
         state = .adjustingDown
         let step = critical ? 2 : 1
         degradationIndex = min(degradationIndex + step, degradationSteps.count)
@@ -365,6 +385,15 @@ private extension AutoQualityPlanner {
         let factor: Float = critical ? 0.65 : 0.8
         multiplier = clampMultiplier(multiplier * factor)
         cooldownTicks = cooldownWindow
+
+        let event = QualityAdjustmentEvent(
+            direction: .degraded,
+            trigger: trigger,
+            isCritical: critical,
+            degradationIndex: degradationIndex
+        )
+        onQualityAdjustment?(event)
+
         clientScore = 0
         serverScore = 0
     }
@@ -377,6 +406,15 @@ private extension AutoQualityPlanner {
 
         multiplier = clampMultiplier(multiplier * 1.05)
         cooldownTicks = cooldownWindow
+
+        let event = QualityAdjustmentEvent(
+            direction: .recovered,
+            trigger: .both,
+            isCritical: false,
+            degradationIndex: degradationIndex
+        )
+        onQualityAdjustment?(event)
+
         clientScore = 0
         serverScore = 0
 
@@ -399,7 +437,15 @@ private extension AutoQualityPlanner {
         // 둘 중 하나라도 threshold 초과 시 디그레이드
         let maxScore = max(clientScore, serverScore)
         if maxScore >= 3 {
-            applyDegradation(critical: maxScore >= 4)
+            let trigger: QualityAdjustmentEvent.Trigger
+            if clientScore >= 3 && serverScore >= 3 {
+                trigger = .both
+            } else if clientScore >= serverScore {
+                trigger = .clientFeedback
+            } else {
+                trigger = .networkThroughput
+            }
+            applyDegradation(critical: maxScore >= 4, trigger: trigger)
             return
         }
 
