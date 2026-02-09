@@ -18,10 +18,10 @@
 		F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
+		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F69644AD2F32C4F20093CFC2 /* Xuanxue */; };
 		F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */; };
-		F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */; };
-		F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB7E2F2A736300B7CF41 /* SharpYuv.xcframework */; };
 		F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +42,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */,
 				F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */,
 				F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */,
 				F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */,
@@ -129,6 +130,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */,
 				F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */,
 				F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */,
 				F627113F2F084EC200E8A3D7 /* libz.1.tbd in Frameworks */,
@@ -136,8 +138,6 @@
 				F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F62689452F1E50F60030D59B /* Gesu in Frameworks */,
 				F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */,
-				F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */,
-				F6B2AB7F2F2A736300B7CF41 /* SharpYuv.xcframework in Frameworks */,
 				F6379D3E2EE7D554004BC795 /* libbcrypt.framework in Frameworks */,
 				F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */,
 				F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */,
@@ -234,6 +234,7 @@
 				F6F98E7A2F306B5D0024513A /* SiriusKit */,
 				F69644AD2F32C4F20093CFC2 /* Xuanxue */,
 				F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */,
+				F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -674,6 +675,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
+		};
+		F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NoctilucaWebPEncoder;
 		};
 		F69644AD2F32C4F20093CFC2 /* Xuanxue */ = {
 			isa = XCSwiftPackageProductDependency;

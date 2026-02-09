@@ -10,14 +10,14 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "NoctilucaServerFrameworks",
+            name: "NoctilucaWebPEncoder",
             type: .dynamic,
-            targets: ["NoctilucaServerFrameworks"]
+            targets: ["NoctilucaWebPEncoder"]
         ),
         .library(
-            name: "NoctilucaClientFrameworks",
+            name: "NoctilucaWebPDecoder",
             type: .dynamic,
-            targets: ["NoctilucaClientFrameworks"]
+            targets: ["NoctilucaWebPDecoder"]
         ),
     ],
     targets: [
@@ -28,13 +28,13 @@ let package = Package(
 
         // Wrapper Targets
         .target(
-            name: "NoctilucaServerFrameworks",
+            name: "NoctilucaWebPEncoder",
             dependencies: ["WebP", "SharpYuv"],
             path: "Sources/NoctilucaServerFrameworks",
             linkerSettings: [.unsafeFlags(["-Xlinker", "-all_load"])]
         ),
         .target(
-            name: "NoctilucaClientFrameworks",
+            name: "NoctilucaWebPDecoder",
             dependencies: ["WebPDecoder", "SharpYuv"],
             path: "Sources/NoctilucaClientFrameworks",
             linkerSettings: [.unsafeFlags(["-Xlinker", "-all_load"])]
