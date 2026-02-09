@@ -49,6 +49,17 @@ struct MiscSettingsTab: View {
                 ))
             }
             
+            /*
+            Section(String(localized: "settings.misc.logging.title", defaultValue: "로깅")) {
+                Toggle(isOn: $settings.logging.enableFileLogging) {
+                    Text(markdown: String(localized: "settings.misc.logging.enable_file_logging.title", defaultValue: "파일 로깅 활성화"))
+                }
+                Toggle(isOn: $settings.logging.enableLogRotation) {
+                    Text(markdown: String(localized: "settings.misc.logging.enable_log_rotation.title", defaultValue: "로테이션 활성화"))
+                }
+            }
+             */
+            
             Section(String(localized: "settings.misc.telemetry.title", defaultValue: "텔레메트리 및 진단 정보")) {
                 Toggle(isOn: $settings.telemetry.enableTelemetry) {
                     Text(markdown: String(localized: "settings.misc.telemetry.enable.title", defaultValue: "Noctiluca의 개발을 익명으로 돕기"))
