@@ -8,6 +8,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
+import Foundation
 internal import SwiftProtobuf
 
 // If the compiler emits an error on this type, it is because this file
@@ -29,7 +30,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: Sendable {
 
   var requestID: UInt64 = 0
 
-  /// reserved
+  /// @optionset: DisplayListRequestFlags
   var flags: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -176,6 +177,18 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: @unchecked Sendable {
   var hasPhysicalSizeInfo: Bool {return _storage._physicalSizeInfo != nil}
   /// Clears the value of `physicalSizeInfo`. Subsequent reads from it will return its default value.
   mutating func clearPhysicalSizeInfo() {_uniqueStorage()._physicalSizeInfo = nil}
+
+  //// 디스플레이 섬네일 
+  //// NOTE: - 이 필드는 DisplayListRequest 플래그에서 'includeThumbnails'가 설정된 경우에만 제공됩니다.
+  ////       - 해당 플래그가 설정되어 있어도 서버 상황에 따라 이 필드는 비어있을 수 있습니다.
+  var thumbnail: Data {
+    get {return _storage._thumbnail ?? Data()}
+    set {_uniqueStorage()._thumbnail = newValue}
+  }
+  /// Returns true if `thumbnail` has been explicitly set.
+  var hasThumbnail: Bool {return _storage._thumbnail != nil}
+  /// Clears the value of `thumbnail`. Subsequent reads from it will return its default value.
+  mutating func clearThumbnail() {_uniqueStorage()._thumbnail = nil}
 
   //// 추가 메타데이터
   //// @note **모든 메타데이터 키는 optional입니다**. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고, 모든 키가 항상 제공되는 것도 아닙니다.
@@ -465,7 +478,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo: SwiftPro
 
 extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".DisplayInfo"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayID\0\u{1}kind\0\u{1}displayName\0\u{1}state\0\u{1}bounds\0\u{1}refreshRate\0\u{1}colorDepth\0\u{1}dynamicRange\0\u{1}colorProfile\0\u{1}physicalSizeInfo\0\u{2}\u{5}metadata\0\u{1}flags\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayID\0\u{1}kind\0\u{1}displayName\0\u{1}state\0\u{1}bounds\0\u{1}refreshRate\0\u{1}colorDepth\0\u{1}dynamicRange\0\u{1}colorProfile\0\u{1}physicalSizeInfo\0\u{2}\u{4}thumbnail\0\u{1}metadata\0\u{1}flags\0")
 
   fileprivate class _StorageClass {
     var _displayID: UInt32 = 0
@@ -478,6 +491,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
     var _dynamicRange: UInt32 = 0
     var _colorProfile: String? = nil
     var _physicalSizeInfo: Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo? = nil
+    var _thumbnail: Data? = nil
     var _metadata: Dictionary<String,String> = [:]
     var _flags: UInt32 = 0
 
@@ -500,6 +514,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
       _dynamicRange = source._dynamicRange
       _colorProfile = source._colorProfile
       _physicalSizeInfo = source._physicalSizeInfo
+      _thumbnail = source._thumbnail
       _metadata = source._metadata
       _flags = source._flags
     }
@@ -530,6 +545,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         case 8: try { try decoder.decodeSingularUInt32Field(value: &_storage._dynamicRange) }()
         case 9: try { try decoder.decodeSingularStringField(value: &_storage._colorProfile) }()
         case 10: try { try decoder.decodeSingularMessageField(value: &_storage._physicalSizeInfo) }()
+        case 14: try { try decoder.decodeSingularBytesField(value: &_storage._thumbnail) }()
         case 15: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &_storage._metadata) }()
         case 16: try { try decoder.decodeSingularUInt32Field(value: &_storage._flags) }()
         default: break
@@ -574,6 +590,9 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
       try { if let v = _storage._physicalSizeInfo {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
       } }()
+      try { if let v = _storage._thumbnail {
+        try visitor.visitSingularBytesField(value: v, fieldNumber: 14)
+      } }()
       if !_storage._metadata.isEmpty {
         try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: _storage._metadata, fieldNumber: 15)
       }
@@ -599,6 +618,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         if _storage._dynamicRange != rhs_storage._dynamicRange {return false}
         if _storage._colorProfile != rhs_storage._colorProfile {return false}
         if _storage._physicalSizeInfo != rhs_storage._physicalSizeInfo {return false}
+        if _storage._thumbnail != rhs_storage._thumbnail {return false}
         if _storage._metadata != rhs_storage._metadata {return false}
         if _storage._flags != rhs_storage._flags {return false}
         return true

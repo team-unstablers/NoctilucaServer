@@ -23,3 +23,17 @@ public struct DisplayChangeEventType: OptionSet {
     /// 디스플레이가 기본 디스플레이로 설정되었습니다.
     public static let becamePrimary = DisplayChangeEventType(rawValue: 0x0008)
 }
+
+public struct DisplayListRequestFlags: OptionSet {
+    public let rawValue: UInt32
+
+    public init(rawValue: UInt32) {
+        self.rawValue = rawValue
+    }
+
+    /// 각 디스플레이 내용에 대한 섬네일을 포함합니다. 컴퓨팅 자원을 많이 소모하므로 남용하지 마십시오.
+    /// NOTE: 이 플래그는 서버 구현체에 따라 무시될 수 있습니다
+    ///       - 캡쳐 시도를 감지하고, 프로그램을 죽이는 'Aggressive' 한 DRM 솔루션 (Fasoo, ASTx)이 가동 중이라고 판단되는 경우 서버 구현체는 이 플래그를 무시할 수 있습니다.
+    public static let includeThumbnails = DisplayListRequestFlags(rawValue: 0x0001)
+}
+
