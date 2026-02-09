@@ -54,15 +54,20 @@ struct MainWindowRemoteSessionView: View {
                 let displayLayoutManager = projection.channel.displayLayoutManager
                 let displays = Array(displayLayoutManager.displayLayouts.values)
                 
-                DisplaySwitcherSheet(displays: displays, currentActive: currentActive) { newSourceDisplayID in
-                    Task {
-                        do {
-                            try await self.updateProjectionTarget(newSourceDisplayID)
-                        } catch {
-                            Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
+                DisplaySwitcherSheet(
+                    displays: displays,
+                    currentActive: currentActive,
+                    action: { newSourceDisplayID in
+                        Task {
+                            do {
+                                try await self.updateProjectionTarget(newSourceDisplayID)
+                            } catch {
+                                Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
+                            }
                         }
-                    }
-                }
+                    },
+                    onDetach: viewModel.onDetachDisplay
+                )
                     .presentationDragIndicator(.visible)
                     .if(DeviceKind.current == .iPhone) {
                         $0.presentationDetents([.height(260)])

@@ -210,15 +210,22 @@ struct RemoteSessionProjectionView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .if(source == nil) {
-                // source를 좀 더 적극적으로 resolve 시도한다.
-                $0.onReceive(client.projectionChannel.events) { event in
-                    switch event {
-                    case .sessionCreated(_):
-                        self.resolveSource(sourceDescriptor)
-                    default:
-                        break
+                $0
+                    // source를 좀 더 적극적으로 resolve 시도한다.
+                    .onReceive(client.projectionChannel.events) { event in
+                        switch event {
+                        case .sessionCreated(_):
+                            self.resolveSource(sourceDescriptor)
+                        default:
+                            break
+                        }
                     }
-                }
+                    // projectionSessions 딕셔너리가 업데이트되면 재시도한다.
+                    // (SubDisplayWindow 등에서 뷰 생성 시점에 .sessionCreated 이벤트를
+                    //  놓칠 수 있는 race condition 방지)
+                    .onReceive(projection.$projectionSessions) { _ in
+                        self.resolveSource(sourceDescriptor)
+                    }
             }
             .if(source != nil) {
                 $0.onReceive(source!.events) { event in

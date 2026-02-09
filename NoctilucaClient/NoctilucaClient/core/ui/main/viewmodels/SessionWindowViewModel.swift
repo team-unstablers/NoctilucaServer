@@ -42,6 +42,10 @@ class SessionWindowViewModel: ObservableObject {
     @Published
     var shouldPresentDisplaySwitchSheet: Bool = false
 
+    /// macOS에서 디스플레이를 별도 창으로 분리하는 콜백.
+    /// AppKitMainWindowController가 SubDisplayWindowManager를 통해 주입한다.
+    var onDetachDisplay: ((Int) async throws -> Void)?
+
 #if os(iOS)
     @Published
     var isFullscreen: Bool = false
@@ -141,6 +145,7 @@ class SessionWindowViewModel: ObservableObject {
         endpointURL = ""
         sessionSettings = nil
         inputWarning = nil
+        onDetachDisplay = nil
 
 #if os(iOS)
         isFullscreen = false

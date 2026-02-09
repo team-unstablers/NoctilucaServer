@@ -18,7 +18,8 @@ struct DisplaySwitcherSheet: View {
     let currentActive: Int?
     
     let action: (Int) -> Void
-    
+    var onDetach: ((Int) async throws -> Void)? = nil
+
     var body: some View {
         VStack {
             Text("디스플레이 전환")
@@ -28,23 +29,38 @@ struct DisplaySwitcherSheet: View {
             ScrollView(.horizontal) {
                 HStack {
                     ForEach(displays.sorted { $0.displayID < $1.displayID }, id: \.displayID) { display in
-                        Button {
-                            action(Int(display.displayID))
-                            dismiss()
-                        } label: {
-                            VStack {
-                                Rectangle()
-                                    .fill(.black)
-                                    .frame(width: 160, height: 120)
-                                    .clipShape(
-                                        RoundedRectangle(cornerRadius: 4)
-                                    )
-                                Text(display.displayName.withFallback("(이름 없음)"))
-                                    .lineLimit(1)
+                        VStack {
+                            Button {
+                                action(Int(display.displayID))
+                                dismiss()
+                            } label: {
+                                VStack {
+                                    Rectangle()
+                                        .fill(.black)
+                                        .frame(width: 160, height: 120)
+                                        .clipShape(
+                                            RoundedRectangle(cornerRadius: 4)
+                                        )
+                                    Text(display.displayName.withFallback("(이름 없음)"))
+                                        .lineLimit(1)
+                                }
+                                .frame(width: 160)
                             }
-                            .frame(width: 160)
+                            .buttonStyle(.plain)
+
+                            if let onDetach {
+                                Button {
+                                    Task {
+                                        try? await onDetach(Int(display.displayID))
+                                        dismiss()
+                                    }
+                                } label: {
+                                    Label("별도 창으로 열기", systemImage: "macwindow.badge.plus")
+                                        .font(.caption)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding()

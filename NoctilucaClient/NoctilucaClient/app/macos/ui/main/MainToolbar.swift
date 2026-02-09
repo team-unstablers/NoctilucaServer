@@ -139,6 +139,12 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 systemSymbolName: "xmark",
                 label: "Stop Session"
             )
+        case .nocSwitchDisplay:
+            return makeSymbolItem(
+                identifier: .nocSwitchDisplay,
+                systemSymbolName: "display.2",
+                label: "Switch Display"
+            )
         case .nocEnableExclusiveInputMode:
             return makeSymbolItem(
                 identifier: .nocEnableExclusiveInputMode,
@@ -180,6 +186,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 .flexibleSpace,
                 .nocAddressBar,
                 .flexibleSpace,
+                .nocSwitchDisplay,
                 .nocEnableExclusiveInputMode
             ]
         }
@@ -236,6 +243,8 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
             }
         case .nocAddSession:
             viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
+        case .nocSwitchDisplay:
+            viewModel.shouldPresentDisplaySwitchSheet = true
         case .nocEnableExclusiveInputMode:
             try? viewModel.remoteSession?.hidio?.session.switchMode(to: .exclusive, reason: .userInitiated)
         default:
@@ -249,6 +258,7 @@ extension NSToolbarItem.Identifier {
     static let nocSettings = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.Settings")
     static let nocAddSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.AddSession")
     static let nocStopSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.StopSession")
+    static let nocSwitchDisplay = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.SwitchDisplay")
     static let nocEnableExclusiveInputMode = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.EnableExclusiveInputMode")
 }
 #endif
