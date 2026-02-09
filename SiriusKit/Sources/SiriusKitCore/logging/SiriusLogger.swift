@@ -18,7 +18,7 @@ public final class SiriusLogger {
         Bundle.main.bundleIdentifier ?? "SiriusKit"
     }
 
-    private static let configurationQueue = DispatchQueue(label: "so.libsirius.logger.config")
+    private static let configurationQueue = DispatchQueue(label: "so.libsirius.SiriusKit.logger.config")
     private static var minimumLevel: SiriusLogLevel = .info
     private static var destinationBuilder: DestinationBuilder = SiriusLogger.defaultDestinations
 

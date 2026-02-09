@@ -33,7 +33,7 @@ public final class SiriusFileLogDestination: SiriusLogDestination {
         self.fileURL = fileURL
         self.rotationPolicy = nil
         self.includeMetadata = includeMetadata
-        self.queue = DispatchQueue(label: "so.libsirius.logger.file.\(fileURL.lastPathComponent)")
+        self.queue = DispatchQueue(label: "so.libsirius.SiriusKit.logger.file.\(fileURL.lastPathComponent)")
         self.currentFileSize = 0
         self.fileHandle = nil
         openOrCreateFile()
@@ -44,7 +44,7 @@ public final class SiriusFileLogDestination: SiriusLogDestination {
         self.fileURL = fileURL
         self.rotationPolicy = rotationPolicy
         self.includeMetadata = includeMetadata
-        self.queue = DispatchQueue(label: "so.libsirius.logger.file.\(fileURL.lastPathComponent)")
+        self.queue = DispatchQueue(label: "so.libsirius.SiriusKit.logger.file.\(fileURL.lastPathComponent)")
         self.currentFileSize = 0
         self.fileHandle = nil
         openOrCreateFile()

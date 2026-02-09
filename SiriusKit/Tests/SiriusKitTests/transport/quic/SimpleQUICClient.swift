@@ -26,7 +26,7 @@ class SimpleQUICClient {
     let events: AsyncStream<SimpleQUICClientEvent>
     let continuation: AsyncStream<SimpleQUICClientEvent>.Continuation
     
-    private let queue = DispatchQueue(label: "so.libsirius.simplequicclient")
+    private let queue = DispatchQueue(label: "so.libsirius.SiriusKit.simplequicclient")
     private var connection: NWConnection?
     
     let host: String

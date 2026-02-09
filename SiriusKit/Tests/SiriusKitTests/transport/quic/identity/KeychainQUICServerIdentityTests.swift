@@ -18,7 +18,7 @@ struct KeychainQUICServerIdentityTests {
     func createsKeychainEntry() async throws {
         let keychain = SRKeychain.shared
         
-        let commonName = "so.libsirius.tests.QUICServerIdentityTest.\(UUID().uuidString)"
+        let commonName = "so.libsirius.SiriusKit.tests.QUICServerIdentityTest.\(UUID().uuidString)"
         
         let args = QUICServerIdentityCreationArgs(
             identityLabel: commonName,
