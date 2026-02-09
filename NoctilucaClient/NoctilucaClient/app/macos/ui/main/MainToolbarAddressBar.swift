@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+import SiriusKitClient
+
 struct MainToolbarAddressBar: View {
     @ObservedObject
     var viewModel: SessionWindowViewModel
@@ -60,6 +62,22 @@ struct MainToolbarAddressBar: View {
         return .neutral
     }
     
+    var degradationIndicator: AddressBarDegradationIndicatorState? {
+        if case .newConnection = viewModel.phase {
+            return nil
+        }
+
+        guard let notice = viewModel.degradationNotice else {
+            return nil
+        }
+
+        return AddressBarDegradationIndicatorState(
+            reasons: .init(rawValue: notice.reason.rawValue),
+            types: .init(rawValue: notice.type.rawValue),
+            additionalInfo: .init(rawValue: notice.additionalInfo.rawValue)
+        )
+    }
+
     var qualityIndicator: AddressBarQualityIndicatorState? {
         if case .newConnection = viewModel.phase {
             return nil
@@ -99,6 +117,7 @@ struct MainToolbarAddressBar: View {
                 endpointURL: viewModel.endpointURL,
                 securityIndicator: securityIndicator,
                 qualityIndicator: qualityIndicator,
+                degradationIndicator: degradationIndicator,
                 rtt: pingRTT ?? 0.0,
                 action: action,
                 isFocused: resolvedFocusBinding

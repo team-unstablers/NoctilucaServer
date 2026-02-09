@@ -76,7 +76,13 @@ extension RemoteSession {
         
         @Published
         private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
-        
+
+        /// 현재 활성화된 DegradationNotice. nil이면 notice를 받지 않았거나 회복된 상태.
+        @Published
+        private(set) var degradationNotice: DegradationNotice? = nil
+
+        private var sessionEventSubscriptions: [UUID: AnyCancellable] = [:]
+
         private let cursorImageCacheManager = CursorImageCacheManager()
         let cursorState = CursorState()
         
@@ -92,6 +98,8 @@ extension RemoteSession {
 
         deinit {
             unsubscribeEvents()
+            sessionEventSubscriptions.values.forEach { $0.cancel() }
+            sessionEventSubscriptions.removeAll()
         }
         
         private func subscribeEvents() {
@@ -112,20 +120,55 @@ extension RemoteSession {
             switch event {
             case .sessionCreated(let session):
                 self.projectionSessions.updateValue(session, forKey: session.dataChannel.identifier)
+                self.subscribeSessionEvents(session)
             case .sessionDestroyed(let sessionID, let reason):
                 self.projectionSessions.removeValue(forKey: sessionID)
-                
+                self.unsubscribeSessionEvents(sessionID)
+                if projectionSessions.isEmpty {
+                    self.degradationNotice = nil
+                }
+
             case .audioSessionCreated(let audioSession):
                 self.audioSessions.updateValue(audioSession, forKey: audioSession.dataChannel!.identifier)
             case .audioSessionDestroyed(let sessionID, let reason):
                 self.audioSessions.removeValue(forKey: sessionID)
-                
+
             case .cursorMoved(let moveEvent):
                 self.handleCursorMoveEvent(moveEvent)
             case .cursorImageChanged(let imageEvent):
                 Task { @MainActor in
                     self.handleCursorImageEvent(imageEvent)
                 }
+            }
+        }
+
+        private func subscribeSessionEvents(_ session: ProjectionSession) {
+            let sessionID = session.dataChannel.identifier
+
+            let subscription = session.events
+                .receive(on: RunLoop.main)
+                .sink { [weak self] event in
+                    self?.handleSessionEvent(event)
+                }
+
+            sessionEventSubscriptions[sessionID] = subscription
+        }
+
+        private func unsubscribeSessionEvents(_ sessionID: UUID) {
+            sessionEventSubscriptions[sessionID]?.cancel()
+            sessionEventSubscriptions.removeValue(forKey: sessionID)
+        }
+
+        private func handleSessionEvent(_ event: ProjectionSessionEvent) {
+            switch event {
+            case .degradationNoticeReceived(let notice):
+                if notice.reason.rawValue == 0 && notice.type.rawValue == 0 && notice.additionalInfo.rawValue == 0 {
+                    self.degradationNotice = nil
+                } else {
+                    self.degradationNotice = notice
+                }
+            default:
+                break
             }
         }
         

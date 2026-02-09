@@ -13,6 +13,7 @@ struct AddressBar: View {
     let endpointURL: String
     let securityIndicator: AddressBarSecurityIndicatorState?
     let qualityIndicator: AddressBarQualityIndicatorState?
+    let degradationIndicator: AddressBarDegradationIndicatorState?
     let rtt: TimeInterval
     let action: AddressBarActionState?
     let actionHandler: (AddressBarAction) -> Void
@@ -41,6 +42,7 @@ struct AddressBar: View {
     init(endpointURL: String,
          securityIndicator: AddressBarSecurityIndicatorState? = nil,
          qualityIndicator: AddressBarQualityIndicatorState? = nil,
+         degradationIndicator: AddressBarDegradationIndicatorState? = nil,
          rtt: TimeInterval = 0,
          action: AddressBarActionState? = nil,
          isFocused: FocusState<Bool>.Binding,
@@ -48,6 +50,7 @@ struct AddressBar: View {
         self.endpointURL = endpointURL
         self.securityIndicator = securityIndicator
         self.qualityIndicator = qualityIndicator
+        self.degradationIndicator = degradationIndicator
         self.rtt = rtt
         self.action = action
         self.actionHandler = actionHandler
@@ -192,7 +195,9 @@ struct AddressBar: View {
                 AddressBarSecurityIndicator(state: securityIndicator)
             }
             Spacer()
-            AddressBarDegradationIndicator(state: .hardwareDecoderUnavailable)
+            if let degradationIndicator = self.degradationIndicator, degradationIndicator.isDegraded {
+                AddressBarDegradationIndicator(state: degradationIndicator)
+            }
             if let qualityIndicator = self.qualityIndicator {
                 AddressBarQualityIndicator(state: qualityIndicator, rtt: rtt)
             }

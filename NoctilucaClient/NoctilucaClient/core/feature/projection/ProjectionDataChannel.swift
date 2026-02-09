@@ -18,6 +18,9 @@ protocol ProjectionDataChannelDelegate: AnyObject {
     /// Called when an audio frame is received.
     /// Default implementation does nothing. Override this for audio sessions.
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveAudioFrame frame: consuming EncodedAudioFrameInput)
+
+    /// Called when a degradation notice is received from the server.
+    func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveDegradationNotice notice: DegradationNotice)
 }
 
 // Default implementations for optional delegate methods
@@ -27,6 +30,10 @@ extension ProjectionDataChannelDelegate {
     }
 
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveAudioFrame frame: consuming EncodedAudioFrameInput) {
+        // Default: ignore
+    }
+
+    func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveDegradationNotice notice: DegradationNotice) {
         // Default: ignore
     }
 }
@@ -48,6 +55,8 @@ class ProjectionDataChannel: Channel {
             try await handleCodecParameterSets(frame)
         case .frameData:
             try await handleFrameData(frame)
+        case .degradationNotice:
+            try await handleDegradationNotice(frame)
         default:
             break
         }
@@ -59,6 +68,11 @@ class ProjectionDataChannel: Channel {
         delegate?.projectionDataChannel(self, didReceiveCodecParameterSets: consume codecParameterSetMessage)
     }
     
+    func handleDegradationNotice(_ frame: SiriusFrame) async throws {
+        let notice = try DegradationNotice.fromProtobufBytes(frame.data)
+        delegate?.projectionDataChannel(self, didReceiveDegradationNotice: notice)
+    }
+
     func handleFrameData(_ frame: SiriusFrame) async throws {
         // <header length: uint32> <frame data length: uint32> <header bytes> <frame data bytes>
         let data = frame.data

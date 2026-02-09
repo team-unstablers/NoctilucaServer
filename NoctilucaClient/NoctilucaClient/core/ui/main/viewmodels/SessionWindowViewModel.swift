@@ -61,6 +61,9 @@ class SessionWindowViewModel: ObservableObject {
     private var sessionCancellables: Set<AnyCancellable> = []
 
     @Published
+    private(set) var degradationNotice: DegradationNotice? = nil
+
+    @Published
     private(set) var remoteSession: RemoteSession? = nil
 
     private var client: NoctilucaClient? {
@@ -273,12 +276,22 @@ class SessionWindowViewModel: ObservableObject {
                 self?.handleClientError(error)
             }
             .store(in: &sessionCancellables)
+
+        session.$projection
+            .compactMap { $0 }
+            .flatMap { $0.$degradationNotice }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] notice in
+                self?.degradationNotice = notice
+            }
+            .store(in: &sessionCancellables)
     }
 
     private func detachRemoteSession() {
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
         remoteSession = nil
+        degradationNotice = nil
     }
 
     // MARK: - Fullscreen (iOS)

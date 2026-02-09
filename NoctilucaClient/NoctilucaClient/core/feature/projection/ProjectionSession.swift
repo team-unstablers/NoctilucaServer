@@ -39,9 +39,11 @@ enum ProjectionSessionEvent: Sendable {
     case performanceReportEmitted(ProjectionPerformanceReport)
     
     case sizeChanged(CGSize)
-    
+
+    /// 서버로부터 DegradationNotice를 수신하였습니다.
+    case degradationNoticeReceived(DegradationNotice)
+
     // TODO: reconfiguration 이벤트 있어야 하지 않아? 디코더 교체나 그런건 언제든 있을 수 있는건데...
-    // TODO: 서버에서 degradation notice같은거 보내야 하지 않아?
 }
 
 class ProjectionSession: Identifiable {
@@ -250,6 +252,12 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
         }
     }
     
+    func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveDegradationNotice notice: DegradationNotice) {
+        Task { @MainActor in
+            self.events.send(.degradationNoticeReceived(notice))
+        }
+    }
+
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveFrame frame: consuming EncodedFrameInput) {
         self.performanceReporter?.recordReceivedFrame(byteCount: frame.data.count)
         do {
