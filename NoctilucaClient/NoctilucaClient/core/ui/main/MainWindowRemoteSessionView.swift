@@ -69,6 +69,14 @@ struct MainWindowRemoteSessionView: View {
                     },
                     onDetach: viewModel.onDetachDisplay
                 )
+                    .task {
+                        // 시트 표시 시 thumbnail 포함 디스플레이 목록 재요청
+                        if let response = try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails) {
+                            for display in response.displays {
+                                await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
+                            }
+                        }
+                    }
                     .presentationDragIndicator(.visible)
                     .if(DeviceKind.current == .iPhone) {
                         $0.presentationDetents([.height(260)])

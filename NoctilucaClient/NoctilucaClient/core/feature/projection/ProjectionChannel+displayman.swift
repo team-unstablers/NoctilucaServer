@@ -14,15 +14,15 @@ import SiriusKitClient
 extension ProjectionChannel {
     
     /// DisplayListRequest를 전송하고 응답을 기다립니다.
-    func requestDisplayList() async throws -> DisplayListResponse {
+    func requestDisplayList(flags: DisplayListRequestFlags = []) async throws -> DisplayListResponse {
         let requestID = nextRequestID()
-        
+
         return try await self.sendRequest(
             requestID: requestID,
             opcode: .displayListRequest,
             message: DisplayListRequest(
                 requestID: requestID,
-                flags: 0
+                flags: flags.rawValue
             )
         )
     }

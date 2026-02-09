@@ -8,6 +8,12 @@
 import Foundation
 import SwiftUI
 
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
 import SiriusKitClient
 
 struct DisplaySwitcherSheet: View {
@@ -35,12 +41,7 @@ struct DisplaySwitcherSheet: View {
                                 dismiss()
                             } label: {
                                 VStack {
-                                    Rectangle()
-                                        .fill(.black)
-                                        .frame(width: 160, height: 120)
-                                        .clipShape(
-                                            RoundedRectangle(cornerRadius: 4)
-                                        )
+                                    displayThumbnailView(for: display)
                                     Text(display.displayName.withFallback("(이름 없음)"))
                                         .lineLimit(1)
                                 }
@@ -69,6 +70,30 @@ struct DisplaySwitcherSheet: View {
         }
         .padding()
     }
+
+    @ViewBuilder
+    private func displayThumbnailView(for display: DisplayInfo) -> some View {
+        Group {
+            if let thumbnail = display.thumbnail, let image = platformImage(from: thumbnail) {
+                Image(decorative: image, scale: 1.0)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                Rectangle()
+                    .fill(.black)
+            }
+        }
+        .frame(width: 160, height: 120)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+
+    private func platformImage(from data: Data) -> CGImage? {
+        #if os(macOS)
+        return NSImage(data: data)?.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        #else
+        return UIImage(data: data)?.cgImage
+        #endif
+    }
 }
 
 #Preview {
@@ -88,6 +113,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .hdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            thumbnail: nil,
             metadata: [:],
             flags: 0
         ),
@@ -102,6 +128,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            thumbnail: nil,
             metadata: [:],
             flags: 0
         ),
@@ -116,6 +143,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            thumbnail: nil,
             metadata: [:],
             flags: 0
         ),
@@ -130,6 +158,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            thumbnail: nil,
             metadata: [:],
             flags: 0
         ),
@@ -144,6 +173,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            thumbnail: nil,
             metadata: [:],
             flags: 0
         ),

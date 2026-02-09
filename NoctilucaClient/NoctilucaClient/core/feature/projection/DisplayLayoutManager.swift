@@ -33,21 +33,42 @@ class DisplayLayoutManager: ObservableObject {
     
     func update(_ displayInfo: DisplayInfo) {
         let displayID = DisplayID(displayInfo.displayID)
-        
-        displayLayouts[displayID] = displayInfo
+        displayLayouts[displayID] = mergeDisplayInfo(displayInfo, preservingThumbnailFrom: displayLayouts[displayID])
     }
-    
+
     func consumeDisplayChangeEvent(_ event: DisplayChangedEvent) {
         let displayID = DisplayID(event.display.displayID)
-        
+
         switch event.eventType {
         case .connected, .modified, .becamePrimary:
-            displayLayouts[displayID] = event.display
+            displayLayouts[displayID] = mergeDisplayInfo(event.display, preservingThumbnailFrom: displayLayouts[displayID])
         case .disconnected:
             displayLayouts.removeValue(forKey: displayID)
         default:
             break
         }
+    }
+
+    /// 새 DisplayInfo에 thumbnail이 없으면 기존 thumbnail을 보존합니다.
+    private func mergeDisplayInfo(_ new: DisplayInfo, preservingThumbnailFrom existing: DisplayInfo?) -> DisplayInfo {
+        let thumbnail = new.thumbnail ?? existing?.thumbnail
+        guard thumbnail != nil else { return new }
+
+        return DisplayInfo(
+            displayID: new.displayID,
+            kind: new.kind,
+            displayName: new.displayName,
+            state: new.state,
+            bounds: new.bounds,
+            refreshRate: new.refreshRate,
+            colorDepth: new.colorDepth,
+            dynamicRange: new.dynamicRange,
+            colorProfile: new.colorProfile,
+            physicalSizeInfo: new.physicalSizeInfo,
+            thumbnail: thumbnail,
+            metadata: new.metadata,
+            flags: new.flags
+        )
     }
     
 }

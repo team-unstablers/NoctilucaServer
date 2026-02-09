@@ -182,24 +182,29 @@ struct RemoteSessionProjectionView: View {
                     .padding(8)
                 }
             }
+            .background(.black)
             .onAppear {
+                syncSourceMetadata()
+            }
+            .onChange(of: source?.id) { _, _ in
                 syncSourceMetadata()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .if(subscription != nil) {
-                $0.onReceive(source!.events) { event in
-                    switch event {
-                    case .sizeChanged(let size):
-                        sourceSize = size
-                        if size.width > 0, size.height > 0 {
-                            projectionAspectRatio = size.width / size.height
+                $0
+                    .onReceive(source!.events) { event in
+                        switch event {
+                        case .sizeChanged(let size):
+                            sourceSize = size
+                            if size.width > 0, size.height > 0 {
+                                projectionAspectRatio = size.width / size.height
+                            }
+                        case .performanceReportEmitted(let report):
+                            lastPerformanceReport = report
+                        default:
+                            break
                         }
-                    case .performanceReportEmitted(let report):
-                        lastPerformanceReport = report
-                    default:
-                        break
                     }
-                }
             }
 #if os(iOS)
             /*
