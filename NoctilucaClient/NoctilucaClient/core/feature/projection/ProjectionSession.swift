@@ -129,6 +129,7 @@ class ProjectionSession: Identifiable {
         self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, parent: self)
 
         self.dataChannel.delegate = self
+        self.dataChannel.activate()
         self.decoder?.delegate = self
     }
 

@@ -33,9 +33,11 @@ extension ProjectionDataChannelDelegate {
 
 class ProjectionDataChannel: Channel {
     private let logger = SiriusLogger(category: "ProjectionDataChannel", subsystem: "app.noctiluca.client")
-    
+
+    override var requiresExplicitActivation: Bool { true }
+
     weak var delegate: ProjectionDataChannelDelegate?
-    
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
     }
