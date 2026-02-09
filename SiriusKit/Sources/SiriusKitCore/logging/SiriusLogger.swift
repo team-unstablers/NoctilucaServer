@@ -51,6 +51,11 @@ public final class SiriusLogger {
         }
     }
 
+    /// Resets the destination builder to the default (OSLog or Console).
+    public static func resetDestinationBuilder() {
+        configure(destinationBuilder: SiriusLogger.defaultDestinations)
+    }
+
     public static func setVerbosity(_ verbosity: SiriusLogVerbosity) {
         configure(minimumLevel: verbosity.minimumLevel)
     }

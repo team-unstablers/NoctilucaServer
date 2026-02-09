@@ -22,7 +22,7 @@ public enum SiriusLogLevel: Int, Comparable, CaseIterable {
         lhs.rawValue < rhs.rawValue
     }
 
-    var label: String {
+    public var label: String {
         switch self {
         case .trace:
             return "TRACE"
@@ -39,6 +39,10 @@ public enum SiriusLogLevel: Int, Comparable, CaseIterable {
         case .off:
             return "OFF"
         }
+    }
+
+    public static func from(label: String) -> SiriusLogLevel? {
+        allCases.first { $0.label.caseInsensitiveCompare(label) == .orderedSame }
     }
 
 #if canImport(OSLog)
