@@ -10,6 +10,8 @@ import SiriusKitClient
 
 class HIDIOChannel: Channel {
     private(set) var controller: HIDIOController!
+    
+    override var serviceClass: ServiceClass { .userInput }
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
