@@ -49,16 +49,71 @@ struct MiscSettingsTab: View {
                 ))
             }
             
-            /*
             Section(String(localized: "settings.misc.logging.title", defaultValue: "로깅")) {
                 Toggle(isOn: $settings.logging.enableFileLogging) {
-                    Text(markdown: String(localized: "settings.misc.logging.enable_file_logging.title", defaultValue: "파일 로깅 활성화"))
+                    Text(markdown: String(localized: "settings.misc.logging.enable_file_logging.title",
+                         defaultValue: "파일 로깅 활성화"))
+                    Text(markdown: String(localized: "settings.misc.logging.enable_file_logging.description",
+                         defaultValue: "로그를 ~/Library/Logs에 파일로 저장합니다."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
+
                 Toggle(isOn: $settings.logging.enableLogRotation) {
-                    Text(markdown: String(localized: "settings.misc.logging.enable_log_rotation.title", defaultValue: "로테이션 활성화"))
+                    Text(markdown: String(localized: "settings.misc.logging.enable_log_rotation.title",
+                         defaultValue: "로그 로테이션 활성화"))
+                    Text(markdown: String(localized: "settings.misc.logging.enable_log_rotation.description",
+                         defaultValue: "로그 파일이 일정 크기를 초과하면 자동으로 새 파일로 전환합니다."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .disabled(!settings.logging.enableFileLogging)
+
+                SettingsPicker(selection: $settings.logging.minimumLogLevel) {
+                    SettingsPickerItem(value: "trace") { Text("Trace") }
+                    SettingsPickerItem(value: "debug") { Text("Debug") }
+                    SettingsPickerItem(value: "info") { Text("Info") }
+                    SettingsPickerItem(value: "warning") { Text("Warning") }
+                    SettingsPickerItem(value: "error") { Text("Error") }
+                } label: {
+                    Text(String(localized: "settings.misc.logging.minimum_log_level.title",
+                         defaultValue: "최소 로그 레벨"))
+                }
+
+                SettingsEntry(
+                    title: String(localized: "settings.misc.logging.max_file_size.title",
+                           defaultValue: "최대 파일 크기 (MB)")
+                ) {
+                    TextField("", value: Binding(
+                        get: { Int(settings.logging.maxFileSize / 1_048_576) },
+                        set: { settings.logging.maxFileSize = UInt64(max($0, 1)) * 1_048_576 }
+                    ), format: .number)
+                    .frame(width: 80)
+                    .textFieldStyle(.roundedBorder)
+                }
+                .disabled(!settings.logging.enableFileLogging || !settings.logging.enableLogRotation)
+
+                SettingsEntry(
+                    title: String(localized: "settings.misc.logging.max_file_count.title",
+                           defaultValue: "최대 파일 수")
+                ) {
+                    Stepper(value: $settings.logging.maxFileCount, in: 1...100) {
+                        Text("\(settings.logging.maxFileCount)")
+                            .monospacedDigit()
+                    }
+                }
+                .disabled(!settings.logging.enableFileLogging || !settings.logging.enableLogRotation)
+
+                SettingsEntry(
+                    title: String(localized: "settings.misc.logging.open_log_folder.title",
+                           defaultValue: "로그 파일 위치")
+                ) {
+                    Button(String(localized: "settings.misc.logging.open_log_folder.action",
+                           defaultValue: "Finder에서 열기")) {
+                        NSWorkspace.shared.open(NoctilucaLoggingConfigurator.logDirectory)
+                    }
                 }
             }
-             */
             
             Section(String(localized: "settings.misc.telemetry.title", defaultValue: "텔레메트리 및 진단 정보")) {
                 Toggle(isOn: $settings.telemetry.enableTelemetry) {
