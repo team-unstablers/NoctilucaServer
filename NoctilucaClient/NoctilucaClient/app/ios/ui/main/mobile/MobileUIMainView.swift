@@ -33,7 +33,7 @@ struct MobileUIMainView: View {
                         case .security:
                             SecuritySettingsTab()
                         case .misc:
-                            MiscSettingsTab()
+                            MiscSettingsTab(settings: $settingsStore.settings)
                         case .plugins:
                             PluginsSettingsTab()
                         case .about:

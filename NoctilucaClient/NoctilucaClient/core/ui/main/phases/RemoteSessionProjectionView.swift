@@ -31,6 +31,9 @@ enum ProjectionSourceDescriptor: CustomDebugStringConvertible, Equatable, Hashab
 struct RemoteSessionProjectionView: View {
     static let logger = NoctilucaLogger(category: "RemoteSessionProjectionView")
     
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+    
     @ObservedObject
     var remoteSession: RemoteSession
     
@@ -72,7 +75,6 @@ struct RemoteSessionProjectionView: View {
 #if os(iOS)
     @State private var shouldPresentKeyboard: Bool = false
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
-    @EnvironmentObject private var settingsStore: SettingsStore
     @EnvironmentObject private var windowViewModel: SessionWindowViewModel
 #endif
     
@@ -102,14 +104,13 @@ struct RemoteSessionProjectionView: View {
                 // Metal Cursor Overlay
                 // ZStack 위에 투명하게 얹음.
                 // allowsHitTesting(false) 필수: 마우스 클릭이 아래 뷰(입력 캡처)로 전달되어야 함.
-                // 커서 이미지가 있을 때만 렌더링하여 불필요한 리소스 소모 방지
-                if projection.cursorState.image != nil {
-                    MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize)
+                // displayID 기반 visibility는 CursorRenderer 내부에서 처리 (SwiftUI 업데이트 지연 방지)
+                if case .displayID(let displayID) = sourceDescriptor {
+                    MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize, targetDisplayID: displayID)
                         .offset(offset)
                         .frame(width: rect.width, height: rect.height)
                         .position(x: rect.midX, y: rect.midY)
                         .allowsHitTesting(false)
-                        // 화면 줌인/아웃 시 커서도 같이 확대/축소 및 이동
                         .scaleEffect(scale)
                 }
                 
@@ -168,16 +169,18 @@ struct RemoteSessionProjectionView: View {
                 }
 #endif
 
-                PerformanceOverlay(
-                    codec: source?.codec,
-                    rtt: remoteSession.pingRTT ?? 0,
-                    receivedFps: lastPerformanceReport?.receivedFrameCount ?? 0,
-                    droppedFrames: lastPerformanceReport?.droppedFrameCount ?? 0,
-                    avgDecodeMs: lastPerformanceReport?.averageDecodeTimeMs ?? 0,
-                    dataRateKbps: source?.currentDataRateKbps ?? 0,
-                    decoderType: source?.decoderTypeName ?? "N/A"
-                )
-                .padding(8)
+                if settingsStore.settings.misc.showPerformanceOverlay {
+                    PerformanceOverlay(
+                        codec: source?.codec,
+                        rtt: remoteSession.pingRTT ?? 0,
+                        receivedFps: lastPerformanceReport?.receivedFrameCount ?? 0,
+                        droppedFrames: lastPerformanceReport?.droppedFrameCount ?? 0,
+                        avgDecodeMs: lastPerformanceReport?.averageDecodeTimeMs ?? 0,
+                        dataRateKbps: source?.currentDataRateKbps ?? 0,
+                        decoderType: source?.decoderTypeName ?? "N/A"
+                    )
+                    .padding(8)
+                }
             }
             .onAppear {
                 syncSourceMetadata()

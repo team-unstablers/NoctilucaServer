@@ -41,6 +41,7 @@ class SubDisplayWindow: NSWindow {
             sourceDescriptor: .constant(.displayID(displayID)),
             subscription: subscription
         )
+            .environmentObject(SettingsStore.shared)
 
         self.contentView = NSHostingView(rootView: rootView)
     }

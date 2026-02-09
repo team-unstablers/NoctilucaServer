@@ -54,7 +54,7 @@ struct AppKitSettingsWindow: View {
                     }
                     .tag(SettingsTab.security)
                     .id(SettingsTab.security)
-                MiscSettingsTab()
+                MiscSettingsTab(settings: $settingsStore.settings)
                     .tabItem {
                         Text("기타")
                     }
