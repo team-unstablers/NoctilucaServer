@@ -54,6 +54,10 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
             return .failure(.notImplemented) // TODO: Map error appropriately
         }
     }
+    
+    override func setServiceClass(_ serviceClass: ServiceClass) async throws {
+        try self.quicStream.setPriority(serviceClass.asMsQuicPriority)
+    }
 
     // MARK: - Receive Loop
 

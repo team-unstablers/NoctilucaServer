@@ -65,6 +65,10 @@ open class Stream {
     open func close() async throws {
         // To be implemented by subclasses
     }
+    
+    open func setServiceClass(_ serviceClass: ServiceClass) async throws {
+        // To be implemented by subclasses
+    }
 }
 
 public struct StreamHolder {
