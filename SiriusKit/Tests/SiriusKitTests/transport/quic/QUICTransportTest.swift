@@ -24,7 +24,7 @@ final class QUICTransportTest {
         self.identifier = UUID()
         self.port = NWEndpoint.Port(integerLiteral: 15495)
         
-        let commonName = "pl.unstabler.sirius.SiriusKitTests.QUICtest.\(identifier.uuidString)"
+        let commonName = "so.libsirius.tests.QUICtest.\(identifier.uuidString)"
 
         let identityArgs = QUICServerIdentityCreationArgs(
             identityLabel: commonName,

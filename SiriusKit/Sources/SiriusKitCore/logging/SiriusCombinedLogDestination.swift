@@ -7,7 +7,7 @@ import Foundation
 
 /// A composite log destination that forwards writes to multiple child destinations.
 public final class SiriusCombinedLogDestination: SiriusLogDestination {
-    private let queue = DispatchQueue(label: "org.noctiluca.sirius.logger.combined")
+    private let queue = DispatchQueue(label: "so.libsirius.logger.combined")
     private var destinations: [any SiriusLogDestination] = []
 
     public init() {}

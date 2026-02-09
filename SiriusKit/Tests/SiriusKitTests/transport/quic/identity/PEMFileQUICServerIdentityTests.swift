@@ -19,7 +19,7 @@ struct PEMFileQUICServerIdentityTests {
         let basePath = temporaryBasePath()
         
         let identifier = UUID().uuidString
-        let commonName = "pl.unstabler.sirius.SiriusKitTests.QUICServerIdentityTest.\(identifier)"
+        let commonName = "so.libsirius.tests.QUICServerIdentityTest.\(identifier)"
         
         let args = QUICServerIdentityCreationArgs(
             identityLabel: basePath,
