@@ -72,6 +72,7 @@ struct RemoteSessionProjectionView: View {
     @State private var shouldPresentKeyboard: Bool = false
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
     @EnvironmentObject private var settingsStore: SettingsStore
+    @EnvironmentObject private var windowViewModel: SessionWindowViewModel
 #endif
     
     func resolveSource(_ descriptor: ProjectionSourceDescriptor) {
@@ -161,16 +162,31 @@ struct RemoteSessionProjectionView: View {
                     isPresented: $shouldPresentKeyboard
                 )
 
-                Button {
-                    shouldPresentKeyboard.toggle()
-                } label: {
-                    Image(systemName: shouldPresentKeyboard ? "keyboard.chevron.compact.down" : "keyboard")
-                        .font(.system(size: 18, weight: .semibold))
-                        .frame(width: 44, height: 44)
+                if windowViewModel.isFullscreen {
+                    // 전체 화면 모드: 반투명 오버레이 트리거 버튼
+                    Button {
+                        windowViewModel.showFullscreenOverlay()
+                    } label: {
+                        Image(systemName: "arrow.down.right.and.arrow.up.left")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                    }
+                    .foregroundStyle(.white.opacity(0.5))
+                    .background(.black.opacity(0.15), in: Circle())
+                    .padding(16)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                } else {
+                    Button {
+                        shouldPresentKeyboard.toggle()
+                    } label: {
+                        Image(systemName: shouldPresentKeyboard ? "keyboard.chevron.compact.down" : "keyboard")
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                    }
+                    .background(.ultraThinMaterial, in: Circle())
+                    .padding(16)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 }
-                .background(.ultraThinMaterial, in: Circle())
-                .padding(16)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
 #endif
 
                 PerformanceOverlay(

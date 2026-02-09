@@ -29,13 +29,21 @@ struct UIKitMainWindow: View {
     private var settingsStore: SettingsStore
 
     var body: some View {
-        VStack {
-            VStack(spacing: 0) {
-                MainWindowContentView()
+        ZStack {
+            VStack {
+                VStack(spacing: 0) {
+                    MainWindowContentView()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .setupMainToolbar(for: .current)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .setupMainToolbar(for: .current)
+
+            if viewModel.isFullscreen && viewModel.isFullscreenOverlayVisible {
+                FullscreenOverlayView()
+            }
         }
+        .ignoresSafeArea(.all, edges: viewModel.isFullscreen ? .all : [])
+        .statusBarHidden(viewModel.isFullscreen)
         .navigationBarTitleDisplayMode(.inline)
         .windowToolbarFullScreenVisibility(.automatic)
         .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {

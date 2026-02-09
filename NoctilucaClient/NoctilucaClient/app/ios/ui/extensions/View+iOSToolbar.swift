@@ -60,6 +60,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                     .padding(.bottom, 8)
                  */
             }
+            .toolbar(viewModel.isFullscreen ? .hidden : .automatic, for: .navigationBar)
             .toolbar {
                 if viewModel.phase == .newConnection {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -86,7 +87,7 @@ struct ToolbarModifierIPhone: ViewModifier {
                             Image(systemName: "xmark")
                         }
                     }
-                    
+
                     if viewModel.phase == .connected {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
@@ -97,6 +98,18 @@ struct ToolbarModifierIPhone: ViewModifier {
                                     .aspectRatio(contentMode: .fit)
                                     .foregroundStyle(.foreground, .clear)
                                     .frame(width: 28, height: 28)
+                            }
+                        }
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    viewModel.isFullscreen = true
+                                }
+                            } label: {
+                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 16, height: 16)
                             }
                         }
                     }
@@ -131,30 +144,33 @@ struct ToolbarModifierIPad: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .safeAreaInset(edge: .top) {
-                HStack {
-                    MainToolbarAddressBar(
-                        viewModel: viewModel,
-                        settingsStore: settingsStore,
-                        focusBinding: .none
-                    )
-                    .allowsHitTesting(false)
-                    .opacity(isAddressBarFocused ? 0.001 : 1.0)
+            .if(!viewModel.isFullscreen) {
+                $0.safeAreaInset(edge: .top) {
+                    HStack {
+                        MainToolbarAddressBar(
+                            viewModel: viewModel,
+                            settingsStore: settingsStore,
+                            focusBinding: .none
+                        )
+                        .allowsHitTesting(false)
+                        .opacity(isAddressBarFocused ? 0.001 : 1.0)
+                    }
+                    .if(toolbarStyle == .standard) {
+                        $0
+                            .frame(maxWidth: 400)
+                            .position(x: principalFrame.midX, y: principalFrame.midY)
+                    }
+                    .if(toolbarStyle == .compact) {
+                        $0
+                            .frame(maxWidth: 400)
+                            .position(x: principalFrame.midX, y: principalFrame.midY)
+                    }
+                    .ignoresSafeArea()
+                    // .background(.blue)
+                    .frame(maxHeight: 0)
                 }
-                .if(toolbarStyle == .standard) {
-                    $0
-                        .frame(maxWidth: 400)
-                        .position(x: principalFrame.midX, y: principalFrame.midY)
-                }
-                .if(toolbarStyle == .compact) {
-                    $0
-                        .frame(maxWidth: 400)
-                        .position(x: principalFrame.midX, y: principalFrame.midY)
-                }
-                .ignoresSafeArea()
-                // .background(.blue)
-                .frame(maxHeight: 0)
             }
+            .toolbar(viewModel.isFullscreen ? .hidden : .automatic, for: .navigationBar)
             .if(shouldPresentAddressBar) {
                 $0.overlay {
                     ZStack {
@@ -270,12 +286,24 @@ struct ToolbarModifierIPad: ViewModifier {
                                     .frame(width: 28, height: 28)
                             }
                         }
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    viewModel.isFullscreen = true
+                                }
+                            } label: {
+                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 16, height: 16)
+                            }
+                        }
                     }
                 }
             }
         }
 
-        
+
     }
 }
 

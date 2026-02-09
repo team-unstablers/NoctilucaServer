@@ -41,7 +41,16 @@ class SessionWindowViewModel: ObservableObject {
 
     @Published
     var shouldPresentDisplaySwitchSheet: Bool = false
-    
+
+#if os(iOS)
+    @Published
+    var isFullscreen: Bool = false
+
+    @Published
+    var isFullscreenOverlayVisible: Bool = false
+
+    private var autoHideTask: Task<Void, Never>?
+#endif
 
     private var settingsStore: SettingsStore?
     private var settingsCancellables: Set<AnyCancellable> = []
@@ -132,6 +141,11 @@ class SessionWindowViewModel: ObservableObject {
         endpointURL = ""
         sessionSettings = nil
         inputWarning = nil
+
+#if os(iOS)
+        isFullscreen = false
+        hideFullscreenOverlay()
+#endif
 
         phase = .newConnection
     }
@@ -261,4 +275,33 @@ class SessionWindowViewModel: ObservableObject {
         sessionCancellables.removeAll()
         remoteSession = nil
     }
+
+    // MARK: - Fullscreen (iOS)
+#if os(iOS)
+    func showFullscreenOverlay() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isFullscreenOverlayVisible = true
+        }
+        scheduleAutoHideOverlay()
+    }
+
+    func hideFullscreenOverlay() {
+        autoHideTask?.cancel()
+        autoHideTask = nil
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isFullscreenOverlayVisible = false
+        }
+    }
+
+    func scheduleAutoHideOverlay() {
+        autoHideTask?.cancel()
+        autoHideTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isFullscreenOverlayVisible = false
+            }
+        }
+    }
+#endif
 }
