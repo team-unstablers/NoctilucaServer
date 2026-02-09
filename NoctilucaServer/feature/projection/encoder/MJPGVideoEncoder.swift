@@ -38,8 +38,8 @@ final class MJPGVideoEncoder: VideoEncoder {
     
 
     init() {
-        self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.mjpgencoder.worker")
-        self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.mjpgencoder.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.mjpg.worker")
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.mjpg.callback")
         if let device = MTLCreateSystemDefaultDevice() {
             self.ciContext = CIContext(mtlDevice: device)
         } else {

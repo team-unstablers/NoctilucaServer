@@ -34,8 +34,8 @@ final class WebPVideoEncoder: VideoEncoder {
     private var frameTileDiffer: FrameTileDiffer!
 
     init() {
-        self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.webpencoder.worker")
-        self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.webpencoder.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.webp.worker")
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.webp.callback")
         if let device = MTLCreateSystemDefaultDevice() {
             self.ciContext = CIContext(mtlDevice: device)
         } else {

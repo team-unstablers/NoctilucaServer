@@ -11,7 +11,7 @@ import NoctilucaPluginKit
 
 class NoctilucaCoreAuth: NoctilucaPluginBundle {
     static let metadata = BuiltinPluginBundleMetadata(
-        id: "pl.unstabler.noctiluca.NoctilucaServer.bundles.NoctilucaCoreAuth",
+        id: "app.noctiluca.server.bundles.NoctilucaCoreAuth",
         displayName: NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.name", comment: "Noctiluca 기본 인증 플러그인 번들"),
         
         version: 1,

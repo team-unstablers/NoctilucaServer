@@ -58,7 +58,7 @@ class NoctilucaServerContext: ServerContext {
 class NoctilucaServer: ObservableObject {
     static let shared = NoctilucaServer()
     
-    private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
+    private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "app.noctiluca.server")
     
     let featureProvider = NoctilucaFeatureProvider()
     

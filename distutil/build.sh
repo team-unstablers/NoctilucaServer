@@ -13,7 +13,7 @@ fi
 
 PRODUCT_NAME="Noctiluca Server"
 VERSION="0.1.0"
-IDENTIFIER="pl.unstabler.noctiluca.NoctilucaServer"
+IDENTIFIER="app.noctiluca.server"
 
 # [중요] Notarytool 프로필 이름 (터미널에서 'xcrun notarytool store-credentials'로 생성 필요)
 NOTARY_KEYCHAIN_PROFILE="tu-noctiluca-notarycred"
@@ -23,7 +23,7 @@ INSTALLER_CERT_ID="Developer ID Installer: team unstablers Inc. (XHA76UVA95)"
 APP_CERT_ID="Developer ID Application: team unstablers Inc. (XHA76UVA95)"
 
 # 컴포넌트별 식별자
-NOCSERVER_ID="pl.unstabler.noctiluca.NoctilucaServer"
+NOCSERVER_ID="app.noctiluca.server"
 
 # 빌드 출력 및 임시 경로
 DIST_DIR="$SRCROOT/dist"

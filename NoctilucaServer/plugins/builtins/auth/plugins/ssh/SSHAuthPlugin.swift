@@ -16,7 +16,7 @@ typealias SSHPublicKey = Xuanxue.PublicKey
 
 final class SSHAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(
-        id: "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.ssh",
+        id: "app.noctiluca.server.auth.plugin.ssh",
         displayName: NSLocalizedString("plugins.auth.SSHAuthPlugin.name", comment: "SSHAuthPlugin"),
         type: .auth,
         description: NSLocalizedString(
@@ -26,7 +26,7 @@ final class SSHAuthPlugin: BuiltInAuthPluginV1 {
     )
     
     
-    static let id = "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.ssh"
+    static let id = "app.noctiluca.server.auth.plugin.ssh"
     
     static let name = NSLocalizedString("plugins.auth.SSHAuthPlugin.name", comment: "SSHAuthPlugin")
     static let description = NSLocalizedString(

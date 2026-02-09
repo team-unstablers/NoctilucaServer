@@ -14,7 +14,7 @@ import NoctilucaPluginKit
 
 final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(
-        id: "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.simple-password",
+        id: "app.noctiluca.server.auth.plugin.simple-password",
         displayName: NSLocalizedString("plugins.auth.SimplePasswordAuthPlugin.name", comment: "SimplePasswordAuthPlugin"),
         type: .auth,
         description: NSLocalizedString(
@@ -31,7 +31,7 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
     )
     
     
-    static let id = "pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.simple-password"
+    static let id = "app.noctiluca.server.auth.plugin.simple-password"
     
     static let name = NSLocalizedString("plugins.auth.SimplePasswordAuthPlugin.name", comment: "SimplePasswordAuthPlugin")
     static let description = NSLocalizedString(

@@ -10,7 +10,7 @@ import Foundation
 import NoctilucaPluginKit
 
 public final class SamplePluginBundle: NoctilucaPluginBundle {
-    public static let id = "pl.unstabler.noctiluca.plugin.example.SamplePluginBundle"
+    public static let id = "app.noctiluca.pluginkit.example.SamplePluginBundle"
     public static var pluginKitVersion: NoctilucaPluginKitVersion = .v1
     
     public static var name = NSLocalizedString("plugin.name", comment: "SamplePluginBundle")

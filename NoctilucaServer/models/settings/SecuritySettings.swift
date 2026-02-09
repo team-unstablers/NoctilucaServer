@@ -12,7 +12,7 @@ import NoctilucaPluginKit
 
 extension AppSettings {
     struct Security: SecureCategory {
-        private static let KEY_ALLOWED_ENTRIES = "pl.unstabler.noctiluca.NoctilucaServer.settings.security.allowedEntries"
+        private static let KEY_ALLOWED_ENTRIES = "app.noctiluca.server.settings.security.allowedEntries"
         
         var allowedEntries: [AuthEntry] = []
         var maxLoginAttempts: Int = 3

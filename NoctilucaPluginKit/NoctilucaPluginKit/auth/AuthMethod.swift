@@ -13,7 +13,7 @@ import Foundation
 /// # 확장 방법
 /// 자체 인증 매커니즘을 추가하려면 이 구조체를 확장하여 고유한 `AuthMethod` 값을 정의하십시오.
 /// - 자체 확장된 인증 매커니즘의 식별자는 충돌을 피하기 위하여 reverse domain name 형식을 따르는 것이 좋습니다.
-///   (e.g., `pl.unstabler.noctiluca-ext.auth.fingerprint`)
+///   (e.g., `app.noctiluca.ext.auth.fingerprint`)
 public struct AuthMethod: RawRepresentable, Equatable, Hashable, Sendable, Codable {
     public let rawValue: String
     

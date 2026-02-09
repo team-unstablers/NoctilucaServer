@@ -32,8 +32,8 @@ final class ZRLEVideoEncoder: VideoEncoder {
     private var frameTileDiffer: FrameTileDiffer!
     
     init() {
-        self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.zrleencoder.worker")
-        self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.zrleencoder.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.zrle.worker")
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.zrle.callback")
         if let device = MTLCreateSystemDefaultDevice() {
             self.ciContext = CIContext(mtlDevice: device)
         } else {

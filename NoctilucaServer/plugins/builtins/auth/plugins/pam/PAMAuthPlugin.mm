@@ -131,7 +131,7 @@ ERROR_EXIT:
     
     if (error) {
         NSString *errorMessage = [NSString stringWithUTF8String: pam_strerror(pamHandle, pamError)];
-        *error = [NSError errorWithDomain: @"pl.unstabler.noctiluca.NoctilucaServer.auth.plugin.pam"
+        *error = [NSError errorWithDomain: @"app.noctiluca.server.auth.plugin.pam"
                                      code: pamError
                                  userInfo: @{ NSLocalizedDescriptionKey: errorMessage }];
     }

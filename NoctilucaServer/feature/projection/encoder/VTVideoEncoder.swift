@@ -41,8 +41,8 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     fileprivate let continuation: AsyncStream<VideoEncoderEvent>.Continuation
     
     override init() {
-        self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtencoder.worker")
-        self.callbackQueue = DispatchQueue(label: "tech.unstablers.noctiluca.vtencoder.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.vt.worker")
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.vt.callback")
         self.targetBitrateKbps = defaultTargetBitrateKbps
         self.maxBitrateKbps = defaultMaxBitrateKbps
         

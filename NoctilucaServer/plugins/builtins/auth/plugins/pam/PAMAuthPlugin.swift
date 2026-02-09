@@ -12,13 +12,13 @@ import NoctilucaPluginKit
 
 final class PAMAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(
-        id: "pl.unstabler.noctiluca.NoctilucaServer.plugins.auth.pam",
+        id: "app.noctiluca.server.plugins.auth.pam",
         displayName: NSLocalizedString("plugins.auth.PAMAuthPlugin.name", comment: "PAMAuthPlugin"),
         type: .auth,
         description: NSLocalizedString("plugins.auth.PAMAuthPlugin.description", comment: "Provides UNIX PAM-based username-password authentication.")
     )
     
-    static let id = "pl.unstabler.noctiluca.NoctilucaServer.plugins.auth.pam"
+    static let id = "app.noctiluca.server.plugins.auth.pam"
     static let name = NSLocalizedString("plugins.auth.PAMAuthPlugin.name", comment: "PAMAuthPlugin")
     static let description = NSLocalizedString("plugins.auth.PAMAuthPlugin.description", comment: "Provides UNIX PAM-based username-password authentication.")
     static let authors = [

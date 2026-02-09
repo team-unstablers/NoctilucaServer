@@ -14,7 +14,7 @@ extension AuthMethod {
 }
 
 final class NullAuthPlugin: AuthPluginV1 {
-    static let id = "pl.unstabler.noctiluca.NoctilucaServer.plugin.test.null"
+    static let id = "app.noctiluca.server.plugin.test.null"
     
     static let name = NSLocalizedString("plugins.auth.NullAuthPlugin.name", comment: "NullAuthPlugin")
     static let description = NSLocalizedString("plugins.auth.NullAuthPlugin.description", comment: "Provides 'NULL' authentication that always succeeds.")

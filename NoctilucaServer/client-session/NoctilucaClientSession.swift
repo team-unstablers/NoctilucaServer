@@ -55,7 +55,7 @@ protocol NoctilucaClientSessionDelegate: AnyObject {
 }
 
 class NoctilucaClientSession: Identifiable {
-    let logger = SiriusLogger(category: "NoctilucaClientSession", subsystem: "pl.unstabler.noctiluca.NoctilucaServer")
+    let logger = SiriusLogger(category: "NoctilucaClientSession", subsystem: "app.noctiluca.server")
     
     var id: UUID { session.id }
     

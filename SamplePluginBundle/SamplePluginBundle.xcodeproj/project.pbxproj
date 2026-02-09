@@ -270,7 +270,7 @@
 				INFOPLIST_KEY_NSPrincipalClass = SamplePluginBundle;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.plugin.example.SamplePluginBundle;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.pluginkit.example.SamplePluginBundle;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -294,7 +294,7 @@
 				INFOPLIST_KEY_NSPrincipalClass = SamplePluginBundle;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.plugin.example.SamplePluginBundle;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.pluginkit.example.SamplePluginBundle;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
