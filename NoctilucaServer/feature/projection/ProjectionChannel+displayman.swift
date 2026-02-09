@@ -19,10 +19,13 @@ extension ProjectionChannel {
         let displayLayoutManager = await DisplayLayoutManager.shared
         let layouts = displayLayoutManager.displayLayouts
 
+        let flags = DisplayListRequestFlags(rawValue: request.flags)
+        let includeThumbnails = flags.contains(.includeThumbnails)
+
         var displays: [DisplayInfo] = []
 
         for (displayID, screen) in layouts {
-            let displayInfo = buildDisplayInfo(from: screen, displayID: displayID)
+            let displayInfo = buildDisplayInfo(from: screen, displayID: displayID, includeThumbnail: includeThumbnails)
             displays.append(displayInfo)
         }
 
@@ -104,6 +107,7 @@ extension ProjectionChannel {
                 dynamicRange: .sdr,
                 colorProfile: nil,
                 physicalSizeInfo: nil,
+                thumbnail: nil,
                 metadata: [:],
                 flags: 0
             )
@@ -124,7 +128,7 @@ extension ProjectionChannel {
 
     // MARK: - Build DisplayInfo
 
-    private func buildDisplayInfo(from screen: NOCScreen, displayID: CGDirectDisplayID) -> DisplayInfo {
+    private func buildDisplayInfo(from screen: NOCScreen, displayID: CGDirectDisplayID, includeThumbnail: Bool = false) -> DisplayInfo {
         // 디스플레이 종류 판별
         let kind = getDisplayKind(displayID: displayID)
         
@@ -175,6 +179,12 @@ extension ProjectionChannel {
             metadata["related-display-id"] = String(mirroredDisplayID)
         }
 
+        let thumbnailData: Data? = if includeThumbnail {
+            captureThumbnail(displayID: displayID)
+        } else {
+            nil
+        }
+
         return DisplayInfo(
             displayID: displayID,
             kind: kind,
@@ -186,6 +196,7 @@ extension ProjectionChannel {
             dynamicRange: dynamicRange,
             colorProfile: colorProfile,
             physicalSizeInfo: physicalSizeInfo,
+            thumbnail: thumbnailData,
             metadata: metadata,
             flags: 0
         )
@@ -258,6 +269,44 @@ extension ProjectionChannel {
 
         // 기타 프로파일은 이름 그대로 반환
         return DisplayColorProfile(rawValue: name)
+    }
+
+    /// 디스플레이의 현재 화면을 캡처하여 JPEG 섬네일로 변환합니다.
+    private func captureThumbnail(displayID: CGDirectDisplayID, maxDimension: Int = 320) -> Data? {
+        guard let cgImage = CGDisplayCreateImage(displayID) else {
+            return nil
+        }
+
+        let originalWidth = cgImage.width
+        let originalHeight = cgImage.height
+        let scale = min(
+            CGFloat(maxDimension) / CGFloat(originalWidth),
+            CGFloat(maxDimension) / CGFloat(originalHeight)
+        )
+        let targetWidth = Int(CGFloat(originalWidth) * scale)
+        let targetHeight = Int(CGFloat(originalHeight) * scale)
+
+        guard let context = CGContext(
+            data: nil,
+            width: targetWidth,
+            height: targetHeight,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
+        ) else {
+            return nil
+        }
+
+        context.interpolationQuality = .medium
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight))
+
+        guard let resizedImage = context.makeImage() else {
+            return nil
+        }
+
+        let bitmapRep = NSBitmapImageRep(cgImage: resizedImage)
+        return bitmapRep.representation(using: .jpeg, properties: [.compressionFactor: 0.7])
     }
 
     private func getPhysicalSizeInfo(displayID: CGDirectDisplayID) -> DisplayPhysicalSizeInfo? {
