@@ -108,12 +108,9 @@ extension HIDIOSession {
 
             if (mode == .shared) {
                 // 1. shared mode에서는 GCKeyboard를 연결한다
-                if let keyboard = HIDIOGCKeyboard.shared() {
-                    self.currentKeyboard = keyboard
-                    controller.connect(keyboard)
-                } else {
-                    logger.warning("Failed to acquire shared GCKeyboard instance; is there any keyboard device connected?")
-                }
+                let keyboard = HIDIOGCKeyboard.shared()
+                self.currentKeyboard = keyboard
+                controller.connect(keyboard)
                 
                 // 2. shared mode에서는 AppKit / NSEvent 기반 마우스를 연결한다
                 let mouse = HIDIOAppKitPointer()
