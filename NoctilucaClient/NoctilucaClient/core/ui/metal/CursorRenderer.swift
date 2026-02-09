@@ -15,6 +15,10 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     private var currentCursorSize: CGSize = .zero
     private var currentSourceSize: CGSize = .zero
     private var viewportSize: CGSize = .zero
+
+    // displayID 기반 visibility (SwiftUI .opacity() 대체)
+    private var targetDisplayID: Int = -1
+    private var currentDisplayID: Int? = nil
     
     private let textureLoader: MTKTextureLoader
     
@@ -83,15 +87,27 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     
     // MARK: - Update Logic (Event Driven)
     
-    func updateCursorState(_ state: RemoteSession.CursorState, sourceSize: CGSize, in view: MTKView) {
+    func updateCursorState(_ state: RemoteSession.CursorState, sourceSize: CGSize, targetDisplayID: Int, in view: MTKView) {
         var needsRedraw = false
-        
+
+        // targetDisplayID 변경 감지
+        if self.targetDisplayID != targetDisplayID {
+            self.targetDisplayID = targetDisplayID
+            needsRedraw = true
+        }
+
+        // displayID 변경 감지 (커서가 다른 디스플레이로 이동)
+        if self.currentDisplayID != state.displayID {
+            self.currentDisplayID = state.displayID
+            needsRedraw = true
+        }
+
         // 위치 변경 감지
         if self.currentPosition != state.position {
             self.currentPosition = state.position
             needsRedraw = true
         }
-        
+
         // 이미지 변경 감지
         if let image = state.image {
             if self.lastCursorImageID != image.id {
@@ -111,7 +127,7 @@ class CursorRenderer: NSObject, MTKViewDelegate {
             self.currentSourceSize = sourceSize
             needsRedraw = true
         }
-        
+
         // 변경사항이 있을 때만 그리기 요청
         if needsRedraw {
             view.setNeedsDisplay(view.bounds)
@@ -136,12 +152,28 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     }
     
     func draw(in view: MTKView) {
+        // displayID가 일치하지 않으면 투명하게 클리어만 수행
+        let isVisible = currentDisplayID == targetDisplayID
+
         guard let drawable = view.currentDrawable,
-              let descriptor = view.currentRenderPassDescriptor,
+              let descriptor = view.currentRenderPassDescriptor else {
+            return
+        }
+
+        guard isVisible,
               let pipelineState = pipelineState,
               let vertexBuffer = vertexBuffer,
               let texture = currentTexture,
               let samplerState = samplerState else {
+            // 커서가 보이지 않거나 텍스처가 없는 경우: 투명하게 클리어
+            descriptor.colorAttachments[0].loadAction = .clear
+            descriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+            if let commandBuffer = commandQueue.makeCommandBuffer(),
+               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) {
+                encoder.endEncoding()
+                commandBuffer.present(drawable)
+                commandBuffer.commit()
+            }
             return
         }
 
