@@ -11,6 +11,7 @@ internal import SwiftProtobuf
 public extension MessageOpcode {
     static let frameData: MessageOpcode = MessageOpcode(rawValue: 0x8001)
     static let codecParameterSets: MessageOpcode = MessageOpcode(rawValue: 0x8002)
+    static let degradationNotice: MessageOpcode = MessageOpcode(rawValue: 0x8003)
 }
 
 public struct FrameDataHeader: SiriusMessage {
@@ -91,6 +92,36 @@ public struct CodecParameterSetMessage: SiriusMessage {
                 $0.flags = parameterSet.flags
             }
         }
+
+        return message
+    }
+}
+
+public struct DegradationNotice: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DegradationNotice
+
+    public let reason: DegradationReason
+    public let type: DegradationType
+    public let additionalInfo: DegradationAdditionalInfo
+
+    public init(reason: DegradationReason, type: DegradationType, additionalInfo: DegradationAdditionalInfo) {
+        self.reason = reason
+        self.type = type
+        self.additionalInfo = additionalInfo
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.reason = DegradationReason(rawValue: protobuf.reason)
+        self.type = DegradationType(rawValue: protobuf.type)
+        self.additionalInfo = DegradationAdditionalInfo(rawValue: protobuf.additionalInfo)
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.reason = reason.rawValue
+        message.type = type.rawValue
+        message.additionalInfo = additionalInfo.rawValue
 
         return message
     }

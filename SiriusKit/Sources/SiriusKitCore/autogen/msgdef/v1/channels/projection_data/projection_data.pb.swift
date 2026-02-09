@@ -87,6 +87,26 @@ struct Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage: Sendable {
   init() {}
 }
 
+/// @opcode: 0x8003
+struct Sirius_Msgdef_V1_Channels_Projection_DegradationNotice: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// @optionset: DegradationReason
+  var reason: UInt32 = 0
+
+  /// @optionset: DegradationType
+  var type: UInt32 = 0
+
+  /// @optionset: DegradationAdditionalInfo
+  var additionalInfo: UInt32 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
@@ -210,6 +230,46 @@ extension Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage: SwiftPr
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage, rhs: Sirius_Msgdef_V1_Channels_Projection_CodecParameterSetMessage) -> Bool {
     if lhs.parameterSets != rhs.parameterSets {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_DegradationNotice: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".DegradationNotice"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}reason\0\u{1}type\0\u{1}additionalInfo\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.reason) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.type) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.additionalInfo) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.reason != 0 {
+      try visitor.visitSingularUInt32Field(value: self.reason, fieldNumber: 1)
+    }
+    if self.type != 0 {
+      try visitor.visitSingularUInt32Field(value: self.type, fieldNumber: 2)
+    }
+    if self.additionalInfo != 0 {
+      try visitor.visitSingularUInt32Field(value: self.additionalInfo, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_DegradationNotice, rhs: Sirius_Msgdef_V1_Channels_Projection_DegradationNotice) -> Bool {
+    if lhs.reason != rhs.reason {return false}
+    if lhs.type != rhs.type {return false}
+    if lhs.additionalInfo != rhs.additionalInfo {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
