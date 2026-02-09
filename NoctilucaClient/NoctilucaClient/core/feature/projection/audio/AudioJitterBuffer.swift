@@ -83,7 +83,7 @@ final class AudioJitterBuffer {
     private var lock = os_unfair_lock()
 
     /// Logger for debugging.
-    private let logger = OSLog(subsystem: "pl.unstabler.noctiluca.NoctilucaClient", category: "AudioJitterBuffer")
+    private let logger = OSLog(subsystem: "app.noctiluca.client", category: "AudioJitterBuffer")
 
     // MARK: - Statistics
 

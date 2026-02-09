@@ -21,8 +21,8 @@ final class ZRLEVideoDecoder: VideoDecoder {
     private var frameHeight: Int = 0
     
     init() {
-        self.workerQueue = DispatchQueue(label: "pl.unstabler.noctiluca.decoder.zrle.worker")
-        self.callbackQueue = DispatchQueue(label: "pl.unstabler.noctiluca.decoder.zrle.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.client.projection.decoder.zrle.worker")
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.client.projection.decoder.zrle.callback")
     }
     
     init(workerQueue: DispatchQueue, callbackQueue: DispatchQueue) {

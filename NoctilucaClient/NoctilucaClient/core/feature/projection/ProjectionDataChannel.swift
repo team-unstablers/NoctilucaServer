@@ -32,7 +32,7 @@ extension ProjectionDataChannelDelegate {
 }
 
 class ProjectionDataChannel: Channel {
-    private let logger = SiriusLogger(category: "ProjectionDataChannel", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = SiriusLogger(category: "ProjectionDataChannel", subsystem: "app.noctiluca.client")
     
     weak var delegate: ProjectionDataChannelDelegate?
     

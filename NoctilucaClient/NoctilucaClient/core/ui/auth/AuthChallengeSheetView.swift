@@ -131,7 +131,7 @@ struct AuthChallengeSheetView: View {
 
 #Preview {
     let authChallenge = AuthChallenge(
-        acceptedMethods: ["password", "pl.unstabler.noctiluca.NoctilucaServer.auth.simple-password"],
+        acceptedMethods: ["password", "app.noctiluca.server.auth.simple-password"],
         nonce: Data(),
         message: "제한 구역입니다"
     )

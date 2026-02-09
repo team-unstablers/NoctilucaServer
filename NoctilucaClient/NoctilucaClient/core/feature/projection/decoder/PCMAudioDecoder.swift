@@ -16,7 +16,7 @@ import SiriusKitClient
 /// G.711 mu-law/A-law decoder.
 /// Performs manual G.711 decoding to LPCM using LUT, then resamples using AVAudioConverter.
 final class PCMAudioDecoder: NSObject, AudioDecoder {
-    private let logger = SiriusLogger(category: "PCMAudioDecoder", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = SiriusLogger(category: "PCMAudioDecoder", subsystem: "app.noctiluca.client")
     private let workerQueue: DispatchQueue
 
     weak var delegate: AudioDecoderDelegate?
@@ -33,7 +33,7 @@ final class PCMAudioDecoder: NSObject, AudioDecoder {
     private var isStarted = false
 
     override init() {
-        self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.pcmaudiodecoder.worker")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.client.projection.decoder.pcm.worker")
         super.init()
     }
 

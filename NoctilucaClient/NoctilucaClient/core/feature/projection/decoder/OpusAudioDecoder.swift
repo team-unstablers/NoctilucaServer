@@ -15,7 +15,7 @@ import SiriusKitClient
 /// Opus decoder using AVAudioConverter.
 /// Decodes Opus frames to PCM (48kHz, stereo, Float32).
 final class OpusAudioDecoder: NSObject, AudioDecoder {
-    private let logger = SiriusLogger(category: "OpusAudioDecoder", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = SiriusLogger(category: "OpusAudioDecoder", subsystem: "app.noctiluca.client")
     private let workerQueue: DispatchQueue
 
     weak var delegate: AudioDecoderDelegate?
@@ -35,7 +35,7 @@ final class OpusAudioDecoder: NSObject, AudioDecoder {
     private var isStarted = false
 
     override init() {
-        self.workerQueue = DispatchQueue(label: "tech.unstablers.noctiluca.opusaudiodecoder.worker")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.client.projection.decoder.opus.worker")
         super.init()
     }
 

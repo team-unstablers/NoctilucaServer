@@ -347,7 +347,7 @@ extension ProjectionSession: TiledVideoDecoderDelegate {
 }
 
 private final class ProjectionPerformanceReporter {
-    private let logger = SiriusLogger(category: "ProjectionPerformanceReporter", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = SiriusLogger(category: "ProjectionPerformanceReporter", subsystem: "app.noctiluca.client")
     private let sessionID: UUID
     
     private weak var parent: ProjectionSession?

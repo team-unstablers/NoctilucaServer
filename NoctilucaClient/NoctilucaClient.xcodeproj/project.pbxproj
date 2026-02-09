@@ -13,6 +13,7 @@
 		F686CFEE2F3A23C8004383CF /* SiriusKitClient in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7C2F306B6C0024513A /* SiriusKitClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF12F3A34C8004383CF /* NoctilucaWebPDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF02F3A34C8004383CF /* NoctilucaWebPDecoder */; };
 		F686CFF22F3A34C8004383CF /* NoctilucaWebPDecoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF02F3A34C8004383CF /* NoctilucaWebPDecoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F686CFF62F3A47A4004383CF /* Xuanxue in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F69644AB2F3296D30093CFC2 /* Xuanxue */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F69644AC2F3296D30093CFC2 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F69644AB2F3296D30093CFC2 /* Xuanxue */; };
 		F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */; };
 		F6F98E7D2F306B6C0024513A /* SiriusKitClient in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7C2F306B6C0024513A /* SiriusKitClient */; };
@@ -36,6 +37,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				F686CFF22F3A34C8004383CF /* NoctilucaWebPDecoder in Embed Frameworks */,
+				F686CFF62F3A47A4004383CF /* Xuanxue in Embed Frameworks */,
 				F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */,
 				F686CFEE2F3A23C8004383CF /* SiriusKitClient in Embed Frameworks */,
 			);
@@ -289,7 +291,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClientTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -310,7 +312,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClientTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -480,7 +482,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClient;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client;
 				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -535,7 +537,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pl.unstabler.noctiluca.NoctilucaClient;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client;
 				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -604,7 +606,7 @@
 			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.3;
+				minimumVersion = 1.0.4;
 			};
 		};
 		F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {

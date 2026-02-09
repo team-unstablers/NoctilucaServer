@@ -14,7 +14,7 @@ struct NoctilucaMeta {
     }
     
     static var bundleIdentifier: String {
-        return Bundle.main.bundleIdentifier ?? "pl.unstabler.noctiluca.NoctilucaClient"
+        return Bundle.main.bundleIdentifier ?? "app.noctiluca.client"
     }
     
     static var version: String {

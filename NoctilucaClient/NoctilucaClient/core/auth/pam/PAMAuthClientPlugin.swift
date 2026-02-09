@@ -8,7 +8,7 @@
 import Foundation
 
 final class PAMAuthClientPlugin: ClientAuthPluginV1 {
-    static let id = "pl.unstabler.noctiluca.NoctilucaClient.auth.pam"
+    static let id = "app.noctiluca.client.auth.pam"
     static let name = "PAM Auth"
     static let description = "UNIX PAM username-password authentication"
 

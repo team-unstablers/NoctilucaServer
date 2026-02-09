@@ -14,10 +14,10 @@ import SiriusKitClient
 final class NOCAudioEngine: @unchecked Sendable {
     static let shared = NOCAudioEngine()
 
-    private let logger = SiriusLogger(category: "NOCAudioEngine", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = SiriusLogger(category: "NOCAudioEngine", subsystem: "app.noctiluca.client")
     
     private let engine = AVAudioEngine()
-    private let queue = DispatchQueue(label: "pl.unstabler.noctiluca.NOCAudioEngine")
+    private let queue = DispatchQueue(label: "app.noctiluca.client.audio-engine")
     
     private var activeNodes: Int = 0
 

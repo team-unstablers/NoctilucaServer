@@ -8,7 +8,7 @@
 import Foundation
 
 final class SimplePasswordAuthClientPlugin: ClientAuthPluginV1 {
-    static let id = "pl.unstabler.noctiluca.NoctilucaClient.auth.simple-password"
+    static let id = "app.noctiluca.client.auth.simple-password"
     static let name = "Simple Password Auth"
     static let description = "Password-only authentication"
 

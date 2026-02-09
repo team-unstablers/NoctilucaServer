@@ -17,7 +17,7 @@ import SiriusKitClient
 /// Uses AVAudioSourceNode (pull-based) with a jitter buffer for accurate
 /// PTS-based timing and smooth playback.
 class AudioProjectionSession: Identifiable {
-    private let logger = SiriusLogger(category: "AudioProjectionSession", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    private let logger = SiriusLogger(category: "AudioProjectionSession", subsystem: "app.noctiluca.client")
 
     let id: UUID
     weak var dataChannel: ProjectionDataChannel?

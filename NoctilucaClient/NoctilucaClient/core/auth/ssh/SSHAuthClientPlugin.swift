@@ -12,7 +12,7 @@ import Xuanxue
 typealias SSHPrivateKey = Xuanxue.PrivateKey
 
 final class SSHAuthClientPlugin: ClientAuthPluginV1 {
-    static let id = "pl.unstabler.noctiluca.NoctilucaClient.auth.ssh"
+    static let id = "app.noctiluca.client.auth.ssh"
     static let name = "SSH Auth Plugin"
     static let description = "provides SSH Key-based authentication."
 

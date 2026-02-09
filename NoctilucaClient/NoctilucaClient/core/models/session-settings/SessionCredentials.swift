@@ -22,7 +22,7 @@ struct ClientAuthMethod: RawRepresentable, Equatable, Hashable, Sendable, Codabl
     }
 
     static let password = ClientAuthMethod(rawValue: "password")
-    static let simplePassword = ClientAuthMethod(rawValue: "pl.unstabler.noctiluca.NoctilucaServer.auth.simple-password")
+    static let simplePassword = ClientAuthMethod(rawValue: "app.noctiluca.server.auth.simple-password")
     static let sshKey = ClientAuthMethod(rawValue: "ssh-key")
 }
 

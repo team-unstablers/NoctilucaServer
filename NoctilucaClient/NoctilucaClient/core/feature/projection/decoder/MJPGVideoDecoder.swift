@@ -22,8 +22,8 @@ final class MJPGVideoDecoder: VideoDecoder {
     private var decompressHandle: tjhandle? = nil
     
     init() {
-        self.workerQueue = DispatchQueue(label: "pl.unstabler.noctiluca.decoder.mjpg.worker")
-        self.callbackQueue = DispatchQueue(label: "pl.unstabler.noctiluca.decoder.mjpg.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.client.projection.decoder.mjpg.worker")
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.client.projection.decoder.mjpg.callback")
     }
     
     init(workerQueue: DispatchQueue, callbackQueue: DispatchQueue) {

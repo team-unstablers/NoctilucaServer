@@ -64,7 +64,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         attachedWindow = window
         installFocusDismissMonitor()
         
-        let toolbar = NSToolbar(identifier: "pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar")
+        let toolbar = NSToolbar(identifier: "app.noctiluca.client.ui.MainWindow.MainToolbar")
         toolbar.delegate = self
         toolbar.centeredItemIdentifiers = [.nocAddressBar]
         toolbar.allowsUserCustomization = false
@@ -254,11 +254,11 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
 }
 
 extension NSToolbarItem.Identifier {
-    static let nocAddressBar = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.AddressBar")
-    static let nocSettings = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.Settings")
-    static let nocAddSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.AddSession")
-    static let nocStopSession = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.StopSession")
-    static let nocSwitchDisplay = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.SwitchDisplay")
-    static let nocEnableExclusiveInputMode = NSToolbarItem.Identifier("pl.unstabler.NoctilucaClient.ui.MainWindow.MainToolbar.EnableExclusiveInputMode")
+    static let nocAddressBar = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.AddressBar")
+    static let nocSettings = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.Settings")
+    static let nocAddSession = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.AddSession")
+    static let nocStopSession = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.StopSession")
+    static let nocSwitchDisplay = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.SwitchDisplay")
+    static let nocEnableExclusiveInputMode = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.EnableExclusiveInputMode")
 }
 #endif

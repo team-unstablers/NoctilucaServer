@@ -96,7 +96,7 @@ struct InputWarning: Sendable, Equatable {
 }
 
 class NoctilucaClient: ObservableObject {
-    let logger = SiriusLogger(category: "NoctilucaClient", subsystem: "pl.unstabler.noctiluca.NoctilucaClient")
+    let logger = SiriusLogger(category: "NoctilucaClient", subsystem: "app.noctiluca.client")
     
     let id: UUID = UUID()
 
