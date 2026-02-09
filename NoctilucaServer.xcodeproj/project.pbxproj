@@ -17,6 +17,7 @@
 		F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F69644AD2F32C4F20093CFC2 /* Xuanxue */; };
 		F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */; };
 		F6B2AB792F2A6FF400B7CF41 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B2AB742F2A6DC500B7CF41 /* WebP.xcframework */; };
@@ -41,6 +42,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */,
 				F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */,
 				F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */,
 				F624FD762EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Embed Frameworks */,

@@ -12,10 +12,12 @@ let package = Package(
     products: [
         .library(
             name: "SiriusKit",
+            type: .dynamic,
             targets: ["SiriusKit"]
         ),
         .library(
             name: "SiriusKitClient",
+            type: .dynamic,
             targets: ["SiriusKitClient"]
         ),
     ],
@@ -49,9 +51,10 @@ let package = Package(
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
                 .product(name: "Atomics", package: "swift-atomics"),
-                .product(name: "SwiftMsQuic", package: "swift-msquic"),
+                .product(name: "SwiftMsQuicStatic", package: "swift-msquic"),
             ],
             path: "Sources/SiriusKit",
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-all_load"])],
             plugins: [
                 .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
             ]
@@ -61,9 +64,10 @@ let package = Package(
             dependencies: [
                 "SiriusKitCore",
                 .product(name: "Atomics", package: "swift-atomics"),
-                .product(name: "SwiftMsQuic", package: "swift-msquic"),
+                .product(name: "SwiftMsQuicStatic", package: "swift-msquic"),
             ],
             path: "Sources/SiriusKitClient",
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-all_load"])],
             plugins: [
                 .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
             ]
