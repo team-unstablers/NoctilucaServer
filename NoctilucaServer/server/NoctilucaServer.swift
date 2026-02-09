@@ -83,9 +83,7 @@ class NoctilucaServer: ObservableObject {
     init() {
         self.authenticator = Authenticator(registry: authPluginRegistry)
         self.context = NoctilucaServerContext(server: self)
-        // FIXME: 이건 AppDelegate에서 하세요.
-        SiriusLogger.configure(minimumLevel: .trace)
-        
+
         logger.info("NoctilucaServer initialized")
         
         Task {
@@ -150,7 +148,8 @@ class NoctilucaServer: ObservableObject {
         DisplayLayoutManager.shared.updateDisplayLayouts()
         
         self.settings = try AppSettings.load()
-        
+        NoctilucaLoggingConfigurator.apply(settings: self.settings.logging)
+
         try await pluginBundleRegistry.registerBuiltinBundles()
         await authenticator.setupAllowedEntires(self.settings.security.allowedEntries)
         

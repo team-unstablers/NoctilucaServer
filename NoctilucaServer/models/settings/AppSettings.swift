@@ -25,7 +25,8 @@ struct AppSettings: Codable, Sendable {
     var quicTransport: QUICTransport = .init()
     
     // MARK: - Misc Settings
-    
+
+    var logging: Logging = .init()
     var telemetry: Telemetry = .init()
 
     init() {}
@@ -37,6 +38,7 @@ struct AppSettings: Codable, Sendable {
         case security
         case transport
         case quicTransport
+        case logging
         case telemetry
     }
 
@@ -53,6 +55,7 @@ struct AppSettings: Codable, Sendable {
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         transport = container.decodeSafe(Transport.self, forKey: .transport, default: transport)
         quicTransport = container.decodeSafe(QUICTransport.self, forKey: .quicTransport, default: quicTransport)
+        logging = container.decodeSafe(Logging.self, forKey: .logging, default: logging)
         telemetry = container.decodeSafe(Telemetry.self, forKey: .telemetry, default: telemetry)
     }
 
@@ -65,6 +68,7 @@ struct AppSettings: Codable, Sendable {
         try container.encode(security, forKey: .security)
         try container.encode(transport, forKey: .transport)
         try container.encode(quicTransport, forKey: .quicTransport)
+        try container.encode(logging, forKey: .logging)
         try container.encode(telemetry, forKey: .telemetry)
     }
 }

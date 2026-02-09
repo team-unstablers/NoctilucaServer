@@ -72,6 +72,7 @@ struct SettingsWindow: View {
                 Button(String(localized: "settings.save", defaultValue: "설정 저장"), role: .compatibleConfirm) {
                     do {
                         try server.settings.save()
+                        NoctilucaLoggingConfigurator.apply(settings: server.settings.logging)
                     } catch {
                         // FIXME: 다이얼로그를 띄우던 뭘 하던 하십시오
                         print(error)
