@@ -15,6 +15,7 @@ import SwiftMsQuicHelper
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let server = NoctilucaServer.shared
     private var settingsWindowController: AppKitSettingsWindowController?
+    private var onboardingWindowController: OnboardingWindowController?
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
@@ -45,6 +46,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setupStatusItem()
         bindServerState()
         updateMenuState()
+
+        if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+            showOnboardingWindow()
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -53,6 +58,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         updateMenuState()
+    }
+
+    private func showOnboardingWindow() {
+        if onboardingWindowController == nil {
+            onboardingWindowController = OnboardingWindowController()
+        }
+
+        onboardingWindowController?.showWindow(nil)
+        onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc

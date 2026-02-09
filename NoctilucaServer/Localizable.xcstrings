@@ -379,6 +379,281 @@
     "OK" : {
 
     },
+    "onboarding.completion.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모든 설정이 완료되었습니다.\n이제 클라이언트에서 이 서버에 접속할 수 있습니다."
+          }
+        }
+      }
+    },
+    "onboarding.completion.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "준비 완료!"
+          }
+        }
+      }
+    },
+    "onboarding.configuration.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 기본 설정을 구성합니다."
+          }
+        }
+      }
+    },
+    "onboarding.configuration.password_confirm.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호 확인"
+          }
+        }
+      }
+    },
+    "onboarding.configuration.password.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트가 이 서버에 접속할 때 사용할 비밀번호입니다."
+          }
+        }
+      }
+    },
+    "onboarding.configuration.password.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호"
+          }
+        }
+      }
+    },
+    "onboarding.configuration.password.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "접속 비밀번호"
+          }
+        }
+      }
+    },
+    "onboarding.configuration.server_name.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트에서 이 서버를 식별하는 데 사용됩니다."
+          }
+        }
+      }
+    },
+    "onboarding.configuration.server_name.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 이름"
+          }
+        }
+      }
+    },
+    "onboarding.configuration.server_name.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 이름"
+          }
+        }
+      }
+    },
+    "onboarding.configuration.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본 설정"
+          }
+        }
+      }
+    },
+    "onboarding.navigation.back" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "뒤로"
+          }
+        }
+      }
+    },
+    "onboarding.navigation.finish" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "시작하기"
+          }
+        }
+      }
+    },
+    "onboarding.navigation.next" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다음"
+          }
+        }
+      }
+    },
+    "onboarding.navigation.skip" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "건너뛰기"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.accessibility.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트의 입력을 시스템에 전달하기 위해 필요합니다."
+          }
+        }
+      }
+    },
+    "onboarding.permissions.accessibility.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "손쉬운 사용"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca가 정상적으로 작동하려면 다음 권한이 필요합니다."
+          }
+        }
+      }
+    },
+    "onboarding.permissions.screen_recording.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격지로 화면을 스트리밍하기 위해 필요합니다."
+          }
+        }
+      }
+    },
+    "onboarding.permissions.screen_recording.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 기록"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "권한 설정"
+          }
+        }
+      }
+    },
+    "onboarding.welcome.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Server는 QUIC 프로토콜을 기반으로 한 원격 제어 소프트웨어입니다.\n몇 가지 설정을 완료하면 바로 시작할 수 있습니다."
+          }
+        }
+      }
+    },
+    "onboarding.welcome.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Server를 선택해 주셔서 감사합니다!"
+          }
+        }
+      }
+    },
+    "onboarding.window.subtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "환영합니다!"
+          }
+        }
+      }
+    },
+    "onboarding.window.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Server"
+          }
+        }
+      }
+    },
     "plugins.auth.NullAuthPlugin.description" : {
       "comment" : "Provides 'NULL' authentication that always succeeds.",
       "localizations" : {
