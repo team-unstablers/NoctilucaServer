@@ -33,8 +33,9 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
     private let logger = SiriusLogger(category: "ClientRoleMsQuicTransport")
 
-    private let host: String
-    private let port: UInt16
+    internal let hostname: String
+    internal let port: UInt16
+    
     private let alpn: SiriusQUICAlpn
 
     private var registration: QuicRegistration?
@@ -52,7 +53,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     nonisolated(unsafe) var identityValidationPolicy: ServerIdentityValidationPolicy
 
     init(host: String, port: UInt16, alpn: SiriusQUICAlpn = .siriusV1, validationPolicy: ServerIdentityValidationPolicy) {
-        self.host = host
+        self.hostname = host
         self.port = port
         self.alpn = alpn
         
@@ -116,7 +117,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         // 7. 연결 시작
         try await connection.start(
             configuration: configuration,
-            serverName: host,
+            serverName: hostname,
             serverPort: port
         )
 
@@ -242,7 +243,10 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
                 allowSelfSigned: policy == .dangerouslyAllowAlways
             )
             
-            if try trust.evaluate() {
+            // try? 를 쓰는 이유는, 인증서 신뢰에 문제가 있어도 얘네는 에러를 던지기 때문이다.. -_-;;
+            let result = (try? trust.evaluate()) ?? false
+            
+            if result {
                 return .allow
             }
         }

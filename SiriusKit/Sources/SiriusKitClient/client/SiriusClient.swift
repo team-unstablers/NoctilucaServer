@@ -30,6 +30,14 @@ public class SiriusClient: SiriusSession {
     
     // MARK: Computed Properties
     
+    public var hostname: String {
+        clientTransport.hostname
+    }
+    
+    public var port: UInt16 {
+        clientTransport.port
+    }
+    
     public var identity: ServerIdentity? {
         clientTransport.identity
     }

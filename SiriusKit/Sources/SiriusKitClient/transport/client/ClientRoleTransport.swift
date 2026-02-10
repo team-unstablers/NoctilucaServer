@@ -19,6 +19,20 @@ public enum ServerIdentity {
     /// 추후 Sirius-over-SSH같은게 나올 일이 있을진 모르겠지만 만약 그렇다면, 무언가 추가되겠지요..
 }
 
+public extension ServerIdentity {
+    func fingerprint() throws -> Data {
+        switch self {
+        case .sslCertificate(let leaf, _):
+            guard let fingerprint = leaf.extractFingerprint() else {
+                // 진짜 만능이다 이 에러 (전혀 아님, 고쳐야됨)
+                throw SRSecurityError.operationFailed(error: nil)
+            }
+            
+            return fingerprint
+        }
+    }
+}
+
 /// 서버 아이덴티티 검증 정책
 public enum ServerIdentityValidationPolicy: Equatable {
     /// 시스템의 트러스트 스토어를 기준으로만 검사합니다.
@@ -122,6 +136,9 @@ protocol ClientRoleTransportDelegate: AnyObject {
 
 protocol ClientRoleTransport: TransportLayer, Hashable where ID == ClientRoleTransportIdentifier {
     var delegate: ClientRoleTransportDelegate? { get set }
+    
+    var hostname: String { get }
+    var port: UInt16 { get }
     
     /// 서버에서 announce한 아이덴티티 정보.
     /// 접속 전 / handshake 전에는 nil입니다.
