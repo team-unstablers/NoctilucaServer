@@ -17,16 +17,21 @@ public struct SiriusClientBuilder {
     public enum TransportProtocol {
         case quic(host: String, port: UInt16)
 
-        func buildTransport() -> any ClientRoleTransport {
+        func buildTransport(_ identityValidationPolicy: ServerIdentityValidationPolicy) -> any ClientRoleTransport {
             switch self {
             case .quic(let host, let port):
-                return ClientRoleMsQuicTransport(host: host, port: port)
+                return ClientRoleMsQuicTransport(
+                    host: host,
+                    port: port,
+                    validationPolicy: identityValidationPolicy
+                )
             }
         }
     }
 
     private(set) var featureProvider: (any FeatureProvider)?
     private(set) var transportProtocol: TransportProtocol?
+    private(set) var identityValidationPolicy: ServerIdentityValidationPolicy?
 
     private(set) var extraConfigurations: [String: String] = [:]
 
@@ -49,6 +54,13 @@ public struct SiriusClientBuilder {
 
         return this
     }
+    
+    public func useServerIdentityValidationPolicy(_ validationPolicy: ServerIdentityValidationPolicy) -> Self {
+        var this = self
+        this.identityValidationPolicy = validationPolicy
+
+        return this
+    }
 
     // TODO: maximum connections, idle timeout, etc.
 
@@ -67,6 +79,10 @@ public struct SiriusClientBuilder {
         guard transportProtocol != nil else {
             return .failure(.invalidConfiguration("Transport protocol is not set."))
         }
+        
+        guard identityValidationPolicy != nil else {
+            return .failure(.invalidConfiguration("Server identity validation policy is not set."))
+        }
 
         return .success(())
     }
@@ -77,8 +93,9 @@ public struct SiriusClientBuilder {
         if case .failure(let error) = validationResult {
             return .failure(error)
         }
-
-        let transport = transportProtocol!.buildTransport()
+        
+        let validationPolicy = identityValidationPolicy!
+        let transport = transportProtocol!.buildTransport(validationPolicy)
 
         let client = SiriusClient(
             transport: transport,

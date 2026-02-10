@@ -11,21 +11,95 @@ import SiriusKitCore
 
 typealias ClientRoleTransportIdentifier = TransportLayerIdentifier
 
-enum TrustDecision {
-    case allow
-    case deny(reason: Error?)
-    case deferToApp
+/// 서버 아이덴티티 타입
+public enum ServerIdentity {
+    /// SSL 인증서
+    case sslCertificate(leaf: SecCertificate, chain: [SecCertificate])
+    
+    /// 추후 Sirius-over-SSH같은게 나올 일이 있을진 모르겠지만 만약 그렇다면, 무언가 추가되겠지요..
 }
 
-struct ServerIdentityInfo {
-    let host: String
-    let port: UInt16
-    let alpn: String
-    let certificates: [SecCertificate]
-    let leafApplicationLabel: Data?
-    let notBefore: Date?
-    let notAfter: Date?
+/// 서버 아이덴티티 검증 정책
+public enum ServerIdentityValidationPolicy: Equatable {
+    /// 시스템의 트러스트 스토어를 기준으로만 검사합니다.
+    case systemOnly
+    
+    /// 시스템의 트러스트 스토어를 절대 사용하지 않고, 항상 앱의 검증 블록만 호출합니다.
+    /// 권장하지 않음: OS의 트러스트 스토어가 너무 낡아 버렸거나 오염되어 있는 경우에 사용하십시오.
+    case appValidationOnly(ServerIdentityValidationBlock)
+    
+    /// 시스템의 트러스트 스토어를 기준으로 우선 검사하고, 그 다음에 앱의 검증 블록을 호출합니다.
+    /// 기본값으로의 사용을 권장합니다.
+    case systemAndAppValidation(ServerIdentityValidationBlock)
+    
+    /// 모든 아이덴티티를 허용합니다. 단, 유효성 검사는 수행합니다.
+    case dangerouslyAllowAlways
+    
+    /// 모든 아이덴티티를 허용합니다. 유효성 검사도 수행하지 않습니다.
+    case dangerouslyAllowAlwaysWithoutValidation
+    
+    public static func ==(lhs: ServerIdentityValidationPolicy, rhs: ServerIdentityValidationPolicy) -> Bool {
+        switch (lhs, rhs) {
+        case (.systemOnly, .systemOnly):
+            return true
+        case (.appValidationOnly(_), .appValidationOnly(_)):
+            return true
+        case (.systemAndAppValidation(_), .systemAndAppValidation(_)):
+            return true
+        case (.dangerouslyAllowAlways, .dangerouslyAllowAlways):
+            return true
+        case (.dangerouslyAllowAlwaysWithoutValidation, .dangerouslyAllowAlwaysWithoutValidation):
+            return true
+        default:
+            return false
+        }
+    }
 }
+
+extension ServerIdentityValidationPolicy {
+    var requiresSystemValidation: Bool {
+        switch self {
+        case .systemOnly, .systemAndAppValidation(_), .dangerouslyAllowAlways:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    var requiresAppValidation: Bool {
+        switch self {
+        case .appValidationOnly(_), .systemAndAppValidation(_):
+            return true
+        default:
+            return false
+        }
+    }
+    
+    var validationBlock: ServerIdentityValidationBlock? {
+        switch self {
+        case .appValidationOnly(let block), .systemAndAppValidation(let block):
+            return block
+        default:
+            return nil
+        }
+    }
+    
+}
+
+public enum ServerIdentityTrustDecision {
+    /// 이 아이덴티티를 신뢰합니다.
+    case allow
+    
+    /// 이 아이덴티티를 신뢰하지 않습니다.
+    case deny
+}
+
+/// 어플리케이션 레이어에서의 검증 블록.
+/// NOTE: 이 검증 블록은 **최대한 빠르게** 처리되어야 합니다.
+///       단, 위 문장은 'UI 표시를 하지 말라'라는 의미가 아닙니다. UI 표시 (사용자 동의) 등을 받아야 하는 경우,
+///       우선 .deny로 접속을 끊고, 디시전을 받은 뒤 재접속 시 디시전 결과를 넘기는 식의 사용을 권장합니다.
+public typealias ServerIdentityValidationBlock = @Sendable (ServerIdentity) -> ServerIdentityTrustDecision
+
 
 struct NegotiationRequest {
     let supportedAlpns: [String]
@@ -43,12 +117,18 @@ protocol ClientRoleTransportDelegate: AnyObject {
     func clientTransportDidClose(_ transport: any ClientRoleTransport) async
     func clientTransport(_ transport: any ClientRoleTransport, didEncounterError error: any Error) async
 
-    func clientTransport(_ transport: any ClientRoleTransport, didReceiveServerIdentity identity: ServerIdentityInfo, decisionHandler: @escaping (TrustDecision) -> Void)
     func clientTransport(_ transport: any ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void)
 }
 
 protocol ClientRoleTransport: TransportLayer, Hashable where ID == ClientRoleTransportIdentifier {
     var delegate: ClientRoleTransportDelegate? { get set }
+    
+    /// 서버에서 announce한 아이덴티티 정보.
+    /// 접속 전 / handshake 전에는 nil입니다.
+    var identity: ServerIdentity? { get }
+    
+    /// 서버 아이덴티티 검증 정책
+    var identityValidationPolicy: ServerIdentityValidationPolicy { get set }
 
     func connect() async throws
 }

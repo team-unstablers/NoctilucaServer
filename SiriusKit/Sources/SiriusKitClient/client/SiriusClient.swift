@@ -22,11 +22,22 @@ public class SiriusClient: SiriusSession {
     package var transport: any TransportLayer { clientTransport }
 
     package let featureProvider: (any FeatureProvider)
-
+    
     public var channelManager: ChannelManager!
     public var shouldAcceptChannelCreation: Bool = false
 
     public weak var delegate: (any SiriusClientDelegate)?
+    
+    // MARK: Computed Properties
+    
+    public var identity: ServerIdentity? {
+        clientTransport.identity
+    }
+    
+    public var identityValidationPolicy: ServerIdentityValidationPolicy {
+        get { clientTransport.identityValidationPolicy }
+        set { clientTransport.identityValidationPolicy = newValue }
+    }
 
     init(transport: any ClientRoleTransport, featureProvider: (any FeatureProvider)) {
         self.id = UUID()
@@ -80,13 +91,6 @@ extension SiriusClient: ClientRoleTransportDelegate {
 
     func clientTransport(_ transport: any ClientRoleTransport, didEncounterError error: any Error) async {
         logger.error("SiriusClient with ID: \(self.id.uuidString) encountered error: \(error)")
-    }
-
-    func clientTransport(_ transport: any ClientRoleTransport, didReceiveServerIdentity identity: ServerIdentityInfo, decisionHandler: @escaping (TrustDecision) -> Void) {
-        logger.info("SiriusClient with ID: \(self.id.uuidString) received server identity info for host: \(identity.host).")
-        print(identity.alpn)
-        print(identity.certificates)
-        decisionHandler(.allow)
     }
 
     func clientTransport(_ transport: any ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void) {

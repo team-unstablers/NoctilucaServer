@@ -9,6 +9,7 @@ import Foundation
 import Combine
 
 import Network
+import Security
 
 import MsQuic
 import SwiftMsQuicHelper
@@ -45,19 +46,20 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     
     private var addressMonitorCancellation: AnyCancellable?
 
-    /// 인증서 검증을 비활성화할지 여부 (개발용)
-    /// 프로덕션에서는 false로 설정하고 delegate를 통해 검증해야 함
-    var disableCertificateValidation: Bool = true
+    nonisolated(unsafe) var identity: ServerIdentity? = nil
+    // 아 진짜 swift6 concurrency 개같다 ㅋㅋㅋㅋㅋㅋㅋ
+    // 진짜 별걸 다 unsafe 떡칠을 해야 하네, C++는 이렇게 개같이 굴지 않았어!
+    nonisolated(unsafe) var identityValidationPolicy: ServerIdentityValidationPolicy
 
-    init(host: String, port: UInt16, alpn: SiriusQUICAlpn = .siriusV1) {
+    init(host: String, port: UInt16, alpn: SiriusQUICAlpn = .siriusV1, validationPolicy: ServerIdentityValidationPolicy) {
         self.host = host
         self.port = port
         self.alpn = alpn
+        
+        self.identityValidationPolicy = validationPolicy
     }
 
     // MARK: - ClientRoleTransport Protocol
-
-    // swiftlint: disable function_body_length
     func connect() async throws {
         setupAddressMonitor()
 
@@ -87,11 +89,15 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         self.configuration = configuration
 
         // 4. TLS Credential 설정 (클라이언트 모드)
-        var credentialFlags: QuicCredentialFlags = [.client, .noCertificateValidation]
-        if disableCertificateValidation {
-            credentialFlags.insert(.noCertificateValidation)
-        }
-
+        var credentialFlags: QuicCredentialFlags = [
+            .client,
+            
+            // 인증서 검증은 SiriusKit 및 어플리케이션 레이어에서 수행할 것이므로
+            // policy가 어떻게 설정되어 있든, 'no certificate validation' 등의 플래그는 넣지 않는다
+            .indicateCertificateReceived,
+            .deferCertificateValidation
+        ]
+        
         let credential = QuicCredentialConfig(
             type: .none,
             flags: credentialFlags
@@ -192,7 +198,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
         self.streams.removeValue(forKey: stream.id)
     }
-
+    
     // MARK: - Connection Migration
 
     /// 네트워크 주소 변경을 감지하여 QUIC 커넥션 마이그레이션을 수행합니다.
@@ -217,10 +223,60 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
                 }
             }
     }
+    
+    nonisolated private static func validateIdentity(_ identity: ServerIdentity, using policy: ServerIdentityValidationPolicy) throws -> ServerIdentityTrustDecision {
+        guard case let .sslCertificate(leaf, chain) = identity else {
+            return .deny
+        }
+        
+        if policy == .dangerouslyAllowAlwaysWithoutValidation {
+            return .allow
+        }
+        
+        // 신나는 인증서 평가 시간~ \ ' ')/
+        if policy.requiresSystemValidation {
+            let trust = try SecTrust.create(
+                leaf: leaf,
+                chain: chain,
+                isServer: true,
+                allowSelfSigned: policy == .dangerouslyAllowAlways
+            )
+            
+            if try trust.evaluate() {
+                return .allow
+            }
+        }
+        
+        if policy.requiresAppValidation, let block = policy.validationBlock {
+            return block(identity)
+        }
+        
+        return .deny
+    }
 
     // MARK: - Event Handlers
 
     private func setupEventHandlers(_ connection: QuicConnection) async {
+        connection.onPeerCertificateReceived { [weak self] _, certificate, chain, _, _ in
+            guard let self = self else { return .badCertificate }
+            
+            let identity: ServerIdentity = .sslCertificate(leaf: certificate, chain: chain)
+            self.identity = identity
+            
+            do {
+                let result = try Self.validateIdentity(identity, using: self.identityValidationPolicy)
+                switch result {
+                case .allow:
+                    return .success
+                case .deny:
+                    return .badCertificate
+                }
+            } catch {
+                self.logger.error("Failed to validate server identity: \(error)")
+                return .badCertificate
+            }
+        }
+
         // 연결 이벤트 핸들러
         connection.onEvent { [weak self] _, event in
             guard let self = self else { return .success }
@@ -243,12 +299,12 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
             case .localAddressChanged(let address):
                 self.logger.info("Local address changed to: \(address.description)")
-                
+
             case .resumptionTicketReceived(let ticket):
                 self.logger.info("Received resumption ticket of size: \(ticket.count) bytes")
                 // 여기서 말하는 재접속은 'connection migration'이 아닌, 완전한 재접속을 의미하는 듯 하다
                 // TODO: 다음 접속에 재사용할 수 있도록 인터페이스를 제공한다
-                
+
             default:
                 break
             }
