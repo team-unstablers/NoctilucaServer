@@ -257,7 +257,7 @@ class ProjectionSession: Identifiable {
         }
     }
     
-    func stop() async throws {
+    func stop() async {
         // Task 취소
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
@@ -272,32 +272,23 @@ class ProjectionSession: Identifiable {
         screenLockCancellable?.cancel()
         screenLockCancellable = nil
 
-        var firstError: Error?
-
         // recorder/encoder 정리
         do {
             try await self.recorder.stop()
         } catch {
             self.logger.error("Failed to stop recorder for projection session \(self.id): \(error)")
-            if firstError == nil { firstError = error }
         }
 
         do {
             try self.encoder.stop()
         } catch {
             self.logger.error("Failed to stop encoder for projection session \(self.id): \(error)")
-            if firstError == nil { firstError = error }
         }
 
         do {
             try await dataChannel.close()
         } catch {
             self.logger.warning("Failed to close projection data channel \(self.dataChannel.identifier): \(error)")
-            if firstError == nil { firstError = error }
-        }
-
-        if let firstError {
-            throw firstError
         }
     }
 

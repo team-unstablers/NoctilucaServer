@@ -47,7 +47,7 @@ actor FrameQueue<Frame> {
 
         var dropped = false
         if queue.count >= capacity {
-            logger.warning("FrameQueue is full. Dropping the oldest frame.")
+            // logger.trace("FrameQueue is full. Dropping the oldest frame.")
             queue.removeFirst()
             dropped = true
         }

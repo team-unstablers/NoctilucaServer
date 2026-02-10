@@ -173,7 +173,7 @@ class AudioProjectionSession: Identifiable {
         try self.encoder?.start()
     }
 
-    func stop() async throws {
+    func stop() async {
         // Cancel task
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
@@ -184,8 +184,10 @@ class AudioProjectionSession: Identifiable {
         await frameQueue.cancelWaiter()
 
         // Clean up recorder/encoder
-        try await self.recorder.stop()
-        try self.encoder?.stop()
+        try? await self.recorder.stop()
+        try? self.encoder?.stop()
+        
+        try? await self.dataChannel.close()
     }
 
     deinit {
@@ -200,15 +202,14 @@ class AudioProjectionSession: Identifiable {
         // encoder.stop()은 동기 메서드이므로 직접 호출 (Task 불필요)
         try? encoder?.stop()
 
-        let frameQueue = self.frameQueue
-        Task {
-            await frameQueue.cancelWaiter()
-        }
-
         // recorder.stop()은 async이므로 fire-and-forget Task가 불가피
+        let frameQueue = self.frameQueue
         let recorder = recorder
+        let dataChannel = self.dataChannel
         Task {
             try? await recorder.stop()
+            await frameQueue.cancelWaiter()
+            try? await dataChannel.close()
         }
     }
 }
