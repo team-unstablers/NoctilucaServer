@@ -155,9 +155,6 @@ extension AppSettings {
         let applicationSupportDirectory = try Self.applicationSupportDirectory()
         
         var sanitized = self
-        if sanitized.sessionDefaults.security.knownHost?.trust == .trustOnce {
-            sanitized.sessionDefaults.security.knownHost = nil
-        }
 
         let json = try Self.jsonEncoder.encode(sanitized)
         
@@ -251,10 +248,8 @@ private extension AppSettings {
         }
 
         settings.scope = .global
-        if settings.security.knownHost?.trust == .trustOnce {
-            settings.security.knownHost = nil
-        }
         settings.ensureCredentialsKey(scope: .global, contactId: nil)
+        
         return settings
     }
 }

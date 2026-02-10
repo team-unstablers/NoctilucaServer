@@ -144,22 +144,7 @@ extension SessionSettings {
     struct Security: Codable, Sendable {
         var tlsValidationPolicy: AppSettings.TLSValidationPolicy = .default
         var disableClientVersionAnnouncement: Bool = false
-        var knownHost: KnownHostRecord? = nil
         var pinning: CertificatePinning? = nil
-    }
-
-    enum TrustDecision: String, Codable, Sendable, Hashable {
-        case trustAlways
-        case trustOnce
-        case deny
-        case ask
-    }
-
-    struct KnownHostRecord: Codable, Sendable {
-        var fingerprint: CertificateFingerprint
-        var trust: TrustDecision = .ask
-        var firstSeenAt: Date? = nil
-        var lastSeenAt: Date? = nil
     }
 
     struct CertificatePinning: Codable, Sendable {
