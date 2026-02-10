@@ -27,6 +27,8 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
 
     private var geometry: CGSize = .zero
 
+    var scope: CursorPositionScope = .displayId(-1)
+
     func connect(to controller: HIDIOController) {
         self.controller = controller
     }
@@ -45,7 +47,7 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
             return
         }
 
-        controller?.moveMouseAbsolutePercentage(to: normalized)
+        controller?.moveMouseAbsolutePercentage(to: normalized, on: scope)
     }
 
     func moveRelative(by delta: CGPoint) {

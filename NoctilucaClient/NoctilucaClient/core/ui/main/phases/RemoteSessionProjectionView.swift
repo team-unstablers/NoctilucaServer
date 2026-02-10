@@ -86,6 +86,25 @@ struct RemoteSessionProjectionView: View {
         }
     }
 
+    private func syncMouseScope() {
+        guard case .displayID(let displayID) = sourceDescriptor else {
+            return
+        }
+
+        let scope = CursorPositionScope.displayId(Int32(displayID))
+
+#if os(macOS)
+        if let mouse = hidio.session.currentMouse as? HIDIOAppKitPointer {
+            mouse.scope = scope
+        }
+#endif
+#if os(iOS)
+        if let mouse = hidio.session.defaultSubMouse as? HIDIOUIKitMouse {
+            mouse.scope = scope
+        }
+#endif
+    }
+
     var body: some View {
         // TODO: preparingView unless(remoteSession.projection)
         GeometryReader { geometry in
@@ -185,9 +204,13 @@ struct RemoteSessionProjectionView: View {
             .background(.black)
             .onAppear {
                 syncSourceMetadata()
+                syncMouseScope()
             }
             .onChange(of: source?.id) { _, _ in
                 syncSourceMetadata()
+            }
+            .onChange(of: sourceDescriptor) { _, _ in
+                syncMouseScope()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .if(subscription != nil) {
