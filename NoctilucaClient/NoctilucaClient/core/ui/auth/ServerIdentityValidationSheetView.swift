@@ -12,7 +12,7 @@ import Security
 
 import SiriusKitClient
 
-enum ServerIdentityValidationSheetViewExtraInfo {
+enum ServerIdentityValidationSheetViewExtraInfo: Sendable {
     case none
 
     /// 서버에서 제시한 인증서 지문이 known_hosts의 레코드와 일치하지 않습니다.
@@ -52,6 +52,7 @@ struct ServerIdentityValidationSheetView: View {
                 Text("서버 인증서 지문이 일치하지 않습니다!")
             }
                 .font(DeviceKind.current == .mac ? .headline : .subheadline)
+                .bold()
                 .padding(.bottom, 4)
                 .foregroundStyle(.primary)
             Text("`\(hostname)`에서 인증서를 제시했지만, 인증서 지문이 저번에 접속했을 때와 다릅니다.")
@@ -93,7 +94,7 @@ struct ServerIdentityValidationSheetView: View {
                 .font(DeviceKind.current == .mac ? .headline : .subheadline)
                 .padding(.bottom, 4)
                 .foregroundStyle(.primary)
-            Text("`\(hostname)`은 다음과 같은 인증서를 제시하였습니다.")
+            Text("`\(hostname)`은 다음과 같은 인증서를 제시하였지만, 시스템의 트러스트 스토어에서는 신뢰할 수 없다고 판단하였습니다.")
                 .font(DeviceKind.current == .mac ? .subheadline : .footnote)
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 12)

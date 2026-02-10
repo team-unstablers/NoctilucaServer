@@ -27,7 +27,7 @@ fileprivate struct MainWindowContentViewInternal: View {
                             get: { remoteSession.shouldPresentAuthChallengeSheet },
                             set: { remoteSession.shouldPresentAuthChallengeSheet = $0 }
                         )
-                        
+
                         $0.dialog(isPresented: isPresentedBinding) {
                             AuthChallengeSheetView(
                                 authChallenge: authChallenge,
@@ -38,6 +38,51 @@ fileprivate struct MainWindowContentViewInternal: View {
                                 }
                             }
                             .id(authChallenge.nonce)
+                        }
+                    }
+                }
+                .if(remoteSession.shouldPresentIdentityValidationSheet) {
+                    if let identity = remoteSession.pendingServerIdentity,
+                       case .sslCertificate(let leaf, let chain) = identity {
+                        let isPresentedBinding = Binding(
+                            get: { remoteSession.shouldPresentIdentityValidationSheet },
+                            set: { remoteSession.shouldPresentIdentityValidationSheet = $0 }
+                        )
+
+                        $0.dialog(isPresented: isPresentedBinding) {
+                            ServerIdentityValidationSheetView(
+                                hostname: viewModel.endpointURL,
+                                certificate: leaf,
+                                extraInfo: remoteSession.identityValidationExtraInfo
+                            ) { action in
+                                Task { @MainActor in
+                                    if case .proceed(let type) = action {
+                                        do {
+                                            guard let fingerprint = leaf.extractFingerprint() else {
+                                                print("서버 인증서에서 지문을 추출하지 못했습니다.")
+                                                return
+                                            }
+                                            
+                                            if type == .always {
+                                                // persist
+                                                let entry = KnownHostEntry(
+                                                    endpoint: viewModel.endpointURL,
+                                                    fingerprint: fingerprint
+                                                )
+                                                try await KeychainBackedKnownHostStore.shared.saveKnownHost(entry)
+                                            }
+                                            
+                                            try await viewModel.performReconnect(decision: SucceedValidationDecision(
+                                                fingerprint: fingerprint, decision: .allow
+                                            ))
+                                        } catch {
+                                            print("재연결 시도 중 오류 발생: \(error)")
+                                        }
+                                    } else {
+                                        await viewModel.stopSession(force: true)
+                                    }
+                                }
+                            }
                         }
                     }
                 }

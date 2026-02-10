@@ -7,6 +7,7 @@
 import Foundation
 
 import AVFoundation
+import Security
 
 import SwiftUI
 import Combine
@@ -55,7 +56,7 @@ class SessionWindowViewModel: ObservableObject {
 
     private var autoHideTask: Task<Void, Never>?
 #endif
-
+    
     private var settingsStore: SettingsStore?
     private var settingsCancellables: Set<AnyCancellable> = []
     private var sessionCancellables: Set<AnyCancellable> = []
@@ -83,7 +84,11 @@ class SessionWindowViewModel: ObservableObject {
         }
     }
 
-    func startSession(endpoint: EndpointKind, settingsOverride: SessionSettings? = nil) async throws {
+    func startSession(
+        endpoint: EndpointKind,
+        settingsOverride: SessionSettings? = nil,
+        succeedValidationDecision: SucceedValidationDecision? = nil
+    ) async throws {
         if remoteSession != nil {
             await stopSession()
         }
@@ -115,7 +120,13 @@ class SessionWindowViewModel: ObservableObject {
         }
 
         let clientManager = NoctilucaClientManager.shared
-        let client = try await clientManager.createClient(to: String(host), port: port, settings: self.sessionSettings)
+        let client = try await clientManager.createClient(
+            to: String(host),
+            port: port,
+            settings: self.sessionSettings,
+        )
+        
+        client.succeedValidationDecision = succeedValidationDecision
 
         if let sessionSettings = self.sessionSettings {
             configureAuthCredentials(for: client, endpoint: endpoint, sessionSettings: sessionSettings)
@@ -128,6 +139,21 @@ class SessionWindowViewModel: ObservableObject {
             try await remoteSession.setup()
             try await remoteSession.startup()
         } catch {
+            // 인증서 검증 대기 상태인 경우 세션을 정리하지 않고 검증 시트를 표시
+            if client.isValidatingServerIdentity {
+                return
+            }
+            
+            /*
+            if let pending = client.pendingIdentityValidation {
+                remoteSession.presentIdentityValidation(
+                    identity: pending.identity,
+                    extraInfo: pending.extraInfo
+                )
+                return
+            }
+             */
+
             phase = .newConnection
             detachRemoteSession()
             await clientManager.killClient(id: client.id)
@@ -135,12 +161,17 @@ class SessionWindowViewModel: ObservableObject {
         }
     }
 
-    func stopSession() async {
+    func stopSession(force: Bool = false) async {
         guard let remoteSession else {
             return
         }
 
         let client = remoteSession.client
+        
+        if !force && client.isValidatingServerIdentity {
+            return
+        }
+
         detachRemoteSession()
 
         await NoctilucaClientManager.shared.killClient(id: client.id)
@@ -154,6 +185,7 @@ class SessionWindowViewModel: ObservableObject {
         isFullscreen = false
         hideFullscreenOverlay()
 #endif
+        
 
         phase = .newConnection
     }
@@ -175,6 +207,25 @@ class SessionWindowViewModel: ObservableObject {
 
     func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction) async {
         await remoteSession?.handleAuthChallengeResponse(action)
+    }
+    
+    func performReconnect(decision: SucceedValidationDecision) async throws {
+        remoteSession?.shouldPresentIdentityValidationSheet = false
+        
+        await self.cleanupForReconnect()
+        try await self.startSession(
+            endpoint: .quickConnect(endpointURL: self.endpointURL),
+            settingsOverride: self.sessionSettings,
+            succeedValidationDecision: decision
+        )
+    }
+
+    private func cleanupForReconnect() async {
+        guard let remoteSession else { return }
+        let client = remoteSession.client
+        detachRemoteSession()
+        await NoctilucaClientManager.shared.killClient(id: client.id)
+        // phase는 변경하지 않음 (.connecting 유지)
     }
 
     func handleClientPhaseChanged(_ phase: NoctilucaClientPhase) {
@@ -259,6 +310,7 @@ class SessionWindowViewModel: ObservableObject {
 
     private func attachRemoteSession(_ session: RemoteSession) {
         remoteSession = session
+        session.parent = Weak(self)
 
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()

@@ -85,7 +85,7 @@ struct NOCCertificateView: View {
 }
 #endif
 
-fileprivate extension Data {
+extension Data {
     func asFingerprintString() -> String {
         return self.map { String(format: "%02X", $0) }.joined(separator: ":")
     }
