@@ -246,41 +246,9 @@ public extension QUICServerIdentity {
         guard privateKeyStatus == errSecSuccess, privateKey != nil else {
             throw QUICServerIdentitySanityCheckError.privateKeyCopyFailed(privateKeyStatus)
         }
-
-        let policy = SecPolicyCreateSSL(true, nil)
-
-        var trust: SecTrust?
-        let trustCreationStatus = SecTrustCreateWithCertificates(certificate, policy, &trust)
-        guard trustCreationStatus == errSecSuccess, let trust else {
-            throw QUICServerIdentitySanityCheckError.trustCreationFailed(trustCreationStatus)
-        }
-
-        if strict {
-            // 시스템 트러스트 스토어를 기준으로 인증서를 검증합니다.
-        } else {
-            // self-signed 인증서도 허용하기 위해, 인증서를 Anchor로 추가합니다.
-            SecTrustSetAnchorCertificates(trust, [certificate] as CFArray)
-            SecTrustSetAnchorCertificatesOnly(trust, false)
-        }
-
-        if #available(macOS 10.15, *) {
-            var error: CFError?
-            let isTrusted = SecTrustEvaluateWithError(trust, &error)
-
-            if let error {
-                throw error
-            }
-
-            return isTrusted
-        } else {
-            var result = SecTrustResultType.invalid
-            let status = SecTrustEvaluate(trust, &result)
-            guard status == errSecSuccess else {
-                return false
-            }
-
-            return result == .unspecified || result == .proceed
-        }
+        
+        let trust = try SecTrust.create(leaf: certificate, allowSelfSigned: !strict)
+        return try trust.evaluate()
     }
 
     func identityInfo() async throws -> QUICServerIdentityInfo {
