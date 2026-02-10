@@ -54,6 +54,9 @@ class AudioProjectionSession: Identifiable {
         self.id = id
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel
+        
+        self.dataChannel?.delegate = self
+        self.dataChannel?.activate()
     }
 
     deinit {
