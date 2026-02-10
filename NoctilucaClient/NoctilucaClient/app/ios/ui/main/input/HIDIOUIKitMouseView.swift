@@ -136,6 +136,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     // MARK: - Touch Handling (Direct)
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        // Cancel any active inertia as soon as a finger touches the screen
+        stopMoveInertia()
+        stopScrollInertia()
+
         guard inputMode == .touch, let touch = touches.first, event?.allTouches?.count == 1 else {
             super.touchesBegan(touches, with: event)
             return
