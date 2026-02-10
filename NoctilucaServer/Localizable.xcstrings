@@ -20,6 +20,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "0.1.0-alpha1" : {
 
     },
@@ -97,6 +100,12 @@
     "Creative Commons Zero v1.0 Universal" : {
 
     },
+    "Debug" : {
+
+    },
+    "Error" : {
+
+    },
     "GNU General Public License v3.0" : {
 
     },
@@ -107,6 +116,9 @@
 
     },
     "HIDIO" : {
+
+    },
+    "Info" : {
 
     },
     "menu.quit" : {
@@ -616,7 +628,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Noctiluca Server는 QUIC 프로토콜을 기반으로 한 원격 제어 소프트웨어입니다.\n몇 가지 설정을 완료하면 바로 시작할 수 있습니다."
+            "value" : "Noctiluca Server는 Sirius 프로토콜을 기반으로 한 원격 제어 소프트웨어입니다.\n몇 가지 설정을 완료하면 바로 시작할 수 있습니다."
           }
         }
       }
@@ -1181,6 +1193,116 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "진단 정보 내보내기"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.enable_file_logging.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그를 ~/Library/Logs에 파일로 저장합니다."
+          }
+        }
+      }
+    },
+    "settings.misc.logging.enable_file_logging.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 로깅 활성화"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.enable_log_rotation.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그 파일이 일정 크기를 초과하면 자동으로 새 파일로 전환합니다."
+          }
+        }
+      }
+    },
+    "settings.misc.logging.enable_log_rotation.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그 로테이션 활성화"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.max_file_count.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 파일 수"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.max_file_size.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 파일 크기 (MB)"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.minimum_log_level.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최소 로그 레벨"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.open_log_folder.action" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Finder에서 열기"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.open_log_folder.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그 파일 위치"
+          }
+        }
+      }
+    },
+    "settings.misc.logging.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로깅"
           }
         }
       }
@@ -5127,6 +5249,12 @@
 
     },
     "test2" : {
+
+    },
+    "Trace" : {
+
+    },
+    "Warning" : {
 
     },
     "window.settings.title" : {
