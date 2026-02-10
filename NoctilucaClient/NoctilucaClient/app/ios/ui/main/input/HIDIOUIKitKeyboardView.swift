@@ -61,6 +61,7 @@ struct HIDIOUIKitKeyboardInputHost: View {
             HIDIOUIKitKeyboardInputView(
                 isFirstResponder: $isPresented,
                 compositingText: $compositingText,
+                keyboard: keyboard,
                 onInsertText: { text in
                     keyboard.handleInsertText(text)
                 },
@@ -190,6 +191,39 @@ private struct HIDIOUIKitKeyboardKeyButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - Input Accessory View (inputAccessoryView로 키보드 위에 modifier 툴바를 표시)
+
+final class HIDIOUIKitKeyboardAccessoryView: UIInputView {
+    private let hostingController: UIHostingController<HIDIOUIKitKeyboardHelperView>
+
+    init(keyboard: HIDIOUIKitKeyboard) {
+        let content = HIDIOUIKitKeyboardHelperView(keyboard: keyboard, isVisible: true)
+        self.hostingController = UIHostingController(rootView: content)
+
+        super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 48), inputViewStyle: .keyboard)
+
+        self.allowsSelfSizing = true
+
+        let hostView = hostingController.view!
+        hostView.translatesAutoresizingMaskIntoConstraints = false
+        hostView.backgroundColor = .clear
+        addSubview(hostView)
+
+        NSLayoutConstraint.activate([
+            hostView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            hostView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            hostView.topAnchor.constraint(equalTo: topAnchor),
+            hostView.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+// MARK: - Text Field
+
 final class HIDIOUIKitKeyboardTextField: UITextField {
     @Binding var compositingText: String
     
@@ -221,7 +255,8 @@ final class HIDIOUIKitKeyboardTextField: UITextField {
 struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
     @Binding var isFirstResponder: Bool
     @Binding var compositingText: String
-    
+
+    let keyboard: HIDIOUIKitKeyboard
     let onInsertText: (String) -> Void
     let onDeleteBackward: () -> Void
     let onReturnKey: () -> Void
@@ -259,6 +294,7 @@ struct HIDIOUIKitKeyboardInputView: UIViewRepresentable {
         textField.inputAssistantItem.leadingBarButtonGroups = []
         textField.inputAssistantItem.trailingBarButtonGroups = []
         textField.textContentType = .none
+        textField.inputAccessoryView = HIDIOUIKitKeyboardAccessoryView(keyboard: keyboard)
 
         textField.addTarget(
             context.coordinator,
