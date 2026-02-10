@@ -96,9 +96,8 @@ class ProjectionSession: Identifiable {
             case .frameSkipped:
                 recentEncodingFailure = true
             case .errorOccurred(let error):
-                // TODO: handle errors
                 self.logger.error("Encoder error occurred in projection session \(self.id): \(error)")
-                return
+                throw error
             case .stopped:
                 return
             }
@@ -135,6 +134,19 @@ class ProjectionSession: Identifiable {
             
             try await self.dataChannel.send(videoFrame: frame)
         }
+    }
+
+    private func handleLoopFailure(loopName: String, error: any Error) {
+        guard !(error is CancellationError) else {
+            return
+        }
+
+        self.logger.warning("Projection session \(self.id) \(loopName) loop failed: \(error)")
+
+        self.dataChannel.projectionDelegate?.projectionDataChannel(
+            self.dataChannel,
+            didEncounterError: error
+        )
     }
     
     func handlePerformanceReport(_ report: ProjectionPerformanceReport) {
@@ -211,12 +223,20 @@ class ProjectionSession: Identifiable {
         
         self.encoderEventLoopTask = Task { [weak self] in
             guard let self else { return }
-            try await self.encoderEventLoopMain()
+            do {
+                try await self.encoderEventLoopMain()
+            } catch {
+                self.handleLoopFailure(loopName: "encoder", error: error)
+            }
         }
 
         self.senderEventLoopTask = Task { [weak self] in
             guard let self else { return }
-            try await self.senderEventLoopMain()
+            do {
+                try await self.senderEventLoopMain()
+            } catch {
+                self.handleLoopFailure(loopName: "sender", error: error)
+            }
         }
     }
     

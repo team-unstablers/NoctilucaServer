@@ -53,7 +53,7 @@ class AudioProjectionSession: Identifiable {
                 try await processEncodedFrame(encodedFrame)
             case .errorOccurred(let error):
                 self.logger.error("Encoder error occurred in audio projection session \(self.id): \(error)")
-                return
+                throw error
             case .stopped:
                 return
             }
@@ -75,6 +75,19 @@ class AudioProjectionSession: Identifiable {
             
             try await self.dataChannel.send(audioFrame: frame)
         }
+    }
+
+    private func handleLoopFailure(loopName: String, error: any Error) {
+        guard !(error is CancellationError) else {
+            return
+        }
+
+        self.logger.warning("Audio projection session \(self.id) \(loopName) loop failed: \(error)")
+
+        self.dataChannel.projectionDelegate?.projectionDataChannel(
+            self.dataChannel,
+            didEncounterError: error
+        )
     }
 
     func prepare(_ request: AudioProjectionRequest, codec: SiriusKit.AudioCodec) async throws {
@@ -138,12 +151,20 @@ class AudioProjectionSession: Identifiable {
 
         self.encoderEventLoopTask = Task { [weak self] in
             guard let self else { return }
-            try await self.encoderEventLoopMain()
+            do {
+                try await self.encoderEventLoopMain()
+            } catch {
+                self.handleLoopFailure(loopName: "encoder", error: error)
+            }
         }
         
         self.senderEventLoopTask = Task { [weak self] in
             guard let self else { return }
-            try await self.senderEventLoopMain()
+            do {
+                try await self.senderEventLoopMain()
+            } catch {
+                self.handleLoopFailure(loopName: "sender", error: error)
+            }
         }
     }
 
