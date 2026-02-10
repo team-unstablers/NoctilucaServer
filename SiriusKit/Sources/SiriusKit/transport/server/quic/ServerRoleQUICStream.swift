@@ -41,7 +41,8 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
         return await withCheckedContinuation { continuation in
             connection.send(content: data, completion: .contentProcessed { error in
-                if let error = error {
+                if error != nil {
+                    self.connection.cancel()
                     continuation.resume(returning: .failure(.notImplemented)) // Map error appropriately
                 } else {
                     continuation.resume(returning: .success(UInt32(data.count)))

@@ -51,6 +51,9 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
             try await quicStream.send(data)
             return .success(UInt32(data.count))
         } catch {
+            Task { [weak self] in
+                try? await self?.close()
+            }
             return .failure(.notImplemented) // TODO: Map error appropriately
         }
     }
