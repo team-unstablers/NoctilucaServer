@@ -50,6 +50,20 @@ struct MainWindowRemoteSessionView: View {
                     }
             }
         }
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            subscription = nil
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            if subscription == nil,
+               case .displayID(let displayID) = sourceDescriptor,
+               displayID != -1 {
+                Task {
+                    try? await updateProjectionTarget(displayID)
+                }
+            }
+        }
+        #endif
         .sheet(isPresented: $viewModel.shouldPresentDisplaySwitchSheet) {
             if case .displayID(let currentActive) = sourceDescriptor {
                 let displayLayoutManager = projection.channel.displayLayoutManager
