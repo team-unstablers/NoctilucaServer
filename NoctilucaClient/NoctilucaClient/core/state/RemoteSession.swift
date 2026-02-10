@@ -6,6 +6,7 @@
 //
 import Foundation
 import Combine
+import Security
 
 import SiriusKitClient
 
@@ -13,6 +14,8 @@ import SiriusKitClient
 class RemoteSession: ObservableObject {
     private let logger = NoctilucaLogger(category: "RemoteSession")
     private var eventSubscription: AnyCancellable? = nil
+    
+    var parent: Weak<SessionWindowViewModel>?
 
     private(set) var client: NoctilucaClient
 
@@ -24,6 +27,15 @@ class RemoteSession: ObservableObject {
 
     @Published
     var shouldPresentAuthChallengeSheet: Bool = false
+
+    @Published
+    var shouldPresentIdentityValidationSheet: Bool = false
+
+    @Published
+    private(set) var pendingServerIdentity: ServerIdentity? = nil
+
+    @Published
+    private(set) var identityValidationExtraInfo: ServerIdentityValidationSheetViewExtraInfo = .none
 
     @Published
     private(set) var pingRTT: TimeInterval? = nil
@@ -130,7 +142,50 @@ class RemoteSession: ObservableObject {
         case .receivedGoodbye(let code, let reason):
             // TODO
             break
+
+        case .serverIdentityValidationNeeded(let identity):
+            Task {
+                do {
+                    try await self.handleIdentityValidationRequest(identity: identity)
+                } catch {
+                    // TODO: 에러 처리
+                    logger.error("Failed to handle identity validation request: \(error.localizedDescription)")
+                }
+            }
         }
+    }
+
+    func handleIdentityValidationRequest(identity: ServerIdentity) async throws {
+        guard let parent = self.parent?.ref else {
+            return
+        }
+        
+        let endpointURL = parent.endpointURL
+        var extraInfo: ServerIdentityValidationSheetViewExtraInfo = .none
+        
+        if let knownHost = try await KeychainBackedKnownHostStore.shared.getKnownHost(endpoint: endpointURL) {
+            let fingerprint = try identity.fingerprint()
+            
+            if knownHost.fingerprint == fingerprint {
+                // 이미 신뢰된 호스트임
+                logger.info("Server identity matches known host. Automatically trusting.")
+                try await parent.performReconnect(decision: SucceedValidationDecision(fingerprint: fingerprint, decision: .allow))
+                
+                return
+            } else {
+                // 지문 불일치 일어남, 사용자에게 경고해야 함.
+                extraInfo = .fingerprintMismatch(
+                    expectedFingerprint: knownHost.fingerprint.asFingerprintString(),
+                    actualFingerprint: fingerprint.asFingerprintString()
+                )
+                
+                // UI 프레젠테이션으로 넘어간다
+            }
+        }
+        
+        self.pendingServerIdentity = identity
+        self.identityValidationExtraInfo = extraInfo
+        self.shouldPresentIdentityValidationSheet = true
     }
 
     func handleAuthChallengeResponse(_ action: AuthChallengeSheetAction) async {

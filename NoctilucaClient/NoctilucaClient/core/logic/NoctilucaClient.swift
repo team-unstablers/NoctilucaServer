@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import Security
 
 import SiriusKitClient
 
@@ -71,6 +72,11 @@ enum NoctilucaClientPhase {
     }
 }
 
+struct SucceedValidationDecision {
+    let fingerprint: Data
+    let decision: ServerIdentityTrustDecision
+}
+
 enum NoctilucaClientUIEvent: Sendable {
     case receivedAuthChallenge(AuthChallenge)
     case receivedAuthResponse(AuthResponse)
@@ -79,9 +85,12 @@ enum NoctilucaClientUIEvent: Sendable {
     case errorOccurred(NoctilucaClientError)
 
     case pingRTTUpdated(TimeInterval)
-   
+
     case channelCreated(SiriusFeature, Channel)
     case channelClosed(UUID)
+
+    /// 서버 아이덴티티 검증이 필요합니다.
+    case serverIdentityValidationNeeded(ServerIdentity)
 }
 
 struct InputWarning: Sendable, Equatable {
@@ -96,7 +105,7 @@ struct InputWarning: Sendable, Equatable {
 }
 
 class NoctilucaClient: ObservableObject {
-    let logger = SiriusLogger(category: "NoctilucaClient", subsystem: "app.noctiluca.client")
+    let logger = SiriusLogger(category: "NoctilucaClient", subsystem: "app.noctiluca.client.logic.NoctilucaClient")
     
     let id: UUID = UUID()
 
@@ -127,7 +136,13 @@ class NoctilucaClient: ObservableObject {
     var pendingPointerInputMode: AppSettings.PointerInputMode = .automatic
 
     var sessionSettings: SessionSettings? = nil
-
+    
+    // 기존 접속으로부터 승계된 서버 아이덴티티 검증 정보
+    var succeedValidationDecision: SucceedValidationDecision? = nil
+    
+    // 디시전 UI를 띄우기 전에 접속 종료 처리되는 것을 막기 위한 hacky한 플래그
+    private(set) var isValidatingServerIdentity: Bool = false
+    
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {
         didSet {
@@ -152,7 +167,57 @@ class NoctilucaClient: ObservableObject {
         authenticator.configureAutoCredentials(sessionEntries: sessionEntries, globalEntries: globalEntries)
     }
     
+    private func setupValidationPolicy() {
+        let policy = sessionSettings?.security.tlsValidationPolicy ?? SettingsStore.shared.settings.security.tlsValidationPolicy
+        
+        let validationBlock: ServerIdentityValidationBlock = { [weak self] identity in
+            /// CONTEXT: 이 validation block은 시스템 트러스트 스토어 검증이 실패한 것입니다.
+            guard let self = self else {
+                return .deny
+            }
+            
+            self.isValidatingServerIdentity = true
+            
+            // 과거로부터 '승계된' 디시전 사항이 있는지 확인합니다.
+            guard let succeedDecision = self.succeedValidationDecision else {
+                // 만약 없다면, 새로운 접속입니다. '이 인증서 믿을 수 없는데, 그래도 접속할래?' 따위의 UI를 표시하고, 접속을 끊어야 합니다.
+                self.uiEvents.send(.serverIdentityValidationNeeded(identity))
+                return .deny
+            }
+            
+            // 승계된 디시전이 있습니다.
+            defer { self.isValidatingServerIdentity = false }
+
+            do {
+                // 최소한의 검증: UI를 표시해서 디시전을 받는 그 짧은 사이에도 인증서는 바꿔 끼워질 수 있습니다.
+                //              모든 것을 믿을 수 없는 어지러운 세상(乱世) 입니다.
+                let currentFingerprint = try identity.fingerprint()
+                guard succeedDecision.fingerprint == currentFingerprint else {
+                    // TODO: 이 호스트는 수상한 행동을 합니다. 사용자에게 정말 위험하니 조심하라고 알리는 게 좋을 것 같습니다.
+                    return .deny
+                }
+                
+                // 승계된 디시전이 유효합니다. 그대로 따릅니다.
+                return succeedDecision.decision
+            } catch {
+                // 서버 아이덴티티를 검증하는 도중에 오류가 발생했습니다. 보안을 위해 거부합니다.
+                return .deny
+            }
+        }
+        
+        switch policy {
+        case .default:
+            session.identityValidationPolicy = .systemAndAppValidation(validationBlock)
+        case .strict:
+            session.identityValidationPolicy = .systemOnly
+        case .unsafe:
+            session.identityValidationPolicy = .dangerouslyAllowAlways
+        }
+    }
+    
     func setup() async throws {
+        self.setupValidationPolicy()
+        
         await session.channelManager.setDelegate(self)
         try await session.setup()
     }
@@ -332,7 +397,7 @@ extension NoctilucaClient: SiriusClientDelegate {
             await self.close()
         }
     }
-    
+
     func siriusClient(_ client: SiriusClient, didCreateMainChannel mainChannel: MainChannel) {
         self.mainChannel = mainChannel
         self.eventLoopTask = Task {
@@ -341,7 +406,7 @@ extension NoctilucaClient: SiriusClientDelegate {
         self.pingTask = Task {
             await pingLoop()
         }
-        
+
         Task {
             try await self.sendClientHello()
         }
