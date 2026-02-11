@@ -41,7 +41,7 @@ extension EventInjector {
             return
         }
         
-        Task { @MainActor in
+        DispatchQueue.main.async {
             CursorStateHolder.shared.updateCursorPosition()
         }
     }

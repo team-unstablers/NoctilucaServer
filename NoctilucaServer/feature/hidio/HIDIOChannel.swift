@@ -13,6 +13,8 @@ class HIDIOChannel: Channel {
     let eventInjector = EventInjector()
     let cursorStateHolder = CursorStateHolder.shared
     
+    override var serviceClass: ServiceClass { .userInput }
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
         

@@ -10,6 +10,8 @@ import AppKit
 
 class ProjectionChannel: Channel {
     let logger = NoctilucaLogger(category: "ProjectionChannel")
+    
+    override var serviceClass: ServiceClass { .userInput }
 
     private let cursorStateHolder = CursorStateHolder.shared
     private var subscription: CursorEventSubscription? = nil

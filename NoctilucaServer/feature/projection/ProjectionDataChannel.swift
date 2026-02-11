@@ -17,6 +17,8 @@ protocol ProjectionDataChannelDelegate: AnyObject {
 class ProjectionDataChannel: Channel {
     weak var projectionDelegate: ProjectionDataChannelDelegate?
 
+    override var serviceClass: ServiceClass { .realtimeVideo }
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
     }
