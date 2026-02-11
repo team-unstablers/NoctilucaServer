@@ -81,6 +81,14 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         settings.keepAliveIntervalMs = 15000
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
+        
+        settings.pacingEnabled = true
+        
+        settings.streamRecvWindowDefault = 2 * 1024 * 1024
+        settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
+        settings.streamRecvWindowBidiRemoteDefault = 2 * 1024 * 1024
+        settings.streamRecvWindowUnidiDefault = 512 * 1024
+        settings.connFlowControlWindow = 16 * 1024 * 1024
 
         let configuration = try QuicConfiguration(
             registration: registration,

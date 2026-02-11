@@ -40,7 +40,7 @@ actor ServerRoleQUICRootTransport: ServerRoleRootTransport {
             do {
                 let listener = try NWListener(using: parameters, on: port)
                 listener.stateUpdateHandler = { newState in
-                    Task {
+                    Task.detached {
                         switch newState {
                         case .ready:
                             continuation.resume()
@@ -60,13 +60,13 @@ actor ServerRoleQUICRootTransport: ServerRoleRootTransport {
                 }
 
                 listener.newConnectionGroupHandler = { [weak self] connectionGroup in
-                    Task {
+                    Task.detached {
                         print("New connection received from: \(connectionGroup.debugDescription))")
                         await self?.handleNewConnectionGroup(connectionGroup: connectionGroup)
                     }
                 }
 
-                listener.start(queue: .main)
+                listener.start(queue: DispatchQueue(label: "sirius.quic.listener", qos: .userInitiated))
                 self.listener = listener
             } catch {
                 continuation.resume(throwing: error)
