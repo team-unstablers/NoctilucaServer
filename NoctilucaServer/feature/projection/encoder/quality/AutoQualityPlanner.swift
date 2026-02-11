@@ -29,9 +29,13 @@ extension AutoQualityPreset {
     
     // FPS 스케일링 로직 유지 (60fps 기준)
     private static func calculateFpsScale(_ fps: Float) -> Double {
+        /*
         let baseFps: Double = 60.0
         let currentFps = Double(max(30, fps))
         return currentFps / baseFps
+         */
+        
+        return 1
     }
     
     static func h264Preset(resolution: CGSize, frameRate: Float) -> AutoQualityPreset {

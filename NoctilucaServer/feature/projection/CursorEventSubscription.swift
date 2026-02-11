@@ -30,39 +30,39 @@ class CursorEventSubscription {
 
     @MainActor
     func setup() {
-        // cursorState 소비 - AsyncAlgorithms throttle 적용 (60Hz = ~16.67ms)
-        self.stateTask = Task { [weak self] in
-            guard let self = self else { return }
+        // MainActor에서 스트림과 초기값을 캡처한 뒤, detached Task로 이벤트 루프 실행
+        let cursorStateStream = self.cursorStateHolder.makeCursorStateStream()
+        let cursorHashStream = self.cursorStateHolder.makeCursorHashStream()
+        let initialCursorState = self.cursorStateHolder.cursorState
 
-            let throttled = self.cursorStateHolder.makeCursorStateStream()
-                ._throttle(for: .milliseconds(1000 / 60), latest: true)
+        // cursorState 소비 - AsyncAlgorithms throttle 적용 (60Hz = ~16.67ms)
+        self.stateTask = Task.detached(priority: .userInitiated) { [weak self] in
+            let throttled = cursorStateStream
+                // ._throttle(for: .milliseconds(1000 / 60), latest: true)
 
             for await state in throttled {
-                guard let channel = self.channel else { continue }
+                guard let channel = self?.channel else { continue }
                 try? await channel.sendCursorPositionEvent(state)
             }
         }
 
         // cursorHash 소비 (throttle 없음)
-        self.hashTask = Task { [weak self] in
-            guard let self = self else { return }
-
-            for await _ in self.cursorStateHolder.makeCursorHashStream() {
-                guard let channel = self.channel else { continue }
+        self.hashTask = Task.detached(priority: .userInitiated) { [weak self] in
+            for await _ in cursorHashStream {
+                guard let channel = self?.channel else { continue }
                 do {
                     try await channel.sendCursorImageEvent()
                 } catch {
-                    self.logger.error("Failed to send cursor image update: \(error)")
+                    self?.logger.error("Failed to send cursor image update: \(error)")
                 }
             }
         }
-        
-        Task { [weak self] in
-            guard let self else { return }
-            try? await self.channel?.sendCursorImageEvent()
 
-            if let state = self.cursorStateHolder.cursorState {
-                try? await self.channel?.sendCursorPositionEvent(state)
+        Task.detached { [weak self] in
+            try? await self?.channel?.sendCursorImageEvent()
+
+            if let initialCursorState {
+                try? await self?.channel?.sendCursorPositionEvent(initialCursorState)
             }
         }
     }

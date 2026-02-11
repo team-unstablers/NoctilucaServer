@@ -41,8 +41,8 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     fileprivate let continuation: AsyncStream<VideoEncoderEvent>.Continuation
     
     override init() {
-        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.vt.worker")
-        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.vt.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.vt.worker", qos: .userInitiated)
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.vt.callback", qos: .userInitiated)
         self.targetBitrateKbps = defaultTargetBitrateKbps
         self.maxBitrateKbps = defaultMaxBitrateKbps
         
@@ -456,6 +456,9 @@ private extension VTVideoEncoder {
         setProperty(session, key: kVTCompressionPropertyKey_RealTime, value: kCFBooleanTrue)
         setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
         
+        // FIXME: 이거 제대로 된 값 설정해야됨
+        setProperty(session, key: kVTCompressionPropertyKey_MaxAllowedFrameQP, value: 32 as CFNumber)
+        
         // setProperty(session, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Normal)
         
         /*
@@ -500,6 +503,7 @@ private extension VTVideoEncoder {
     }
     
     func applyQualitySettings(_ session: VTCompressionSession) throws {
+        /*
         if #available(macOS 26.0, *) {
             isVBRMode = true
             logger.info("Using VBR rate control mode")
@@ -510,13 +514,15 @@ private extension VTVideoEncoder {
                 applyVBVMaxBitrate(maxBitrateKbps, to: session)
             }
         } else {
-            isVBRMode = false
-            if targetBitrateKbps > 0 {
-                applyAverageBitrate(targetBitrateKbps, to: session)
-            }
-            if maxBitrateKbps > 0 {
-                applyMaxBitrate(maxBitrateKbps, to: session)
-            }
+            
+        }
+         */
+        isVBRMode = false
+        if targetBitrateKbps > 0 {
+            applyAverageBitrate(targetBitrateKbps, to: session)
+        }
+        if maxBitrateKbps > 0 {
+            applyMaxBitrate(maxBitrateKbps, to: session)
         }
 
         /*

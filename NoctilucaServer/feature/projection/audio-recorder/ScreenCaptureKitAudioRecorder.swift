@@ -208,8 +208,7 @@ class ScreenCaptureKitAudioRecorder: NSObject, AudioRecorder {
         
         self.stream = stream
         
-        // FIXME: 적절한 핸들러 큐를 설정해야 함
-        try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: .global(qos: .userInteractive))
+        try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: self.queue)
     }
     
     func start() async throws {

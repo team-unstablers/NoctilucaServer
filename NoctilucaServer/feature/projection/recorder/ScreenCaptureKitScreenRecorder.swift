@@ -286,8 +286,7 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
         
         self.stream = stream
         
-        // FIXME: 적절한 핸들러 큐를 설정해야 함
-        try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: .global(qos: .userInteractive))
+        try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: self.queue)
     }
     
     func start() async throws {

@@ -16,7 +16,10 @@ import SiriusKit
 class AudioProjectionSession: Identifiable {
     private let logger = NoctilucaLogger(category: "AudioProjectionSession")
 
-    private let recorderQueue: DispatchQueue = .global(qos: .userInteractive)
+    private let recorderQueue = DispatchQueue(
+        label: "app.noctiluca.server.projection.recorder.audio",
+        qos: .userInitiated
+    )
 
     let id: UUID
     let dataChannel: ProjectionDataChannel
@@ -149,7 +152,7 @@ class AudioProjectionSession: Identifiable {
             inputFormatDescription: nil
         ))
 
-        self.encoderEventLoopTask = Task { [weak self] in
+        self.encoderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             do {
                 try await self.encoderEventLoopMain()
@@ -157,8 +160,8 @@ class AudioProjectionSession: Identifiable {
                 self.handleLoopFailure(loopName: "encoder", error: error)
             }
         }
-        
-        self.senderEventLoopTask = Task { [weak self] in
+
+        self.senderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             do {
                 try await self.senderEventLoopMain()

@@ -34,8 +34,8 @@ final class WebPVideoEncoder: VideoEncoder {
     private var frameTileDiffer: FrameTileDiffer!
 
     init() {
-        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.webp.worker")
-        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.webp.callback")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.webp.worker", qos: .userInitiated)
+        self.callbackQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.webp.callback", qos: .userInitiated)
         if let device = MTLCreateSystemDefaultDevice() {
             self.ciContext = CIContext(mtlDevice: device)
         } else {
@@ -152,16 +152,18 @@ final class WebPVideoEncoder: VideoEncoder {
             throw error
         }
 
-        do {
-            try workerQueue.sync {
-                // 인코더 레벨 프레임 레이트 제한
-                let now = CFAbsoluteTimeGetCurrent()
-                let minInterval = 1.0 / Double(maxEncoderFrameRate)
-                if now - lastEncodeTime < minInterval {
-                    return
-                }
-                lastEncodeTime = now
+        workerQueue.async { [self] in
+            guard self.isStarted else { return }
 
+            // 인코더 레벨 프레임 레이트 제한
+            let now = CFAbsoluteTimeGetCurrent()
+            let minInterval = 1.0 / Double(maxEncoderFrameRate)
+            if now - lastEncodeTime < minInterval {
+                return
+            }
+            lastEncodeTime = now
+
+            do {
                 // RGB888 or RGB565
                 let pixelBuffer: CVPixelBuffer
                 if let imageBuffer = sampleBuffer.imageBuffer {
@@ -272,10 +274,9 @@ final class WebPVideoEncoder: VideoEncoder {
                 )
                 let frame = EncodedFrame(header: consume frameHeader, data: consume frameData, formatDescription: nil)
                 continuation.yield(with: .success(.frameEncoded(consume frame)))
+            } catch {
+                continuation.yield(with: .success(.errorOccurred(error)))
             }
-        } catch {
-            continuation.yield(with: .success(.errorOccurred(error)))
-            throw error
         }
     }
 

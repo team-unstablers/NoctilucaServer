@@ -40,7 +40,7 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
     private let continuation: AsyncStream<AudioEncoderEvent>.Continuation
 
     override init() {
-        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.opus.worker")
+        self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.opus.worker", qos: .userInitiated)
 
         var continuationLocal: AsyncStream<AudioEncoderEvent>.Continuation!
         self.events = AsyncStream<AudioEncoderEvent>(AudioEncoderEvent.self, bufferingPolicy: .unbounded) { continuation in
