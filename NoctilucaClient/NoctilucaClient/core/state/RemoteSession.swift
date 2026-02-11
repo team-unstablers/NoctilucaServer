@@ -122,7 +122,7 @@ class RemoteSession: ObservableObject {
             self.shouldPresentAuthChallengeSheet = false
 
         case .pingRTTUpdated(let rtt):
-            // self.pingRTT = rtt
+            self.pingRTT = rtt
             break
             
         /*
