@@ -82,14 +82,17 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
         
-        settings.pacingEnabled = true
+        settings.pacingEnabled = false
         
         settings.streamRecvWindowDefault = 2 * 1024 * 1024
         settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
         settings.streamRecvWindowBidiRemoteDefault = 2 * 1024 * 1024
         settings.streamRecvWindowUnidiDefault = 512 * 1024
         settings.connFlowControlWindow = 16 * 1024 * 1024
-
+        settings.sendBufferingEnabled = false
+        
+        settings.ecnEnabled = true
+        
         let configuration = try QuicConfiguration(
             registration: registration,
             alpnBuffers: [alpn.rawValue],
@@ -314,8 +317,10 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
             case .resumptionTicketReceived(let ticket):
                 self.logger.info("Received resumption ticket of size: \(ticket.count) bytes")
-                // 여기서 말하는 재접속은 'connection migration'이 아닌, 완전한 재접속을 의미하는 듯 하다
-                // TODO: 다음 접속에 재사용할 수 있도록 인터페이스를 제공한다
+                
+                Task {
+                    try? await self.connection?.setResumptionTicket(ticket)
+                }
 
             default:
                 break

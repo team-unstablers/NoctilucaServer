@@ -18,7 +18,8 @@ class ProjectionSession: Identifiable {
     
     private let recorderQueue = DispatchQueue(
         label: "app.noctiluca.server.projection.recorder.video",
-        qos: .userInitiated
+        // 가장 높은 우선순위
+        qos: .userInteractive
     )
     
     let id: UUID

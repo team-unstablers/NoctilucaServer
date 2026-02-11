@@ -400,14 +400,14 @@ extension NoctilucaClient: SiriusClientDelegate {
 
     func siriusClient(_ client: SiriusClient, didCreateMainChannel mainChannel: MainChannel) {
         self.mainChannel = mainChannel
-        self.eventLoopTask = Task {
-            await mainChannelEventLoop()
+        self.eventLoopTask = Task.detached(priority: .userInitiated) {
+            await self.mainChannelEventLoop()
         }
-        self.pingTask = Task {
-            await pingLoop()
+        self.pingTask = Task.detached(priority: .userInitiated) {
+            await self.pingLoop()
         }
 
-        Task {
+        Task.detached {
             try await self.sendClientHello()
         }
     }

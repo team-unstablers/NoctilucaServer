@@ -96,7 +96,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         settings.sendBufferingEnabled = true
         settings.serverResumptionLevel = UInt8(Int(exactly: QUIC_SERVER_RESUME_AND_ZERORTT.rawValue)!)
         
-        settings.pacingEnabled = true
+        settings.pacingEnabled = false
         
         settings.streamRecvWindowDefault = 2 * 1024 * 1024
         settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
@@ -104,6 +104,8 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         settings.streamRecvWindowUnidiDefault = 512 * 1024
         settings.connFlowControlWindow = 16 * 1024 * 1024
         
+        settings.ecnEnabled = true
+
 
         do {
             self.configuration = try QuicConfiguration(
