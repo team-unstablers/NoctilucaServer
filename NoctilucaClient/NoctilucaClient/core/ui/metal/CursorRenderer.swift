@@ -1,5 +1,6 @@
 import MetalKit
 import CoreGraphics
+import Combine
 
 class CursorRenderer: NSObject, MTKViewDelegate {
     private let device: MTLDevice
@@ -7,7 +8,7 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     private var pipelineState: MTLRenderPipelineState?
     private var vertexBuffer: MTLBuffer?
     private var samplerState: MTLSamplerState?
-    
+
     // 현재 커서 상태 캐싱
     private var currentTexture: MTLTexture?
     private var currentPosition: CGPoint = .zero
@@ -19,9 +20,14 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     // displayID 기반 visibility (SwiftUI .opacity() 대체)
     private var targetDisplayID: Int = -1
     private var currentDisplayID: Int? = nil
-    
+
     private let textureLoader: MTKTextureLoader
-    
+
+    // Combine 기반 직접 구독 (SwiftUI 뷰 업데이트 파이프라인 우회)
+    private weak var boundView: MTKView?
+    private weak var observedState: RemoteSession.CursorState?
+    private var stateSubscription: AnyCancellable?
+
     // Quad Vertices (x, y, u, v) - (0,0) ~ (1,1) 범위의 사각형
     private let vertexData: [Float] = [
         0.0, 0.0, 0.0, 0.0, // Top-Left
@@ -29,18 +35,18 @@ class CursorRenderer: NSObject, MTKViewDelegate {
         1.0, 0.0, 1.0, 0.0, // Top-Right
         1.0, 1.0, 1.0, 1.0  // Bottom-Right
     ]
-    
+
     // 이전 커서 이미지 ID (중복 로드 방지용)
     private var lastCursorImageID: UInt64? = nil
-    
+
     init?(device: MTLDevice) {
         self.device = device
         guard let queue = device.makeCommandQueue() else { return nil }
         self.commandQueue = queue
         self.textureLoader = MTKTextureLoader(device: device)
-        
+
         super.init()
-        
+
         setupPipeline()
         setupBuffers()
         setupSampler()
@@ -85,9 +91,38 @@ class CursorRenderer: NSObject, MTKViewDelegate {
         samplerState = device.makeSamplerState(descriptor: descriptor)
     }
     
+    // MARK: - Combine Binding (SwiftUI 우회)
+
+    /// CursorState를 Combine으로 직접 구독하여 SwiftUI 뷰 업데이트 파이프라인을 우회합니다.
+    func bind(to view: MTKView, cursorState: RemoteSession.CursorState, sourceSize: CGSize, targetDisplayID: Int) {
+        self.boundView = view
+        self.observedState = cursorState
+
+        stateSubscription?.cancel()
+        stateSubscription = cursorState.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncCursorState()
+            }
+
+        // 초기 동기화
+        updateCursorState(cursorState, sourceSize: sourceSize, targetDisplayID: targetDisplayID, in: view)
+    }
+
+    /// sourceSize/targetDisplayID 변경 시 호출 (SwiftUI updateNSView/updateUIView에서 사용)
+    func updateSourceParameters(sourceSize: CGSize, targetDisplayID: Int) {
+        guard let view = boundView, let state = observedState else { return }
+        updateCursorState(state, sourceSize: sourceSize, targetDisplayID: targetDisplayID, in: view)
+    }
+
+    private func syncCursorState() {
+        guard let view = boundView, let state = observedState else { return }
+        updateCursorState(state, sourceSize: currentSourceSize, targetDisplayID: targetDisplayID, in: view)
+    }
+
     // MARK: - Update Logic (Event Driven)
-    
-    func updateCursorState(_ state: RemoteSession.CursorState, sourceSize: CGSize, targetDisplayID: Int, in view: MTKView) {
+
+    private func updateCursorState(_ state: RemoteSession.CursorState, sourceSize: CGSize, targetDisplayID: Int, in view: MTKView) {
         var needsRedraw = false
 
         // targetDisplayID 변경 감지

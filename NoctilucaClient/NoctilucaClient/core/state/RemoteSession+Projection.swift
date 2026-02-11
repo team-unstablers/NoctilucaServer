@@ -104,7 +104,7 @@ extension RemoteSession {
         
         private func subscribeEvents() {
             self.eventSubscription = channel.events
-                .receive(on: RunLoop.main)
+                // .receive(on: RunLoop.main)
                 .sink { [weak self] event in
                     self?.handleEvent(event)
                 }
@@ -134,10 +134,45 @@ extension RemoteSession {
                 self.audioSessions.removeValue(forKey: sessionID)
 
             case .cursorMoved(let moveEvent):
-                self.handleCursorMoveEvent(moveEvent)
+                DispatchQueue.main.async {
+                    self.handleCursorMoveEvent(moveEvent)
+                }
             case .cursorImageChanged(let imageEvent):
-                Task { @MainActor in
-                    self.handleCursorImageEvent(imageEvent)
+                Task.detached { [weak self] in
+                    guard let self else { return }
+
+                    // 캐시 확인 (MainActor 불필요 — cache 읽기는 non-isolated)
+                    if let cachedImage = self.cursorImageCacheManager.cache[imageEvent.cursorType] {
+                        await MainActor.run {
+                            self.cursorState.image = cachedImage
+                        }
+                        return
+                    }
+
+                    // PNG 디코딩을 백그라운드에서 수행
+                    guard let imageData = imageEvent.imageData,
+                          let dataProvider = CGDataProvider(data: imageData as CFData),
+                          let image = CGImage(
+                              pngDataProviderSource: dataProvider,
+                              decode: nil,
+                              shouldInterpolate: true,
+                              intent: .defaultIntent
+                          ) else {
+                        return
+                    }
+
+                    let cursorImage = CursorImage(
+                        id: imageEvent.cursorType,
+                        image: image,
+                        size: imageEvent.size.cgSize,
+                        hotspot: imageEvent.hotspot.cgPoint
+                    )
+
+                    // UI 업데이트만 MainActor에서 수행
+                    await MainActor.run {
+                        self.cursorImageCacheManager.updateCache(cursorImage)
+                        self.cursorState.image = cursorImage
+                    }
                 }
             }
         }

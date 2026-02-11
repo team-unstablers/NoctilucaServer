@@ -69,9 +69,9 @@ class RemoteSession: ObservableObject {
     @MainActor
     deinit {
         self.unsubscribeClientEvents()
-        
+
         let client = self.client
-        Task {
+        Task.detached {
             await client.close()
         }
     }
@@ -122,7 +122,8 @@ class RemoteSession: ObservableObject {
             self.shouldPresentAuthChallengeSheet = false
 
         case .pingRTTUpdated(let rtt):
-            self.pingRTT = rtt
+            // self.pingRTT = rtt
+            break
             
         /*
         case .inputWarningUpdated(let warning):
@@ -214,9 +215,9 @@ class RemoteSession: ObservableObject {
             guard let projectionChannel = channel as? ProjectionChannel else {
                 return
             }
-            
+
             self.projection = Projection(self, channel: projectionChannel)
-            Task { [weak self] in
+            Task.detached { [weak self] in
                 try? await self?.projection?.startAudioProjection()
             }
             
