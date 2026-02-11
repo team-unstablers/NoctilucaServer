@@ -41,6 +41,8 @@ enum ProjectionChannelEvent: Sendable {
 
 class ProjectionChannel: Channel {
     let logger = NoctilucaLogger(category: "ProjectionChannel")
+    
+    override var serviceClass: ServiceClass { .userInput }
 
     /// Request ID 생성을 위한 atomic 카운터
     private let requestCounter = ManagedAtomic<UInt64>(0)

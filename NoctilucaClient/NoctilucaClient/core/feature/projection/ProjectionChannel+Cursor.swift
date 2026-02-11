@@ -26,7 +26,6 @@ extension ProjectionChannel {
         }
     }
     
-    @MainActor
     func handleCursorMoveEvent(_ event: CursorMoveEvent) {
         self.events.send(.cursorMoved(event))
     }

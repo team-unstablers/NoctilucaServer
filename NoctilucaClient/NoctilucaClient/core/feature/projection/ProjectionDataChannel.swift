@@ -41,6 +41,7 @@ extension ProjectionDataChannelDelegate {
 class ProjectionDataChannel: Channel {
     private let logger = SiriusLogger(category: "ProjectionDataChannel", subsystem: "app.noctiluca.client")
 
+    override var serviceClass: ServiceClass { .realtimeVideo }
     override var requiresExplicitActivation: Bool { true }
 
     weak var delegate: ProjectionDataChannelDelegate?

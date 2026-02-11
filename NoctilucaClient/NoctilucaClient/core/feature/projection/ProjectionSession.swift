@@ -136,7 +136,6 @@ class ProjectionSession: Identifiable {
     }
 
     deinit {
-        performanceReporter?.stop()
         tileCompositor?.invalidate()
         try? decoder?.stop()
     }
@@ -193,7 +192,7 @@ class ProjectionSession: Identifiable {
     func start() async throws {
         do {
             try self.decoder?.start()
-            self.performanceReporter?.start()
+            await self.performanceReporter?.start()
             
             await MainActor.run {
                 self.events.send(.projectionStarted)
@@ -212,7 +211,7 @@ class ProjectionSession: Identifiable {
             self.events.send(.projectionWillStop)
         }
 
-        self.performanceReporter?.stop()
+        await self.performanceReporter?.stop()
         try self.decoder?.stop()
         
         try await self.controlChannel?.send(opcode: .stopProjectionRequest, message: StopProjectionRequest(identifier: self.id))
@@ -355,107 +354,108 @@ extension ProjectionSession: TiledVideoDecoderDelegate {
     }
 }
 
-private final class ProjectionPerformanceReporter {
+private actor ProjectionPerformanceReporter {
     private let logger = SiriusLogger(category: "ProjectionPerformanceReporter", subsystem: "app.noctiluca.client")
     private let sessionID: UUID
-    
+
     private weak var parent: ProjectionSession?
-    
+
     private var controlChannel: ProjectionChannel? {
         parent?.controlChannel
     }
-    
-    private let syncQueue = DispatchQueue(label: "projection.performanceReporter.sync")
-    
-    private var received: UInt32 = 0
-    private var decoded: UInt32 = 0
-    private var dropped: UInt32 = 0
-    private var decodeTimeSumMs: Double = 0
-    private var receivedBytes: UInt64 = 0
-    
+
+    // atomic 카운터 — nonisolated 메서드에서 lock-free로 접근
+    private let _received = ManagedAtomic<UInt32>(0)
+    private let _decoded = ManagedAtomic<UInt32>(0)
+    private let _dropped = ManagedAtomic<UInt32>(0)
+    private let _decodeTimeSumUs = ManagedAtomic<UInt64>(0)
+    private let _receivedBytes = ManagedAtomic<UInt64>(0)
+
     private var timerTask: Task<Void, Never>?
-    
+
     init(sessionID: UUID, parent: ProjectionSession) {
         self.sessionID = sessionID
         self.parent = parent
     }
-    
+
+    // MARK: - Lifecycle
+
     func start() {
         guard timerTask == nil else { return }
         timerTask = Task { [weak self] in
-            guard let self else { return }
-            while Task.isCancelled == false {
+            while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard let self else { return }
                 await self.flush()
             }
         }
     }
-    
+
     func stop() {
         timerTask?.cancel()
         timerTask = nil
     }
-    
-    func recordReceivedFrame(byteCount: Int) {
-        syncQueue.sync {
-            self.received &+= 1
-            self.receivedBytes &+= UInt64(byteCount)
-        }
+
+    // MARK: - Hot-path recording (nonisolated, lock-free)
+
+    nonisolated func recordReceivedFrame(byteCount: Int) {
+        _received.wrappingIncrement(ordering: .relaxed)
+        _receivedBytes.wrappingIncrement(by: UInt64(byteCount), ordering: .relaxed)
     }
-    
-    func recordDecodedFrame(decodeTimeMs: Double) {
-        syncQueue.sync {
-            self.decoded &+= 1
-            self.decodeTimeSumMs += decodeTimeMs
-        }
+
+    nonisolated func recordDecodedFrame(decodeTimeMs: Double) {
+        _decoded.wrappingIncrement(ordering: .relaxed)
+        _decodeTimeSumUs.wrappingIncrement(
+            by: UInt64((decodeTimeMs * 1000).rounded()),
+            ordering: .relaxed
+        )
     }
-    
-    func recordDroppedFrame() {
-        syncQueue.sync {
-            self.dropped &+= 1
-        }
+
+    nonisolated func recordDroppedFrame() {
+        _dropped.wrappingIncrement(ordering: .relaxed)
     }
-    
-    private func snapshotAndReset() -> (UInt32, UInt32, UInt32, UInt32, UInt64) {
-        return syncQueue.sync {
-            let avgDecodeMs: UInt32 = decoded > 0 ? UInt32((decodeTimeSumMs / Double(decoded)).rounded()) : 0
-            let snapshot = (received, decoded, dropped, avgDecodeMs, receivedBytes)
-            received = 0
-            decoded = 0
-            dropped = 0
-            decodeTimeSumMs = 0
-            receivedBytes = 0
-            return snapshot
-        }
+
+    // MARK: - Flush
+
+    private nonisolated func snapshotAndReset() -> (received: UInt32, decoded: UInt32, dropped: UInt32, avgDecodeMs: UInt32, bytes: UInt64) {
+        let received = _received.exchange(0, ordering: .relaxed)
+        let decoded = _decoded.exchange(0, ordering: .relaxed)
+        let dropped = _dropped.exchange(0, ordering: .relaxed)
+        let decodeTimeSumUs = _decodeTimeSumUs.exchange(0, ordering: .relaxed)
+        let receivedBytes = _receivedBytes.exchange(0, ordering: .relaxed)
+
+        let avgDecodeMs: UInt32 = decoded > 0
+            ? UInt32((Double(decodeTimeSumUs) / 1000.0 / Double(decoded)).rounded())
+            : 0
+
+        return (received, decoded, dropped, avgDecodeMs, receivedBytes)
     }
-    
+
     private func flush() async {
         guard let controlChannel else { return }
-        let (received, decoded, dropped, avgDecodeMs, bytes) = snapshotAndReset()
+        let snapshot = snapshotAndReset()
 
         // 1초 간격 flush이므로 bytes == bytes/sec
-        parent?.currentDataRate.store(Int(bytes), ordering: .relaxed)
+        parent?.currentDataRate.store(Int(snapshot.bytes), ordering: .relaxed)
 
-        if received == 0 && decoded == 0 && dropped == 0 {
+        if snapshot.received == 0 && snapshot.decoded == 0 && snapshot.dropped == 0 {
             return
         }
-        
+
         let report = ProjectionPerformanceReport(
             identifier: sessionID,
-            receivedFrameCount: received,
-            decodedFrameCount: decoded,
-            droppedFrameCount: dropped,
-            averageDecodeTimeMs: avgDecodeMs
+            receivedFrameCount: snapshot.received,
+            decodedFrameCount: snapshot.decoded,
+            droppedFrameCount: snapshot.dropped,
+            averageDecodeTimeMs: snapshot.avgDecodeMs
         )
-        
-        defer {
-            Task { @MainActor in
-                self.parent?.events.send(.performanceReportEmitted(report))
-            }
+
+        Task { @MainActor [parent] in
+            parent?.events.send(.performanceReportEmitted(report))
         }
-        
+
         do {
-            logger.info("Sending performance report for session \(self.sessionID): received=\(received), decoded=\(decoded), dropped=\(dropped), avgDecodeMs=\(avgDecodeMs)")
+            logger.info("Sending performance report for session \(self.sessionID): received=\(snapshot.received), decoded=\(snapshot.decoded), dropped=\(snapshot.dropped), avgDecodeMs=\(snapshot.avgDecodeMs)")
             try await controlChannel.send(opcode: .projectionPerformanceReport, message: report)
         } catch {
             logger.warning("Failed to send performance report for session \(self.sessionID): \(error)")

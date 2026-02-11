@@ -30,8 +30,8 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
     private var isStarted = false
     
     override init() {
-        self.workerQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.workerQueue"))
-        self.callbackQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.callbackQueue"))
+        self.workerQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.workerQueue"), qos: .userInitiated)
+        self.callbackQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.callbackQueue"), qos: .userInitiated)
         super.init()
     }
     
