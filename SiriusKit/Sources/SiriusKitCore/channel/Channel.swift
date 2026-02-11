@@ -83,7 +83,7 @@ open class Channel {
         self.identifier = identifier
         self.direction = direction
         
-        Task {
+        Task.detached { [self] in
             do {
                 self.logger.debug("[\(self.identifier)] setting service class to \(self.serviceClass)")
                 try await stream.setServiceClass(self.serviceClass)
@@ -91,8 +91,8 @@ open class Channel {
                 self.logger.error("[\(self.identifier)] failed to set service class \(self.serviceClass): \(error)")
             }
         }
-        
-        self.streamEventLoopTask = Task {
+
+        self.streamEventLoopTask = Task.detached(priority: .userInitiated) { [self] in
             do {
                 try await self.streamEventLoop()
             } catch {
