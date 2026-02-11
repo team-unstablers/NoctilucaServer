@@ -53,9 +53,10 @@ final class MsQuicServerIdentityAdapter {
     /// MsQuic용 QuicCredentialConfig를 생성합니다.
     func createCredentialConfig() async throws -> QuicCredentialConfig {
         let secIdentity = try await identity.getServerIdentity()
+        let intermediateChain = try await identity.getCertificateChain()
         let password = try generateAsciiPassword(count: 16)
         
-        let pemCert = try Self.exportCertificate(identity: secIdentity)
+        let pemCert = try Self.exportCertificates(identity: secIdentity, chain: intermediateChain)
         let privateKey = try secIdentity.extractPrivateKey()
         
         let keyAlgorithm = try privateKey.extractKeyAlgorithm()
@@ -80,29 +81,43 @@ final class MsQuicServerIdentityAdapter {
         }
     }
     
-    // TODO: support certificate chain
-    /// exports certificate to PEM format from SecIdentity
-    private static func exportCertificate(identity: SecIdentity) throws -> Data {
+    /// exports certificate chain to PEM sequence format from SecIdentity
+    private static func exportCertificates(identity: SecIdentity, chain: [SecCertificate]) throws -> Data {
         var certificate: SecCertificate?
         let status = SecIdentityCopyCertificate(identity, &certificate)
         
-        guard status == errSecSuccess, let cert = certificate else {
+        guard status == errSecSuccess, let leaf = certificate else {
             throw AdapterError.identityNotAvailable
         }
-        
+
+        let exportTarget = [leaf] + chain.filter { !$0.isSelfSignedCertificate() }
+        var pemSequence = Data()
+
+        for certificate in exportTarget {
+            var pemData = try exportCertificateToPEM(certificate)
+            if pemData.last != 0x0A {
+                pemData.append(0x0A)
+            }
+            pemSequence.append(pemData)
+        }
+
+        return pemSequence
+    }
+
+    private static func exportCertificateToPEM(_ certificate: SecCertificate) throws -> Data {
         var certData: CFData?
         let exportStatus = SecItemExport(
-            cert,
+            certificate,
             .formatPEMSequence,
             [],
             nil,
             &certData
         )
-        
+
         guard exportStatus == errSecSuccess, let data = certData as Data? else {
             throw AdapterError.pemExportFailed(exportStatus)
         }
-        
+
         return data
     }
     
@@ -122,7 +137,7 @@ final class MsQuicServerIdentityAdapter {
             &keyData
         )
         
-        guard exportStatus == errSecSuccess, let data = keyData else {
+        guard exportStatus == errSecSuccess, keyData != nil else {
             throw AdapterError.pemExportFailed(exportStatus)
         }
         

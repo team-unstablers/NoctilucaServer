@@ -108,4 +108,22 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
 
         return identity
     }
+
+    public func getCertificateChain() async throws -> [SecCertificate] {
+        let leaf = try await self.secCertificate()
+        let trust = try SecTrust.create(leaf: leaf, isServer: true, allowSelfSigned: false)
+
+        // 체인 구성이 가능하면 신뢰 평가 결과와 무관하게 intermediate를 추출합니다.
+        _ = try? trust.evaluate()
+
+        guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+              certificateChain.count > 1
+        else {
+            return []
+        }
+
+        let chain = Array(certificateChain.dropFirst())
+
+        return chain.filter { !$0.isSelfSignedCertificate() }
+    }
 }

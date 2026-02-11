@@ -76,6 +76,17 @@ public extension SecCertificate {
         return digest.withUnsafeBytes { Data($0) }
     }
 
+    /// subject DN과 issuer DN이 동일하면 self-signed(대체로 root)로 간주합니다.
+    func isSelfSignedCertificate() -> Bool {
+        guard let normalizedSubject = SecCertificateCopyNormalizedSubjectSequence(self) as Data?,
+              let normalizedIssuer = SecCertificateCopyNormalizedIssuerSequence(self) as Data?
+        else {
+            return false
+        }
+
+        return normalizedSubject == normalizedIssuer
+    }
+
     func extractNotBefore() -> Date? {
         if #available(macOS 15.0, iOS 18.0, *) {
             let notBefore = SecCertificateCopyNotValidBeforeDate(self) as? Date
