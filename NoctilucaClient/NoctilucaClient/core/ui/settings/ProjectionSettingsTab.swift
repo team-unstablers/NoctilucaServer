@@ -7,22 +7,22 @@ struct ProjectionSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                SettingsPicker(selection: .constant("auto")) {
-                    SettingsPickerItem(value: "auto") {
-                        Text("하드웨어 가속을 우선하기")
-                        Text("가능한 경우 하드웨어 가속을 시도합니다.\n동시에 많은 비디오 스트림이 열려 있거나, 기기에서 지원하지 않는 형식의 비디오 스트림이 포함된 경우 소프트웨어 디코더로 폴백됩니다.")
+                SettingsPicker(selection: $settingsStore.settings.projection.enableJitterBuffer) {
+                    SettingsPickerItem(value: false) {
+                        Text("최대한 빠르게 표시하기")
+                        Text("화면 데이터가 도착하는 대로 최대한 빠르게 표시합니다.\n딜레이는 적지만, 네트워크 지터(Jitter)로 인하여 약간의 불쾌감이 들 수 있습니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    SettingsPickerItem(value: "software") {
-                        Text("소프트웨어 디코딩만 사용하기")
-                        Text("항상 소프트웨어 방식의 디코더를 사용합니다.\n배터리 소모가 커질 수 있어 권장하지 않습니다.")
+                    SettingsPickerItem(value: true) {
+                        Text("지터 버퍼 사용하기")
+                        Text("화면 데이터를 조금씩 모아두었다가 일정한 간격으로 재생하려 노력합니다.\n화면 표시 딜레이가 조금 늘어납니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 } label: {
-                    Text("비디오 디코딩 정책")
-                    Text("원격 세션의 화면 데이터를 압축 해제하는 방식을 설정합니다.")
+                    Text("화면 프로젝션 정책")
+                    Text("화면 프로젝션과 관련된 정책을 설정합니다.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

@@ -23,6 +23,9 @@ struct AppSettings: Codable, Sendable {
     // MARK: - Session Defaults
 
     var sessionDefaults: SessionSettings = SessionSettings(scope: .global)
+    
+    // MARK: - Projection Settings
+    var projection: Projection = .init()
 
     // MARK: - Input Settings
 
@@ -65,13 +68,13 @@ struct AppSettings: Codable, Sendable {
         let decodedSessionDefaults = container.decodeSafeIfPresent(SessionSettings.self, forKey: .sessionDefaults)
         let sessionDefaultsMissing = decodedSessionDefaults == nil
         sessionDefaults = decodedSessionDefaults ?? SessionSettings(scope: .global)
+        
+        projection = container.decodeSafeIfPresent(Projection.self, forKey: .projection) ?? Projection()
 
         if let decodedInput = container.decodeSafeIfPresent(Input.self, forKey: .input) {
             input = decodedInput
-        } else if let legacyInput = container.decodeSafeIfPresent(Input.self, forKey: .projection) {
-            input = legacyInput
         }
-
+        
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         misc = container.decodeSafe(Misc.self, forKey: .misc, default: misc)
         plugins = container.decodeSafe(Plugins.self, forKey: .plugins, default: plugins)

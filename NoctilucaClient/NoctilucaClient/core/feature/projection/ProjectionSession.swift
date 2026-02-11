@@ -55,8 +55,11 @@ class ProjectionSession: Identifiable {
 
     private(set) var decoder: (any VideoDecoder)?
     private var tileCompositor: TileCompositor?
-    
+
     private var performanceReporter: ProjectionPerformanceReporter?
+
+    private let enableJitterBuffer: Bool
+    private var jitterBuffer: VideoJitterBuffer?
 
     let displayID: Int
 
@@ -120,15 +123,25 @@ class ProjectionSession: Identifiable {
     let events = PassthroughSubject<ProjectionSessionEvent, Never>()
 
     @MainActor
-    init(id: UUID, displayID: Int, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
+    init(id: UUID, displayID: Int, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel, enableJitterBuffer: Bool = false) {
         self.id = id
         self.displayID = displayID
-        
+
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel
+        self.enableJitterBuffer = enableJitterBuffer
 
         self.decoder = VTVideoDecoder()
         self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, parent: self)
+
+        if enableJitterBuffer {
+            let buffer = VideoJitterBuffer()
+            buffer.onFrameReady = { [weak self] sampleBuffer in
+                self?.enqueueToAllDisplayLayers(sampleBuffer)
+            }
+            self.jitterBuffer = buffer
+            logger.info("Jitter buffer enabled for session \(id)")
+        }
 
         self.dataChannel.delegate = self
         self.dataChannel.activate()
@@ -136,6 +149,7 @@ class ProjectionSession: Identifiable {
     }
 
     deinit {
+        jitterBuffer?.stop()
         tileCompositor?.invalidate()
         try? decoder?.stop()
     }
@@ -192,8 +206,9 @@ class ProjectionSession: Identifiable {
     func start() async throws {
         do {
             try self.decoder?.start()
+            self.jitterBuffer?.start()
             await self.performanceReporter?.start()
-            
+
             await MainActor.run {
                 self.events.send(.projectionStarted)
             }
@@ -201,7 +216,7 @@ class ProjectionSession: Identifiable {
             await MainActor.run {
                 self.events.send(.errorOccurred(error, fatal: true))
             }
-            
+
             throw error
         }
     }
@@ -211,15 +226,16 @@ class ProjectionSession: Identifiable {
             self.events.send(.projectionWillStop)
         }
 
+        self.jitterBuffer?.stop()
         await self.performanceReporter?.stop()
         try self.decoder?.stop()
-        
+
         try await self.controlChannel?.send(opcode: .stopProjectionRequest, message: StopProjectionRequest(identifier: self.id))
-        
+
         await MainActor.run {
             self.events.send(.projectionStopped)
         }
-        
+
         try? await self.dataChannel.close()
     }
 }
@@ -281,25 +297,26 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
 
 extension ProjectionSession: VideoDecoderDelegate {
     func videoDecoder(_ decoder: any VideoDecoder, didDecode frame: DecodedFrame) {
-        // logger.info("decoded frame: \(frame.pts)")
         self.performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
-        
-        
-        let now = mach_absolute_time()
-        let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
 
-        let sampleBuffer = try! CMSampleBuffer(
-            imageBuffer: frame.pixelBuffer,
-            formatDescription: CMFormatDescription(imageBuffer: frame.pixelBuffer),
-            // FIXME
-            sampleTiming: CMSampleTimingInfo(
-                duration: CMTime.invalid,
-                presentationTimeStamp: presentationTime,
-                decodeTimeStamp: CMTime.invalid
-            ),
-        )
+        if let jitterBuffer {
+            jitterBuffer.enqueue(pixelBuffer: frame.pixelBuffer, remotePTS: frame.pts.seconds)
+        } else {
+            let now = mach_absolute_time()
+            let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
 
-        enqueueToAllDisplayLayers(sampleBuffer)
+            let sampleBuffer = try! CMSampleBuffer(
+                imageBuffer: frame.pixelBuffer,
+                formatDescription: CMFormatDescription(imageBuffer: frame.pixelBuffer),
+                sampleTiming: CMSampleTimingInfo(
+                    duration: CMTime.invalid,
+                    presentationTimeStamp: presentationTime,
+                    decodeTimeStamp: CMTime.invalid
+                )
+            )
+
+            enqueueToAllDisplayLayers(sampleBuffer)
+        }
     }
     
     func videoDecoder(_ decoder: any VideoDecoder, didFailWith error: any Error) {
@@ -324,31 +341,34 @@ extension ProjectionSession: TiledVideoDecoderDelegate {
             let pixelBuffer = try compositor.composite(frame)
             performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
 
-            let now = mach_absolute_time()
-            let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
-
             if size == .zero {
                 size = frame.frameSize
             }
 
-            let sampleBuffer = try CMSampleBuffer(
-                imageBuffer: pixelBuffer,
-                formatDescription: CMFormatDescription(imageBuffer: pixelBuffer),
-                sampleTiming: CMSampleTimingInfo(
-                    duration: CMTime.invalid,
-                    presentationTimeStamp: presentationTime,
-                    decodeTimeStamp: CMTime.invalid
-                )
-            )
+            if let jitterBuffer {
+                jitterBuffer.enqueue(pixelBuffer: pixelBuffer, remotePTS: frame.pts.seconds)
+            } else {
+                let now = mach_absolute_time()
+                let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
 
-            enqueueToAllDisplayLayers(sampleBuffer)
+                let sampleBuffer = try CMSampleBuffer(
+                    imageBuffer: pixelBuffer,
+                    formatDescription: CMFormatDescription(imageBuffer: pixelBuffer),
+                    sampleTiming: CMSampleTimingInfo(
+                        duration: CMTime.invalid,
+                        presentationTimeStamp: presentationTime,
+                        decodeTimeStamp: CMTime.invalid
+                    )
+                )
+
+                enqueueToAllDisplayLayers(sampleBuffer)
+            }
         } catch {
             logger.error("Tile composition failed: \(error.localizedDescription)")
             Task { @MainActor in
-                // 대부분의 경우 다음 키프레임을 받으면 되므로 fatal까진 아님
                 self.events.send(.errorOccurred(error, fatal: false))
             }
-            
+
             performanceReporter?.recordDroppedFrame()
         }
     }
