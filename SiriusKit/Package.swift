@@ -74,7 +74,10 @@ let package = Package(
         ),
         .testTarget(
             name: "SiriusKitTests",
-            dependencies: ["SiriusKit"]
+            dependencies: [
+                "SiriusKit",
+                "SiriusKitCore",
+            ]
         ),
         .testTarget(
             name: "SiriusKitClientTests",
