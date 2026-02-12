@@ -1,63 +1,26 @@
 //
-//  RenameMePluginV1.swift
+//  NoctilucaServerExtensionV1.swift
 //  NoctilucaPluginKit
 //
 //  Created by Gyuhwan Park on 12/9/25.
 //
 
-/*
-public struct ClientRemoteEndpoint {
-    public let ipAddress: String
-    public let port: UInt16
+/// 서버 확장 플러그인이 이벤트를 관찰하기 위한 컨텍스트
+public protocol NoctilucaServerExtensionContext: AnyObject, Sendable {
+    func subscribe(to eventType: String) async
+    func unsubscribe(from eventType: String) async
 }
 
-public enum NoctilucaServerEventType {
-    case serverAppStarted
-    case serverTransportStarted
-    case clientConnectionEstablished
+/// 서버 확장 플러그인 V1
+/// 서버 이벤트를 관찰하고 반응하는 저레벨 확장 (예: fail2ban)
+public protocol NoctilucaServerExtensionV1: AnyObject {
+    static var id: String { get }
+    static var name: String { get }
+    static var description: String { get }
+
+    init()
+
+    func start(with context: NoctilucaServerExtensionContext) async throws
+    func onEvent(type eventType: String, payload: Any) async
+    func stop() async
 }
-
-public enum NoctilucaServerEvent {
-    case serverAppStarted
-    case serverTransportStarted
-    case clientConnectionEstablished(clientInfo: ClientRemoteEndpoint, client: ClientConnection)
-}
-
-public protocol RenameMePluginV1ServerContext: AnyObject {
-    func startObserve(for event: NoctilucaServerEventType) async
-}
-
-/// 이름 뭘로 지어야 할지 모르겠다
-public protocol RenameMePluginV1: AnyObject {
-    
-    func start(with context: RenameMePluginV1ServerContext) async throws
-    
-    func onEvent(_ event: NoctilucaServerEvent) async
-}
-
-
-// ...
-
-class Fail2BanPlugin: RenameMePluginV1 {
-    func start(with context: any RenameMePluginV1ServerContext) async throws {
-        await context.startObserve(for: .clientConnectionEstablished)
-    }
-    
-    func isBanned(ipAddress: String) async -> Bool {
-        // ...
-        return false
-    }
-    
-    func onEvent(_ event: NoctilucaServerEvent) async {
-        guard case .clientConnectionEstablished(let clientInfo, let client) = event else {
-            return
-        }
-        
-        if await isBanned(ipAddress: clientInfo.ipAddress) {
-            await client.disconnect()
-        }
-    }
-    
-}
-
-*/

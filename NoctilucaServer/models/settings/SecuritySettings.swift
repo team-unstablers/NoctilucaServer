@@ -16,10 +16,12 @@ extension AppSettings {
         
         var allowedEntries: [AuthEntry] = []
         var maxLoginAttempts: Int = 3
-        
+        var pluginBundleSecurityPolicy: PluginBundleSecurityPolicy = .allowTeamUnstablers
+
         enum CodingKeys: String, CodingKey {
             // allowedEntries는 보안 항목이므로 인코딩/디코딩 시 제외
             case maxLoginAttempts
+            case pluginBundleSecurityPolicy
         }
         
         init() {
@@ -34,11 +36,13 @@ extension AppSettings {
             }
 
             maxLoginAttempts = container.decodeSafe(Int.self, forKey: .maxLoginAttempts, default: maxLoginAttempts)
+            pluginBundleSecurityPolicy = container.decodeSafe(PluginBundleSecurityPolicy.self, forKey: .pluginBundleSecurityPolicy, default: pluginBundleSecurityPolicy)
         }
-        
+
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(maxLoginAttempts, forKey: .maxLoginAttempts)
+            try container.encode(pluginBundleSecurityPolicy, forKey: .pluginBundleSecurityPolicy)
         }
         
         func saveSecureEntries() throws {

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppKit
 
 import SiriusKit
 import NoctilucaPluginKit
@@ -76,11 +77,13 @@ class PluginBundleRegistry {
     private let logger = NoctilucaLogger(category: "PluginBundleRegistry")
     
     private(set) var bundles: [String: PluginBundleHandle] = [:]
-    private let defaultPolicy: PluginBundleSecurityPolicy
-    
+    private(set) var defaultPolicy: PluginBundleSecurityPolicy = .allowTeamUnstablers
+
     private init() {
-        // TODO: Load policy from configuration
-        self.defaultPolicy = .allowTeamUnstablers
+    }
+
+    func configure(policy: PluginBundleSecurityPolicy) {
+        self.defaultPolicy = policy
     }
     
     deinit {
@@ -135,8 +138,30 @@ class PluginBundleRegistry {
             return .failure(.duplicateBundle(id: metadata.id))
         }
         
-        // TODO: 보안 정책 검증
-        
+        // 보안 정책 검증 (bundle.load() 이전에 수행해야 함)
+        let effectivePolicy = policy ?? defaultPolicy
+        let verificationResult = PluginBundleCodeSigningVerifier.verify(bundleURL: url)
+        let allowResult = PluginBundleCodeSigningVerifier.shouldAllow(result: verificationResult, policy: effectivePolicy)
+
+        if case .failure(let error) = allowResult {
+            logger.warning("Plugin bundle \(metadata.id) rejected by security policy (\(effectivePolicy.rawValue)): \(error.localizedDescription ?? "")")
+            return .failure(error)
+        }
+
+        // allowAll 정책에서 unsigned/adHoc 번들은 사용자 확인 필요
+        if effectivePolicy == .allowAll {
+            switch verificationResult {
+            case .unsigned, .adHocSignature:
+                let confirmed = await confirmUnsignedBundleLoad(bundleURL: url, metadata: metadata)
+                if !confirmed {
+                    logger.info("User rejected loading unsigned/ad-hoc bundle: \(metadata.id)")
+                    return .failure(.rejectedBySystem)
+                }
+            default:
+                break
+            }
+        }
+
         guard bundle.load() else {
             logger.error("Failed to load plugin bundle from \(url.path): unable to load bundle")
             return .failure(.rejectedBySystem)
@@ -183,9 +208,9 @@ class PluginBundleRegistry {
             case .auth(let plugin):
                 AuthPluginRegistry.shared.register(plugin: plugin)
                 logger.info("Registered auth plugin: \(plugin.id) from bundle: \(metadata.id)")
-                break
-            @unknown default:
-                break
+            case .extension(let extensionPlugin):
+                // TODO: ExtensionPluginRegistry 연동 (향후 구현)
+                logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(metadata.id)")
             }
         }
         
@@ -209,6 +234,85 @@ class PluginBundleRegistry {
         
         self.bundles.removeValue(forKey: id)
         logger.info("Successfully unloaded plugin bundle with id: \(id)")
+    }
+    @MainActor
+    private func confirmUnsignedBundleLoad(bundleURL: URL, metadata: PluginBundlePlistMetadata) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "서명되지 않은 플러그인 번들"
+        alert.informativeText = """
+            "\(metadata.displayName)" (\(metadata.id)) 플러그인 번들은 유효한 코드 서명이 없습니다.
+            서명되지 않은 플러그인은 시스템에 악영향을 줄 수 있습니다.
+
+            경로: \(bundleURL.path)
+
+            계속 로드하시겠습니까?
+            """
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "로드")
+        alert.addButton(withTitle: "취소")
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    // MARK: - 외부 번들 스캔 및 로드
+
+    /// 검색 경로에서 외부 플러그인 번들을 스캔하고 로드한다.
+    func loadExternalBundles() async {
+        let searchPaths = buildPluginSearchPaths()
+        for path in searchPaths {
+            await scanAndLoadBundles(in: path)
+        }
+    }
+
+    /// 플러그인 번들 검색 경로 목록을 구성한다.
+    private func buildPluginSearchPaths() -> [URL] {
+        var paths: [URL] = []
+
+        // 1. 앱 번들 내장 PlugIns 디렉토리
+        if let builtInPlugInsURL = Bundle.main.builtInPlugInsURL {
+            paths.append(builtInPlugInsURL)
+        }
+
+        // 2. Application Support의 Plugins 디렉토리
+        if let appSupportDir = try? AppSettings.applicationSupportDirectory() {
+            let pluginsDir = appSupportDir.appendingPathComponent("Plugins", isDirectory: true)
+            paths.append(pluginsDir)
+        }
+
+        return paths
+    }
+
+    /// 지정된 디렉토리에서 .nocbundle / .bundle 확장자를 가진 번들을 스캔하고 로드한다.
+    private func scanAndLoadBundles(in directory: URL) async {
+        let fileManager = FileManager.default
+
+        guard fileManager.fileExists(atPath: directory.path) else {
+            logger.debug("Plugin search path does not exist, skipping: \(directory.path)")
+            return
+        }
+
+        let contents: [URL]
+        do {
+            contents = try fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        } catch {
+            logger.warning("Failed to scan plugin directory \(directory.path): \(error.localizedDescription)")
+            return
+        }
+
+        let bundleURLs = contents.filter { url in
+            let ext = url.pathExtension.lowercased()
+            return ext == "nocbundle" || ext == "bundle"
+        }
+
+        for bundleURL in bundleURLs {
+            let result = await loadBundle(from: bundleURL)
+            if case .failure(let error) = result {
+                logger.warning("Failed to load external bundle at \(bundleURL.path): \(error.localizedDescription ?? "unknown error")")
+            }
+        }
     }
 }
 
@@ -237,11 +341,8 @@ extension PluginBundleRegistry {
         switch pluginExport {
         case .auth(let authPlugin):
             return pluginsMetadata.contains { metadata in metadata.id == authPlugin.id && metadata.type == .auth }
-        @unknown default:
-            // 이거 어쩌죠?: 미래의 플러그인 타입이 추가된 경우
-            break
+        case .extension(let extensionPlugin):
+            return pluginsMetadata.contains { metadata in metadata.id == type(of: extensionPlugin).id && metadata.type == .extension }
         }
-        
-        return false
     }
 }

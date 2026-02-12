@@ -150,7 +150,18 @@ class NoctilucaServer: ObservableObject {
         self.settings = try AppSettings.load()
         NoctilucaLoggingConfigurator.apply(settings: self.settings.logging)
 
+        // 보안 정책 주입
+        pluginBundleRegistry.configure(policy: settings.security.pluginBundleSecurityPolicy)
+
+        // 1. 내장 번들 등록
         try await pluginBundleRegistry.registerBuiltinBundles()
+
+        // 2. 외부 번들 스캔/로드 (disallowAll이 아닌 경우)
+        if settings.security.pluginBundleSecurityPolicy != .disallowAll {
+            await pluginBundleRegistry.loadExternalBundles()
+        }
+
+        // 3. 인증 엔트리 설정 (외부 auth 플러그인 포함)
         await authenticator.setupAllowedEntires(self.settings.security.allowedEntries)
         
         ScreenCaptureKitWorkaroundDummyWindow.windowManager.startup()
