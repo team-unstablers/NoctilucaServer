@@ -30,47 +30,49 @@ final class VideoJitterBuffer: NSObject {
         let lateResyncThresholdMs: Double
         let earlyResyncThresholdMs: Double
         let noReadyResyncConsecutiveTicks: Int
+        
+        /// 저지연 튜닝 전 기본값 프리셋.
+        static let legacy = Preset(
+            minBufferCount: 3,
+            maxBufferCount: 4,
+            lateThresholdMs: 50.0,
+            lateResyncThresholdMs: 200.0,
+            earlyResyncThresholdMs: 200.0,
+            noReadyResyncConsecutiveTicks: 6
+        )
+        
+        /// 현재 적용 중인 저지연 튜닝값 프리셋.
+        static let lowLatency = Preset(
+            minBufferCount: 2,
+            maxBufferCount: 3,
+            lateThresholdMs: 35.0,
+            lateResyncThresholdMs: 150.0,
+            earlyResyncThresholdMs: 120.0,
+            noReadyResyncConsecutiveTicks: 4
+        )
+        
+        /// 현재 저지연과 초저지연 사이의 중간 단계 프리셋.
+        static let lowLatencyPlus = Preset(
+            minBufferCount: 2,
+            maxBufferCount: 2,
+            lateThresholdMs: 28.0,
+            lateResyncThresholdMs: 120.0,
+            earlyResyncThresholdMs: 100.0,
+            noReadyResyncConsecutiveTicks: 3
+        )
+        
+        /// 지연 최소화를 최우선으로 하는 초저지연 프리셋.
+        static let ultraLowLatency = Preset(
+            minBufferCount: 1,
+            maxBufferCount: 2,
+            lateThresholdMs: 22.0,
+            lateResyncThresholdMs: 90.0,
+            earlyResyncThresholdMs: 80.0,
+            noReadyResyncConsecutiveTicks: 2
+        )
     }
 
-    /// 저지연 튜닝 전 기본값 프리셋.
-    static let presetLegacy = Preset(
-        minBufferCount: 3,
-        maxBufferCount: 4,
-        lateThresholdMs: 50.0,
-        lateResyncThresholdMs: 200.0,
-        earlyResyncThresholdMs: 200.0,
-        noReadyResyncConsecutiveTicks: 6
-    )
 
-    /// 현재 적용 중인 저지연 튜닝값 프리셋.
-    static let presetLowLatency = Preset(
-        minBufferCount: 2,
-        maxBufferCount: 3,
-        lateThresholdMs: 35.0,
-        lateResyncThresholdMs: 150.0,
-        earlyResyncThresholdMs: 120.0,
-        noReadyResyncConsecutiveTicks: 4
-    )
-
-    /// 현재 저지연과 초저지연 사이의 중간 단계 프리셋.
-    static let presetLowLatencyPlus = Preset(
-        minBufferCount: 2,
-        maxBufferCount: 2,
-        lateThresholdMs: 28.0,
-        lateResyncThresholdMs: 120.0,
-        earlyResyncThresholdMs: 100.0,
-        noReadyResyncConsecutiveTicks: 3
-    )
-
-    /// 지연 최소화를 최우선으로 하는 초저지연 프리셋.
-    static let presetUltraLowLatency = Preset(
-        minBufferCount: 1,
-        maxBufferCount: 2,
-        lateThresholdMs: 22.0,
-        lateResyncThresholdMs: 90.0,
-        earlyResyncThresholdMs: 80.0,
-        noReadyResyncConsecutiveTicks: 2
-    )
 
     /// 현재 적용 중인 프리셋.
     let preset: Preset
