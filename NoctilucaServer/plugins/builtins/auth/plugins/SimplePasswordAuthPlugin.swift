@@ -98,20 +98,21 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
         guard method == .simplePassword else {
             return .failure(.unsupportedMethod)
         }
-        
+
         do {
-            let digest = try Bcrypt.sha512(value: payload)
+            let payloadCopy = copy payload
+            let digest = try await Bcrypt.sha512Async(value: payloadCopy)
             for hash in allowedHashes {
-                if try Bcrypt.verify(password: digest, hash: hash) {
+                if try await Bcrypt.verifyAsync(password: digest, hash: hash) {
                     return .success(getuid())
                 }
             }
         } catch {
             logger.error("authenticate(): error during verification: \(error.localizedDescription)")
-            
+
             return .failure(.authenticationFailed(error))
         }
-        
+
         return .failure(.authenticationFailed(nil))
     }
 }

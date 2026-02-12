@@ -30,6 +30,11 @@ final class PAMAuthPlugin: BuiltInAuthPluginV1 {
     
     static let supportedMethods: Set<NoctilucaPluginKit.AuthMethod> = [.password]
     
+    private static let authQueue = DispatchQueue(
+        label: "app.noctiluca.server.auth.pam",
+        qos: .userInitiated
+    )
+
     private let logger = NoctilucaLogger(category: "PAMAuthPlugin")
     
     private var allowedUsers: Set<String> = []
@@ -90,31 +95,41 @@ final class PAMAuthPlugin: BuiltInAuthPluginV1 {
         guard method == .password else {
             return .failure(.unsupportedMethod)
         }
-        
+
         guard PAMAuthPayload.validate(payload: payload),
               let username = String(data: PAMAuthPayload.username(from: payload), encoding: .utf8)
         else {
             return .failure(.invalidPayload)
         }
-        
+
         let password = PAMAuthPayload.password(from: payload)
-        
+
         guard let passwd = Passwd.__getpwnam(username),
               self.isEntryAllowed(passwd)
         else {
             return .failure(.authenticationFailed(nil))
         }
-        
+
         do {
             logger.debug("authenticate(): Authenticating user '\(username)' via PAM")
-            try PAMAuthPluginObjC.authenticate(username, password: password)
-            
+
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+                Self.authQueue.async {
+                    do {
+                        try PAMAuthPluginObjC.authenticate(username, password: password)
+                        continuation.resume()
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+
             logger.info("authenticate(): PAM authentication succeeded for user '\(username)' (uid: \(passwd.uid))")
-            
+
             return .success(passwd.uid)
         } catch {
             logger.error("authenticate(): PAM authentication failed for user '\(username)': \(error.localizedDescription)")
-            
+
             return .failure(.authenticationFailed(error))
         }
     }

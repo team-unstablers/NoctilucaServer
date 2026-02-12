@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 12/9/25.
 //
 
+import Foundation
 import libbcrypt
 
 enum BcryptError: LocalizedError {
@@ -13,6 +14,12 @@ enum BcryptError: LocalizedError {
 }
 
 struct Bcrypt {
+    private static let authQueue = DispatchQueue(
+        label: "app.noctiluca.server.auth.bcrypt",
+        qos: .userInitiated,
+        attributes: .concurrent
+    )
+
     static func generateSalt(rounds: Int32 = BCRYPT_DEFAULT_WORK_FACTOR) throws -> Data {
         var salt = Data(count: Int(BCRYPT_HASHSIZE))
         
@@ -28,7 +35,6 @@ struct Bcrypt {
         return consume salt
     }
     
-    /// FIXME: UI 스레드에서 호출하지 않도록 할것
     static func hash(password: consuming Data, salt: consuming Data? = nil) throws -> Data {
         let salt = try (salt ?? generateSalt())
         
@@ -80,16 +86,16 @@ struct Bcrypt {
         guard hash.count == Int(BCRYPT_HASHSIZE) else {
             throw BcryptError.invalidInput
         }
-        
+
         let retval = password.withUnsafeBytes { passwordBytes in
             hash.withUnsafeBytes { hashBytes in
                 let passwordPtr = passwordBytes.bindMemory(to: Int8.self).baseAddress!
                 let hashPtr = hashBytes.bindMemory(to: Int8.self).baseAddress!
-                
+
                 return bcrypt_checkpw(passwordPtr, hashPtr)
             }
         }
-        
+
         switch retval {
         case 0:
             return true
@@ -97,6 +103,47 @@ struct Bcrypt {
             return false
         default:
             throw BcryptError.libraryError(retval: retval)
+        }
+    }
+
+    // MARK: - Async wrappers (cooperative thread pool을 블로킹하지 않음)
+
+    static func hashAsync(password: Data, salt: Data? = nil) async throws -> Data {
+        try await withCheckedThrowingContinuation { continuation in
+            authQueue.async {
+                do {
+                    let result = try hash(password: password, salt: salt)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    static func sha512Async(value: Data) async throws -> Data {
+        try await withCheckedThrowingContinuation { continuation in
+            authQueue.async {
+                do {
+                    let result = try sha512(value: value)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    static func verifyAsync(password: Data, hash: Data) async throws -> Bool {
+        try await withCheckedThrowingContinuation { continuation in
+            authQueue.async {
+                do {
+                    let result = try verify(password: password, hash: hash)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
         }
     }
 }
