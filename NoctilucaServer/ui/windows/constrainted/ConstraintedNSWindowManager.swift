@@ -42,8 +42,34 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
     func shutdown() {
         self.subscription?.cancel()
         self.subscription = nil
+
+        for (displayID, window) in windows {
+            self.logger.debug("Closing \(Window.self) for displayID: \(displayID) (shutdown)")
+            window.orderOut(nil)
+            window.close()
+        }
+        windows.removeAll()
     }
     
+    /// 지정된 디스플레이에 대한 윈도우를 반환합니다.
+    /// 윈도우가 아직 생성되지 않았다면 최대 `timeout`까지 대기합니다.
+    func window(for displayID: CGDirectDisplayID, timeout: Duration = .seconds(3)) async -> Window? {
+        if let window = windows[displayID] {
+            return window
+        }
+
+        let deadline = ContinuousClock.now + timeout
+        while ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(100))
+            if let window = windows[displayID] {
+                return window
+            }
+        }
+
+        self.logger.warning("window(for:timeout:): timed out waiting for \(Window.self) for displayID: \(displayID)")
+        return nil
+    }
+
     func updateWindows(for displayLayouts: [CGDirectDisplayID: NOCScreen]) {
         // 1. Remove windows for disconnected displays
         let currentDisplayIDs = Set(displayLayouts.keys)
@@ -53,6 +79,7 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         for displayID in disconnectedDisplayIDs {
             if let window = windows.removeValue(forKey: displayID) {
                 self.logger.debug("Closing \(Window.self) for disconnected displayID: \(displayID)")
+                window.orderOut(nil)
                 window.close()
             }
         }

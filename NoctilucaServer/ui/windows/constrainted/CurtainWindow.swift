@@ -18,7 +18,9 @@ class CurtainWindow: NSWindow, ConstraintedNSWindow {
             backing: .buffered,
             defer: false
         )
-        
+
+        self.isReleasedWhenClosed = false
+
         // 기본 설정
         self.level = .screenSaver // 최상단
         self.backgroundColor = .black

@@ -219,10 +219,14 @@ class NoctilucaServer: ObservableObject {
         guard case .running(let server) = state else {
             return
         }
-        
+
         logger.info("Shutting down NoctilucaServer...")
-        
+
         try await server.shutdown()
+
+        await MainActor.run {
+            ScreenCaptureKitWorkaroundDummyWindow.windowManager.shutdown()
+        }
     }
 }
 
