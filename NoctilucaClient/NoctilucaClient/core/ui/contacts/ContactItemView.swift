@@ -26,74 +26,83 @@ extension AnyTransition {
 enum ContactItemAction {
     case launch
     case edit
+    case delete
+    case duplicate
 }
 
 struct ContactItemView: View {
     let item: ContactItem
     let actionHandler: ((ContactItemAction) -> Void)
-    
+
     @FocusState
     var isFocused: Bool
-    
+
     @State
     var shouldAnimateLaunchEffect: Bool = false
-    
+
+    @State
+    private var isHovering: Bool = false
+
+    private var icon: SessionSettings.ContactIcon {
+        item.settings.general?.icon ?? .init()
+    }
+
     @ViewBuilder
     var __innerBody: some View {
-        HStack {
-            Image(systemName: "desktopcomputer")
-                .font(.system(size: 32))
-                .frame(width: 48, height: 48)
-                .padding(.trailing, 8)
-            
-            VStack(alignment: .leading, spacing: 0) {
-                Text(item.displayName)
-                    .font(.title2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, 6)
-                Text("3년 전에 최종 접속")
-            }
-            
-            Spacer()
-            
-            HStack {
-                Button {
-                    actionHandler(.edit)
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                }
-            }
+        VStack(spacing: 8) {
+            ContactIconView(icon: icon, size: 48)
+
+            Text(item.displayName)
+                .font(.callout)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
-        .padding(16)
-        .contentShape(.rect(cornerRadius: 8))
+        .frame(maxWidth: .infinity, minHeight: 100)
+        .padding(12)
+        .contentShape(.rect(cornerRadius: 12))
         .with {
             if #available(macOS 26.0, iOS 26.0, *) {
                 $0.glassEffect(
                     .regular.tint(.gray.opacity(0.05)).interactive(true),
-                    in: .rect(cornerRadius: 8)
+                    in: .rect(cornerRadius: 12)
                 )
             } else {
-                $0.background(.ultraThinMaterial)
+                $0.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 4)
+        .scaleEffect(isHovering ? 1.05 : 1.0)
+        .brightness(isHovering ? 0.1 : 0.0)
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
     }
-    
+
     var body: some View {
-        __innerBody
+        Button {
+            performLaunch()
+        } label: {
+            __innerBody
+        }
+        .buttonStyle(.plain)
         .focusable(interactions: [.activate, .edit])
         .focused($isFocused)
         .onKeyPress(.return) {
-            print("Return key pressed on ContactsItem")
             performLaunch()
-            
             return .handled
         }
-        .onTapGesture(count: 2) {
-            print("ContactsItem double-clicked")
-            performLaunch()
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .contextMenu {
+            Button("편집") {
+                actionHandler(.edit)
+            }
+            Button("복제") {
+                actionHandler(.duplicate)
+            }
+            Divider()
+            Button("삭제", role: .destructive) {
+                actionHandler(.delete)
+            }
         }
         .overlay {
             if shouldAnimateLaunchEffect {
@@ -105,14 +114,14 @@ struct ContactItemView: View {
             }
         }
     }
-    
+
     func performLaunch() {
         if (shouldAnimateLaunchEffect) {
             return
         }
-        
+
         shouldAnimateLaunchEffect = true
-        
+
         actionHandler(.launch)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             shouldAnimateLaunchEffect = false
@@ -125,11 +134,12 @@ struct ContactItemView: View {
     let item = ContactItem(name: nil, endpointURL: "localhost")
     let item2 = ContactItem(name: "내부 리소스 #1", endpointURL: "localhost")
     let item3 = ContactItem(name: "집 컴퓨터", endpointURL: "localhost")
-    
-    VStack {
+
+    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 120))], spacing: 16) {
         ContactItemView(item: item) {_ in}
         ContactItemView(item: item2) {_ in}
         ContactItemView(item: item3) {_ in}
     }
-    .frame(minWidth: 360, minHeight: 360)
+    .padding()
+    .frame(minWidth: 400, minHeight: 300)
 }

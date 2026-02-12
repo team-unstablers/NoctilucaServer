@@ -10,45 +10,82 @@ import SwiftUI
 struct MainWindowNewConnectionPhaseContentView: View {
     @EnvironmentObject
     var viewModel: SessionWindowViewModel
-    
+
     @EnvironmentObject
     var contactSheetCoordinator: ContactSheetCoordinator
 
     @ObservedObject
     private var contactsStore = ContactsStore.shared
 
+    @ObservedObject
+    private var recentStore = RecentConnectionStore.shared
+
+    @State
+    private var contactToDelete: ContactItem? = nil
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading) {
-                HStack(spacing: 0) {
-                    Text("Noctiluca ")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+        ScrollView {
+            VStack(spacing: 32) {
+                // MARK: - 중앙 로고 + 타이틀
+                VStack(spacing: 4) {
+                    Image(systemName: "moon.haze.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.tint)
+                        .padding(.bottom, 8)
 
-                    Text("Navigator")
-                        .font(.largeTitle)
-                        .fontWeight(.light)
+                    HStack(spacing: 0) {
+                        Text("Noctiluca ")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
 
-                    Spacer()
+                        Text("Navigator")
+                            .font(.largeTitle)
+                            .fontWeight(.light)
+                    }
+
+                    Text("버전 \(NoctilucaMeta.version)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
+                .padding(.top, 40)
 
-                Text("버전 \(NoctilucaMeta.version)")
-            }
-            .padding(.top, 24)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 32)
+                // MARK: - 최근 연결 섹션
+                if !recentStore.records.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("최근 연결")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("저장된 호스트 목록")
-                .font(.title)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 16)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(recentStore.records.prefix(5)) { record in
+                                    RecentConnectionItemView(record: record) {
+                                        Task { @MainActor in
+                                            try? await viewModel.startSession(
+                                                endpoint: .quickConnect(endpointURL: record.endpointURL)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 4)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
 
-            ScrollView {
-                VStack {
+                // MARK: - 저장된 호스트 섹션
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("저장된 호스트")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                     if contactsStore.isLoading {
                         ProgressView()
+                            .frame(maxWidth: .infinity)
                             .padding(.vertical, 32)
                     } else if let loadError = contactsStore.loadError {
                         VStack(alignment: .leading, spacing: 8) {
@@ -60,44 +97,88 @@ struct MainWindowNewConnectionPhaseContentView: View {
                         }
                         .padding(.vertical, 16)
                     } else if contactsStore.contacts.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("(저장된 호스트가 없습니다)")
+                        VStack(spacing: 16) {
+                            Text("저장된 호스트가 없습니다")
                                 .font(.headline)
-                            Text("우측 상단의 주소창에서 연결할 호스트를 입력하거나 연락처를 추가하세요.")
-                                .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                            Text("아래 버튼을 눌러 새 호스트를 추가하거나,\n상단 주소창에서 바로 연결하세요.")
+                                .font(.subheadline)
+                                .foregroundStyle(.tertiary)
+                                .multilineTextAlignment(.center)
+
+                            AddContactTileView {
+                                contactSheetCoordinator.presentContactEditor(for: nil)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                     } else {
-                        ForEach(contactsStore.contacts) { item in
-                            ContactItemView(item: item) { action in
-                                switch action {
-                                case .launch:
-                                    Task { @MainActor in
-                                        try? await viewModel.startSession(endpoint: .contact(item: item))
-                                    }
-                                case .edit:
-                                    contactSheetCoordinator.presentContactEditor(for: item)
+                        LazyVGrid(
+                            columns: [GridItem(.adaptive(minimum: 120, maximum: 150), spacing: 24)],
+                            spacing: 24
+                        ) {
+                            ForEach(contactsStore.contacts) { item in
+                                ContactItemView(item: item) { action in
+                                    handleContactAction(action, for: item)
                                 }
+                            }
+
+                            AddContactTileView {
+                                contactSheetCoordinator.presentContactEditor(for: nil)
                             }
                         }
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 16)
             }
-            .frame(maxWidth: .infinity)
+            .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .alert("호스트 삭제", isPresented: Binding(
+            get: { contactToDelete != nil },
+            set: { if !$0 { contactToDelete = nil } }
+        )) {
+            Button("취소", role: .cancel) {
+                contactToDelete = nil
+            }
+            Button("삭제", role: .destructive) {
+                if let contact = contactToDelete {
+                    try? ContactsStore.shared.remove(id: contact.id)
+                    contactToDelete = nil
+                }
+            }
+        } message: {
+            if let contact = contactToDelete {
+                Text("'\(contact.displayName)'을(를) 삭제하시겠습니까?")
+            }
+        }
+    }
+
+    private func handleContactAction(_ action: ContactItemAction, for item: ContactItem) {
+        switch action {
+        case .launch:
+            Task { @MainActor in
+                try? await viewModel.startSession(endpoint: .contact(item: item))
+            }
+        case .edit:
+            contactSheetCoordinator.presentContactEditor(for: item)
+        case .delete:
+            contactToDelete = item
+        case .duplicate:
+            var duplicated = ContactItem(
+                name: "\(item.displayName) (복사본)",
+                endpointURL: item.endpointURL,
+                preset: item.settings
+            )
+            duplicated.settings.credentials.keychainKey = nil
+            duplicated.settings.ensureCredentialsKey(scope: .session, contactId: duplicated.id)
+            try? ContactsStore.shared.save(duplicated)
+        }
     }
 }
 
 #Preview("NewConnectionPhase") {
     let viewModel = SessionWindowViewModel()
-
-    /*
-    MainWindowContentView(viewModel: viewModel)
-     */
 
     MainWindowNewConnectionPhaseContentView()
         .environmentObject(viewModel)

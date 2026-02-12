@@ -8,11 +8,12 @@
 import Foundation
 
 struct ContactItem: Codable, Identifiable, Sendable {
-    static let currentSchemaVersion: Int = 1
+    static let currentSchemaVersion: Int = 2
 
     var schemaVersion: Int = Self.currentSchemaVersion
     var id: UUID
     var settings: SessionSettings
+    var lastConnectedAt: Date?
 
     init(
         id: UUID = UUID(),

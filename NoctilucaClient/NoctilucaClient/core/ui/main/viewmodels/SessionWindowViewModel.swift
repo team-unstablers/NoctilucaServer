@@ -57,6 +57,8 @@ class SessionWindowViewModel: ObservableObject {
     private var autoHideTask: Task<Void, Never>?
 #endif
     
+    private var currentEndpoint: EndpointKind?
+
     private var settingsStore: SettingsStore?
     private var settingsCancellables: Set<AnyCancellable> = []
     private var sessionCancellables: Set<AnyCancellable> = []
@@ -103,6 +105,7 @@ class SessionWindowViewModel: ObservableObject {
         }
 
         self.endpointURL = endpointURL
+        self.currentEndpoint = endpoint
         self.phase = .connecting
 
         if let settingsOverride {
@@ -167,16 +170,21 @@ class SessionWindowViewModel: ObservableObject {
         }
 
         let client = remoteSession.client
-        
+
         if !force && client.isValidatingServerIdentity {
             return
         }
 
         detachRemoteSession()
 
-        await NoctilucaClientManager.shared.killClient(id: client.id)
+        if force {
+            await NoctilucaClientManager.shared.killClient(id: client.id)
+        } else {
+            await client.closeWithGoodbye()
+        }
 
         endpointURL = ""
+        currentEndpoint = nil
         sessionSettings = nil
         inputWarning = nil
         onDetachDisplay = nil
@@ -236,6 +244,7 @@ class SessionWindowViewModel: ObservableObject {
             break
         case .ready:
             self.phase = .connected
+            recordRecentConnection()
         case .panic:
             break
         case .closed:
@@ -248,6 +257,36 @@ class SessionWindowViewModel: ObservableObject {
     func handleClientError(_ error: NoctilucaClientError) {
         errors.append(error)
         shouldDisplayErrorAlert = true
+    }
+
+    private func recordRecentConnection() {
+        guard let endpoint = currentEndpoint else { return }
+        let icon = sessionSettings?.general?.icon ?? SessionSettings.ContactIcon()
+
+        let displayName: String
+        let contactId: UUID?
+
+        switch endpoint {
+        case .contact(let item):
+            displayName = item.displayName
+            contactId = item.id
+            var updated = item
+            updated.lastConnectedAt = Date()
+            try? ContactsStore.shared.save(updated)
+        case .quickConnect(let url):
+            displayName = url
+            contactId = nil
+        case .connect(let url):
+            displayName = url
+            contactId = nil
+        }
+
+        RecentConnectionStore.shared.add(
+            endpointURL: endpointURL,
+            displayName: displayName,
+            icon: icon,
+            contactId: contactId
+        )
     }
 
     private func configureAuthCredentials(
