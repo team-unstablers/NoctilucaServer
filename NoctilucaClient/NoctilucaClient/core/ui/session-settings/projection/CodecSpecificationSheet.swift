@@ -41,11 +41,11 @@ struct CodecSpecificationSheet: View {
                         Text("하드웨어 가속")
                         switch specification.options[.hardwareAcceleration] {
                         case .kHardwareAccelerationAuto:
-                            Text("가능한 경우 하드웨어 가속을 사용합니다.")
+                            Text("서버가 환경에 맞춰 하드웨어 가속 사용 여부를 자동으로 결정합니다.")
                         case .kHardwareAccelerationFalse:
-                            Text("하드웨어 가속을 사용하지 않고, 소프트웨어 압축만 사용합니다.\n컴퓨팅 자원이 부족해질 수 있습니다.")
+                            Text("서버에게 하드웨어 가속 사용을 요청합니다.\n참고: 옵션 이름은 legacy 호환성 때문에 false로 표시됩니다.")
                         default:
-                            Text("하드웨어 가속 사용 여부를 설정합니다.")
+                            Text("서버 인코딩의 하드웨어 가속 요청 정책을 설정합니다.")
                         }
                     }
                     

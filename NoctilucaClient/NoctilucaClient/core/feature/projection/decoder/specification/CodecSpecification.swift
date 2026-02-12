@@ -187,11 +187,11 @@ extension CodecSpecification {
         
         switch hardwareAcceleration {
         case .kHardwareAccelerationAuto:
-            entries.append("가능한 경우 하드웨어 가속 사용")
+            entries.append("서버가 하드웨어 가속 사용 여부를 자동 결정")
         case .kHardwareAccelerationFalse:
-            entries.append("하드웨어 가속 사용 안 함")
+            entries.append("서버 하드웨어 가속 사용 요청")
         default:
-            entries.append("가능한 경우 하드웨어 가속 사용")
+            entries.append("서버 하드웨어 가속 사용 정책 사용자 지정")
         }
         
         let dynamicRange = self.option(.dynamicRange) ?? .kDynamicRangeSDR
