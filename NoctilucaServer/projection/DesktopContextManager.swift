@@ -68,6 +68,7 @@ enum DesktopContextError: Error {
 // MARK: - Protocols
 
 /// 특정 앱(AppSession)에서 발생하는 이벤트를 수신
+@MainActor
 protocol AppSessionDelegate: AnyObject {
     // Lifecycle
     func appSessionDidTerminate(_ session: AppSession)
@@ -96,6 +97,7 @@ protocol AppSessionDelegate: AnyObject {
 }
 
 /// 시스템 전체(DesktopContextManager)에서 발생하는 이벤트를 수신
+@MainActor
 protocol DesktopContextManagerDelegate: AnyObject {
     /// 새로운 앱이 실행됨 (감시 시작 가능 시점)
     func desktopManager(_ manager: DesktopContextManager, didDetectAppLaunch app: NSRunningApplication)
@@ -111,22 +113,24 @@ protocol DesktopContextManagerDelegate: AnyObject {
 
 /// 단일 애플리케이션의 상태를 감시하고 제어하는 세션
 /// (기존 AppSubscription)
+@MainActor
 final class AppSession {
     // 식별 및 상태
     let appIdentifier: AppIdentifier
     let pid: pid_t
     private let runningApplication: NSRunningApplication
-    
+
     // 내부 캐시 (WindowID -> Info)
     private(set) var monitoredWindows: [WindowInfo.ID: WindowInfo] = [:]
-    
+
     weak var delegate: AppSessionDelegate?
-    
+
     // AXUIElement 등 내부 구현체
     private let appElement: AXUIElement
     private var axObserver: AXObserver?
-    
-    private let observedNotifications: [CFString] = [
+    private var observerRefCon: UnsafeMutableRawPointer?
+
+    private nonisolated let observedNotifications: [CFString] = [
         kAXWindowCreatedNotification as CFString,
         kAXUIElementDestroyedNotification as CFString,
         kAXFocusedWindowChangedNotification as CFString,
@@ -135,13 +139,14 @@ final class AppSession {
         kAXWindowResizedNotification as CFString,
         kAXTitleChangedNotification as CFString
     ]
-    
+
     // 디바운스+병합: 잦은 AX 노티를 100~200ms 간격으로 묶고, 실행 중 중복을 한 번으로 합친다.
     private let refreshSubject = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
     private let refreshDelay: TimeInterval = 0.15
     private var isRefreshing = false
     private var pendingRefresh = false
+    private var isStopped = false
     
     init(runningApp: NSRunningApplication) throws {
         if let bundleID = runningApp.bundleIdentifier, bundleID.isEmpty == false {
@@ -163,29 +168,51 @@ final class AppSession {
     }
     
     deinit {
+        // 정상 흐름에서는 retain cycle(passRetained) 때문에
+        // stop() 없이는 deinit에 도달할 수 없음.
+        // 이 guard는 방어적 프로그래밍용.
+        if !isStopped {
+            assertionFailure("AppSession \(appIdentifier) deallocated without stop()")
+        }
+    }
+
+    // MARK: - Lifecycle
+
+    /// AXObserver 및 Combine 파이프라인을 정리하고 retain cycle을 해소한다.
+    /// DesktopContextManager.stopMonitoring(pid:) 에서 호출된다.
+    func stop() {
+        guard !isStopped else { return }
+        isStopped = true
+
         cancellables.removeAll()
+
         guard let observer = axObserver else { return }
-        observedNotifications.forEach { notification in
+        for notification in observedNotifications {
             AXObserverRemoveNotification(observer, appElement, notification)
         }
         CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
+
+        // passRetained의 +1 retain을 해제 (retain cycle 해소)
+        if let refCon = observerRefCon {
+            Unmanaged<AppSession>.fromOpaque(refCon).release()
+            observerRefCon = nil
+        }
+
+        axObserver = nil
     }
-    
-    // MARK: - Control Actions (Async 권장: AX API는 IPC이므로 블로킹 가능성 있음)
+
+    // MARK: - Control Actions
     
     /// 앱 자체를 활성화 (Bring to front)
-    func activate() async throws {
+    func activate() throws {
         try ensureAppIsRunning()
-        await MainActor.run {
-            _ = self.runningApplication.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
-        }
+        _ = runningApplication.activate()
     }
-    
+
     /// 앱 종료 요청
-    func terminate() async throws {
+    func terminate() throws {
         try ensureAppIsRunning()
-        let terminated = await MainActor.run { self.runningApplication.terminate() }
-        if terminated == false {
+        if !runningApplication.terminate() {
             throw DesktopContextError.appNotRunning
         }
     }
@@ -194,44 +221,42 @@ final class AppSession {
     func refreshWindows() {
         let previousWindows = self.monitoredWindows
         let previousFocusID = previousWindows.values.first(where: { $0.isActive })?.id
-        
+
         let windows = self.fetchWindowList()
         let newFocusID = windows.values.first(where: { $0.isActive })?.id
-        
+
         self.monitoredWindows = windows
-        
-        if let delegate = self.delegate {
-            DispatchQueue.main.async {
-                let added = Set(windows.keys).subtracting(previousWindows.keys)
-                let removed = Set(previousWindows.keys).subtracting(windows.keys)
-                let candidates = Set(windows.keys).intersection(previousWindows.keys)
-                
-                for id in added {
-                    if let window = windows[id] {
-                        delegate.appSession(self, didDiscoverWindow: window)
-                    }
-                }
-                
-                for id in removed {
-                    delegate.appSession(self, didCloseWindow: id)
-                }
-                
-                for id in candidates {
-                    guard let oldValue = previousWindows[id], let newValue = windows[id] else { continue }
-                    if oldValue != newValue {
-                        delegate.appSession(self, didUpdateWindow: newValue)
-                    }
-                }
-                
-                if previousFocusID != newFocusID {
-                    delegate.appSession(self, didChangeWindowFocusTo: newFocusID)
-                }
+
+        guard let delegate = self.delegate else { return }
+
+        let added = Set(windows.keys).subtracting(previousWindows.keys)
+        let removed = Set(previousWindows.keys).subtracting(windows.keys)
+        let candidates = Set(windows.keys).intersection(previousWindows.keys)
+
+        for id in added {
+            if let window = windows[id] {
+                delegate.appSession(self, didDiscoverWindow: window)
             }
+        }
+
+        for id in removed {
+            delegate.appSession(self, didCloseWindow: id)
+        }
+
+        for id in candidates {
+            guard let oldValue = previousWindows[id], let newValue = windows[id] else { continue }
+            if oldValue != newValue {
+                delegate.appSession(self, didUpdateWindow: newValue)
+            }
+        }
+
+        if previousFocusID != newFocusID {
+            delegate.appSession(self, didChangeWindowFocusTo: newFocusID)
         }
     }
     
     /// 특정 윈도우로 포커스 이동 (winman.proto: WindowFocusRequest)
-    func focusWindow(id: WindowInfo.ID) async throws {
+    func focusWindow(id: WindowInfo.ID) throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
         
@@ -251,7 +276,7 @@ final class AppSession {
     }
     
     /// 윈도우 닫기
-    func closeWindow(id: WindowInfo.ID) async throws {
+    func closeWindow(id: WindowInfo.ID) throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
         
@@ -274,7 +299,7 @@ final class AppSession {
     }
     
     /// 윈도우 이동/크기 조절 (Noctiluca 기능 확장 시 필요)
-    func setWindowFrame(id: WindowInfo.ID, frame: CGRect) async throws {
+    func setWindowFrame(id: WindowInfo.ID, frame: CGRect) throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
         
@@ -311,19 +336,27 @@ final class AppSession {
         var observer: AXObserver?
         let result = AXObserverCreate(self.pid, { _, _, notification, context in
             guard let context else { return }
-            let session = Unmanaged<AppSession>.fromOpaque(context).takeUnretainedValue()
-            session.handleAXNotification(notification)
+            // AXObserver 콜백은 메인 런루프에서 실행되므로 assumeIsolated가 안전함
+            MainActor.assumeIsolated {
+                let session = Unmanaged<AppSession>.fromOpaque(context).takeUnretainedValue()
+                session.handleAXNotification(notification)
+            }
         }, &observer)
-        
+
         guard result == .success, let observer else {
             throw DesktopContextError.cannotCreateAXObserver(result)
         }
-        
+
         self.axObserver = observer
+
+        // +1 retain: stop()에서 release하여 retain cycle을 해소함
+        let refCon = Unmanaged.passRetained(self).toOpaque()
+        self.observerRefCon = refCon
+
         for notification in observedNotifications {
-            _ = AXObserverAddNotification(observer, appElement, notification, Unmanaged.passUnretained(self).toOpaque())
+            _ = AXObserverAddNotification(observer, appElement, notification, refCon)
         }
-        
+
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
     }
     
@@ -340,26 +373,19 @@ final class AppSession {
     
     /// 실제 refresh 실행을 직렬화하고, 실행 중 추가 요청은 한 번 더 실행하도록 병합
     private func enqueueRefresh() {
-        if isRefreshing {
+        guard !isRefreshing else {
             pendingRefresh = true
             return
         }
         isRefreshing = true
-        
-        Task(priority: .utility) { [weak self] in
-            guard let self else { return }
-            defer {
-                self.isRefreshing = false
-                if self.pendingRefresh {
-                    self.pendingRefresh = false
-                    DispatchQueue.main.async { [weak self] in
-                        self?.enqueueRefresh()
-                    }
-                }
+        defer {
+            isRefreshing = false
+            if pendingRefresh {
+                pendingRefresh = false
+                enqueueRefresh()
             }
-            
-            self.refreshWindows()
         }
+        refreshWindows()
     }
     
     private func ensureAppIsRunning() throws {
@@ -460,6 +486,7 @@ final class AppSession {
 
 /// 시스템 전체의 앱 실행 상태와 포커스를 관장하는 매니저
 /// (기존 WindowManagerOrSpy)
+@MainActor
 final class DesktopContextManager {
     
     weak var delegate: DesktopContextManagerDelegate?
@@ -523,52 +550,64 @@ final class DesktopContextManager {
     
     /// 감시 중단
     func stopMonitoring(pid: pid_t) {
-        activeSessions.removeValue(forKey: pid)
+        if let session = activeSessions.removeValue(forKey: pid) {
+            session.stop()
+        }
+    }
+
+    /// 모든 세션을 정리하고 workspace observer를 해제한다.
+    func shutdown() {
+        for session in activeSessions.values {
+            session.stop()
+        }
+        activeSessions.removeAll()
+        workspaceObservers.forEach { observer in
+            workspace.notificationCenter.removeObserver(observer)
+        }
+        workspaceObservers.removeAll()
     }
     
     // MARK: - Global Window Queries
     // winman.proto의 WindowListRequest 처리를 위해 필요할 수 있음
     
     /// 현재 화면에 있는 모든 윈도우 리스트 조회 (CGWindowList 활용)
-    func globalWindowList() async -> [WindowInfo] {
-        await Task(priority: .utility) { () -> [WindowInfo] in
-            let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-            guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
-                return []
+    func globalWindowList() -> [WindowInfo] {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+            return []
+        }
+
+        let frontmostWindowID = infoList.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
+
+        return infoList.compactMap { info in
+            guard info.keys.contains(kCGWindowBounds as String) else {
+                return nil
             }
-            
-            let frontmostWindowID = infoList.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
-            
-            return infoList.compactMap { info in
-                guard info.keys.contains(kCGWindowBounds as String) else {
-                    return nil
-                }
-                
-                let boundsDictionary = info[kCGWindowBounds as String] as! CFDictionary
-                guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
-                    return nil
-                }
-                
-                let windowID = info[kCGWindowNumber as String] as? CGWindowID ?? 0
-                let layer = Int32(info[kCGWindowLayer as String] as? Int ?? 0)
-                let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t ?? 0
-                let title = info[kCGWindowName as String] as? String ?? ""
-                let isOnscreen = info[kCGWindowIsOnscreen as String] as? Bool ?? false
-                let alpha = info[kCGWindowAlpha as String] as? Double ?? 0.0
-                let isVisible = isOnscreen && alpha > 0.01
-                let isActive = frontmostWindowID == windowID
-                
-                return WindowInfo(
-                    id: windowID,
-                    title: title,
-                    frame: bounds,
-                    isVisible: isVisible,
-                    isActive: isActive,
-                    layer: layer,
-                    ownerPID: ownerPID
-                )
+
+            let boundsDictionary = info[kCGWindowBounds as String] as! CFDictionary
+            guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
+                return nil
             }
-        }.value
+
+            let windowID = info[kCGWindowNumber as String] as? CGWindowID ?? 0
+            let layer = Int32(info[kCGWindowLayer as String] as? Int ?? 0)
+            let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t ?? 0
+            let title = info[kCGWindowName as String] as? String ?? ""
+            let isOnscreen = info[kCGWindowIsOnscreen as String] as? Bool ?? false
+            let alpha = info[kCGWindowAlpha as String] as? Double ?? 0.0
+            let isVisible = isOnscreen && alpha > 0.01
+            let isActive = frontmostWindowID == windowID
+
+            return WindowInfo(
+                id: windowID,
+                title: title,
+                frame: bounds,
+                isVisible: isVisible,
+                isActive: isActive,
+                layer: layer,
+                ownerPID: ownerPID
+            )
+        }
     }
     
     // MARK: - Private
@@ -582,35 +621,42 @@ final class DesktopContextManager {
             object: nil,
             queue: queue
         ) { [weak self] notification in
-            guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
-                return
+            // OperationQueue.main에서 실행되므로 assumeIsolated가 안전함
+            MainActor.assumeIsolated {
+                guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+                    return
+                }
+                self.delegate?.desktopManager(self, didDetectAppLaunch: app)
             }
-            self.delegate?.desktopManager(self, didDetectAppLaunch: app)
         }
-        
+
         let terminationObserver = center.addObserver(
             forName: NSWorkspace.didTerminateApplicationNotification,
             object: nil,
             queue: queue
         ) { [weak self] notification in
-            guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
-                return
+            MainActor.assumeIsolated {
+                guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+                    return
+                }
+                if let session = self.activeSessions[app.processIdentifier] {
+                    session.delegate?.appSessionDidTerminate(session)
+                }
+                self.stopMonitoring(pid: app.processIdentifier)
+                self.delegate?.desktopManager(self, didDetectAppTermination: app.processIdentifier)
             }
-            if let session = self.activeSessions[app.processIdentifier] {
-                session.delegate?.appSessionDidTerminate(session)
-            }
-            self.stopMonitoring(pid: app.processIdentifier)
-            self.delegate?.desktopManager(self, didDetectAppTermination: app.processIdentifier)
         }
-        
+
         let activationObserver = center.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
             object: nil,
             queue: queue
         ) { [weak self] notification in
-            guard let self else { return }
-            let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            self.delegate?.desktopManager(self, didChangeFrontmostApp: app ?? self.workspace.frontmostApplication)
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+                self.delegate?.desktopManager(self, didChangeFrontmostApp: app ?? self.workspace.frontmostApplication)
+            }
         }
         
         self.workspaceObservers.append(contentsOf: [launchObserver, terminationObserver, activationObserver])
