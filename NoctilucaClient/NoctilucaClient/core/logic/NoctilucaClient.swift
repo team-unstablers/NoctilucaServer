@@ -15,10 +15,11 @@ enum NoctilucaClientError: LocalizedError {
     case unsupportedProtocolVersion
     case invalidPhase
     case protocolVersionMismatch(client: String, server: String)
-    
+
     case remoteClosedConnection
     case authNegotiationFailed(authMethods: [ClientAuthMethod])
-    
+    case sessionClosedByServer(ClosureCode, String?)
+
     var errorDescription: String? {
         switch self {
         case .unsupportedProtocolVersion:
@@ -28,15 +29,48 @@ enum NoctilucaClientError: LocalizedError {
         case .protocolVersionMismatch(let client, let server):
             return "프로토콜 버전이 호환되지 않습니다.\nClient: \(client), Server: \(server)"
         case .remoteClosedConnection:
-            return "호스트가 임의로 연결을 종료했습니다."
+            return "연결이 예기치 않게 끊어졌습니다."
         case .authNegotiationFailed(let authMethods):
             if authMethods.isEmpty {
                 return "인증 방법 협상에 실패했습니다.\n서버에서 아무런 인증 방법도 제시하지 않았습니다."
             }
-            
+
             let joined = authMethods.map { $0.rawValue }.joined(separator: ", ")
             return "인증 방법 협상에 실패했습니다.\n서버에서 인증 방법으로 \(joined)를 제시했지만, 현재 버전의 클라이언트에서는 이 중 아무것도 지원하지 않습니다."
+        case .sessionClosedByServer(let code, let message):
+            return Self.descriptionForClosureCode(code, message: message)
         }
+    }
+
+    var alertTitle: String {
+        switch self {
+        case .sessionClosedByServer(let code, _) where code == .successful:
+            return "세션 종료"
+        default:
+            return "오류 발생"
+        }
+    }
+
+    private static func descriptionForClosureCode(_ code: ClosureCode, message: String?) -> String {
+        let base: String
+        switch code {
+        case .successful:
+            base = "호스트가 세션을 종료했습니다."
+        case .protocolError:
+            base = "프로토콜 오류로 인해 호스트가 연결을 종료했습니다."
+        case .internalServerError:
+            base = "호스트 내부 오류로 인해 연결이 종료되었습니다."
+        case .authenticationFailed:
+            base = "인증 실패로 인해 연결이 종료되었습니다."
+        case .sessionAllocationFailed:
+            base = "서버의 세션 할당 실패로 인해 연결이 종료되었습니다."
+        default:
+            base = "호스트가 연결을 종료했습니다. (코드: \(code.rawValue))"
+        }
+        if let message, !message.isEmpty {
+            return "\(base)\n\(message)"
+        }
+        return base
     }
 }
 
@@ -80,7 +114,6 @@ struct SucceedValidationDecision {
 enum NoctilucaClientUIEvent: Sendable {
     case receivedAuthChallenge(AuthChallenge)
     case receivedAuthResponse(AuthResponse)
-    case receivedGoodbye(ClosureCode, String?)
     case phaseChanged(NoctilucaClientPhase)
     case errorOccurred(NoctilucaClientError)
 
@@ -245,9 +278,8 @@ class NoctilucaClient: ObservableObject {
                 case .receivedGoodbye(let message):
                     logger.info("Received Goodbye from server: code=\(message.code.rawValue), message=\(message.message ?? "(none)")")
                     await MainActor.run {
-                        self.uiEvents.send(.receivedGoodbye(message.code, message.message))
+                        self.uiEvents.send(.errorOccurred(.sessionClosedByServer(message.code, message.message)))
                     }
-                    // Goodbye 수신 시에는 재전송 없이 정리만 수행
                     await self.close()
                     return
 
@@ -391,8 +423,10 @@ class NoctilucaClient: ObservableObject {
 extension NoctilucaClient: SiriusClientDelegate {
     func siriusClientDidCloseTransport(_ client: SiriusKitClient.SiriusClient) {
         Task {
-            await MainActor.run {
-                self.uiEvents.send(.errorOccurred(.remoteClosedConnection))
+            if self.phase != .closed {
+                await MainActor.run {
+                    self.uiEvents.send(.errorOccurred(.remoteClosedConnection))
+                }
             }
             await self.close()
         }

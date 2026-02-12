@@ -134,15 +134,11 @@ class RemoteSession: ObservableObject {
             self.logger.error("Client error occurred: \(error.localizedDescription)")
             // 재전송
             self.errorEvents.send(error)
-            
+
         case .channelCreated(let feature, let channel):
             self.handleChannelOpen(channel: channel, for: feature)
         case .channelClosed(let channelID):
             self.handleChannelClose(channelID)
-            
-        case .receivedGoodbye(let code, let reason):
-            // TODO
-            break
 
         case .serverIdentityValidationNeeded(let identity):
             Task {
