@@ -8,106 +8,85 @@
 import SiriusKit
 import AppKit
 
-import Atomics
-
 class ProjectionChannel: Channel {
     let logger = NoctilucaLogger(category: "ProjectionChannel")
-    
+
     override var serviceClass: ServiceClass { .userInput }
 
     private let cursorStateHolder = CursorStateHolder.shared
-    private var subscription: CursorEventSubscription? = nil
-
-    /// Display 변경 이벤트 구독
-    var displaySubscription: DisplayEventSubscription? = nil
-
-    private(set) var sessions: [UUID: ProjectionSession] = [:]
-    private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
-
-    /// 모든 ProjectionDataChannel 추적 (orphan 채널 정리용)
-    private(set) var projectionDataChannels: [UUID: ProjectionDataChannel] = [:]
-    
-    private let isDestroyed = ManagedAtomic<Bool>(false)
+    let state = ProjectionChannelState()
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
-        
+
         assert(direction == .remote, "ProjectionChannel must be opened from remote side")
     }
-    
+
     func destroy() async {
-        let result = self.isDestroyed.compareExchange(expected: false, desired: true, ordering: .relaxed)
-        guard result.exchanged else {
+        guard let snapshot = await state.beginDestroy() else {
             return
         }
-        
-        // 비디오 프로젝션 세션 정리
-        for (id, session) in self.sessions {
-            do {
-                try await session.stop()
-            } catch {
-                self.logger.error("Failed to stop projection session \(session.id): \(error)")
-            }
-            self.projectionDataChannels.removeValue(forKey: id)
-        }
-        self.sessions.removeAll()
 
-        // 오디오 프로젝션 세션 정리
-        for (id, audioSession) in self.audioSessions {
-            do {
-                try await audioSession.stop()
-            } catch {
-                self.logger.error("Failed to stop audio projection session \(audioSession.id): \(error)")
-            }
-            self.projectionDataChannels.removeValue(forKey: id)
+        for channel in snapshot.dataChannels {
+            channel.projectionDelegate = nil
         }
-        self.audioSessions.removeAll()
 
-        // orphan ProjectionDataChannel 강제 정리
-        // 세션에 등록되지 않았거나 세션 stop()에서 정리되지 않은 채널들
-        for channel in self.projectionDataChannels.values {
+        for session in snapshot.videoSessions {
+            await session.stop()
+        }
+
+        for audioSession in snapshot.audioSessions {
+            await audioSession.stop()
+        }
+
+        for channel in snapshot.dataChannels {
             do {
                 try await channel.close()
             } catch {
-                self.logger.error("Failed to close orphan projection data channel \(channel.identifier): \(error)")
+                logger.warning("Failed to close projection data channel \(channel.identifier) during destroy: \(error)")
             }
         }
-        self.projectionDataChannels.removeAll()
 
-        // cursor subscription 정리
-        self.subscription?.destroy()
-        self.subscription = nil
+        snapshot.cursorSubscription?.destroy()
+        snapshot.displaySubscription?.destroy()
 
-        // display subscription 정리
-        self.displaySubscription?.destroy()
-        self.displaySubscription = nil
+        await state.completeDestroy()
+    }
+
+    private func cleanupTerminationTargets(
+        _ targets: ProjectionChannelState.TerminationTargets,
+        closeDataChannel: Bool
+    ) async {
+        if let videoSession = targets.videoSession {
+            await videoSession.stop()
+        }
+
+        if let audioSession = targets.audioSession {
+            await audioSession.stop()
+        }
+
+        guard closeDataChannel, let dataChannel = targets.dataChannel else {
+            return
+        }
+
+        dataChannel.projectionDelegate = nil
+
+        do {
+            try await dataChannel.close()
+        } catch {
+            logger.warning("Failed to close projection data channel \(dataChannel.identifier): \(error)")
+        }
     }
 
     private func handleProjectionDataChannelTermination(identifier: UUID, error: (any Error)? = nil) async {
         if let error {
-            self.logger.warning("ProjectionDataChannel \(identifier) terminated with error: \(error)")
+            logger.warning("ProjectionDataChannel \(identifier) terminated with error: \(error)")
         }
 
-        // 추적 딕셔너리에서 제거
-        self.projectionDataChannels.removeValue(forKey: identifier)
-
-        if let session = self.sessions.removeValue(forKey: identifier) {
-            do {
-                try await session.stop()
-            } catch {
-                self.logger.error("Failed to stop projection session \(session.id): \(error)")
-            }
-        }
-
-        if let audioSession = self.audioSessions.removeValue(forKey: identifier) {
-            do {
-                try await audioSession.stop()
-            } catch {
-                self.logger.error("Failed to stop audio projection session \(audioSession.id): \(error)")
-            }
-        }
+        let targets = await state.terminateByDataChannelClosure(identifier: identifier)
+        await cleanupTerminationTargets(targets, closeDataChannel: false)
     }
-    
+
     override func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
@@ -116,81 +95,94 @@ class ProjectionChannel: Channel {
         switch frame.opcode {
         case .projectionRequest:
             let projectionRequest = try ProjectionRequest.fromProtobufBytes(frame.data)
-            await self.handleProjectionRequest(consume projectionRequest)
+            await handleProjectionRequest(consume projectionRequest)
+
         case .stopProjectionRequest:
             let stopRequest = try StopProjectionRequest.fromProtobufBytes(frame.data)
-            if let session = self.sessions.removeValue(forKey: stopRequest.identifier) {
-                try? await session.stop()
-            }
-            self.projectionDataChannels.removeValue(forKey: stopRequest.identifier)
+            let targets = await state.terminateByControlMessage(
+                identifier: stopRequest.identifier,
+                kind: .video
+            )
+            await cleanupTerminationTargets(targets, closeDataChannel: true)
+
         case .projectionPerformanceReport:
             let report = try ProjectionPerformanceReport.fromProtobufBytes(frame.data)
-            await self.handlePerformanceReport(report)
+            await handlePerformanceReport(report)
+
         case .subscribeCursorEventsRequest:
             let request = try SubscribeCursorEventsRequest.fromProtobufBytes(frame.data)
-            try await self.handleSubscribeCursorEventsRequest(request)
+            try await handleSubscribeCursorEventsRequest(request)
+
         case .unsubscribeCursorEventsRequest:
             let request = try UnsubscribeCursorEventsRequest.fromProtobufBytes(frame.data)
-            try await self.handleUnsubscribeCursorEventsRequest(request)
-            
+            try await handleUnsubscribeCursorEventsRequest(request)
+
         case .audioProjectionRequest:
             let projectionRequest = try AudioProjectionRequest.fromProtobufBytes(frame.data)
-            try await self.handleAudioProjectionRequest(consume projectionRequest)
+            try await handleAudioProjectionRequest(consume projectionRequest)
+
         case .stopAudioProjectionRequest:
             let stopRequest = try StopAudioProjectionRequest.fromProtobufBytes(frame.data)
-            if let session = self.audioSessions.removeValue(forKey: stopRequest.identifier) {
-                await session.stop()
-            }
-            self.projectionDataChannels.removeValue(forKey: stopRequest.identifier)
+            let targets = await state.terminateByControlMessage(
+                identifier: stopRequest.identifier,
+                kind: .audio
+            )
+            await cleanupTerminationTargets(targets, closeDataChannel: true)
 
-        // displayman opcodes
         case .displayListRequest:
             let request = try DisplayListRequest.fromProtobufBytes(frame.data)
-            try await self.handleDisplayListRequest(request)
+            try await handleDisplayListRequest(request)
+
         case .subscribeDisplayChangesRequest:
             let request = try SubscribeDisplayChangesRequest.fromProtobufBytes(frame.data)
-            try await self.handleSubscribeDisplayChangesRequest(request)
+            try await handleSubscribeDisplayChangesRequest(request)
+
         case .unsubscribeDisplayChangesRequest:
             let request = try UnsubscribeDisplayChangesRequest.fromProtobufBytes(frame.data)
-            try await self.handleUnsubscribeDisplayChangesRequest(request)
+            try await handleUnsubscribeDisplayChangesRequest(request)
 
         default:
             print("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
-            break
         }
     }
-    
+
     private func handlePerformanceReport(_ report: ProjectionPerformanceReport) async {
-        guard let session = self.sessions[report.identifier] else {
-            self.logger.warning("Received performance report for unknown session \(report.identifier)")
+        guard let session = await state.sessionForPerformanceReport(identifier: report.identifier) else {
+            logger.warning("Received performance report for unknown session \(report.identifier)")
             return
         }
-        
+
         session.handlePerformanceReport(report)
     }
-    
+
     func handleProjectionRequest(_ request: ProjectionRequest) async {
-        guard let session = self.clientSession else {
+        guard let session = clientSession else {
             return
         }
 
-        var channel: ProjectionDataChannel?
-        do {
-            let identifier = request.identifier
+        let identifier = request.identifier
 
+        guard await state.reserveSession(identifier: identifier, kind: .video) else {
+            logger.warning("Rejecting projection request for \(identifier) because lifecycle is not active or identifier is already in use")
+            return
+        }
+
+        var transientSession: ProjectionSession?
+
+        do {
             let projectionSettings = NoctilucaServer.shared.settings.projection
             let negotiator = CodecNegotiator.create(
                 from: projectionSettings.codecNegotiationPolicy,
                 specifications: projectionSettings.codecSpecifications
             )
 
-            var negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs)
-
-            guard var negotiatedCodec else {
-                fatalError("Failed to negotiate codec for projection session")
+            guard var negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs) else {
+                logger.error("Failed to negotiate codec for projection session \(identifier)")
+                let targets = await state.terminateByControlMessage(identifier: identifier, kind: .video)
+                await cleanupTerminationTargets(targets, closeDataChannel: true)
+                return
             }
 
-            // FIXME
             if let desiredSize = request.preferredCodecs.compactMap({ $0.size }).first {
                 negotiatedCodec = Codec(
                     fourCC: negotiatedCodec.fourCC,
@@ -212,95 +204,110 @@ class ProjectionChannel: Channel {
             }
 
             let openedChannel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
-            channel = openedChannel
+            logger.info("Opened ProjectionDataChannel with id: \(openedChannel.identifier)")
 
-            self.logger.info("Opened ProjectionDataChannel with id: \(openedChannel.identifier)")
             openedChannel.projectionDelegate = self
-            self.projectionDataChannels[identifier] = openedChannel
+
+            guard await state.registerPendingDataChannel(identifier: identifier, channel: openedChannel) else {
+                openedChannel.projectionDelegate = nil
+                try? await openedChannel.close()
+
+                let targets = await state.terminateByControlMessage(identifier: identifier, kind: .video)
+                await cleanupTerminationTargets(targets, closeDataChannel: false)
+                return
+            }
 
             let projectionSession = await ProjectionSession(
                 id: identifier,
                 dataChannel: openedChannel,
                 preferredRecorderType: projectionSettings.preferredScreenRecorder
             )
+            transientSession = projectionSession
 
             try await projectionSession.prepare(request, codec: negotiatedCodec)
             try await projectionSession.start()
 
-            self.sessions[identifier] = projectionSession
+            guard await state.activateVideoSession(identifier: identifier, session: projectionSession) else {
+                projectionSession.dataChannel.projectionDelegate = nil
+                await projectionSession.stop()
 
-            try await self.send(opcode: .projectionSessionCreatedEvent, message: ProjectionSessionCreatedEvent(
+                let targets = await state.terminateByControlMessage(identifier: identifier, kind: .video)
+                await cleanupTerminationTargets(targets, closeDataChannel: false)
+                return
+            }
+
+            try await send(opcode: .projectionSessionCreatedEvent, message: ProjectionSessionCreatedEvent(
                 identifier: identifier,
                 source: request.viewport,
                 codec: negotiatedCodec
             ))
         } catch {
-            self.logger.error("Failed to handle projection request: \(error)")
-            if let channel {
-                try? await channel.close()
-                self.projectionDataChannels.removeValue(forKey: channel.identifier)
+            logger.error("Failed to handle projection request \(identifier): \(error)")
+
+            if let transientSession {
+                transientSession.dataChannel.projectionDelegate = nil
+                await transientSession.stop()
             }
+
+            let targets = await state.terminateByControlMessage(identifier: identifier, kind: .video)
+            await cleanupTerminationTargets(targets, closeDataChannel: true)
         }
     }
-    
+
     private func handleSubscribeCursorEventsRequest(_ request: SubscribeCursorEventsRequest) async throws {
-        if let subscription = self.subscription {
-            // TODO: send error
-            return
-        }
-        
         let subscription = CursorEventSubscription()
         subscription.channel = self
-        
+
+        guard await state.addCursorSubscriptionIfAbsent(subscription) else {
+            subscription.destroy()
+            return
+        }
+
         await subscription.setup()
-        
-        self.subscription = subscription
-        
-        try await self.send(opcode: .subscribeCursorEventsResponse, message: SubscribeCursorEventsResponse(
+
+        guard await state.isCurrentCursorSubscription(subscription) else {
+            subscription.destroy()
+            return
+        }
+
+        try await send(opcode: .subscribeCursorEventsResponse, message: SubscribeCursorEventsResponse(
             requestID: request.requestID,
             subscriptionID: subscription.id
         ))
     }
-    
+
     private func handleUnsubscribeCursorEventsRequest(_ request: UnsubscribeCursorEventsRequest) async throws {
-        guard let subscription = self.subscription else {
-            // TODO: send error
+        guard let subscription = await state.removeCursorSubscription() else {
             return
         }
-        
-        subscription.destroy()
-        self.subscription = nil
 
-        try await self.send(opcode: .unsubscribeCursorEventsResponse, message: UnsubscribeCursorEventsResponse(
+        subscription.destroy()
+
+        try await send(opcode: .unsubscribeCursorEventsResponse, message: UnsubscribeCursorEventsResponse(
             requestID: request.requestID,
             subscriptionID: subscription.id,
             isSuccess: true
         ))
     }
-    
+
     func sendCursorPositionEvent(_ state: CursorState) async throws {
-        /// STOP!: position은 (하단, 좌측) 기준입니다. 이를 (상단, 좌측) 기준으로 변환해야 합니다.
-        ///        아니, 그건 그런데, 이거 position이 그래픽 세션의 전체 뷰포트 (모든 모니터를 합친) 인지, 아니면 특정 모니터 기준인지도 확실하지가 않은데...
-        let displayLayoutManager = DisplayLayoutManager.shared
-        
-        try await self.send(opcode: .cursorEvent, message: CursorEvent(
+        try await send(opcode: .cursorEvent, message: CursorEvent(
             event: .moveEvent(CursorMoveEvent(
                 displayID: state.belongsTo,
                 position: SRPoint(x: state.relativePosition.x, y: state.relativePosition.y)
             ))
         ))
     }
-    
+
     func sendCursorImageEvent() async throws {
-        guard let cursorImage   = await cursorStateHolder.cursorImage,
+        guard let cursorImage = await cursorStateHolder.cursorImage,
               let cursorHotspot = await cursorStateHolder.cursorHotspot,
               let png = cursorImage.pngData()
         else {
             return
         }
-        
-        
-        try await self.send(opcode: .cursorEvent, message: CursorEvent(
+
+        try await send(opcode: .cursorEvent, message: CursorEvent(
             event: .imageEvent(CursorImageEvent(
                 cursorType: UInt64(cursorStateHolder.cursorHash),
                 mimeType: "image/png",
@@ -310,9 +317,9 @@ class ProjectionChannel: Channel {
             ))
         ))
     }
-    
+
     private func handleAudioProjectionRequest(_ request: AudioProjectionRequest) async throws {
-        guard let session = self.clientSession else {
+        guard let session = clientSession else {
             return
         }
 
@@ -320,8 +327,8 @@ class ProjectionChannel: Channel {
         let projectionSettings = NoctilucaServer.shared.settings.projection
 
         guard projectionSettings.isAudioProjectionEnabled else {
-            self.logger.warning("Audio projection request rejected because it is disabled in settings")
-            try await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
+            logger.warning("Audio projection request rejected because it is disabled in settings")
+            try await send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
                 identifier: identifier,
                 reason: .unknown,
                 message: "Audio projection is disabled on server."
@@ -329,65 +336,92 @@ class ProjectionChannel: Channel {
             return
         }
 
-        var channel: ProjectionDataChannel?
+        guard await state.reserveSession(identifier: identifier, kind: .audio) else {
+            logger.warning("Rejecting audio projection request for \(identifier) because lifecycle is not active or identifier is already in use")
+            return
+        }
+
+        var transientSession: AudioProjectionSession?
+
         do {
             let serverSupportedCodecs = projectionSettings.audioCodecSpecifications.map { $0.fourCC }
 
-            // 코덱 협상: 클라이언트 선호 코덱 중 서버가 지원하는 첫 번째 코덱 선택
-            guard let negotiatedCodec = negotiateAudioCodec(clientPreferred: request.preferredCodecs, serverSupported: serverSupportedCodecs) else {
-                self.logger.warning("No supported audio codec found for session \(identifier)")
-                try await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
+            guard let negotiatedCodec = negotiateAudioCodec(
+                clientPreferred: request.preferredCodecs,
+                serverSupported: serverSupportedCodecs
+            ) else {
+                logger.warning("No supported audio codec found for session \(identifier)")
+                try await send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
                     identifier: identifier,
                     reason: .codecNotSupported,
                     message: "No supported audio codec found. Server supports: \(serverSupportedCodecs.map { $0.stringRepresentation }.joined(separator: ", "))"
                 ))
+
+                let targets = await state.terminateByControlMessage(identifier: identifier, kind: .audio)
+                await cleanupTerminationTargets(targets, closeDataChannel: true)
                 return
             }
 
-            self.logger.info("Negotiated audio codec: \(negotiatedCodec.fourCC.stringRepresentation) for session \(identifier)")
+            logger.info("Negotiated audio codec: \(negotiatedCodec.fourCC.stringRepresentation) for session \(identifier)")
 
             let openedChannel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
-            channel = openedChannel
+            logger.info("Opened ProjectionDataChannel for audio with id: \(openedChannel.identifier)")
 
-            self.logger.info("Opened ProjectionDataChannel for audio with id: \(openedChannel.identifier)")
             openedChannel.projectionDelegate = self
-            self.projectionDataChannels[identifier] = openedChannel
+
+            guard await state.registerPendingDataChannel(identifier: identifier, channel: openedChannel) else {
+                openedChannel.projectionDelegate = nil
+                try? await openedChannel.close()
+
+                let targets = await state.terminateByControlMessage(identifier: identifier, kind: .audio)
+                await cleanupTerminationTargets(targets, closeDataChannel: false)
+                return
+            }
 
             let projectionSession = AudioProjectionSession(
                 id: identifier,
                 dataChannel: openedChannel
             )
+            transientSession = projectionSession
 
             try await projectionSession.prepare(request, codec: negotiatedCodec)
             try await projectionSession.start()
 
-            self.audioSessions[identifier] = projectionSession
+            guard await state.activateAudioSession(identifier: identifier, session: projectionSession) else {
+                projectionSession.dataChannel.projectionDelegate = nil
+                await projectionSession.stop()
 
-            try await self.send(opcode: .audioSessionCreatedEvent, message: AudioSessionCreatedEvent(
+                let targets = await state.terminateByControlMessage(identifier: identifier, kind: .audio)
+                await cleanupTerminationTargets(targets, closeDataChannel: false)
+                return
+            }
+
+            try await send(opcode: .audioSessionCreatedEvent, message: AudioSessionCreatedEvent(
                 identifier: identifier,
                 source: request.source,
                 codec: negotiatedCodec
             ))
         } catch {
-            self.logger.error("Failed to handle audio projection request: \(error)")
+            logger.error("Failed to handle audio projection request \(identifier): \(error)")
 
-            // 세션 생성 실패 이벤트 전송
-            try? await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
+            try? await send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
                 identifier: identifier,
                 reason: .unknown,
                 message: error.localizedDescription
             ))
 
-            if let channel {
-                try? await channel.close()
-                self.projectionDataChannels.removeValue(forKey: channel.identifier)
+            if let transientSession {
+                transientSession.dataChannel.projectionDelegate = nil
+                await transientSession.stop()
             }
+
+            let targets = await state.terminateByControlMessage(identifier: identifier, kind: .audio)
+            await cleanupTerminationTargets(targets, closeDataChannel: true)
         }
     }
 
     /// 클라이언트 선호 코덱 목록에서 서버가 지원하는 첫 번째 코덱을 선택
     private func negotiateAudioCodec(clientPreferred: [SiriusKit.AudioCodec], serverSupported: [CodecFourCC]) -> SiriusKit.AudioCodec? {
-        // 클라이언트 선호 순서대로 서버 지원 여부 확인
         for codec in clientPreferred {
             if serverSupported.contains(codec.fourCC) {
                 return codec
@@ -411,7 +445,6 @@ extension ProjectionChannel: ProjectionDataChannelDelegate {
     }
 }
 
-
 fileprivate extension ProjectionSource {
     @MainActor
     var contentSize: SRSize? {
@@ -426,19 +459,19 @@ fileprivate extension ProjectionSource {
             default:
                 CGDirectDisplayID(source.displayID)
             }
-            
+
             if let displaySize = DisplayLayoutManager.shared.displayLayouts[displayID]?.frame.size {
                 return SRSize(width: displaySize.width, height: displaySize.height)
             } else {
                 return nil
             }
-            
+
         case .region(let region):
             return SRSize(width: region.region.width, height: region.region.height)
-            
-        case .singleWindow(let window):
+
+        case .singleWindow:
             fatalError("not implemented yet")
-            
+
         default:
             return nil
         }

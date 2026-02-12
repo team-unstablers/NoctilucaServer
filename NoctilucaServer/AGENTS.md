@@ -231,6 +231,13 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 - `CInteropHandle`로 C 콜백 컨텍스트 전달/복원 지원.
 - `TCCUtil`, `JSON` 등 유틸은 `utils/`에 위치합니다.
 
+# RECENT NOTES
+
+- **ProjectionChannel 동시성 정리 (2026-02-12)**:
+  - `ProjectionChannelState` actor를 도입해 세션/데이터 채널/구독 상태를 단일 격리 경계에서 관리합니다.
+  - `ProjectionChannel.destroy()`는 lifecycle(`active → destroying → destroyed`) 기반 2-phase teardown으로 동작합니다.
+  - 세션 종료 경로(`stop request`, `ProjectionDataChannel` close/error, `destroy`)를 통합해 중복 정리 및 경합을 완화합니다.
+
 # SEE ALSO
 
 - `../SiriusKit/AGENTS.md` - Sirius 프로토콜, 트랜스포트/채널 구조 설명

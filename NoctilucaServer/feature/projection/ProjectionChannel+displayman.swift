@@ -38,60 +38,64 @@ extension ProjectionChannel {
     // MARK: - Subscribe Display Changes
 
     func handleSubscribeDisplayChangesRequest(_ request: SubscribeDisplayChangesRequest) async throws {
-        // 이미 구독 중이면 에러 (현재는 단순히 새로운 구독으로 대체)
-        if let existingSubscription = self.displaySubscription {
-            existingSubscription.destroy()
-        }
-
         let subscription = DisplayEventSubscription(eventMask: request.eventMask)
         subscription.channel = self
 
-        await subscription.setup()
+        let result = await state.replaceDisplaySubscription(subscription)
 
-        self.displaySubscription = subscription
+        switch result {
+        case .rejected:
+            subscription.destroy()
+            return
 
-        try await self.send(opcode: .subscribeDisplayChangesResponse, message: SubscribeDisplayChangesResponse(
-            requestID: request.requestID,
-            subscriptionID: subscription.id
-        ))
+        case .installed(let previousSubscription):
+            await subscription.setup()
+
+            guard await state.isCurrentDisplaySubscription(subscription) else {
+                subscription.destroy()
+                return
+            }
+
+            previousSubscription?.destroy()
+
+            try await self.send(opcode: .subscribeDisplayChangesResponse, message: SubscribeDisplayChangesResponse(
+                requestID: request.requestID,
+                subscriptionID: subscription.id
+            ))
+        }
     }
 
     // MARK: - Unsubscribe Display Changes
 
     func handleUnsubscribeDisplayChangesRequest(_ request: UnsubscribeDisplayChangesRequest) async throws {
-        guard let subscription = self.displaySubscription else {
-            // 구독이 없으면 실패 응답
+        let unsubscribeResult = await state.unsubscribeDisplaySubscription(expectedID: request.subscriptionID)
+
+        switch unsubscribeResult {
+        case .notFound, .mismatchedSubscriptionID:
             try await self.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
                 requestID: request.requestID,
                 subscriptionID: request.subscriptionID,
                 isSuccess: false
             ))
-            return
-        }
 
-        // subscriptionID 검증
-        guard subscription.id == request.subscriptionID else {
+        case .unsubscribed(let subscription):
+            subscription.destroy()
+
             try await self.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
                 requestID: request.requestID,
-                subscriptionID: request.subscriptionID,
-                isSuccess: false
+                subscriptionID: subscription.id,
+                isSuccess: true
             ))
-            return
         }
-
-        subscription.destroy()
-        self.displaySubscription = nil
-
-        try await self.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
-            requestID: request.requestID,
-            subscriptionID: subscription.id,
-            isSuccess: true
-        ))
     }
 
     // MARK: - Send Display Changed Event
 
     func sendDisplayChangedEvent(_ event: DisplayChangeEvent) async throws {
+        guard await state.lifecycleState == .active else {
+            return
+        }
+
         let displayInfo: DisplayInfo
 
         if event.eventType.contains(.disconnected) {
@@ -116,7 +120,7 @@ extension ProjectionChannel {
             guard let nocScreen = DisplayLayoutManager.shared.displayLayouts[displayID] else {
                 return
             }
-            
+
             displayInfo = buildDisplayInfo(from: nocScreen, displayID: event.displayID)
         }
 
@@ -131,7 +135,7 @@ extension ProjectionChannel {
     private func buildDisplayInfo(from screen: NOCScreen, displayID: CGDirectDisplayID, includeThumbnail: Bool = false) -> DisplayInfo {
         // 디스플레이 종류 판별
         let kind = getDisplayKind(displayID: displayID)
-        
+
         let nsScreen = screen.backingNSScreen
 
         // 디스플레이 이름
@@ -235,12 +239,14 @@ extension ProjectionChannel {
 
         // HDR 지원 모니터는 10bit일 가능성이 높음
         if let pixelEncoding = mode.pixelEncoding {
-            let encodingString = pixelEncoding as String; if encodingString.contains("10") {
+            let encodingString = pixelEncoding as String
+            if encodingString.contains("10") {
                 return .bit10
             }
         }
 
         // 대부분의 경우 8bit
+        _ = bitsPerPixel
         return .bit8
     }
 
@@ -318,18 +324,22 @@ extension ProjectionChannel {
             return nil
         }
 
-        // DPI 계산
-        guard let mode = CGDisplayCopyDisplayMode(displayID) else {
-            return nil
-        }
-
-        let widthPixels = Double(mode.pixelWidth)
+        // 가로/세로 DPI 계산
+        let pixelWidth = CGFloat(CGDisplayPixelsWide(displayID))
+        let pixelHeight = CGFloat(CGDisplayPixelsHigh(displayID))
         let widthInches = widthMM / 25.4
-        let dpi = widthInches > 0 ? UInt32(widthPixels / widthInches) : 0
+        let heightInches = heightMM / 25.4
+
+        let horizontalDPI = widthInches > 0 ? (pixelWidth / widthInches) : 0
+        let verticalDPI = heightInches > 0 ? (pixelHeight / heightInches) : 0
+        let averageDPI = UInt32(((horizontalDPI + verticalDPI) / 2.0).rounded())
 
         return DisplayPhysicalSizeInfo(
-            physicalSize: SRSize(width: widthMM, height: heightMM),
-            dpi: dpi
+            physicalSize: SRSize(
+                width: Double(widthMM),
+                height: Double(heightMM)
+            ),
+            dpi: averageDPI
         )
     }
 }
