@@ -48,10 +48,10 @@ struct KeychainQUICServerIdentityTests {
     }
 
     @Test(
-        "수동 체인 픽스처(leaf/intermediate/root)에서 intermediate만 체인으로 반환하는가",
+        "수동 체인 픽스처(leaf/intermediate/root)에서 self-signed root를 포함한 체인을 반환하는가",
         .disabled(if: !runManualChainFixtureTest || TestConfig.isUnattended)
     )
-    func returnsIntermediateOnlyForManualKeychainFixture() async throws {
+    func returnsChainIncludingSelfSignedRootForManualKeychainFixture() async throws {
         let identity = KeychainQUICServerIdentity(Self.manualLeafLabel)
 
         let leaf = try await identity.secCertificate()
@@ -62,6 +62,6 @@ struct KeychainQUICServerIdentityTests {
         let chainCommonNames = Set(chain.compactMap { $0.extractCommonName() })
 
         #expect(chainCommonNames.contains(Self.manualIntermediateCommonName))
-        #expect(!chainCommonNames.contains(Self.manualRootCommonName))
+        #expect(chainCommonNames.contains(Self.manualRootCommonName))
     }
 }

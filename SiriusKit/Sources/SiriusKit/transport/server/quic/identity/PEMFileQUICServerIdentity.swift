@@ -134,7 +134,7 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
             chain.append(secCertificate)
         }
 
-        return chain.filter { !$0.isSelfSignedCertificate() }
+        return chain
     }
 }
 

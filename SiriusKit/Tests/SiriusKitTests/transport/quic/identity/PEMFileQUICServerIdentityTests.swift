@@ -38,8 +38,8 @@ struct PEMFileQUICServerIdentityTests {
         #expect(try await identity.sanityCheck())
     }
 
-    @Test("다중 CERTIFICATE 블록을 파싱하고 self-signed 체인을 제외할 수 있는가")
-    func parsesMultipleCertificateBlocksAndDropsSelfSignedChain() async throws {
+    @Test("다중 CERTIFICATE 블록을 파싱하고 self-signed 체인을 포함할 수 있는가")
+    func parsesMultipleCertificateBlocksAndKeepsSelfSignedChain() async throws {
         let basePath = temporaryBasePath()
 
         let identifier = UUID().uuidString
@@ -65,7 +65,7 @@ struct PEMFileQUICServerIdentityTests {
         #expect(parsedCertificates.count == 2)
 
         let chain = try await identity.getCertificateChain()
-        #expect(chain.count == 0)
+        #expect(chain.count == 1)
     }
     
     // MARK: - Helpers

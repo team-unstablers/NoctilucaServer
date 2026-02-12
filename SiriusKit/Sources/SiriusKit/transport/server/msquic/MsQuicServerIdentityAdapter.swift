@@ -90,7 +90,7 @@ final class MsQuicServerIdentityAdapter {
             throw AdapterError.identityNotAvailable
         }
 
-        let exportTarget = [leaf] + chain.filter { !$0.isSelfSignedCertificate() }
+        let exportTarget = [leaf] + chain
         var pemSequence = Data()
 
         for certificate in exportTarget {
@@ -100,7 +100,7 @@ final class MsQuicServerIdentityAdapter {
             }
             pemSequence.append(pemData)
         }
-
+        
         return pemSequence
     }
 
