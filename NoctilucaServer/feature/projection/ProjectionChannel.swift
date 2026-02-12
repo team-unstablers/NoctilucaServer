@@ -8,6 +8,8 @@
 import SiriusKit
 import AppKit
 
+import Atomics
+
 class ProjectionChannel: Channel {
     let logger = NoctilucaLogger(category: "ProjectionChannel")
     
@@ -24,6 +26,8 @@ class ProjectionChannel: Channel {
 
     /// 모든 ProjectionDataChannel 추적 (orphan 채널 정리용)
     private(set) var projectionDataChannels: [UUID: ProjectionDataChannel] = [:]
+    
+    private let isDestroyed = ManagedAtomic<Bool>(false)
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -32,6 +36,11 @@ class ProjectionChannel: Channel {
     }
     
     func destroy() async {
+        let result = self.isDestroyed.compareExchange(expected: false, desired: true, ordering: .relaxed)
+        guard result.exchanged else {
+            return
+        }
+        
         // 비디오 프로젝션 세션 정리
         for (id, session) in self.sessions {
             do {
