@@ -20,7 +20,9 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
 
     private var configuration: AudioEncoderConfiguration?
     private var converter: AVAudioConverter?
+    private var resamplerConverter: AVAudioConverter?
     private var inputFormat: AVAudioFormat?
+    private var intermediateFormat: AVAudioFormat?
     private var outputFormat: AVAudioFormat?
 
     /// Internal buffer for accumulating samples (Opus requires 20ms frames = 960 samples @ 48kHz)
@@ -86,7 +88,9 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
     func stop() throws {
         workerQueue.sync {
             self.converter = nil
+            self.resamplerConverter = nil
             self.inputFormat = nil
+            self.intermediateFormat = nil
             self.outputFormat = nil
             self.accumulationBuffer = nil
             self.accumulatedFrameCount = 0
@@ -166,14 +170,36 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         }
         self.inputFormat = inputFormat
 
-        // Opus works best with 48kHz - we'll use the input sample rate if it's 48kHz,
-        // otherwise we need an intermediate conversion (not implemented here for simplicity)
-        let outputSampleRate = inputFormat.sampleRate == 48000 ? 48000.0 : inputFormat.sampleRate
-        let outputChannelCount = min(inputFormat.channelCount, 2) // Opus supports up to 2 channels easily
+        let opusSampleRate: Double = 48000.0
+        let outputChannelCount = min(inputFormat.channelCount, 2)
 
-        // Create output format for Opus
+        // Stage 1: Create resampler if input is not 48kHz
+        let converterInputFormat: AVAudioFormat
+        if inputFormat.sampleRate != opusSampleRate {
+            guard let intFormat = AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: opusSampleRate,
+                channels: outputChannelCount,
+                interleaved: false
+            ) else {
+                throw AudioEncoderError.unsupportedFormat
+            }
+            self.intermediateFormat = intFormat
+
+            guard let resampler = AVAudioConverter(from: inputFormat, to: intFormat) else {
+                throw AudioEncoderError.converterCreationFailed
+            }
+            self.resamplerConverter = resampler
+            converterInputFormat = intFormat
+        } else {
+            self.intermediateFormat = nil
+            self.resamplerConverter = nil
+            converterInputFormat = inputFormat
+        }
+
+        // Stage 2: Create Opus converter from 48kHz PCM -> Opus
         var outputASBD = AudioStreamBasicDescription(
-            mSampleRate: outputSampleRate,
+            mSampleRate: opusSampleRate,
             mFormatID: kAudioFormatOpus,
             mFormatFlags: 0,
             mBytesPerPacket: 0, // Variable
@@ -189,7 +215,7 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         }
         self.outputFormat = outputFormat
 
-        guard let converter = AVAudioConverter(from: inputFormat, to: outputFormat) else {
+        guard let converter = AVAudioConverter(from: converterInputFormat, to: outputFormat) else {
             throw AudioEncoderError.converterCreationFailed
         }
 
@@ -198,14 +224,18 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
 
         self.converter = converter
 
-        // Create accumulation buffer for input samples
-        guard let accBuffer = AVAudioPCMBuffer(pcmFormat: inputFormat, frameCapacity: opusFrameSamples * 4) else {
+        // Create accumulation buffer in 48kHz format (converterInputFormat is always 48kHz)
+        guard let accBuffer = AVAudioPCMBuffer(pcmFormat: converterInputFormat, frameCapacity: opusFrameSamples * 4) else {
             throw AudioEncoderError.internalError("Failed to create accumulation buffer")
         }
         self.accumulationBuffer = accBuffer
         self.accumulatedFrameCount = 0
 
-        logger.info("Created Opus converter: \(inputFormat.sampleRate)Hz \(inputFormat.channelCount)ch -> Opus \(self.targetBitrateKbps)kbps")
+        if self.resamplerConverter != nil {
+            logger.info("Created Opus converter: \(inputFormat.sampleRate)Hz \(inputFormat.channelCount)ch -> [resample to \(opusSampleRate)Hz] -> Opus \(self.targetBitrateKbps)kbps")
+        } else {
+            logger.info("Created Opus converter: \(inputFormat.sampleRate)Hz \(inputFormat.channelCount)ch -> Opus \(self.targetBitrateKbps)kbps")
+        }
 
         return converter
     }
@@ -222,8 +252,46 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         }
 
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+
+        // Resample to 48kHz if needed
+        let bufferToAccumulate: AVAudioPCMBuffer
+        if let resampler = self.resamplerConverter, let intFormat = self.intermediateFormat {
+            let ratio = intFormat.sampleRate / inputFormat.sampleRate
+            let resampledFrameCount = AVAudioFrameCount(ceil(Double(inputBuffer.frameLength) * ratio))
+            guard resampledFrameCount > 0 else { return }
+
+            guard let resampledBuffer = AVAudioPCMBuffer(pcmFormat: intFormat, frameCapacity: resampledFrameCount) else {
+                throw AudioEncoderError.internalError("Failed to create resample buffer")
+            }
+
+            var conversionError: NSError?
+            var inputConsumed = false
+            let status = resampler.convert(to: resampledBuffer, error: &conversionError) { _, outStatus in
+                if inputConsumed {
+                    outStatus.pointee = .noDataNow
+                    return nil
+                }
+                inputConsumed = true
+                outStatus.pointee = .haveData
+                return inputBuffer
+            }
+
+            if let error = conversionError {
+                throw AudioEncoderError.conversionFailed(error)
+            }
+            guard status != .error else {
+                throw AudioEncoderError.internalError("Resampling failed")
+            }
+
+            bufferToAccumulate = resampledBuffer
+        } else {
+            bufferToAccumulate = inputBuffer
+        }
+
+        // Accumulate resampled (48kHz) samples
         var inputOffset: AVAudioFrameCount = 0
-        let inputFrameCount = inputBuffer.frameLength
+        let inputFrameCount = bufferToAccumulate.frameLength
+        let channelCount = Int(accumulationBuffer.format.channelCount)
 
         while inputOffset < inputFrameCount {
             let framesToCopy = min(
@@ -232,10 +300,10 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
             )
 
             // Copy frames to accumulation buffer
-            if let inputFloatData = inputBuffer.floatChannelData,
+            if let srcFloatData = bufferToAccumulate.floatChannelData,
                let accFloatData = accumulationBuffer.floatChannelData {
-                for channel in 0..<Int(inputFormat.channelCount) {
-                    let srcPtr = inputFloatData[channel].advanced(by: Int(inputOffset))
+                for channel in 0..<channelCount {
+                    let srcPtr = srcFloatData[channel].advanced(by: Int(inputOffset))
                     let dstPtr = accFloatData[channel].advanced(by: Int(accumulatedFrameCount))
                     memcpy(dstPtr, srcPtr, Int(framesToCopy) * MemoryLayout<Float>.size)
                 }
@@ -254,8 +322,7 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
     }
 
     private func encodeAccumulatedBuffer(converter: AVAudioConverter, pts: CMTime) throws {
-        guard let inputFormat = self.inputFormat,
-              let outputFormat = self.outputFormat,
+        guard let outputFormat = self.outputFormat,
               let accumulationBuffer = self.accumulationBuffer else {
             throw AudioEncoderError.notPrepared
         }
