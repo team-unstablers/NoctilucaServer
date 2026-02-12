@@ -13,7 +13,7 @@ import Network
 @testable import SiriusKit
 
 /// QUIC 트랜스포트 관련한 클래스를 종합적으로 테스트합니다.
-@Suite(.disabled(if: TestConfig.isUnattended))
+@Suite(.disabled("자가 서명 인증서 신뢰 처리에 사용자 인증 다이얼로그가 필요"))
 final class QUICTransportTest {
     private let identifier: UUID
     private let port: NWEndpoint.Port
