@@ -51,6 +51,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     // 아 진짜 swift6 concurrency 개같다 ㅋㅋㅋㅋㅋㅋㅋ
     // 진짜 별걸 다 unsafe 떡칠을 해야 하네, C++는 이렇게 개같이 굴지 않았어!
     nonisolated(unsafe) var identityValidationPolicy: ServerIdentityValidationPolicy
+    nonisolated(unsafe) private var _certificateValidationFailed: Bool = false
 
     init(host: String, port: UInt16, alpn: SiriusQUICAlpn = .siriusV1, validationPolicy: ServerIdentityValidationPolicy) {
         self.hostname = host
@@ -284,10 +285,12 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
                 case .allow:
                     return .success
                 case .deny:
+                    self._certificateValidationFailed = true
                     return .badCertificate
                 }
             } catch {
                 self.logger.error("Failed to validate server identity: \(error)")
+                self._certificateValidationFailed = true
                 return .badCertificate
             }
         }
@@ -357,7 +360,9 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
     private func handleConnectionShutdown(errorCode: UInt64) async {
         if let delegate = self.delegate {
-            let error = ClientRoleMsQuicTransportError.connectionFailed
+            let error: ClientTransportError = _certificateValidationFailed
+                ? .certificateValidationFailed
+                : .connectionFailed
             await delegate.clientTransport(self, didEncounterError: error)
         }
         await disconnect()

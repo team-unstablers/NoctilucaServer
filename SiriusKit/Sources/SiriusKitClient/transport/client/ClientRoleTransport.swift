@@ -11,6 +11,14 @@ import SiriusKitCore
 
 typealias ClientRoleTransportIdentifier = TransportLayerIdentifier
 
+/// 트랜스포트 계층에서 발생하는 에러
+public enum ClientTransportError: Error, Sendable {
+    /// 서버 인증서 검증에 실패했습니다.
+    case certificateValidationFailed
+    /// 연결에 실패했습니다.
+    case connectionFailed
+}
+
 /// 서버 아이덴티티 타입
 public enum ServerIdentity {
     /// SSL 인증서

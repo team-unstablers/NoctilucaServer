@@ -26,6 +26,9 @@ public class SiriusClient: SiriusSession {
     public var channelManager: ChannelManager!
     public var shouldAcceptChannelCreation: Bool = false
 
+    /// 마지막으로 발생한 트랜스포트 에러
+    public private(set) var lastTransportError: ClientTransportError?
+
     public weak var delegate: (any SiriusClientDelegate)?
     
     // MARK: Computed Properties
@@ -99,6 +102,9 @@ extension SiriusClient: ClientRoleTransportDelegate {
 
     func clientTransport(_ transport: any ClientRoleTransport, didEncounterError error: any Error) async {
         logger.error("SiriusClient with ID: \(self.id.uuidString) encountered error: \(error)")
+        if let transportError = error as? ClientTransportError {
+            self.lastTransportError = transportError
+        }
     }
 
     func clientTransport(_ transport: any ClientRoleTransport, didReceiveNegotiationRequest request: NegotiationRequest, responder: @escaping (NegotiationResponse) -> Void) {

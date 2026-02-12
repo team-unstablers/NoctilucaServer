@@ -16,6 +16,7 @@ enum NoctilucaClientError: LocalizedError {
     case invalidPhase
     case protocolVersionMismatch(client: String, server: String)
 
+    case certificateValidationFailed
     case remoteClosedConnection
     case authNegotiationFailed(authMethods: [ClientAuthMethod])
     case sessionClosedByServer(ClosureCode, String?)
@@ -28,6 +29,8 @@ enum NoctilucaClientError: LocalizedError {
             return "잘못된 페이즈 전환이 시도되었습니다."
         case .protocolVersionMismatch(let client, let server):
             return "프로토콜 버전이 호환되지 않습니다.\nClient: \(client), Server: \(server)"
+        case .certificateValidationFailed:
+            return "서버 인증서 검증에 실패했습니다.\n신뢰할 수 있는 인증서가 아니거나, 인증서가 만료되었을 수 있습니다."
         case .remoteClosedConnection:
             return "연결이 예기치 않게 끊어졌습니다."
         case .authNegotiationFailed(let authMethods):
@@ -424,8 +427,15 @@ extension NoctilucaClient: SiriusClientDelegate {
     func siriusClientDidCloseTransport(_ client: SiriusKitClient.SiriusClient) {
         Task {
             if self.phase != .closed {
+                let error: NoctilucaClientError = switch client.lastTransportError {
+                case .certificateValidationFailed:
+                    .certificateValidationFailed
+                default:
+                    .remoteClosedConnection
+                }
+
                 await MainActor.run {
-                    self.uiEvents.send(.errorOccurred(.remoteClosedConnection))
+                    self.uiEvents.send(.errorOccurred(error))
                 }
             }
             await self.close()
