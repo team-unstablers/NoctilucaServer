@@ -22,33 +22,48 @@ class ProjectionChannel: Channel {
     private(set) var sessions: [UUID: ProjectionSession] = [:]
     private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
 
+    /// 모든 ProjectionDataChannel 추적 (orphan 채널 정리용)
+    private(set) var projectionDataChannels: [UUID: ProjectionDataChannel] = [:]
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
         
         assert(direction == .remote, "ProjectionChannel must be opened from remote side")
     }
     
-    // FIXME: 채널 닫고 그래야 함
     func destroy() async {
         // 비디오 프로젝션 세션 정리
-        for session in self.sessions.values {
+        for (id, session) in self.sessions {
             do {
                 try await session.stop()
             } catch {
                 self.logger.error("Failed to stop projection session \(session.id): \(error)")
             }
+            self.projectionDataChannels.removeValue(forKey: id)
         }
         self.sessions.removeAll()
 
         // 오디오 프로젝션 세션 정리
-        for audioSession in self.audioSessions.values {
+        for (id, audioSession) in self.audioSessions {
             do {
                 try await audioSession.stop()
             } catch {
                 self.logger.error("Failed to stop audio projection session \(audioSession.id): \(error)")
             }
+            self.projectionDataChannels.removeValue(forKey: id)
         }
         self.audioSessions.removeAll()
+
+        // orphan ProjectionDataChannel 강제 정리
+        // 세션에 등록되지 않았거나 세션 stop()에서 정리되지 않은 채널들
+        for channel in self.projectionDataChannels.values {
+            do {
+                try await channel.close()
+            } catch {
+                self.logger.error("Failed to close orphan projection data channel \(channel.identifier): \(error)")
+            }
+        }
+        self.projectionDataChannels.removeAll()
 
         // cursor subscription 정리
         self.subscription?.destroy()
@@ -63,6 +78,9 @@ class ProjectionChannel: Channel {
         if let error {
             self.logger.warning("ProjectionDataChannel \(identifier) terminated with error: \(error)")
         }
+
+        // 추적 딕셔너리에서 제거
+        self.projectionDataChannels.removeValue(forKey: identifier)
 
         if let session = self.sessions.removeValue(forKey: identifier) {
             do {
@@ -95,6 +113,7 @@ class ProjectionChannel: Channel {
             if let session = self.sessions.removeValue(forKey: stopRequest.identifier) {
                 try? await session.stop()
             }
+            self.projectionDataChannels.removeValue(forKey: stopRequest.identifier)
         case .projectionPerformanceReport:
             let report = try ProjectionPerformanceReport.fromProtobufBytes(frame.data)
             await self.handlePerformanceReport(report)
@@ -108,6 +127,12 @@ class ProjectionChannel: Channel {
         case .audioProjectionRequest:
             let projectionRequest = try AudioProjectionRequest.fromProtobufBytes(frame.data)
             try await self.handleAudioProjectionRequest(consume projectionRequest)
+        case .stopAudioProjectionRequest:
+            let stopRequest = try StopAudioProjectionRequest.fromProtobufBytes(frame.data)
+            if let session = self.audioSessions.removeValue(forKey: stopRequest.identifier) {
+                await session.stop()
+            }
+            self.projectionDataChannels.removeValue(forKey: stopRequest.identifier)
 
         // displayman opcodes
         case .displayListRequest:
@@ -139,22 +164,23 @@ class ProjectionChannel: Channel {
         guard let session = self.clientSession else {
             return
         }
-        
+
+        var channel: ProjectionDataChannel?
         do {
             let identifier = request.identifier
-            
+
             let projectionSettings = NoctilucaServer.shared.settings.projection
             let negotiator = CodecNegotiator.create(
                 from: projectionSettings.codecNegotiationPolicy,
                 specifications: projectionSettings.codecSpecifications
             )
-            
+
             var negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs)
-            
+
             guard var negotiatedCodec else {
                 fatalError("Failed to negotiate codec for projection session")
             }
-            
+
             // FIXME
             if let desiredSize = request.preferredCodecs.compactMap({ $0.size }).first {
                 negotiatedCodec = Codec(
@@ -166,7 +192,7 @@ class ProjectionChannel: Channel {
                 )
             } else {
                 let contentSize = await request.viewport.contentSize
-                
+
                 negotiatedCodec = Codec(
                     fourCC: negotiatedCodec.fourCC,
                     frameRate: negotiatedCodec.frameRate,
@@ -175,23 +201,25 @@ class ProjectionChannel: Channel {
                     quality: negotiatedCodec.quality
                 )
             }
-            
-            let channel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
-            
-            self.logger.info("Opened ProjectionDataChannel with id: \(channel.identifier)")
-            channel.projectionDelegate = self
-            
+
+            let openedChannel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
+            channel = openedChannel
+
+            self.logger.info("Opened ProjectionDataChannel with id: \(openedChannel.identifier)")
+            openedChannel.projectionDelegate = self
+            self.projectionDataChannels[identifier] = openedChannel
+
             let projectionSession = await ProjectionSession(
                 id: identifier,
-                dataChannel: channel,
+                dataChannel: openedChannel,
                 preferredRecorderType: projectionSettings.preferredScreenRecorder
             )
-            
+
             try await projectionSession.prepare(request, codec: negotiatedCodec)
             try await projectionSession.start()
-            
+
             self.sessions[identifier] = projectionSession
-            
+
             try await self.send(opcode: .projectionSessionCreatedEvent, message: ProjectionSessionCreatedEvent(
                 identifier: identifier,
                 source: request.viewport,
@@ -199,6 +227,10 @@ class ProjectionChannel: Channel {
             ))
         } catch {
             self.logger.error("Failed to handle projection request: \(error)")
+            if let channel {
+                try? await channel.close()
+                self.projectionDataChannels.removeValue(forKey: channel.identifier)
+            }
         }
     }
     
@@ -277,7 +309,7 @@ class ProjectionChannel: Channel {
 
         let identifier = request.identifier
         let projectionSettings = NoctilucaServer.shared.settings.projection
-        
+
         guard projectionSettings.isAudioProjectionEnabled else {
             self.logger.warning("Audio projection request rejected because it is disabled in settings")
             try await self.send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
@@ -288,9 +320,10 @@ class ProjectionChannel: Channel {
             return
         }
 
+        var channel: ProjectionDataChannel?
         do {
             let serverSupportedCodecs = projectionSettings.audioCodecSpecifications.map { $0.fourCC }
-            
+
             // 코덱 협상: 클라이언트 선호 코덱 중 서버가 지원하는 첫 번째 코덱 선택
             guard let negotiatedCodec = negotiateAudioCodec(clientPreferred: request.preferredCodecs, serverSupported: serverSupportedCodecs) else {
                 self.logger.warning("No supported audio codec found for session \(identifier)")
@@ -304,14 +337,16 @@ class ProjectionChannel: Channel {
 
             self.logger.info("Negotiated audio codec: \(negotiatedCodec.fourCC.stringRepresentation) for session \(identifier)")
 
-            let channel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
+            let openedChannel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
+            channel = openedChannel
 
-            self.logger.info("Opened ProjectionDataChannel for audio with id: \(channel.identifier)")
-            channel.projectionDelegate = self
+            self.logger.info("Opened ProjectionDataChannel for audio with id: \(openedChannel.identifier)")
+            openedChannel.projectionDelegate = self
+            self.projectionDataChannels[identifier] = openedChannel
 
             let projectionSession = AudioProjectionSession(
                 id: identifier,
-                dataChannel: channel
+                dataChannel: openedChannel
             )
 
             try await projectionSession.prepare(request, codec: negotiatedCodec)
@@ -333,6 +368,11 @@ class ProjectionChannel: Channel {
                 reason: .unknown,
                 message: error.localizedDescription
             ))
+
+            if let channel {
+                try? await channel.close()
+                self.projectionDataChannels.removeValue(forKey: channel.identifier)
+            }
         }
     }
 

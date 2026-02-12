@@ -35,6 +35,8 @@ class AudioProjectionSession: Identifiable {
     private var encoderEventLoopTask: Task<Void, Error>?
     private var senderEventLoopTask: Task<Void, Error>?
 
+    private var isStopped = false
+
     init(id: UUID, dataChannel: ProjectionDataChannel) {
         self.id = id
 
@@ -172,48 +174,74 @@ class AudioProjectionSession: Identifiable {
     }
 
     func start() async throws {
-        try await self.recorder.start()
-        try self.encoder?.start()
+        do {
+            try await self.recorder.start()
+            try self.encoder?.start()
+        } catch {
+            self.logger.error("Failed to start audio projection session \(self.id): \(error)")
+            await self.stop()
+            throw error
+        }
     }
 
     func stop() async {
-        // Cancel task
+        guard !isStopped else { return }
+
+        defer {
+            isStopped = true
+        }
+
+        // 1. Task 취소 (새로운 프레임 처리 중단)
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
-        
+
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
+
+        // 2. Frame queue 정리
         await frameQueue.clear()
         await frameQueue.cancelWaiter()
 
-        // Clean up recorder/encoder
-        try? await self.recorder.stop()
-        try? self.encoder?.stop()
-        
-        try? await self.dataChannel.close()
+        // 3. Recorder 정리 (캡처 중지)
+        do {
+            try await self.recorder.stop()
+        } catch {
+            self.logger.error("Failed to stop recorder for audio projection session \(self.id): \(error)")
+        }
+
+        // 4. Encoder 정리
+        do {
+            try self.encoder?.stop()
+        } catch {
+            self.logger.error("Failed to stop encoder for audio projection session \(self.id): \(error)")
+        }
+
+        // 5. Data channel 정리
+        do {
+            try await self.dataChannel.close()
+        } catch {
+            self.logger.warning("Failed to close projection data channel \(self.dataChannel.identifier): \(error)")
+        }
     }
 
     deinit {
-        encoderEventLoopTask?.cancel()
-        encoderEventLoopTask = nil
+        // 명시적 stop() 호출 없이 deinit된 경우 경고
+        if !isStopped {
+            logger.warning("AudioProjectionSession \(self.id) deallocated without explicit stop() - resource cleanup may be incomplete")
+        }
 
+        // 동기 작업만 수행 (async 호출 금지)
+        encoderEventLoopTask?.cancel()
         senderEventLoopTask?.cancel()
-        senderEventLoopTask = nil
 
         recorder.delegate = nil
 
-        // encoder.stop()은 동기 메서드이므로 직접 호출 (Task 불필요)
+        // encoder.stop()은 동기 메서드이므로 직접 호출
         try? encoder?.stop()
 
-        // recorder.stop()은 async이므로 fire-and-forget Task가 불가피
-        let frameQueue = self.frameQueue
-        let recorder = recorder
-        let dataChannel = self.dataChannel
-        Task {
-            try? await recorder.stop()
-            await frameQueue.cancelWaiter()
-            try? await dataChannel.close()
-        }
+        // Note: recorder.stop(), dataChannel.close(), frameQueue.cancelWaiter()는 async이므로 deinit에서 호출 불가
+        // 반드시 명시적으로 stop()을 호출해야 정상적인 리소스 정리가 보장됨
+        // (특히 frameQueue.next()에서 대기 중인 senderEventLoopTask가 해제되지 않을 수 있음)
     }
 }
 

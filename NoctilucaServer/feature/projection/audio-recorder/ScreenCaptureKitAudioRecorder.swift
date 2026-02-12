@@ -216,11 +216,28 @@ class ScreenCaptureKitAudioRecorder: NSObject, AudioRecorder {
     }
     
     func stop() async throws {
-        if let stream = self.stream {
-            try? stream.removeStreamOutput(self, type: .audio)
-            try await stream.stopCapture()
+        guard let stream = self.stream else {
+            return
         }
-        self.stream = nil
+
+        defer {
+            self.stream = nil
+        }
+
+        // SCStream output 제거 시도 (실패해도 계속 진행)
+        do {
+            try stream.removeStreamOutput(self, type: .audio)
+        } catch {
+            logger.warning("Failed to remove stream output: \(error)")
+        }
+
+        // Capture 중지 (반드시 시도, 실패 시 throw)
+        do {
+            try await stream.stopCapture()
+        } catch {
+            logger.error("Failed to stop capture: \(error)")
+            throw error
+        }
     }
 }
 

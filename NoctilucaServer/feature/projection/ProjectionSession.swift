@@ -50,10 +50,12 @@ class ProjectionSession: Identifiable {
     private var currentAppliedFrameRate: Float? = nil
 
     private var screenLockCancellable: AnyCancellable!
-    
+
     // FIXME
     var targetBitrate = 0
     var maxBitrate = 0
+
+    private var isStopped = false
 
     init(id: UUID, dataChannel: ProjectionDataChannel, preferredRecorderType: ScreenRecorderType) async {
         self.id = id
@@ -262,33 +264,42 @@ class ProjectionSession: Identifiable {
     }
     
     func stop() async {
-        // Task 취소
+        guard !isStopped else { return }
+
+        defer {
+            isStopped = true
+        }
+
+        // 1. Task 취소 (새로운 프레임 처리 중단)
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
-        
+
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
 
-        await frameQueue.clear()
-        await frameQueue.cancelWaiter()
-
-        // Combine 구독 취소
+        // 2. Combine 구독 취소 (reconfigureRecorder 호출 방지)
         screenLockCancellable?.cancel()
         screenLockCancellable = nil
 
-        // recorder/encoder 정리
+        // 3. Frame queue 정리
+        await frameQueue.clear()
+        await frameQueue.cancelWaiter()
+
+        // 4. Recorder 정리 (캡처 중지)
         do {
             try await self.recorder.stop()
         } catch {
             self.logger.error("Failed to stop recorder for projection session \(self.id): \(error)")
         }
 
+        // 5. Encoder 정리
         do {
             try self.encoder.stop()
         } catch {
             self.logger.error("Failed to stop encoder for projection session \(self.id): \(error)")
         }
 
+        // 6. Data channel 정리
         do {
             try await dataChannel.close()
         } catch {
@@ -297,6 +308,12 @@ class ProjectionSession: Identifiable {
     }
 
     deinit {
+        // 명시적 stop() 호출 없이 deinit된 경우 경고
+        if !isStopped {
+            logger.warning("ProjectionSession \(self.id) deallocated without explicit stop() - resource cleanup may be incomplete")
+        }
+
+        // 동기 작업만 수행 (async 호출 금지)
         encoderEventLoopTask?.cancel()
         senderEventLoopTask?.cancel()
         screenLockCancellable?.cancel()
@@ -304,10 +321,9 @@ class ProjectionSession: Identifiable {
         // VTVideoEncoder의 Unmanaged refCon retain cycle을 끊는다 (동기 메서드)
         try? encoder.stop()
 
-        let frameQueue = self.frameQueue
-        Task {
-            await frameQueue.cancelWaiter()
-        }
+        // Note: recorder.stop(), dataChannel.close(), frameQueue.cancelWaiter()는 async이므로 deinit에서 호출 불가
+        // 반드시 명시적으로 stop()을 호출해야 정상적인 리소스 정리가 보장됨
+        // (특히 frameQueue.next()에서 대기 중인 senderEventLoopTask가 해제되지 않을 수 있음)
     }
 }
 
