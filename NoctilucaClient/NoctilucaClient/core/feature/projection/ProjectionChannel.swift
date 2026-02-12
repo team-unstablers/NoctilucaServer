@@ -16,6 +16,27 @@ import SiriusKitClient
 enum ProjectionChannelError: Error {
     case sessionCreationCancelled
     case channelClosed
+    case audioSessionCreationFailed(identifier: UUID, reason: AudioSessionFailureReason, message: String?)
+    case audioSessionCreationTimedOut(identifier: UUID, timeout: TimeInterval)
+    case audioSessionStartFailed(identifier: UUID, underlying: Error)
+}
+
+extension ProjectionChannelError {
+    var isRetryableAudioSessionCreationFailure: Bool {
+        switch self {
+        case .audioSessionCreationFailed(_, let reason, _):
+            switch reason {
+            case .codecNotSupported, .permissionDenied, .sourceNotFound:
+                return false
+            default:
+                return true
+            }
+        case .audioSessionCreationTimedOut, .audioSessionStartFailed:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 enum ProjectionChannelEvent: Sendable {
@@ -40,6 +61,11 @@ enum ProjectionChannelEvent: Sendable {
 }
 
 class ProjectionChannel: Channel {
+    private struct PendingAudioSessionRequest {
+        let continuation: CheckedContinuation<AudioSessionCreatedEvent, Error>
+        let timeoutTask: Task<Void, Never>
+    }
+
     let logger = NoctilucaLogger(category: "ProjectionChannel")
     
     override var serviceClass: ServiceClass { .userInput }
@@ -52,6 +78,7 @@ class ProjectionChannel: Channel {
 
     private var pendingSessions: [UUID:   (any DecodableSiriusMessage) -> Void] = [:]
     private var pendingRequests: [UInt64: (any DecodableSiriusMessage) -> Void] = [:]
+    private var pendingAudioSessionRequests: [UUID: PendingAudioSessionRequest] = [:]
     
     var displayChangesSubscriptionID: UUID? = nil
     
@@ -107,7 +134,7 @@ class ProjectionChannel: Channel {
 
         case .audioSessionCreationFailedEvent:
             let event = try AudioSessionCreationFailedEvent.fromProtobufBytes(frame.data)
-            self.logger.error("Audio session creation failed: identifier=\(event.identifier), reason=\(event.reason)")
+            self.handleAudioSessionCreationFailedEvent(event)
 
         case .audioSessionEndedEvent:
             let event = try AudioSessionEndedEvent.fromProtobufBytes(frame.data)
@@ -129,6 +156,86 @@ class ProjectionChannel: Channel {
             self.pendingRequests.removeValue(forKey: requestID)
         } else {
              self.logger.warning("No pending request found for requestID: \(requestID)")
+        }
+    }
+
+    func registerPendingAudioSessionRequest(
+        identifier: UUID,
+        timeout: TimeInterval,
+        continuation: CheckedContinuation<AudioSessionCreatedEvent, Error>
+    ) {
+        let timeoutNanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
+        let timeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: timeoutNanoseconds)
+            self?.handleAudioSessionRequestTimeout(identifier: identifier, timeout: timeout)
+        }
+
+        pendingAudioSessionRequests[identifier] = PendingAudioSessionRequest(
+            continuation: continuation,
+            timeoutTask: timeoutTask
+        )
+    }
+
+    @discardableResult
+    func succeedPendingAudioSessionRequest(identifier: UUID, event: AudioSessionCreatedEvent) -> Bool {
+        guard let pending = pendingAudioSessionRequests.removeValue(forKey: identifier) else {
+            return false
+        }
+
+        pending.timeoutTask.cancel()
+        pending.continuation.resume(returning: event)
+        return true
+    }
+
+    @discardableResult
+    func failPendingAudioSessionRequest(identifier: UUID, error: Error) -> Bool {
+        guard let pending = pendingAudioSessionRequests.removeValue(forKey: identifier) else {
+            return false
+        }
+
+        pending.timeoutTask.cancel()
+        pending.continuation.resume(throwing: error)
+        return true
+    }
+
+    func hasPendingAudioSessionRequest(identifier: UUID) -> Bool {
+        pendingAudioSessionRequests[identifier] != nil
+    }
+
+    func sendStopAudioProjectionRequest(identifier: UUID) {
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+
+            do {
+                try await self.send(
+                    opcode: .stopAudioProjectionRequest,
+                    message: StopAudioProjectionRequest(identifier: identifier)
+                )
+            } catch {
+                self.logger.warning("Failed to send StopAudioProjectionRequest for \(identifier): \(error)")
+            }
+        }
+    }
+
+    func cancelAllPendingAudioSessionRequests(with error: Error = ProjectionChannelError.sessionCreationCancelled) {
+        let pendingRequests = pendingAudioSessionRequests
+        pendingAudioSessionRequests.removeAll()
+
+        for (_, pending) in pendingRequests {
+            pending.timeoutTask.cancel()
+            pending.continuation.resume(throwing: error)
+        }
+    }
+
+    private func handleAudioSessionRequestTimeout(identifier: UUID, timeout: TimeInterval) {
+        let didFailPending = failPendingAudioSessionRequest(
+            identifier: identifier,
+            error: ProjectionChannelError.audioSessionCreationTimedOut(identifier: identifier, timeout: timeout)
+        )
+        if didFailPending {
+            sendStopAudioProjectionRequest(identifier: identifier)
         }
     }
     

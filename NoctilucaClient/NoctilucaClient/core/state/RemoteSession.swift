@@ -213,8 +213,16 @@ class RemoteSession: ObservableObject {
             }
 
             self.projection = Projection(self, channel: projectionChannel)
-            Task.detached { [weak self] in
-                try? await self?.projection?.startAudioProjection()
+            Task { [weak self] in
+                guard let self else {
+                    return
+                }
+
+                do {
+                    try await self.projection?.startAudioProjection()
+                } catch {
+                    self.handleAudioProjectionInitializationFailure(error)
+                }
             }
             
         case .hidio:
@@ -235,6 +243,47 @@ class RemoteSession: ObservableObject {
         
         if channelID == hidio?.channelID {
             self.hidio = nil
+        }
+    }
+
+    private func handleAudioProjectionInitializationFailure(_ error: Error) {
+        let message = makeAudioProjectionErrorMessage(from: error)
+        self.logger.error("Audio projection initialization failed: \(message)")
+        self.errorEvents.send(.audioProjectionInitializationFailed(message: message))
+    }
+
+    private func makeAudioProjectionErrorMessage(from error: Error) -> String {
+        guard let projectionError = error as? ProjectionChannelError else {
+            return error.localizedDescription
+        }
+
+        switch projectionError {
+        case .audioSessionCreationFailed(_, let reason, let message):
+            let reasonDescription: String
+            switch reason {
+            case .codecNotSupported:
+                reasonDescription = "서버와 공통으로 사용할 수 있는 오디오 코덱이 없습니다."
+            case .permissionDenied:
+                reasonDescription = "서버가 오디오 캡처 권한을 거부했습니다."
+            case .sourceNotFound:
+                reasonDescription = "요청한 오디오 소스를 찾을 수 없습니다."
+            default:
+                reasonDescription = "서버가 오디오 세션 생성을 거부했습니다."
+            }
+
+            if let message, !message.isEmpty {
+                return "\(reasonDescription)\n\(message)"
+            }
+            return reasonDescription
+
+        case .audioSessionCreationTimedOut(_, let timeout):
+            return "오디오 세션 생성 응답이 \(Int(timeout))초 안에 도착하지 않았습니다."
+        case .audioSessionStartFailed(_, let underlying):
+            return "오디오 세션 시작 중 오류가 발생했습니다.\n\(underlying.localizedDescription)"
+        case .channelClosed:
+            return "프로젝션 채널이 닫혀 오디오를 시작할 수 없습니다."
+        case .sessionCreationCancelled:
+            return "오디오 세션 생성이 취소되었습니다."
         }
     }
 }

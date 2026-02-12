@@ -77,6 +77,44 @@ extension ProjectionChannel {
         return CodecOptions(mandatory: [:], optional: combined)
     }
 
+    private func requestAudioSession(
+        identifier: UUID,
+        source: AudioSource,
+        preferredCodecs: [SiriusKitClient.AudioCodec],
+        timeout: TimeInterval = 5.0
+    ) async throws -> AudioSessionCreatedEvent {
+        try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<AudioSessionCreatedEvent, Error>) in
+            guard let self else {
+                continuation.resume(throwing: ProjectionChannelError.channelClosed)
+                return
+            }
+
+            self.registerPendingAudioSessionRequest(
+                identifier: identifier,
+                timeout: timeout,
+                continuation: continuation
+            )
+
+            Task { [weak self] in
+                guard let self else {
+                    return
+                }
+
+                do {
+                    try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
+                        identifier: identifier,
+                        source: source,
+                        preferredCodecs: preferredCodecs
+                    ))
+                    self.logger.info("Sent AudioProjectionRequest: identifier=\(identifier)")
+                } catch {
+                    self.logger.error("Failed to send AudioProjectionRequest: \(error)")
+                    _ = self.failPendingAudioSessionRequest(identifier: identifier, error: error)
+                }
+            }
+        }
+    }
+
 
     func createSession(for displayID: Int = -1, projectionSettings: SessionSettings.Projection?) async throws -> ProjectionSession {
         guard let clientSession = self.clientSession else {
@@ -111,26 +149,51 @@ extension ProjectionChannel {
     
     // TODO: AudioProjectionSession을 반환해야 함
     func createAudioSession(for source: AudioSource, projectionSettings: SessionSettings.Projection?) async throws {
-        do {
-            let audioSpecs = projectionSettings?.audioCodecSpecifications ?? [.opus]
-            let preferredCodecs = audioSpecs.map { $0.toSiriusKitCodec() }
-            
-            // TODO: 성공 여부를 감시해야 함
-            // 단순히 send() 하는 것만으론 부족하다!
-            try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
-                identifier: UUID(),
-                source: source,
-                preferredCodecs: preferredCodecs
-            ))
-            self.logger.info("Sent AudioProjectionRequest")
-        } catch {
-            self.logger.error("Failed to send AudioProjectionRequest: \(error)")
-            // 오디오 요청 실패는 비디오 세션에 영향을 주지 않도록 무시
+        let audioSpecs = projectionSettings?.audioCodecSpecifications ?? [.opus]
+        let preferredCodecs = audioSpecs.map { $0.toSiriusKitCodec() }
+
+        let maxAttempts = 2
+        let retryBackoffNanoseconds: UInt64 = 300_000_000
+
+        for attempt in 1...maxAttempts {
+            let identifier = UUID()
+
+            do {
+                _ = try await requestAudioSession(
+                    identifier: identifier,
+                    source: source,
+                    preferredCodecs: preferredCodecs
+                )
+                self.logger.info("Audio projection request succeeded: identifier=\(identifier), attempt=\(attempt)")
+                return
+            } catch {
+                if error is CancellationError {
+                    throw error
+                }
+
+                let shouldRetry: Bool
+                if let projectionError = error as? ProjectionChannelError {
+                    shouldRetry = projectionError.isRetryableAudioSessionCreationFailure
+                } else {
+                    shouldRetry = true
+                }
+
+                guard attempt < maxAttempts, shouldRetry else {
+                    throw error
+                }
+
+                self.logger.warning("Audio projection request failed (attempt \(attempt)): \(error.localizedDescription). Retrying...")
+                try await Task.sleep(nanoseconds: retryBackoffNanoseconds)
+            }
         }
+
+        throw ProjectionChannelError.sessionCreationCancelled
     }
     
     /// 모든 projection session을 중지하고 리소스를 정리합니다.
     func stopAllSessions() async {
+        cancelAllPendingAudioSessionRequests()
+
         // 모든 비디오 세션 중지
         for (_, session) in sessions {
             do {

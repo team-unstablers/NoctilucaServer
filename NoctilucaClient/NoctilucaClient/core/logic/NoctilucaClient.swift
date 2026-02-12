@@ -20,6 +20,7 @@ enum NoctilucaClientError: LocalizedError {
     case remoteClosedConnection
     case authNegotiationFailed(authMethods: [ClientAuthMethod])
     case sessionClosedByServer(ClosureCode, String?)
+    case audioProjectionInitializationFailed(message: String)
 
     var errorDescription: String? {
         switch self {
@@ -42,6 +43,8 @@ enum NoctilucaClientError: LocalizedError {
             return "인증 방법 협상에 실패했습니다.\n서버에서 인증 방법으로 \(joined)를 제시했지만, 현재 버전의 클라이언트에서는 이 중 아무것도 지원하지 않습니다."
         case .sessionClosedByServer(let code, let message):
             return Self.descriptionForClosureCode(code, message: message)
+        case .audioProjectionInitializationFailed(let message):
+            return "오디오 프로젝션 초기화에 실패했습니다.\n\(message)"
         }
     }
 
@@ -49,6 +52,8 @@ enum NoctilucaClientError: LocalizedError {
         switch self {
         case .sessionClosedByServer(let code, _) where code == .successful:
             return "세션 종료"
+        case .audioProjectionInitializationFailed:
+            return "오디오 연결 실패"
         default:
             return "오류 발생"
         }
