@@ -29,7 +29,7 @@ struct MobileUIMainView: View {
                         case .projection:
                             ProjectionSettingsTab()
                         case .input:
-                            InputSettingsTab(settings: $settingsStore.settings)
+                            InputSettingsTab()
                         case .security:
                             SecuritySettingsTab()
                         case .misc:
