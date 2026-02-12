@@ -129,7 +129,7 @@ extension SessionSettings {
         case asOptional
         case asMandatory
     }
-
+    
     struct Projection: Codable, Sendable {
         var codecSettingsMode: CodecSettingsMode = .useDefault
         var codecNegotiationPolicy: CodecNegotiationPolicy = .asOptional

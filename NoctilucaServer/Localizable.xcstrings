@@ -809,6 +809,28 @@
         }
       }
     },
+    "projection.recorder.type.null.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 녹화를 수행하지 않고 검은 화면만을 전송하는 더미 레코더입니다. 개발 용도로만 사용하세요."
+          }
+        }
+      }
+    },
+    "projection.recorder.type.null.display_name" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "NULL Recorder"
+          }
+        }
+      }
+    },
     "projection.recorder.type.screencapturekit.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4244,6 +4266,28 @@
         }
       }
     },
+    "settings.security.auth_entry.null.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
+          }
+        }
+      }
+    },
+    "settings.security.auth_entry.null.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증을 요구하지 않음 (권장하지 않음)"
+          }
+        }
+      }
+    },
     "settings.security.auth_entry.password.default_description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4592,6 +4636,28 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "SSH 키 인증"
+          }
+        }
+      }
+    },
+    "settings.security.auth_method.template.null.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아무런 인증도 요구하지 않습니다. (보안 문제가 발생할 수 있으므로 권장하지 않습니다.)"
+          }
+        }
+      }
+    },
+    "settings.security.auth_method.template.null.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 방법 없음 (DEBUG)"
           }
         }
       }

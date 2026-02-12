@@ -49,10 +49,11 @@ fileprivate struct MainWindowContentViewInternal: View {
                             set: { remoteSession.shouldPresentIdentityValidationSheet = $0 }
                         )
 
-                        $0.dialog(isPresented: isPresentedBinding) {
+                        $0.detachedSheet(isPresented: isPresentedBinding) {
                             ServerIdentityValidationSheetView(
                                 hostname: viewModel.endpointURL,
-                                certificate: leaf,
+                                leaf: leaf,
+                                chain: chain,
                                 extraInfo: remoteSession.identityValidationExtraInfo
                             ) { action in
                                 Task { @MainActor in

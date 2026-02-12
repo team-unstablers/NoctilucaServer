@@ -144,6 +144,7 @@ public protocol QUICServerIdentity {
     static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self
 
     func getServerIdentity() async throws -> SecIdentity
+    func getCertificateChain() async throws -> [SecCertificate]
 }
 
 // MARK: - Internal helpers
@@ -197,6 +198,10 @@ enum SelfSignedCertificateBuilder {
 }
 
 public extension QUICServerIdentity {
+    func getCertificateChain() async throws -> [SecCertificate] {
+        return []
+    }
+
     func secCertificate() async throws -> SecCertificate {
         let identityRef = try await getServerIdentity()
 
