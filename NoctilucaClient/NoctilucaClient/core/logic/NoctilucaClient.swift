@@ -312,32 +312,25 @@ class NoctilucaClient: ObservableObject {
     
     private func pingLoop() async {
         self.pingRTTSamples.reserveCapacity(10)
-        
+
         do {
             while !Task.isCancelled {
                 let startTime = Date()
-                await withCheckedContinuation { continuation in
-                    self.pongHandler = {
-                        self.pongHandler = nil
-                        
-                        continuation.resume()
+                let didReceivePong = await pingWithTimeout()
+
+                if didReceivePong {
+                    let rtt = Date().timeIntervalSince(startTime)
+                    self.pingRTTSamples.append(rtt)
+
+                    await MainActor.run {
+                        self.uiEvents.send(.pingRTTUpdated(self.averagePingRTT))
                     }
-                    
-                    Task {
-                        try await self.mainChannel.sendPing()
-                    }
+                } else {
+                    logger.warning("Ping timeout: no pong received within 5 seconds")
                 }
-                let endTime = Date()
-                
-                let rtt = endTime.timeIntervalSince(startTime)
-                self.pingRTTSamples.append(rtt)
-                
-                await MainActor.run {
-                    self.uiEvents.send(.pingRTTUpdated(self.averagePingRTT))
-                }
-                
+
                 try await Task.sleep(for: .seconds(1))
-                
+
                 if self.pingRTTSamples.count >= 10 {
                     let average = self.averagePingRTT
                     self.pingRTTSamples.removeAll(keepingCapacity: true)
@@ -346,6 +339,44 @@ class NoctilucaClient: ObservableObject {
             }
         } catch {
             logger.error("pingLoop() encountered error: \(error.localizedDescription)")
+        }
+    }
+
+    /// Ping을 전송하고 타임아웃 내에 Pong 응답을 기다린다.
+    /// AsyncStream + TaskGroup race 패턴으로 continuation leak을 방지한다.
+    private func pingWithTimeout(timeoutSeconds: Double = 5.0) async -> Bool {
+        let stream = AsyncStream<Void> { continuation in
+            self.pongHandler = {
+                self.pongHandler = nil
+                continuation.yield()
+                continuation.finish()
+            }
+
+            Task {
+                try? await self.mainChannel.sendPing()
+            }
+        }
+
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                var iterator = stream.makeAsyncIterator()
+                _ = await iterator.next()
+                return true
+            }
+
+            group.addTask {
+                try? await Task.sleep(for: .seconds(timeoutSeconds))
+                return false
+            }
+
+            let result = await group.next()!
+            group.cancelAll()
+
+            if !result {
+                self.pongHandler = nil
+            }
+
+            return result
         }
     }
 
