@@ -227,11 +227,10 @@ class NoctilucaClientSession: Identifiable {
         self.phase = .closed
         self.notifyCloseIfNeeded()
 
-        // FIXME
         let channels = await self.session.channelManager.channels
         for channel in channels.values {
-            if channel is ProjectionChannel {
-                await (channel as! ProjectionChannel).destroy()
+            if let projectionChannel = channel as? ProjectionChannel {
+                await projectionChannel.destroy()
             }
         }
 
