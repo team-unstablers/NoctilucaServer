@@ -76,6 +76,13 @@ let package = Package(
             name: "SiriusKitTests",
             dependencies: ["SiriusKit"]
         ),
+        .testTarget(
+            name: "SiriusKitClientTests",
+            dependencies: [
+                "SiriusKitClient",
+                "SiriusKitCore",
+            ]
+        ),
     ],
     swiftLanguageVersions: [.v5]
 )
