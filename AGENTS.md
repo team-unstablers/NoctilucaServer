@@ -167,6 +167,8 @@ swiftlint lint --config .swiftlint.yml
 - 프로젝트에 대한 중요한 정보나 커다란 변경 사항이 있을 때는, `AGENTS.md`를 수정하여 프로젝트에 대한 최신 정보를 반영해 주세요.
 - **권한이 부족하여 작업을 수행할 수 없는 경우, 반드시 사용자에게 elevation 요청을 해야 합니다.** (If a command fails due to insufficient permissions, you must elevate the command to the user for approval.)
 
+<conditional-rule applies-to="OpenAI Codex" excludes="Anthropic Claude Code">
+
 ## 2. Workflow Protocol (중요)
 당신(에이전트)가 OpenAI Codex인 경우, 당신은 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 **[Explicit Plan Mode]** 조건에 해당할 경우 행동 방식을 변경해야 합니다.
 
@@ -182,6 +184,8 @@ swiftlint lint --config .swiftlint.yml
 4. **Action:** 사용자의 명시적 승인(예: "ㅇㅇ", "진행해")이 떨어진 후에만 코드를 수정하십시오.
 
 *(위 조건에 해당하지 않는 단순 수정이나 버그 픽스는 기존대로 승인 없이 즉시 처리하고 결과를 보고하십시오.)*
+
+</conditional-rule>
 
 <conditional-rule applies-to="all agent, but excluding claude code (because claude code has own interview/decision ui)">
 
