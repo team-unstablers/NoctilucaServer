@@ -33,6 +33,18 @@ extension ScreenRecorderSource {
             return false
         }
     }
+
+    /// 현재 프로젝션 대상인 디스플레이의 CGDirectDisplayID를 반환합니다.
+    var monitoredDisplayID: CGDirectDisplayID? {
+        switch self {
+        case .entireDisplay(let rawDisplayID):
+            return rawDisplayID == -1 ? CGMainDisplayID() : CGDirectDisplayID(rawDisplayID)
+        case .displayRegion(let rawDisplayID, _):
+            return rawDisplayID == -1 ? CGMainDisplayID() : CGDirectDisplayID(rawDisplayID)
+        case .window:
+            return nil
+        }
+    }
     
     /// 전체 디스플레이 영역 / 전체 뷰포트를 프로젝션 해야 하는지 여부를 반환합니다.
     var requiresEntireDisplayRegion: Bool {

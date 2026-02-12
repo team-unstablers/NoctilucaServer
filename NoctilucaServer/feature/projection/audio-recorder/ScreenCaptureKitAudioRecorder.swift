@@ -106,10 +106,9 @@ fileprivate extension AudioRecorderSource {
         }
         
         let dummyWindowManager = ScreenCaptureKitWorkaroundDummyWindow.windowManager
-        guard let dummyWindowID = dummyWindowManager.windows[displayID]?.windowNumber,
-              let dummyWindow = try await SCShareableContent.currentAppWindow(windowID: dummyWindowID)
+        guard let dummyNSWindow = await dummyWindowManager.window(for: displayID),
+              let dummyWindow = try await SCShareableContent.currentAppWindow(windowID: dummyNSWindow.windowNumber)
         else {
-            // FIXME: 레이스 컨디션: 해당 디스플레이에 대한 더미 윈도우가 아직 생성되지 않음
             throw ScreenRecorderPrepareError.internalError
         }
         
@@ -244,6 +243,7 @@ class ScreenCaptureKitAudioRecorder: NSObject, AudioRecorder {
 extension ScreenCaptureKitAudioRecorder: SCStreamDelegate {
     public func stream(_ stream: SCStream, didStopWithError error: Error) {
         logger.error("didStopWithError: \(error.localizedDescription)")
+        delegate?.audioRecorder(self, didStopWithError: error)
     }
 }
 

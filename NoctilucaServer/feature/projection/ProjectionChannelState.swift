@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreGraphics
 
 actor ProjectionChannelState {
     enum SessionKind {
@@ -50,6 +51,7 @@ actor ProjectionChannelState {
     private var audioSessions: [UUID: AudioProjectionSession] = [:]
     private var projectionDataChannels: [UUID: ProjectionDataChannel] = [:]
     private var reservations: [UUID: SessionKind] = [:]
+    private var sessionDisplayIDs: [UUID: CGDirectDisplayID] = [:]
 
     private var cursorSubscription: CursorEventSubscription?
     private var displaySubscription: DisplayEventSubscription?
@@ -80,7 +82,7 @@ actor ProjectionChannelState {
         return true
     }
 
-    func activateVideoSession(identifier: UUID, session: ProjectionSession) -> Bool {
+    func activateVideoSession(identifier: UUID, session: ProjectionSession, displayID: CGDirectDisplayID? = nil) -> Bool {
         guard lifecycleState == .active else {
             return false
         }
@@ -91,6 +93,10 @@ actor ProjectionChannelState {
 
         sessions[identifier] = session
         reservations.removeValue(forKey: identifier)
+
+        if let displayID {
+            sessionDisplayIDs[identifier] = displayID
+        }
 
         return true
     }
@@ -114,6 +120,7 @@ actor ProjectionChannelState {
         switch kind {
         case .video:
             let videoSession = sessions.removeValue(forKey: identifier)
+            sessionDisplayIDs.removeValue(forKey: identifier)
 
             if reservations[identifier] == .video {
                 reservations.removeValue(forKey: identifier)
@@ -140,12 +147,17 @@ actor ProjectionChannelState {
         let audioSession = audioSessions.removeValue(forKey: identifier)
 
         reservations.removeValue(forKey: identifier)
+        sessionDisplayIDs.removeValue(forKey: identifier)
 
         return TerminationTargets(videoSession: videoSession, audioSession: audioSession, dataChannel: dataChannel)
     }
 
     func sessionForPerformanceReport(identifier: UUID) -> ProjectionSession? {
         sessions[identifier]
+    }
+
+    func videoSessionIdentifiers(forDisplayID displayID: CGDirectDisplayID) -> [UUID] {
+        sessionDisplayIDs.filter { $0.value == displayID }.map { $0.key }
     }
 
     func addCursorSubscriptionIfAbsent(_ subscription: CursorEventSubscription) -> Bool {
@@ -218,6 +230,7 @@ actor ProjectionChannelState {
         audioSessions.removeAll()
         projectionDataChannels.removeAll()
         reservations.removeAll()
+        sessionDisplayIDs.removeAll()
 
         cursorSubscription = nil
         displaySubscription = nil

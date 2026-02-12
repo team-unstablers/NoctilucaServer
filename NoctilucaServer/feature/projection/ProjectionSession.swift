@@ -13,6 +13,24 @@ import CoreMedia
 
 import SiriusKit
 
+/// 프로젝션 세션 종료 사유
+enum ProjectionSessionEndReason: Int32 {
+    case normal = 0
+    case displayDisconnected = 1
+    case internalError = 2
+    case recorderFailed = 3
+}
+
+/// 프로젝션 세션 변경 사유
+enum ProjectionSessionChangeReason: Int32 {
+    case resolutionChanged = 1
+}
+
+protocol ProjectionSessionDelegate: AnyObject {
+    func projectionSession(_ session: ProjectionSession, didChangeResolution newCodec: Codec)
+    func projectionSession(_ session: ProjectionSession, didFailWithError error: Error)
+}
+
 class ProjectionSession: Identifiable {
     private let logger = NoctilucaLogger(category: "ProjectionSession")
     
@@ -50,11 +68,17 @@ class ProjectionSession: Identifiable {
     private var currentAppliedFrameRate: Float? = nil
 
     private var screenLockCancellable: AnyCancellable!
+    private var displayChangeCancellable: AnyCancellable?
+
+    weak var sessionDelegate: ProjectionSessionDelegate?
+
+    private var originalRequest: ProjectionRequest?
 
     // FIXME
     var targetBitrate = 0
     var maxBitrate = 0
 
+    private var isReconfiguring = false
     private var isStopped = false
 
     init(id: UUID, dataChannel: ProjectionDataChannel, preferredRecorderType: ScreenRecorderType) async {
@@ -79,19 +103,103 @@ class ProjectionSession: Identifiable {
     }
     
     private func reconfigureRecorder() async {
+        guard !isReconfiguring else {
+            logger.info("reconfigureRecorder(): already in progress, skipping")
+            return
+        }
+        guard !isStopped else { return }
+
+        isReconfiguring = true
+        defer { isReconfiguring = false }
+
+        let maxRetries = 2
+        var lastError: Error? = nil
+
+        // 기존 recorder 확실히 중지
         try? await self.recorder.stop()
-        
-        self.recorder = await ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
-        self.recorder.delegate = self
-        
+        self.recorder.delegate = nil
+
+        for attempt in 0...maxRetries {
+            if attempt > 0 {
+                try? await Task.sleep(for: .milliseconds(500 * attempt))
+                guard !isStopped else { return }
+            }
+
+            let newRecorder = await ScreenRecorderFactory.create(
+                preferred: preferredRecorderType,
+                queue: recorderQueue
+            )
+            newRecorder.delegate = self
+            self.recorder = newRecorder
+
+            do {
+                try await self.recorder.prepare(with: recorderArgs)
+                try await self.recorder.start()
+                logger.info("reconfigureRecorder(): succeeded (attempt \(attempt))")
+                return
+            } catch {
+                lastError = error
+                logger.warning("reconfigureRecorder(): attempt \(attempt) failed: \(error)")
+                try? await self.recorder.stop()
+            }
+        }
+
+        // 모든 재시도 실패
+        logger.error("reconfigureRecorder(): all retries exhausted for projection session \(self.id)")
+        dataChannel.projectionDelegate?.projectionDataChannel(
+            dataChannel,
+            didEncounterError: lastError ?? ScreenRecorderPrepareError.internalError
+        )
+    }
+
+    private func handleDisplayLayoutChange(_ layouts: [CGDirectDisplayID: NOCScreen]) async {
+        guard !isStopped, !isReconfiguring else { return }
+        guard let displayID = recorderArgs?.source.monitoredDisplayID else { return }
+
+        guard let newScreen = layouts[displayID] else {
+            // 디스플레이가 사라짐 → 에러 전파 (Phase 4에서 ProjectionChannel이 처리)
+            logger.warning("Monitored display \(displayID) no longer available")
+            sessionDelegate?.projectionSession(self, didFailWithError: ScreenRecorderPrepareError.invalidSource)
+            return
+        }
+
+        let newSize = newScreen.frame.size
+        guard let currentCodec = self.codec,
+              let currentSize = currentCodec.size?.cgSize,
+              currentSize != newSize else {
+            return
+        }
+
+        logger.info("Display resolution changed: \(currentSize) -> \(newSize) for projection session \(self.id)")
+        await reconfigureForResolutionChange(newSize: newSize)
+    }
+
+    private func reconfigureForResolutionChange(newSize: CGSize) async {
+        guard !isStopped, let currentCodec = self.codec, let request = self.originalRequest else { return }
+
+        // codec에 새 해상도 반영
+        let updatedCodec = Codec(
+            fourCC: currentCodec.fourCC,
+            frameRate: currentCodec.frameRate,
+            size: SRSize(width: newSize.width, height: newSize.height),
+            options: currentCodec.options,
+            quality: currentCodec.quality
+        )
+
         do {
-            try await self.recorder.prepare(with: recorderArgs)
-            try await self.recorder.start()
+            // prepare()가 encoder + event loop task를 모두 재생성
+            try await self.prepare(request, codec: updatedCodec)
+            // recorder도 새 해상도로 재구성
+            await reconfigureRecorder()
+
+            sessionDelegate?.projectionSession(self, didChangeResolution: updatedCodec)
+            logger.info("Successfully reconfigured for resolution change to \(newSize)")
         } catch {
-            self.logger.error("Failed to reconfigure recorder for projection session \(self.id): \(error)")
+            logger.error("Failed to reconfigure for resolution change: \(error)")
+            sessionDelegate?.projectionSession(self, didFailWithError: error)
         }
     }
-    
+
     private func encoderEventLoopMain() async throws {
         for await event in self.encoder.events {
             switch event {
@@ -166,19 +274,31 @@ class ProjectionSession: Identifiable {
             // TODO: throw .invalidSource
             fatalError()
         }
-        
+
         let recorderArgs = ScreenRecorderArgs(
             // FIXME
             source: recorderSource,
             codec: codec,
             flags: request.viewport.flags
         )
-        
+
         try await self.recorder.prepare(with: recorderArgs)
-        
+
         self.recorderArgs = recorderArgs
-        
+        self.originalRequest = request
+
         self.codec = codec
+
+        // 디스플레이 해상도 변경 구독 (최초 prepare 시에만 설정)
+        if displayChangeCancellable == nil {
+            displayChangeCancellable = DisplayLayoutManager.shared.displayLayoutChangeSubject
+                .receive(on: RunLoop.main)
+                .sink { [weak self] layouts in
+                    Task {
+                        await self?.handleDisplayLayoutChange(layouts)
+                    }
+                }
+        }
 
         // 기존 encoder event loop task 취소 및 encoder 정리
         encoderEventLoopTask?.cancel()
@@ -280,6 +400,8 @@ class ProjectionSession: Identifiable {
         // 2. Combine 구독 취소 (reconfigureRecorder 호출 방지)
         screenLockCancellable?.cancel()
         screenLockCancellable = nil
+        displayChangeCancellable?.cancel()
+        displayChangeCancellable = nil
 
         // 3. Frame queue 정리
         await frameQueue.clear()
@@ -308,22 +430,29 @@ class ProjectionSession: Identifiable {
     }
 
     deinit {
-        // 명시적 stop() 호출 없이 deinit된 경우 경고
-        if !isStopped {
-            logger.warning("ProjectionSession \(self.id) deallocated without explicit stop() - resource cleanup may be incomplete")
-        }
-
-        // 동기 작업만 수행 (async 호출 금지)
+        // 동기 작업 수행
         encoderEventLoopTask?.cancel()
         senderEventLoopTask?.cancel()
         screenLockCancellable?.cancel()
+        displayChangeCancellable?.cancel()
 
         // VTVideoEncoder의 Unmanaged refCon retain cycle을 끊는다 (동기 메서드)
         try? encoder.stop()
 
-        // Note: recorder.stop(), dataChannel.close(), frameQueue.cancelWaiter()는 async이므로 deinit에서 호출 불가
-        // 반드시 명시적으로 stop()을 호출해야 정상적인 리소스 정리가 보장됨
-        // (특히 frameQueue.next()에서 대기 중인 senderEventLoopTask가 해제되지 않을 수 있음)
+        // Safety-net: stop() 미호출 시 async 리소스를 비동기적으로 정리
+        guard !isStopped else { return }
+
+        logger.warning("ProjectionSession \(self.id) deallocated without explicit stop() - triggering safety-net async cleanup")
+
+        let recorder = self.recorder
+        let dataChannel = self.dataChannel
+        let frameQueue = self.frameQueue
+
+        Task.detached {
+            await frameQueue.cancelWaiter()
+            try? await recorder.stop()
+            try? await dataChannel.close()
+        }
     }
 }
 
@@ -334,6 +463,12 @@ extension ProjectionSession: ScreenRecorderDelegate {
     
     func screenRecorder(_ recorder: any ScreenRecorder, didStopWithError error: (any Error)?) {
         self.logger.info("Screen recorder stopped for projection session \(self.id), error: \(String(describing: error))")
+
+        if error != nil, !isStopped {
+            Task {
+                await self.reconfigureRecorder()
+            }
+        }
     }
     
     func screenRecorder(_ recorder: any ScreenRecorder, didCaptureFrame frameData: CMSampleBuffer) {

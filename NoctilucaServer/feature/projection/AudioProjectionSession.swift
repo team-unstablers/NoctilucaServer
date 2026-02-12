@@ -35,6 +35,8 @@ class AudioProjectionSession: Identifiable {
     private var encoderEventLoopTask: Task<Void, Error>?
     private var senderEventLoopTask: Task<Void, Error>?
 
+    private var screenLockCancellable: AnyCancellable?
+    private var isReconfiguring = false
     private var isStopped = false
 
     init(id: UUID, dataChannel: ProjectionDataChannel) {
@@ -44,6 +46,53 @@ class AudioProjectionSession: Identifiable {
         self.recorder = ScreenCaptureKitAudioRecorder(queue: recorderQueue)
 
         self.recorder.delegate = self
+    }
+
+    private func reconfigureRecorder() async {
+        guard !isReconfiguring else {
+            logger.info("reconfigureRecorder(): already in progress, skipping")
+            return
+        }
+        guard !isStopped else { return }
+
+        isReconfiguring = true
+        defer { isReconfiguring = false }
+
+        let maxRetries = 2
+        var lastError: Error? = nil
+
+        // 기존 recorder 중지
+        try? await self.recorder.stop()
+        self.recorder.delegate = nil
+
+        for attempt in 0...maxRetries {
+            if attempt > 0 {
+                try? await Task.sleep(for: .milliseconds(500 * attempt))
+                guard !isStopped else { return }
+            }
+
+            let newRecorder = ScreenCaptureKitAudioRecorder(queue: recorderQueue)
+            newRecorder.delegate = self
+            self.recorder = newRecorder
+
+            do {
+                try await self.recorder.prepare(with: recorderArgs)
+                try await self.recorder.start()
+                logger.info("reconfigureRecorder(): succeeded (attempt \(attempt))")
+                return
+            } catch {
+                lastError = error
+                logger.warning("reconfigureRecorder(): attempt \(attempt) failed: \(error)")
+                try? await self.recorder.stop()
+            }
+        }
+
+        // 모든 재시도 실패
+        logger.error("reconfigureRecorder(): all retries exhausted for audio projection session \(self.id)")
+        dataChannel.projectionDelegate?.projectionDataChannel(
+            dataChannel,
+            didEncounterError: lastError ?? AudioRecorderPrepareError.internalError
+        )
     }
 
     private func encoderEventLoopMain() async throws {
@@ -127,6 +176,19 @@ class AudioProjectionSession: Identifiable {
         self.recorderArgs = recorderArgs
         self.codec = codec
 
+        // 화면 잠금 구독 (최초 prepare 시에만 설정)
+        if screenLockCancellable == nil {
+            screenLockCancellable = await ScreenLockObserver.shared.$isScreenLocked
+                .receive(on: RunLoop.main)
+                .removeDuplicates()
+                .dropFirst()
+                .sink { [weak self] isLocked in
+                    Task {
+                        await self?.reconfigureRecorder()
+                    }
+                }
+        }
+
         // Cancel existing encoder event loop task and clean up encoder
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
@@ -198,25 +260,29 @@ class AudioProjectionSession: Identifiable {
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
 
-        // 2. Frame queue 정리
+        // 2. Combine 구독 취소
+        screenLockCancellable?.cancel()
+        screenLockCancellable = nil
+
+        // 3. Frame queue 정리
         await frameQueue.clear()
         await frameQueue.cancelWaiter()
 
-        // 3. Recorder 정리 (캡처 중지)
+        // 4. Recorder 정리 (캡처 중지)
         do {
             try await self.recorder.stop()
         } catch {
             self.logger.error("Failed to stop recorder for audio projection session \(self.id): \(error)")
         }
 
-        // 4. Encoder 정리
+        // 5. Encoder 정리
         do {
             try self.encoder?.stop()
         } catch {
             self.logger.error("Failed to stop encoder for audio projection session \(self.id): \(error)")
         }
 
-        // 5. Data channel 정리
+        // 6. Data channel 정리
         do {
             try await self.dataChannel.close()
         } catch {
@@ -225,23 +291,27 @@ class AudioProjectionSession: Identifiable {
     }
 
     deinit {
-        // 명시적 stop() 호출 없이 deinit된 경우 경고
-        if !isStopped {
-            logger.warning("AudioProjectionSession \(self.id) deallocated without explicit stop() - resource cleanup may be incomplete")
-        }
-
-        // 동기 작업만 수행 (async 호출 금지)
+        // 동기 작업 수행
         encoderEventLoopTask?.cancel()
         senderEventLoopTask?.cancel()
-
+        screenLockCancellable?.cancel()
         recorder.delegate = nil
-
-        // encoder.stop()은 동기 메서드이므로 직접 호출
         try? encoder?.stop()
 
-        // Note: recorder.stop(), dataChannel.close(), frameQueue.cancelWaiter()는 async이므로 deinit에서 호출 불가
-        // 반드시 명시적으로 stop()을 호출해야 정상적인 리소스 정리가 보장됨
-        // (특히 frameQueue.next()에서 대기 중인 senderEventLoopTask가 해제되지 않을 수 있음)
+        // Safety-net: stop() 미호출 시 async 리소스를 비동기적으로 정리
+        guard !isStopped else { return }
+
+        logger.warning("AudioProjectionSession \(self.id) deallocated without explicit stop() - triggering safety-net async cleanup")
+
+        let recorder = self.recorder
+        let dataChannel = self.dataChannel
+        let frameQueue = self.frameQueue
+
+        Task.detached {
+            await frameQueue.cancelWaiter()
+            try? await recorder.stop()
+            try? await dataChannel.close()
+        }
     }
 }
 
@@ -252,6 +322,12 @@ extension AudioProjectionSession: AudioRecorderDelegate {
 
     func audioRecorder(_ recorder: any AudioRecorder, didStopWithError error: (any Error)?) {
         self.logger.info("audio recorder stopped for audio projection session \(self.id), error: \(String(describing: error))")
+
+        if error != nil, !isStopped {
+            Task {
+                await self.reconfigureRecorder()
+            }
+        }
     }
 
     func audioRecorder(_ recorder: any AudioRecorder, didCaptureFrame frameData: CMSampleBuffer) {

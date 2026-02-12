@@ -7,6 +7,7 @@
 
 import SiriusKit
 import AppKit
+import Combine
 
 class ProjectionChannel: Channel {
     let logger = NoctilucaLogger(category: "ProjectionChannel")
@@ -15,14 +16,26 @@ class ProjectionChannel: Channel {
 
     private let cursorStateHolder = CursorStateHolder.shared
     let state = ProjectionChannelState()
+    private var displayChangesCancellable: AnyCancellable?
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
 
         assert(direction == .remote, "ProjectionChannel must be opened from remote side")
+
+        self.displayChangesCancellable = DisplayLayoutManager.shared.displayChangeSubject
+            .filter { $0.eventType.contains(.disconnected) }
+            .sink { [weak self] event in
+                Task {
+                    await self?.handleDisplayDisconnected(displayID: event.displayID)
+                }
+            }
     }
 
     func destroy() async {
+        displayChangesCancellable?.cancel()
+        displayChangesCancellable = nil
+
         guard let snapshot = await state.beginDestroy() else {
             return
         }
@@ -75,6 +88,29 @@ class ProjectionChannel: Channel {
             try await dataChannel.close()
         } catch {
             logger.warning("Failed to close projection data channel \(dataChannel.identifier): \(error)")
+        }
+    }
+
+    private func handleDisplayDisconnected(displayID: CGDirectDisplayID) async {
+        let affectedIdentifiers = await state.videoSessionIdentifiers(forDisplayID: displayID)
+
+        guard !affectedIdentifiers.isEmpty else { return }
+
+        logger.warning("Display \(displayID) disconnected, terminating \(affectedIdentifiers.count) affected projection session(s)")
+
+        for identifier in affectedIdentifiers {
+            let targets = await state.terminateByControlMessage(identifier: identifier, kind: .video)
+            await cleanupTerminationTargets(targets, closeDataChannel: true)
+
+            do {
+                try await send(opcode: .projectionSessionEndedEvent, message: ProjectionSessionEndedEvent(
+                    identifier: identifier,
+                    reason: ProjectionSessionEndReason.displayDisconnected.rawValue,
+                    message: "Display disconnected"
+                ))
+            } catch {
+                logger.warning("Failed to send ProjectionSessionEndedEvent for session \(identifier): \(error)")
+            }
         }
     }
 
@@ -222,12 +258,14 @@ class ProjectionChannel: Channel {
                 dataChannel: openedChannel,
                 preferredRecorderType: projectionSettings.preferredScreenRecorder
             )
+            projectionSession.sessionDelegate = self
             transientSession = projectionSession
 
             try await projectionSession.prepare(request, codec: negotiatedCodec)
             try await projectionSession.start()
 
-            guard await state.activateVideoSession(identifier: identifier, session: projectionSession) else {
+            let monitoredDisplayID = request.viewport.toScreenRecorderSource()?.monitoredDisplayID
+            guard await state.activateVideoSession(identifier: identifier, session: projectionSession, displayID: monitoredDisplayID) else {
                 projectionSession.dataChannel.projectionDelegate = nil
                 await projectionSession.stop()
 
@@ -441,6 +479,46 @@ extension ProjectionChannel: ProjectionDataChannelDelegate {
     func projectionDataChannel(_ channel: ProjectionDataChannel, didEncounterError error: any Error) {
         Task { [weak self] in
             await self?.handleProjectionDataChannelTermination(identifier: channel.identifier, error: error)
+        }
+    }
+}
+
+extension ProjectionChannel: ProjectionSessionDelegate {
+    func projectionSession(_ session: ProjectionSession, didChangeResolution newCodec: Codec) {
+        Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                try await self.send(opcode: .projectionSessionChangedEvent, message: ProjectionSessionChangedEvent(
+                    identifier: session.id,
+                    reason: ProjectionSessionChangeReason.resolutionChanged.rawValue,
+                    source: nil,
+                    codec: newCodec
+                ))
+            } catch {
+                self.logger.warning("Failed to send ProjectionSessionChangedEvent for session \(session.id): \(error)")
+            }
+        }
+    }
+
+    func projectionSession(_ session: ProjectionSession, didFailWithError error: Error) {
+        Task { [weak self] in
+            guard let self else { return }
+
+            self.logger.error("ProjectionSession \(session.id) failed: \(error)")
+
+            let targets = await self.state.terminateByControlMessage(identifier: session.id, kind: .video)
+            await self.cleanupTerminationTargets(targets, closeDataChannel: true)
+
+            do {
+                try await self.send(opcode: .projectionSessionEndedEvent, message: ProjectionSessionEndedEvent(
+                    identifier: session.id,
+                    reason: ProjectionSessionEndReason.internalError.rawValue,
+                    message: error.localizedDescription
+                ))
+            } catch {
+                self.logger.warning("Failed to send ProjectionSessionEndedEvent for session \(session.id): \(error)")
+            }
         }
     }
 }
