@@ -74,6 +74,14 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         subDisplayWindowManager?.destroyAll()
         subDisplayWindowManager = nil
+
+        let viewModel = self.viewModel
+        if viewModel.remoteSession != nil {
+            Task { @MainActor in
+                await viewModel.stopSession(force: true)
+            }
+        }
+
         onClose?(self)
     }
     

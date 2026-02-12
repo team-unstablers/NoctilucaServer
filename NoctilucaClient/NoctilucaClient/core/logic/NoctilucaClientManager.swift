@@ -72,6 +72,27 @@ class NoctilucaClientManager: ObservableObject {
     public func detachClient(client: NoctilucaClient) {
         self.detachClient(id: client.id)
     }
+
+    /// 활성 클라이언트가 있는지 여부를 반환한다.
+    public var hasActiveClients: Bool {
+        clients.values.contains { $0.phase != .closed }
+    }
+
+    /// 모든 활성 클라이언트를 종료하고 목록을 비운다.
+    /// 앱 종료 전 호출하여 모든 세션이 정상 종료되도록 보장한다.
+    public func shutdownAllClients() async {
+        let activeClients = clients.values.filter { $0.phase != .closed }
+
+        await withTaskGroup(of: Void.self) { group in
+            for client in activeClients {
+                group.addTask {
+                    await client.close()
+                }
+            }
+        }
+
+        clients.removeAll()
+    }
 }
 
 

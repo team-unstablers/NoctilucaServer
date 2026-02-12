@@ -232,7 +232,20 @@ class ProjectionSession: Identifiable {
         await self.performanceReporter?.stop()
         try self.decoder?.stop()
 
-        try await self.controlChannel?.send(opcode: .stopProjectionRequest, message: StopProjectionRequest(identifier: self.id))
+        if let controlChannel = self.controlChannel {
+            let sessionID = self.id
+            let logger = self.logger
+            Task { [weak controlChannel] in
+                do {
+                    try await controlChannel?.send(
+                        opcode: .stopProjectionRequest,
+                        message: StopProjectionRequest(identifier: sessionID)
+                    )
+                } catch {
+                    logger.warning("Failed to send StopProjectionRequest for session \(sessionID): \(error)")
+                }
+            }
+        }
 
         await MainActor.run {
             self.events.send(.projectionStopped)

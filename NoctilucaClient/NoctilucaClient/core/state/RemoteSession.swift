@@ -71,6 +71,11 @@ class RemoteSession: ObservableObject {
         self.unsubscribeClientEvents()
 
         let client = self.client
+        guard client.phase != .closed else {
+            return
+        }
+
+        logger.warning("RemoteSession.deinit: client is not closed (phase=\(client.phase)). Triggering safety-net cleanup. This indicates a missing explicit cleanup call.")
         Task.detached {
             await client.close()
         }

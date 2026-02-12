@@ -54,6 +54,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        let clientManager = NoctilucaClientManager.shared
+
+        guard clientManager.hasActiveClients else {
+            return .terminateNow
+        }
+
+        Task { @MainActor in
+            await clientManager.shutdownAllClients()
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
+
+        return .terminateLater
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
             openNewMainWindow(nil)
