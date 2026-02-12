@@ -39,10 +39,10 @@ package enum SRCertificateTrustScope {
 #endif
 
 /// 'S'i'R'ius Keychain - macOS Security.framework 의 Security 관련 기능을 wrap합니다.
-package class SRSecurity {
-    package static let shared = SRSecurity()
+public class SRSecurity {
+    public static let shared = SRSecurity()
     
-    package func createSecureRandomBytes(count: Int) throws -> Data {
+    public func createSecureRandomBytes(count: Int) throws -> Data {
         var buffer = Data(count: count)
         
         let status = buffer.withUnsafeMutableBytes { ptr in

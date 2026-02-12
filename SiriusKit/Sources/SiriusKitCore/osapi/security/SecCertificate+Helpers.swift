@@ -120,4 +120,21 @@ public extension SecCertificate {
 #endif
         }
     }
+    
+    func extractAlgorithmDescription() -> String? {
+        return try? X509.Certificate(self).signatureAlgorithm.description
+    }
+    
+    func extractIssuer() -> String? {
+        return try? X509.Certificate(self).issuer.description
+    }
+    
+    func extractPublicKey() -> Data? {
+        
+        guard let publicKey = try? X509.Certificate(self).publicKey.subjectPublicKeyInfoBytes else {
+            return nil
+        }
+        
+        return Data(publicKey)
+    }
 }
