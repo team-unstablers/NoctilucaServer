@@ -59,6 +59,7 @@ class ProjectionSession: Identifiable {
     private var performanceReporter: ProjectionPerformanceReporter?
 
     private let enableJitterBuffer: Bool
+    private let jitterBufferPreset: AppSettings.JitterBufferPreset
     private var jitterBuffer: VideoJitterBuffer?
 
     let displayID: Int
@@ -123,24 +124,25 @@ class ProjectionSession: Identifiable {
     let events = PassthroughSubject<ProjectionSessionEvent, Never>()
 
     @MainActor
-    init(id: UUID, displayID: Int, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel, enableJitterBuffer: Bool = false) {
+    init(id: UUID, displayID: Int, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel, enableJitterBuffer: Bool = false, jitterBufferPreset: AppSettings.JitterBufferPreset = .lowLatency) {
         self.id = id
         self.displayID = displayID
 
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel
         self.enableJitterBuffer = enableJitterBuffer
+        self.jitterBufferPreset = jitterBufferPreset
 
         self.decoder = VTVideoDecoder()
         self.performanceReporter = ProjectionPerformanceReporter(sessionID: id, parent: self)
 
         if enableJitterBuffer {
-            let buffer = VideoJitterBuffer()
+            let buffer = VideoJitterBuffer(preset: jitterBufferPreset.bufferPreset)
             buffer.onFrameReady = { [weak self] sampleBuffer in
                 self?.enqueueToAllDisplayLayers(sampleBuffer)
             }
             self.jitterBuffer = buffer
-            logger.info("Jitter buffer enabled for session \(id)")
+            logger.info("Jitter buffer enabled for session \(id) (preset: \(jitterBufferPreset.rawValue))")
         }
 
         self.dataChannel.delegate = self

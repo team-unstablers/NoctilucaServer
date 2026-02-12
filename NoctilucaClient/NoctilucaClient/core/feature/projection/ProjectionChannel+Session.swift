@@ -90,8 +90,10 @@ extension ProjectionChannel {
 
         let channel = await clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
 
-        let enableJitterBuffer = SettingsStore.shared.settings.projection.enableJitterBuffer
-        let session = await ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self, enableJitterBuffer: enableJitterBuffer)
+        let projectionAppSettings = SettingsStore.shared.settings.projection
+        let enableJitterBuffer = projectionAppSettings.enableJitterBuffer
+        let jitterBufferPreset = projectionAppSettings.jitterBufferPreset
+        let session = await ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self, enableJitterBuffer: enableJitterBuffer, jitterBufferPreset: jitterBufferPreset)
 
         try await session.prepare(codec: response.codec)
         try await session.start()

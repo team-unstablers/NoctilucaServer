@@ -72,23 +72,26 @@ final class VideoJitterBuffer: NSObject {
         noReadyResyncConsecutiveTicks: 2
     )
 
+    /// 현재 적용 중인 프리셋.
+    let preset: Preset
+
     /// 재생을 시작하기 전 최소 버퍼 프레임 수.
-    let minBufferCount: Int = 2
+    var minBufferCount: Int { preset.minBufferCount }
 
     /// 최대 버퍼 프레임 수 (초과 시 oldest drop).
-    let maxBufferCount: Int = 3
+    var maxBufferCount: Int { preset.maxBufferCount }
 
     /// Late threshold (ms). 이보다 늦은 프레임은 skip.
-    let lateThresholdMs: Double = 35.0
+    var lateThresholdMs: Double { preset.lateThresholdMs }
 
     /// Hard lateness threshold (ms). 이보다 크게 늦으면 즉시 resync.
-    let lateResyncThresholdMs: Double = 150.0
+    var lateResyncThresholdMs: Double { preset.lateResyncThresholdMs }
 
     /// Hard earliness threshold (ms). 이보다 크게 빠른(미래) 프레임 상태가 지속되면 resync.
-    let earlyResyncThresholdMs: Double = 120.0
+    var earlyResyncThresholdMs: Double { preset.earlyResyncThresholdMs }
 
     /// Ready 프레임이 없는 displayLink tick이 연속될 때, 이 횟수 이상이면 re-anchor를 시도.
-    let noReadyResyncConsecutiveTicks: Int = 4
+    var noReadyResyncConsecutiveTicks: Int { preset.noReadyResyncConsecutiveTicks }
 
     // MARK: - State
 
@@ -153,7 +156,9 @@ final class VideoJitterBuffer: NSObject {
 
     // MARK: - Initialization
 
-    override init() {
+    init(preset: Preset = .lowLatency) {
+        self.preset = preset
+
         var info = mach_timebase_info_data_t()
         mach_timebase_info(&info)
         self.timebaseNumer = UInt64(info.numer)

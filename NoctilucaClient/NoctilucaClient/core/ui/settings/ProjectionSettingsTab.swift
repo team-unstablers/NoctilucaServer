@@ -26,6 +26,24 @@ struct ProjectionSettingsTab: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+
+                if settingsStore.settings.projection.enableJitterBuffer {
+                    SettingsPicker(selection: $settingsStore.settings.projection.jitterBufferPreset) {
+                        ForEach(AppSettings.JitterBufferPreset.allCases, id: \.self) { preset in
+                            SettingsPickerItem(value: preset) {
+                                Text(preset.displayName)
+                                Text(preset.description)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } label: {
+                        Text("지터 버퍼 프리셋")
+                        Text("지터 버퍼의 지연 시간과 안정성 사이의 균형을 조절합니다.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             } header: {
                 Text("고급 설정")
                 Text("프로젝션과 관련된 고급 설정을 구성합니다.")
