@@ -3,6 +3,9 @@ import AVFoundation
 import VideoToolbox
 import SiriusKitClient
 
+/// `paramErr` (-50) is not available on iOS (Carbon/MacTypes.h is macOS-only).
+private let kParamErr: OSStatus = -50
+
 enum VTDecompressionBackend: Equatable {
     case hardware
     case software
@@ -229,7 +232,7 @@ private extension VTVideoDecoder {
         )
 
         let attributeDictionary = attributes.isEmpty ? nil : attributes as CFDictionary
-        var lastStatus: OSStatus = OSStatus(paramErr)
+        var lastStatus: OSStatus = kParamErr
 
         for (index, attempt) in Self.decompressionSessionCreationAttempts.enumerated() {
             let specification = decoderSpecification(for: attempt)
@@ -243,7 +246,7 @@ private extension VTVideoDecoder {
             )
 
             guard status == noErr, let createdSession = session else {
-                let normalizedStatus = status == noErr ? OSStatus(paramErr) : status
+                let normalizedStatus = status == noErr ? kParamErr : status
                 lastStatus = normalizedStatus
 
                 if index + 1 < Self.decompressionSessionCreationAttempts.count {
