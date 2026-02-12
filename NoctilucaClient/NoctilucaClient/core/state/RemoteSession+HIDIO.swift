@@ -14,36 +14,56 @@ extension RemoteSession {
     class HIDIO: ObservableObject {
         private let parent: Weak<RemoteSession>
         private let channel: Weak<HIDIOChannel>
-        
+
+        private let rebinder = KeyEventRebinder()
+        private var cancellables: Set<AnyCancellable> = []
+
         private(set) var session: HIDIOSession!
-        
+
         @Published
         private(set) var sessionState: HIDIOSessionState = .inactive
-        
+
         @Published
         private(set) var sessionMode: HIDIOSessionMode = .shared
-        
+
         var channelID: UUID {
             channel.ref.identifier
         }
-        
+
         var controller: HIDIOController {
             channel.ref.controller
         }
-        
+
         init(_ parent: RemoteSession, channel: HIDIOChannel) {
             self.parent  = Weak(parent)
             self.channel = Weak(channel)
-            
+
             self.session = HIDIOSession(controller)
-            
+
             session.delegate = self
-            
-            
+
+            self.setupKeyEventPipeline()
             try? self.session.startSession()
             self.installEscapeHook()
         }
-        
+
+        private func setupKeyEventPipeline() {
+            controller.keyEventPipeline.append(rebinder)
+
+            let overrides = SettingsStore.shared.settings.input.modifierKeyOverrides
+            ModifierKeyRebindingConfigurator.apply(overrides, to: rebinder)
+
+            SettingsStore.shared.$settings
+                .compactMap { $0?.input.modifierKeyOverrides }
+                .removeDuplicates()
+                .dropFirst()
+                .sink { [weak self] overrides in
+                    guard let self else { return }
+                    ModifierKeyRebindingConfigurator.apply(overrides, to: self.rebinder)
+                }
+                .store(in: &cancellables)
+        }
+
         private func installEscapeHook() {
             let escapeSequence = SettingsStore.shared.settings.input.unlockKeySequence
             let hook = HIDIOKeystrokeHook(condition: escapeSequence) {
@@ -51,10 +71,10 @@ extension RemoteSession {
                     try? self.session.switchMode(to: .shared, reason: .userInitiated)
                 }
             }
-            
+
             controller.installHook(hook, for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
         }
-        
+
         deinit {
             self.session.stopSession()
         }

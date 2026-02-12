@@ -43,6 +43,8 @@ class HIDIOController {
     private var publisherTask: Task<Void, Never>? = nil
     private let requestCounter = ManagedAtomic<UInt64>(0)
     
+    let keyEventPipeline = KeyEventPipelineChain()
+
     private(set) var keyPressState = KeyPressState()
     private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
 
@@ -133,6 +135,9 @@ class HIDIOController {
     }
     
     func keyDown(keyCode: LinuxKeycode) {
+        self.keyPressState.keyDown(keyCode)
+        self.evaluateHooks()
+
         let event = KeyboardEvent(
             eventType: .keyDown,
             scanCode: 0,
@@ -140,14 +145,15 @@ class HIDIOController {
             modifiers: 0,
             flags: 0
         )
-        
-        self.eventStreamContinuation.yield(event)
-        self.keyPressState.keyDown(keyCode)
-        
-        self.evaluateHooks()
+
+        if let processed = keyEventPipeline.process(event) {
+            self.eventStreamContinuation.yield(processed)
+        }
     }
-    
+
     func keyUp(keyCode: LinuxKeycode) {
+        self.keyPressState.keyUp(keyCode)
+
         let event = KeyboardEvent(
             eventType: .keyUp,
             scanCode: 0,
@@ -156,8 +162,9 @@ class HIDIOController {
             flags: 0
         )
 
-        self.eventStreamContinuation.yield(event)
-        self.keyPressState.keyUp(keyCode)
+        if let processed = keyEventPipeline.process(event) {
+            self.eventStreamContinuation.yield(processed)
+        }
     }
 
     /// UCS4 코드포인트를 직접 전송합니다. CJK 등 keycode 매핑이 불가능한 문자에 사용됩니다.

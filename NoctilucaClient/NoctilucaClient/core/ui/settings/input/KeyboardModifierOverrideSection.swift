@@ -25,9 +25,6 @@ struct KeyboardModifierOverrideSection: View {
         Text("⌘ (Command)")
             .tag(AppSettings.ModifierKeyOverride.command)
         
-        Text("fn (Function)")
-            .tag(AppSettings.ModifierKeyOverride.function)
-        
         Text("⎋ (Escape)")
             .tag(AppSettings.ModifierKeyOverride.escape)
         

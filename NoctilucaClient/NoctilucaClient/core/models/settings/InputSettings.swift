@@ -31,7 +31,6 @@ extension AppSettings {
         case control
         case option
         case command
-        case function
         case escape
         case disabled
 
@@ -96,7 +95,7 @@ extension AppSettings {
         }
     }
 
-    struct ModifierKeyOverrides: Codable, Sendable {
+    struct ModifierKeyOverrides: Codable, Sendable, Equatable {
         var capsLock: ModifierKeyOverride = .capsLock
         var control: ModifierKeyOverride = .control
         var option: ModifierKeyOverride = .option
