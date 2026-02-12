@@ -101,13 +101,21 @@ class ProjectionChannel: Channel {
         case .projectionSessionCreatedEvent:
             let event = try ProjectionSessionCreatedEvent.fromProtobufBytes(frame.data)
             self.logger.info("Received ProjectionSessionCreatedEvent: sessionId=\(event.identifier)")
-            
+
             if let continuation = self.pendingSessions[event.identifier] {
                 continuation(event)
             } else {
                 self.logger.warning("No pending session found for identifier: \(event.identifier)")
             }
-            
+
+        case .projectionSessionEndedEvent:
+            let event = try ProjectionSessionEndedEvent.fromProtobufBytes(frame.data)
+            await self.handleProjectionSessionEndedEvent(event)
+
+        case .projectionSessionChangedEvent:
+            let event = try ProjectionSessionChangedEvent.fromProtobufBytes(frame.data)
+            await self.handleProjectionSessionChangedEvent(event)
+
         case .cursorEvent:
             let event = try CursorEvent.fromProtobufBytes(frame.data)
             try await self.handleCursorEvent(event)

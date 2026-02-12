@@ -214,4 +214,56 @@ extension ProjectionChannel {
         }
         audioSessions.removeAll()
     }
+
+    // MARK: - Server-initiated session events
+
+    func handleProjectionSessionEndedEvent(_ event: ProjectionSessionEndedEvent) async {
+        guard let identifier = event.identifier else {
+            logger.warning("Received ProjectionSessionEndedEvent without identifier")
+            return
+        }
+
+        logger.info("Projection session ended: identifier=\(identifier), reason=\(event.reason)")
+
+        guard let session = self.sessions[identifier] else {
+            logger.warning("No projection session found for identifier: \(identifier)")
+            return
+        }
+
+        do {
+            try await session.stop()
+        } catch {
+            logger.error("Failed to stop projection session \(identifier): \(error)")
+        }
+
+        self.sessions.removeValue(forKey: identifier)
+
+        Task { @MainActor in
+            self.events.send(.sessionDestroyed(identifier, reason: event.message ?? "reason=\(event.reason)"))
+        }
+    }
+
+    func handleProjectionSessionChangedEvent(_ event: ProjectionSessionChangedEvent) async {
+        guard let identifier = event.identifier else {
+            logger.warning("Received ProjectionSessionChangedEvent without identifier")
+            return
+        }
+
+        logger.info("Projection session changed: identifier=\(identifier), reason=\(event.reason)")
+
+        guard let session = self.sessions[identifier] else {
+            logger.warning("No projection session found for identifier: \(identifier)")
+            return
+        }
+
+        // 코덱 변경 시 디코더 재구성
+        if let newCodec = event.codec {
+            logger.info("Reconfiguring decoder for session \(identifier) with new codec: \(newCodec.fourCC)")
+            do {
+                try await session.reconfigure(codec: newCodec)
+            } catch {
+                logger.error("Failed to reconfigure session \(identifier): \(error)")
+            }
+        }
+    }
 }

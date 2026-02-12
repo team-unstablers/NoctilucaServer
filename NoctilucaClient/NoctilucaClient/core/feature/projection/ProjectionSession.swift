@@ -205,6 +205,20 @@ class ProjectionSession: Identifiable {
         try decoder?.prepare(with: .init(codec: codec))
     }
     
+    /// 서버로부터 코덱/해상도 변경 통지를 받았을 때 디코더를 재구성합니다.
+    func reconfigure(codec: Codec) async throws {
+        logger.info("Reconfiguring session \(self.id) with new codec: \(codec.fourCC)")
+
+        let previousSize = self.size
+        try await prepare(codec: codec)
+
+        if let newSize = codec.size?.cgSize, newSize != previousSize {
+            Task { @MainActor in
+                self.events.send(.sizeChanged(newSize))
+            }
+        }
+    }
+
     func start() async throws {
         do {
             try self.decoder?.start()
