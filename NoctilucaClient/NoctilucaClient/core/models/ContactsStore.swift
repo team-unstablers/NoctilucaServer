@@ -64,6 +64,14 @@ final class ContactsStore: ObservableObject {
             return
         }
 
+        let credentialsRef = contacts.first(where: { $0.id == id })?.settings.credentials
+            ?? SessionSettings.CredentialsRef()
+        _ = SessionCredentialsStore.remove(
+            scope: .session,
+            contactId: id,
+            currentRef: credentialsRef
+        )
+
         try fileManager.removeItem(at: url)
         loadContacts()
     }
