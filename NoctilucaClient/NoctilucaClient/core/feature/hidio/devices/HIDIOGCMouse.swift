@@ -9,6 +9,7 @@ import Foundation
 
 import Combine
 import GameController
+import Atomics
 
 #if os(macOS)
 import Cocoa
@@ -60,6 +61,12 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     private var cancellables: Set<AnyCancellable> = []
     
     private var controller: HIDIOController?
+
+#if os(macOS)
+    private static let recenterIntervalNanoseconds: UInt64 = 8_000_000
+    private let shouldRecenterCursor = ManagedAtomic<Bool>(false)
+    private var recenterTask: Task<Void, Never>?
+#endif
     
     init() {
     }
@@ -114,8 +121,14 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     fileprivate func updateHandler() {
         if self.controller != nil {
             self.setupMouseInputHandler()
+#if os(macOS)
+            self.startRecenterLoopIfNeeded()
+#endif
         } else {
             self.destroyMouseInputHandler()
+#if os(macOS)
+            self.stopRecenterLoop()
+#endif
         }
     }
     
@@ -136,10 +149,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
                 
                 let delta = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
                 controller.moveMouseRelative(to: delta)
-                
-                Task { @MainActor [weak self] in
-                    self?.centerCursor()
-                }
+                self?.requestCursorRecenter()
             }
             
             func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
@@ -199,12 +209,62 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     func connect(to controller: HIDIOController) {
         self.controller = controller
         self.setupMouseInputHandler()
+#if os(macOS)
+        self.startRecenterLoopIfNeeded()
+#endif
     }
     
     func disconnect() {
         self.controller = nil
         self.destroyMouseInputHandler()
+#if os(macOS)
+        self.stopRecenterLoop()
+#endif
     }
+
+    private func requestCursorRecenter() {
+#if os(macOS)
+        shouldRecenterCursor.store(true, ordering: .relaxed)
+#endif
+    }
+
+#if os(macOS)
+    private func startRecenterLoopIfNeeded() {
+        guard recenterTask == nil else {
+            return
+        }
+
+        logger.debug("Starting cursor recenter loop (8ms)")
+        recenterTask = Task.detached { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: Self.recenterIntervalNanoseconds)
+                guard let self else {
+                    return
+                }
+
+                let shouldRecenter = self.shouldRecenterCursor.exchange(false, ordering: .relaxed)
+                guard shouldRecenter else {
+                    continue
+                }
+
+                await MainActor.run { [weak self] in
+                    self?.centerCursor()
+                }
+            }
+        }
+    }
+
+    private func stopRecenterLoop() {
+        guard recenterTask != nil else {
+            return
+        }
+
+        logger.debug("Stopping cursor recenter loop")
+        recenterTask?.cancel()
+        recenterTask = nil
+        shouldRecenterCursor.store(false, ordering: .relaxed)
+    }
+#endif
 }
 
 #if os(macOS)
