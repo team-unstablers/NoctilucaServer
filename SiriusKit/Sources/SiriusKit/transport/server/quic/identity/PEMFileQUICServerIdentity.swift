@@ -75,7 +75,11 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
             throw QUICServerIdentityCreationError.identityNotFound
         }
 
-        let certData = try loadPEMData(atPath: certPath, type: "CERTIFICATE")
+        let certDataList = try loadPEMDatas(atPath: certPath, type: "CERTIFICATE")
+        guard let certData = certDataList.first else {
+            throw QUICServerIdentityCreationError.identityNotFound
+        }
+
         let (privateKey, keyType) = try loadPrivateKeyFromPEM(atPath: keyPath)
 
         guard let secCertificate = SecCertificateCreateWithData(nil, certData as CFData) else {
@@ -111,6 +115,27 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
 
         return identity
     }
+
+    public func getCertificateChain() async throws -> [SecCertificate] {
+        guard FileManager.default.fileExists(atPath: certPath) else {
+            throw QUICServerIdentityCreationError.identityNotFound
+        }
+
+        let certDataList = try loadPEMDatas(atPath: certPath, type: "CERTIFICATE")
+        guard certDataList.count > 1 else {
+            return []
+        }
+
+        var chain: [SecCertificate] = []
+        for certData in certDataList.dropFirst() {
+            guard let secCertificate = SecCertificateCreateWithData(nil, certData as CFData) else {
+                throw QUICServerIdentityCreationError.certificateCreationFailed
+            }
+            chain.append(secCertificate)
+        }
+
+        return chain
+    }
 }
 
 // MARK: - PEM helpers
@@ -128,12 +153,21 @@ func pemEncode(type: String, serializer: (inout DER.Serializer) throws -> Void) 
 }
 
 func loadPEMData(atPath path: String, type: String) throws -> Data {
-    let pemString = try String(contentsOfFile: path, encoding: .utf8)
-    guard let data = extractPEMData(from: pemString, type: type) else {
+    let pemDataList = try loadPEMDatas(atPath: path, type: type)
+    guard let firstPEMData = pemDataList.first else {
         throw QUICServerIdentityCreationError.identityNotFound
     }
 
-    return data
+    return firstPEMData
+}
+
+func loadPEMDatas(atPath path: String, type: String) throws -> [Data] {
+    let pemString = try String(contentsOfFile: path, encoding: .utf8)
+    guard let pemDataList = extractAllPEMData(from: pemString, type: type), !pemDataList.isEmpty else {
+        throw QUICServerIdentityCreationError.identityNotFound
+    }
+
+    return pemDataList
 }
 
 func loadPrivateKeyFromPEM(atPath path: String) throws -> (IdentityPrivateKey, IdentityKeyType) {
@@ -175,17 +209,32 @@ private func identityKeyType(for key: IdentityPrivateKey) throws -> IdentityKeyT
 }
 
 private func extractPEMData(from pemString: String, type: String) -> Data? {
-    guard let beginRange = pemString.range(of: "-----BEGIN \(type)-----"),
-          let endRange = pemString.range(of: "-----END \(type)-----")
-    else {
-        return nil
+    return extractAllPEMData(from: pemString, type: type)?.first
+}
+
+private func extractAllPEMData(from pemString: String, type: String) -> [Data]? {
+    let beginMarker = "-----BEGIN \(type)-----"
+    let endMarker = "-----END \(type)-----"
+
+    var searchRange = pemString.startIndex..<pemString.endIndex
+    var results: [Data] = []
+
+    while let beginRange = pemString.range(of: beginMarker, range: searchRange),
+          let endRange = pemString.range(of: endMarker, range: beginRange.upperBound..<pemString.endIndex)
+    {
+        let body = pemString[beginRange.upperBound..<endRange.lowerBound]
+        let stripped = body
+            .replacingOccurrences(of: "\r", with: "")
+            .replacingOccurrences(of: "\n", with: "")
+            .replacingOccurrences(of: " ", with: "")
+
+        guard let decoded = Data(base64Encoded: stripped) else {
+            return nil
+        }
+
+        results.append(decoded)
+        searchRange = endRange.upperBound..<pemString.endIndex
     }
 
-    let body = pemString[beginRange.upperBound..<endRange.lowerBound]
-    let stripped = body
-        .replacingOccurrences(of: "\r", with: "")
-        .replacingOccurrences(of: "\n", with: "")
-        .replacingOccurrences(of: " ", with: "")
-
-    return Data(base64Encoded: stripped)
+    return results.isEmpty ? nil : results
 }

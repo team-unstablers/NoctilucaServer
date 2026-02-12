@@ -195,6 +195,8 @@ let hidioChannel = try await client.channelManager.openChannel(
 # RECENT NOTES / CAUTIONS
 
 - `CodecOptionsParser.parse(...)`는 이제 `CodecOptions`를 반환합니다. (`!required` 지원)
+- `QUICServerIdentity`는 `getCertificateChain()`를 지원하며, MsQuic 서버 경로에서는 leaf + intermediate 체인을 함께 전송합니다. (self-signed root 제외)
+- `PEMFileQUICServerIdentity`는 `.pem` 내 다중 `CERTIFICATE` 블록을 지원합니다. (첫 블록 leaf, 이후 블록 chain)
 - `ChannelOpenTask.blockUntilReceiveData()`는 기본 5초 타임아웃이며, 0 이하면 무제한 대기합니다.
 - QUIC 스트림 수신 로직은 현재 프레임 단위 고정 길이 수신을 가정합니다. (fragmented read TODO)
 - `TransportLayer`의 기본 구현은 비어있으며, QUIC 또는 커스텀 구현이 필요합니다.

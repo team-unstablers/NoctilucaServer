@@ -37,6 +37,36 @@ struct PEMFileQUICServerIdentityTests {
         
         #expect(try await identity.sanityCheck())
     }
+
+    @Test("다중 CERTIFICATE 블록을 파싱하고 self-signed 체인을 포함할 수 있는가")
+    func parsesMultipleCertificateBlocksAndKeepsSelfSignedChain() async throws {
+        let basePath = temporaryBasePath()
+
+        let identifier = UUID().uuidString
+        let commonName = "so.libsirius.SiriusKit.tests.QUICServerIdentityTest.\(identifier)"
+
+        let args = QUICServerIdentityCreationArgs(
+            identityLabel: basePath,
+            commonName: commonName,
+            organizationName: "team unstablers Inc.",
+            organizationalUnitName: "SiriusKit",
+            countryName: "KR",
+            validityPeriodInDays: 1
+        )
+
+        let identity = try PEMFileQUICServerIdentity.createSelfSignedIdentity(args: args)
+        let certPath = basePath + ".pem"
+
+        let originalPEM = try String(contentsOfFile: certPath, encoding: .utf8)
+        let concatenatedPEM = originalPEM + originalPEM
+        try concatenatedPEM.write(toFile: certPath, atomically: true, encoding: .utf8)
+
+        let parsedCertificates = try loadPEMDatas(atPath: certPath, type: "CERTIFICATE")
+        #expect(parsedCertificates.count == 2)
+
+        let chain = try await identity.getCertificateChain()
+        #expect(chain.count == 1)
+    }
     
     // MARK: - Helpers
     private func temporaryBasePath() -> String {
