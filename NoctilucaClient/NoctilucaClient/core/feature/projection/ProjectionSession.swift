@@ -98,7 +98,7 @@ class ProjectionSession: Identifiable {
     var decoderTypeName: String {
         guard let decoder else { return "N/A" }
         switch decoder {
-        case is VTVideoDecoder: return "VideoToolbox (HW)" // 잠시만요, 이거 HW 디코딩이 아닐 수도 있는데..
+        case let vtDecoder as VTVideoDecoder: return vtDecoder.decoderTypeName
         case is ZRLEVideoDecoder: return "ZRLE"
 #if !targetEnvironment(simulator)
         case is WebPVideoDecoder: return "WebP"

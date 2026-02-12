@@ -3,6 +3,16 @@ import AVFoundation
 import VideoToolbox
 import SiriusKitClient
 
+enum VTDecompressionBackend: Equatable {
+    case hardware
+    case software
+}
+
+struct VTDecompressionSessionCreationAttempt: Equatable {
+    let requiresHardwareDecoder: Bool
+    let backend: VTDecompressionBackend
+}
+
 private final class FrameDecodeContext {
     let header: FrameDataHeader
     let pts: CMTime
@@ -18,26 +28,76 @@ private final class FrameDecodeContext {
 }
 
 final class VTVideoDecoder: NSObject, VideoDecoder {
+    typealias DecompressionSessionCreateHandler = (
+        CMFormatDescription,
+        CFDictionary?,
+        CFDictionary?,
+        UnsafeMutablePointer<VTDecompressionOutputCallbackRecord>,
+        UnsafeMutablePointer<VTDecompressionSession?>
+    ) -> OSStatus
+
+    static var decompressionSessionCreationAttempts: [VTDecompressionSessionCreationAttempt] {
+#if targetEnvironment(simulator)
+        return [
+            VTDecompressionSessionCreationAttempt(
+                requiresHardwareDecoder: false,
+                backend: .software
+            ),
+        ]
+#else
+        return [
+            VTDecompressionSessionCreationAttempt(
+                requiresHardwareDecoder: true,
+                backend: .hardware
+            ),
+            VTDecompressionSessionCreationAttempt(
+                requiresHardwareDecoder: false,
+                backend: .software
+            ),
+        ]
+#endif
+    }
+
     weak var delegate: VideoDecoderDelegate?
     
     private let logger = NoctilucaLogger(category: "VTVideoDecoder", subsystem: "projection.decoder")
     private let workerQueue: DispatchQueue
     internal let callbackQueue: DispatchQueue
+    private let decompressionSessionCreateHandler: DecompressionSessionCreateHandler
     
     private var configuration: VideoDecoderConfiguration?
     private var decompressionSession: VTDecompressionSession?
     internal var currentFormatDescription: CMFormatDescription?
     private var isStarted = false
+    private(set) var activeBackend: VTDecompressionBackend?
+
+    var decoderTypeName: String {
+        switch activeBackend {
+        case .hardware:
+            return "VideoToolbox (HW)"
+        case .software:
+            return "VideoToolbox (SW)"
+        case .none:
+            return "VideoToolbox"
+        }
+    }
     
     override init() {
         self.workerQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.workerQueue"), qos: .userInitiated)
         self.callbackQueue = DispatchQueue(label: NoctilucaMeta.scopedIdentifier("projection.decoder.VTVideoDecoder.callbackQueue"), qos: .userInitiated)
+        self.decompressionSessionCreateHandler = VTVideoDecoder.defaultDecompressionSessionCreateHandler
         super.init()
     }
     
-    init(workerQueue: DispatchQueue, callbackQueue: DispatchQueue) {
+    init(
+        workerQueue: DispatchQueue,
+        callbackQueue: DispatchQueue,
+        decompressionSessionCreateHandler: @escaping DecompressionSessionCreateHandler =
+            VTVideoDecoder.defaultDecompressionSessionCreateHandler
+    ) {
         self.workerQueue = workerQueue
         self.callbackQueue = callbackQueue
+        self.decompressionSessionCreateHandler = decompressionSessionCreateHandler
         super.init()
     }
 
@@ -49,6 +109,7 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
             }
             decompressionSession = nil
             currentFormatDescription = nil
+            activeBackend = nil
         }
     }
 
@@ -74,6 +135,7 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
             }
             decompressionSession = nil
             currentFormatDescription = nil
+            activeBackend = nil
             isStarted = false
         }
     }
@@ -127,6 +189,23 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
 // MARK: - Session setup
 
 private extension VTVideoDecoder {
+    static func defaultDecompressionSessionCreateHandler(
+        formatDescription: CMFormatDescription,
+        decoderSpecification: CFDictionary?,
+        imageBufferAttributes: CFDictionary?,
+        outputCallback: UnsafeMutablePointer<VTDecompressionOutputCallbackRecord>,
+        decompressionSessionOut: UnsafeMutablePointer<VTDecompressionSession?>
+    ) -> OSStatus {
+        VTDecompressionSessionCreate(
+            allocator: kCFAllocatorDefault,
+            formatDescription: formatDescription,
+            decoderSpecification: decoderSpecification,
+            imageBufferAttributes: imageBufferAttributes,
+            outputCallback: outputCallback,
+            decompressionSessionOut: decompressionSessionOut
+        )
+    }
+
     func ensureDecompressionSession(using frame: EncodedFrameInput) throws -> VTDecompressionSession {
         if let session = decompressionSession {
             return session
@@ -140,50 +219,85 @@ private extension VTVideoDecoder {
         }
         
         let codec = configuration.codec
-        
-        var specification: [CFString: Any] = [:]
-        
-#if !targetEnvironment(simulator)
-        let __FIXME__clientSideEnabledHardwareDecoding = true
-        
-        if __FIXME__clientSideEnabledHardwareDecoding {
-            // FIXME: 이거 해보고 실패하면 소프트웨어 디코드로 fallback하는거 있어야 함
-            specification[kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder] = kCFBooleanTrue
-            // specification[kVTVideoDecoderSpecification_AllowHardwareAcceleratedVideoDecoder] = hw
-        }
-#endif
-        
+
         var attributes: [CFString: Any] = [:]
         attributes[kCVPixelBufferPixelFormatTypeKey] = codec.cvPixelFormat
-        
+
         var callbackRecord = VTDecompressionOutputCallbackRecord(
             decompressionOutputCallback: decompressionOutputCallback,
             decompressionOutputRefCon: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         )
-        
-        var session: VTDecompressionSession?
-        let status = VTDecompressionSessionCreate(
-            allocator: kCFAllocatorDefault,
-            formatDescription: formatDescription,
-            decoderSpecification: specification.isEmpty ? nil : specification as CFDictionary,
-            imageBufferAttributes: attributes.isEmpty ? nil : attributes as CFDictionary,
-            outputCallback: &callbackRecord,
-            decompressionSessionOut: &session
-        )
-        
-        
-        
-        guard status == noErr, let createdSession = session else {
-            throw VideoDecoderError.decompressionSessionFailed(status)
-        }
-        
-        VTSessionSetProperty(createdSession, key: kVTDecompressionPropertyKey_GeneratePerFrameHDRDisplayMetadata, value: kCFBooleanTrue)
 
-        decompressionSession = createdSession
-        currentFormatDescription = formatDescription
-        logger.info("Created decompression session for codec: \(codec.fourCC.stringRepresentation)")
-        
-        return createdSession
+        let attributeDictionary = attributes.isEmpty ? nil : attributes as CFDictionary
+        var lastStatus: OSStatus = OSStatus(paramErr)
+
+        for (index, attempt) in Self.decompressionSessionCreationAttempts.enumerated() {
+            let specification = decoderSpecification(for: attempt)
+            var session: VTDecompressionSession?
+            let status = decompressionSessionCreateHandler(
+                formatDescription,
+                specification,
+                attributeDictionary,
+                &callbackRecord,
+                &session
+            )
+
+            guard status == noErr, let createdSession = session else {
+                let normalizedStatus = status == noErr ? OSStatus(paramErr) : status
+                lastStatus = normalizedStatus
+
+                if index + 1 < Self.decompressionSessionCreationAttempts.count {
+                    let message = """
+                    Failed to create VT decompression session \
+                    (backend=\(attempt.backend.logLabel), status=\(normalizedStatus)). \
+                    Trying fallback backend.
+                    """
+                    logger.warning(
+                        message
+                    )
+                } else {
+                    let message = """
+                    Failed to create VT decompression session \
+                    (backend=\(attempt.backend.logLabel), status=\(normalizedStatus)).
+                    """
+                    logger.error(
+                        message
+                    )
+                }
+                continue
+            }
+
+            VTSessionSetProperty(
+                createdSession,
+                key: kVTDecompressionPropertyKey_GeneratePerFrameHDRDisplayMetadata,
+                value: kCFBooleanTrue
+            )
+            decompressionSession = createdSession
+            currentFormatDescription = formatDescription
+            activeBackend = attempt.backend
+            let message = """
+            Created decompression session for codec: \(codec.fourCC.stringRepresentation), \
+            backend=\(attempt.backend.logLabel)
+            """
+            logger.info(
+                message
+            )
+
+            return createdSession
+        }
+
+        throw VideoDecoderError.decompressionSessionFailed(lastStatus)
+    }
+
+    func decoderSpecification(for attempt: VTDecompressionSessionCreationAttempt) -> CFDictionary? {
+        guard attempt.requiresHardwareDecoder else {
+            return nil
+        }
+
+        let specification: [CFString: Any] = [
+            kVTVideoDecoderSpecification_RequireHardwareAcceleratedVideoDecoder: kCFBooleanTrue as Any,
+        ]
+        return specification as CFDictionary
     }
     
     func makeSampleBuffer(from frame: EncodedFrameInput) throws -> CMSampleBuffer {
@@ -343,6 +457,17 @@ private extension SiriusKitClient.Codec {
 private extension VTVideoDecoder {
     func pts(fromMicroseconds value: UInt64) -> CMTime {
         CMTime(value: CMTimeValue(value), timescale: 1_000_000)
+    }
+}
+
+private extension VTDecompressionBackend {
+    var logLabel: String {
+        switch self {
+        case .hardware:
+            return "hardware"
+        case .software:
+            return "software"
+        }
     }
 }
 
