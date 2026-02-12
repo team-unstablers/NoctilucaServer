@@ -183,7 +183,7 @@ public struct ProjectionSessionChangedEvent: SiriusMessage {
     public let codec: Codec?
 
 
-    init(identifier: UUID?, reason: Int32, source: ProjectionSource?, codec: Codec?) {
+    public init(identifier: UUID?, reason: Int32, source: ProjectionSource?, codec: Codec?) {
         self.identifier = identifier
         self.reason = reason
         self.source = source
@@ -223,7 +223,7 @@ public struct ProjectionSessionEndedEvent: SiriusMessage {
     public let message: String?
 
 
-    init(identifier: UUID?, reason: Int32, message: String?) {
+    public init(identifier: UUID?, reason: Int32, message: String?) {
         self.identifier = identifier
         self.reason = reason
         self.message = message
