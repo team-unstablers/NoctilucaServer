@@ -9,7 +9,7 @@ import Foundation
 import AVFoundation
 import CoreMedia
 import QuartzCore
-import os
+import SiriusKitClient
 
 #if canImport(AppKit)
 import AppKit
@@ -154,7 +154,7 @@ final class VideoJitterBuffer: NSObject {
 
     // MARK: - Logging
 
-    private let logger = OSLog(subsystem: "app.noctiluca.client", category: "VideoJitterBuffer")
+    private let logger = NoctilucaLogger(category: "VideoJitterBuffer")
 
     // MARK: - Initialization
 
@@ -184,7 +184,7 @@ final class VideoJitterBuffer: NSObject {
         link.add(to: .main, forMode: .common)
         displayLink = link
 
-        os_log(.info, log: logger, "VideoJitterBuffer started (thread=%{public}@)", Thread.current.description)
+        logger.info("VideoJitterBuffer started (thread=\(Thread.current.description))")
     }
 
     private func createDisplayLink() -> CADisplayLink {
@@ -209,9 +209,7 @@ final class VideoJitterBuffer: NSObject {
         frameQueue.removeAll()
         os_unfair_lock_unlock(&lock)
 
-        os_log(.info, log: logger,
-               "VideoJitterBuffer stopped (enqueued=%d, displayed=%d, dropped=%d, lateSkipped=%d)",
-               totalEnqueued, totalDisplayed, totalDropped, totalLateSkipped)
+        logger.info("VideoJitterBuffer stopped (enqueued=\(self.totalEnqueued), displayed=\(self.totalDisplayed), dropped=\(self.totalDropped), lateSkipped=\(self.totalLateSkipped))")
     }
 
     /// 버퍼를 리셋한다 (앵커, 상태, 큐 모두 초기화).
@@ -226,7 +224,7 @@ final class VideoJitterBuffer: NSObject {
         needsResyncAfterUnderflow = false
         consecutiveNoReadyTicks = 0
 
-        os_log(.info, log: logger, "VideoJitterBuffer reset")
+        logger.info("VideoJitterBuffer reset")
     }
 
     // MARK: - Enqueue (Producer - decoder thread)
@@ -261,21 +259,15 @@ final class VideoJitterBuffer: NSObject {
             let earlyResyncThreshold = earlyResyncThresholdMs / 1000.0
 
             if lateness > resyncThreshold {
-                os_log(.info, log: logger,
-                       "Resyncing: frame late by %.1f ms (threshold %.1f ms)",
-                       lateness * 1000, resyncThreshold * 1000)
+                logger.info("Resyncing: frame late by \(String(format: "%.1f", lateness * 1000)) ms (threshold \(String(format: "%.1f", resyncThreshold * 1000)) ms)")
                 resyncLocked(remotePTS: remotePTS, reason: "lateness")
             } else if lateness < -earlyResyncThreshold {
                 // 기준점이 과거에 묶여 프레임이 계속 "미래"로 판정되는 starvation 상태를 복구한다.
-                os_log(.info, log: logger,
-                       "Resyncing: frame early by %.1f ms (threshold %.1f ms)",
-                       -lateness * 1000, earlyResyncThreshold * 1000)
+                logger.info("Resyncing: frame early by \(String(format: "%.1f", -lateness * 1000)) ms (threshold \(String(format: "%.1f", earlyResyncThreshold * 1000)) ms)")
                 resyncLocked(remotePTS: remotePTS, reason: "earliness")
             } else if lateness > lateThreshold {
                 totalLateSkipped += 1
-                os_log(.debug, log: logger,
-                       "Skipping late frame: %.1f ms late",
-                       lateness * 1000)
+                logger.debug("Skipping late frame: \(String(format: "%.1f", lateness * 1000)) ms late")
                 return
             }
         }
@@ -292,11 +284,11 @@ final class VideoJitterBuffer: NSObject {
             if isStarvingLocked() {
                 frameQueue.removeLast()
                 totalDropped += 1
-                os_log(.debug, log: logger, "Buffer overflow during starvation, dropped newest frame")
+                logger.debug("Buffer overflow during starvation, dropped newest frame")
             } else {
                 frameQueue.removeFirst()
                 totalDropped += 1
-                os_log(.debug, log: logger, "Buffer overflow, dropped oldest frame")
+                logger.debug("Buffer overflow, dropped oldest frame")
             }
         }
 
@@ -311,9 +303,7 @@ final class VideoJitterBuffer: NSObject {
                 if let oldest = frameQueue.first {
                     setAnchorLocked(remotePTS: oldest.remotePTS)
                 }
-                os_log(.info, log: logger,
-                       "Buffering complete, starting playback (%d frames buffered)",
-                       frameQueue.count)
+                logger.info("Buffering complete, starting playback (\(self.frameQueue.count) frames buffered)")
             }
         case .underflow:
             if frameQueue.count >= minBufferCount {
@@ -321,9 +311,7 @@ final class VideoJitterBuffer: NSObject {
                 if let oldest = frameQueue.first {
                     setAnchorLocked(remotePTS: oldest.remotePTS)
                 }
-                os_log(.info, log: logger,
-                       "Recovered from underflow (%d frames buffered)",
-                       frameQueue.count)
+                logger.info("Recovered from underflow (\(self.frameQueue.count) frames buffered)")
             }
         case .playing:
             break
@@ -366,7 +354,7 @@ final class VideoJitterBuffer: NSObject {
                 // ready 프레임이 연속으로 없으면 앵커를 oldest 기준으로 재설정해 starvation을 해소한다.
                 setAnchorLocked(remotePTS: oldest.remotePTS)
                 consecutiveNoReadyTicks = 0
-                os_log(.info, log: logger, "Resynced due to no-ready starvation")
+                logger.info("Resynced due to no-ready starvation")
             }
 
             os_unfair_lock_unlock(&lock)
@@ -389,7 +377,7 @@ final class VideoJitterBuffer: NSObject {
             state = .underflow
             needsResyncAfterUnderflow = true
             consecutiveNoReadyTicks = 0
-            os_log(.debug, log: logger, "Underflow: buffer exhausted after display")
+            logger.debug("Underflow: buffer exhausted after display")
         }
 
         os_unfair_lock_unlock(&lock)
@@ -405,7 +393,7 @@ final class VideoJitterBuffer: NSObject {
     private func setAnchorLocked(remotePTS: Double) {
         anchorRemotePTS = remotePTS
         anchorHostTime = mach_absolute_time()
-        os_log(.debug, log: logger, "Anchor set: remotePTS=%.3f", remotePTS)
+        // logger.debug("Anchor set: remotePTS=\(String(format: "%.3f", remotePTS))")
     }
 
     private func resyncLocked(remotePTS: Double, reason: String) {
@@ -414,7 +402,7 @@ final class VideoJitterBuffer: NSObject {
         needsResyncAfterUnderflow = false
         consecutiveNoReadyTicks = 0
         setAnchorLocked(remotePTS: remotePTS)
-        os_log(.info, log: logger, "Resynced (%{public}s)", reason)
+        logger.info("Resynced (\(reason))")
     }
 
     /// 앵커 시점으로부터 경과한 시간 (seconds).
@@ -477,7 +465,7 @@ final class VideoJitterBuffer: NSObject {
             )
             return sampleBuffer
         } catch {
-            os_log(.error, log: logger, "Failed to create CMSampleBuffer: %{public}@", error.localizedDescription)
+            logger.error("Failed to create CMSampleBuffer: \(error.localizedDescription)")
             return nil
         }
     }
