@@ -48,7 +48,8 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
 
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
         do {
-            try await quicStream.send(data)
+            try quicStream.enqueue(data)
+            try await quicStream.drain()
             return .success(UInt32(data.count))
         } catch {
             return .failure(.notImplemented) // TODO: Map error appropriately
