@@ -33,18 +33,32 @@ extension CodecSpecification {
     }
     
     func toSiriusKitCodec() -> SiriusKitClient.Codec {
-        var codec = SiriusKitClient.Codec(
+        let siriusQuality: SiriusKitClient.Codec.Quality
+
+        switch self.quality {
+        case .auto(let mode):
+            siriusQuality = .auto(mode: AutoQualityMode(rawValue: mode))
+        case .constantBitrate(let bitrateKbps):
+            siriusQuality = .constantBitrate(bitrateKbps: bitrateKbps)
+        case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+            siriusQuality = .variableBitrate(targetBitrateKbps: targetBitrateKbps, maxBitrateKbps: maxBitrateKbps)
+        case .fixedQuality(let factor):
+            siriusQuality = .fixedQuality(factor: factor)
+        case .lossless(let mode):
+            siriusQuality = .lossless(mode: LosslessQualityMode(rawValue: mode))
+        }
+
+        let codec = SiriusKitClient.Codec(
             fourCC: self.fourCC,
             frameRate: Float(self.frameRate),
-            
+
             // FIXME
             size: nil,
             options: self.siriusKitCodecOptions,
-            
-            // FIXME - CodecSpecification에 품질 정책 없음!!
-            quality: .auto(mode: .balancedPriority)
+
+            quality: siriusQuality
         )
-            
+
         return codec
     }
 }

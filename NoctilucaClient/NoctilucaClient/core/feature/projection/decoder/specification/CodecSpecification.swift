@@ -12,9 +12,79 @@ import SiriusKitClient
 enum CodecNegotiationPolicy: String, Hashable, Equatable, Codable {
     /// 최대한 균형 있게 결정합니다.
     case balanced = "balanced"
-    
+
     /// 서버의 품질 설정을 우선시합니다. 클라이언트의 요청은 무시됩니다.
     case overrideFromServer = "override-from-server"
+}
+
+enum QualityMode: Codable, Hashable {
+    case auto(mode: UInt32)
+    case constantBitrate(bitrateKbps: Int32)
+    case variableBitrate(targetBitrateKbps: Int32, maxBitrateKbps: Int32)
+    case fixedQuality(factor: Int32)
+    case lossless(mode: UInt32)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case mode
+        case bitrateKbps = "bitrate_kbps"
+        case targetBitrateKbps = "target_bitrate_kbps"
+        case maxBitrateKbps = "max_bitrate_kbps"
+        case factor
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+
+        switch type {
+        case "auto":
+            let mode = try container.decode(UInt32.self, forKey: .mode)
+            self = .auto(mode: mode)
+        case "constant_bitrate":
+            let bitrateKbps = try container.decode(Int32.self, forKey: .bitrateKbps)
+            self = .constantBitrate(bitrateKbps: bitrateKbps)
+        case "variable_bitrate":
+            let targetBitrateKbps = try container.decode(Int32.self, forKey: .targetBitrateKbps)
+            let maxBitrateKbps = try container.decode(Int32.self, forKey: .maxBitrateKbps)
+            self = .variableBitrate(targetBitrateKbps: targetBitrateKbps, maxBitrateKbps: maxBitrateKbps)
+        case "fixed_quality":
+            let factor = try container.decode(Int32.self, forKey: .factor)
+            self = .fixedQuality(factor: factor)
+        case "lossless":
+            let mode = try container.decode(UInt32.self, forKey: .mode)
+            self = .lossless(mode: mode)
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .type,
+                in: container,
+                debugDescription: "Unknown quality mode type: \(type)"
+            )
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .auto(let mode):
+            try container.encode("auto", forKey: .type)
+            try container.encode(mode, forKey: .mode)
+        case .constantBitrate(let bitrateKbps):
+            try container.encode("constant_bitrate", forKey: .type)
+            try container.encode(bitrateKbps, forKey: .bitrateKbps)
+        case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+            try container.encode("variable_bitrate", forKey: .type)
+            try container.encode(targetBitrateKbps, forKey: .targetBitrateKbps)
+            try container.encode(maxBitrateKbps, forKey: .maxBitrateKbps)
+        case .fixedQuality(let factor):
+            try container.encode("fixed_quality", forKey: .type)
+            try container.encode(factor, forKey: .factor)
+        case .lossless(let mode):
+            try container.encode("lossless", forKey: .type)
+            try container.encode(mode, forKey: .mode)
+        }
+    }
 }
 
 struct CodecSpecification: Codable {
@@ -24,18 +94,22 @@ struct CodecSpecification: Codable {
         case extras = "extras"
         case frameRate = "frame_rate"
         case maximumResolutionLevel = "maximum_resolution_level"
+        case quality = "quality"
     }
     
     let fourCC: CodecFourCC
     var options: [CodecOptionKey: CodecOptionValue]
     var extras: String = ""
-    
-    
+
+
     // 초당 프레임 수. 0.0인 경우 자동 설정됨을 의미합니다.
     var frameRate: Double = 0.0
-    
+
     // XXX: 간단 설정을 위한 속성 - 최대 해상도 레벨
     var maximumResolutionLevel: CodecResolutionLevel = .unlimited
+
+    // 품질 모드
+    var quality: QualityMode = .auto(mode: 0)
     
     init(fourCC: CodecFourCC) {
         self.fourCC = fourCC
@@ -44,23 +118,25 @@ struct CodecSpecification: Codable {
     
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
+
         fourCC = try container.decode(CodecFourCC.self, forKey: .fourCC)
         options = try container.decode([CodecOptionKey: CodecOptionValue].self, forKey: .options)
         extras = try container.decodeIfPresent(String.self, forKey: .extras) ?? ""
-        
+
         frameRate = try container.decodeIfPresent(Double.self, forKey: .frameRate) ?? 0.0
         maximumResolutionLevel = try container.decodeIfPresent(CodecResolutionLevel.self, forKey: .maximumResolutionLevel) ?? .unlimited
+        quality = try container.decodeIfPresent(QualityMode.self, forKey: .quality) ?? .auto(mode: 0)
     }
     
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        
+
         try container.encode(fourCC, forKey: .fourCC)
         try container.encode(options, forKey: .options)
         try container.encode(extras, forKey: .extras)
         try container.encode(frameRate, forKey: .frameRate)
         try container.encode(maximumResolutionLevel, forKey: .maximumResolutionLevel)
+        try container.encode(quality, forKey: .quality)
     }
     
     func option(_ key: CodecOptionKey) -> CodecOptionValue? {
@@ -89,6 +165,8 @@ extension CodecSpecification: Hashable {
         hasher.combine(frameRate)
         hasher.combine(options)
         hasher.combine(extras)
+        hasher.combine(maximumResolutionLevel)
+        hasher.combine(quality)
     }
 }
 
@@ -122,12 +200,14 @@ extension CodecSpecification {
         .option(.colorFormat, .kColorFormatYUV444)
         .option(.compressionLevel, .init(rawValue: "80"))
         .option(.tileSize, .kTileSize256x256)
+        .option(.quantizeLevel, .kQuantizeLevelNone)
         .also { $0.frameRate = 30 }
 
     static let mjpg = CodecSpecification(fourCC: .mjpg)
         .option(.colorFormat, .kColorFormatYUV420)
         .option(.tileSize, .kTileSize256x256)
-        .option(.compressionLevel, .init(rawValue: "35"))
+        .option(.compressionLevel, .init(rawValue: "28"))
+        .option(.quantizeLevel, .kQuantizeLevelNone)
 }
 
 extension CodecSpecification {
@@ -141,7 +221,9 @@ extension CodecSpecification {
             return "Run-Length Encoding (RLE) + Zstd"
         case .mjpg:
             return "Motion JPEG"
-            
+        case .webp:
+            return "WebP"
+
         default:
             return "Unknown Codec (\(fourCC.stringRepresentation))"
         }
@@ -205,7 +287,7 @@ extension CodecSpecification {
     
     var description: String {
         switch self.fourCC {
-        case .zrle, .mjpg:
+        case .zrle, .mjpg, .webp:
             return "압축 레벨 \(self.option(.compressionLevel)?.rawValue ?? "1")"
         default:
             return commonDescription
