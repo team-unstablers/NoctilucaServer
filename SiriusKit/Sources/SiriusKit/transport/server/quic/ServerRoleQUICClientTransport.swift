@@ -102,6 +102,12 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
                 Task {
                     await self.disconnect()
                 }
+            case .ready:
+                guard let metadata = self.connectionGroup.metadata(definition: NWProtocolQUIC.definition) as? NWProtocolQUIC.Metadata else {
+                    return
+                }
+                
+                metadata.keepAlive = .seconds(2)
             default:
                 break
             }

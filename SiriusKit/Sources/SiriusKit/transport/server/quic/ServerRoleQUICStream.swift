@@ -122,8 +122,6 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
     private func read(minSize: Int, maxSize: Int) async -> Result<Data, Error> {
         return await withCheckedContinuation { cont in
             self.connection.receive(minimumIncompleteLength: minSize, maximumLength: maxSize) { content, context, complete, error in
-                print(context?.identifier)
-                
                 if complete {
                     cont.resume(returning: .failure(StreamError.endOfStream))
                 } else if let error = error {
