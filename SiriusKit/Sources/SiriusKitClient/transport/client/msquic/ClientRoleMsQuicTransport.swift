@@ -94,6 +94,10 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         settings.migrationEnabled = true
 
         settings.pacingEnabled = true
+        
+        
+        settings.tlsClientMaxSendBuffer = 262144
+        settings.streamRecvBufferDefault = 262144
 
         settings.streamRecvWindowDefault = 2 * 1024 * 1024
         settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
