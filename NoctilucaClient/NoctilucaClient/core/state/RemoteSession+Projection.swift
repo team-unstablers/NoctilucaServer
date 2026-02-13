@@ -85,6 +85,9 @@ extension RemoteSession {
 
         private let cursorImageCacheManager = CursorImageCacheManager()
         let cursorState = CursorState()
+        private let cursorMoveCoalescingLock = NSLock()
+        private var pendingCursorMoveEvent: CursorMoveEvent?
+        private var isCursorMoveDeliveryScheduled = false
         
         init(_ parent: RemoteSession, channel: ProjectionChannel) {
             self.parent = parent
@@ -134,9 +137,7 @@ extension RemoteSession {
                 self.audioSessions.removeValue(forKey: sessionID)
 
             case .cursorMoved(let moveEvent):
-                DispatchQueue.main.async {
-                    self.handleCursorMoveEvent(moveEvent)
-                }
+                self.enqueueCursorMoveEvent(moveEvent)
             case .cursorImageChanged(let imageEvent):
                 Task.detached { [weak self] in
                     guard let self else { return }
@@ -205,6 +206,42 @@ extension RemoteSession {
             default:
                 break
             }
+        }
+
+        private func enqueueCursorMoveEvent(_ moveEvent: CursorMoveEvent) {
+            cursorMoveCoalescingLock.lock()
+            pendingCursorMoveEvent = moveEvent
+
+            let shouldSchedule = !isCursorMoveDeliveryScheduled
+            if shouldSchedule {
+                isCursorMoveDeliveryScheduled = true
+            }
+            cursorMoveCoalescingLock.unlock()
+
+            guard shouldSchedule else {
+                return
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                self?.drainCoalescedCursorMoveEvent()
+            }
+        }
+
+        @MainActor
+        private func drainCoalescedCursorMoveEvent() {
+            let moveEvent: CursorMoveEvent?
+
+            cursorMoveCoalescingLock.lock()
+            moveEvent = pendingCursorMoveEvent
+            pendingCursorMoveEvent = nil
+            isCursorMoveDeliveryScheduled = false
+            cursorMoveCoalescingLock.unlock()
+
+            guard let moveEvent else {
+                return
+            }
+
+            handleCursorMoveEvent(moveEvent)
         }
         
         private func handleCursorMoveEvent(_ moveEvent: CursorMoveEvent) {

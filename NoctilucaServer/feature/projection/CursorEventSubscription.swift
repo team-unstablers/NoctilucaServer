@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import AsyncAlgorithms
 
 import SiriusKit
 
@@ -35,14 +34,31 @@ class CursorEventSubscription {
         let cursorHashStream = self.cursorStateHolder.makeCursorHashStream()
         let initialCursorState = self.cursorStateHolder.cursorState
 
-        // cursorState 소비 - AsyncAlgorithms throttle 적용 (60Hz = ~16.67ms)
+        // cursorState 소비: 커서 위치 이벤트를 120Hz로 제한하여 메인/네트워크 큐 적체를 완화한다.
         self.stateTask = Task.detached(priority: .userInitiated) { [weak self] in
-            let throttled = cursorStateStream
-                // ._throttle(for: .milliseconds(1000 / 60), latest: true)
+            let minSendIntervalNanos: UInt64 = 8_333_333 // ~120Hz
+            var lastSentState: CursorState?
+            var lastSentAtNanos: UInt64 = 0
 
-            for await state in throttled {
+            for await state in cursorStateStream {
                 guard let channel = self?.channel else { continue }
-                try? await channel.sendCursorPositionEvent(state)
+
+                if lastSentState == state {
+                    continue
+                }
+
+                let now = DispatchTime.now().uptimeNanoseconds
+                if lastSentAtNanos != 0, (now - lastSentAtNanos) < minSendIntervalNanos {
+                    continue
+                }
+
+                do {
+                    try await channel.sendCursorPositionEvent(state)
+                    lastSentState = state
+                    lastSentAtNanos = DispatchTime.now().uptimeNanoseconds
+                } catch {
+                    self?.logger.error("Failed to send cursor position update: \(error)")
+                }
             }
         }
 
