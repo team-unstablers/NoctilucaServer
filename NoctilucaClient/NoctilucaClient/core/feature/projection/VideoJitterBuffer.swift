@@ -34,17 +34,27 @@ final class VideoJitterBuffer: NSObject {
         /// 저지연 튜닝 전 기본값 프리셋.
         static let legacy = Preset(
             minBufferCount: 3,
-            maxBufferCount: 4,
+            maxBufferCount: 10,
             lateThresholdMs: 50.0,
             lateResyncThresholdMs: 200.0,
             earlyResyncThresholdMs: 200.0,
             noReadyResyncConsecutiveTicks: 6
         )
         
+        /// 안정성을 중시하는 균형 잡힌 프리셋 (추천).
+        static let balanced = Preset(
+            minBufferCount: 4,
+            maxBufferCount: 12,
+            lateThresholdMs: 40.0,
+            lateResyncThresholdMs: 150.0,
+            earlyResyncThresholdMs: 150.0,
+            noReadyResyncConsecutiveTicks: 5
+        )
+        
         /// 현재 적용 중인 저지연 튜닝값 프리셋.
         static let lowLatency = Preset(
             minBufferCount: 2,
-            maxBufferCount: 3,
+            maxBufferCount: 8,
             lateThresholdMs: 35.0,
             lateResyncThresholdMs: 150.0,
             earlyResyncThresholdMs: 120.0,
@@ -54,7 +64,7 @@ final class VideoJitterBuffer: NSObject {
         /// 현재 저지연과 초저지연 사이의 중간 단계 프리셋.
         static let lowLatencyPlus = Preset(
             minBufferCount: 2,
-            maxBufferCount: 2,
+            maxBufferCount: 6,
             lateThresholdMs: 28.0,
             lateResyncThresholdMs: 120.0,
             earlyResyncThresholdMs: 100.0,
@@ -64,7 +74,7 @@ final class VideoJitterBuffer: NSObject {
         /// 지연 최소화를 최우선으로 하는 초저지연 프리셋.
         static let ultraLowLatency = Preset(
             minBufferCount: 1,
-            maxBufferCount: 2,
+            maxBufferCount: 4,
             lateThresholdMs: 22.0,
             lateResyncThresholdMs: 90.0,
             earlyResyncThresholdMs: 80.0,
