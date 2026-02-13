@@ -16,6 +16,14 @@ enum CodecSpecificationSheetAction {
     case cancel
 }
 
+fileprivate enum QualityModeTag: Hashable {
+    case auto
+    case constantBitrate
+    case variableBitrate
+    case fixedQuality
+    case lossless
+}
+
 struct CodecSpecificationSheet: View {
     let actionHandler: (CodecSpecificationSheetAction) -> Void
     
@@ -196,10 +204,10 @@ struct CodecSpecificationSheet: View {
                     Picker(selection: $specification.options[.displayDensity]) {
                         Text("자동")
                             .tag(CodecOptionValue.kDisplayDensityAuto)
-                        
+
                         Text("성능 우선")
                             .tag(CodecOptionValue.kDisplayDensityPerformance)
-                        
+
                         Text("화질 우선")
                             .tag(CodecOptionValue.kDisplayDensityBest)
                     } label: {
@@ -216,6 +224,13 @@ struct CodecSpecificationSheet: View {
                             Text("디스플레이 밀도를 설정합니다.")
                         }
                     }
+                }
+
+                Section {
+                    qualityPicker()
+                    qualityParameters()
+                } header: {
+                    Text("품질")
                 }
             }
             .formStyle(.grouped)
@@ -264,6 +279,290 @@ struct CodecSpecificationSheet: View {
 }
 
 fileprivate extension CodecSpecificationSheet {
+    var isImageCodec: Bool {
+        specification.fourCC == .zrle || specification.fourCC == .mjpg || specification.fourCC == .webp
+    }
+
+    var qualityModeBinding: Binding<QualityModeTag> {
+        Binding(
+            get: {
+                switch specification.quality {
+                case .auto: return .auto
+                case .constantBitrate: return .constantBitrate
+                case .variableBitrate: return .variableBitrate
+                case .fixedQuality: return .fixedQuality
+                case .lossless: return .lossless
+                }
+            },
+            set: { newTag in
+                switch newTag {
+                case .auto:
+                    specification.quality = .auto(mode: 0)
+                case .constantBitrate:
+                    specification.quality = .constantBitrate(bitrateKbps: 5000)
+                case .variableBitrate:
+                    specification.quality = .variableBitrate(targetBitrateKbps: 5000, maxBitrateKbps: 10000)
+                case .fixedQuality:
+                    specification.quality = .fixedQuality(factor: 50)
+                case .lossless:
+                    specification.quality = .lossless(mode: 0)
+                }
+            }
+        )
+    }
+
+    var autoQualityModeBinding: Binding<AutoQualityMode> {
+        Binding(
+            get: {
+                if case .auto(let mode) = specification.quality {
+                    return AutoQualityMode(rawValue: mode)
+                }
+                return .balancedPriority
+            },
+            set: { newMode in
+                specification.quality = .auto(mode: newMode.rawValue)
+            }
+        )
+    }
+
+    var constantBitrateBinding: Binding<Int32> {
+        Binding(
+            get: {
+                if case .constantBitrate(let bitrateKbps) = specification.quality {
+                    return bitrateKbps
+                }
+                return 5000
+            },
+            set: { newValue in
+                specification.quality = .constantBitrate(bitrateKbps: newValue)
+            }
+        )
+    }
+
+    var variableBitrateTargetBinding: Binding<Int32> {
+        Binding(
+            get: {
+                if case .variableBitrate(let targetBitrateKbps, _) = specification.quality {
+                    return targetBitrateKbps
+                }
+                return 5000
+            },
+            set: { newValue in
+                if case .variableBitrate(_, let maxBitrateKbps) = specification.quality {
+                    specification.quality = .variableBitrate(targetBitrateKbps: newValue, maxBitrateKbps: maxBitrateKbps)
+                }
+            }
+        )
+    }
+
+    var variableBitrateMaxBinding: Binding<Int32> {
+        Binding(
+            get: {
+                if case .variableBitrate(_, let maxBitrateKbps) = specification.quality {
+                    return maxBitrateKbps
+                }
+                return 10000
+            },
+            set: { newValue in
+                if case .variableBitrate(let targetBitrateKbps, _) = specification.quality {
+                    specification.quality = .variableBitrate(targetBitrateKbps: targetBitrateKbps, maxBitrateKbps: newValue)
+                }
+            }
+        )
+    }
+
+    var fixedQualityFactorBinding: Binding<Double> {
+        Binding(
+            get: {
+                if case .fixedQuality(let factor) = specification.quality {
+                    return Double(factor)
+                }
+                return 50.0
+            },
+            set: { newValue in
+                specification.quality = .fixedQuality(factor: Int32(newValue))
+            }
+        )
+    }
+
+    var losslessQualityModeBinding: Binding<LosslessQualityMode> {
+        Binding(
+            get: {
+                if case .lossless(let mode) = specification.quality {
+                    return LosslessQualityMode(rawValue: mode)
+                }
+                return .balancedPriority
+            },
+            set: { newMode in
+                specification.quality = .lossless(mode: newMode.rawValue)
+            }
+        )
+    }
+
+    @ViewBuilder
+    func qualityPicker() -> some View {
+        Picker(selection: qualityModeBinding) {
+            Text("자동")
+                .tag(QualityModeTag.auto)
+
+            if !isImageCodec {
+                Text("고정 비트레이트 (CBR)")
+                    .tag(QualityModeTag.constantBitrate)
+
+                Text("가변 비트레이트 (VBR)")
+                    .tag(QualityModeTag.variableBitrate)
+
+                Text("고정 품질 (CQP/CRF)")
+                    .tag(QualityModeTag.fixedQuality)
+
+                Text("무손실")
+                    .tag(QualityModeTag.lossless)
+            }
+        } label: {
+            Text("품질 모드")
+            qualityModeDescription()
+        }
+    }
+
+    @ViewBuilder
+    func qualityModeDescription() -> some View {
+        switch specification.quality {
+        case .auto:
+            Text("서버가 네트워크 상태에 따라 자동으로 품질을 조절합니다.")
+        case .constantBitrate:
+            Text("고정 비트레이트로 안정적인 대역폭을 사용합니다.")
+        case .variableBitrate:
+            Text("가변 비트레이트로 품질과 대역폭의 균형을 맞춥니다.")
+        case .fixedQuality:
+            Text("고정 품질 계수를 사용하여 일정한 화질을 유지합니다.")
+        case .lossless:
+            Text("무손실 압축을 사용하여 품질 저하 없이 전송합니다.")
+        }
+    }
+
+    @ViewBuilder
+    func qualityParameters() -> some View {
+        switch specification.quality {
+        case .auto(let mode):
+            autoQualityParameters(mode: mode)
+        case .constantBitrate(let bitrateKbps):
+            constantBitrateParameters(bitrateKbps: bitrateKbps)
+        case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+            variableBitrateParameters(targetBitrateKbps: targetBitrateKbps, maxBitrateKbps: maxBitrateKbps)
+        case .fixedQuality(let factor):
+            fixedQualityParameters(factor: factor)
+        case .lossless(let mode):
+            losslessQualityParameters(mode: mode)
+        }
+    }
+
+    @ViewBuilder
+    func autoQualityParameters(mode: UInt32) -> some View {
+        Picker(selection: autoQualityModeBinding) {
+            Text("균형")
+                .tag(AutoQualityMode.balancedPriority)
+            Text("품질 우선")
+                .tag(AutoQualityMode.qualityPriority)
+            Text("성능 우선")
+                .tag(AutoQualityMode.performancePriority)
+        } label: {
+            Text("자동 품질 전략")
+            switch AutoQualityMode(rawValue: mode) {
+            case .balancedPriority:
+                Text("품질과 성능 간의 균형을 맞춥니다.")
+            case .qualityPriority:
+                Text("가능한 최고의 품질을 우선시합니다.")
+            case .performancePriority:
+                Text("가능한 최고의 성능을 우선시합니다.")
+            default:
+                Text("자동 품질 전략을 설정합니다.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    func constantBitrateParameters(bitrateKbps: Int32) -> some View {
+        SettingsEntry(
+            title: "비트레이트 (kbps)",
+            subtitle: "목표 비트레이트: \(bitrateKbps) kbps"
+        ) {
+            TextField("비트레이트", value: constantBitrateBinding, format: .number)
+                .multilineTextAlignment(.trailing)
+#if os(macOS)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 120)
+#endif
+        }
+    }
+
+    @ViewBuilder
+    func variableBitrateParameters(targetBitrateKbps: Int32, maxBitrateKbps: Int32) -> some View {
+        SettingsEntry(
+            title: "목표 비트레이트 (kbps)",
+            subtitle: "목표: \(targetBitrateKbps) kbps"
+        ) {
+            TextField("목표 비트레이트", value: variableBitrateTargetBinding, format: .number)
+                .multilineTextAlignment(.trailing)
+#if os(macOS)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 120)
+#endif
+        }
+
+        SettingsEntry(
+            title: "최대 비트레이트 (kbps)",
+            subtitle: "최대: \(maxBitrateKbps) kbps"
+        ) {
+            TextField("최대 비트레이트", value: variableBitrateMaxBinding, format: .number)
+                .multilineTextAlignment(.trailing)
+#if os(macOS)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 120)
+#endif
+        }
+    }
+
+    @ViewBuilder
+    func fixedQualityParameters(factor: Int32) -> some View {
+        SettingsEntry(
+            title: "품질 계수",
+            subtitle: "현재 품질 계수: \(factor)"
+        ) {
+            Slider(
+                value: fixedQualityFactorBinding,
+                in: 0...100,
+                step: 1,
+                minimumValueLabel: Text("0"),
+                maximumValueLabel: Text("100")
+            ) {
+            }
+        }
+    }
+
+    @ViewBuilder
+    func losslessQualityParameters(mode: UInt32) -> some View {
+        Picker(selection: losslessQualityModeBinding) {
+            Text("균형")
+                .tag(LosslessQualityMode.balancedPriority)
+            Text("속도 우선")
+                .tag(LosslessQualityMode.speedPriority)
+            Text("압축 우선")
+                .tag(LosslessQualityMode.compressionPriority)
+        } label: {
+            Text("무손실 품질 모드")
+            switch LosslessQualityMode(rawValue: mode) {
+            case .balancedPriority:
+                Text("성능과 압축률 간의 균형을 맞춥니다.")
+            case .speedPriority:
+                Text("성능을 우선시합니다. (압축률이 낮아질 수 있음)")
+            case .compressionPriority:
+                Text("압축률을 우선시합니다. (성능이 낮아질 수 있음)")
+            default:
+                Text("무손실 품질 모드를 설정합니다.")
+            }
+        }
+    }
+
     @ViewBuilder
     func h264ProfileOptions() -> some View {
         Text("Baseline Profile (가장 높은 호환성, 압축률 낮음)")
@@ -273,7 +572,7 @@ fileprivate extension CodecSpecificationSheet {
         Text("High Profile (가장 낮은 호환성, 압축률 높음)")
             .tag(CodecOptionValue.kProfileH264High)
     }
-    
+
     @ViewBuilder
     func hevcProfileOptions() -> some View {
         Text("Main Profile")
