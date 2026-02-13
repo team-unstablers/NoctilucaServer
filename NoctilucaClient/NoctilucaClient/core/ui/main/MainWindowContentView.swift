@@ -77,7 +77,7 @@ fileprivate struct MainWindowContentViewInternal: View {
                                                 fingerprint: fingerprint, decision: .allow
                                             ))
                                         } catch {
-                                            print("재연결 시도 중 오류 발생: \(error)")
+                                            viewModel.presentConnectionError(error)
                                         }
                                     } else {
                                         await viewModel.stopSession(force: true)

@@ -73,7 +73,9 @@ struct MainWindowRootView: View {
                     }
                 )
             }
-            .sheet(isPresented: $contactSheetCoordinator.isPresented) {
+            .sheet(isPresented: $contactSheetCoordinator.isPresented, onDismiss: {
+                viewModel.flushPendingConnectionErrors()
+            }) {
                 let coordinator = contactSheetCoordinator
                 SessionSettingsSheet(
                     scope: .session,

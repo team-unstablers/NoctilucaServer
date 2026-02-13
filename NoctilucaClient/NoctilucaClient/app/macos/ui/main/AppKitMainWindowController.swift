@@ -34,6 +34,8 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
             .environmentObject(viewModel.contactSheetCoordinator)
         
         let hostingView = NSHostingView(rootView: contentView)
+        hostingView.sizingOptions = []
+
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],

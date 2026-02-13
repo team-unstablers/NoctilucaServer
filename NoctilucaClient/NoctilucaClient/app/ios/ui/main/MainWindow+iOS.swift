@@ -57,7 +57,9 @@ struct UIKitMainWindow: View {
                 }
             )
         }
-        .sheet(isPresented: $contactSheetCoordinator.isPresented) {
+        .sheet(isPresented: $contactSheetCoordinator.isPresented, onDismiss: {
+            viewModel.flushPendingConnectionErrors()
+        }) {
             SessionSettingsSheet(
                 scope: .session,
                 sessionSettings: $contactSheetCoordinator.draft.settings,

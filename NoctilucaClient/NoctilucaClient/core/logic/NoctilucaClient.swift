@@ -21,6 +21,7 @@ enum NoctilucaClientError: LocalizedError {
     case authNegotiationFailed(authMethods: [ClientAuthMethod])
     case sessionClosedByServer(ClosureCode, String?)
     case audioProjectionInitializationFailed(message: String)
+    case connectionFailed(Error)
 
     var errorDescription: String? {
         switch self {
@@ -45,6 +46,8 @@ enum NoctilucaClientError: LocalizedError {
             return Self.descriptionForClosureCode(code, message: message)
         case .audioProjectionInitializationFailed(let message):
             return "오디오 프로젝션 초기화에 실패했습니다.\n\(message)"
+        case .connectionFailed(let error):
+            return "연결에 실패했습니다.\n\(error.localizedDescription)"
         }
     }
 
@@ -54,6 +57,8 @@ enum NoctilucaClientError: LocalizedError {
             return "세션 종료"
         case .audioProjectionInitializationFailed:
             return "오디오 연결 실패"
+        case .connectionFailed:
+            return "연결 실패"
         default:
             return "오류 발생"
         }
@@ -462,18 +467,6 @@ class NoctilucaClient: ObservableObject {
 extension NoctilucaClient: SiriusClientDelegate {
     func siriusClientDidCloseTransport(_ client: SiriusKitClient.SiriusClient) {
         Task {
-            if self.phase != .closed {
-                let error: NoctilucaClientError = switch client.lastTransportError {
-                case .certificateValidationFailed:
-                    .certificateValidationFailed
-                default:
-                    .remoteClosedConnection
-                }
-
-                await MainActor.run {
-                    self.uiEvents.send(.errorOccurred(error))
-                }
-            }
             await self.close()
         }
     }
@@ -490,6 +483,35 @@ extension NoctilucaClient: SiriusClientDelegate {
         Task.detached {
             try await self.sendClientHello()
         }
+    }
+    
+    func siriusClient(_ client: SiriusClient, didEncounterError error: any Error) {
+        Task.detached {
+            if let error = error as? ClientTransportError {
+                self.handleTransportError(error)
+                return
+            }
+            
+            self.handleError(error)
+        }
+    }
+    
+    private func handleTransportError(_ error: ClientTransportError) {
+        let error: NoctilucaClientError = switch error {
+        case .certificateValidationFailed:
+            .certificateValidationFailed
+        default:
+            .remoteClosedConnection
+        }
+        
+        
+        Task { @MainActor in
+            self.uiEvents.send(.errorOccurred(error))
+        }
+    }
+    
+    private func handleError(_ error: (any Error)) {
+        // TODO
     }
 }
 

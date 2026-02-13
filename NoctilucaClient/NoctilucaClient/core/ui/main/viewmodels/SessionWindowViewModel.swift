@@ -81,7 +81,11 @@ class SessionWindowViewModel: ObservableObject {
     private func setupContactSheetCoordinator() {
         contactSheetCoordinator.onConnect = { [weak self] endpoint, settingsOverride in
             Task { @MainActor in
-                try? await self?.startSession(endpoint: endpoint, settingsOverride: settingsOverride)
+                do {
+                    try await self?.startSession(endpoint: endpoint, settingsOverride: settingsOverride)
+                } catch {
+                    self?.presentConnectionError(error)
+                }
             }
         }
     }
@@ -254,7 +258,27 @@ class SessionWindowViewModel: ObservableObject {
         }
     }
 
+    func presentConnectionError(_ error: Error) {
+        if let clientError = error as? NoctilucaClientError {
+            errors.append(clientError)
+        } else {
+            errors.append(.connectionFailed(error))
+        }
+        shouldDisplayErrorAlert = true
+    }
+
+    /// Contact sheet dismiss 완료 후 호출되어, sheet 전환 중 누락된 에러 alert를 표시한다.
+    func flushPendingConnectionErrors() {
+        guard !errors.isEmpty else { return }
+        shouldDisplayErrorAlert = true
+    }
+
     func handleClientError(_ error: NoctilucaClientError) {
+        guard (client?.isValidatingServerIdentity ?? false) == false else {
+            // 인증서 검증 시에 발생하는 접속 끊김은 어쩔 수 없는 것
+            return
+        }
+        
         errors.append(error)
         shouldDisplayErrorAlert = true
     }
@@ -362,7 +386,6 @@ class SessionWindowViewModel: ObservableObject {
             .store(in: &sessionCancellables)
 
         session.errorPublisher
-            .receive(on: RunLoop.main)
             .sink { [weak self] error in
                 self?.handleClientError(error)
             }

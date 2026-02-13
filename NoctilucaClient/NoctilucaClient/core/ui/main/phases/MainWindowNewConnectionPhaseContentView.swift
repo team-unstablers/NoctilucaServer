@@ -63,9 +63,13 @@ struct MainWindowNewConnectionPhaseContentView: View {
                                 ForEach(recentStore.records.prefix(5)) { record in
                                     RecentConnectionItemView(record: record) {
                                         Task { @MainActor in
-                                            try? await viewModel.startSession(
-                                                endpoint: .quickConnect(endpointURL: record.endpointURL)
-                                            )
+                                            do {
+                                                try await viewModel.startSession(
+                                                    endpoint: .quickConnect(endpointURL: record.endpointURL)
+                                                )
+                                            } catch {
+                                                viewModel.presentConnectionError(error)
+                                            }
                                         }
                                     }
                                 }
@@ -158,7 +162,11 @@ struct MainWindowNewConnectionPhaseContentView: View {
         switch action {
         case .launch:
             Task { @MainActor in
-                try? await viewModel.startSession(endpoint: .contact(item: item))
+                do {
+                    try await viewModel.startSession(endpoint: .contact(item: item))
+                } catch {
+                    viewModel.presentConnectionError(error)
+                }
             }
         case .edit:
             contactSheetCoordinator.presentContactEditor(for: item)
