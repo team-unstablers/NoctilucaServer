@@ -456,9 +456,10 @@ class NoctilucaClient: ObservableObject {
 
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
+        self.pingTask?.cancel()
 
         await self.session.shutdown()
-        
+
         await NoctilucaClientManager.shared.detachClient(id: self.id)
     }
 }

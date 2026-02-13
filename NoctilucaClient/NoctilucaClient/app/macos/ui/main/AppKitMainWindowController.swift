@@ -94,6 +94,10 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     func window(_ window: NSWindow, willUseFullScreenPresentationOptions proposedOptions: NSApplication.PresentationOptions = []) -> NSApplication.PresentationOptions {
         return [.autoHideToolbar, .autoHideMenuBar, .fullScreen]
     }
+
+    func windowDidResignKey(_ notification: Notification) {
+        viewModel.remoteSession?.hidio?.controller.resetKeyPressState()
+    }
 }
 
 

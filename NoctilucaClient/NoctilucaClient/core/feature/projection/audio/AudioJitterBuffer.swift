@@ -209,7 +209,6 @@ final class AudioJitterBuffer {
             if bufferedMs >= Double(minBufferMs) {
                 state = .playing
                 consecutiveLateFrames = 0
-                os_log(.info, log: logger, "Buffering complete, starting playback (%.1f ms buffered)", bufferedMs)
             }
         } else if state == .underflow {
             let bufferedMs = Double(availableSamples / channelCount) / sampleRate * 1000.0

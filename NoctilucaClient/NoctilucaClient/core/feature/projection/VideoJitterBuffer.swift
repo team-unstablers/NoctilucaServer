@@ -313,7 +313,6 @@ final class VideoJitterBuffer: NSObject {
                 if let oldest = frameQueue.first {
                     setAnchorLocked(remotePTS: oldest.remotePTS)
                 }
-                logger.info("Buffering complete, starting playback (\(self.frameQueue.count) frames buffered)")
             }
         case .underflow:
             if frameQueue.count >= minBufferCount {
