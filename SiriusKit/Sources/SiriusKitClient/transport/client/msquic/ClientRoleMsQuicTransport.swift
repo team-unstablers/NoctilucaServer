@@ -93,7 +93,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
 
-        settings.pacingEnabled = false
+        settings.pacingEnabled = true
 
         settings.streamRecvWindowDefault = 2 * 1024 * 1024
         settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024

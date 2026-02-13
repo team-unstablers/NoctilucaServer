@@ -50,7 +50,7 @@ class ProjectionSession: Identifiable {
     var encoder: any VideoEncoder
     var codec: Codec?
     
-    private let frameQueue = FrameQueue<EncodedFrame>(capacity: 4)
+    private let frameQueue = FrameQueue<EncodedFrame>(capacity: 8)
     
     private var encoderEventLoopTask: Task<Void, Error>?
     private var senderEventLoopTask: Task<Void, Error>?

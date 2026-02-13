@@ -27,7 +27,7 @@ class FrameDropController {
 
     // MARK: - 큐 드랍 기반 플러시 상태
     private var consecutiveQueueDrops: Int = 0
-    private let queueDropFlushThreshold: Int = 3
+    private let queueDropFlushThreshold: Int = 5
     private var flushCooldown: Int = 0
     private let flushCooldownFrames: Int = 10
 
