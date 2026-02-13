@@ -113,6 +113,8 @@ class HIDIOSession: ObservableObject {
     var defaultSubMouse: HIDIOVirtualDevice {
         (driver as! IOSDriver).defaultSubMouse
     }
+    
+    var rootViewController: Weak<RootViewController>? = nil
 #endif
     
     var currentMouse: HIDIOVirtualDevice? {

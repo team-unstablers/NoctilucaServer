@@ -49,6 +49,7 @@ final class RootViewController: UIHostingController<AnyView> {
         self.mainUIViewModel = mainUIViewModel
         self.mainWindowViewModel = mainWindowViewModel
         self.settingsStore = settingsStore
+        
 
         mainWindowViewModel.bind(settingsStore: settingsStore)
         mainWindowViewModel.loadContacts()
@@ -60,6 +61,8 @@ final class RootViewController: UIHostingController<AnyView> {
             .environmentObject(settingsStore)
 
         super.init(rootView: AnyView(contentView))
+        
+        mainWindowViewModel.rootViewController = Weak(self)
     }
 
     required init?(coder: NSCoder) {

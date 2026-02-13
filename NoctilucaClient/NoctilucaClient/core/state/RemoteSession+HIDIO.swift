@@ -39,12 +39,17 @@ extension RemoteSession {
             self.channel = Weak(channel)
 
             self.session = HIDIOSession(controller)
-
             session.delegate = self
-
-            self.setupKeyEventPipeline()
-            try? self.session.startSession()
-            self.installEscapeHook()
+            
+            Task { @MainActor in
+#if os(iOS)
+                session.rootViewController = self.parent.ref.parent?.ref.rootViewController
+#endif
+                
+                self.setupKeyEventPipeline()
+                try? self.session.startSession()
+                self.installEscapeHook()
+            }
         }
 
         private func setupKeyEventPipeline() {

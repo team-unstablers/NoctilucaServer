@@ -29,7 +29,7 @@ struct MouseRedirectionMethodPicker: View {
                 }
                 SettingsPickerItem(value: AppSettings.PointerInputMode.hardwareMouse) {
                     Text("하드웨어 마우스 우선")
-                    Text("가능한 경우 하드웨어 마우스를 우선 사용합니다.")
+                    Text("가능한 경우 하드웨어 마우스를 우선 사용합니다. 하드웨어 마우스가 연결되어 있는 동안 터치 입력은 무시됩니다.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

@@ -47,7 +47,7 @@ class HIDIOController {
 
     private(set) var keyPressState = KeyPressState()
     private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
-
+    
     init(channel: HIDIOChannel) {
         self.channel = Weak(channel)
         

@@ -179,7 +179,6 @@ class NoctilucaClient: ObservableObject {
     var projectionChannel: ProjectionChannel!
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
-    var pendingPointerInputMode: AppSettings.PointerInputMode = .automatic
 
     var sessionSettings: SessionSettings? = nil
     

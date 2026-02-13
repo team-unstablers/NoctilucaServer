@@ -46,22 +46,6 @@ extension AppSettings {
         }
     }
 
-    enum MouseMoveMode: String, Codable, CaseIterable, Sendable {
-        case absolute
-        case relative
-
-        init(from decoder: any Decoder) throws {
-            let container = try? decoder.singleValueContainer()
-            let rawValue = (try? container?.decode(String.self)) ?? Self.absolute.rawValue
-            self = MouseMoveMode(rawValue: rawValue) ?? .absolute
-        }
-
-        func encode(to encoder: any Encoder) throws {
-            var container = encoder.singleValueContainer()
-            try container.encode(rawValue)
-        }
-    }
-
     enum PointerInputMode: String, Codable, CaseIterable, Sendable {
         case automatic
         case touchPointer
@@ -137,7 +121,9 @@ extension AppSettings {
         var unlockKeySequence: KeySequence = KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
         var redirectionMethod: InputRedirectionMethod = .gameController
         var modifierKeyOverrides: ModifierKeyOverrides = .init()
-        var mouseMoveMode: MouseMoveMode = .absolute
+#if os(iOS)
+        var enableGCMouse: Bool = true
+#endif
         var pointerInputMode: PointerInputMode = .automatic
         var touchInputMode: TouchInputMode = .touch
         var trackpadMoveMultiplier: Double = 1.0
@@ -153,7 +139,9 @@ extension AppSettings {
             case unlockKeySequence
             case redirectionMethod
             case modifierKeyOverrides
-            case mouseMoveMode
+#if os(iOS)
+            case enableGCMouse
+#endif
             case pointerInputMode
             case touchInputMode
             case trackpadMoveMultiplier
@@ -174,20 +162,12 @@ extension AppSettings {
             unlockKeySequence = container.decodeSafe(KeySequence.self, forKey: .unlockKeySequence, default: unlockKeySequence)
             redirectionMethod = container.decodeSafe(InputRedirectionMethod.self, forKey: .redirectionMethod, default: redirectionMethod)
             modifierKeyOverrides = container.decodeSafe(ModifierKeyOverrides.self, forKey: .modifierKeyOverrides, default: modifierKeyOverrides)
-            mouseMoveMode = container.decodeSafe(MouseMoveMode.self, forKey: .mouseMoveMode, default: mouseMoveMode)
-            let hasPointerInputMode = container.contains(.pointerInputMode)
+#if os(iOS)
+            enableGCMouse = container.decodeSafe(Bool.self, forKey: .enableGCMouse, default: enableGCMouse)
+#endif
             pointerInputMode = container.decodeSafe(PointerInputMode.self, forKey: .pointerInputMode, default: pointerInputMode)
             touchInputMode = container.decodeSafe(TouchInputMode.self, forKey: .touchInputMode, default: touchInputMode)
             trackpadMoveMultiplier = container.decodeSafe(Double.self, forKey: .trackpadMoveMultiplier, default: trackpadMoveMultiplier)
-
-            if !hasPointerInputMode {
-                switch mouseMoveMode {
-                case .relative:
-                    pointerInputMode = .hardwareMouse
-                case .absolute:
-                    pointerInputMode = .touchPointer
-                }
-            }
             invertMouseButtons = container.decodeSafe(Bool.self, forKey: .invertMouseButtons, default: invertMouseButtons)
             invertVerticalScroll = container.decodeSafe(Bool.self, forKey: .invertVerticalScroll, default: invertVerticalScroll)
             invertHorizontalScroll = container.decodeSafe(Bool.self, forKey: .invertHorizontalScroll, default: invertHorizontalScroll)
@@ -200,7 +180,9 @@ extension AppSettings {
             try container.encode(unlockKeySequence, forKey: .unlockKeySequence)
             try container.encode(redirectionMethod, forKey: .redirectionMethod)
             try container.encode(modifierKeyOverrides, forKey: .modifierKeyOverrides)
-            try container.encode(mouseMoveMode, forKey: .mouseMoveMode)
+#if os(iOS)
+            try container.encode(enableGCMouse, forKey: .enableGCMouse)
+#endif
             try container.encode(pointerInputMode, forKey: .pointerInputMode)
             try container.encode(touchInputMode, forKey: .touchInputMode)
             try container.encode(trackpadMoveMultiplier, forKey: .trackpadMoveMultiplier)

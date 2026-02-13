@@ -53,6 +53,12 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private let panRecognizer = UIPanGestureRecognizer()
     private let twoFingerPanRecognizer = UIPanGestureRecognizer()
     private let chordedDragRecognizer = ChordedDragGestureRecognizer()
+    
+    private let mouseMoveRecognizer        = UIHoverGestureRecognizer()
+    private let mouseLeftClickRecognizer   = UITapGestureRecognizer()
+    private let mouseRightClickRecognizer  = UITapGestureRecognizer()
+    private let mouseCenterClickRecognizer = UITapGestureRecognizer()
+    private let mouseScrollRecognizer      = UIPanGestureRecognizer()
 
     private var isChordedDragging: Bool = false
     private var isScrolling: Bool = false
@@ -131,6 +137,35 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         addGestureRecognizer(twoFingerPanRecognizer)
         addGestureRecognizer(panRecognizer)
         addGestureRecognizer(chordedDragRecognizer)
+        
+        mouseMoveRecognizer.addTarget(self, action: #selector(handleMouseMove(_:)))
+        
+        mouseLeftClickRecognizer.numberOfTouchesRequired = 1
+        mouseLeftClickRecognizer.buttonMaskRequired = .primary
+        mouseLeftClickRecognizer.addTarget(self, action: #selector(handleMouseClick(_:)))
+        
+        mouseRightClickRecognizer.numberOfTouchesRequired = 1
+        mouseRightClickRecognizer.buttonMaskRequired = .secondary
+        mouseRightClickRecognizer.addTarget(self, action: #selector(handleMouseClick(_:)))
+        
+        /*
+         // 중앙 버튼은 인식이 불가능하더라구요. ㅠ
+        mouseCenterClickRecognizer.numberOfTouchesRequired = 1
+        mouseCenterClickRecognizer.buttonMaskRequired = .init(rawValue: 3)
+        mouseCenterClickRecognizer.addTarget(self, action: #selector(handleMouseClick(_:)))
+        mouseCenterClickRecognizer.delegate = self
+         */
+
+        mouseScrollRecognizer.minimumNumberOfTouches = 1
+        mouseScrollRecognizer.maximumNumberOfTouches = 1
+        mouseScrollRecognizer.allowedScrollTypesMask = [.discrete]
+        mouseScrollRecognizer.allowedTouchTypes = []
+        mouseScrollRecognizer.addTarget(self, action: #selector(handleMouseScroll(_:)))
+        
+        addGestureRecognizer(mouseMoveRecognizer)
+        addGestureRecognizer(mouseLeftClickRecognizer)
+        addGestureRecognizer(mouseRightClickRecognizer)
+        addGestureRecognizer(mouseScrollRecognizer)
     }
 
     // MARK: - Touch Handling (Direct)
@@ -140,18 +175,35 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         stopMoveInertia()
         stopScrollInertia()
 
-        guard inputMode == .touch, let touch = touches.first, event?.allTouches?.count == 1 else {
+        guard inputMode == .touch,
+              let touch = touches.first,
+              event?.allTouches?.count == 1
+        else {
             super.touchesBegan(touches, with: event)
             return
         }
         
-        let location = touch.location(in: self)
-        pointer.moveAbsolute(to: location)
-        pointer.buttonDown(.left)
+        if touch.type == .indirectPointer {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+            
+            if touch.gestureRecognizers?.contains(mouseLeftClickRecognizer) == true {
+                pointer.buttonDown(.left)
+            } else if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
+                pointer.buttonDown(.right)
+            }
+        } else {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+            pointer.buttonDown(.left)
+        }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard inputMode == .touch, let touch = touches.first, event?.allTouches?.count == 1 else {
+        guard inputMode == .touch,
+              let touch = touches.first,
+              event?.allTouches?.count == 1
+        else {
             super.touchesMoved(touches, with: event)
             return
         }
@@ -161,16 +213,31 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard inputMode == .touch, let touch = touches.first else {
+        guard inputMode == .touch,
+              let touch = touches.first,
+              event?.allTouches?.count == 1
+        else {
             super.touchesEnded(touches, with: event)
             return
         }
         
-        // Ensure we lift the button even if it transitioned to multi-touch, 
-        // but typically we care about the primary finger lifting.
-        let location = touch.location(in: self)
-        pointer.moveAbsolute(to: location)
-        pointer.buttonUp(.left)
+        if touch.type == .indirectPointer {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+            
+            if touch.gestureRecognizers?.contains(mouseLeftClickRecognizer) == true {
+                pointer.buttonUp(.left)
+            } else if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
+                pointer.buttonUp(.right)
+            }
+        } else {
+            // Ensure we lift the button even if it transitioned to multi-touch,
+            // but typically we care about the primary finger lifting.
+            
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+            pointer.buttonUp(.left)
+        }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -179,9 +246,20 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
         
-        let location = touch.location(in: self)
-        pointer.moveAbsolute(to: location)
-        pointer.buttonUp(.left)
+        if touch.type == .indirectPointer {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+            
+            if touch.gestureRecognizers?.contains(mouseLeftClickRecognizer) == true {
+                pointer.buttonUp(.left)
+            } else if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
+                pointer.buttonUp(.right)
+            }
+        } else {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+            pointer.buttonUp(.left)
+        }
     }
 
     // MARK: - UIGestureRecognizerDelegate
@@ -294,6 +372,76 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
                 isScrolling = false
                 let velocity = recognizer.velocity(in: self)
                 startScrollInertia(with: velocity)
+            }
+        default:
+            break
+        }
+    }
+    
+    @objc private func handleMouseMove(_ recognizer: UIHoverGestureRecognizer) {
+        let location = recognizer.location(in: self)
+
+        switch recognizer.state {
+        case .changed:
+            pointer.moveAbsolute(to: location)
+        default:
+            break
+        }
+    }
+    
+    @objc private func handleMouseClick(_ recognizer: UITapGestureRecognizer) {
+        return
+        /*
+        let button: MouseButtonType = if recognizer == mouseLeftClickRecognizer {
+            .left
+        } else if recognizer == mouseRightClickRecognizer {
+            .right
+        } else if recognizer == mouseCenterClickRecognizer {
+            .middle
+        } else {
+            .left
+        }
+        
+        if button == .left {
+            // UIKit 터치 핸들러에서 처리해줄 거임 (여기서 하면 드래그 안됨 ㅜ)
+            return
+        }
+        
+        let location = recognizer.location(in: self)
+
+        switch recognizer.state {
+        case .ended:
+            pointer.moveAbsolute(to: location)
+            pointer.buttonDown(button)
+            pointer.buttonUp(button)
+            
+        default:
+            break
+        }
+         */
+    }
+    
+    @objc private func handleMouseScroll(_ recognizer: UIPanGestureRecognizer) {
+        let translation = recognizer.translation(in: self)
+
+        switch recognizer.state {
+        case .began:
+            // Prevent scroll if we are already dragging
+            if isChordedDragging {
+                return
+            }
+            isScrolling = true
+            stopScrollInertia()
+            recognizer.setTranslation(.zero, in: self)
+        case .changed:
+            guard isScrolling else { return }
+            // Y is inverted for scroll naturally
+            let delta = CGPoint(x: translation.x, y: -translation.y)
+            recognizer.setTranslation(.zero, in: self)
+            pointer.scroll(delta: normalizedScrollDelta(delta))
+        case .ended, .cancelled, .failed:
+            if isScrolling {
+                isScrolling = false
             }
         default:
             break

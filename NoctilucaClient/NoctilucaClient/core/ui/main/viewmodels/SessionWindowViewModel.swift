@@ -16,6 +16,10 @@ import SiriusKitClient
 
 @MainActor
 class SessionWindowViewModel: ObservableObject {
+#if os(iOS)
+    var rootViewController: Weak<RootViewController>? = nil
+#endif
+    
     @Published
     var phase: MainWindowPhase = .newConnection
 
