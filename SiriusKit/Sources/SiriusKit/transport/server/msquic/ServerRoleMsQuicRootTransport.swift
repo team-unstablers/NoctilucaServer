@@ -89,8 +89,10 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
         // 3. Configuration 생성 (ALPN 설정)
         var settings = QuicSettings()
-        settings.idleTimeoutMs = 15000
-        settings.keepAliveIntervalMs = 15000
+        settings.idleTimeoutMs = 10000
+        settings.keepAliveIntervalMs = 5000
+        settings.disconnectTimeoutMs = 2000
+
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
         settings.sendBufferingEnabled = true

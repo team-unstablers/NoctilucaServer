@@ -12,11 +12,36 @@ import SiriusKitCore
 typealias ClientRoleTransportIdentifier = TransportLayerIdentifier
 
 /// 트랜스포트 계층에서 발생하는 에러
-public enum ClientTransportError: Error, Sendable {
+public enum ClientTransportError: LocalizedError, Sendable {
     /// 서버 인증서 검증에 실패했습니다.
     case certificateValidationFailed
+    /// 서버가 연결을 거부했습니다.
+    case connectionRefused
+    /// 연결 시간이 초과되었습니다.
+    case connectionTimeout
+    /// TLS 핸드셰이크에 실패했습니다.
+    case handshakeFailure
+    /// 서버에 연결할 수 없습니다.
+    case unreachable
     /// 연결에 실패했습니다.
-    case connectionFailed
+    case connectionFailed(description: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .certificateValidationFailed:
+            return "서버 인증서 검증에 실패했습니다."
+        case .connectionRefused:
+            return "서버가 연결을 거부했습니다."
+        case .connectionTimeout:
+            return "연결 시간이 초과되었습니다."
+        case .handshakeFailure:
+            return "TLS 핸드셰이크에 실패했습니다."
+        case .unreachable:
+            return "서버에 연결할 수 없습니다."
+        case .connectionFailed(let description):
+            return "연결에 실패했습니다: \(description)"
+        }
+    }
 }
 
 /// 서버 아이덴티티 타입

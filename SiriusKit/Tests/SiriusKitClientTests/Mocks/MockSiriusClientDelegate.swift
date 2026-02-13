@@ -9,6 +9,7 @@ import Foundation
 
 final class MockSiriusClientDelegate: SiriusClientDelegate {
     private(set) var mainChannel: MainChannel?
+    private(set) var lastError: (any Error)?
     private(set) var didCloseTransport = false
 
     private var mainChannelContinuation: CheckedContinuation<MainChannel, Never>?
@@ -17,6 +18,10 @@ final class MockSiriusClientDelegate: SiriusClientDelegate {
         self.mainChannel = mainChannel
         mainChannelContinuation?.resume(returning: mainChannel)
         mainChannelContinuation = nil
+    }
+
+    func siriusClient(_ client: SiriusClient, didEncounterError error: any Error) {
+        self.lastError = error
     }
 
     func siriusClientDidCloseTransport(_ client: SiriusClient) {

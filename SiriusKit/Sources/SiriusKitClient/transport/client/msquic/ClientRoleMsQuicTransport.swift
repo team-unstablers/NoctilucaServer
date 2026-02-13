@@ -63,6 +63,14 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
     // MARK: - ClientRoleTransport Protocol
     func connect() async throws {
+        do {
+            try await connectInternal()
+        } catch let error as QuicError {
+            throw Self.mapQuicError(error)
+        }
+    }
+
+    private func connectInternal() async throws {
         setupAddressMonitor()
 
         // 1. MsQuic API 초기화 (전역적으로 한 번만 호출됨)
@@ -78,22 +86,24 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
         // 3. Configuration 생성
         var settings = QuicSettings()
-        settings.idleTimeoutMs = 15000
-        settings.keepAliveIntervalMs = 15000
+        settings.idleTimeoutMs = 10000
+        settings.keepAliveIntervalMs = 5000
+        settings.disconnectTimeoutMs = 2000
+
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
-        
+
         settings.pacingEnabled = false
-        
+
         settings.streamRecvWindowDefault = 2 * 1024 * 1024
         settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
         settings.streamRecvWindowBidiRemoteDefault = 2 * 1024 * 1024
         settings.streamRecvWindowUnidiDefault = 512 * 1024
         settings.connFlowControlWindow = 16 * 1024 * 1024
         settings.sendBufferingEnabled = true
-        
+
         settings.ecnEnabled = true
-        
+
         let configuration = try QuicConfiguration(
             registration: registration,
             alpnBuffers: [alpn.rawValue],
@@ -104,13 +114,13 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         // 4. TLS Credential 설정 (클라이언트 모드)
         var credentialFlags: QuicCredentialFlags = [
             .client,
-            
+
             // 인증서 검증은 SiriusKit 및 어플리케이션 레이어에서 수행할 것이므로
             // policy가 어떻게 설정되어 있든, 'no certificate validation' 등의 플래그는 넣지 않는다
             .indicateCertificateReceived,
             .deferCertificateValidation
         ]
-        
+
         let credential = QuicCredentialConfig(
             type: .none,
             flags: credentialFlags
@@ -120,7 +130,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         // 5. Connection 생성 및 시작
         let connection = try QuicConnection(registration: registration)
         try connection.setStreamSchedulingScheme(.roundRobin)
-        
+
         self.connection = connection
 
         // 6. 이벤트 핸들러 설정
@@ -136,6 +146,23 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         // 연결 완료 알림
         if let delegate = self.delegate {
             await delegate.clientTransportDidEstablishConnection(self)
+        }
+    }
+
+    private static func mapQuicError(_ error: QuicError) -> ClientTransportError {
+        switch error {
+        case .connectionRefused:
+            return .connectionRefused
+        case .connectionTimeout:
+            return .connectionTimeout
+        case .handshakeFailure:
+            return .handshakeFailure
+        case .unreachable:
+            return .unreachable
+        case .certError, .tlsError:
+            return .certificateValidationFailed
+        default:
+            return .connectionFailed(description: String(describing: error))
         }
     }
 
@@ -302,11 +329,11 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
             switch event {
             case .shutdownInitiatedByPeer(let errorCode):
                 Task {
-                    await self.handleConnectionShutdown(errorCode: errorCode)
+                    await self.handleConnectionShutdown(status: nil, errorCode: errorCode)
                 }
-            case .shutdownInitiatedByTransport(_, let errorCode):
+            case .shutdownInitiatedByTransport(let status, let errorCode):
                 Task {
-                    await self.handleConnectionShutdown(errorCode: errorCode)
+                    await self.handleConnectionShutdown(status: status, errorCode: errorCode)
                 }
             case .shutdownComplete:
                 Task {
@@ -358,11 +385,16 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
     }
 
-    private func handleConnectionShutdown(errorCode: UInt64) async {
+    private func handleConnectionShutdown(status: QuicStatus?, errorCode: UInt64) async {
         if let delegate = self.delegate {
-            let error: ClientTransportError = _certificateValidationFailed
-                ? .certificateValidationFailed
-                : .connectionFailed
+            let error: ClientTransportError
+            if _certificateValidationFailed {
+                error = .certificateValidationFailed
+            } else if let status {
+                error = Self.mapQuicError(QuicError(status: status))
+            } else {
+                error = .connectionFailed(description: "peer closed connection (code: \(errorCode))")
+            }
             await delegate.clientTransport(self, didEncounterError: error)
         }
         await disconnect()
