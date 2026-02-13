@@ -32,6 +32,9 @@ extension AppSettings {
         /// 오디오 코덱 우선순위
         var audioCodecSpecifications: [AudioCodecSpecification] = [.opus]
 
+        /// 자동 품질 저하 허용 여부
+        var allowQualityDegradation: Bool = true
+
         init() {}
 
         enum CodingKeys: String, CodingKey {
@@ -40,6 +43,7 @@ extension AppSettings {
             case codecSpecifications
             case isAudioProjectionEnabled
             case audioCodecSpecifications
+            case allowQualityDegradation
         }
 
         init(from decoder: any Decoder) throws {
@@ -52,9 +56,10 @@ extension AppSettings {
             preferredScreenRecorder = container.decodeSafe(ScreenRecorderType.self, forKey: .preferredScreenRecorder, default: preferredScreenRecorder)
             codecNegotiationPolicy = container.decodeSafe(CodecNegotiationPolicy.self, forKey: .codecNegotiationPolicy, default: codecNegotiationPolicy)
             codecSpecifications = container.decodeSafe([CodecSpecification].self, forKey: .codecSpecifications, default: codecSpecifications)
-            
+
             isAudioProjectionEnabled = container.decodeSafe(Bool.self, forKey: .isAudioProjectionEnabled, default: isAudioProjectionEnabled)
             audioCodecSpecifications = container.decodeSafe([AudioCodecSpecification].self, forKey: .audioCodecSpecifications, default: audioCodecSpecifications)
+            allowQualityDegradation = container.decodeSafe(Bool.self, forKey: .allowQualityDegradation, default: allowQualityDegradation)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -64,6 +69,7 @@ extension AppSettings {
             try container.encode(codecSpecifications, forKey: .codecSpecifications)
             try container.encode(isAudioProjectionEnabled, forKey: .isAudioProjectionEnabled)
             try container.encode(audioCodecSpecifications, forKey: .audioCodecSpecifications)
+            try container.encode(allowQualityDegradation, forKey: .allowQualityDegradation)
         }
     }
 }

@@ -16,6 +16,14 @@ enum CodecSpecificationSheetAction {
     case cancel
 }
 
+fileprivate enum QualityModeTag: Hashable {
+    case auto
+    case constantBitrate
+    case variableBitrate
+    case fixedQuality
+    case lossless
+}
+
 struct CodecSpecificationSheet: View {
     let actionHandler: (CodecSpecificationSheetAction) -> Void
     
@@ -201,6 +209,13 @@ struct CodecSpecificationSheet: View {
                 } header: {
                     Text(markdown: String(localized: "settings.projection.codec_sheet.header", defaultValue: "\(specification.displayTitle) 코덱 설정"))
                 }
+
+                Section {
+                    qualityPicker()
+                    qualityParameters()
+                } header: {
+                    Text(markdown: String(localized: "settings.projection.codec_sheet.quality_header", defaultValue: "품질 설정"))
+                }
             }
             .formStyle(.grouped)
             
@@ -218,6 +233,281 @@ struct CodecSpecificationSheet: View {
 }
 
 fileprivate extension CodecSpecificationSheet {
+    var isImageCodec: Bool {
+        specification.fourCC == .zrle || specification.fourCC == .mjpg || specification.fourCC == .webp
+    }
+
+    var qualityModeBinding: Binding<QualityModeTag> {
+        Binding(
+            get: {
+                switch specification.quality {
+                case .auto: return .auto
+                case .constantBitrate: return .constantBitrate
+                case .variableBitrate: return .variableBitrate
+                case .fixedQuality: return .fixedQuality
+                case .lossless: return .lossless
+                }
+            },
+            set: { newTag in
+                switch newTag {
+                case .auto:
+                    specification.quality = .auto(mode: 0)
+                case .constantBitrate:
+                    specification.quality = .constantBitrate(bitrateKbps: 5000)
+                case .variableBitrate:
+                    specification.quality = .variableBitrate(targetBitrateKbps: 5000, maxBitrateKbps: 10000)
+                case .fixedQuality:
+                    specification.quality = .fixedQuality(factor: 50)
+                case .lossless:
+                    specification.quality = .lossless(mode: 0)
+                }
+            }
+        )
+    }
+
+    var autoQualityModeBinding: Binding<AutoQualityMode> {
+        Binding(
+            get: {
+                if case .auto(let mode) = specification.quality {
+                    return AutoQualityMode(rawValue: mode)
+                }
+                return .balancedPriority
+            },
+            set: { newMode in
+                specification.quality = .auto(mode: newMode.rawValue)
+            }
+        )
+    }
+
+    var constantBitrateBinding: Binding<Int32> {
+        Binding(
+            get: {
+                if case .constantBitrate(let bitrateKbps) = specification.quality {
+                    return bitrateKbps
+                }
+                return 5000
+            },
+            set: { newValue in
+                specification.quality = .constantBitrate(bitrateKbps: newValue)
+            }
+        )
+    }
+
+    var variableBitrateTargetBinding: Binding<Int32> {
+        Binding(
+            get: {
+                if case .variableBitrate(let targetBitrateKbps, _) = specification.quality {
+                    return targetBitrateKbps
+                }
+                return 5000
+            },
+            set: { newValue in
+                if case .variableBitrate(_, let maxBitrateKbps) = specification.quality {
+                    specification.quality = .variableBitrate(targetBitrateKbps: newValue, maxBitrateKbps: maxBitrateKbps)
+                }
+            }
+        )
+    }
+
+    var variableBitrateMaxBinding: Binding<Int32> {
+        Binding(
+            get: {
+                if case .variableBitrate(_, let maxBitrateKbps) = specification.quality {
+                    return maxBitrateKbps
+                }
+                return 10000
+            },
+            set: { newValue in
+                if case .variableBitrate(let targetBitrateKbps, _) = specification.quality {
+                    specification.quality = .variableBitrate(targetBitrateKbps: targetBitrateKbps, maxBitrateKbps: newValue)
+                }
+            }
+        )
+    }
+
+    var fixedQualityFactorBinding: Binding<Double> {
+        Binding(
+            get: {
+                if case .fixedQuality(let factor) = specification.quality {
+                    return Double(factor)
+                }
+                return 50.0
+            },
+            set: { newValue in
+                specification.quality = .fixedQuality(factor: Int32(newValue))
+            }
+        )
+    }
+
+    var losslessQualityModeBinding: Binding<LosslessQualityMode> {
+        Binding(
+            get: {
+                if case .lossless(let mode) = specification.quality {
+                    return LosslessQualityMode(rawValue: mode)
+                }
+                return .balancedPriority
+            },
+            set: { newMode in
+                specification.quality = .lossless(mode: newMode.rawValue)
+            }
+        )
+    }
+
+    @ViewBuilder
+    func qualityPicker() -> some View {
+        Picker(selection: qualityModeBinding) {
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.auto", defaultValue: "자동"))
+                .tag(QualityModeTag.auto)
+
+            if !isImageCodec {
+                Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.cbr", defaultValue: "고정 비트레이트 (CBR)"))
+                    .tag(QualityModeTag.constantBitrate)
+
+                Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.vbr", defaultValue: "가변 비트레이트 (VBR)"))
+                    .tag(QualityModeTag.variableBitrate)
+
+                Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.fixed_quality", defaultValue: "고정 품질 (CQP/CRF)"))
+                    .tag(QualityModeTag.fixedQuality)
+
+                Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.lossless", defaultValue: "무손실"))
+                    .tag(QualityModeTag.lossless)
+            }
+        } label: {
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.title", defaultValue: "품질 모드"))
+            qualityModeDescription()
+        }
+    }
+
+    @ViewBuilder
+    func qualityModeDescription() -> some View {
+        switch specification.quality {
+        case .auto:
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.auto_description", defaultValue: "네트워크 상태에 따라 자동으로 품질을 조절합니다."))
+        case .constantBitrate:
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.cbr_description", defaultValue: "고정 비트레이트로 안정적인 대역폭을 사용합니다."))
+        case .variableBitrate:
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.vbr_description", defaultValue: "가변 비트레이트로 품질과 대역폭의 균형을 맞춥니다."))
+        case .fixedQuality:
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.fixed_quality_description", defaultValue: "고정 품질 계수를 사용하여 일정한 화질을 유지합니다."))
+        case .lossless:
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_mode.lossless_description", defaultValue: "무손실 압축을 사용하여 품질 저하 없이 전송합니다."))
+        }
+    }
+
+    @ViewBuilder
+    func qualityParameters() -> some View {
+        switch specification.quality {
+        case .auto(let mode):
+            autoQualityParameters(mode: mode)
+        case .constantBitrate(let bitrateKbps):
+            constantBitrateParameters(bitrateKbps: bitrateKbps)
+        case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+            variableBitrateParameters(targetBitrateKbps: targetBitrateKbps, maxBitrateKbps: maxBitrateKbps)
+        case .fixedQuality(let factor):
+            fixedQualityParameters(factor: factor)
+        case .lossless(let mode):
+            losslessQualityParameters(mode: mode)
+        }
+    }
+
+    @ViewBuilder
+    func autoQualityParameters(mode: UInt32) -> some View {
+        Picker(selection: autoQualityModeBinding) {
+            Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.balanced", defaultValue: "균형"))
+                .tag(AutoQualityMode.balancedPriority)
+            Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.quality", defaultValue: "품질 우선"))
+                .tag(AutoQualityMode.qualityPriority)
+            Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.performance", defaultValue: "성능 우선"))
+                .tag(AutoQualityMode.performancePriority)
+        } label: {
+            Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.title", defaultValue: "자동 품질 전략"))
+            switch AutoQualityMode(rawValue: mode) {
+            case .balancedPriority:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.balanced_description", defaultValue: "품질과 성능 간의 균형을 맞춥니다."))
+            case .qualityPriority:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.quality_description", defaultValue: "가능한 최고의 품질을 우선시합니다."))
+            case .performancePriority:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.performance_description", defaultValue: "가능한 최고의 성능을 우선시합니다."))
+            default:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.auto_quality_strategy.description", defaultValue: "자동 품질 전략을 설정합니다."))
+            }
+        }
+    }
+
+    @ViewBuilder
+    func constantBitrateParameters(bitrateKbps: Int32) -> some View {
+        SettingsEntry(
+            title: String(localized: "settings.projection.codec_sheet.bitrate.title", defaultValue: "비트레이트 (kbps)"),
+            subtitle: String(localized: "settings.projection.codec_sheet.bitrate.description", defaultValue: "목표 비트레이트: \(bitrateKbps) kbps")
+        ) {
+            TextField(String(localized: "settings.projection.codec_sheet.bitrate.placeholder", defaultValue: "비트레이트"), value: constantBitrateBinding, format: .number)
+                .multilineTextAlignment(.trailing)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 120)
+        }
+    }
+
+    @ViewBuilder
+    func variableBitrateParameters(targetBitrateKbps: Int32, maxBitrateKbps: Int32) -> some View {
+        SettingsEntry(
+            title: String(localized: "settings.projection.codec_sheet.target_bitrate.title", defaultValue: "목표 비트레이트 (kbps)"),
+            subtitle: String(localized: "settings.projection.codec_sheet.target_bitrate.description", defaultValue: "목표: \(targetBitrateKbps) kbps")
+        ) {
+            TextField(String(localized: "settings.projection.codec_sheet.target_bitrate.placeholder", defaultValue: "목표 비트레이트"), value: variableBitrateTargetBinding, format: .number)
+                .multilineTextAlignment(.trailing)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 120)
+        }
+
+        SettingsEntry(
+            title: String(localized: "settings.projection.codec_sheet.max_bitrate.title", defaultValue: "최대 비트레이트 (kbps)"),
+            subtitle: String(localized: "settings.projection.codec_sheet.max_bitrate.description", defaultValue: "최대: \(maxBitrateKbps) kbps")
+        ) {
+            TextField(String(localized: "settings.projection.codec_sheet.max_bitrate.placeholder", defaultValue: "최대 비트레이트"), value: variableBitrateMaxBinding, format: .number)
+                .multilineTextAlignment(.trailing)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 120)
+        }
+    }
+
+    @ViewBuilder
+    func fixedQualityParameters(factor: Int32) -> some View {
+        Slider(
+            value: fixedQualityFactorBinding,
+            in: 0...100,
+            step: 1,
+            minimumValueLabel: Text(markdown: String(localized: "settings.projection.codec_sheet.quality_factor.min", defaultValue: "0")),
+            maximumValueLabel: Text(markdown: String(localized: "settings.projection.codec_sheet.quality_factor.max", defaultValue: "100"))
+        ) {
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_factor.title", defaultValue: "품질 계수"))
+            Text(markdown: String(localized: "settings.projection.codec_sheet.quality_factor.description", defaultValue: "현재 품질 계수: \(factor)"))
+        }
+    }
+
+    @ViewBuilder
+    func losslessQualityParameters(mode: UInt32) -> some View {
+        Picker(selection: losslessQualityModeBinding) {
+            Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.balanced", defaultValue: "균형"))
+                .tag(LosslessQualityMode.balancedPriority)
+            Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.speed", defaultValue: "속도 우선"))
+                .tag(LosslessQualityMode.speedPriority)
+            Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.compression", defaultValue: "압축 우선"))
+                .tag(LosslessQualityMode.compressionPriority)
+        } label: {
+            Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.title", defaultValue: "무손실 품질 모드"))
+            switch LosslessQualityMode(rawValue: mode) {
+            case .balancedPriority:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.balanced_description", defaultValue: "성능과 압축률 간의 균형을 맞춥니다."))
+            case .speedPriority:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.speed_description", defaultValue: "성능을 우선시합니다. (압축률이 낮아질 수 있음)"))
+            case .compressionPriority:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.compression_description", defaultValue: "압축률을 우선시합니다. (성능이 낮아질 수 있음)"))
+            default:
+                Text(markdown: String(localized: "settings.projection.codec_sheet.lossless_mode.description", defaultValue: "무손실 품질 모드를 설정합니다."))
+            }
+        }
+    }
+
     @ViewBuilder
     func h264ProfileOptions() -> some View {
         Text(markdown: String(localized: "settings.projection.codec_sheet.profile.h264_baseline", defaultValue: "Baseline Profile (가장 높은 호환성, 압축률 낮음)"))

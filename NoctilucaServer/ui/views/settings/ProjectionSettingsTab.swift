@@ -15,6 +15,8 @@ struct ProjectionSettingsTab: View {
             Section {
                 CodecNegotiationPolicyPicker(selection: $settings.projection.codecNegotiationPolicy)
                 CodecSpecificationListContainer(codecSpecifications: $settings.projection.codecSpecifications)
+
+                Toggle(String(localized: "settings.projection.quality_degradation.enable", defaultValue: "자동 품질 저하 허용"), isOn: $settings.projection.allowQualityDegradation)
             } header: {
                 Text(markdown: String(localized: "settings.projection.video_encoder.title", defaultValue: "비디오 인코더 설정"))
             }
