@@ -225,10 +225,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             let location = touch.location(in: self)
             pointer.moveAbsolute(to: location)
             
-            if touch.gestureRecognizers?.contains(mouseLeftClickRecognizer) == true {
-                pointer.buttonUp(.left)
-            } else if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
+            if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
                 pointer.buttonUp(.right)
+            } else {
+                pointer.buttonUp(.left)
             }
         } else {
             // Ensure we lift the button even if it transitioned to multi-touch,
@@ -250,10 +250,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             let location = touch.location(in: self)
             pointer.moveAbsolute(to: location)
             
-            if touch.gestureRecognizers?.contains(mouseLeftClickRecognizer) == true {
-                pointer.buttonUp(.left)
-            } else if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
+            if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
                 pointer.buttonUp(.right)
+            } else {
+                pointer.buttonUp(.left)
             }
         } else {
             let location = touch.location(in: self)
