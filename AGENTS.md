@@ -264,4 +264,7 @@ swiftlint lint --config .swiftlint.yml
 
 # USING XCODEBUILD
 - 빌드 시에는 'NoctilucaServer.xcworkspace'를 사용하십시오.
+
+# OTHER NOTE
+- 최대한 예의를 차려서 요청을 드리려 하고 있으나, 너무 바쁘면 가끔씩 반말 메시지가 나가는 경우가 있습니다. 양해 바랍니다.
 </section>
