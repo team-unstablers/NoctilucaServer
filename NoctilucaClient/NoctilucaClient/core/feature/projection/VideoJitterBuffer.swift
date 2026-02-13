@@ -30,6 +30,9 @@ final class VideoJitterBuffer: NSObject {
         let lateResyncThresholdMs: Double
         let earlyResyncThresholdMs: Double
         let noReadyResyncConsecutiveTicks: Int
+        let underflowGraceTicks: Int
+        let preferSoftResync: Bool
+        let churnLogRateLimitMs: Double
         
         /// 저지연 튜닝 전 기본값 프리셋.
         static let legacy = Preset(
@@ -38,7 +41,10 @@ final class VideoJitterBuffer: NSObject {
             lateThresholdMs: 50.0,
             lateResyncThresholdMs: 200.0,
             earlyResyncThresholdMs: 200.0,
-            noReadyResyncConsecutiveTicks: 6
+            noReadyResyncConsecutiveTicks: 6,
+            underflowGraceTicks: 1,
+            preferSoftResync: false,
+            churnLogRateLimitMs: 500.0
         )
         
         /// 현재 적용 중인 저지연 튜닝값 프리셋.
@@ -48,7 +54,10 @@ final class VideoJitterBuffer: NSObject {
             lateThresholdMs: 35.0,
             lateResyncThresholdMs: 150.0,
             earlyResyncThresholdMs: 120.0,
-            noReadyResyncConsecutiveTicks: 4
+            noReadyResyncConsecutiveTicks: 4,
+            underflowGraceTicks: 2,
+            preferSoftResync: true,
+            churnLogRateLimitMs: 500.0
         )
         
         /// 현재 저지연과 초저지연 사이의 중간 단계 프리셋.
@@ -58,7 +67,10 @@ final class VideoJitterBuffer: NSObject {
             lateThresholdMs: 28.0,
             lateResyncThresholdMs: 120.0,
             earlyResyncThresholdMs: 100.0,
-            noReadyResyncConsecutiveTicks: 3
+            noReadyResyncConsecutiveTicks: 3,
+            underflowGraceTicks: 2,
+            preferSoftResync: true,
+            churnLogRateLimitMs: 500.0
         )
         
         /// 지연 최소화를 최우선으로 하는 초저지연 프리셋.
@@ -68,7 +80,10 @@ final class VideoJitterBuffer: NSObject {
             lateThresholdMs: 22.0,
             lateResyncThresholdMs: 90.0,
             earlyResyncThresholdMs: 80.0,
-            noReadyResyncConsecutiveTicks: 2
+            noReadyResyncConsecutiveTicks: 2,
+            underflowGraceTicks: 1,
+            preferSoftResync: false,
+            churnLogRateLimitMs: 500.0
         )
     }
 
@@ -94,6 +109,15 @@ final class VideoJitterBuffer: NSObject {
 
     /// Ready 프레임이 없는 displayLink tick이 연속될 때, 이 횟수 이상이면 re-anchor를 시도.
     var noReadyResyncConsecutiveTicks: Int { preset.noReadyResyncConsecutiveTicks }
+
+    /// 재생 중 큐가 비어있을 때 underflow로 진입하기 전 허용할 연속 empty tick 수.
+    var underflowGraceTicks: Int { max(1, preset.underflowGraceTicks) }
+
+    /// true면 resync 시 큐를 보존하는 soft resync를 우선 사용한다.
+    var preferSoftResync: Bool { preset.preferSoftResync }
+
+    /// churn 로그(rate-limit 대상)의 최소 출력 간격.
+    var churnLogRateLimitSeconds: Double { max(0, preset.churnLogRateLimitMs / 1000.0) }
 
     // MARK: - State
 
@@ -151,10 +175,12 @@ final class VideoJitterBuffer: NSObject {
 
     private var needsResyncAfterUnderflow: Bool = false
     private var consecutiveNoReadyTicks: Int = 0
+    private var consecutiveNoFrameTicks: Int = 0
 
     // MARK: - Logging
 
     private let logger = NoctilucaLogger(category: "VideoJitterBuffer")
+    private var lastChurnLogAt: [String: Double] = [:]
 
     // MARK: - Initialization
 
@@ -207,6 +233,9 @@ final class VideoJitterBuffer: NSObject {
 
         os_unfair_lock_lock(&lock)
         frameQueue.removeAll()
+        consecutiveNoReadyTicks = 0
+        consecutiveNoFrameTicks = 0
+        lastChurnLogAt.removeAll(keepingCapacity: true)
         os_unfair_lock_unlock(&lock)
 
         logger.info("VideoJitterBuffer stopped (enqueued=\(self.totalEnqueued), displayed=\(self.totalDisplayed), dropped=\(self.totalDropped), lateSkipped=\(self.totalLateSkipped))")
@@ -223,6 +252,8 @@ final class VideoJitterBuffer: NSObject {
         anchorHostTime = nil
         needsResyncAfterUnderflow = false
         consecutiveNoReadyTicks = 0
+        consecutiveNoFrameTicks = 0
+        lastChurnLogAt.removeAll(keepingCapacity: true)
 
         logger.info("VideoJitterBuffer reset")
     }
@@ -248,6 +279,7 @@ final class VideoJitterBuffer: NSObject {
             needsResyncAfterUnderflow = false
             state = .buffering
             consecutiveNoReadyTicks = 0
+            consecutiveNoFrameTicks = 0
             setAnchorLocked(remotePTS: frameQueue.first?.remotePTS ?? remotePTS)
         }
 
@@ -259,12 +291,18 @@ final class VideoJitterBuffer: NSObject {
             let earlyResyncThreshold = earlyResyncThresholdMs / 1000.0
 
             if lateness > resyncThreshold {
-                logger.info("Resyncing: frame late by \(String(format: "%.1f", lateness * 1000)) ms (threshold \(String(format: "%.1f", resyncThreshold * 1000)) ms)")
-                resyncLocked(remotePTS: remotePTS, reason: "lateness")
+                logChurnLocked(
+                    event: "resync.lateness",
+                    "Resyncing: frame late by \(String(format: "%.1f", lateness * 1000)) ms (threshold \(String(format: "%.1f", resyncThreshold * 1000)) ms)"
+                )
+                resyncLocked(remotePTS: remotePTS, reason: "lateness", forceHard: !preferSoftResync)
             } else if lateness < -earlyResyncThreshold {
                 // 기준점이 과거에 묶여 프레임이 계속 "미래"로 판정되는 starvation 상태를 복구한다.
-                logger.info("Resyncing: frame early by \(String(format: "%.1f", -lateness * 1000)) ms (threshold \(String(format: "%.1f", earlyResyncThreshold * 1000)) ms)")
-                resyncLocked(remotePTS: remotePTS, reason: "earliness")
+                logChurnLocked(
+                    event: "resync.earliness",
+                    "Resyncing: frame early by \(String(format: "%.1f", -lateness * 1000)) ms (threshold \(String(format: "%.1f", earlyResyncThreshold * 1000)) ms)"
+                )
+                resyncLocked(remotePTS: remotePTS, reason: "earliness", forceHard: !preferSoftResync)
             } else if lateness > lateThreshold {
                 totalLateSkipped += 1
                 logger.debug("Skipping late frame: \(String(format: "%.1f", lateness * 1000)) ms late")
@@ -297,21 +335,31 @@ final class VideoJitterBuffer: NSObject {
         case .buffering:
             if frameQueue.count >= minBufferCount {
                 state = .playing
+                consecutiveNoReadyTicks = 0
+                consecutiveNoFrameTicks = 0
                 // 앵커를 재설정하여 가장 오래된 버퍼 프레임이 "지금"부터 릴리즈되도록 한다.
                 // 이렇게 하지 않으면 버퍼링 동안 축적된 프레임이 모두 "과거"로 판정되어
                 // displayLink 한 틱에 전부 소비되고 즉시 underflow가 발생한다.
                 if let oldest = frameQueue.first {
                     setAnchorLocked(remotePTS: oldest.remotePTS)
                 }
-                logger.info("Buffering complete, starting playback (\(self.frameQueue.count) frames buffered)")
+                logChurnLocked(
+                    event: "state.playing.buffering_complete",
+                    "Buffering complete, starting playback (\(self.frameQueue.count) frames buffered)"
+                )
             }
         case .underflow:
             if frameQueue.count >= minBufferCount {
                 state = .playing
+                consecutiveNoReadyTicks = 0
+                consecutiveNoFrameTicks = 0
                 if let oldest = frameQueue.first {
                     setAnchorLocked(remotePTS: oldest.remotePTS)
                 }
-                logger.info("Recovered from underflow (\(self.frameQueue.count) frames buffered)")
+                logChurnLocked(
+                    event: "state.playing.recovered_underflow",
+                    "Recovered from underflow (\(self.frameQueue.count) frames buffered)"
+                )
             }
         case .playing:
             break
@@ -323,10 +371,18 @@ final class VideoJitterBuffer: NSObject {
     @objc private func displayLinkFired(_ link: CADisplayLink) {
         os_unfair_lock_lock(&lock)
 
-        guard state == .playing, !frameQueue.isEmpty else {
+        guard state == .playing else {
             os_unfair_lock_unlock(&lock)
             return
         }
+
+        guard !frameQueue.isEmpty else {
+            handlePlayingWithoutFramesLocked()
+            os_unfair_lock_unlock(&lock)
+            return
+        }
+
+        consecutiveNoFrameTicks = 0
 
         let currentTime = elapsedSecondsFromAnchorLocked()
         guard let currentTime else {
@@ -354,7 +410,7 @@ final class VideoJitterBuffer: NSObject {
                 // ready 프레임이 연속으로 없으면 앵커를 oldest 기준으로 재설정해 starvation을 해소한다.
                 setAnchorLocked(remotePTS: oldest.remotePTS)
                 consecutiveNoReadyTicks = 0
-                logger.info("Resynced due to no-ready starvation")
+                logChurnLocked(event: "resync.starvation", "Resynced due to no-ready starvation")
             }
 
             os_unfair_lock_unlock(&lock)
@@ -362,6 +418,7 @@ final class VideoJitterBuffer: NSObject {
         }
 
         consecutiveNoReadyTicks = 0
+        consecutiveNoFrameTicks = 0
 
         // 가장 최신 ready 프레임만 표시 (이전 것들은 skip)
         let frameToDisplay = frameQueue[readyIdx]
@@ -372,12 +429,9 @@ final class VideoJitterBuffer: NSObject {
         // ready 프레임까지 제거
         frameQueue.removeFirst(readyIdx + 1)
 
-        // underflow 체크
         if frameQueue.isEmpty {
-            state = .underflow
-            needsResyncAfterUnderflow = true
-            consecutiveNoReadyTicks = 0
-            logger.debug("Underflow: buffer exhausted after display")
+            // immediate underflow 진입 대신 히스테리시스를 적용해 상태 튐을 줄인다.
+            handlePlayingWithoutFramesLocked()
         }
 
         os_unfair_lock_unlock(&lock)
@@ -396,13 +450,25 @@ final class VideoJitterBuffer: NSObject {
         // logger.debug("Anchor set: remotePTS=\(String(format: "%.3f", remotePTS))")
     }
 
-    private func resyncLocked(remotePTS: Double, reason: String) {
-        frameQueue.removeAll()
-        state = .buffering
+    private func resyncLocked(remotePTS: Double, reason: String, forceHard: Bool) {
+        if forceHard {
+            frameQueue.removeAll()
+            state = .buffering
+            needsResyncAfterUnderflow = false
+            consecutiveNoReadyTicks = 0
+            consecutiveNoFrameTicks = 0
+            setAnchorLocked(remotePTS: remotePTS)
+            logChurnLocked(event: "resync.hard.\(reason)", "Hard resync (\(reason))")
+            return
+        }
+
+        // soft resync: 큐를 보존한 채 앵커만 재정렬한다.
+        let anchorTarget = frameQueue.first?.remotePTS ?? remotePTS
         needsResyncAfterUnderflow = false
         consecutiveNoReadyTicks = 0
-        setAnchorLocked(remotePTS: remotePTS)
-        logger.info("Resynced (\(reason))")
+        consecutiveNoFrameTicks = 0
+        setAnchorLocked(remotePTS: anchorTarget)
+        logChurnLocked(event: "resync.soft.\(reason)", "Soft resync (\(reason))")
     }
 
     /// 앵커 시점으로부터 경과한 시간 (seconds).
@@ -445,6 +511,48 @@ final class VideoJitterBuffer: NSObject {
         }
         let oldestRelativePTS = oldest.remotePTS - anchorPTS
         return oldestRelativePTS > elapsed
+    }
+
+    private func handlePlayingWithoutFramesLocked() {
+        consecutiveNoFrameTicks += 1
+
+        guard consecutiveNoFrameTicks >= underflowGraceTicks else {
+            return
+        }
+
+        state = .underflow
+        needsResyncAfterUnderflow = true
+        consecutiveNoFrameTicks = 0
+        consecutiveNoReadyTicks = 0
+        logChurnLocked(event: "state.underflow", "Underflow: buffer exhausted")
+    }
+
+    private func logChurnLocked(event: String, _ message: @autoclosure () -> String) {
+        guard shouldLogChurnLocked(event: event) else {
+            return
+        }
+        logger.debug(message())
+    }
+
+    private func shouldLogChurnLocked(event: String) -> Bool {
+        let interval = churnLogRateLimitSeconds
+        guard interval > 0 else {
+            return true
+        }
+
+        let now = monotonicSecondsLocked()
+        if let previous = lastChurnLogAt[event], now - previous < interval {
+            return false
+        }
+
+        lastChurnLogAt[event] = now
+        return true
+    }
+
+    private func monotonicSecondsLocked() -> Double {
+        let ticks = mach_absolute_time()
+        let nanos = Double(ticks) * Double(timebaseNumer) / Double(timebaseDenom)
+        return nanos / 1_000_000_000.0
     }
 
     // MARK: - Private: CMSampleBuffer Creation
