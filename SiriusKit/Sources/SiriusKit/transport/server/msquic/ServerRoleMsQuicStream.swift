@@ -82,49 +82,12 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
     }
 
     private func receiveLoop() async throws {
-        // 프레임 파싱을 위한 버퍼
-        var buffer = Data()
+        var decoder = SiriusFrameStreamDecoder()
 
         for try await chunk in quicStream.receive {
-            buffer.append(chunk)
-
-            // 버퍼에서 완전한 프레임들을 추출
-            while true {
-                // 헤더 크기 확인 (opcode 2바이트 + length 4바이트 = 6바이트)
-                guard buffer.count >= 6 else {
-                    break
-                }
-
-                // 헤더 파싱
-                let opcode = buffer.subdata(in: 0..<2).withUnsafeBytes {
-                    $0.load(as: UInt16.self).bigEndian
-                }
-                let length = buffer.subdata(in: 2..<6).withUnsafeBytes {
-                    $0.load(as: UInt32.self).bigEndian
-                }
-
-                // 전체 프레임 크기 확인
-                let frameSize = 6 + Int(length)
-                guard buffer.count >= frameSize else {
-                    break
-                }
-
-                // 페이로드 추출
-                let payload = (length > 0) ?
-                    buffer.subdata(in: 6..<frameSize) :
-                    Data()
-
-                // 프레임 생성 및 이벤트 발행
-                let frame = SiriusFrame(
-                    opcode: MessageOpcode(rawValue: opcode),
-                    length: length,
-                    data: payload
-                )
-
+            decoder.append(chunk)
+            while let frame = decoder.nextFrame() {
                 self.continuation.yield(with: .success(.frame(frame)))
-
-                // 버퍼에서 처리된 프레임 제거
-                buffer.removeSubrange(0..<frameSize)
             }
         }
 
