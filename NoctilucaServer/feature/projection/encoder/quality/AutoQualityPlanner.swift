@@ -148,12 +148,25 @@ private enum AutoQualityState {
 enum AutoQualityStrategy {
     /// A balanced approach between quality and performance.
     case balanced
-    
+
     /// Prioritizes video quality over performance.
     case qualityFirst
-    
+
     /// Prioritizes performance over video quality.
     case performanceFirst
+
+    init(from mode: AutoQualityMode) {
+        switch mode {
+        case .balancedPriority:
+            self = .balanced
+        case .qualityPriority:
+            self = .qualityFirst
+        case .performancePriority:
+            self = .performanceFirst
+        default:
+            self = .balanced
+        }
+    }
 }
 
 struct QualityAdjustmentEvent {

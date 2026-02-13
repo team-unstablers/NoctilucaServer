@@ -503,61 +503,50 @@ private extension VTVideoEncoder {
     }
     
     func applyQualitySettings(_ session: VTCompressionSession) throws {
-        /*
-        if #available(macOS 26.0, *) {
-            isVBRMode = true
-            logger.info("Using VBR rate control mode")
-            if targetBitrateKbps > 0 {
-                applyVariableBitrate(targetBitrateKbps, to: session)
-            }
-            if maxBitrateKbps > 0 {
-                applyVBVMaxBitrate(maxBitrateKbps, to: session)
-            }
-        } else {
-            
-        }
-         */
-        isVBRMode = false
-        if targetBitrateKbps > 0 {
-            applyAverageBitrate(targetBitrateKbps, to: session)
-        }
-        if maxBitrateKbps > 0 {
-            applyMaxBitrate(maxBitrateKbps, to: session)
-        }
+        guard let configuration else { throw VideoEncoderError.notPrepared }
+        let codec = configuration.codec
 
-        /*
         switch codec.quality {
         case .constantBitrate(let bitrateKbps):
+            isVBRMode = false
             let bitrate = max(Int(bitrateKbps), 0) * 1000
             if bitrate > 0 {
                 setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: bitrate))
-                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: bitrate), NSNumber(value: 1)] as NSArray)
+                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: bitrate / 8), NSNumber(value: 1)] as NSArray)
             }
-            
+
         case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+            isVBRMode = true
             let target = max(Int(targetBitrateKbps), 0) * 1000
             let maxRate = max(Int(maxBitrateKbps), 0) * 1000
             if target > 0 {
                 setProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: target))
             }
             if maxRate > 0 {
-                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: maxRate), NSNumber(value: 1)] as NSArray)
+                setProperty(session, key: kVTCompressionPropertyKey_DataRateLimits, value: [NSNumber(value: maxRate / 8), NSNumber(value: 1)] as NSArray)
             }
-            
+
         case .fixedQuality(let factor):
+            isVBRMode = false
             let clamped = max(0, min(Int(factor), 100))
-            let vtQuality = Float(1.0 - (Float(clamped) / 100.0))
+            let vtQuality = Float(clamped) / 100.0
             setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: vtQuality))
-            
+
         case .lossless(_):
-            setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
-            setProperty(session, key: kVTCompressionPropertyKey_AllowOpenGOP, value: kCFBooleanFalse)
+            isVBRMode = false
             setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: 1.0))
-            
+            setProperty(session, key: kVTCompressionPropertyKey_AllowOpenGOP, value: kCFBooleanFalse)
+
         case .auto(_):
-            logger.info("Using default quality settings for codec: \(codecString)")
+            // auto 모드: 기존 ABR 방식 사용
+            isVBRMode = false
+            if targetBitrateKbps > 0 {
+                applyAverageBitrate(targetBitrateKbps, to: session)
+            }
+            if maxBitrateKbps > 0 {
+                applyMaxBitrate(maxBitrateKbps, to: session)
+            }
         }
-         */
     }
 }
 

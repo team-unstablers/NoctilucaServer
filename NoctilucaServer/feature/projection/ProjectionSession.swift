@@ -515,21 +515,29 @@ private extension ProjectionSession {
         }
     }
     
-    static func makeQualityPlanner(codec: Codec) -> (planner: QualityPlanner, frameRate: Float) {
+    static func makeQualityPlanner(codec: Codec) -> (planner: QualityPlanner?, frameRate: Float) {
         // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
         var frameRate = codec.frameRate ?? 60.0
         let resolution = codec.size ?? SRSize(width: 2880, height: 2560)
 
-        // FIXME: 무조건 AutoQuality를 쓰는건 아니잖아요.
-        let planner = AutoQualityPlanner(
-            codec: codec.fourCC,
-            resolution: resolution.cgSize,
-            frameRate: frameRate,
-            strategy: .balanced // FIXME: hard-coded strategy.
-        )
+        let planner: QualityPlanner?
+        switch codec.quality {
+        case .auto(let mode):
+            let strategy = AutoQualityStrategy(from: mode)
+            let autoPlanner = AutoQualityPlanner(
+                codec: codec.fourCC,
+                resolution: resolution.cgSize,
+                frameRate: frameRate,
+                strategy: strategy
+            )
+            // FIXME: codec.options로부터 allow-degradation 옵션을 읽어오도록
+            autoPlanner.allowDegradation = true
+            planner = autoPlanner
+        default:
+            // auto가 아닌 quality 모드는 quality planner를 사용하지 않음
+            planner = nil
+        }
 
-        // FIXME: codec.options로부터 allow-degradation 옵션을 읽어오도록
-        planner.allowDegradation = true
         return (planner, frameRate)
     }
     
