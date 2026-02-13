@@ -100,7 +100,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         settings.streamRecvWindowBidiRemoteDefault = 2 * 1024 * 1024
         settings.streamRecvWindowUnidiDefault = 512 * 1024
         settings.connFlowControlWindow = 16 * 1024 * 1024
-        settings.sendBufferingEnabled = false
+        settings.sendBufferingEnabled = true
 
         settings.ecnEnabled = true
 

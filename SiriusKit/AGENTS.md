@@ -200,8 +200,6 @@ let hidioChannel = try await client.channelManager.openChannel(
 - `ChannelOpenTask.blockUntilReceiveData()`는 기본 5초 타임아웃이며, 0 이하면 무제한 대기합니다.
 - QUIC 스트림 수신 로직은 현재 프레임 단위 고정 길이 수신을 가정합니다. (fragmented read TODO)
 - `TransportLayer`의 기본 구현은 비어있으며, QUIC 또는 커스텀 구현이 필요합니다.
-- MsQuic 트랜스포트의 송신 경로는 기본적으로 non-buffered(`sendBufferingEnabled = false`)로 동작하며, `ClientRoleMsQuicStream`/`ServerRoleMsQuicStream`은 내부적으로 `sendChunks(...)`를 사용합니다.
-- 동일 스트림 내 송신은 스트림 구현체 내부 직렬화 게이트로 보장되며, 앱 레이어에서 특정 executor 고정을 강제하지 않아도 동시 송신 충돌(`invalidState`)을 피할 수 있습니다.
 
 </section>
 <section id="about-sirius-protocol">
