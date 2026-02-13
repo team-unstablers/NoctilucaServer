@@ -95,7 +95,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
-        settings.sendBufferingEnabled = true
+        settings.sendBufferingEnabled = false
         settings.serverResumptionLevel = UInt8(Int(exactly: QUIC_SERVER_RESUME_AND_ZERORTT.rawValue)!)
         
         settings.pacingEnabled = true

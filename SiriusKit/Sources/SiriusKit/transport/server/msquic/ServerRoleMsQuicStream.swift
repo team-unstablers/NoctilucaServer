@@ -20,8 +20,14 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
     let quicStream: QuicStream
     let transport: ServerRoleMsQuicClientTransport
 
+    private enum NonBufferedSendDefaults {
+        static let chunkSize = 32 * 1024
+        static let bootstrapWindowBytes: UInt64 = 128 * 1024
+    }
+
     private var receiveTask: Task<Void, Error>?
     private let isClosed = ManagedAtomic(false)
+    private let sendGate = NonBufferedSendGate()
 
     init(quicStream: QuicStream, transport: ServerRoleMsQuicClientTransport, identifier: StreamIdentifier = StreamIdentifier()) {
         self.quicStream = quicStream
@@ -46,16 +52,24 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
         await finalize(event: .closed)
     }
 
+    override func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
+        let header = Self.makeFrameHeader(opcode: opcode, length: length ?? UInt32(data.count))
+        let chunks = Self.makeChunks(header: header, payload: data)
+
+        return await self.sendSerialized(
+            chunks: chunks,
+            writtenByteCount: UInt32(header.count + data.count),
+            closeOnFailure: true
+        )
+    }
+
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
-        do {
-            try await quicStream.send(data)
-            return .success(UInt32(data.count))
-        } catch {
-            Task { [weak self] in
-                try? await self?.close()
-            }
-            return .failure(.notImplemented) // TODO: Map error appropriately
-        }
+        let chunks = Self.makePayloadChunks(payload: data)
+        return await self.sendSerialized(
+            chunks: chunks,
+            writtenByteCount: UInt32(data.count),
+            closeOnFailure: true
+        )
     }
     
     override func setServiceClass(_ serviceClass: ServiceClass) async throws {
@@ -146,6 +160,72 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
 
         await transport.unregisterStream(self)
     }
+
+    // MARK: - Send Helpers
+
+    private static func makeFrameHeader(opcode: MessageOpcode, length: UInt32) -> Data {
+        let opcodeRaw = opcode.rawValue.bigEndian
+        let lengthRaw = length.bigEndian
+
+        var header = Data()
+        header.reserveCapacity(6)
+
+        withUnsafeBytes(of: opcodeRaw) { header.append(contentsOf: $0) }
+        withUnsafeBytes(of: lengthRaw) { header.append(contentsOf: $0) }
+
+        return header
+    }
+
+    private static func makeChunks(header: Data, payload: Data) -> [Data] {
+        guard !payload.isEmpty else {
+            return [header]
+        }
+
+        var chunks: [Data] = [header]
+        chunks.append(contentsOf: makePayloadChunks(payload: payload))
+        return chunks
+    }
+
+    private static func makePayloadChunks(payload: Data) -> [Data] {
+        guard !payload.isEmpty else {
+            return [Data()]
+        }
+
+        if payload.count <= NonBufferedSendDefaults.chunkSize {
+            return [payload]
+        }
+
+        var chunks: [Data] = []
+        chunks.reserveCapacity((payload.count + NonBufferedSendDefaults.chunkSize - 1) / NonBufferedSendDefaults.chunkSize)
+
+        var start = 0
+        while start < payload.count {
+            let end = min(start + NonBufferedSendDefaults.chunkSize, payload.count)
+            chunks.append(payload.subdata(in: start..<end))
+            start = end
+        }
+
+        return chunks
+    }
+
+    private func sendSerialized(chunks: [Data], writtenByteCount: UInt32, closeOnFailure: Bool) async -> Result<UInt32, StreamError> {
+        do {
+            try await sendGate.withLock {
+                try await quicStream.sendChunks(
+                    chunks,
+                    options: .init(bootstrapWindowBytes: NonBufferedSendDefaults.bootstrapWindowBytes)
+                )
+            }
+            return .success(writtenByteCount)
+        } catch {
+            if closeOnFailure {
+                Task { [weak self] in
+                    try? await self?.close()
+                }
+            }
+            return .failure(.notImplemented) // TODO: Map error appropriately
+        }
+    }
 }
 
 // MARK: - Hashable & Equatable
@@ -157,5 +237,37 @@ extension ServerRoleMsQuicStream: Hashable, Equatable {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+    }
+}
+
+private actor NonBufferedSendGate {
+    private var isLocked = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func withLock<T>(_ operation: () async throws -> T) async rethrows -> T {
+        await self.lock()
+        defer { self.unlock() }
+        return try await operation()
+    }
+
+    private func lock() async {
+        guard !isLocked else {
+            await withCheckedContinuation { continuation in
+                waiters.append(continuation)
+            }
+            return
+        }
+
+        isLocked = true
+    }
+
+    private func unlock() {
+        guard !waiters.isEmpty else {
+            isLocked = false
+            return
+        }
+
+        let continuation = waiters.removeFirst()
+        continuation.resume()
     }
 }
