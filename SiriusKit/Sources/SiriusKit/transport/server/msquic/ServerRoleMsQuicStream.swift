@@ -18,7 +18,7 @@ import SiriusKitCore
 /// 프레이밍 규칙: [opcode: 2바이트 BE] [length: 4바이트 BE] [payload: length 바이트]
 class ServerRoleMsQuicStream: SiriusKitCore.Stream {
     let quicStream: QuicStream
-    let transport: ServerRoleMsQuicClientTransport
+    private weak var transport: ServerRoleMsQuicClientTransport?
 
     private var receiveTask: Task<Void, Error>?
     private let isClosed = ManagedAtomic(false)
@@ -37,13 +37,17 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
     // MARK: - Stream Protocol Overrides
 
     override func close() async throws {
-        if self.isClosed.load(ordering: .acquiring) {
+        if self.isClosed.exchange(true, ordering: .acquiring) {
             return
         }
 
         // Graceful shutdown
         await quicStream.shutdown()
-        await finalize(event: .closed)
+
+        receiveTask?.cancel()
+        self.continuation.yield(with: .success(.closed))
+        self.continuation.finish()
+        await transport?.unregisterStream(self)
     }
 
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
@@ -107,7 +111,7 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
         self.continuation.yield(with: .success(event))
         self.continuation.finish()
 
-        await transport.unregisterStream(self)
+        await transport?.unregisterStream(self)
     }
 }
 

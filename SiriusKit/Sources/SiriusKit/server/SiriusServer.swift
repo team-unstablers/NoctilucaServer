@@ -43,6 +43,13 @@ public class SiriusServer {
     }
 
     public func shutdown() async throws {
+        let sessionSnapshot = self.sessions
+        self.sessions.removeAll()
+
+        for session in sessionSnapshot {
+            await session.close()
+        }
+
         try await serverTransport.shutdown()
     }
 
