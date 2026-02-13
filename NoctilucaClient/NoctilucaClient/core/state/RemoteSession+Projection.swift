@@ -132,7 +132,10 @@ extension RemoteSession {
                 }
 
             case .audioSessionCreated(let audioSession):
-                self.audioSessions.updateValue(audioSession, forKey: audioSession.dataChannel!.identifier)
+                guard let dataChannel = audioSession.dataChannel else {
+                    return
+                }
+                self.audioSessions.updateValue(audioSession, forKey: dataChannel.identifier)
             case .audioSessionDestroyed(let sessionID, let reason):
                 self.audioSessions.removeValue(forKey: sessionID)
 
