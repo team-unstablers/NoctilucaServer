@@ -91,13 +91,7 @@ struct InputSettingsTab: View {
                 case .trackpad:
                     Text("참고:\n- 트랙패드 모드는 상대 좌표로 커서를 이동합니다.\n- 드래그는 긴 누름 또는 두 손가락 조합으로 실행됩니다.")
                 }
-#else
-                if settingsStore.settings.input.mouseMoveMode == .relative {
-                    // TODO: 마우스 / 키보드 캡쳐 해제 단축키 추가해야 함
-                    Text("참고:\n- 이 방식은 마우스를 잠급니다. 미리 설정된 단축키를 누르면 마우스 잠금이 해제됩니다.")
-                }
 #endif
-                
             }
             
             Section {
