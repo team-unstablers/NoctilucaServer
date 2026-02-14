@@ -182,6 +182,22 @@ class ProjectionChannel: Channel {
         }
     }
 
+    override func handleStreamClose() {
+        super.handleStreamClose()
+
+        Task { [weak self] in
+            await self?.destroy()
+        }
+    }
+
+    override func handleStreamError(error: any Error) {
+        super.handleStreamError(error: error)
+
+        Task { [weak self] in
+            await self?.destroy()
+        }
+    }
+
     private func handlePerformanceReport(_ report: ProjectionPerformanceReport) async {
         guard let session = await state.sessionForPerformanceReport(identifier: report.identifier) else {
             logger.warning("Received performance report for unknown session \(report.identifier)")

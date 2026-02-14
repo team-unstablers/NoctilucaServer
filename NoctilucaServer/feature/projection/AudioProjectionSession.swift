@@ -249,9 +249,8 @@ class AudioProjectionSession: Identifiable {
     func stop() async {
         guard !isStopped else { return }
 
-        defer {
-            isStopped = true
-        }
+        // Stop sequence 시작 시점에 종료 상태를 먼저 표시해 재구성 경로를 차단한다.
+        isStopped = true
 
         // 1. Task 취소 (새로운 프레임 처리 중단)
         encoderEventLoopTask?.cancel()
@@ -269,6 +268,7 @@ class AudioProjectionSession: Identifiable {
         await frameQueue.cancelWaiter()
 
         // 4. Recorder 정리 (캡처 중지)
+        recorder.delegate = nil
         do {
             try await self.recorder.stop()
         } catch {
