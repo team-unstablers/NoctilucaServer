@@ -139,13 +139,15 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         addGestureRecognizer(chordedDragRecognizer)
         
         mouseMoveRecognizer.addTarget(self, action: #selector(handleMouseMove(_:)))
-        
+
         mouseLeftClickRecognizer.numberOfTouchesRequired = 1
         mouseLeftClickRecognizer.buttonMaskRequired = .primary
+        mouseLeftClickRecognizer.delegate = self
         mouseLeftClickRecognizer.addTarget(self, action: #selector(handleMouseClick(_:)))
-        
+
         mouseRightClickRecognizer.numberOfTouchesRequired = 1
         mouseRightClickRecognizer.buttonMaskRequired = .secondary
+        mouseRightClickRecognizer.delegate = self
         mouseRightClickRecognizer.addTarget(self, action: #selector(handleMouseClick(_:)))
         
         /*
@@ -175,95 +177,142 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         stopMoveInertia()
         stopScrollInertia()
 
+        guard let touch = touches.first else {
+            super.touchesBegan(touches, with: event)
+            return
+        }
+
+        // Hardware mouse: handle regardless of input mode
+        if touch.type == .indirectPointer {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+
+            if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
+                pointer.buttonDown(.right)
+            } else {
+                pointer.buttonDown(.left)
+            }
+            return
+        }
+
+        // Direct touch: only in touch mode
         guard inputMode == .touch,
-              let touch = touches.first,
               event?.allTouches?.count == 1
         else {
             super.touchesBegan(touches, with: event)
             return
         }
-        
-        if touch.type == .indirectPointer {
-            let location = touch.location(in: self)
-            pointer.moveAbsolute(to: location)
-            
-            if touch.gestureRecognizers?.contains(mouseLeftClickRecognizer) == true {
-                pointer.buttonDown(.left)
-            } else if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
-                pointer.buttonDown(.right)
-            }
-        } else {
-            let location = touch.location(in: self)
-            pointer.moveAbsolute(to: location)
-            pointer.buttonDown(.left)
-        }
+
+        let location = touch.location(in: self)
+        pointer.moveAbsolute(to: location)
+        pointer.buttonDown(.left)
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else {
+            super.touchesMoved(touches, with: event)
+            return
+        }
+
+        if touch.type == .indirectPointer {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+            return
+        }
+
         guard inputMode == .touch,
-              let touch = touches.first,
               event?.allTouches?.count == 1
         else {
             super.touchesMoved(touches, with: event)
             return
         }
-        
+
         let location = touch.location(in: self)
         pointer.moveAbsolute(to: location)
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else {
+            super.touchesEnded(touches, with: event)
+            return
+        }
+
+        if touch.type == .indirectPointer {
+            let location = touch.location(in: self)
+            pointer.moveAbsolute(to: location)
+
+            if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
+                pointer.buttonUp(.right)
+            } else {
+                pointer.buttonUp(.left)
+            }
+            return
+        }
+
         guard inputMode == .touch,
-              let touch = touches.first,
               event?.allTouches?.count == 1
         else {
             super.touchesEnded(touches, with: event)
             return
         }
-        
-        if touch.type == .indirectPointer {
-            let location = touch.location(in: self)
-            pointer.moveAbsolute(to: location)
-            
-            if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
-                pointer.buttonUp(.right)
-            } else {
-                pointer.buttonUp(.left)
-            }
-        } else {
-            // Ensure we lift the button even if it transitioned to multi-touch,
-            // but typically we care about the primary finger lifting.
-            
-            let location = touch.location(in: self)
-            pointer.moveAbsolute(to: location)
-            pointer.buttonUp(.left)
-        }
+
+        let location = touch.location(in: self)
+        pointer.moveAbsolute(to: location)
+        pointer.buttonUp(.left)
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard inputMode == .touch, let touch = touches.first else {
+        guard let touch = touches.first else {
             super.touchesCancelled(touches, with: event)
             return
         }
-        
+
         if touch.type == .indirectPointer {
             let location = touch.location(in: self)
             pointer.moveAbsolute(to: location)
-            
+
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
                 pointer.buttonUp(.right)
             } else {
                 pointer.buttonUp(.left)
             }
-        } else {
-            let location = touch.location(in: self)
-            pointer.moveAbsolute(to: location)
-            pointer.buttonUp(.left)
+            return
         }
+
+        guard inputMode == .touch else {
+            super.touchesCancelled(touches, with: event)
+            return
+        }
+
+        let location = touch.location(in: self)
+        pointer.moveAbsolute(to: location)
+        pointer.buttonUp(.left)
     }
 
     // MARK: - UIGestureRecognizerDelegate
     
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if touch.type == .indirectPointer {
+            // Hardware mouse touches are handled directly in touches* methods,
+            // so block touch-mode gesture recognizers from receiving them.
+            if gestureRecognizer == tapRecognizer ||
+               gestureRecognizer == twoFingerTapRecognizer ||
+               gestureRecognizer == panRecognizer ||
+               gestureRecognizer == twoFingerPanRecognizer ||
+               gestureRecognizer == chordedDragRecognizer {
+                return false
+            }
+        } else {
+            // Block mouse recognizers from receiving finger touches
+            // to prevent them from stealing taps from tapRecognizer.
+            if gestureRecognizer == mouseLeftClickRecognizer ||
+               gestureRecognizer == mouseRightClickRecognizer {
+                return false
+            }
+        }
+        return true
+    }
+
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         // Enforce input mode policies at the start of gestures
         switch inputMode {
