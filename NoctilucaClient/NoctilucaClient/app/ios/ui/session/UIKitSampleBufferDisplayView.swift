@@ -49,6 +49,14 @@ final class SampleBufferHostView: UIView {
         displayLayer.backgroundColor = UIColor.black.cgColor
         displayLayer.videoGravity = .resizeAspect
         displayLayer.contentsScale = UIScreen.main.scale
+        
+        if #available(iOS 26.0, *) {
+            // TODO: 컨텐츠가 HDR일때만 이걸 설정해야 하지 않을까?
+            displayLayer.preferredDynamicRange = .high
+        } else {
+            displayLayer.wantsExtendedDynamicRangeContent = true
+        }
+        
     }
 }
 
