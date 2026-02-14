@@ -36,6 +36,16 @@ struct NoctilucaClientApp: App {
                 }
                 .keyboardShortcut(",", modifiers: [.command])
             }
+            CommandGroup(replacing: .appInfo) {
+                Button("About Noctiluca Navigator") {
+                    UIApplication.shared.requestSceneSessionActivation(
+                        nil,
+                        userActivity: NSUserActivity(activityType: "app.noctiluca.client.about"),
+                        options: nil,
+                        errorHandler: nil
+                    )
+                }
+            }
         }
     }
     

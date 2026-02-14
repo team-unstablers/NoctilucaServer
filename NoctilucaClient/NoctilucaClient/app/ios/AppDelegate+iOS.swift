@@ -24,14 +24,26 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
-        let sceneConfig = UISceneConfiguration(
-            name: nil,
-            sessionRole: connectingSceneSession.role
-        )
         
-        sceneConfig.delegateClass = MobileUIMainSceneDelegate.self
-        
-        return sceneConfig
+        if let activityType = options.userActivities.first?.activityType {
+            let sceneConfig = UISceneConfiguration(
+                name: nil,
+                sessionRole: connectingSceneSession.role
+            )
+            
+            sceneConfig.delegateClass = AboutAppWindowUISceneDelegate.self
+            
+            return sceneConfig
+        } else {
+            let sceneConfig = UISceneConfiguration(
+                name: nil,
+                sessionRole: connectingSceneSession.role
+            )
+            
+            sceneConfig.delegateClass = MobileUIMainSceneDelegate.self
+            
+            return sceneConfig
+        }
     }
     
 }

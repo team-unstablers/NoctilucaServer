@@ -7,6 +7,9 @@
 
 import Foundation
 
+#if os(iOS)
+import UIKit
+#endif
 
 struct NoctilucaMeta {
     static var productName: String {
@@ -28,6 +31,22 @@ struct NoctilucaMeta {
     static var license: SoftwareLicense = .proprietary(name: "Noctiluca Client EULA",
                                                        url: URL(string: "https://unstabler.pl")!)
     
+    
+#if os(iOS)
+    static func applicationIcon() -> UIImage? {
+        guard let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+              let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
+              let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String] else {
+            return nil
+        }
+        
+        // Use the last file name in the array, which is often a good size to use
+        if let lastIconName = iconFiles.last {
+            return UIImage(named: lastIconName)
+        }
+        return nil
+    }
+#endif
 }
 
 extension NoctilucaMeta {

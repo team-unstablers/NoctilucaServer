@@ -21,7 +21,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsStore = SettingsStore.shared
     private var mainWindowControllers: [AppKitMainWindowController] = []
     private var settingsWindowController: AppKitSettingsWindowController?
-    
+    private var aboutAppWindowController: AppKitAboutAppWindowController?
+
     static func main() {
         let app = NSApplication.shared
         
@@ -103,7 +104,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc
     func showAboutPanel(_ sender: Any?) {
-        NSApp.orderFrontStandardAboutPanel(sender)
+        // NSApp.orderFrontStandardAboutPanel(sender)
+        if aboutAppWindowController == nil {
+            aboutAppWindowController = AppKitAboutAppWindowController()
+        }
+        
+        aboutAppWindowController?.showWindow(nil)
+        aboutAppWindowController?.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     private func setupMainMenu() {
