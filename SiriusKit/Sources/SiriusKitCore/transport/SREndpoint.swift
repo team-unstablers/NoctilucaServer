@@ -63,6 +63,60 @@ public enum SRNetworkAddress: CustomStringConvertible {
     }
 }
 
+// MARK: - Codable & Sendable
+
+extension SRNetworkAddress: Sendable {}
+
+extension SRNetworkAddress: Codable {
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let string = try container.decode(String.self)
+        self = SREndpoint.parse(string).address
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(description)
+    }
+}
+
+extension SREndpoint: Sendable {}
+
+extension SREndpoint: Codable {
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let string = try container.decode(String.self)
+        self = SREndpoint.parse(string)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(description)
+    }
+}
+
+// MARK: - Host String
+
+public extension SRNetworkAddress {
+    /// IPv6 bracket을 제거한 순수 주소 문자열.
+    /// TLS SNI / MsQuic serverName에 사용합니다.
+    /// (예: `[::1]` → `::1`, IPv4/hostname은 `description` 그대로)
+    var hostString: String {
+        switch self {
+        case .IPv6:
+            let desc = description
+            if desc.hasPrefix("[") && desc.hasSuffix("]") {
+                return String(desc.dropFirst().dropLast())
+            }
+            return desc
+        default:
+            return description
+        }
+    }
+}
+
+// MARK: - Equatable
+
 extension SRNetworkAddress: Equatable {
     public static func == (lhs: SRNetworkAddress, rhs: SRNetworkAddress) -> Bool {
         switch (lhs, rhs) {
