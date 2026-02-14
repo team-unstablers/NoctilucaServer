@@ -170,8 +170,7 @@ protocol ClientRoleTransportDelegate: AnyObject {
 protocol ClientRoleTransport: TransportLayer, Hashable where ID == ClientRoleTransportIdentifier {
     var delegate: ClientRoleTransportDelegate? { get set }
     
-    var hostname: String { get }
-    var port: UInt16 { get }
+    var endpoint: SREndpoint { get }
     
     /// 서버에서 announce한 아이덴티티 정보.
     /// 접속 전 / handshake 전에는 nil입니다.

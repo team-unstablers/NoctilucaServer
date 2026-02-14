@@ -33,9 +33,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
     private let logger = SiriusLogger(category: "ClientRoleMsQuicTransport")
 
-    internal let hostname: String
-    internal let port: UInt16
-    
+    internal let endpoint: SREndpoint
+
     private let alpn: SiriusQUICAlpn
 
     private var registration: QuicRegistration?
@@ -53,9 +52,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     nonisolated(unsafe) var identityValidationPolicy: ServerIdentityValidationPolicy
     nonisolated(unsafe) private var _certificateValidationFailed: Bool = false
 
-    init(host: String, port: UInt16, alpn: SiriusQUICAlpn = .siriusV1, validationPolicy: ServerIdentityValidationPolicy) {
-        self.hostname = host
-        self.port = port
+    init(endpoint: SREndpoint, alpn: SiriusQUICAlpn = .siriusV1, validationPolicy: ServerIdentityValidationPolicy) {
+        self.endpoint = endpoint
         self.alpn = alpn
         
         self.identityValidationPolicy = validationPolicy
@@ -142,8 +140,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         // 7. 연결 시작
         try await connection.start(
             configuration: configuration,
-            serverName: hostname,
-            serverPort: port
+            serverName: endpoint.address.hostString,
+            serverPort: endpoint.port
         )
 
         // 연결 완료 알림

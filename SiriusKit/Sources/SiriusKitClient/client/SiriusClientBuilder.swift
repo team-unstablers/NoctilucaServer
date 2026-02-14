@@ -15,14 +15,13 @@ public enum SiriusClientBuilderError: Error {
 
 public struct SiriusClientBuilder {
     public enum TransportProtocol {
-        case quic(host: String, port: UInt16)
+        case quic(endpoint: SREndpoint)
 
         func buildTransport(_ identityValidationPolicy: ServerIdentityValidationPolicy) -> any ClientRoleTransport {
             switch self {
-            case .quic(let host, let port):
+            case .quic(let endpoint):
                 return ClientRoleMsQuicTransport(
-                    host: host,
-                    port: port,
+                    endpoint: endpoint,
                     validationPolicy: identityValidationPolicy
                 )
             }
