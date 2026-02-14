@@ -19,6 +19,9 @@ class SessionWindowViewModel: ObservableObject {
 #if os(iOS)
     var rootViewController: Weak<RootViewController>? = nil
 #endif
+#if os(macOS)
+    var mainWindowController: Weak<AppKitMainWindowController>? = nil
+#endif
     
     @Published
     var phase: MainWindowPhase = .newConnection
@@ -98,7 +101,7 @@ class SessionWindowViewModel: ObservableObject {
     }
 
     func startSession(
-        endpoint: EndpointKind,
+        endpoint endpointKind: EndpointKind,
         settingsOverride: SessionSettings? = nil,
         succeedValidationDecision: SucceedValidationDecision? = nil
     ) async throws {
@@ -106,23 +109,46 @@ class SessionWindowViewModel: ObservableObject {
             await stopSession()
         }
 
-        // FIXME: IPv6 지원하지 않는다
-        let endpointURL = endpoint.endpointURL
-        let host = endpointURL.split(separator: ":").first
-        let port = UInt16(endpointURL.split(separator: ":").last ?? "") ?? 8282
+        let endpoint = endpointKind.endpoint
 
-        guard let host else {
+        guard !endpoint.address.description.isEmpty else {
             return
         }
 
-        self.endpointURL = endpointURL
-        self.currentEndpoint = endpoint
+#if os(macOS)
+        if let window = mainWindowController?.ref.window {
+            if endpoint.address.isLoopbackAddress {
+                var shouldContinue = false
+                let alert = NOCAlert()
+                alert.title = "루프백 경고"
+                alert.message = "자기 자신에게 접속하려고 하고 있습니다. 다음과 같은 위험이 있으니 권장하지 않습니다.\n\n- 오디오 프로젝션이 활성화된 경우, 듣기 괴로울 정도의 굉음이 발생할 수 있습니다.\n- 키보드 입력이 무한히 반사되어 원치 않는 조작이 수행될 수 있습니다.\n\n계속 진행하시겠습니까?"
+                alert.alert.alertStyle = .critical
+                
+                alert.addButton(title: "계속") {
+                    shouldContinue = true
+                }
+                
+                alert.addButton(title: "취소") {
+                    shouldContinue = false
+                }
+                
+                await alert.present(to: window)
+                
+                if !shouldContinue {
+                    return
+                }
+            }
+        }
+#endif
+
+        self.endpointURL = endpointKind.endpointURL
+        self.currentEndpoint = endpointKind
         self.phase = .connecting
 
         if let settingsOverride {
             self.sessionSettings = settingsOverride
         } else {
-            switch endpoint {
+            switch endpointKind {
             case .contact(let item):
                 self.sessionSettings = item.settings
             case .quickConnect:
@@ -135,15 +161,14 @@ class SessionWindowViewModel: ObservableObject {
 
         let clientManager = NoctilucaClientManager.shared
         let client = try await clientManager.createClient(
-            to: String(host),
-            port: port,
+            to: endpoint,
             settings: self.sessionSettings,
         )
         
         client.succeedValidationDecision = succeedValidationDecision
 
         if let sessionSettings = self.sessionSettings {
-            configureAuthCredentials(for: client, endpoint: endpoint, sessionSettings: sessionSettings)
+            configureAuthCredentials(for: client, endpoint: endpointKind, sessionSettings: sessionSettings)
         }
 
         let remoteSession = RemoteSession(client)

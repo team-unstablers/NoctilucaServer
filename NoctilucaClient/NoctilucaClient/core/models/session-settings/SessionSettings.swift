@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKitClient
 
 enum SessionSettingsScope: String, Codable, Sendable, Hashable {
     case global
@@ -82,11 +83,50 @@ struct SessionSettings: Codable, Sendable {
 extension SessionSettings {
     struct General: Codable, Sendable {
         var displayName: String = ""
-        var endpoint: Endpoint = .init()
+        var endpoint: SREndpoint = SREndpoint(address: .hostname(""))
         var icon: ContactIcon = .init()
+
+        enum CodingKeys: String, CodingKey {
+            case displayName
+            case endpoint
+            case icon
+        }
+
+        init(
+            displayName: String = "",
+            endpoint: SREndpoint = SREndpoint(address: .hostname("")),
+            icon: ContactIcon = .init()
+        ) {
+            self.displayName = displayName
+            self.endpoint = endpoint
+            self.icon = icon
+        }
+
+        init(from decoder: any Decoder) throws {
+            self.init()
+
+            guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+                return
+            }
+
+            displayName = (try? container.decode(String.self, forKey: .displayName)) ?? displayName
+            icon = (try? container.decode(ContactIcon.self, forKey: .icon)) ?? icon
+
+            // 하위 호환: 구 포맷 { "host": "...", "port": ... } 과 신 포맷 "host:port" 모두 처리
+            if let srEndpoint = try? container.decode(SREndpoint.self, forKey: .endpoint) {
+                endpoint = srEndpoint
+            } else if let legacy = try? container.decode(LegacyEndpoint.self, forKey: .endpoint) {
+                let port = legacy.port ?? SiriusQUICDefaultPort
+                let host = legacy.host.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !host.isEmpty {
+                    endpoint = SREndpoint.parse("\(host):\(port)")
+                }
+            }
+        }
     }
 
-    struct Endpoint: Codable, Sendable {
+    /// 구 포맷 마이그레이션용
+    private struct LegacyEndpoint: Codable {
         var host: String = ""
         var port: UInt16? = nil
     }
@@ -179,25 +219,3 @@ extension SessionSettings {
     }
 }
 
-extension SessionSettings.Endpoint {
-    static func parse(_ endpointURL: String) -> SessionSettings.Endpoint {
-        let parts = endpointURL.split(separator: ":")
-        let host = String(parts.first ?? "")
-        let port = UInt16(parts.dropFirst().first ?? "")
-
-        return SessionSettings.Endpoint(host: host, port: port)
-    }
-
-    var urlString: String {
-        let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let port else {
-            return trimmedHost
-        }
-
-        if trimmedHost.isEmpty {
-            return ""
-        }
-
-        return "\(trimmedHost):\(port)"
-    }
-}

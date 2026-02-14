@@ -7,6 +7,8 @@
 
 import Foundation
 
+import SiriusKitClient
+
 enum EndpointKind: Hashable, Equatable {
     case contact(item: ContactItem)
     // TODO: recent item
@@ -32,6 +34,17 @@ enum EndpointKind: Hashable, Equatable {
             return endpointURL
         case .connect(let endpointURL):
             return endpointURL
+        }
+    }
+    
+    var endpoint: SREndpoint {
+        switch self {
+        case .contact(let item):
+            return SREndpoint.parse(item.endpointURL)
+        case .quickConnect(let endpointURL):
+            return SREndpoint.parse(endpointURL)
+        case .connect(let endpointURL):
+            return SREndpoint.parse(endpointURL)
         }
     }
 

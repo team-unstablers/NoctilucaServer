@@ -18,6 +18,8 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     private let toolbarController: MainToolbar
     var onClose: ((AppKitMainWindowController) -> Void)?
 
+    private weak var mainWindow: NSWindow?
+    
     private var subDisplayWindowManager: SubDisplayWindowManager?
     private var remoteSessionCancellable: AnyCancellable?
     
@@ -52,7 +54,10 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
         
         super.init(window: window)
         
+        viewModel.mainWindowController = Weak(self)
         window.delegate = self
+        
+        self.window = window
 
         toolbarController.attach(to: window)
 

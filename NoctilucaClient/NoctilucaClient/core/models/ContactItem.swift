@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SiriusKitClient
 
 struct ContactItem: Codable, Identifiable, Sendable {
     static let currentSchemaVersion: Int = 2
@@ -28,7 +29,7 @@ struct ContactItem: Codable, Identifiable, Sendable {
 
         var general = baseSettings.general ?? SessionSettings.General()
         general.displayName = name ?? ""
-        general.endpoint = SessionSettings.Endpoint.parse(endpointURL)
+        general.endpoint = SREndpoint.parse(endpointURL)
         baseSettings.general = general
         baseSettings.credentials.keychainKey = SessionSettings.credentialsKey(for: .session, contactId: id)
 
@@ -51,11 +52,13 @@ extension ContactItem {
             return name
         }
 
-        let endpoint = settings.general?.endpoint.urlString ?? ""
-        return endpoint.isEmpty ? "Unknown" : endpoint
+        let url = endpointURL
+        return url.isEmpty ? "Unknown" : url
     }
 
     var endpointURL: String {
-        settings.general?.endpoint.urlString ?? ""
+        guard let endpoint = settings.general?.endpoint else { return "" }
+        if case .hostname(let name) = endpoint.address, name.isEmpty { return "" }
+        return endpoint.description
     }
 }

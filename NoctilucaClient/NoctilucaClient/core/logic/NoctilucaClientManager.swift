@@ -24,13 +24,11 @@ class NoctilucaClientManager: ObservableObject {
     }
     
     public func createClient(
-        to host: String,
-        port: UInt16,
-
+        to endpoint: SREndpoint,
         settings: SessionSettings?,
     ) async throws -> NoctilucaClient {
         let siriusClientResult = SiriusClientBuilder()
-            .useTransportProtocol(.quic(host: host, port: port))
+            .useTransportProtocol(.quic(endpoint: endpoint))
             .useFeatureProvider(NoctilucaFeatureProvider())
             .useServerIdentityValidationPolicy(.systemOnly) // 유저랜드 핸들러는 나중에 세팅할 것임
             .build()

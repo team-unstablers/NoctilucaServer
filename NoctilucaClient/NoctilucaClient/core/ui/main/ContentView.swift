@@ -21,15 +21,10 @@ class FIXME__ContentViewModel: ObservableObject {
     }
     
     func connect() async throws {
-        let host = serverAddress.split(separator: ":").first
-        let port = UInt16(serverAddress.split(separator: ":").last ?? "") ?? 12345
-        
-        guard let host else {
-            return
-        }
-        
+        let endpoint = SREndpoint.parse(serverAddress)
+
         let result = SiriusClientBuilder()
-            .useTransportProtocol(.quic(host: String(host), port: port))
+            .useTransportProtocol(.quic(endpoint: endpoint))
             .useFeatureProvider(NoctilucaFeatureProvider())
             .build()
         

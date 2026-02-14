@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SiriusKitClient
 
 struct GeneralSessionSettingsTab: View {
     @Binding
@@ -24,11 +25,15 @@ struct GeneralSessionSettingsTab: View {
 
     private var endpointURL: Binding<String> {
         Binding(
-            get: { sessionSettings.general?.endpoint.urlString ?? "" },
+            get: {
+                guard let endpoint = sessionSettings.general?.endpoint else { return "" }
+                if case .hostname(let name) = endpoint.address, name.isEmpty { return "" }
+                return endpoint.description
+            },
             set: { newValue in
                 var general = sessionSettings.general ?? SessionSettings.General()
                 let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                general.endpoint = SessionSettings.Endpoint.parse(trimmed)
+                general.endpoint = SREndpoint.parse(trimmed)
                 sessionSettings.general = general
             }
         )
