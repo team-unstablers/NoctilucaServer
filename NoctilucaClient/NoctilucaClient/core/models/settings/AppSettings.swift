@@ -91,6 +91,7 @@ struct AppSettings: Codable, Sendable {
         try container.encode(security, forKey: .security)
         try container.encode(misc, forKey: .misc)
         try container.encode(plugins, forKey: .plugins)
+        try container.encode(projection, forKey: .projection)
     }
 
     mutating func migrateIfNeeded(from legacyVersion: Int, sessionDefaultsMissing: Bool = false) {
