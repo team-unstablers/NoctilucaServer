@@ -71,6 +71,9 @@ class SessionWindowViewModel: ObservableObject {
     private(set) var degradationNotice: DegradationNotice? = nil
 
     @Published
+    private(set) var pingRTT: TimeInterval? = nil
+
+    @Published
     private(set) var remoteSession: RemoteSession? = nil
 
     private var client: NoctilucaClient? {
@@ -395,6 +398,13 @@ class SessionWindowViewModel: ObservableObject {
             }
             .store(in: &sessionCancellables)
 
+        session.$pingRTT
+            .receive(on: RunLoop.main)
+            .sink { [weak self] rtt in
+                self?.pingRTT = rtt
+            }
+            .store(in: &sessionCancellables)
+
         session.$projection
             .compactMap { $0 }
             .flatMap { $0.$degradationNotice }
@@ -409,6 +419,7 @@ class SessionWindowViewModel: ObservableObject {
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
         remoteSession = nil
+        pingRTT = nil
         degradationNotice = nil
     }
 

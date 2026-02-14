@@ -22,13 +22,7 @@ struct MainToolbarAddressBar: View {
     private var internalFocus: Bool
     
     var pingRTT: Double? {
-        guard let session = viewModel.remoteSession,
-              let pingRTT = session.pingRTT
-        else {
-            return nil
-        }
-        
-        return pingRTT
+        viewModel.pingRTT
     }
     
     init(viewModel: SessionWindowViewModel,
@@ -105,8 +99,6 @@ struct MainToolbarAddressBar: View {
         default:
             return .poor
         }
-            
-        return .unknown
     }
     
     var body: some View {
@@ -118,7 +110,7 @@ struct MainToolbarAddressBar: View {
                 securityIndicator: securityIndicator,
                 qualityIndicator: qualityIndicator,
                 degradationIndicator: degradationIndicator,
-                rtt: pingRTT ?? 0.0,
+                rtt: viewModel.pingRTT ?? 0.0,
                 action: action,
                 isFocused: resolvedFocusBinding
             ) { action in
