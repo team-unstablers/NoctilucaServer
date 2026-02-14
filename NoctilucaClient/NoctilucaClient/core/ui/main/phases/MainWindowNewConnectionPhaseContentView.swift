@@ -28,10 +28,20 @@ struct MainWindowNewConnectionPhaseContentView: View {
             VStack(spacing: 32) {
                 // MARK: - 중앙 로고 + 타이틀
                 VStack(spacing: 4) {
-                    Image(systemName: "moon.haze.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.tint)
-                        .padding(.bottom, 8)
+#if os(macOS)
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 128, height: 128)
+#else
+                    if let icon = NoctilucaMeta.applicationIcon() {
+                        Image(uiImage: icon)
+                            .resizable()
+                            .frame(width: 72, height: 72)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .black.opacity(0.15), radius: 16)
+                            .padding(.bottom, 8)
+                    }
+#endif
 
                     HStack(spacing: 0) {
                         Text("Noctiluca ")
@@ -59,7 +69,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
+                            LazyHStack(spacing: 12) {
                                 ForEach(recentStore.records.prefix(5)) { record in
                                     RecentConnectionItemView(record: record) {
                                         Task { @MainActor in
@@ -76,6 +86,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             }
                             .padding(.horizontal, 4)
                         }
+                        .scrollClipDisabled()
                     }
                     .padding(.horizontal, 24)
                 }
