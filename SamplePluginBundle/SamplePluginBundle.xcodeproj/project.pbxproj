@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		F624FDB12EE2D241007A68B3 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FDB02EE2D241007A68B3 /* NoctilucaPluginKit.framework */; };
 		F624FDB52EE2D2B5007A68B3 /* SamplePluginBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F624FDB42EE2D24E007A68B3 /* SamplePluginBundle.swift */; };
-		F624FDBC2EE2D6F8007A68B3 /* NullAuthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F624FDBB2EE2D6F8007A68B3 /* NullAuthPlugin.swift */; };
 		F624FDBF2EE2D846007A68B3 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F624FDBE2EE2D843007A68B3 /* Info.plist */; };
 /* End PBXBuildFile section */
 
@@ -17,9 +16,16 @@
 		F624FDA82EE2D238007A68B3 /* SamplePluginBundle.nocbundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SamplePluginBundle.nocbundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		F624FDB02EE2D241007A68B3 /* NoctilucaPluginKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = NoctilucaPluginKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F624FDB42EE2D24E007A68B3 /* SamplePluginBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SamplePluginBundle.swift; sourceTree = "<group>"; };
-		F624FDBB2EE2D6F8007A68B3 /* NullAuthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NullAuthPlugin.swift; sourceTree = "<group>"; };
 		F624FDBE2EE2D843007A68B3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F67CB5932F403A54003A2869 /* keyboard-hack */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "keyboard-hack";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		F624FDA52EE2D238007A68B3 /* Frameworks */ = {
@@ -36,8 +42,8 @@
 		F624FD9F2EE2D238007A68B3 = {
 			isa = PBXGroup;
 			children = (
+				F67CB5932F403A54003A2869 /* keyboard-hack */,
 				F624FDBE2EE2D843007A68B3 /* Info.plist */,
-				F624FDBB2EE2D6F8007A68B3 /* NullAuthPlugin.swift */,
 				F624FDB42EE2D24E007A68B3 /* SamplePluginBundle.swift */,
 				F624FDAF2EE2D241007A68B3 /* Frameworks */,
 				F624FDA92EE2D238007A68B3 /* Products */,
@@ -74,6 +80,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F67CB5932F403A54003A2869 /* keyboard-hack */,
 			);
 			name = SamplePluginBundle;
 			packageProductDependencies = (
@@ -132,7 +141,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F624FDB52EE2D2B5007A68B3 /* SamplePluginBundle.swift in Sources */,
-				F624FDBC2EE2D6F8007A68B3 /* NullAuthPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,9 +273,9 @@
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Display Name";
+				INFOPLIST_KEY_CFBundleDisplayName = SamplePluginBundle;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSPrincipalClass = SamplePluginBundle;
+				INFOPLIST_KEY_NSPrincipalClass = SamplePluginBundle.SamplePluginBundle;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.pluginkit.example.SamplePluginBundle;
@@ -289,9 +297,9 @@
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Display Name";
+				INFOPLIST_KEY_CFBundleDisplayName = SamplePluginBundle;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSPrincipalClass = SamplePluginBundle;
+				INFOPLIST_KEY_NSPrincipalClass = SamplePluginBundle.SamplePluginBundle;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.pluginkit.example.SamplePluginBundle;

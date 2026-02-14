@@ -33,6 +33,6 @@ public final class SamplePluginBundle: NoctilucaPluginBundle {
     }
     
     public static var exports: [NoctilucaPluginKit.NoctilucaPluginExport] = [
-        .auth(NullAuthPlugin())
+        .keyboardHack(CJKEmulateWin32HangulToggleHack())
     ]
 }
