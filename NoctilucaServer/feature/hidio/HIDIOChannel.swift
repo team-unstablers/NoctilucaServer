@@ -6,6 +6,7 @@
 //
 
 import SiriusKit
+import NoctilucaPluginKit
 
 class HIDIOChannel: Channel {
     let logger = NoctilucaLogger(category: "HIDIOChannel")
@@ -48,7 +49,7 @@ class HIDIOChannel: Channel {
                 // TODO
                 break
             case is KeyboardEvent:
-                self.inject(keyboardEvent: event as! KeyboardEvent)
+                await self.inject(keyboardEvent: event as! KeyboardEvent)
                 break
             case is MouseMoveEvent:
                 self.inject(mouseMoveEvent: event as! MouseMoveEvent)
@@ -66,28 +67,52 @@ class HIDIOChannel: Channel {
         }
     }
     
-    func inject(keyboardEvent: KeyboardEvent) {
+    func inject(keyboardEvent: KeyboardEvent) async {
         switch keyboardEvent.eventType {
         case .ucs4:
             injectUcs4Key(keyboardEvent)
         case .keyDown, .keyUp:
-            injectNormalKey(keyboardEvent)
+            await injectNormalKey(keyboardEvent)
         default:
             logger.warning("unhandled keyboard event type: \(keyboardEvent.eventType)")
         }
     }
     
-    private func injectNormalKey(_ event: KeyboardEvent) {
+    private func injectNormalKey(_ event: KeyboardEvent) async {
         guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(event.keyCode)).toCarbonKeycode else {
             logger.warning("failed to map linux keycode \(event.keyCode) to carbon keycode")
             return
         }
         
+        let decision = if let hack = HIDIOKeyboardHackRegistry.shared.hacks.first?.value {
+            switch event.eventType {
+            case .keyDown:
+                await hack.onKeyDown(.init(rawValue: UInt16(event.keyCode)))
+            case .keyUp:
+                await hack.onKeyUp(.init(rawValue: UInt16(event.keyCode)))
+            default:
+                KeyboardHackResult.passthrough
+            }
+        } else {
+            KeyboardHackResult.passthrough
+        }
+        
+        var newKeyCode = carbonKeyCode
+        
+        switch decision {
+        case .modify(let keyCode):
+            newKeyCode = LinuxKeycode(rawValue: UInt16(keyCode.key.rawValue)).toCarbonKeycode!
+        case .stop:
+            return
+        default:
+            break
+        }
+        
         switch event.eventType {
         case .keyDown:
-            eventInjector.postKeyDown(carbonKeyCode)
+            eventInjector.postKeyDown(newKeyCode)
         case .keyUp:
-            eventInjector.postKeyUp(carbonKeyCode)
+            eventInjector.postKeyUp(newKeyCode)
         default:
             break
         }

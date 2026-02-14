@@ -211,6 +211,9 @@ class PluginBundleRegistry {
             case .extension(let extensionPlugin):
                 // TODO: ExtensionPluginRegistry 연동 (향후 구현)
                 logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(metadata.id)")
+            case .keyboardHack(let keyboardHack):
+                HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
+                logger.info("Registered keyboard hack: \(type(of: keyboardHack).id) from bundle: \(metadata.id)")
             }
         }
         
@@ -343,6 +346,8 @@ extension PluginBundleRegistry {
             return pluginsMetadata.contains { metadata in metadata.id == authPlugin.id && metadata.type == .auth }
         case .extension(let extensionPlugin):
             return pluginsMetadata.contains { metadata in metadata.id == type(of: extensionPlugin).id && metadata.type == .extension }
+        case .keyboardHack(let keyboardHack):
+            return pluginsMetadata.contains { metadata in metadata.id == type(of: keyboardHack).id && metadata.type == .keyboardHack }
         }
     }
 }

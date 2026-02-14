@@ -82,7 +82,8 @@ struct PluginBundlePlistMetadata: PluginBundleMetadata {
     init?(from infoPlist: [String: Any]) {
         guard let id          = infoPlist.value(pluginBundleInfoKey: .id) as? String,
               let displayName = infoPlist.value(pluginBundleInfoKey: .displayName) as? String,
-              let version     = infoPlist.value(pluginBundleInfoKey: .version) as? UInt32,
+              let versionStr  = infoPlist.value(pluginBundleInfoKey: .version) as? String,
+              let version     = Int(versionStr),
               let displayVersion = infoPlist.value(pluginBundleInfoKey: .displayVersion) as? String,
               let pluginKitVersionRaw = infoPlist.value(pluginBundleInfoKey: .pluginKitVersion) as? UInt32,
               let bundleDescription = infoPlist.value(pluginBundleInfoKey: .bundleDescription) as? String,
@@ -107,7 +108,7 @@ struct PluginBundlePlistMetadata: PluginBundleMetadata {
         self.init(
             id: id,
             displayName: displayName,
-            version: version,
+            version: UInt32(version),
             displayVersion: displayVersion,
             pluginKitVersion: NoctilucaPluginKitVersion(rawValue: pluginKitVersionRaw),
             description: bundleDescription,
