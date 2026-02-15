@@ -21,7 +21,7 @@ struct PluginsSettingsTab: View {
                 Picker(selection: $securityPolicy) {
                     VStack(alignment: .leading) {
                         Text(markdown: String(localized: "settings.plugins.security_policy.disallow_all.title", defaultValue: "모든 플러그인 차단"))
-                        Text(markdown: String(localized: "settings.plugins.security_policy.disallow_all.description", defaultValue: "Noctiluca Server에 내장된 플러그인 외에는 모두 차단합니다."))
+                        Text(markdown: String(localized: "settings.plugins.security_policy.disallow_all.description", defaultValue: "Noctiluca Server에 내장되거나 번들된 플러그인 외에는 모두 차단합니다."))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

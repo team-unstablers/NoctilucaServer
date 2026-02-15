@@ -10,6 +10,16 @@
     "%@" : {
 
     },
+    "%@\n(Team ID: %@)" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@\n(Team ID: %2$@)"
+          }
+        }
+      }
+    },
     "%@ (%u)" : {
       "localizations" : {
         "ko" : {
@@ -27,9 +37,6 @@
 
     },
     "Apache License 2.0" : {
-
-    },
-    "Apple Development: Kirino Kousaka (ABCDE12345)" : {
 
     },
     "BSD 3-Clause License" : {
@@ -179,6 +186,17 @@
     "MIT License" : {
 
     },
+    "notificaiton.plugin_bundle_rejected_by_security_policy.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "플러그인 번들 로드 거부됨"
+          }
+        }
+      }
+    },
     "notification.connection_closed.message" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -212,7 +230,7 @@
         }
       }
     },
-    "notification.critical_update_required.piracy_notice" : {
+    "notification.critical_update_required.piracy_notice.message" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ko" : {
@@ -274,6 +292,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "새 클라이언트 연결됨"
+          }
+        }
+      }
+    },
+    "notification.plugin_bundle_rejected_by_security_policy.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "플러그인 번들 '%@'이 코드 서명 정책을 위반하여 로드될 수 없었습니다."
           }
         }
       }
@@ -665,6 +694,9 @@
           }
         }
       }
+    },
+    "OSStatus: %d" : {
+
     },
     "plugins.auth.NullAuthPlugin.description" : {
       "comment" : "Provides 'NULL' authentication that always succeeds.",
@@ -1494,6 +1526,116 @@
         }
       }
     },
+    "settings.plugins.detail_sheet.signature.adhoc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ad-hoc 서명"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.adhoc.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 플러그인 번들은 Ad-hoc으로 서명되어 있으며, 개발자 신원을 확인할 수 없습니다."
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.builtin" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "내장 플러그인"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.builtin.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 플러그인 번들은 애플리케이션에 내장되어 있습니다."
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.certificate" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증서 정보"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.identity" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 ID"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.invalid" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 검증 실패"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.unsigned" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 없음"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.unsigned.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 플러그인 번들은 서명되어 있지 않습니다. 신뢰할 수 없는 출처의 플러그인일 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.plugins.detail_sheet.signature.valid" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유효한 서명"
+          }
+        }
+      }
+    },
     "settings.plugins.detail_sheet.tab.general" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1556,6 +1698,50 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "서명 정보"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.adhoc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ad-hoc 서명"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.builtin" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "내장 플러그인"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.invalid" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 검증 실패 (OSStatus: %d)"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.unsigned" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 없음"
           }
         }
       }
@@ -1687,7 +1873,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Noctiluca Server에 내장된 플러그인 외에는 모두 차단합니다."
+            "value" : "Noctiluca Server에 내장되거나 번들된 플러그인 외에는 모두 차단합니다."
           }
         }
       }
@@ -5246,9 +5432,6 @@
       }
     },
     "test" : {
-
-    },
-    "test2" : {
 
     },
     "Trace" : {
