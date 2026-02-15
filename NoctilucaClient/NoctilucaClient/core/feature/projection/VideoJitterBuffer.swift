@@ -31,18 +31,8 @@ final class VideoJitterBuffer: NSObject {
         let earlyResyncThresholdMs: Double
         let noReadyResyncConsecutiveTicks: Int
         
-        /// 저지연 튜닝 전 기본값 프리셋.
-        static let legacy = Preset(
-            minBufferCount: 3,
-            maxBufferCount: 10,
-            lateThresholdMs: 50.0,
-            lateResyncThresholdMs: 200.0,
-            earlyResyncThresholdMs: 200.0,
-            noReadyResyncConsecutiveTicks: 6
-        )
-        
-        /// 안정성을 중시하는 균형 잡힌 프리셋 (추천).
-        static let balanced = Preset(
+        /// 안정성 최우선 프리셋. 지연이 다소 증가하더라도 프레임 누락과 underflow를 최소화한다.
+        static let prioritizeStability = Preset(
             minBufferCount: 4,
             maxBufferCount: 12,
             lateThresholdMs: 40.0,
@@ -51,8 +41,9 @@ final class VideoJitterBuffer: NSObject {
             noReadyResyncConsecutiveTicks: 5
         )
         
-        /// 현재 적용 중인 저지연 튜닝값 프리셋.
-        static let lowLatency = Preset(
+        /*
+        /// 균형 잡힌 프리셋. 저지연과 안정성 사이의 균형을 목표로 한다. 대부분의 상황에서 무난한 선택이다.
+        static let balanced = Preset(
             minBufferCount: 2,
             maxBufferCount: 8,
             lateThresholdMs: 35.0,
@@ -60,9 +51,10 @@ final class VideoJitterBuffer: NSObject {
             earlyResyncThresholdMs: 120.0,
             noReadyResyncConsecutiveTicks: 4
         )
+         */
         
-        /// 현재 저지연과 초저지연 사이의 중간 단계 프리셋.
-        static let lowLatencyPlus = Preset(
+        /// 지연 최소화 프리셋. 가능한 한 낮은 지연을 목표로 하며, 일부 프레임 누락과 underflow를 감수한다.
+        static let lowLatency = Preset(
             minBufferCount: 2,
             maxBufferCount: 6,
             lateThresholdMs: 28.0,
@@ -71,7 +63,7 @@ final class VideoJitterBuffer: NSObject {
             noReadyResyncConsecutiveTicks: 3
         )
         
-        /// 지연 최소화를 최우선으로 하는 초저지연 프리셋.
+        /// 극한의 저지연 프리셋. 지연을 극단적으로 낮추지만, 프레임 누락과 underflow가 빈번할 수 있다.
         static let ultraLowLatency = Preset(
             minBufferCount: 1,
             maxBufferCount: 4,

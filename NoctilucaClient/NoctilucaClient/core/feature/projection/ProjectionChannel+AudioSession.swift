@@ -45,7 +45,8 @@ extension ProjectionChannel {
             return
         }
 
-        let session = AudioProjectionSession(id: event.identifier, dataChannel: channel, controlChannel: self)
+        let audioProjectionPolicy = SettingsStore.shared.settings.projection.audioProjectionPolicy
+        let session = AudioProjectionSession(id: event.identifier, dataChannel: channel, controlChannel: self, audioJitterBufferPreset: audioProjectionPolicy.bufferPreset)
 
         do {
             try await session.prepare(codec: event.codec)

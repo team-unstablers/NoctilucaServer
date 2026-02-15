@@ -21,22 +21,45 @@ import os
 /// - Clock synchronization between remote PTS and local playback time
 final class AudioJitterBuffer {
 
+    // MARK: - Preset
+
+    struct Preset {
+        let minBufferMs: Int
+        let maxBufferMs: Int
+        let lateThresholdMs: Int
+        let lateResyncThresholdMs: Int
+        let lateResyncConsecutiveFrames: Int
+
+        /// 저지연 프리셋. 버퍼를 최소화하여 딜레이를 줄인다.
+        /// 네트워크 지터가 있을 경우 underflow가 발생할 수 있다.
+        static let latencyFirst = Preset(
+            minBufferMs: 100,
+            maxBufferMs: 150,
+            lateThresholdMs: 30,
+            lateResyncThresholdMs: 180,
+            lateResyncConsecutiveFrames: 4
+        )
+
+        /// 안정성 우선 프리셋. 넉넉한 버퍼로 네트워크 지터에 강하다.
+        /// 딜레이가 다소 증가한다.
+        static let stabilityFirst = Preset(
+            minBufferMs: 200,
+            maxBufferMs: 350,
+            lateThresholdMs: 60,
+            lateResyncThresholdMs: 400,
+            lateResyncConsecutiveFrames: 8
+        )
+    }
+
     // MARK: - Configuration
 
-    /// Minimum buffer duration in milliseconds before starting playback.
-    var minBufferMs: Int = 150
+    let preset: Preset
 
-    /// Maximum buffer duration in milliseconds (frames beyond this are dropped).
-    var maxBufferMs: Int = 200
-
-    /// Late threshold in milliseconds. Frames older than this are skipped.
-    var lateThresholdMs: Int = 40
-
-    /// Hard lateness threshold in milliseconds to trigger resync immediately.
-    var lateResyncThresholdMs: Int = 250
-
-    /// Consecutive late frames count to trigger resync.
-    var lateResyncConsecutiveFrames: Int = 5
+    var minBufferMs: Int { preset.minBufferMs }
+    var maxBufferMs: Int { preset.maxBufferMs }
+    var lateThresholdMs: Int { preset.lateThresholdMs }
+    var lateResyncThresholdMs: Int { preset.lateResyncThresholdMs }
+    var lateResyncConsecutiveFrames: Int { preset.lateResyncConsecutiveFrames }
 
     // MARK: - State
 
@@ -102,8 +125,9 @@ final class AudioJitterBuffer {
     /// - Parameters:
     ///   - sampleRate: The sample rate in Hz (default: 48000).
     ///   - maxDurationMs: Maximum buffer duration in milliseconds (default: 500ms).
-    init(sampleRate: Double = 48000, maxDurationMs: Int = 500) {
+    init(sampleRate: Double = 48000, maxDurationMs: Int = 500, preset: Preset = .latencyFirst) {
         self.sampleRate = sampleRate
+        self.preset = preset
 
         // Calculate ring buffer capacity
         // maxDurationMs worth of stereo samples

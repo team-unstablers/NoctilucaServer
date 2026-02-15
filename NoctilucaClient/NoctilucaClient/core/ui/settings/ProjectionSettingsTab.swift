@@ -50,19 +50,14 @@ struct ProjectionSettingsTab: View {
             }
             
             Section {
-                Toggle(isOn: .constant(false)) {
-                    Text("오디오 프로젝션 사용하기")
-                    Text("원격 세션의 오디오 스트림을 프로젝션 받도록 구성합니다.\n모든 서버 구현체가 이를 지원하는 것은 아닙니다.")
-                }
-                
-                SettingsPicker(selection: .constant("latency-first")) {
-                    SettingsPickerItem(value: "latency-first") {
+                SettingsPicker(selection: $settingsStore.settings.projection.audioProjectionPolicy) {
+                    SettingsPickerItem(value: AppSettings.AudioProjectionPolicy.latencyFirst) {
                         Text("낮은 지연 시간을 우선하기")
                         Text("지연 시간을 최대한 줄이도록 코덱을 구성하고, 오디오의 지터 버퍼를 최대한 작게 잡습니다.\n조금이라도 타이밍을 놓칠 것 같으면, 오디오 프레임을 적극적으로 건너뜁니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    SettingsPickerItem(value: "stability-first") {
+                    SettingsPickerItem(value: AppSettings.AudioProjectionPolicy.stabilityFirst) {
                         Text("안정성을 우선하기")
                         Text("품질을 우선하도록 코덱을 구성하고, 오디오의 지터 버퍼를 적절한 크기로 유지합니다.\n네트워크 상태가 불안정한 경우에도 오디오 끊김 현상을 최소화합니다.")
                             .font(.subheadline)
@@ -74,10 +69,7 @@ struct ProjectionSettingsTab: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-            } header: {
-                Text("실험 기능")
             }
-            .disabled(true)
 
         }
         .formStyle(.grouped)

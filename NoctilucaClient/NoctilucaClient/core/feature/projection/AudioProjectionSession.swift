@@ -48,13 +48,16 @@ class AudioProjectionSession: Identifiable {
 
     private var isStarted: Bool = false
 
+    private let audioJitterBufferPreset: AudioJitterBuffer.Preset
+
     // MARK: - Lifecycle
 
-    init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel) {
+    init(id: UUID, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel, audioJitterBufferPreset: AudioJitterBuffer.Preset = .latencyFirst) {
         self.id = id
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel
-        
+        self.audioJitterBufferPreset = audioJitterBufferPreset
+
         self.dataChannel?.delegate = self
         self.dataChannel?.activate()
     }
@@ -154,7 +157,7 @@ class AudioProjectionSession: Identifiable {
         self.outputFormat = format
 
         // Initialize jitter buffer
-        jitterBuffer = AudioJitterBuffer(sampleRate: 48000, maxDurationMs: 500)
+        jitterBuffer = AudioJitterBuffer(sampleRate: 48000, maxDurationMs: 500, preset: audioJitterBufferPreset)
 
         // Create AVAudioSourceNode (pull-based)
         let sourceNode = AVAudioSourceNode(format: format) { [weak self] silence, timestamp, frameCount, audioBufferList in
