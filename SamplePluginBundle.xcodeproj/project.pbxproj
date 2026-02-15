@@ -19,6 +19,14 @@
 		F624FDBE2EE2D843007A68B3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F67CB5932F403A54003A2869 /* keyboard-hack */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "keyboard-hack";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		F624FDA52EE2D238007A68B3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -34,6 +42,7 @@
 		F624FD9F2EE2D238007A68B3 = {
 			isa = PBXGroup;
 			children = (
+				F67CB5932F403A54003A2869 /* keyboard-hack */,
 				F624FDBE2EE2D843007A68B3 /* Info.plist */,
 				F624FDB42EE2D24E007A68B3 /* SamplePluginBundle.swift */,
 				F624FDAF2EE2D241007A68B3 /* Frameworks */,
@@ -71,6 +80,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F67CB5932F403A54003A2869 /* keyboard-hack */,
 			);
 			name = SamplePluginBundle;
 			packageProductDependencies = (
@@ -258,7 +270,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = XHA76UVA95;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SamplePluginBundle;
@@ -282,7 +294,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = XHA76UVA95;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SamplePluginBundle;

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F61AB32A2F41289F00BB69AF /* CJKKeyboardHacks.nocbundle in Bundle PlugIns */ = {isa = PBXBuildFile; fileRef = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */ = {isa = PBXBuildFile; productRef = F61AB32D2F4146CF00BB69AF /* Gesu */; };
 		F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; };
 		F624FD762EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD862EE2B2E6007A68B3 /* libpam.tbd */; };
@@ -27,6 +29,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		F61AB32B2F41293A00BB69AF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F66965032ECF26770032EF4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F61AB3172F41274E00BB69AF;
+			remoteInfo = CJKKeyboardHacks;
+		};
 		F659BDF62EF3C1730010A18E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F66965032ECF26770032EF4E /* Project object */;
@@ -37,6 +46,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		F61AB3292F41288800BB69AF /* Bundle PlugIns */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F61AB32A2F41289F00BB69AF /* CJKKeyboardHacks.nocbundle in Bundle PlugIns */,
+			);
+			name = "Bundle PlugIns";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F66965392ECF27110032EF4E /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -56,6 +76,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CJKKeyboardHacks.nocbundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = NoctilucaPluginKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F624FD862EE2B2E6007A68B3 /* libpam.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpam.tbd; path = usr/lib/libpam.tbd; sourceTree = SDKROOT; };
 		F627113E2F084EBB00E8A3D7 /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
@@ -92,6 +113,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F61AB31C2F41275F00BB69AF /* CJKKeyboardHacks */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CJKKeyboardHacks;
+			sourceTree = "<group>";
+		};
 		F6379F9C2EEAAFD9004BC795 /* pam.d */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = pam.d;
@@ -121,6 +147,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		F61AB3152F41274E00BB69AF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F659BDEF2EF3C1730010A18E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -152,6 +186,7 @@
 		F66965022ECF26770032EF4E = {
 			isa = PBXGroup;
 			children = (
+				F61AB31C2F41275F00BB69AF /* CJKKeyboardHacks */,
 				F64C01132F1B98E1009781D8 /* distutil */,
 				F6379F9C2EEAAFD9004BC795 /* pam.d */,
 				F669650D2ECF26770032EF4E /* NoctilucaServer */,
@@ -166,6 +201,7 @@
 			children = (
 				F669650B2ECF26770032EF4E /* NoctilucaServer.app */,
 				F659BDF22EF3C1730010A18E /* NoctilucaServerTests.xctest */,
+				F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -188,6 +224,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F61AB3192F41274E00BB69AF /* Build configuration list for PBXNativeTarget "CJKKeyboardHacks" */;
+			buildPhases = (
+				F61AB3142F41274E00BB69AF /* Sources */,
+				F61AB3152F41274E00BB69AF /* Frameworks */,
+				F61AB3162F41274E00BB69AF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F61AB31C2F41275F00BB69AF /* CJKKeyboardHacks */,
+			);
+			name = CJKKeyboardHacks;
+			packageProductDependencies = (
+				F61AB32D2F4146CF00BB69AF /* Gesu */,
+			);
+			productName = CJKKeyboardHacks;
+			productReference = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */;
+			productType = "com.apple.product-type.bundle";
+		};
 		F659BDF12EF3C1730010A18E /* NoctilucaServerTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F659BDFA2EF3C1730010A18E /* Build configuration list for PBXNativeTarget "NoctilucaServerTests" */;
@@ -219,10 +278,12 @@
 				F66965082ECF26770032EF4E /* Frameworks */,
 				F66965092ECF26770032EF4E /* Resources */,
 				F66965392ECF27110032EF4E /* Embed Frameworks */,
+				F61AB3292F41288800BB69AF /* Bundle PlugIns */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F61AB32C2F41293A00BB69AF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F6379F9C2EEAAFD9004BC795 /* pam.d */,
@@ -252,6 +313,9 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					F61AB3172F41274E00BB69AF = {
+						CreatedOnToolsVersion = 26.1;
+					};
 					F659BDF12EF3C1730010A18E = {
 						CreatedOnToolsVersion = 26.1;
 						TestTargetID = F669650A2ECF26770032EF4E;
@@ -285,11 +349,19 @@
 			targets = (
 				F669650A2ECF26770032EF4E /* NoctilucaServer */,
 				F659BDF12EF3C1730010A18E /* NoctilucaServerTests */,
+				F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		F61AB3162F41274E00BB69AF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F659BDF02EF3C1730010A18E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -307,6 +379,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		F61AB3142F41274E00BB69AF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F659BDEE2EF3C1730010A18E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -324,6 +403,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F61AB32C2F41293A00BB69AF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */;
+			targetProxy = F61AB32B2F41293A00BB69AF /* PBXContainerItemProxy */;
+		};
 		F659BDF72EF3C1730010A18E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
@@ -332,6 +416,56 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		F61AB31A2F41274E00BB69AF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CJKKeyboardHacks/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "CJK Keyboard Hack Bundle";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = CJKKeyboardHacks.CJKKeyboardHacksBundle;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server.bundles.CJKKeyboardHacks;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = nocbundle;
+			};
+			name = Debug;
+		};
+		F61AB31B2F41274E00BB69AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CJKKeyboardHacks/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "CJK Keyboard Hack Bundle";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = CJKKeyboardHacks.CJKKeyboardHacksBundle;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server.bundles.CJKKeyboardHacks;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = nocbundle;
+			};
+			name = Release;
+		};
 		F659BDF82EF3C1730010A18E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -612,6 +746,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		F61AB3192F41274E00BB69AF /* Build configuration list for PBXNativeTarget "CJKKeyboardHacks" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F61AB31A2F41274E00BB69AF /* Debug */,
+				F61AB31B2F41274E00BB69AF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F659BDFA2EF3C1730010A18E /* Build configuration list for PBXNativeTarget "NoctilucaServerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -669,6 +812,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F61AB32D2F4146CF00BB69AF /* Gesu */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Gesu;
+		};
 		F62689442F1E50F60030D59B /* Gesu */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Gesu;
