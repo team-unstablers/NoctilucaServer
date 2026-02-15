@@ -166,7 +166,6 @@ struct ToolbarModifierIPad: ViewModifier {
                             .position(x: principalFrame.midX, y: principalFrame.midY)
                     }
                     .ignoresSafeArea()
-                    // .background(.blue)
                     .frame(maxHeight: 0)
                 }
             }
