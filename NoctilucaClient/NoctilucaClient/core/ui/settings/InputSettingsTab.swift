@@ -73,12 +73,14 @@ struct InputSettingsTab: View {
             Section {
                 MouseRedirectionMethodPicker(input: $settingsStore.settings.input)
 #if os(iOS)
+                /*
                 if DeviceKind.current == .iPad {
                     Toggle(isOn: $settingsStore.settings.input.enableGCMouse) {
                         Text("GCMouse를 보조 수단으로 사용하기")
                         Text("Apple의 [GameController.framework](https://developer.apple.com/documentation/gamecontroller) 에서 제공하는 GCMouse를 보조 입력 수단으로 사용합니다.\n이 앱을 전체 화면으로 사용 중인 상태에서 블루투스 마우스를 연결했을 때, 휠 스크롤, 추가 버튼에 대한 지원을 받을 수 있게 됩니다.")
                     }
                 }
+                 */
 #endif
             } header: {
                 Text("마우스 입력 설정")

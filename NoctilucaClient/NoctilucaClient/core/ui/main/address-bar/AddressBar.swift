@@ -83,7 +83,7 @@ struct AddressBar: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 24)
-        .background(.white.opacity(focusPhase.isFocused ? 0.8 : 0.6))
+        .background(.background.opacity(focusPhase.isFocused ? 0.8 : 0.6))
         .overlay(alignment: .bottom) {
             if !focusPhase.isFocused, let action = self.action {
                 AddressBarProgressIndicator(progress: action.progress)
@@ -92,7 +92,7 @@ struct AddressBar: View {
         .clipShape(RoundedRectangle(cornerRadius: radiusSize))
         .with {
             if #available(macOS 26.0, iOS 26.0, *) {
-                $0.glassEffect(.regular.tint(.gray.opacity(0.05)).interactive(true), in: .rect(cornerRadius: radiusSize))
+                $0.glassEffect(.regular.interactive(true), in: .rect(cornerRadius: radiusSize))
             } else {
                 $0.background(.ultraThinMaterial)
             }
