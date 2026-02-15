@@ -238,8 +238,8 @@ struct RemoteSessionProjectionView: View {
                 }
                 
 #if os(iOS)
-                .frame(width: geometry.size.width, height: geometry.size.height + 10)
-                .position(x: geometry.frame(in: .local).midX, y: geometry.frame(in: .local).midY - 5)
+                // .frame(width: geometry.size.width, height: geometry.size.height + 10)
+                // .position(x: geometry.frame(in: .local).midX, y: geometry.frame(in: .local).midY - 5)
 #endif
 #if os(macOS)
                 /*
@@ -262,7 +262,8 @@ struct RemoteSessionProjectionView: View {
         /// - 어째서인지 iOS에서만 툴바 - 메인 뷰 사이에 10포인트의 갭이 있음
         /// - 그런데 이게 원인을 모르겠음
         /// - position: fixed; left: 0; top: -10; 같은 짓을 함으로써 해결함
-        let patchedSize = CGSize(width: size.width, height: size.height + 10)
+        // let patchedSize = CGSize(width: size.width, height: size.height + 10)
+        let patchedSize = size
 #else
         let patchedSize = size
 #endif

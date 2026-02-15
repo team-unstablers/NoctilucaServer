@@ -13,7 +13,7 @@ fileprivate struct MainWindowContentViewInternal: View {
     @EnvironmentObject
     var viewModel: SessionWindowViewModel
 
-    @StateObject
+    @ObservedObject
     var remoteSession: RemoteSession
     
     var body: some View {

@@ -61,6 +61,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                 .padding(.top, 40)
 
                 // MARK: - 최근 연결 섹션
+                /*
                 if !recentStore.records.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("최근 연결")
@@ -90,6 +91,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                     }
                     .padding(.horizontal, 24)
                 }
+                 */
 
                 // MARK: - 저장된 호스트 섹션
                 VStack(alignment: .leading, spacing: 12) {
