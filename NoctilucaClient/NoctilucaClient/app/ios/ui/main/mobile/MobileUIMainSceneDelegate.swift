@@ -40,6 +40,20 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
             await rootViewController.mainWindowViewModel?.stopSession()
         }
     }
+    
+    func sceneWillResignActive(_ scene: UIScene) {
+        if DeviceKind.current == .iPhone {
+            if NOCAudioEngine.shared.activeNodes != 0 {
+                AppNotification.backgroundSessionActive.post()
+            }
+        }
+    }
+    
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        if DeviceKind.current == .iPhone {
+            AppNotification.backgroundSessionActive.dismiss()
+        }
+    }
 }
 
 #endif

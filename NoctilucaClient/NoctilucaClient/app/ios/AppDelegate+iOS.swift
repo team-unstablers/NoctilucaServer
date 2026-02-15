@@ -18,6 +18,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             minimumLevel: .trace
         )
         
+        AppNotification.initialize()
         AddressMonitor.shared.start()
         
         return true
@@ -45,7 +46,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             return sceneConfig
         }
     }
-    
 }
 
 #endif

@@ -11,7 +11,6 @@ import SwiftUI
 @main
 struct NoctilucaClientApp: App {
     
-    
     @UIApplicationDelegateAdaptor
     private var appDelegate: AppDelegate
     
