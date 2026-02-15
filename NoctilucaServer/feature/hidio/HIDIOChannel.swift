@@ -14,6 +14,8 @@ class HIDIOChannel: Channel {
     let eventInjector = EventInjector()
     let cursorStateHolder = CursorStateHolder.shared
     
+    private var keyboardHacks: [KeyboardHackPluginV1] = []
+    
     override var serviceClass: ServiceClass { .userInput }
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
@@ -46,7 +48,7 @@ class HIDIOChannel: Channel {
                 // not implemented
                 break
             case is KeyboardSetupEvent:
-                // TODO
+                await self.handleKeyboardSetupEvent(event as! KeyboardSetupEvent)
                 break
             case is KeyboardEvent:
                 await self.inject(keyboardEvent: event as! KeyboardEvent)
@@ -67,6 +69,22 @@ class HIDIOChannel: Channel {
         }
     }
     
+    func handleKeyboardSetupEvent(_ event: KeyboardSetupEvent) async {
+        let registry = HIDIOKeyboardHackRegistry.shared
+        
+        self.keyboardHacks.removeAll()
+        
+        for hack in event.hacks {
+            let identifier = hack.identifier
+            
+            guard let hack = registry.hacks[identifier] else {
+                continue
+            }
+            
+            self.keyboardHacks.append(hack)
+        }
+    }
+    
     func inject(keyboardEvent: KeyboardEvent) async {
         switch keyboardEvent.eventType {
         case .ucs4:
@@ -79,40 +97,35 @@ class HIDIOChannel: Channel {
     }
     
     private func injectNormalKey(_ event: KeyboardEvent) async {
-        guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(event.keyCode)).toCarbonKeycode else {
+        var keyCode = NoctilucaPluginKit.LinuxKeycode(rawValue: UInt16(event.keyCode))
+        
+        for hack in self.keyboardHacks.filter({ $0.evaluate(keyCode) }) {
+            let decision = switch event.eventType {
+            case .keyDown:
+                await hack.onKeyDown(keyCode)
+            case .keyUp:
+                await hack.onKeyUp(keyCode)
+            default:
+                await hack.onKeyDown(keyCode)
+            }
+            
+            if case .modify(let modified) = decision {
+                keyCode = modified
+            } else if case .stop = decision {
+                break
+            }
+        }
+        
+        guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(keyCode.rawValue)).toCarbonKeycode else {
             logger.warning("failed to map linux keycode \(event.keyCode) to carbon keycode")
             return
         }
-        
-        let decision = if let hack = HIDIOKeyboardHackRegistry.shared.hacks.first?.value {
-            switch event.eventType {
-            case .keyDown:
-                await hack.onKeyDown(.init(rawValue: UInt16(event.keyCode)))
-            case .keyUp:
-                await hack.onKeyUp(.init(rawValue: UInt16(event.keyCode)))
-            default:
-                KeyboardHackResult.passthrough
-            }
-        } else {
-            KeyboardHackResult.passthrough
-        }
-        
-        var newKeyCode = carbonKeyCode
-        
-        switch decision {
-        case .modify(let keyCode):
-            newKeyCode = LinuxKeycode(rawValue: UInt16(keyCode.key.rawValue)).toCarbonKeycode!
-        case .stop:
-            return
-        default:
-            break
-        }
-        
+       
         switch event.eventType {
         case .keyDown:
-            eventInjector.postKeyDown(newKeyCode)
+            eventInjector.postKeyDown(carbonKeyCode)
         case .keyUp:
-            eventInjector.postKeyUp(newKeyCode)
+            eventInjector.postKeyUp(carbonKeyCode)
         default:
             break
         }
@@ -132,5 +145,11 @@ class HIDIOChannel: Channel {
     
     override func handleStreamError(error: (any Error)) {
         eventInjector.resetKeyboardState()
+    }
+}
+
+fileprivate extension KeyboardHackPluginV1 {
+    func evaluate(_ keyCode: NoctilucaPluginKit.LinuxKeycode) -> Bool {
+        return type(of: self).desiredKeyEvents.contains(keyCode)
     }
 }
