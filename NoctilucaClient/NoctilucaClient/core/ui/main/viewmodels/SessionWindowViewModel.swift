@@ -120,15 +120,15 @@ class SessionWindowViewModel: ObservableObject {
             if endpoint.address.isLoopbackAddress {
                 var shouldContinue = false
                 let alert = NOCAlert()
-                alert.title = "루프백 경고"
-                alert.message = "자기 자신에게 접속하려고 하고 있습니다. 다음과 같은 위험이 있으니 권장하지 않습니다.\n\n- 오디오 프로젝션이 활성화된 경우, 듣기 괴로울 정도의 굉음이 발생할 수 있습니다.\n- 키보드 입력이 무한히 반사되어 원치 않는 조작이 수행될 수 있습니다.\n\n계속 진행하시겠습니까?"
+                alert.title = String(localized: "main.loopback_warning.title", defaultValue: "루프백 경고")
+                alert.message = String(localized: "main.loopback_warning.message", defaultValue: "자기 자신에게 접속하려고 하고 있습니다. 다음과 같은 위험이 있으니 권장하지 않습니다.\n\n- 오디오 프로젝션이 활성화된 경우, 듣기 괴로울 정도의 굉음이 발생할 수 있습니다.\n- 키보드 입력이 무한히 반사되어 원치 않는 조작이 수행될 수 있습니다.\n\n계속 진행하시겠습니까?")
                 alert.alert.alertStyle = .critical
-                
-                alert.addButton(title: "계속") {
+
+                alert.addButton(title: String(localized: "common.continue", defaultValue: "계속")) {
                     shouldContinue = true
                 }
-                
-                alert.addButton(title: "취소") {
+
+                alert.addButton(title: String(localized: "common.cancel", defaultValue: "취소")) {
                     shouldContinue = false
                 }
                 

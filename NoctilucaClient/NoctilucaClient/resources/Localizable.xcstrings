@@ -7,6 +7,9 @@
     "-10%" : {
 
     },
+    "..." : {
+
+    },
     "**[Codec]**" : {
 
     },
@@ -56,6 +59,9 @@
 
     },
     "1.5x" : {
+
+    },
+    "2.0x" : {
 
     },
     "4K" : {
@@ -422,6 +428,23 @@
         }
       }
     },
+    "auth.certificate.expires_at_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expires at %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ 에 만료"
+          }
+        }
+      }
+    },
     "auth.certificate.info" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -439,6 +462,40 @@
         }
       }
     },
+    "auth.certificate.issued_by_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issued by %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@가 발급함"
+          }
+        }
+      }
+    },
+    "auth.certificate.key_algorithm" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key Algorithm"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키 알고리즘"
+          }
+        }
+      }
+    },
     "auth.certificate.leaf_suffix" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -452,6 +509,108 @@
           "stringUnit" : {
             "state" : "new",
             "value" : " - 리프 인증서"
+          }
+        }
+      }
+    },
+    "auth.certificate.public_key" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Public Key"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "공개 키"
+          }
+        }
+      }
+    },
+    "auth.certificate.sha256_fingerprint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SHA-256 Fingerprint"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SHA-256 지문"
+          }
+        }
+      }
+    },
+    "auth.certificate.valid_from_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid from %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ 부터 유효"
+          }
+        }
+      }
+    },
+    "auth.certificate.validity.expired" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "만료됨"
+          }
+        }
+      }
+    },
+    "auth.certificate.validity.not_yet_valid" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Yet Valid"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아직 유효하지 않음"
+          }
+        }
+      }
+    },
+    "auth.certificate.validity.valid" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유효"
           }
         }
       }
@@ -1275,6 +1434,210 @@
     "Cocoa Event Tap" : {
 
     },
+    "codec-spec.color_format.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Color Format"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동 색상 포맷"
+          }
+        }
+      }
+    },
+    "codec-spec.color_format.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown Color Format"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "알 수 없는 색상 포맷"
+          }
+        }
+      }
+    },
+    "codec-spec.compression_level" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compression Level %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축 레벨 %@"
+          }
+        }
+      }
+    },
+    "codec-spec.dynamic_range.hdr_enabled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HDR Support Enabled"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "HDR 지원 활성화됨"
+          }
+        }
+      }
+    },
+    "codec-spec.hw_accel.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Decides Hardware Acceleration"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 하드웨어 가속 사용 여부를 자동 결정"
+          }
+        }
+      }
+    },
+    "codec-spec.hw_accel.custom" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Hardware Acceleration Policy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 하드웨어 가속 사용 정책 사용자 지정"
+          }
+        }
+      }
+    },
+    "codec-spec.hw_accel.requested" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hardware Acceleration Requested"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 하드웨어 가속 사용 요청"
+          }
+        }
+      }
+    },
+    "codec-spec.profile.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Profile"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동 프로파일"
+          }
+        }
+      }
+    },
+    "codec-spec.profile.baseline" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baseline Profile"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Baseline 프로파일"
+          }
+        }
+      }
+    },
+    "codec-spec.profile.high" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High Profile"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "High 프로파일"
+          }
+        }
+      }
+    },
+    "codec-spec.profile.main" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main Profile"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main 프로파일"
+          }
+        }
+      }
+    },
+    "codec-spec.profile.main10" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main10 Profile"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main10 프로파일"
+          }
+        }
+      }
+    },
     "common.add" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1373,6 +1736,23 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "연결"
+          }
+        }
+      }
+    },
+    "common.continue" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "계속"
           }
         }
       }
@@ -1509,6 +1889,23 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "설정…"
+          }
+        }
+      }
+    },
+    "common.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "알 수 없음"
           }
         }
       }
@@ -2072,6 +2469,57 @@
         }
       }
     },
+    "main.input.keyboard.cjk_hint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm with Space / ↩︎ — CJK Composition Preview"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "스페이스 바 / ↩︎ 키로 확정 — CJK Composition Preview"
+          }
+        }
+      }
+    },
+    "main.loopback_warning.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You are trying to connect to yourself. This is not recommended due to the following risks:\n\n- If audio projection is enabled, extremely loud feedback noise may occur.\n- Keyboard input may be reflected infinitely, causing unintended actions.\n\nDo you want to continue?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자기 자신에게 접속하려고 하고 있습니다. 다음과 같은 위험이 있으니 권장하지 않습니다.\n\n- 오디오 프로젝션이 활성화된 경우, 듣기 괴로울 정도의 굉음이 발생할 수 있습니다.\n- 키보드 입력이 무한히 반사되어 원치 않는 조작이 수행될 수 있습니다.\n\n계속 진행하시겠습니까?"
+          }
+        }
+      }
+    },
+    "main.loopback_warning.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loopback Warning"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "루프백 경고"
+          }
+        }
+      }
+    },
     "main.new_connection.delete_confirm_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -2221,6 +2669,448 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "서버 주소"
+          }
+        }
+      }
+    },
+    "menu.about" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About Noctiluca Navigator"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator에 대하여"
+          }
+        }
+      }
+    },
+    "menu.app_help" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca Navigator Help"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator 도움말"
+          }
+        }
+      }
+    },
+    "menu.bring_all_to_front" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring All to Front"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모두 앞으로 가져오기"
+          }
+        }
+      }
+    },
+    "menu.close_window" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Window"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "윈도우 닫기"
+          }
+        }
+      }
+    },
+    "menu.copy" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "복사하기"
+          }
+        }
+      }
+    },
+    "menu.cut" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cut"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "잘라내기"
+          }
+        }
+      }
+    },
+    "menu.delete" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "삭제"
+          }
+        }
+      }
+    },
+    "menu.edit" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "편집"
+          }
+        }
+      }
+    },
+    "menu.enter_full_screen" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Full Screen"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전체 화면 시작"
+          }
+        }
+      }
+    },
+    "menu.file" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일"
+          }
+        }
+      }
+    },
+    "menu.help" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "도움말"
+          }
+        }
+      }
+    },
+    "menu.hide_app" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Noctiluca Navigator"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator 가리기"
+          }
+        }
+      }
+    },
+    "menu.hide_others" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Others"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기타 가리기"
+          }
+        }
+      }
+    },
+    "menu.minimize" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimize"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최소화"
+          }
+        }
+      }
+    },
+    "menu.new_window" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Window"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "새 윈도우"
+          }
+        }
+      }
+    },
+    "menu.paste" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "붙여넣기"
+          }
+        }
+      }
+    },
+    "menu.quit_app" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit Noctiluca Navigator"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator 종료"
+          }
+        }
+      }
+    },
+    "menu.redo" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다시 실행"
+          }
+        }
+      }
+    },
+    "menu.select_all" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전체 선택"
+          }
+        }
+      }
+    },
+    "menu.services" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Services"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서비스"
+          }
+        }
+      }
+    },
+    "menu.settings" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator 설정…"
+          }
+        }
+      }
+    },
+    "menu.show_all" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show All"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모두 보기"
+          }
+        }
+      }
+    },
+    "menu.undo" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "실행 취소"
+          }
+        }
+      }
+    },
+    "menu.view" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "보기"
+          }
+        }
+      }
+    },
+    "menu.window" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Window"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "윈도우"
+          }
+        }
+      }
+    },
+    "menu.zoom" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "확대/축소"
           }
         }
       }
@@ -4019,6 +4909,23 @@
         }
       }
     },
+    "session-settings.save_and_connect" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Contacts and Connect"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연락처에 저장 후 연결하기"
+          }
+        }
+      }
+    },
     "session-settings.save_and_connect.short" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4716,6 +5623,23 @@
         }
       }
     },
+    "session-settings.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세션 설정"
+          }
+        }
+      }
+    },
     "settings.general.default_connection.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4831,6 +5755,40 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "마우스 스크롤 배수"
+          }
+        }
+      }
+    },
+    "settings.input.advanced.trackpad_multiplier.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply a multiplier to cursor movement in trackpad mode.\nHigher values result in faster cursor movement."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "트랙패드 모드에서 커서 이동량에 배수를 적용합니다.\n값이 클수록 커서가 더 멀리 이동합니다."
+          }
+        }
+      }
+    },
+    "settings.input.advanced.trackpad_multiplier.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trackpad Speed Multiplier"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "트랙패드 이동 배수"
           }
         }
       }
@@ -5056,6 +6014,23 @@
         }
       }
     },
+    "settings.input.keyboard_redirection.method.cocoa_event_tap.unavailable" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cocoa Event Tap (Unavailable on this platform)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cocoa Event Tap (이 플랫폼에서는 사용할 수 없습니다)"
+          }
+        }
+      }
+    },
     "settings.input.keyboard_redirection.method.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -5239,6 +6214,278 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Option(⌥) 키"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.automatic.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically switch when a hardware mouse is connected, and revert to touch pointer when disconnected."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "하드웨어 마우스가 연결되면 자동으로 전환하고, 연결이 해제되면 터치 포인터로 복귀합니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.automatic.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic (Recommended)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동 전환 (권장)"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Determine whether to use touch input or hardware mouse input."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터치 입력과 하드웨어 마우스 입력 중 어떤 소스를 사용할지 결정합니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.hardware_mouse.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize hardware mouse if available. Touch input is ignored while a hardware mouse is connected."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가능한 경우 하드웨어 마우스를 우선 사용합니다. 하드웨어 마우스가 연결되어 있는 동안 터치 입력은 무시됩니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.hardware_mouse.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize Hardware Mouse"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "하드웨어 마우스 우선"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pointer Input Mode"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "포인터 입력 모드"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.touch_pointer.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use only touch gestures to control the pointer. Hardware mouse input is ignored."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터치 제스처만으로 포인터를 조작합니다. 하드웨어 마우스 입력은 무시됩니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.pointer_mode.touch_pointer.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Touch Pointer Only"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터치 포인터만 사용"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.touch_mode.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure how touch gestures map to mouse actions."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터치 제스처를 어떤 방식으로 마우스 동작에 매핑할지 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.touch_mode.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch Input Mode"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터치 입력 모드"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.touch_mode.touch.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch position maps directly to cursor position. Tap to move+click, drag to click+drag."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터치 위치가 곧 커서 위치가 됩니다. 탭은 이동+클릭, 드래그는 클릭+드래그로 처리합니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.touch_mode.touch.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch Mode (Default)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터치 모드 (기본)"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.touch_mode.trackpad.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move cursor with relative coordinates. Long press or two-finger tap to drag."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "상대 좌표로 커서를 이동합니다. 긴 누름 또는 두 손가락 조합으로 드래그합니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_redirection.touch_mode.trackpad.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trackpad Mode"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "트랙패드 모드"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.footer.touch" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note:\n- Touch mode moves to the tapped location and clicks.\n- Dragging is handled directly as click+drag with one finger."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "참고:\n- 터치 모드는 탭 시 해당 위치로 이동 후 클릭합니다.\n- 드래그는 한 손가락으로 바로 클릭+드래그로 처리됩니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse.footer.trackpad" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note:\n- Trackpad mode moves the cursor using relative coordinates.\n- Dragging is performed via long press or two-finger gestures."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "참고:\n- 트랙패드 모드는 상대 좌표로 커서를 이동합니다.\n- 드래그는 긴 누름 또는 두 손가락 조합으로 실행됩니다."
           }
         }
       }
@@ -5736,6 +6983,72 @@
         }
       }
     },
+    "settings.projection.jitter_buffer.low_latency" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "저지연 (추천)"
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer.low_latency.desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지연 시간을 줄이는 것을 목표로 합니다.\n네트워크 상태가 양호할 때 사용하세요."
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer.prioritize_stability" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "안정성 우선"
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer.prioritize_stability.desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "버퍼를 넉넉하게 잡아 네트워크 지터에 강한 안정적인 재생을 합니다.\n딜레이가 다소 있을 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer.ultra_low_latency" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "초저지연"
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer.ultra_low_latency.desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지연 시간 최소화를 최우선으로 합니다.\n네트워크 상태가 좋지 않으면 끊김이나 프레임 드롭이 빈번해질 수 있습니다."
+          }
+        }
+      }
+    },
     "settings.projection.navigation_title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6208,6 +7521,23 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "보안"
+          }
+        }
+      }
+    },
+    "settings.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "설정"
           }
         }
       }
