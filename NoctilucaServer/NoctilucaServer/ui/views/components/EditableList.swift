@@ -35,6 +35,12 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
     
     /// Text for the empty state.
     var emptyText: String
+
+    /// Whether deletion is allowed.
+    var canDelete: Bool
+
+    /// Whether reordering via drag is allowed.
+    var canReorder: Bool
     
     // MARK: - View Builders
     
@@ -66,6 +72,8 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
         title: String? = nil,
         description: String? = nil,
         emptyText: String = "목록이 비어있습니다.",
+        canDelete: Bool = true,
+        canReorder: Bool = true,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent,
         @ViewBuilder addSheet: @escaping (@escaping (Item) -> Void) -> AddSheet,
         @ViewBuilder editSheet: @escaping (Item, @escaping (Item) -> Void) -> EditSheet
@@ -76,6 +84,8 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
         self.title = title
         self.description = description
         self.emptyText = emptyText
+        self.canDelete = canDelete
+        self.canReorder = canReorder
         self.rowContent = rowContent
         self.addSheet = addSheet
         self.editSheet = editSheet
@@ -105,29 +115,33 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
             listBody
             
             // Footer Actions
-            HStack {
-                Spacer()
-                
-                // Delete Button
-                Button("삭제", role: .destructive) {
-                    removeSelected()
-                }
-                .disabled(selection.isEmpty)
-                
-                // Edit Button (Only visible if EditSheet is provided and 1 item is selected)
-                if canEdit {
-                    Button("편집") {
-                        if selection.count == 1 {
-                            isEditSheetPresented = true
+            if canDelete || canEdit || canAdd {
+                HStack {
+                    Spacer()
+
+                    // Delete Button
+                    if canDelete {
+                        Button("삭제", role: .destructive) {
+                            removeSelected()
                         }
+                        .disabled(selection.isEmpty)
                     }
-                    .disabled(selection.count != 1)
-                }
-                
-                // Add Button (Only visible if AddSheet is provided)
-                if canAdd {
-                    Button("추가") {
-                        isAddSheetPresented = true
+
+                    // Edit Button (Only visible if EditSheet is provided and 1 item is selected)
+                    if canEdit {
+                        Button("편집") {
+                            if selection.count == 1 {
+                                isEditSheetPresented = true
+                            }
+                        }
+                        .disabled(selection.count != 1)
+                    }
+
+                    // Add Button (Only visible if AddSheet is provided)
+                    if canAdd {
+                        Button("추가") {
+                            isAddSheetPresented = true
+                        }
                     }
                 }
             }
@@ -170,15 +184,18 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                  Text(emptyText)
                      .foregroundStyle(.secondary)
             } else {
-                ForEach(items, id: idKeyPath) { item in
-                    // In existing views, there was a workaround for Edit button inside the row
-                    // "if (selection.first == specification.hashValue) { ... Edit Button }"
-                    // Since we moved Edit button to the footer (standard macOS/iOS pattern),
-                    // we just render the row.
-                    rowContent(item)
-                        .tag(item[keyPath: idKeyPath])
+                if canReorder {
+                    ForEach(items, id: idKeyPath) { item in
+                        rowContent(item)
+                            .tag(item[keyPath: idKeyPath])
+                    }
+                    .onMove(perform: moveItems)
+                } else {
+                    ForEach(items, id: idKeyPath) { item in
+                        rowContent(item)
+                            .tag(item[keyPath: idKeyPath])
+                    }
                 }
-                .onMove(perform: moveItems)
             }
         }
         .listStyle(.inset)
@@ -206,6 +223,8 @@ extension EditableList where AddSheet == EmptyView {
         title: String? = nil,
         description: String? = nil,
         emptyText: String = "목록이 비어있습니다.",
+        canDelete: Bool = true,
+        canReorder: Bool = true,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent,
         @ViewBuilder editSheet: @escaping (Item, @escaping (Item) -> Void) -> EditSheet
     ) {
@@ -216,6 +235,8 @@ extension EditableList where AddSheet == EmptyView {
             title: title,
             description: description,
             emptyText: emptyText,
+            canDelete: canDelete,
+            canReorder: canReorder,
             rowContent: rowContent,
             addSheet: { _ in EmptyView() },
             editSheet: editSheet
@@ -231,6 +252,8 @@ extension EditableList where EditSheet == EmptyView {
         title: String? = nil,
         description: String? = nil,
         emptyText: String = "목록이 비어있습니다.",
+        canDelete: Bool = true,
+        canReorder: Bool = true,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent,
         @ViewBuilder addSheet: @escaping (@escaping (Item) -> Void) -> AddSheet
     ) {
@@ -241,6 +264,8 @@ extension EditableList where EditSheet == EmptyView {
             title: title,
             description: description,
             emptyText: emptyText,
+            canDelete: canDelete,
+            canReorder: canReorder,
             rowContent: rowContent,
             addSheet: addSheet,
             editSheet: { _, _ in EmptyView() }
@@ -256,6 +281,8 @@ extension EditableList where AddSheet == EmptyView, EditSheet == EmptyView {
         title: String? = nil,
         description: String? = nil,
         emptyText: String = "목록이 비어있습니다.",
+        canDelete: Bool = false,
+        canReorder: Bool = false,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent
     ) {
         self.init(
@@ -265,6 +292,8 @@ extension EditableList where AddSheet == EmptyView, EditSheet == EmptyView {
             title: title,
             description: description,
             emptyText: emptyText,
+            canDelete: canDelete,
+            canReorder: canReorder,
             rowContent: rowContent,
             addSheet: { _ in EmptyView() },
             editSheet: { _, _ in EmptyView() }
