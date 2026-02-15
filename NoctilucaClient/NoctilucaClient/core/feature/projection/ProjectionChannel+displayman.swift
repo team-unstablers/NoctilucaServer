@@ -12,7 +12,7 @@ import SiriusKitClient
 // MARK: - Displayman Request/Response
 
 extension ProjectionChannel {
-    
+
     /// DisplayListRequest를 전송하고 응답을 기다립니다.
     func requestDisplayList(flags: DisplayListRequestFlags = []) async throws -> DisplayListResponse {
         let requestID = nextRequestID()
@@ -26,10 +26,10 @@ extension ProjectionChannel {
             )
         )
     }
-    
+
     func updateDisplayLayout() async throws {
         let response = try await requestDisplayList()
-        
+
         for displayInfo in response.displays {
             await displayLayoutManager.update(displayInfo)
         }
@@ -38,7 +38,7 @@ extension ProjectionChannel {
     /// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
     func subscribeDisplayChanges(eventMask: DisplayChangeEventType = []) async throws -> SubscribeDisplayChangesResponse {
         let requestID = nextRequestID()
-        
+
         let response: SubscribeDisplayChangesResponse = try await self.sendRequest(
             requestID: requestID,
             opcode: .subscribeDisplayChangesRequest,
@@ -48,14 +48,14 @@ extension ProjectionChannel {
                 flags: 0
             )
         )
-        
-        self.displayChangesSubscriptionID = response.subscriptionID
+
+        await state.setDisplayChangesSubscriptionID(response.subscriptionID)
         return response
     }
 
     /// 디스플레이 변경 이벤트 구독을 해제합니다.
     func unsubscribeDisplayChanges() async throws {
-        guard let subscriptionID = self.displayChangesSubscriptionID else {
+        guard let subscriptionID = await state.displayChangesSubscriptionID else {
             return
         }
 
@@ -66,7 +66,7 @@ extension ProjectionChannel {
             subscriptionID: subscriptionID
         ))
 
-        self.displayChangesSubscriptionID = nil
+        await state.setDisplayChangesSubscriptionID(nil)
     }
 
     /// DisplayChangedEvent를 처리합니다. 디바운스 Subject로 전달합니다.
@@ -74,8 +74,8 @@ extension ProjectionChannel {
         self.logger.info("Received DisplayChangedEvent: eventType=\(event.eventType.rawValue), displayID=\(event.display.displayID)")
         await displayLayoutManager.consumeDisplayChangeEvent(event)
     }
-    
-    
+
+
     /// 서버에서 디스플레이 목록을 조회하고 메인 디스플레이 ID를 반환합니다.
     func fetchPrimaryDisplayID() async throws -> Int32 {
         // FIXME: 매번 새로 받지 말고, 캐싱 좀 하세요
@@ -97,7 +97,7 @@ extension ProjectionChannel {
         self.logger.warning("No displays found, using default display ID -1")
         return -1
     }
-    
+
 
     // TODO: 이거는 다른 곳에서 처리할 예정
     private func handleDebouncedDisplayChange(_ event: DisplayChangedEvent) async {
@@ -114,14 +114,14 @@ extension ProjectionChannel {
         self.logger.info("Main display changed, restarting projection...")
 
         // 기존 세션 중지
-        for (_, session) in self.sessions {
+        let allSessions = await state.removeAllSessions()
+        for session in allSessions {
             do {
                 try await session.stop()
             } catch {
                 self.logger.error("Failed to stop existing projection session: \(error)")
             }
         }
-        self.sessions.removeAll()
 
         // 새로운 디스플레이 정보 조회 및 프로젝션 재시작
         do {

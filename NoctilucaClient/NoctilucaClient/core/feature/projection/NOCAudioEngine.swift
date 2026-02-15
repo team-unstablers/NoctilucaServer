@@ -20,7 +20,7 @@ final class NOCAudioEngine: @unchecked Sendable {
     private let engine = AVAudioEngine()
     private let queue = DispatchQueue(label: "app.noctiluca.client.audio-engine")
 
-    private var activeNodes: Int = 0
+    private(set) var activeNodes: Int = 0
 
     private init() {
         logger.info("NOCAudioEngine initialized")

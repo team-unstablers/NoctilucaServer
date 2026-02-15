@@ -11,10 +11,10 @@ import Combine
 import SiriusKitClient
 
 extension ProjectionChannel {
-    
+
     /// 프로젝션 세션 생성 요청을 보냅니다.
     private func requestSession(identifier: UUID, displayID: Int32, preferredCodecs: [Codec]) async throws -> ProjectionSessionCreatedEvent {
-        
+
         let response = try await self.sendSessionRequest(
             sessionID: identifier,
             opcode: .projectionRequest,
@@ -27,10 +27,10 @@ extension ProjectionChannel {
                 preferredCodecs: preferredCodecs
             ),
         ) as ProjectionSessionCreatedEvent
-        
+
         return response
     }
-    
+
     private func buildPreferredCodecs(from projectionSettings: SessionSettings.Projection?) -> [Codec] {
         guard let projectionSettings else {
             return CodecSpecification.defaultSpecifications.map { $0.toSiriusKitCodec() }
@@ -50,7 +50,7 @@ extension ProjectionChannel {
             return applyNegotiationPolicy(projectionSettings.codecNegotiationPolicy, to: codecs)
         }
     }
-    
+
     private func applyNegotiationPolicy(_ policy: SessionSettings.CodecNegotiationPolicy, to codecs: [Codec]) -> [Codec] {
         let shouldForceMandatory = policy == .asMandatory
 
@@ -89,16 +89,17 @@ extension ProjectionChannel {
                 return
             }
 
-            self.registerPendingAudioSessionRequest(
-                identifier: identifier,
-                timeout: timeout,
-                continuation: continuation
-            )
-
             Task { [weak self] in
                 guard let self else {
+                    continuation.resume(throwing: ProjectionChannelError.channelClosed)
                     return
                 }
+
+                await self.registerPendingAudioSessionRequest(
+                    identifier: identifier,
+                    timeout: timeout,
+                    continuation: continuation
+                )
 
                 do {
                     try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
@@ -109,7 +110,7 @@ extension ProjectionChannel {
                     self.logger.info("Sent AudioProjectionRequest: identifier=\(identifier)")
                 } catch {
                     self.logger.error("Failed to send AudioProjectionRequest: \(error)")
-                    _ = self.failPendingAudioSessionRequest(identifier: identifier, error: error)
+                    _ = await self.state.failPendingAudioSessionRequest(identifier, error: error)
                 }
             }
         }
@@ -136,17 +137,17 @@ extension ProjectionChannel {
         try await session.prepare(codec: response.codec)
         try await session.start()
 
-        self.sessions[identifier] = session
-        
+        await state.setSession(identifier, session)
+
         defer {
             Task { @MainActor in
                 self.events.send(.sessionCreated(session))
             }
         }
-        
+
         return session
     }
-    
+
     // TODO: AudioProjectionSession을 반환해야 함
     func createAudioSession(for source: AudioSource, projectionSettings: SessionSettings.Projection?) async throws {
         let audioSpecs = projectionSettings?.audioCodecSpecifications ?? [.opus]
@@ -189,30 +190,30 @@ extension ProjectionChannel {
 
         throw ProjectionChannelError.sessionCreationCancelled
     }
-    
+
     /// 모든 projection session을 중지하고 리소스를 정리합니다.
     func stopAllSessions() async {
-        cancelAllPendingAudioSessionRequests()
+        await state.cancelAllPendingAudioSessionRequests()
 
         // 모든 비디오 세션 중지
-        for (_, session) in sessions {
+        let allSessions = await state.removeAllSessions()
+        for session in allSessions {
             do {
                 try await session.stop()
             } catch {
                 logger.warning("Failed to stop projection session: \(error)")
             }
         }
-        sessions.removeAll()
 
         // 모든 오디오 세션 중지
-        for (_, session) in audioSessions {
+        let allAudioSessions = await state.removeAllAudioSessions()
+        for session in allAudioSessions {
             do {
                 try session.stop()
             } catch {
                 logger.warning("Failed to stop audio projection session: \(error)")
             }
         }
-        audioSessions.removeAll()
     }
 
     // MARK: - Server-initiated session events
@@ -225,7 +226,7 @@ extension ProjectionChannel {
 
         logger.info("Projection session ended: identifier=\(identifier), reason=\(event.reason)")
 
-        guard let session = self.sessions[identifier] else {
+        guard let session = await state.removeSession(identifier) else {
             logger.warning("No projection session found for identifier: \(identifier)")
             return
         }
@@ -235,8 +236,6 @@ extension ProjectionChannel {
         } catch {
             logger.error("Failed to stop projection session \(identifier): \(error)")
         }
-
-        self.sessions.removeValue(forKey: identifier)
 
         Task { @MainActor in
             self.events.send(.sessionDestroyed(identifier, reason: event.message ?? "reason=\(event.reason)"))
@@ -251,7 +250,7 @@ extension ProjectionChannel {
 
         logger.info("Projection session changed: identifier=\(identifier), reason=\(event.reason)")
 
-        guard let session = self.sessions[identifier] else {
+        guard let session = await state.getSession(identifier) else {
             logger.warning("No projection session found for identifier: \(identifier)")
             return
         }

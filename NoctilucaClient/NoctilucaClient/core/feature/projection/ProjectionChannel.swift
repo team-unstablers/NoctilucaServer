@@ -44,48 +44,37 @@ enum ProjectionChannelEvent: Sendable {
     case sessionCreated(ProjectionSession)
     /// 화면 프로젝션 세션이 종료되었습니다.
     case sessionDestroyed(UUID, reason: String)
-    
+
     /// 오디오 프로젝션 세션이 생성되었습니다.
     case audioSessionCreated(AudioProjectionSession)
     /// 오디오 프로젝션 세션이 종료되었습니다.
     case audioSessionDestroyed(UUID, reason: String)
-    
+
     /// 디스플레이 변경 이벤트가 발생했습니다.
     // case displayLayoutChanged() // TODO: 전체 레이아웃을 들고 있거나 하는게 좋을거같음
-    
+
     /// 커서 이미지가 변경되었습니다.
     case cursorImageChanged(CursorImageEvent)
-    
+
     /// 커서 위치가 변경되었습니다.
     case cursorMoved(CursorMoveEvent)
 }
 
 class ProjectionChannel: Channel {
-    private struct PendingAudioSessionRequest {
-        let continuation: CheckedContinuation<AudioSessionCreatedEvent, Error>
-        let timeoutTask: Task<Void, Never>
-    }
-
     let logger = NoctilucaLogger(category: "ProjectionChannel")
-    
+
     override var serviceClass: ServiceClass { .userInput }
 
     /// Request ID 생성을 위한 atomic 카운터
     private let requestCounter = ManagedAtomic<UInt64>(0)
 
-    var sessions: [UUID: ProjectionSession] = [:]
-    var audioSessions: [UUID: AudioProjectionSession] = [:]
+    /// Actor-isolated mutable state
+    let state = ProjectionChannelState()
 
-    private var pendingSessions: [UUID:   (any DecodableSiriusMessage) -> Void] = [:]
-    private var pendingRequests: [UInt64: (any DecodableSiriusMessage) -> Void] = [:]
-    private var pendingAudioSessionRequests: [UUID: PendingAudioSessionRequest] = [:]
-    
-    var displayChangesSubscriptionID: UUID? = nil
-    
     let displayLayoutManager = DisplayLayoutManager()
 
     let events = PassthroughSubject<ProjectionChannelEvent, Never>()
-    
+
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
 
@@ -96,15 +85,14 @@ class ProjectionChannel: Channel {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
-        
+
         switch frame.opcode {
         case .projectionSessionCreatedEvent:
             let event = try ProjectionSessionCreatedEvent.fromProtobufBytes(frame.data)
             self.logger.info("Received ProjectionSessionCreatedEvent: sessionId=\(event.identifier)")
 
-            if let continuation = self.pendingSessions[event.identifier] {
-                continuation(event)
-            } else {
+            let dispatched = await state.dispatchPendingSession(event.identifier, message: event)
+            if !dispatched {
                 self.logger.warning("No pending session found for identifier: \(event.identifier)")
             }
 
@@ -124,11 +112,11 @@ class ProjectionChannel: Channel {
 
         case .displayListResponse:
             let response = try DisplayListResponse.fromProtobufBytes(frame.data)
-            self.dispatchResponse(requestID: response.requestID, message: response)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
 
         case .subscribeDisplayChangesResponse:
             let response = try SubscribeDisplayChangesResponse.fromProtobufBytes(frame.data)
-            self.dispatchResponse(requestID: response.requestID, message: response)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
 
         case .displayChangedEvent:
             let event = try DisplayChangedEvent.fromProtobufBytes(frame.data)
@@ -142,7 +130,7 @@ class ProjectionChannel: Channel {
 
         case .audioSessionCreationFailedEvent:
             let event = try AudioSessionCreationFailedEvent.fromProtobufBytes(frame.data)
-            self.handleAudioSessionCreationFailedEvent(event)
+            await self.handleAudioSessionCreationFailedEvent(event)
 
         case .audioSessionEndedEvent:
             let event = try AudioSessionEndedEvent.fromProtobufBytes(frame.data)
@@ -152,18 +140,16 @@ class ProjectionChannel: Channel {
             break
         }
     }
-    
+
     /// 다음 request ID를 생성합니다.
     func nextRequestID() -> UInt64 {
         requestCounter.loadThenWrappingIncrement(ordering: .relaxed)
     }
-    
-    func dispatchResponse(requestID: UInt64, message: any DecodableSiriusMessage) {
-        if let handler = self.pendingRequests[requestID] {
-            handler(message)
-            self.pendingRequests.removeValue(forKey: requestID)
-        } else {
-             self.logger.warning("No pending request found for requestID: \(requestID)")
+
+    func dispatchResponse(requestID: UInt64, message: any DecodableSiriusMessage) async {
+        let dispatched = await state.dispatchPendingRequest(requestID, message: message)
+        if !dispatched {
+            self.logger.warning("No pending request found for requestID: \(requestID)")
         }
     }
 
@@ -171,43 +157,17 @@ class ProjectionChannel: Channel {
         identifier: UUID,
         timeout: TimeInterval,
         continuation: CheckedContinuation<AudioSessionCreatedEvent, Error>
-    ) {
+    ) async {
         let timeoutNanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
         let timeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: timeoutNanoseconds)
-            self?.handleAudioSessionRequestTimeout(identifier: identifier, timeout: timeout)
+            await self?.handleAudioSessionRequestTimeout(identifier: identifier, timeout: timeout)
         }
 
-        pendingAudioSessionRequests[identifier] = PendingAudioSessionRequest(
+        await state.registerPendingAudioSessionRequest(identifier, request: PendingAudioSessionRequest(
             continuation: continuation,
             timeoutTask: timeoutTask
-        )
-    }
-
-    @discardableResult
-    func succeedPendingAudioSessionRequest(identifier: UUID, event: AudioSessionCreatedEvent) -> Bool {
-        guard let pending = pendingAudioSessionRequests.removeValue(forKey: identifier) else {
-            return false
-        }
-
-        pending.timeoutTask.cancel()
-        pending.continuation.resume(returning: event)
-        return true
-    }
-
-    @discardableResult
-    func failPendingAudioSessionRequest(identifier: UUID, error: Error) -> Bool {
-        guard let pending = pendingAudioSessionRequests.removeValue(forKey: identifier) else {
-            return false
-        }
-
-        pending.timeoutTask.cancel()
-        pending.continuation.resume(throwing: error)
-        return true
-    }
-
-    func hasPendingAudioSessionRequest(identifier: UUID) -> Bool {
-        pendingAudioSessionRequests[identifier] != nil
+        ))
     }
 
     func sendStopAudioProjectionRequest(identifier: UUID) {
@@ -227,27 +187,17 @@ class ProjectionChannel: Channel {
         }
     }
 
-    func cancelAllPendingAudioSessionRequests(with error: Error = ProjectionChannelError.sessionCreationCancelled) {
-        let pendingRequests = pendingAudioSessionRequests
-        pendingAudioSessionRequests.removeAll()
-
-        for (_, pending) in pendingRequests {
-            pending.timeoutTask.cancel()
-            pending.continuation.resume(throwing: error)
-        }
-    }
-
-    private func handleAudioSessionRequestTimeout(identifier: UUID, timeout: TimeInterval) {
-        let didFailPending = failPendingAudioSessionRequest(
-            identifier: identifier,
+    private func handleAudioSessionRequestTimeout(identifier: UUID, timeout: TimeInterval) async {
+        let didFailPending = await state.failPendingAudioSessionRequest(
+            identifier,
             error: ProjectionChannelError.audioSessionCreationTimedOut(identifier: identifier, timeout: timeout)
         )
         if didFailPending {
             sendStopAudioProjectionRequest(identifier: identifier)
         }
     }
-    
-    
+
+
    func sendSessionRequest<T: DecodableSiriusMessage>(
         sessionID: UUID,
         opcode: MessageOpcode,
@@ -258,18 +208,22 @@ class ProjectionChannel: Channel {
                 continuation.resume(throwing: ProjectionChannelError.channelClosed)
                 return
             }
-            
-            self.pendingSessions[sessionID] = { response in
-                if let typedResponse = response as? T {
-                    continuation.resume(returning: typedResponse)
-                } else {
-                    self.logger.error("Type mismatch for request \(sessionID): expected \(T.self), got \(type(of: response))")
-                    continuation.resume(throwing: ChannelError.invalidFrame)
-                }
-            }
-            
+
             Task {
-                try await self.send(opcode: opcode, message: message)
+                await self.state.registerPendingSession(sessionID) { response in
+                    if let typedResponse = response as? T {
+                        continuation.resume(returning: typedResponse)
+                    } else {
+                        continuation.resume(throwing: ChannelError.invalidFrame)
+                    }
+                }
+
+                do {
+                    try await self.send(opcode: opcode, message: message)
+                } catch {
+                    await self.state.removePendingSession(sessionID)
+                    continuation.resume(throwing: error)
+                }
             }
         }
     }
@@ -284,18 +238,22 @@ class ProjectionChannel: Channel {
                 continuation.resume(throwing: ProjectionChannelError.channelClosed)
                 return
             }
-            
-            self.pendingRequests[requestID] = { response in
-                if let typedResponse = response as? T {
-                    continuation.resume(returning: typedResponse)
-                } else {
-                    self.logger.error("Type mismatch for request \(requestID): expected \(T.self), got \(type(of: response))")
-                    continuation.resume(throwing: ChannelError.invalidFrame)
-                }
-            }
-            
+
             Task {
-                try await self.send(opcode: opcode, message: message)
+                await self.state.registerPendingRequest(requestID) { response in
+                    if let typedResponse = response as? T {
+                        continuation.resume(returning: typedResponse)
+                    } else {
+                        continuation.resume(throwing: ChannelError.invalidFrame)
+                    }
+                }
+
+                do {
+                    try await self.send(opcode: opcode, message: message)
+                } catch {
+                    _ = await self.state.dispatchPendingRequest(requestID, message: message)
+                    continuation.resume(throwing: error)
+                }
             }
         }
     }
