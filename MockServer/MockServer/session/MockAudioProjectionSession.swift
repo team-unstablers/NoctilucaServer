@@ -87,16 +87,31 @@ class MockAudioProjectionSession: Identifiable {
             }
         }
 
-        // Reader loop: reader -> encoder
+        // Reader loop: reader -> encoder (절대 시간 기준 실시간 페이싱)
         guard let reader = self.reader else { return }
+        let sampleRate = reader.sampleRate
 
         self.readerLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
 
+            let startTime = ContinuousClock.now
+            var totalSamplesRead: Int64 = 0
+
             while !Task.isCancelled {
                 do {
                     let sampleBuffer = try await reader.readNextSample()
+                    let sampleCount = CMSampleBufferGetNumSamples(sampleBuffer)
                     try encoder.encode(sampleBuffer: sampleBuffer)
+
+                    totalSamplesRead += Int64(sampleCount)
+
+                    // 절대 시간 기준 페이싱: 시작 시점 + 누적 오디오 재생 시간까지 대기
+                    let expectedElapsed = Duration.microseconds(Int64(Double(totalSamplesRead) / sampleRate * 1_000_000))
+                    let targetTime = startTime + expectedElapsed
+                    let now = ContinuousClock.now
+                    if targetTime > now {
+                        try await Task.sleep(until: targetTime, clock: .continuous)
+                    }
                 } catch is CancellationError {
                     return
                 } catch {
