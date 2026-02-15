@@ -20,6 +20,7 @@ struct SessionSettings: Codable, Sendable {
     var scope: SessionSettingsScope = .global
     var general: General? = nil
     var projection: Projection = .init()
+    var input: Input = .init()
     var security: Security = .init()
     var credentials: CredentialsRef = .init()
 
@@ -27,12 +28,14 @@ struct SessionSettings: Codable, Sendable {
         scope: SessionSettingsScope = .global,
         general: General? = nil,
         projection: Projection = .init(),
+        input: Input = .init(),
         security: Security = .init(),
         credentials: CredentialsRef = .init()
     ) {
         self.scope = scope
         self.general = general
         self.projection = projection
+        self.input = input
         self.security = security
         self.credentials = credentials
 
@@ -46,6 +49,7 @@ struct SessionSettings: Codable, Sendable {
         case scope
         case general
         case projection
+        case input
         case security
         case credentials
     }
@@ -61,6 +65,7 @@ struct SessionSettings: Codable, Sendable {
         scope = container.decodeSafe(SessionSettingsScope.self, forKey: .scope, default: scope)
         general = container.decodeSafeIfPresent(General.self, forKey: .general)
         projection = container.decodeSafe(Projection.self, forKey: .projection, default: projection)
+        input = container.decodeSafe(Input.self, forKey: .input, default: input)
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         credentials = container.decodeSafe(CredentialsRef.self, forKey: .credentials, default: credentials)
 
@@ -199,6 +204,12 @@ extension SessionSettings {
 
     enum FingerprintAlgorithm: String, Codable, Sendable, Hashable {
         case sha256
+    }
+}
+
+extension SessionSettings {
+    struct Input: Codable, Sendable {
+        var enabledKeyboardHacks: Set<String> = []
     }
 }
 
