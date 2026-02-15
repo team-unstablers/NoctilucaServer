@@ -12,7 +12,7 @@ final class MockServerRoleClientTransport: ServerRoleClientTransport {
 
     weak var delegate: ServerRoleClientTransportDelegate?
 
-    var remoteAddress: String? = "127.0.0.1"
+    var remoteEndpoint: SREndpoint? = SREndpoint(address: .IPv4(0x7F000001))
 
     // MARK: - Tracking
 

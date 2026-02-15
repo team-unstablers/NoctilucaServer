@@ -233,7 +233,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         let clientTransport = ServerRoleMsQuicClientTransport(
             connection: quicConnection,
             serverTransport: self,
-            remoteAddress: connectionInfo.remoteAddress.description,
+            remoteEndpoint: SREndpoint(msQuicAddress: connectionInfo.remoteAddress),
             id: ServerRoleClientTransportIdentifier()
         )
 

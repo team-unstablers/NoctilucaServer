@@ -92,7 +92,7 @@ class NoctilucaClientSession: Identifiable {
             return
         }
         
-        self.remoteAddress = session.remoteAddress ?? "(unknown)"
+        self.remoteAddress = session.remoteEndpoint?.description ?? "(unknown)"
         
         // 우선 5초 이내에 client hello를 받아야 한다
         // TODO: 이 값은 설정 가능하도록 한다

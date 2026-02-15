@@ -33,22 +33,22 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
 
     private var streams: [StreamIdentifier: ServerRoleMsQuicStream] = [:]
     private let isFinalized = ManagedAtomic(false)
-    private let remoteAddressLock: OSAllocatedUnfairLock<String?>
+    private let remoteEndpointLock: OSAllocatedUnfairLock<SREndpoint?>
 
-    nonisolated var remoteAddress: String? {
-        remoteAddressLock.withLock { $0 }
+    nonisolated var remoteEndpoint: SREndpoint? {
+        remoteEndpointLock.withLock { $0 }
     }
 
     init(
         connection: QuicConnection,
         serverTransport: ServerRoleMsQuicRootTransport,
-        remoteAddress: String?,
+        remoteEndpoint: SREndpoint?,
         id: ServerRoleClientTransportIdentifier
     ) {
         self.id = id
         self.connection = connection
         self.serverTransport = serverTransport
-        self.remoteAddressLock = OSAllocatedUnfairLock(initialState: remoteAddress)
+        self.remoteEndpointLock = OSAllocatedUnfairLock(initialState: remoteEndpoint)
     }
 
     deinit {
@@ -151,17 +151,17 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     }
 
     internal func handlePeerAddressChanged(_ address: QuicAddress) {
-        let updatedAddress = address.description
-        let previousAddress = self.remoteAddressLock.withLock { state -> String? in
+        let updatedEndpoint = SREndpoint(msQuicAddress: address)
+        let previousEndpoint = self.remoteEndpointLock.withLock { state -> SREndpoint? in
             let previous = state
-            state = updatedAddress
+            state = updatedEndpoint
             return previous
         }
-        guard previousAddress != updatedAddress else {
+        guard previousEndpoint != updatedEndpoint else {
             return
         }
 
-        Self.logger.debug("MsQuic peer address changed. id=\(self.id), old=\(previousAddress ?? "(unknown)"), new=\(updatedAddress)")
+        Self.logger.debug("MsQuic peer address changed. id=\(self.id), old=\(previousEndpoint?.description ?? "(unknown)"), new=\(updatedEndpoint)")
     }
 
     internal func registerStream(_ stream: ServerRoleMsQuicStream) {

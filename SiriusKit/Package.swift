@@ -38,6 +38,7 @@ let package = Package(
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
                 .product(name: "Atomics", package: "swift-atomics"),
+                .product(name: "SwiftMsQuicStatic", package: "swift-msquic"),
             ],
             path: "Sources/SiriusKitCore",
             plugins: [

@@ -25,12 +25,12 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
 
     private var isFinalized: Bool = false
 
-    nonisolated var remoteAddress: String? {
+    nonisolated var remoteEndpoint: SREndpoint? {
         guard let endpoint = self.connectionGroup.descriptor.members.first else {
             return nil
         }
 
-        return endpoint.asString()
+        return SREndpoint(from: endpoint)
     }
 
     init(_ connectionGroup: NWConnectionGroup, serverTransport: ServerRoleQUICRootTransport, id: ServerRoleClientTransportIdentifier) {

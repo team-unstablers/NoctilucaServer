@@ -343,7 +343,7 @@ extension SREndpoint {
     }
 
     /// in6_addr를 (high, low) UInt64 튜플로 변환합니다.
-    private static func in6AddrToHighLow(_ addr: in6_addr) -> (high: UInt64, low: UInt64) {
+    package static func in6AddrToHighLow(_ addr: in6_addr) -> (high: UInt64, low: UInt64) {
         withUnsafeBytes(of: addr) { ptr in
             let high = UInt64(bigEndian: ptr.load(fromByteOffset: 0, as: UInt64.self))
             let low = UInt64(bigEndian: ptr.load(fromByteOffset: 8, as: UInt64.self))
