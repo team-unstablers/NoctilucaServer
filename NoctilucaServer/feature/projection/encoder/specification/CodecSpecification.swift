@@ -174,64 +174,64 @@ extension CodecSpecification {
     
     fileprivate var commonDescription: String {
         var entries: [String] = []
-        
+
         let profile = self.option(.profile) ?? .kProfileAuto
-        
+
         switch profile {
         case .kProfileH264High:
-            entries.append("High 프로파일")
+            entries.append(String(localized: "codec-spec.profile.high", defaultValue: "High 프로파일"))
         case .kProfileH264Main:
-            entries.append("Main 프로파일")
+            entries.append(String(localized: "codec-spec.profile.main", defaultValue: "Main 프로파일"))
         case .kProfileH264Baseline:
-            entries.append("Baseline 프로파일")
-            
+            entries.append(String(localized: "codec-spec.profile.baseline", defaultValue: "Baseline 프로파일"))
+
         case .kProfileHEVCMain:
-            entries.append("Main 프로파일")
-            
+            entries.append(String(localized: "codec-spec.profile.main", defaultValue: "Main 프로파일"))
+
         case .kProfileHEVCMain10:
-            entries.append("Main10 프로파일")
-            
+            entries.append(String(localized: "codec-spec.profile.main10", defaultValue: "Main10 프로파일"))
+
         default:
-            entries.append("자동 프로파일")
+            entries.append(String(localized: "codec-spec.profile.auto", defaultValue: "자동 프로파일"))
         }
-        
+
         let colorFormat = self.option(.colorFormat) ?? .kColorFormatAuto
-        
+
         switch colorFormat {
         case .kColorFormatAuto:
-            entries.append("자동 색상 포맷")
+            entries.append(String(localized: "codec-spec.color_format.auto", defaultValue: "자동 색상 포맷"))
         case .kColorFormatYUV420:
             entries.append("YUV 4:2:0")
         case .kColorFormatYUV444:
             entries.append("YUV 4:4:4")
         default:
-            entries.append("알 수 없는 색상 포맷")
+            entries.append(String(localized: "codec-spec.color_format.unknown", defaultValue: "알 수 없는 색상 포맷"))
         }
-        
+
         let hardwareAcceleration = self.option(.hardwareAcceleration) ?? .kHardwareAccelerationFalse
-        
+
         switch hardwareAcceleration {
         case .kHardwareAccelerationAuto:
-            entries.append("가능한 경우 하드웨어 가속 사용")
+            entries.append(String(localized: "codec-spec.hw_accel.auto", defaultValue: "가능한 경우 하드웨어 가속 사용"))
         case .kHardwareAccelerationFalse:
-            entries.append("하드웨어 가속 사용 안 함")
+            entries.append(String(localized: "codec-spec.hw_accel.disabled", defaultValue: "하드웨어 가속 사용 안 함"))
         default:
-            entries.append("가능한 경우 하드웨어 가속 사용")
+            entries.append(String(localized: "codec-spec.hw_accel.auto", defaultValue: "가능한 경우 하드웨어 가속 사용"))
         }
-        
+
         let dynamicRange = self.option(.dynamicRange) ?? .kDynamicRangeSDR
-        
+
         if dynamicRange == .kDynamicRangeHDR {
-            entries.append("HDR 지원 활성화됨")
+            entries.append(String(localized: "codec-spec.dynamic_range.hdr_enabled", defaultValue: "HDR 지원 활성화됨"))
         }
-        
+
         return entries.joined(separator: ", ")
     }
-    
+
     var description: String {
         switch self.fourCC {
         case .zrle, .mjpg, .webp:
-            return "압축 레벨 \(self.option(.compressionLevel)?.rawValue ?? "1")"
+            return String(localized: "codec-spec.compression_level", defaultValue: "압축 레벨 \(self.option(.compressionLevel)?.rawValue ?? "1")")
         default:
             return commonDescription
         }

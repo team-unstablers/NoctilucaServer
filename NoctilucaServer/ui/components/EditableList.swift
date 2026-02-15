@@ -71,7 +71,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
         selection: Binding<Set<ID>>,
         title: String? = nil,
         description: String? = nil,
-        emptyText: String = "목록이 비어있습니다.",
+        emptyText: String = String(localized: "components.editable_list.empty", defaultValue: "목록이 비어있습니다."),
         canDelete: Bool = true,
         canReorder: Bool = true,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent,
@@ -121,7 +121,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
 
                     // Delete Button
                     if canDelete {
-                        Button("삭제", role: .destructive) {
+                        Button(String(localized: "components.editable_list.delete", defaultValue: "삭제"), role: .destructive) {
                             removeSelected()
                         }
                         .disabled(selection.isEmpty)
@@ -134,7 +134,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
 
                     // Edit Button (Only visible if EditSheet is provided and 1 item is selected)
                     if canEdit {
-                        Button("편집") {
+                        Button(String(localized: "components.editable_list.edit", defaultValue: "편집")) {
                             if selection.count == 1 {
                                 isEditSheetPresented = true
                             }
@@ -149,7 +149,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
 
                     // Add Button (Only visible if AddSheet is provided)
                     if canAdd {
-                        Button("추가") {
+                        Button(String(localized: "components.editable_list.add", defaultValue: "추가")) {
                             isAddSheetPresented = true
                         }
 #if os(iOS)
@@ -175,7 +175,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                 }
             } else {
                 // Selection became invalid?
-                Text("항목을 찾을 수 없습니다.")
+                Text(String(localized: "components.editable_list.item_not_found", defaultValue: "항목을 찾을 수 없습니다."))
                     .onAppear { isEditSheetPresented = false }
             }
         }
@@ -275,7 +275,7 @@ extension EditableList where AddSheet == EmptyView {
         selection: Binding<Set<ID>>,
         title: String? = nil,
         description: String? = nil,
-        emptyText: String = "목록이 비어있습니다.",
+        emptyText: String = String(localized: "components.editable_list.empty", defaultValue: "목록이 비어있습니다."),
         canDelete: Bool = true,
         canReorder: Bool = true,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent,
@@ -304,7 +304,7 @@ extension EditableList where EditSheet == EmptyView {
         selection: Binding<Set<ID>>,
         title: String? = nil,
         description: String? = nil,
-        emptyText: String = "목록이 비어있습니다.",
+        emptyText: String = String(localized: "components.editable_list.empty", defaultValue: "목록이 비어있습니다."),
         canDelete: Bool = true,
         canReorder: Bool = true,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent,
@@ -333,7 +333,7 @@ extension EditableList where AddSheet == EmptyView, EditSheet == EmptyView {
         selection: Binding<Set<ID>>,
         title: String? = nil,
         description: String? = nil,
-        emptyText: String = "목록이 비어있습니다.",
+        emptyText: String = String(localized: "components.editable_list.empty", defaultValue: "목록이 비어있습니다."),
         canDelete: Bool = false,
         canReorder: Bool = false,
         @ViewBuilder rowContent: @escaping (Item) -> RowContent

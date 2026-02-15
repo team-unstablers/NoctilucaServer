@@ -35,8 +35,14 @@ struct MiscSettingsTab: View {
                             .foregroundStyle(.secondary)
                     }
                 } label: {
-                    Text("트랜스포트 레이어 구현체")
-                    Text("서버 가동 시 사용할 트랜스포트 레이어 구현체를 선택합니다. 구현체에 따라 성능이나 세부 동작이 다를 수 있습니다.")
+                    Text(markdown: String(
+                        localized: "settings.misc.transport_layer_implementation.title",
+                        defaultValue: "트랜스포트 레이어 구현체"
+                    ))
+                    Text(markdown: String(
+                        localized: "settings.misc.transport_layer_implementation.description",
+                        defaultValue: "서버 가동 시 사용할 트랜스포트 레이어 구현체를 선택합니다. 구현체에 따라 성능이나 세부 동작이 다를 수 있습니다."
+                    ))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
