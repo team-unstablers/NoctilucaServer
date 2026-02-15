@@ -11,22 +11,20 @@ import SwiftUI
 
 import SiriusKitClient
 
-enum CodecSpecificationSheetAction {
-    case save(CodecSpecification)
-    case cancel
-}
-
 struct CodecSpecificationSheet: View {
-    let actionHandler: (CodecSpecificationSheetAction) -> Void
-    
+    let onSave: (CodecSpecification) -> Void
+
+    @Environment(\.dismiss)
+    private var dismiss
+
     @State
     var specification: CodecSpecification = .h264
-    
-    init(specification: CodecSpecification, actionHandler: @escaping (CodecSpecificationSheetAction) -> Void) {
+
+    init(specification: CodecSpecification, onSave: @escaping (CodecSpecification) -> Void) {
         self.specification = specification
-        self.actionHandler = actionHandler
+        self.onSave = onSave
     }
-    
+
     @ViewBuilder
     var _body: some View {
         VStack {
@@ -48,7 +46,7 @@ struct CodecSpecificationSheet: View {
                             Text("서버 인코딩의 하드웨어 가속 요청 정책을 설정합니다.")
                         }
                     }
-                    
+
                     Picker(selection: $specification.options[.colorFormat]) {
                         Text("자동")
                             .tag(CodecOptionValue.kColorFormatAuto)
@@ -69,11 +67,11 @@ struct CodecSpecificationSheet: View {
                             Text("색상 포맷을 설정합니다.")
                         }
                     }
-                    
+
                     Picker(selection: $specification.options[.colorRange]) {
                         Text("제한됨")
                             .tag(CodecOptionValue.kColorRangeLimited)
-                        
+
                         Text("전체")
                             .tag(CodecOptionValue.kColorRangeFull)
                     } label: {
@@ -89,15 +87,15 @@ struct CodecSpecificationSheet: View {
                             Text("색상 범위를 설정합니다.")
                         }
                     }
-                    
+
                     Picker(selection: $specification.options[.profile]) {
                         Text("자동")
                             .tag(CodecOptionValue.kProfileAuto)
-                        
+
                         if specification.fourCC == .avc1 {
                             h264ProfileOptions()
                         }
-                        
+
                         if specification.fourCC == .hvc1 {
                             hevcProfileOptions()
                         }
@@ -127,11 +125,11 @@ struct CodecSpecificationSheet: View {
                             specification.options[.dynamicRange] = .kDynamicRangeSDR
                         }
                     }
-                    
+
                     Picker(selection: $specification.options[.dynamicRange]) {
                         Text("SDR (Standard Dynamic Range)")
                             .tag(CodecOptionValue.kDynamicRangeSDR)
-                        
+
                         Text("HDR (High Dynamic Range)")
                             .tag(CodecOptionValue.kDynamicRangeHDR)
                     } label: {
@@ -145,13 +143,13 @@ struct CodecSpecificationSheet: View {
                             Text("다이나믹 레인지를 설정합니다.")
                         }
                     }.disabled(!specification.isEligibleForHDR.isEligible)
-                    
+
                 } header: {
 #if os(macOS)
                     Text("\(specification.displayTitle) 코덱 설정")
 #endif
                 }
-                
+
                 Section {
                     SettingsEntry(
                         title: "최대 해상도",
@@ -171,7 +169,7 @@ struct CodecSpecificationSheet: View {
                         }
                     }
                 }
-                
+
                 Section {
                     SettingsEntry(
                         title: "프레임 속도",
@@ -191,15 +189,15 @@ struct CodecSpecificationSheet: View {
                         }
                     }
                 }
-                
+
                 Section {
                     Picker(selection: $specification.options[.displayDensity]) {
                         Text("자동")
                             .tag(CodecOptionValue.kDisplayDensityAuto)
-                        
+
                         Text("성능 우선")
                             .tag(CodecOptionValue.kDisplayDensityPerformance)
-                        
+
                         Text("화질 우선")
                             .tag(CodecOptionValue.kDisplayDensityBest)
                     } label: {
@@ -221,23 +219,23 @@ struct CodecSpecificationSheet: View {
             .formStyle(.grouped)
         }
     }
-    
+
 #if os(macOS)
     var body: some View {
         VStack {
             _body
-            
+
             HStack {
                 Button("취소") {
-                    actionHandler(.cancel)
+                    dismiss()
                 }
                 Button("저장") {
-                    actionHandler(.save(specification))
+                    onSave(specification)
                 }
             }
             .padding(.bottom)
         }
-        
+
     }
 #elseif os(iOS)
     var body: some View {
@@ -248,13 +246,13 @@ struct CodecSpecificationSheet: View {
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("취소") {
-                            actionHandler(.cancel)
+                            dismiss()
                         }
                     }
-                    
+
                     ToolbarItem(placement: .confirmationAction) {
                         Button("저장", role: .compatibleConfirm) {
-                            actionHandler(.save(specification))
+                            onSave(specification)
                         }
                     }
                 }
@@ -273,7 +271,7 @@ fileprivate extension CodecSpecificationSheet {
         Text("High Profile (가장 낮은 호환성, 압축률 높음)")
             .tag(CodecOptionValue.kProfileH264High)
     }
-    
+
     @ViewBuilder
     func hevcProfileOptions() -> some View {
         Text("Main Profile")
@@ -284,12 +282,7 @@ fileprivate extension CodecSpecificationSheet {
 }
 
 #Preview {
-    CodecSpecificationSheet(specification: .hevc) { action in
-        switch action {
-        case .save(let spec):
-            print("Saved specification: \(spec)")
-        case .cancel:
-            print("Cancelled")
-        }
+    CodecSpecificationSheet(specification: .hevc) { spec in
+        print("Saved specification: \(spec)")
     }
 }

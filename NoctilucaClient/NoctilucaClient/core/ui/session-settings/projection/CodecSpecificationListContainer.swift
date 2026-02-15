@@ -19,222 +19,96 @@ import SiriusKitClient
 struct CodecSpecificationListContainer: View {
     @Binding
     var codecSpecifications: [CodecSpecification]
-    
-#if os(macOS)
+
     @State
-    private var isEditSheetPresented = false
-    
-    @State
-    private var isAddSheetPresented = false
-    
-    
-    @State
-    private var selection = Set<Int>()
+    private var selection = Set<CodecSpecification>()
 
     var body: some View {
-        VStack(alignment: .leading) {
-            VStack(alignment: .leading) {
-                Text("코덱 우선순위 설정")
-                Text("서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            VStack {
-                List(selection: $selection) {
-                    ForEach(codecSpecifications, id: \.self) { specification in
-                        HStack {
-                            CodecSpecificationListEntry(specification: specification)
-                            if (selection.first == specification.hashValue) {
-                                Spacer()
-                                Button("편집") {
-                                    isEditSheetPresented = true
-                                }
-                            }
-                        }
-                        .tag(specification.hashValue)
-                        .focusable(true)
-                    }
-                    .onMove(perform: moveCodecSpecification)
-                }
-                .listStyle(.inset)
-                .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
-            }
-            
-            HStack {
-                Spacer()
-                Button("삭제", role: .destructive) {
-                    removeSelected()
-                }
-                .disabled(selection.isEmpty)
-                
-                Button("추가") {
-                    isAddSheetPresented = true
-                }
-            }
-        }
-        .sheet(isPresented: $isEditSheetPresented) {
-            if let firstSelected = selection.first,
-               let specification = codecSpecifications.first(where: { $0.hashValue == firstSelected }) {
-                CodecSpecificationSheet(specification: specification) { action in
-                    if case .save(let newSpecification) = action {
-                        if let index = codecSpecifications.firstIndex(of: specification) {
-                            codecSpecifications[index] = newSpecification
-                        }
-                    }
-                    isEditSheetPresented = false
-                }
-            }
-        }
-        .sheet(isPresented: $isAddSheetPresented) {
-            CodecSpecificationAddSheet { specification in
-                if !codecSpecifications.contains(specification) {
-                    codecSpecifications.append(specification)
-                }
-                isAddSheetPresented = false
-            }
-        }
-        
-        
-        
-        /*
-         if let selected = selection.first,
-         let handle = pluginRegistry.bundles[selected]
-         {
-         PluginBundleDetailView(metadata: handle.metadata)
-         }
-         */
+#if os(macOS)
+        macOSBody
+#else
+        iOSBody
+#endif
     }
-    
-    private func moveCodecSpecification(from source: IndexSet, to destination: Int) {
-        codecSpecifications.move(fromOffsets: source, toOffset: destination)
-    }
-    
-    private func removeSelected() {
-        guard !selection.isEmpty else { return }
-        codecSpecifications.removeAll { selection.contains($0.hashValue) }
-        selection.removeAll()
-    }
-    
-#elseif os(iOS)
-    enum ModalState {
-        case none
-        case edit(Int)
-        case add
-        
-        // 저능해
-        var isAdd: Bool {
-            switch self {
-            case .add:
-                return true
-            default:
-                return false
+
+#if os(macOS)
+    @ViewBuilder
+    private var macOSBody: some View {
+        EditableList(
+            items: $codecSpecifications,
+            id: \.self,
+            selection: $selection,
+            title: "코덱 우선순위 설정",
+            description: "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다.",
+            emptyText: "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요.",
+            rowContent: { specification in
+                CodecSpecificationListEntry(specification: specification)
+            },
+            addSheet: { onComplete in
+                CodecSpecificationAddSheet { specification in
+                    onComplete(specification)
+                }
+            },
+            editSheet: { specification, onSave in
+                CodecSpecificationSheet(specification: specification) { newSpecification in
+                    onSave(newSpecification)
+                }
             }
-        }
-        
-        var isEdit: Bool {
-            switch self {
-            case .edit(_):
-                return true
-            default:
-                return false
-            }
-        }
+        )
     }
-    
-    @State
-    var modalState: ModalState = .none
-    
-    var body: some View {
-        VStack(alignment: .leading) {
+#endif
+
+    private var headerView: some View {
+        VStack(alignment: .leading, spacing: 4) {
             Text("코덱 우선순위 설정")
             Text("서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-        .sheet(isPresented: .constant(modalState.isEdit)) {
-            modalState = .none
-        } content: {
-            if case .edit(let index) = modalState {
-                let specification = codecSpecifications[index]
-                CodecSpecificationSheet(specification: specification) { action in
-                    if case .save(let newSpecification) = action {
-                        if let index = codecSpecifications.firstIndex(of: specification) {
-                            codecSpecifications[index] = newSpecification
-                        }
-                    }
-                    modalState = .none
-                }
-            }
-        }
-        .sheet(isPresented: .constant(modalState.isAdd)) {
-            modalState = .none
-        } content: {
-            CodecSpecificationAddSheet { specification in
-                if !codecSpecifications.contains(specification) {
-                    codecSpecifications.append(specification)
-                }
-                modalState = .none
-            }
-        }
-        
-        ForEach(0..<codecSpecifications.count, id: \.self) { index in
-            let specification = codecSpecifications[index]
-            Button {
-                modalState = .edit(index)
-            } label: {
-                CodecSpecificationListEntry(specification: specification)
-            }
-            .tag(specification.hashValue)
-        }
-        // .onMove(perform: moveCodecSpecification)
-        .onDelete { indexSet in
-            codecSpecifications.removeAll { specification in
-                indexSet.contains(where: { index in
-                    codecSpecifications[index] == specification
-                })
-            }
-        }
-        
-        
-        Button("새 코덱 추가") {
-            modalState = .add
-        }
-        
-        /*
-         HStack {
-         Spacer()
-         Button("삭제", role: .destructive) {
-         removeSelected()
-         }
-         .disabled(selection.isEmpty)
-         
-         }
-         */
-        
-        
-        
-        /*
-         if let selected = selection.first,
-         let handle = pluginRegistry.bundles[selected]
-         {
-         PluginBundleDetailView(metadata: handle.metadata)
-         }
-         */
     }
-#endif
-    
-    
 
+    @ViewBuilder
+    private var iOSBody: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerView
+                .padding(.bottom, 12)
+
+            Divider()
+
+            EditableList(
+                items: $codecSpecifications,
+                id: \.self,
+                selection: $selection,
+                title: nil,
+                description: nil,
+                emptyText: "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요.",
+                rowContent: { specification in
+                    CodecSpecificationListEntry(specification: specification)
+                },
+                addSheet: { onComplete in
+                    CodecSpecificationAddSheet { specification in
+                        onComplete(specification)
+                    }
+                },
+                editSheet: { specification, onSave in
+                    CodecSpecificationSheet(specification: specification) { newSpecification in
+                        onSave(newSpecification)
+                    }
+                }
+            )
+        }
+        .frame(maxWidth: .infinity)
+    }
 }
 
 private struct CodecSpecificationAddTemplateRow: View {
     let specification: CodecSpecification
-    
+
     let title: String
     let description: String
-    
+
     let isSelected: Bool
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -263,12 +137,12 @@ struct CodecSpecificationAddSheet: View {
         let specification: CodecSpecification
         let title: String
         let description: String
-        
+
         func hash(into hasher: inout Hasher) {
             hasher.combine(specification)
         }
     }
-    
+
     static let templates: [Template] = [
         .init(
             specification: .hevc,
@@ -298,15 +172,15 @@ struct CodecSpecificationAddSheet: View {
         ),
 
     ]
-    
+
     let handler: (CodecSpecification) -> Void
-    
+
     @Environment(\.dismiss)
     private var dismiss
-    
+
     @State
     var selected: Template? = Self.templates.first
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading) {
@@ -315,7 +189,7 @@ struct CodecSpecificationAddSheet: View {
                 Text("추가할 코덱 유형을 선택하세요.")
                     .foregroundStyle(.secondary)
             }
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(Self.templates, id: \.self) { template in
                     Button {
@@ -332,9 +206,9 @@ struct CodecSpecificationAddSheet: View {
                     .buttonStyle(.plain)
                 }
             }
-            
+
             Spacer()
-            
+
             HStack {
                 Spacer()
                 Button("취소") {

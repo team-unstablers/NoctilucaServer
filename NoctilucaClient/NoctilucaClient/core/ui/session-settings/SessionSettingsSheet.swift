@@ -65,7 +65,7 @@ struct SessionSettingsSheet: View {
                     .id(SettingsTab.general)
             }
             
-            ProjectionSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
+            ProjectionSessionSettingsTab(projection: $sessionSettings.projection, scope: scope)
                 .tabItem {
                     Image(systemName: "display")
                     Text("프로젝션")
@@ -94,7 +94,9 @@ struct SessionSettingsSheet: View {
                 .id(SettingsTab.security)
  
         }
+#if os(macOS)
         .tabViewStyle(.sidebarAdaptable)
+#endif
     }
 
     @ViewBuilder

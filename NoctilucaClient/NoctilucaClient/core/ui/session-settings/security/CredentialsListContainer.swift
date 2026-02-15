@@ -34,24 +34,33 @@ struct CredentialsListContainer: View {
     }
 
     var body: some View {
-        Group {
 #if os(macOS)
-            macOSBody
+        macOSBody
+            .onAppear(perform: reloadEntries)
+            .onChange(of: scope) { _, _ in
+                reloadEntries()
+            }
+            .onChange(of: contactId) { _, _ in
+                reloadEntries()
+            }
+            .onChange(of: entries) { _, _ in
+                guard !isLoading else { return }
+                saveEntries()
+            }
 #else
-            iOSBody
+        iOSBody
+            .onAppear(perform: reloadEntries)
+            .onChange(of: scope) { _, _ in
+                reloadEntries()
+            }
+            .onChange(of: contactId) { _, _ in
+                reloadEntries()
+            }
+            .onChange(of: entries) { _, _ in
+                guard !isLoading else { return }
+                saveEntries()
+            }
 #endif
-        }
-        .onAppear(perform: reloadEntries)
-        .onChange(of: scope) { _, _ in
-            reloadEntries()
-        }
-        .onChange(of: contactId) { _, _ in
-            reloadEntries()
-        }
-        .onChange(of: entries) { _, _ in
-            guard !isLoading else { return }
-            saveEntries()
-        }
     }
 
 #if os(macOS)
@@ -96,68 +105,35 @@ struct CredentialsListContainer: View {
 
     @ViewBuilder
     private var iOSBody: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             headerView
-
+                .padding(.bottom, 12)
+            
+            Divider()
+            
             if !canManageEntries {
                 Text("연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다.")
                     .foregroundStyle(.secondary)
             } else {
-                credentialsListBody
-            }
-
-            HStack {
-                Spacer()
-                Button("추가") {
-                    isAddSheetPresented = true
-                }
-                .disabled(!canManageEntries)
-            }
-        }
-        .sheet(isPresented: $isAddSheetPresented) {
-            CredentialAddSheet(scope: scope) { entry in
-                entries.append(entry)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var credentialsListBody: some View {
-#if os(macOS)
-        EmptyView()
-#else
-        VStack(alignment: .leading, spacing: 8) {
-            if entries.isEmpty {
-                Text("(구성된 자격 증명이 없습니다)")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(entries) { entry in
-                    HStack(alignment: .top, spacing: 12) {
+                EditableList(
+                    items: $entries,
+                    id: \.id,
+                    selection: $selection,
+                    title: nil,
+                    description: nil,
+                    emptyText: "(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요.",
+                    rowContent: { entry in
                         CredentialEntryRow(entry: entry)
-                        Spacer()
-                        Button(role: .destructive) {
-                            remove(entry)
-                        } label: {
-                            Image(systemName: "trash")
+                    },
+                    addSheet: { onComplete in
+                        CredentialAddSheet(scope: scope) { entry in
+                            onComplete(entry)
                         }
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.secondary.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
+                )
             }
         }
-#endif
-    }
-
-    private func moveEntries(from source: IndexSet, to destination: Int) {
-        entries.move(fromOffsets: source, toOffset: destination)
-    }
-
-    private func remove(_ entry: ClientAuthEntry) {
-        entries.removeAll { $0.id == entry.id }
+        .frame(maxWidth: .infinity)
     }
 
     private func reloadEntries() {

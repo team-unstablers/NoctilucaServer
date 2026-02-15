@@ -125,6 +125,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                             removeSelected()
                         }
                         .disabled(selection.isEmpty)
+                        .buttonStyle(.borderedProminent)
                     }
 
                     // Edit Button (Only visible if EditSheet is provided and 1 item is selected)
@@ -135,6 +136,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                             }
                         }
                         .disabled(selection.count != 1)
+                        .buttonStyle(.borderedProminent)
                     }
 
                     // Add Button (Only visible if AddSheet is provided)
@@ -142,6 +144,7 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                         Button("추가") {
                             isAddSheetPresented = true
                         }
+                        .buttonStyle(.borderedProminent)
                     }
                 }
             }
@@ -181,24 +184,62 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                  // Existing views put Text inside List when empty (CredentialsListContainer)
                  // or just empty list.
                  // Let's put a simple text row if empty.
-                 Text(emptyText)
-                     .foregroundStyle(.secondary)
+                VStack(spacing: 0) {
+                    Text(emptyText)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth:.infinity)
+                        .foregroundStyle(.secondary)
+#if os(iOS)
+                        .padding(.vertical, 12)
+#endif
+#if os(iOS)
+                    Divider()
+#endif
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
             } else {
                 if canReorder {
                     ForEach(items, id: idKeyPath) { item in
-                        rowContent(item)
-                            .tag(item[keyPath: idKeyPath])
+                        VStack(alignment: .leading, spacing: 0) {
+                            rowContent(item)
+#if os(iOS)
+                                .padding(.vertical, 12)
+#endif
+#if os(iOS)
+                            Divider()
+#endif
+                        }
+                        .tag(item[keyPath: idKeyPath])
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
                     }
                     .onMove(perform: moveItems)
                 } else {
                     ForEach(items, id: idKeyPath) { item in
-                        rowContent(item)
-                            .tag(item[keyPath: idKeyPath])
+                        VStack(alignment: .leading, spacing: 0) {
+                            rowContent(item)
+#if os(iOS)
+                                .padding(.vertical, 12)
+#endif
+#if os(iOS)
+                            Divider()
+#endif
+                        }
+                        .tag(item[keyPath: idKeyPath])
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
                     }
                 }
             }
         }
+#if os(macOS)
         .listStyle(.inset)
+#else
+        .listStyle(.plain)
+        .listSectionSpacing(.zero) // Control spacing between sections
+        .environment(\.defaultMinListRowHeight, 0) // Reset default minimum row height
+#endif
         .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
     }
     

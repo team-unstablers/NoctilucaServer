@@ -2,49 +2,14 @@ import SwiftUI
 
 struct ProjectionSessionSettingsTab: View {
     @Binding
-    var sessionSettings: SessionSettings
+    var projection: SessionSettings.Projection
 
     let scope: SessionSettingsScope
 
-    private var codecSettingsMode: Binding<SessionSettings.CodecSettingsMode> {
-        Binding(
-            get: { sessionSettings.projection.codecSettingsMode },
-            set: { sessionSettings.projection.codecSettingsMode = $0 }
-        )
-    }
-
-    private var codecNegotiationPolicy: Binding<SessionSettings.CodecNegotiationPolicy> {
-        Binding(
-            get: { sessionSettings.projection.codecNegotiationPolicy },
-            set: { sessionSettings.projection.codecNegotiationPolicy = $0 }
-        )
-    }
-
-    private var codecSpecifications: Binding<[CodecSpecification]> {
-        Binding(
-            get: { sessionSettings.projection.codecSpecifications },
-            set: { sessionSettings.projection.codecSpecifications = $0 }
-        )
-    }
-    
-    private var isAudioProjectionEnabled: Binding<Bool> {
-        Binding(
-            get: { sessionSettings.projection.isAudioProjectionEnabled },
-            set: { sessionSettings.projection.isAudioProjectionEnabled = $0 }
-        )
-    }
-
-    private var audioCodecSpecifications: Binding<[AudioCodecSpecification]> {
-        Binding(
-            get: { sessionSettings.projection.audioCodecSpecifications },
-            set: { sessionSettings.projection.audioCodecSpecifications = $0 }
-        )
-    }
-    
     var body: some View {
         Form {
             Section {
-                SettingsPicker(selection: codecSettingsMode) {
+                SettingsPicker(selection: $projection.codecSettingsMode) {
                     SettingsPickerItem(value: SessionSettings.CodecSettingsMode.useDefault) {
                         Text("권장 설정 사용 **(권장)**")
                         Text("Noctiluca Navigator에서 미리 정의된 코덱 설정을 사용합니다.")
@@ -68,50 +33,54 @@ struct ProjectionSessionSettingsTab: View {
                 Text("코덱 설정")
             }
             
-            Section {
-                SettingsPicker(selection: codecNegotiationPolicy) {
-                    SettingsPickerItem(value: SessionSettings.CodecNegotiationPolicy.asOptional) {
-                        Text("호환성 우선 **(권장)**")
-                        Text("사용자가 지정한 코덱 관련 요구 사항을 전부 필수적이지 않은 것으로 마킹합니다.\n유연하게 협상이 가능하지만 요구 사항이 전부 충족되지 않을 수도 있습니다.")
+            if projection.codecSettingsMode == .manual {
+                Section {
+                    SettingsPicker(selection: $projection.codecNegotiationPolicy) {
+                        SettingsPickerItem(value: SessionSettings.CodecNegotiationPolicy.asOptional) {
+                            Text("호환성 우선 **(권장)**")
+                            Text("사용자가 지정한 코덱 관련 요구 사항을 전부 필수적이지 않은 것으로 마킹합니다.\n유연하게 협상이 가능하지만 요구 사항이 전부 충족되지 않을 수도 있습니다.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        SettingsPickerItem(value: SessionSettings.CodecNegotiationPolicy.asMandatory) {
+                            Text("요구 사항 우선")
+                            Text("사용자가 지정한 코덱 관련 요구 사항을 전부 필수적인 것으로 마킹합니다.\n서버가 요구 사항을 충족하지 못할 경우 협상에 실패할 수 있습니다.\n또한, 서버 측의 코덱 협상 정책에 따라 요구 사항이 무시될 수도 있습니다.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } label: {
+                        Text("코덱 협상 정책")
+                        Text("서버와의 코덱 협상 정책을 설정합니다.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    
-                    SettingsPickerItem(value: SessionSettings.CodecNegotiationPolicy.asMandatory) {
-                        Text("요구 사항 우선")
-                        Text("사용자가 지정한 코덱 관련 요구 사항을 전부 필수적인 것으로 마킹합니다.\n서버가 요구 사항을 충족하지 못할 경우 협상에 실패할 수 있습니다.\n또한, 서버 측의 코덱 협상 정책에 따라 요구 사항이 무시될 수도 있습니다.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                } label: {
-                    Text("코덱 협상 정책")
-                    Text("서버와의 코덱 협상 정책을 설정합니다.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
                 }
-            }
-            
-            Section {
-                CodecSpecificationListContainer(codecSpecifications: codecSpecifications)
-            }
-            
-            Section {
-                Toggle("오디오 프로젝션 활성화", isOn: isAudioProjectionEnabled)
                 
-                if isAudioProjectionEnabled.wrappedValue {
-                    AudioCodecSpecificationListContainer(codecSpecifications: audioCodecSpecifications)
+                Section {
+                    CodecSpecificationListContainer(codecSpecifications: $projection.codecSpecifications)
                 }
-            } header: {
-                Text("오디오 설정")
+                
+                Section {
+                    Toggle("오디오 프로젝션 활성화", isOn: $projection.isAudioProjectionEnabled)
+                    
+                    if projection.isAudioProjectionEnabled {
+                        AudioCodecSpecificationListContainer(codecSpecifications: $projection.audioCodecSpecifications)
+                    }
+                } header: {
+                    Text("오디오 설정")
+                }
             }
         }
         .formStyle(.grouped)
     }
 }
 
+/*
 #Preview {
     ProjectionSessionSettingsTab(
         sessionSettings: .constant(SessionSettings(scope: .global)),
         scope: .global
     )
 }
+*/

@@ -75,6 +75,7 @@ struct SecuritySessionSettingsTab: View {
                         .foregroundStyle(.secondary)
                 }
                 
+                /*
                 if scope == .session {
                     Toggle(isOn: certificatePinningEnabled) {
                         Text("인증서 고정하기")
@@ -87,6 +88,7 @@ struct SecuritySessionSettingsTab: View {
                     ) {
                     }
                 }
+                 */
                
             } header: {
                 Text("트랜스포트 레이어")
