@@ -90,13 +90,13 @@ struct PluginBundleDetailView: View {
                     .multilineTextAlignment(.trailing)
             }
         case .adHocSignature:
-            Text(String(localized: "settings.plugins.detail.signature.adhoc", defaultValue: "Ad-hoc 서명"))
+            Text(markdown: String(localized: "settings.plugins.detail.signature.adhoc", defaultValue: "Ad-hoc 서명"))
         case .unsigned:
-            Text(String(localized: "settings.plugins.detail.signature.unsigned", defaultValue: "서명 없음"))
+            Text(markdown: String(localized: "settings.plugins.detail.signature.unsigned", defaultValue: "서명 없음"))
         case .invalid(let error):
-            Text(String(localized: "settings.plugins.detail.signature.invalid", defaultValue: "서명 검증 실패 (OSStatus: \(error))"))
+            Text(markdown: String(localized: "settings.plugins.detail.signature.invalid", defaultValue: "서명 검증 실패 (OSStatus: \(error))"))
         case nil:
-            Text(String(localized: "settings.plugins.detail.signature.builtin", defaultValue: "내장 플러그인"))
+            Text(markdown: String(localized: "settings.plugins.detail.signature.builtin", defaultValue: "내장 플러그인"))
         }
     }
 }

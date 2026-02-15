@@ -65,7 +65,7 @@ struct AddressBarSecurityIndicator: View {
                 .multilineTextAlignment(.leading)
                 .padding(.bottom, 4)
 
-            Text(String(localized: "main.address_bar.security.icon_hint", defaultValue: "이 아이콘을 누르면 서버의 인증서 정보를 확인할 수 있습니다."))
+            Text(markdown: String(localized: "main.address_bar.security.icon_hint", defaultValue: "이 아이콘을 누르면 서버의 인증서 정보를 확인할 수 있습니다."))
                 .font(.system(size: 11))
         }
     }

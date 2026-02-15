@@ -95,7 +95,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
 
                 // MARK: - 저장된 호스트 섹션
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(String(localized: "main.new_connection.saved_hosts", defaultValue: "저장된 호스트"))
+                    Text(markdown: String(localized: "main.new_connection.saved_hosts", defaultValue: "저장된 호스트"))
                         .font(.title3)
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -106,7 +106,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             .padding(.vertical, 32)
                     } else if let loadError = contactsStore.loadError {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(String(localized: "main.new_connection.load_error", defaultValue: "연락처 목록을 불러오지 못했습니다."))
+                            Text(markdown: String(localized: "main.new_connection.load_error", defaultValue: "연락처 목록을 불러오지 못했습니다."))
                                 .font(.headline)
                             Text(loadError)
                                 .font(.subheadline)
@@ -115,10 +115,10 @@ struct MainWindowNewConnectionPhaseContentView: View {
                         .padding(.vertical, 16)
                     } else if contactsStore.contacts.isEmpty {
                         VStack(spacing: 16) {
-                            Text(String(localized: "main.new_connection.no_saved_hosts", defaultValue: "저장된 호스트가 없습니다"))
+                            Text(markdown: String(localized: "main.new_connection.no_saved_hosts", defaultValue: "저장된 호스트가 없습니다"))
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "main.new_connection.no_saved_hosts_hint", defaultValue: "아래 버튼을 눌러 새 호스트를 추가하거나,\n상단 주소창에서 바로 연결하세요."))
+                            Text(markdown: String(localized: "main.new_connection.no_saved_hosts_hint", defaultValue: "아래 버튼을 눌러 새 호스트를 추가하거나,\n상단 주소창에서 바로 연결하세요."))
                                 .font(.subheadline)
                                 .foregroundStyle(.tertiary)
                                 .multilineTextAlignment(.center)

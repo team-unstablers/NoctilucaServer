@@ -4177,14 +4177,14 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Public Key (Supports OpenSSH / PEM format)"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "개인 키 (OpenSSH 형식 / PEM 형식을 지원합니다)"
+            "value" : "공개    키 (OpenSSH 형식 / PEM 형식을 지원합니다)"
           }
         }
       }

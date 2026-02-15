@@ -24,7 +24,7 @@ struct AboutSettingsTab: View {
                     .foregroundStyle(.secondary)
                 }
                 HStack(alignment: .top) {
-                    Text(String(localized: "about.siriuskit_version.title", defaultValue: "SiriusKit 버전"))
+                    Text(markdown: String(localized: "about.siriuskit_version.title", defaultValue: "SiriusKit 버전"))
                     Spacer()
                     VStack(alignment: .trailing) {
                         Text(String(format: String(localized: "about.siriuskit_version.value_format", defaultValue: "%@ (%@)"), SiriusKitMeta.displayVersion, SiriusKitMeta.buildVersion))
@@ -34,7 +34,7 @@ struct AboutSettingsTab: View {
                     .foregroundStyle(.secondary)
                 }
                 HStack(alignment: .top) {
-                    Text(String(localized: "about.transport_layer.title", defaultValue: "사용 가능한 트랜스포트 레이어 구현체"))
+                    Text(markdown: String(localized: "about.transport_layer.title", defaultValue: "사용 가능한 트랜스포트 레이어 구현체"))
                     Spacer()
                     VStack(alignment: .trailing) {
                         Text(TransportLayerImplementation.msQuic.displayName)
@@ -42,7 +42,7 @@ struct AboutSettingsTab: View {
                     .foregroundStyle(.secondary)
                 }
                 HStack(alignment: .top) {
-                    Text(String(localized: "about.features.title", defaultValue: "사용 가능한 기능 목록"))
+                    Text(markdown: String(localized: "about.features.title", defaultValue: "사용 가능한 기능 목록"))
                     Spacer()
                     VStack(alignment: .trailing) {
                         Text("HIDIO")

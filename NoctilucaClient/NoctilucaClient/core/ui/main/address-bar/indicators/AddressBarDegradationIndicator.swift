@@ -60,7 +60,7 @@ struct AddressBarDegradationIndicator: View {
             Image(systemName: "cloud.bolt.rain.fill")
                 .foregroundColor(.black.opacity(0.7))
         } tooltip: {
-            Text(String(localized: "main.address_bar.degradation.title", defaultValue: "화면 품질이 저하되었습니다"))
+            Text(markdown: String(localized: "main.address_bar.degradation.title", defaultValue: "화면 품질이 저하되었습니다"))
                 .font(.system(size: 12))
                 .bold()
                 .padding(.bottom, 4)

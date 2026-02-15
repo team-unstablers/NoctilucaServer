@@ -51,7 +51,7 @@ struct AboutAppView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Group {
                             Text("Copyright © 2026 team unstablers Inc. All rights reserved.")
-                            Text(String(localized: "about.open_source_notice", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어를 포함합니다. 자세한 사항은 아래 '오픈 소스 라이선스' 버튼을 눌러 확인할 수 있습니다."))
+                            Text(markdown: String(localized: "about.open_source_notice", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어를 포함합니다. 자세한 사항은 아래 '오픈 소스 라이선스' 버튼을 눌러 확인할 수 있습니다."))
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -63,19 +63,19 @@ struct AboutAppView: View {
                             Button {
 
                             } label: {
-                                Text(String(localized: "about.terms_of_service", defaultValue: "사용 약관"))
+                                Text(markdown: String(localized: "about.terms_of_service", defaultValue: "사용 약관"))
                             }
 
                             Button {
 
                             } label: {
-                                Text(String(localized: "about.open_source_licenses", defaultValue: "오픈 소스 라이선스"))
+                                Text(markdown: String(localized: "about.open_source_licenses", defaultValue: "오픈 소스 라이선스"))
                             }
 
                             Button {
                                 isLetterSectionVisible.toggle()
                             } label: {
-                                Text(String(localized: "about.appeal_button", defaultValue: "호소문…"))
+                                Text(markdown: String(localized: "about.appeal_button", defaultValue: "호소문…"))
                             }
                         }
                     }
@@ -87,7 +87,7 @@ struct AboutAppView: View {
             if isLetterSectionVisible {
                 ScrollView {
                     VStack(alignment: .leading) {
-                        Text(String(localized: "about.appeal.title", defaultValue: "호소문"))
+                        Text(markdown: String(localized: "about.appeal.title", defaultValue: "호소문"))
                             .font(.title)
                             .bold()
                             .padding(.bottom, 1)

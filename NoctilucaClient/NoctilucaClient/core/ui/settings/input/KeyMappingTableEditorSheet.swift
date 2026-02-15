@@ -241,7 +241,7 @@ struct KeyMappingTableEditorSheet: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(String(localized: "settings.input.key_mapping.editor.title", defaultValue: "키매핑 테이블 편집기"))
+                    Text(markdown: String(localized: "settings.input.key_mapping.editor.title", defaultValue: "키매핑 테이블 편집기"))
                         .font(.headline)
                         .padding(.bottom, 4)
                         .foregroundStyle(.primary)
@@ -255,14 +255,14 @@ struct KeyMappingTableEditorSheet: View {
                 
                 HStack {
                     Picker(selection: $fromKeyDisplayMode) {
-                        Text(String(localized: "settings.input.key_mapping.display_mode.apple", defaultValue: "Apple 스타일")).tag(KeyDisplayMode.appleStyle)
-                        Text(String(localized: "settings.input.key_mapping.display_mode.generic", defaultValue: "일반 스타일")).tag(KeyDisplayMode.generic)
+                        Text(markdown: String(localized: "settings.input.key_mapping.display_mode.apple", defaultValue: "Apple 스타일")).tag(KeyDisplayMode.appleStyle)
+                        Text(markdown: String(localized: "settings.input.key_mapping.display_mode.generic", defaultValue: "일반 스타일")).tag(KeyDisplayMode.generic)
                     } label: {
-                        Text(String(localized: "settings.input.key_mapping.display_mode.label", defaultValue: "키 표시 방식"))
+                        Text(markdown: String(localized: "settings.input.key_mapping.display_mode.label", defaultValue: "키 표시 방식"))
                     }
                     Picker(selection: $toKeyDisplayMode) {
-                        Text(String(localized: "settings.input.key_mapping.display_mode.apple", defaultValue: "Apple 스타일")).tag(KeyDisplayMode.appleStyle)
-                        Text(String(localized: "settings.input.key_mapping.display_mode.generic", defaultValue: "일반 스타일")).tag(KeyDisplayMode.generic)
+                        Text(markdown: String(localized: "settings.input.key_mapping.display_mode.apple", defaultValue: "Apple 스타일")).tag(KeyDisplayMode.appleStyle)
+                        Text(markdown: String(localized: "settings.input.key_mapping.display_mode.generic", defaultValue: "일반 스타일")).tag(KeyDisplayMode.generic)
                     } label: {
                         Text("→")
                     }

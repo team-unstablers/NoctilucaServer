@@ -69,7 +69,7 @@ struct CredentialsListContainer: View {
         if !canManageEntries {
             VStack(alignment: .leading, spacing: 12) {
                 headerView
-                Text(String(localized: "session-settings.security.credentials.no_contact_selected", defaultValue: "연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다."))
+                Text(markdown: String(localized: "session-settings.security.credentials.no_contact_selected", defaultValue: "연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다."))
                     .foregroundStyle(.secondary)
                 Spacer()
             }
@@ -96,7 +96,7 @@ struct CredentialsListContainer: View {
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(String(localized: "session-settings.security.credentials.title", defaultValue: "자격 증명 목록"))
+            Text(markdown: String(localized: "session-settings.security.credentials.title", defaultValue: "자격 증명 목록"))
             Text(scope == .global ? String(localized: "session-settings.security.credentials.description.global", defaultValue: "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다.") : String(localized: "session-settings.security.credentials.description.session", defaultValue: "선택된 호스트에 대한 자격 증명을 구성합니다."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -112,7 +112,7 @@ struct CredentialsListContainer: View {
             Divider()
             
             if !canManageEntries {
-                Text(String(localized: "session-settings.security.credentials.no_contact_selected", defaultValue: "연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다."))
+                Text(markdown: String(localized: "session-settings.security.credentials.no_contact_selected", defaultValue: "연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다."))
                     .foregroundStyle(.secondary)
             } else {
                 EditableList(

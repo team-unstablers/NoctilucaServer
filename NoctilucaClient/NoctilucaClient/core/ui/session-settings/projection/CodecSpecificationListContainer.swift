@@ -60,8 +60,8 @@ struct CodecSpecificationListContainer: View {
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(String(localized: "session-settings.projection.codec_list.title", defaultValue: "코덱 우선순위 설정"))
-            Text(String(localized: "session-settings.projection.codec_list.description", defaultValue: "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."))
+            Text(markdown: String(localized: "session-settings.projection.codec_list.title", defaultValue: "코덱 우선순위 설정"))
+            Text(markdown: String(localized: "session-settings.projection.codec_list.description", defaultValue: "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -184,9 +184,9 @@ struct CodecSpecificationAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading) {
-                Text(String(localized: "session-settings.projection.codec_list.add.title", defaultValue: "코덱 선택"))
+                Text(markdown: String(localized: "session-settings.projection.codec_list.add.title", defaultValue: "코덱 선택"))
                     .font(.title2.bold())
-                Text(String(localized: "session-settings.projection.codec_list.add.description", defaultValue: "추가할 코덱 유형을 선택하세요."))
+                Text(markdown: String(localized: "session-settings.projection.codec_list.add.description", defaultValue: "추가할 코덱 유형을 선택하세요."))
                     .foregroundStyle(.secondary)
             }
 

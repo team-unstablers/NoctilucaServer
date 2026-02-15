@@ -25,7 +25,7 @@ struct MainWindowConnectingPhaseContentView: View {
                 Spacer()
 
                 HStack(spacing: 0) {
-                    Text(String(localized: "main.connecting.title", defaultValue: "연결 중"))
+                    Text(markdown: String(localized: "main.connecting.title", defaultValue: "연결 중"))
                         .font(.largeTitle)
                         .fontWeight(.light)
                 }

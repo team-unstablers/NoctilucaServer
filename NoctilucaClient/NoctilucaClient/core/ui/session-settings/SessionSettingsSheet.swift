@@ -59,7 +59,7 @@ struct SessionSettingsSheet: View {
                 GeneralSessionSettingsTab(sessionSettings: $sessionSettings)
                     .tabItem {
                         Image(systemName: "gearshape.fill")
-                        Text(String(localized: "session-settings.tabs.general", defaultValue: "일반"))
+                        Text(markdown: String(localized: "session-settings.tabs.general", defaultValue: "일반"))
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
@@ -68,7 +68,7 @@ struct SessionSettingsSheet: View {
             ProjectionSessionSettingsTab(projection: $sessionSettings.projection, scope: scope)
                 .tabItem {
                     Image(systemName: "display")
-                    Text(String(localized: "session-settings.tabs.projection", defaultValue: "프로젝션"))
+                    Text(markdown: String(localized: "session-settings.tabs.projection", defaultValue: "프로젝션"))
                 }
                 .tag(SettingsTab.projection)
                 .id(SettingsTab.projection)
@@ -76,7 +76,7 @@ struct SessionSettingsSheet: View {
             InputSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
                 .tabItem {
                     Image(systemName: "keyboard.fill")
-                    Text(String(localized: "session-settings.tabs.input", defaultValue: "입력"))
+                    Text(markdown: String(localized: "session-settings.tabs.input", defaultValue: "입력"))
                 }
                 .tag(SettingsTab.input)
                 .id(SettingsTab.input)
@@ -88,7 +88,7 @@ struct SessionSettingsSheet: View {
             )
                 .tabItem {
                     Image(systemName: "lock.fill")
-                    Text(String(localized: "session-settings.tabs.security", defaultValue: "보안"))
+                    Text(markdown: String(localized: "session-settings.tabs.security", defaultValue: "보안"))
                 }
                 .tag(SettingsTab.security)
                 .id(SettingsTab.security)
@@ -116,7 +116,7 @@ struct SessionSettingsSheet: View {
                     shouldPresentDeleteContactConfirmation = false
                 }
             } message: {
-                Text(String(localized: "session-settings.delete_contact.message", defaultValue: "이 연락처를 삭제하면 복구할 수 없습니다."))
+                Text(markdown: String(localized: "session-settings.delete_contact.message", defaultValue: "이 연락처를 삭제하면 복구할 수 없습니다."))
             }
     }
     
@@ -164,7 +164,7 @@ struct SessionSettingsSheet: View {
             Button(role: .cancel) {
                 self.actionHandler(.cancel)
             } label: {
-                Text(String(localized: "common.cancel", defaultValue: "취소"))
+                Text(markdown: String(localized: "common.cancel", defaultValue: "취소"))
             }
         }
 
@@ -180,7 +180,7 @@ struct SessionSettingsSheet: View {
                 Button(role: .compatibleConfirm) {
                     self.actionHandler(.connect)
                 } label: {
-                    Text(String(localized: "common.connect", defaultValue: "연결"))
+                    Text(markdown: String(localized: "common.connect", defaultValue: "연결"))
                 }
             }
         } else {
@@ -189,7 +189,7 @@ struct SessionSettingsSheet: View {
                     Button(role: .destructive) {
                         shouldPresentDeleteContactConfirmation = true
                     } label: {
-                        Text(String(localized: "common.delete", defaultValue: "삭제"))
+                        Text(markdown: String(localized: "common.delete", defaultValue: "삭제"))
                     }
                 }
             }
@@ -198,7 +198,7 @@ struct SessionSettingsSheet: View {
                 Button(role: .compatibleConfirm) {
                     self.actionHandler(.save)
                 } label: {
-                    Text(String(localized: "common.save", defaultValue: "저장"))
+                    Text(markdown: String(localized: "common.save", defaultValue: "저장"))
                 }
             }
         }

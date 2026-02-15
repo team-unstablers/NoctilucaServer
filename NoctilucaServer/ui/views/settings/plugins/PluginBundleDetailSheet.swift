@@ -69,7 +69,7 @@ struct PluginBundleDetailSheet: View {
                 if let leafCert = certificates.first {
                     Divider()
 
-                    Text(String(localized: "settings.plugins.detail_sheet.signature.certificate", defaultValue: "인증서 정보"))
+                    Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.certificate", defaultValue: "인증서 정보"))
                         .font(.headline)
 
                     PluginBundleCertificateView(certificate: leafCert)
@@ -85,7 +85,7 @@ struct PluginBundleDetailSheet: View {
                     systemImage: "exclamationmark.triangle.fill",
                     color: .orange
                 )
-                Text(String(localized: "settings.plugins.detail_sheet.signature.adhoc.description",
+                Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.adhoc.description",
                             defaultValue: "이 플러그인 번들은 Ad-hoc으로 서명되어 있으며, 개발자 신원을 확인할 수 없습니다."))
                     .foregroundStyle(.secondary)
             }
@@ -98,7 +98,7 @@ struct PluginBundleDetailSheet: View {
                     systemImage: "xmark.seal.fill",
                     color: .red
                 )
-                Text(String(localized: "settings.plugins.detail_sheet.signature.unsigned.description",
+                Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.unsigned.description",
                             defaultValue: "이 플러그인 번들은 서명되어 있지 않습니다. 신뢰할 수 없는 출처의 플러그인일 수 있습니다."))
                     .foregroundStyle(.secondary)
             }
@@ -124,7 +124,7 @@ struct PluginBundleDetailSheet: View {
                     systemImage: "checkmark.seal.fill",
                     color: .blue
                 )
-                Text(String(localized: "settings.plugins.detail_sheet.signature.builtin.description",
+                Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.builtin.description",
                             defaultValue: "이 플러그인 번들은 애플리케이션에 내장되어 있습니다."))
                     .foregroundStyle(.secondary)
             }

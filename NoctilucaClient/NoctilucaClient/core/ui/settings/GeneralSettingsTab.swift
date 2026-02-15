@@ -12,8 +12,8 @@ struct GeneralSettingsTab: View {
             Section(String(localized: "settings.general.title", defaultValue: "일반")) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading) {
-                        Text(String(localized: "settings.general.default_connection.title", defaultValue: "기본 연결 설정"))
-                        Text(String(localized: "settings.general.default_connection.description", defaultValue: "빠른 연결 시 사용할 기본 설정을 변경합니다."))
+                        Text(markdown: String(localized: "settings.general.default_connection.title", defaultValue: "기본 연결 설정"))
+                        Text(markdown: String(localized: "settings.general.default_connection.description", defaultValue: "빠른 연결 시 사용할 기본 설정을 변경합니다."))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

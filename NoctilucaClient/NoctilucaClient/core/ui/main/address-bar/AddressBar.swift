@@ -123,7 +123,7 @@ struct AddressBar: View {
                 .opacity(focusPhase.labelTextOpacity)
             } else {
                 if endpointURL.isEmpty {
-                    Text(String(localized: "main.address_bar.placeholder", defaultValue: "호스트 주소를 입력하세요"))
+                    Text(markdown: String(localized: "main.address_bar.placeholder", defaultValue: "호스트 주소를 입력하세요"))
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                         .opacity(focusPhase.labelTextOpacity)

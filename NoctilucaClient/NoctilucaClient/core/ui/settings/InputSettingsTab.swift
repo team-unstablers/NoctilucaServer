@@ -15,8 +15,8 @@ struct InputSettingsTab: View {
 #if os(macOS)
             Section {
                 Toggle(isOn: $settingsStore.settings.input.enableExclusiveMode) {
-                    Text(String(localized: "settings.input.exclusive_mode.title", defaultValue: "독점 모드 활성화"))
-                    Text(String(localized: "settings.input.exclusive_mode.description", defaultValue: "키보드와 마우스를 잠그는 독점 모드를 활성화합니다.\n- ⌘Q를 포함한 모든 키보드 단축키를 그대로 사용할 수 있게 됩니다.\n- 마우스 입력이 상대 좌표로 전달됩니다. 3D 툴이나 FPS 게임 등에서 유용하게 동작합니다."))
+                    Text(markdown: String(localized: "settings.input.exclusive_mode.title", defaultValue: "독점 모드 활성화"))
+                    Text(markdown: String(localized: "settings.input.exclusive_mode.description", defaultValue: "키보드와 마우스를 잠그는 독점 모드를 활성화합니다.\n- ⌘Q를 포함한 모든 키보드 단축키를 그대로 사용할 수 있게 됩니다.\n- 마우스 입력이 상대 좌표로 전달됩니다. 3D 툴이나 FPS 게임 등에서 유용하게 동작합니다."))
                 }
                 .disabled(!isMonitoringTCCGranted)
                 
@@ -42,22 +42,22 @@ struct InputSettingsTab: View {
                                 policy: .none,
                                 default: KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
                             ) {
-                                Text(String(localized: "common.change", defaultValue: "변경"))
+                                Text(markdown: String(localized: "common.change", defaultValue: "변경"))
                             }
                         }
                     }
                 }
             } header: {
-                Text(String(localized: "settings.input.header", defaultValue: "입력 설정"))
-                Text(String(localized: "settings.input.header.description", defaultValue: "전반적인 입력 설정을 구성합니다."))
+                Text(markdown: String(localized: "settings.input.header", defaultValue: "입력 설정"))
+                Text(markdown: String(localized: "settings.input.header.description", defaultValue: "전반적인 입력 설정을 구성합니다."))
             }
 #endif
             
             Section {
                 KeyboardModifierOverrideSection(input: $settingsStore.settings.input)
             } header: {
-                Text(String(localized: "settings.input.keyboard.header", defaultValue: "키보드 입력 설정"))
-                Text(String(localized: "settings.input.keyboard.header.description", defaultValue: "키보드 입력과 관련된 설정을 구성합니다."))
+                Text(markdown: String(localized: "settings.input.keyboard.header", defaultValue: "키보드 입력 설정"))
+                Text(markdown: String(localized: "settings.input.keyboard.header.description", defaultValue: "키보드 입력과 관련된 설정을 구성합니다."))
             }
 
             
@@ -83,31 +83,31 @@ struct InputSettingsTab: View {
                  */
 #endif
             } header: {
-                Text(String(localized: "settings.input.mouse.header", defaultValue: "마우스 입력 설정"))
-                Text(String(localized: "settings.input.mouse.header.description", defaultValue: "마우스 입력과 관련된 설정을 구성합니다."))
+                Text(markdown: String(localized: "settings.input.mouse.header", defaultValue: "마우스 입력 설정"))
+                Text(markdown: String(localized: "settings.input.mouse.header.description", defaultValue: "마우스 입력과 관련된 설정을 구성합니다."))
             } footer: {
 #if os(iOS)
                 switch settingsStore.settings.input.touchInputMode {
                 case .touch:
-                    Text(String(localized: "settings.input.mouse.footer.touch", defaultValue: "참고:\n- 터치 모드는 탭 시 해당 위치로 이동 후 클릭합니다.\n- 드래그는 한 손가락으로 바로 클릭+드래그로 처리됩니다."))
+                    Text(markdown: String(localized: "settings.input.mouse.footer.touch", defaultValue: "참고:\n- 터치 모드는 탭 시 해당 위치로 이동 후 클릭합니다.\n- 드래그는 한 손가락으로 바로 클릭+드래그로 처리됩니다."))
                 case .trackpad:
-                    Text(String(localized: "settings.input.mouse.footer.trackpad", defaultValue: "참고:\n- 트랙패드 모드는 상대 좌표로 커서를 이동합니다.\n- 드래그는 긴 누름 또는 두 손가락 조합으로 실행됩니다."))
+                    Text(markdown: String(localized: "settings.input.mouse.footer.trackpad", defaultValue: "참고:\n- 트랙패드 모드는 상대 좌표로 커서를 이동합니다.\n- 드래그는 긴 누름 또는 두 손가락 조합으로 실행됩니다."))
                 }
 #endif
             }
             
             Section {
                 Toggle(isOn: $settingsStore.settings.input.invertMouseButtons) {
-                    Text(String(localized: "settings.input.mouse.invert_buttons.title", defaultValue: "마우스 좌우 버튼을 반전하기"))
-                    Text(String(localized: "settings.input.mouse.invert_buttons.description", defaultValue: "2-버튼 마우스의 좌우 버튼 위치를 반전하여 사용합니다.\n왼손을 주로 사용하는 사용자에게 도움이 될 수 있습니다."))
+                    Text(markdown: String(localized: "settings.input.mouse.invert_buttons.title", defaultValue: "마우스 좌우 버튼을 반전하기"))
+                    Text(markdown: String(localized: "settings.input.mouse.invert_buttons.description", defaultValue: "2-버튼 마우스의 좌우 버튼 위치를 반전하여 사용합니다.\n왼손을 주로 사용하는 사용자에게 도움이 될 수 있습니다."))
                 }
                 Toggle(isOn: $settingsStore.settings.input.invertVerticalScroll) {
-                    Text(String(localized: "settings.input.mouse.invert_vertical_scroll.title", defaultValue: "세로↕ 스크롤 방향을 반전하기"))
-                    Text(String(localized: "settings.input.mouse.invert_vertical_scroll.description", defaultValue: "세로 스크롤 시 상하 방향을 반전시킵니다."))
+                    Text(markdown: String(localized: "settings.input.mouse.invert_vertical_scroll.title", defaultValue: "세로↕ 스크롤 방향을 반전하기"))
+                    Text(markdown: String(localized: "settings.input.mouse.invert_vertical_scroll.description", defaultValue: "세로 스크롤 시 상하 방향을 반전시킵니다."))
                 }
                 Toggle(isOn: $settingsStore.settings.input.invertHorizontalScroll) {
-                    Text(String(localized: "settings.input.mouse.invert_horizontal_scroll.title", defaultValue: "가로↔ 스크롤 방향을 반전하기"))
-                    Text(String(localized: "settings.input.mouse.invert_horizontal_scroll.description", defaultValue: "가로 스크롤 시 좌우 방향을 반전시킵니다."))
+                    Text(markdown: String(localized: "settings.input.mouse.invert_horizontal_scroll.title", defaultValue: "가로↔ 스크롤 방향을 반전하기"))
+                    Text(markdown: String(localized: "settings.input.mouse.invert_horizontal_scroll.description", defaultValue: "가로 스크롤 시 좌우 방향을 반전시킵니다."))
                 }
             }
             
@@ -132,8 +132,8 @@ struct InputSettingsTab: View {
                     }
                 }
             } header: {
-                Text(String(localized: "settings.input.advanced.header", defaultValue: "고급 설정"))
-                Text(String(localized: "settings.input.advanced.header.description", defaultValue: "입력 관련 고급 설정을 구성합니다."))
+                Text(markdown: String(localized: "settings.input.advanced.header", defaultValue: "고급 설정"))
+                Text(markdown: String(localized: "settings.input.advanced.header.description", defaultValue: "입력 관련 고급 설정을 구성합니다."))
             }
             
             Section {
@@ -143,7 +143,7 @@ struct InputSettingsTab: View {
                     }
                 }
             } header: {
-                Text(String(localized: "settings.input.troubleshoot.header", defaultValue: "문제 해결"))
+                Text(markdown: String(localized: "settings.input.troubleshoot.header", defaultValue: "문제 해결"))
             }
         }
         .formStyle(.grouped)

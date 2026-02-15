@@ -10,11 +10,11 @@ struct OnboardingPermissionsStepView: View {
         VStack(spacing: 32) {
             Spacer()
 
-            Text(String(localized: "onboarding.permissions.title", defaultValue: "권한 설정"))
+            Text(markdown: String(localized: "onboarding.permissions.title", defaultValue: "권한 설정"))
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text(String(localized: "onboarding.permissions.description", defaultValue: "Noctiluca가 정상적으로 작동하려면 다음 권한이 필요합니다."))
+            Text(markdown: String(localized: "onboarding.permissions.description", defaultValue: "Noctiluca가 정상적으로 작동하려면 다음 권한이 필요합니다."))
                 .font(.title3)
                 .foregroundStyle(.secondary)
 

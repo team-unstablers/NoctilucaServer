@@ -24,7 +24,7 @@ private struct AddressBarCandidateItemView: View {
                     Text(item.endpointURL)
                         .foregroundColor(isFocused ? Color.white.opacity(0.8) : Color.secondary)
                     
-                    Text(String(localized: "main.address_bar.candidate.registered_contact", defaultValue: "— 연락처에 등록된 컴퓨터"))
+                    Text(markdown: String(localized: "main.address_bar.candidate.registered_contact", defaultValue: "— 연락처에 등록된 컴퓨터"))
                         .foregroundColor(isFocused ? Color.white.opacity(0.6) : Color.secondary)
                 }
                 if case .quickConnect(let endpointURL) = candidate {

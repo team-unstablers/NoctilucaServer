@@ -27,7 +27,7 @@ struct AudioCodecSpecificationSheet: View {
         VStack {
             Form {
                 Section {
-                    Text(String(localized: "session-settings.projection.audio_codec_list.no_options", defaultValue: "이 코덱에는 설정할 수 있는 옵션이 없습니다."))
+                    Text(markdown: String(localized: "session-settings.projection.audio_codec_list.no_options", defaultValue: "이 코덱에는 설정할 수 있는 옵션이 없습니다."))
                         .foregroundStyle(.secondary)
                 } header: {
                     Text(specification.displayTitle)
@@ -94,8 +94,8 @@ struct AudioCodecSpecificationListContainer: View {
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(String(localized: "session-settings.projection.audio_codec_list.title", defaultValue: "오디오 코덱 우선순위 설정"))
-            Text(String(localized: "session-settings.projection.audio_codec_list.description", defaultValue: "사용할 오디오 코덱의 우선순위를 설정합니다. 우선순위가 높은 코덱부터 서버와 협상을 시도합니다."))
+            Text(markdown: String(localized: "session-settings.projection.audio_codec_list.title", defaultValue: "오디오 코덱 우선순위 설정"))
+            Text(markdown: String(localized: "session-settings.projection.audio_codec_list.description", defaultValue: "사용할 오디오 코덱의 우선순위를 설정합니다. 우선순위가 높은 코덱부터 서버와 협상을 시도합니다."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -204,9 +204,9 @@ struct AudioCodecSpecificationAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading) {
-                Text(String(localized: "session-settings.projection.audio_codec_list.add.title", defaultValue: "코덱 선택"))
+                Text(markdown: String(localized: "session-settings.projection.audio_codec_list.add.title", defaultValue: "코덱 선택"))
                     .font(.title2.bold())
-                Text(String(localized: "session-settings.projection.audio_codec_list.add.description", defaultValue: "추가할 코덱 유형을 선택하세요."))
+                Text(markdown: String(localized: "session-settings.projection.audio_codec_list.add.description", defaultValue: "추가할 코덱 유형을 선택하세요."))
                     .foregroundStyle(.secondary)
             }
 

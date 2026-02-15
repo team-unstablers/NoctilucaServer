@@ -14,11 +14,11 @@ struct OnboardingWelcomeStepView: View {
                 .resizable()
                 .frame(width: 128, height: 128)
 
-            Text(String(localized: "onboarding.welcome.title", defaultValue: "Noctiluca Server를 선택해 주셔서 감사합니다!"))
+            Text(markdown: String(localized: "onboarding.welcome.title", defaultValue: "Noctiluca Server를 선택해 주셔서 감사합니다!"))
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text(String(localized: "onboarding.welcome.description", defaultValue: "Noctiluca Server는 Sirius 프로토콜을 기반으로 한 원격 제어 소프트웨어입니다.\n몇 가지 설정을 완료하면 바로 시작할 수 있습니다."))
+            Text(markdown: String(localized: "onboarding.welcome.description", defaultValue: "Noctiluca Server는 Sirius 프로토콜을 기반으로 한 원격 제어 소프트웨어입니다.\n몇 가지 설정을 완료하면 바로 시작할 수 있습니다."))
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

@@ -52,7 +52,7 @@ struct UIKitMainWindow: View {
             return Alert(
                 title: Text(error?.alertTitle ?? String(localized: "main.error.title", defaultValue: "오류 발생")),
                 message: Text(error?.localizedDescription ?? String(localized: "main.error.unknown", defaultValue: "알 수 없는 오류가 발생했습니다.")),
-                dismissButton: .default(Text(String(localized: "common.confirm", defaultValue: "확인"))) {
+                dismissButton: .default(Text(markdown: String(localized: "common.confirm", defaultValue: "확인"))) {
                     viewModel.dismissLastError()
                 }
             )

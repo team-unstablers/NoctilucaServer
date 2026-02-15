@@ -76,7 +76,7 @@ struct MiscSettingsTab: View {
                     SettingsPickerItem(value: "warning") { Text("Warning") }
                     SettingsPickerItem(value: "error") { Text("Error") }
                 } label: {
-                    Text(String(localized: "settings.misc.logging.minimum_log_level.title",
+                    Text(markdown: String(localized: "settings.misc.logging.minimum_log_level.title",
                          defaultValue: "최소 로그 레벨"))
                 }
 

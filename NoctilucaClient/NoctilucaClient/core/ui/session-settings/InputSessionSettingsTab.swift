@@ -42,11 +42,11 @@ struct InputSessionSettingsTab: View {
                  */
                 
                 Toggle(isOn: hackToggleBinding("app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle")) {
-                    Text(String(localized: "session-settings.input.hack.hangul_toggle", defaultValue: "한국어: Windows 스타일의 한/영 전환"))
+                    Text(markdown: String(localized: "session-settings.input.hack.hangul_toggle", defaultValue: "한국어: Windows 스타일의 한/영 전환"))
                     Group {
                         Text("app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle")
                             .font(.caption2.monospaced())
-                        Text(String(localized: "session-settings.input.hack.hangul_toggle_desc", defaultValue: "Windows 스타일의 한/영 전환 동작을 에뮬레이트합니다.\n오른쪽 ⌘ (Command)키와 ⌥ (Option) 키를 한/영 전환으로 사용합니다."))
+                        Text(markdown: String(localized: "session-settings.input.hack.hangul_toggle_desc", defaultValue: "Windows 스타일의 한/영 전환 동작을 에뮬레이트합니다.\n오른쪽 ⌘ (Command)키와 ⌥ (Option) 키를 한/영 전환으로 사용합니다."))
                             .font(.subheadline)
                     }
                         .foregroundStyle(.secondary)
@@ -65,7 +65,7 @@ struct InputSessionSettingsTab: View {
                 }
                  */
             } header: {
-                Text(String(localized: "session-settings.input.experimental", defaultValue: "실험 기능"))
+                Text(markdown: String(localized: "session-settings.input.experimental", defaultValue: "실험 기능"))
             }
         }
         .formStyle(.grouped)

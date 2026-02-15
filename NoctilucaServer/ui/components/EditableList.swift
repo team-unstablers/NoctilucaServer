@@ -125,7 +125,11 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                             removeSelected()
                         }
                         .disabled(selection.isEmpty)
+#if os(iOS)
                         .buttonStyle(.borderedProminent)
+#else
+                        .buttonStyle(.bordered)
+#endif
                     }
 
                     // Edit Button (Only visible if EditSheet is provided and 1 item is selected)
@@ -136,7 +140,11 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                             }
                         }
                         .disabled(selection.count != 1)
+#if os(iOS)
                         .buttonStyle(.borderedProminent)
+#else
+                        .buttonStyle(.bordered)
+#endif
                     }
 
                     // Add Button (Only visible if AddSheet is provided)
@@ -144,7 +152,11 @@ where ID: Hashable, RowContent: View, AddSheet: View, EditSheet: View {
                         Button("추가") {
                             isAddSheetPresented = true
                         }
+#if os(iOS)
                         .buttonStyle(.borderedProminent)
+#else
+                        .buttonStyle(.bordered)
+#endif
                     }
                 }
             }

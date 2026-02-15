@@ -68,7 +68,7 @@ struct GeneralSessionSettingsTab: View {
             Section {
                 TextField(String(localized: "session-settings.general.name.placeholder", defaultValue: "연락처 이름"), text: displayName)
             } header: {
-                Text(String(localized: "session-settings.general.name", defaultValue: "이름"))
+                Text(markdown: String(localized: "session-settings.general.name", defaultValue: "이름"))
             }
 
             Section {
@@ -78,8 +78,8 @@ struct GeneralSessionSettingsTab: View {
 #endif
                     .autocorrectionDisabled(true)
             } header: {
-                Text(String(localized: "session-settings.general.endpoint", defaultValue: "호스트 주소"))
-                Text(String(localized: "session-settings.general.endpoint.example", defaultValue: "예: office.example.com:8282"))
+                Text(markdown: String(localized: "session-settings.general.endpoint", defaultValue: "호스트 주소"))
+                Text(markdown: String(localized: "session-settings.general.endpoint.example", defaultValue: "예: office.example.com:8282"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -98,7 +98,7 @@ struct GeneralSessionSettingsTab: View {
 
                 // 심볼 선택
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "session-settings.general.icon.symbol", defaultValue: "심볼"))
+                    Text(markdown: String(localized: "session-settings.general.icon.symbol", defaultValue: "심볼"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -127,7 +127,7 @@ struct GeneralSessionSettingsTab: View {
 
                 // 배경색 선택
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "session-settings.general.icon.background", defaultValue: "배경색"))
+                    Text(markdown: String(localized: "session-settings.general.icon.background", defaultValue: "배경색"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 

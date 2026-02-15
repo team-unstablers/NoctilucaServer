@@ -1,1 +1,1 @@
-../../../../../NoctilucaServer/NoctilucaServer/ui/views/components/EditableList.swift
+../../../../../NoctilucaServer/ui/components/EditableList.swift

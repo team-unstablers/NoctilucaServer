@@ -29,7 +29,7 @@ struct AuthChallengeSheetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(String(localized: "auth.challenge.title", defaultValue: "인증 챌린지를 받았습니다"))
+            Text(markdown: String(localized: "auth.challenge.title", defaultValue: "인증 챌린지를 받았습니다"))
                 .font(.headline)
                 .padding(.bottom, 4)
                 .foregroundStyle(.primary)
@@ -59,9 +59,9 @@ struct AuthChallengeSheetView: View {
     private var authFormBody: some View {
         if viewModel.availableMethods.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "auth.challenge.no_methods_available", defaultValue: "지원 가능한 인증 방법이 없습니다."))
+                Text(markdown: String(localized: "auth.challenge.no_methods_available", defaultValue: "지원 가능한 인증 방법이 없습니다."))
                     .foregroundStyle(.secondary)
-                Text(String(localized: "auth.challenge.no_methods_detail", defaultValue: "서버가 요구하는 인증 방법을 클라이언트가 지원하지 않습니다."))
+                Text(markdown: String(localized: "auth.challenge.no_methods_detail", defaultValue: "서버가 요구하는 인증 방법을 클라이언트가 지원하지 않습니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -96,29 +96,29 @@ struct AuthChallengeSheetView: View {
         switch viewModel.selectedMethod {
         case .password:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "auth.challenge.username_label", defaultValue: "사용자명"))
+                Text(markdown: String(localized: "auth.challenge.username_label", defaultValue: "사용자명"))
                 TextField(String(localized: "auth.challenge.username_placeholder", defaultValue: "사용자명 입력"), text: $viewModel.username)
 #if os(iOS)
                     .textInputAutocapitalization(.never)
 #endif
                     .textFieldStyle(.roundedBorder)
-                Text(String(localized: "auth.challenge.password_label", defaultValue: "비밀번호"))
+                Text(markdown: String(localized: "auth.challenge.password_label", defaultValue: "비밀번호"))
                 SecureField(String(localized: "auth.challenge.password_placeholder", defaultValue: "비밀번호 입력"), text: $viewModel.password)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { submit() }
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "auth.challenge.password_label", defaultValue: "비밀번호"))
+                Text(markdown: String(localized: "auth.challenge.password_label", defaultValue: "비밀번호"))
                 SecureField(String(localized: "auth.challenge.password_placeholder", defaultValue: "비밀번호 입력"), text: $viewModel.simplePassword)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { submit() }
             }
         case .sshKey:
-            Text(String(localized: "auth.challenge.ssh_key_not_supported", defaultValue: "SSH 키 인증은 아직 지원되지 않습니다."))
+            Text(markdown: String(localized: "auth.challenge.ssh_key_not_supported", defaultValue: "SSH 키 인증은 아직 지원되지 않습니다."))
                 .foregroundStyle(.secondary)
         default:
-            Text(String(localized: "auth.challenge.unsupported_method", defaultValue: "지원되지 않는 인증 방법입니다."))
+            Text(markdown: String(localized: "auth.challenge.unsupported_method", defaultValue: "지원되지 않는 인증 방법입니다."))
                 .foregroundStyle(.secondary)
         }
     }

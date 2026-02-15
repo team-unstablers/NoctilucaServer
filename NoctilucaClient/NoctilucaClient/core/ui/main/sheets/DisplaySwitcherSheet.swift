@@ -28,7 +28,7 @@ struct DisplaySwitcherSheet: View {
 
     var body: some View {
         VStack {
-            Text(String(localized: "main.display_switcher.title", defaultValue: "디스플레이 전환"))
+            Text(markdown: String(localized: "main.display_switcher.title", defaultValue: "디스플레이 전환"))
                 .font(.headline)
                 .padding()
 

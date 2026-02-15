@@ -42,9 +42,9 @@ struct CredentialAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading) {
-                Text(String(localized: "session-settings.security.credential_add.title", defaultValue: "자격 증명 추가"))
+                Text(markdown: String(localized: "session-settings.security.credential_add.title", defaultValue: "자격 증명 추가"))
                     .font(.title2.bold())
-                Text(String(localized: "session-settings.security.credential_add.description", defaultValue: "추가할 자격 증명 유형을 선택하세요."))
+                Text(markdown: String(localized: "session-settings.security.credential_add.description", defaultValue: "추가할 자격 증명 유형을 선택하세요."))
                     .foregroundStyle(.secondary)
             }
 
@@ -102,7 +102,7 @@ struct CredentialAddSheet: View {
         switch selectedTemplate {
         case .password:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "session-settings.security.credential_add.password.header", defaultValue: "사용자명-비밀번호"))
+                Text(markdown: String(localized: "session-settings.security.credential_add.password.header", defaultValue: "사용자명-비밀번호"))
                     .font(.headline)
                 TextField(String(localized: "session-settings.security.credential_add.password.username", defaultValue: "사용자명"), text: $username)
                     .textFieldStyle(.roundedBorder)
@@ -111,14 +111,14 @@ struct CredentialAddSheet: View {
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "session-settings.security.credential_add.simple_password.header", defaultValue: "간단 비밀번호"))
+                Text(markdown: String(localized: "session-settings.security.credential_add.simple_password.header", defaultValue: "간단 비밀번호"))
                     .font(.headline)
                 SecureField(String(localized: "session-settings.security.credential_add.simple_password.password", defaultValue: "비밀번호"), text: $simplePassword)
                     .textFieldStyle(.roundedBorder)
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "session-settings.security.credential_add.ssh_key.header", defaultValue: "SSH 키"))
+                Text(markdown: String(localized: "session-settings.security.credential_add.ssh_key.header", defaultValue: "SSH 키"))
                     .font(.headline)
                 TextField(String(localized: "session-settings.security.credential_add.ssh_key.private_key_placeholder", defaultValue: "공개    키 (OpenSSH 형식 / PEM 형식을 지원합니다)"), text: $privateKey, axis: .vertical)
                     .textFieldStyle(.roundedBorder)

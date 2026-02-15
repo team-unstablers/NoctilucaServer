@@ -35,7 +35,7 @@ struct NOCCertificateView: View {
             List(selection: $selection) {
                 HStack(spacing: 0) {
                     Text(leaf.commonName)
-                    Text(String(localized: "auth.certificate.leaf_suffix", defaultValue: " - 리프 인증서"))
+                    Text(markdown: String(localized: "auth.certificate.leaf_suffix", defaultValue: " - 리프 인증서"))
                         .italic()
                         .foregroundStyle(.secondary)
                 }
@@ -47,7 +47,7 @@ struct NOCCertificateView: View {
                     let intermediate = chain[index]
                     HStack(spacing: 0) {
                         Text(intermediate.commonName)
-                        Text(String(localized: "auth.certificate.chain_suffix", defaultValue: " - 체인 인증서"))
+                        Text(markdown: String(localized: "auth.certificate.chain_suffix", defaultValue: " - 체인 인증서"))
                             .italic()
                             .foregroundStyle(.secondary)
                     }
@@ -79,7 +79,7 @@ struct NOCCertificateView: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text(String(localized: "auth.certificate.chain", defaultValue: "인증서 체인"))
+            Text(markdown: String(localized: "auth.certificate.chain", defaultValue: "인증서 체인"))
                 .font(.headline)
                 .padding(.bottom, 8)
                 .foregroundStyle(.primary)
@@ -87,7 +87,7 @@ struct NOCCertificateView: View {
             
             chainSelector
             
-            Text(String(localized: "auth.certificate.info", defaultValue: "인증서 정보"))
+            Text(markdown: String(localized: "auth.certificate.info", defaultValue: "인증서 정보"))
                 .font(.headline)
                 .padding(.vertical, 8)
                 .foregroundStyle(.primary)
@@ -276,7 +276,7 @@ struct NOCCertificateDetailView: View {
 
             if let fingerprint = certificate.fingerprint {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "auth.certificate.sha256_fingerprint", defaultValue: "SHA-256 지문"))
+                    Text(markdown: String(localized: "auth.certificate.sha256_fingerprint", defaultValue: "SHA-256 지문"))
                         .font(.footnote)
                         .bold()
 
@@ -289,7 +289,7 @@ struct NOCCertificateDetailView: View {
             
             if let algorithmDescription = certificate.algorithmDescription {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "auth.certificate.key_algorithm", defaultValue: "키 알고리즘"))
+                    Text(markdown: String(localized: "auth.certificate.key_algorithm", defaultValue: "키 알고리즘"))
                         .font(.footnote)
                         .bold()
 
@@ -302,7 +302,7 @@ struct NOCCertificateDetailView: View {
             
             if let publicKey = certificate.publicKey {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "auth.certificate.public_key", defaultValue: "공개 키"))
+                    Text(markdown: String(localized: "auth.certificate.public_key", defaultValue: "공개 키"))
                         .font(.footnote)
                         .bold()
 
