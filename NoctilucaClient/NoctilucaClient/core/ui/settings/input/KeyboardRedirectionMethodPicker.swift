@@ -15,7 +15,7 @@ struct KeyboardRedirectionMethodPicker: View {
         SettingsPicker(selection: $input.redirectionMethod) {
             SettingsPickerItem(value: AppSettings.InputRedirectionMethod.gameController) {
                 Text("GameController.framework")
-                Text("Apple의 게임 컨트롤러 프레임워크를 사용합니다.\nApp 전환 (⌘Tab), 창 닫기(⌘W), App 종료(⌘Q) 등의 단축키가 동작하지 않을 수 있습니다.")
+                Text(String(localized: "settings.input.keyboard_redirection.method.game_controller.description", defaultValue: "Apple의 게임 컨트롤러 프레임워크를 사용합니다.\nApp 전환 (⌘Tab), 창 닫기(⌘W), App 종료(⌘Q) 등의 단축키가 동작하지 않을 수 있습니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -24,9 +24,9 @@ struct KeyboardRedirectionMethodPicker: View {
 #if os(macOS)
                 Text("Cocoa Event Tap")
 #else
-                Text("Cocoa Event Tap (이 플랫폼에서는 사용할 수 없습니다)")
+                Text(String(localized: "settings.input.keyboard_redirection.method.cocoa_event_tap.unavailable", defaultValue: "Cocoa Event Tap (이 플랫폼에서는 사용할 수 없습니다)"))
 #endif
-                Text("macOS의 Cocoa Event Tap API를 사용하여 입력을 리디렉션합니다.\n모든 단축키가 정상적으로 동작하지만, 입력 모니터링 권한을 필요로 합니다.")
+                Text(String(localized: "settings.input.keyboard_redirection.method.cocoa_event_tap.description", defaultValue: "macOS의 Cocoa Event Tap API를 사용하여 입력을 리디렉션합니다.\n모든 단축키가 정상적으로 동작하지만, 입력 모니터링 권한을 필요로 합니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -34,8 +34,8 @@ struct KeyboardRedirectionMethodPicker: View {
             .disabled(true)
 #endif
         } label: {
-            Text("입력 리디렉션 방법")
-            Text("키보드 입력을 원격 컴퓨터로 리디렉션하는 방법을 설정합니다.")
+            Text(String(localized: "settings.input.keyboard_redirection.method.label", defaultValue: "입력 리디렉션 방법"))
+            Text(String(localized: "settings.input.keyboard_redirection.method.description", defaultValue: "키보드 입력을 원격 컴퓨터로 리디렉션하는 방법을 설정합니다."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }

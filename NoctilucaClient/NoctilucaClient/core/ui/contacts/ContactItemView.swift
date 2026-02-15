@@ -93,14 +93,14 @@ struct ContactItemView: View {
             isHovering = hovering
         }
         .contextMenu {
-            Button("편집") {
+            Button(String(localized: "common.edit", defaultValue: "편집")) {
                 actionHandler(.edit)
             }
-            Button("복제") {
+            Button(String(localized: "common.duplicate", defaultValue: "복제")) {
                 actionHandler(.duplicate)
             }
             Divider()
-            Button("삭제", role: .destructive) {
+            Button(String(localized: "common.delete", defaultValue: "삭제"), role: .destructive) {
                 actionHandler(.delete)
             }
         }

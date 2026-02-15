@@ -1,0 +1,6247 @@
+{
+  "sourceLanguage" : "ko",
+  "strings" : {
+    "" : {
+
+    },
+    "-10%" : {
+
+    },
+    "**[Codec]**" : {
+
+    },
+    "**[Performance]**" : {
+
+    },
+    "%@" : {
+
+    },
+    "%@ - " : {
+
+    },
+    "%ufps" : {
+
+    },
+    "© 2025 team unstablers Inc. All rights reserved." : {
+
+    },
+    "→" : {
+
+    },
+    "⇪ (Caps Lock)" : {
+
+    },
+    "+10%" : {
+
+    },
+    "|" : {
+
+    },
+    "⌃ (Control)" : {
+
+    },
+    "⌘ (Command)" : {
+
+    },
+    "⌥ (Option)" : {
+
+    },
+    "⎋ (Escape)" : {
+
+    },
+    "0.5x" : {
+
+    },
+    "0%" : {
+
+    },
+    "1.5x" : {
+
+    },
+    "4K" : {
+
+    },
+    "25%" : {
+
+    },
+    "50%" : {
+
+    },
+    "60 FPS" : {
+
+    },
+    "75%" : {
+
+    },
+    "100%" : {
+
+    },
+    "about.appeal_button" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appeal…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호소문…"
+          }
+        }
+      }
+    },
+    "about.appeal.body" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hello. We are **Team Unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto “We make your dreams come true,” we have primarily focused on addressing technical challenges that many clients have been unable to resolve. In candor, we continued to undertake such work because we were uncertain of our long-term direction, and the area in which we were most competent was computing.\n\nHowever, due to the ongoing economic downturn and the resulting changes to our revenue structure, the long-term sustainability of our company has become uncertain. We have accrued delays in salary payments and tax obligations, and our corporate bank account has also been subject to seizure.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \"여러분들의 꿈을 이루어 드립니다\" 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 사실은 저희는 \"우리가 하고 싶은 것이 무엇인지 몰라서\", \"그나마 할 줄 아는 것이 컴퓨터 뿐이어서\" 이런 모토를 내걸고 남을 돕는 일을 계속 해왔습니다.\n\n하지만, 불경기로 인해 수익 구조에도 여러 변동이 생기면서, 저희 회사의 지속 가능 여부도 불투명해졌습니다. 급여와 세금도 밀리고, 회사 통장에는 압류도 들어오게 되었습니다.\n\nNoctiluca / Sirius는 그런 와중에 멍청한 제가 바닥부터 구상해내고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다."
+          }
+        }
+      }
+    },
+    "about.appeal.subtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please entrust your work to us at [team unstablers Inc.](https://unstabler.pl)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "저희 [주식회사 팀언스테이블러즈](https://unstabler.pl)에게 일을 맡겨주세요"
+          }
+        }
+      }
+    },
+    "about.appeal.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appeal"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호소문"
+          }
+        }
+      }
+    },
+    "about.features.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available Features"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용 가능한 기능 목록"
+          }
+        }
+      }
+    },
+    "about.open_source_licenses" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Source Licenses"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오픈 소스 라이선스"
+          }
+        }
+      }
+    },
+    "about.open_source_notice" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This software includes open source software. Click the 'Open Source Licenses' button below for details."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 소프트웨어는 오픈 소스 소프트웨어를 포함합니다. 자세한 사항은 아래 '오픈 소스 라이선스' 버튼을 눌러 확인할 수 있습니다."
+          }
+        }
+      }
+    },
+    "about.oss_license_info" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This software includes open source software. [License Info…](http://google.com)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](http://google.com)"
+          }
+        }
+      }
+    },
+    "about.product_version.title_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ 버전"
+          }
+        }
+      }
+    },
+    "about.protocol_version_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protocol Version %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로토콜 버전 %@"
+          }
+        }
+      }
+    },
+    "about.section_header_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ 정보"
+          }
+        }
+      }
+    },
+    "about.sirius_protocol_spec" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sirius protocol specification is available on GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol)."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."
+          }
+        }
+      }
+    },
+    "about.siriuskit_version.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SiriusKit Version"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SiriusKit 버전"
+          }
+        }
+      }
+    },
+    "about.siriuskit_version.value_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ (%2$@)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "about.terms_of_service" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Service"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용 약관"
+          }
+        }
+      }
+    },
+    "about.transport_layer.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available Transport Layer Implementations"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용 가능한 트랜스포트 레이어 구현체"
+          }
+        }
+      }
+    },
+    "about.version_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %1$@ (%2$@)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "버전 %1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "about.version_full_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ (%2$@)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "App Store" : {
+
+    },
+    "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle" : {
+
+    },
+    "auth.certificate.chain" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate Chain"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증서 체인"
+          }
+        }
+      }
+    },
+    "auth.certificate.chain_suffix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " - Chain Certificate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : " - 체인 인증서"
+          }
+        }
+      }
+    },
+    "auth.certificate.info" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate Info"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증서 정보"
+          }
+        }
+      }
+    },
+    "auth.certificate.leaf_suffix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " - Leaf Certificate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : " - 리프 인증서"
+          }
+        }
+      }
+    },
+    "auth.challenge.method_picker" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auth Method"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 방법"
+          }
+        }
+      }
+    },
+    "auth.challenge.no_message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(None)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(없음)"
+          }
+        }
+      }
+    },
+    "auth.challenge.no_methods_available" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No supported authentication methods available."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지원 가능한 인증 방법이 없습니다."
+          }
+        }
+      }
+    },
+    "auth.challenge.no_methods_detail" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The client does not support the authentication method required by the server."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 요구하는 인증 방법을 클라이언트가 지원하지 않습니다."
+          }
+        }
+      }
+    },
+    "auth.challenge.password_label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호"
+          }
+        }
+      }
+    },
+    "auth.challenge.password_placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Password"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호 입력"
+          }
+        }
+      }
+    },
+    "auth.challenge.server_message_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Message: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 메시지: %@"
+          }
+        }
+      }
+    },
+    "auth.challenge.ssh_key_not_supported" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH key authentication is not supported yet."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SSH 키 인증은 아직 지원되지 않습니다."
+          }
+        }
+      }
+    },
+    "auth.challenge.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Received Authentication Challenge"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 챌린지를 받았습니다"
+          }
+        }
+      }
+    },
+    "auth.challenge.unsupported_method" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported authentication method."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지원되지 않는 인증 방법입니다."
+          }
+        }
+      }
+    },
+    "auth.challenge.username_label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명"
+          }
+        }
+      }
+    },
+    "auth.challenge.username_placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Username"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명 입력"
+          }
+        }
+      }
+    },
+    "auth.identity.actual_fingerprint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fingerprint presented by server"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에서 제시한 인증서 지문"
+          }
+        }
+      }
+    },
+    "auth.identity.danger" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danger"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "위험"
+          }
+        }
+      }
+    },
+    "auth.identity.expected_fingerprint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate fingerprint remembered by this client"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 클라이언트가 기억하고 있는 인증서 지문"
+          }
+        }
+      }
+    },
+    "auth.identity.fingerprint_mismatch_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "`%@` presented a certificate, but the fingerprint is different from the last connection."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "`%@`에서 인증서를 제시했지만, 인증서 지문이 저번에 접속했을 때와 다릅니다."
+          }
+        }
+      }
+    },
+    "auth.identity.fingerprint_mismatch.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Certificate Fingerprint Mismatch!"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 인증서 지문이 일치하지 않습니다!"
+          }
+        }
+      }
+    },
+    "auth.identity.help.consequences.mismatch.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the worst case, passwords or confidential information may be leaked."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최악의 경우, 비밀번호나 기밀 정보가 유출될 수 있습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.consequences.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What happens if I continue?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "만약 계속 진행하면 어떻게 되나요?"
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.mismatch.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It seems another computer is trying to scam you by **faking its identity**."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다른 컴퓨터가 **신분을 위조**해서 사기를 치려고 하는 것 같습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.mismatch.body_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca Navigator keeps a copy of the ID (certificate) of every computer it connects to. This warning is shown because the ID received this time does not match the one received previously."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)의 복사본을 받아둡니다. 이번에 받은 신분증은 저번에 받은 것과 일치하지 않았기 때문에 경고를 표시합니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.untrusted.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This warning is shown because the authenticity of the ID (certificate) presented by the computer could not be verified.\n"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "컴퓨터가 제시한 신분증 (인증서)의 진위를 검증할 수 없기 때문에 이 경고가 표시되었습니다.\n"
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.untrusted.body_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When computers communicate with encryption, an ID (certificate) is required. There are two main ways to get a certificate.\n"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "컴퓨터끼리 암호화된 통신을 할 때는, 신분증 (인증서)이 필요합니다. 인증서를 발급 받는 방법은 크게 2가지가 있습니다.\n"
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.untrusted.body_3" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• **Get issued by a trusted CA**: This warning will not appear, but it costs money."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• **신뢰받는 인증 기관에서 발급받기**: 지금 보고 계신 것과 같은 경고가 표시되지 않게 되지만, 비용을 지불해야 합니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.untrusted.body_4" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• **Issue a Self-Signed Certificate**: This is a way to create your own certificate. This error is shown because other computers cannot verify its authenticity.\n"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• **자가 서명 인증서 발급하기**: 자기 자신의 인증서를 직접 만드는 방법입니다. 다른 컴퓨터들이 진위를 검증할 수 없기 때문에 이러한 오류가 표시됩니다.\n"
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.untrusted.body_5" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The computer you tried to connect to presented an ID of unknown authenticity."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이번에 접속을 시도한 컴퓨터는 진위를 알 수 없는 신분증을 제시하였습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.what_happened.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I don't understand what this means. Please explain it simply."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "무슨 의미인지 하나도 모르겠어요. 최대한 쉽게 설명해 주세요."
+          }
+        }
+      }
+    },
+    "auth.identity.help.what_to_do.mismatch.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• If you are working in an insecure internet environment (e.g., public Wi-Fi), disconnect and try again in a secure environment."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 안전하지 않은 인터넷 환경 (공개된 Wi-Fi 등)에서 작업하고 있다면, 접속을 해제하고 안전이 보장되는 환경에서 다시 시도하십시오."
+          }
+        }
+      }
+    },
+    "auth.identity.help.what_to_do.mismatch.body_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• If you remember replacing the certificate recently, it is safe to proceed."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 만약 최근에 인증서를 직접 교체한 기억이 있으시다면 계속 진행하셔도 괜찮습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.what_to_do.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So what should I do?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "그럼 저는 어떻게 해야 하나요?"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.mismatch.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This warning can occur in the following situations:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 경고는 다음과 같은 상황에서 발생할 수 있습니다:"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.mismatch.body_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• The server administrator replaced the certificate."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 서버 관리자가 인증서를 교체하였습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.mismatch.body_3" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• There is a possibility of a **Man-in-the-Middle (MITM) attack**: Someone might be trying to eavesdrop on or tamper with the communication for malicious purposes."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• **중간자 공격**(MITM)의 가능성이 있습니다: 누군가가 악의적인 목적으로 통신 내용을 훔쳐보거나 변조하려 할 수도 있습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Why is this warning shown?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 경고는 왜 표시되나요?"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.untrusted.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This warning may be shown in the following situations:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 경고는 다음과 같은 상황에서 표시될 수 있습니다:"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.untrusted.body_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• When using a self-signed certificate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 자가 서명 인증서를 사용한 경우"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.untrusted.body_3" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• If the system trust store is outdated"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 시스템의 트러스트 스토어가 낡은 상태인 경우"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.untrusted.body_4" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• If the system clock is incorrect and differs significantly from the actual time."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 시스템의 시계가 틀어져 실제 시각과 커다란 차이가 나는 경우"
+          }
+        }
+      }
+    },
+    "auth.identity.navigation_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate Verification Failed"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증서 검증 실패"
+          }
+        }
+      }
+    },
+    "auth.identity.proceed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "계속 진행"
+          }
+        }
+      }
+    },
+    "auth.identity.tab.certificate_info" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate Info"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증서 정보"
+          }
+        }
+      }
+    },
+    "auth.identity.tab.help" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "도움말"
+          }
+        }
+      }
+    },
+    "auth.identity.tab.warning" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "경고"
+          }
+        }
+      }
+    },
+    "auth.identity.trust_always" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Trust"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "항상 신뢰하기"
+          }
+        }
+      }
+    },
+    "auth.identity.trust_once" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trust Once"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이번만 신뢰하기"
+          }
+        }
+      }
+    },
+    "auth.identity.untrusted_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "`%@` presented a certificate, but the system trust store decided it cannot be trusted."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "`%@`에서 인증서를 제시했지만, 시스템의 트러스트 스토어에서 이를 신뢰할 수 없다고 판단했습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.untrusted.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot verify server certificate."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 인증서를 검증할 수 없습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.warning" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "경고"
+          }
+        }
+      }
+    },
+    "Cocoa Event Tap" : {
+
+    },
+    "common.add" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "추가"
+          }
+        }
+      }
+    },
+    "common.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동"
+          }
+        }
+      }
+    },
+    "common.cancel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "취소"
+          }
+        }
+      }
+    },
+    "common.change" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "변경"
+          }
+        }
+      }
+    },
+    "common.confirm" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "확인"
+          }
+        }
+      }
+    },
+    "common.connect" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결"
+          }
+        }
+      }
+    },
+    "common.delete" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "삭제"
+          }
+        }
+      }
+    },
+    "common.disabled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabled"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비활성화"
+          }
+        }
+      }
+    },
+    "common.duplicate" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "복제"
+          }
+        }
+      }
+    },
+    "common.edit" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "편집"
+          }
+        }
+      }
+    },
+    "common.open_settings" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "설정 열기"
+          }
+        }
+      }
+    },
+    "common.retry" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다시 시도"
+          }
+        }
+      }
+    },
+    "common.save" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "저장"
+          }
+        }
+      }
+    },
+    "common.settings" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "설정…"
+          }
+        }
+      }
+    },
+    "contacts.add.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add New Host"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "새 호스트 추가"
+          }
+        }
+      }
+    },
+    "Copyright © 2026 team unstablers Inc. All rights reserved." : {
+
+    },
+    "Data rate: %@" : {
+
+    },
+    "Decode: %u ms (avg)" : {
+
+    },
+    "Decoder: %@" : {
+
+    },
+    "description" : {
+
+    },
+    "fourCC: %@" : {
+
+    },
+    "FPS: %u (dropped: %u)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FPS: %1$u (dropped: %2$u)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "FPS: %1$u (dropped: %2$u)"
+          }
+        }
+      }
+    },
+    "Frame rate: %@ fps" : {
+
+    },
+    "GameController.framework" : {
+
+    },
+    "HDR (High Dynamic Range)" : {
+
+    },
+    "HIDIO" : {
+
+    },
+    "Main Profile" : {
+
+    },
+    "main.address_bar.candidate.connect_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review settings and connect to %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "설정 검토 후 %@ 으로 연결하기"
+          }
+        }
+      }
+    },
+    "main.address_bar.candidate.quick_connect_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick connect to %@ using default settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본 설정을 사용하여 %@ 으로 빠르게 연결하기"
+          }
+        }
+      }
+    },
+    "main.address_bar.candidate.registered_contact" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "— Registered Computers"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "— 연락처에 등록된 컴퓨터"
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.adjustment_prefix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjustments: "
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "조정 사항: "
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.adjustment.bitrate" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower Bitrate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비트레이트 낮춤"
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.adjustment.encoding_efficiency" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encoding Efficiency First"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인코딩 효율 우선 모드"
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.adjustment.framerate" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower Framerate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프레임레이트 낮춤"
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.adjustment.resolution" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower Resolution"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "해상도 낮춤"
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.hw_encoder_unavailable" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server cannot use the hardware encoder.\nPerformance may be degraded due to software encoding."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 하드웨어 인코더를 사용할 수 없는 상태입니다.\n소프트웨어 인코딩으로 인해 성능이 저하될 수 있습니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.reason.decoding" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decoding performance is insufficient."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디코딩 성능이 부족합니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.reason.encoding" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server encoding performance is insufficient."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 인코딩 성능이 부족합니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.reason.network" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insufficient network bandwidth."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "네트워크 대역폭이 부족합니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.reason.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screen quality adjusted for unknown reasons."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "알 수 없는 이유로 화면 품질이 조정되었습니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screen Quality Degraded"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 품질이 저하되었습니다"
+          }
+        }
+      }
+    },
+    "main.address_bar.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Host Address"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트 주소를 입력하세요"
+          }
+        }
+      }
+    },
+    "main.address_bar.security.dangerous.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This host is using a certificate that is not trusted by the macOS trust store.\nThere is a risk that a third party could eavesdrop on or tamper with the remote control session."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 호스트는 macOS의 트러스트 스토어에서 신뢰가 거부된 인증서를 사용하고 있습니다.\n원격 제어 세션의 내용을 제 3자가 도청하거나 변조할 위험이 있습니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.security.dangerous.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insecure Connection"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "안전하지 않은 연결"
+          }
+        }
+      }
+    },
+    "main.address_bar.security.icon_hint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click this icon to view server certificate information."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 아이콘을 누르면 서버의 인증서 정보를 확인할 수 있습니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.security.neutral.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This host provides an encrypted connection using a self-signed certificate."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 호스트는 자가 서명 인증서를 사용하여 암호화된 연결을 제공하고 있습니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.security.neutral.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encrypted Connection"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "암호화된 연결"
+          }
+        }
+      }
+    },
+    "main.address_bar.security.trustable.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This host provides an encrypted connection using a certificate trusted by the macOS trust store."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 호스트는 macOS의 트러스트 스토어에서 신뢰하는 인증서를 사용하여 암호화 연결을 제공하고 있습니다."
+          }
+        }
+      }
+    },
+    "main.address_bar.security.trustable.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secure Connection"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "안전한 연결"
+          }
+        }
+      }
+    },
+    "main.connecting.message_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting to %@..."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@에 연결하고 있습니다..."
+          }
+        }
+      }
+    },
+    "main.connecting.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결 중"
+          }
+        }
+      }
+    },
+    "main.display_switcher.open_in_new_window" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in New Window"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "별도 창으로 열기"
+          }
+        }
+      }
+    },
+    "main.display_switcher.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch Display"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 전환"
+          }
+        }
+      }
+    },
+    "main.display_switcher.unnamed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Unnamed)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(이름 없음)"
+          }
+        }
+      }
+    },
+    "main.error.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오류 발생"
+          }
+        }
+      }
+    },
+    "main.error.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An unknown error occurred."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "알 수 없는 오류가 발생했습니다."
+          }
+        }
+      }
+    },
+    "main.new_connection.delete_confirm_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete '%@'?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "'%@'을(를) 삭제하시겠습니까?"
+          }
+        }
+      }
+    },
+    "main.new_connection.delete_host_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Host"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트 삭제"
+          }
+        }
+      }
+    },
+    "main.new_connection.duplicate_name_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (Copy)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ (복사본)"
+          }
+        }
+      }
+    },
+    "main.new_connection.load_error" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load contact list."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연락처 목록을 불러오지 못했습니다."
+          }
+        }
+      }
+    },
+    "main.new_connection.no_saved_hosts" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No saved hosts"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "저장된 호스트가 없습니다"
+          }
+        }
+      }
+    },
+    "main.new_connection.no_saved_hosts_hint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the button below to add a new host,\nor connect directly from the address bar above."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아래 버튼을 눌러 새 호스트를 추가하거나,\n상단 주소창에서 바로 연결하세요."
+          }
+        }
+      }
+    },
+    "main.new_connection.saved_hosts" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved Hosts"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "저장된 호스트"
+          }
+        }
+      }
+    },
+    "main.new_connection.version_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "버전 %@"
+          }
+        }
+      }
+    },
+    "main.server_address" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Address"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 주소"
+          }
+        }
+      }
+    },
+    "Navigator" : {
+
+    },
+    "Noctiluca " : {
+
+    },
+    "notification.background_session_active.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing in Background"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "백그라운드 재생 중"
+          }
+        }
+      }
+    },
+    "Options:" : {
+
+    },
+    "Ping: %@ ms" : {
+
+    },
+    "ping: %@ms" : {
+
+    },
+    "Progress: %lld%%" : {
+
+    },
+    "Projection" : {
+
+    },
+    "ProjectionData" : {
+
+    },
+    "Resolution: %lld x %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resolution: %1$lld x %2$lld"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resolution: %1$lld x %2$lld"
+          }
+        }
+      }
+    },
+    "SDR (Standard Dynamic Range)" : {
+
+    },
+    "session-settings.delete_contact.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting this contact cannot be undone."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 연락처를 삭제하면 복구할 수 없습니다."
+          }
+        }
+      }
+    },
+    "session-settings.delete_contact.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Contact"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연락처 삭제"
+          }
+        }
+      }
+    },
+    "session-settings.general.endpoint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host Address"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트 주소"
+          }
+        }
+      }
+    },
+    "session-settings.general.endpoint.example" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g., office.example.com:8282"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "예: office.example.com:8282"
+          }
+        }
+      }
+    },
+    "session-settings.general.endpoint.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host Address (host:port)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트 주소 (host:port)"
+          }
+        }
+      }
+    },
+    "session-settings.general.icon" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icon"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아이콘"
+          }
+        }
+      }
+    },
+    "session-settings.general.icon.background" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Color"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "배경색"
+          }
+        }
+      }
+    },
+    "session-settings.general.icon.symbol" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "심볼"
+          }
+        }
+      }
+    },
+    "session-settings.general.name" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이름"
+          }
+        }
+      }
+    },
+    "session-settings.general.name.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contact Name"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연락처 이름"
+          }
+        }
+      }
+    },
+    "session-settings.input.experimental" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimental"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "실험 기능"
+          }
+        }
+      }
+    },
+    "session-settings.input.hack.hangul_toggle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Korean: Windows-style Han/Eng Toggle"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "한국어: Windows 스타일의 한/영 전환"
+          }
+        }
+      }
+    },
+    "session-settings.input.hack.hangul_toggle_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emulate Windows-style Han/Eng toggling.\nUse Right ⌘ (Command) and ⌥ (Option) keys for Han/Eng switching."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Windows 스타일의 한/영 전환 동작을 에뮬레이트합니다.\n오른쪽 ⌘ (Command)키와 ⌥ (Option) 키를 한/영 전환으로 사용합니다."
+          }
+        }
+      }
+    },
+    "session-settings.input.keyboard_hacks" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keyboard Hack Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드 핵 (Hack) 설정"
+          }
+        }
+      }
+    },
+    "session-settings.input.keyboard_hacks_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request the server to modify or augment keyboard behavior for user convenience.\n- Not all servers support these hacks.\n- Some hacks are mutually exclusive. Unexpected behavior may occur if used simultaneously."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자 편의를 위해 키보드 동작을 수정하거나 보완하도록 서버에 요청합니다.\n- 모든 서버가 이 Hack들을 지원하는 것은 아닙니다.\n- 일부 Hack은 상호 배타적입니다. 동시 사용 시 예기치 않은 동작이 발생할 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 설정"
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.add.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the codec type to add."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "추가할 코덱 유형을 선택하세요."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.add.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Codec"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 선택"
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set priority of audio codecs. Codecs with higher priority are attempted first during negotiation."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용할 오디오 코덱의 우선순위를 설정합니다. 우선순위가 높은 코덱부터 서버와 협상을 시도합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.empty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(No codecs configured)\nClick the Add button to register codecs."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.no_options" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There are no configurable options for this codec."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 코덱에는 설정할 수 있는 옵션이 없습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.template.opus.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A modern audio codec providing high quality and low latency."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "높은 음질과 낮은 지연 시간을 제공하는 현대적인 오디오 코덱입니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.template.opus.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opus"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Opus"
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.template.pcma.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A G.711 variant mainly used in Europe and other regions."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유럽 등지에서 주로 사용되는 G.711 변형입니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.template.pcma.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "G.711 a-law"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "G.711 a-law"
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.template.pcmu.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A standard codec used in traditional telephone networks. High compatibility."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전통적인 전화망에서 사용되는 표준 코덱입니다. 호환성이 높습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.template.pcmu.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "G.711 u-law"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "G.711 u-law"
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio_codec_list.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio Codec Priority"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 코덱 우선순위 설정"
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio.enable" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Audio Projection"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션 활성화"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.add.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the codec type to add."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "추가할 코덱 유형을 선택하세요."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.add.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Codec"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 선택"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set the priority of codecs to be used by the server. During negotiation with the client, codecs with higher priority are attempted first."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.empty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(No codecs configured)\nClick the Add button to register codecs."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.h264.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The most widely used video codec. Provides high compatibility."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.h264.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced Video Coding (H.264)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced Video Coding (H.264)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.hevc.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A modern video codec providing higher compression efficiency than H.264."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "H.264보다 더 높은 압축 효율을 제공하는 최신 비디오 코덱입니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.hevc.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High Efficiency Video Coding (H.265)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "High Efficiency Video Coding (H.265)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.mjpg.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A video codec used in traditional remote desktop environments.\nSuitable for displaying frequently changing content in virtual machine environments."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.mjpg.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motion JPEG"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Motion JPEG"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.webp.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use tiled WebP.\nBetter compression than MJPG but uses more resources.\nSuitable for displaying frequently changing content in virtual machine environments."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일링된 WebP를 사용합니다.\nMJPG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.webp.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiled WebP"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tiled WebP"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.zrle.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A bitmap-based video codec used in traditional remote desktop environments.\nSuitable for displaying text-heavy content with few screen changes in virtual machine environments."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 기반 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.zrle.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RLE + Zstd"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "RLE + Zstd"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Priority"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 우선순위 설정"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Setup Mode"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 설정 모드"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select codec setup mode."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 설정 모드를 선택합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.manual" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual (Advanced)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "직접 설정 (고급)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.manual_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manually configure codec requirements."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자가 직접 코덱 요구사항을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.recommended" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Recommended Settings **(Recommended)**"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "권장 설정 사용 **(권장)**"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.recommended_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use codec settings predefined by Noctiluca Navigator."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator에서 미리 정의된 코덱 설정을 사용합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_settings" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 설정"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color Format"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "색상 포맷"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_format.auto_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically select optimal color format."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최적의 색상 포맷을 자동으로 선택합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_format.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set color format."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "색상 포맷을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_format.yuv420_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use YUV 4:2:0 color format. Compatible with most devices."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YUV 4:2:0 색상 포맷을 사용합니다. 대부분의 기기에서 호환됩니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_format.yuv444_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use YUV 4:4:4 color format.\nImproves text readability but increases bandwidth usage and may reduce compatibility."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YUV 4:4:4 색상 포맷을 사용합니다.\n텍스트 가독성이 향상되지만, 대역폭 사용량이 늘어나고 호환성이 떨어질 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_range" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color Range"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "색상 범위"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_range.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set color range."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "색상 범위를 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_range.full" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전체"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_range.full_desc_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use full color range %@.\nColor reproduction is better, but compatibility issues may occur on some devices."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전체 색상 범위 %@를 사용합니다.\n색상 재현이 더 좋지만, 일부 기기에서 호환성 문제가 발생할 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_range.limited" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limited"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "제한됨"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.color_range.limited_desc_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use limited color range %@."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "제한된 색상 범위 %@를 사용합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.display_density" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display Density"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 밀도"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.display_density.auto_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically select display density."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 밀도를 자동으로 선택합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.display_density.best" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quality First"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화질 우선"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.display_density.best_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attempt to use HIDPI / Retina display density.\nProvides better quality but uses high bandwidth and computing resources."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "HIDPI / Retina 디스플레이 밀도를 사용하려 노력합니다.\n더 나은 화질을 제공하지만, 높은 대역폭과 컴퓨팅 자원을 사용합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.display_density.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set display density."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 밀도를 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.display_density.performance" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Performance First"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "성능 우선"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.display_density.performance_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize performance when setting display density.\nIn most cases, it is set to 1x density."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "성능을 우선시하여 디스플레이 밀도를 설정합니다.\n대부분의 경우 1x 밀도로 설정됩니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.dynamic_range" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dynamic Range"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다이나믹 레인지"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.dynamic_range.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set dynamic range."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다이나믹 레인지를 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.dynamic_range.hdr_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use HDR dynamic range if available."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용 가능한 경우 HDR 다이나믹 레인지를 사용합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.dynamic_range.sdr_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Standard Dynamic Range."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "표준 다이나믹 레인지를 사용합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.frame_rate" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frame Rate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프레임 속도"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.frame_rate.auto_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Determine frame rate based on client negotiation."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트의 협상 내용을 기반으로 프레임 속도를 결정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.frame_rate.set_desc_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set max frame rate to %d FPS."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프레임 속도를 최대 %d FPS로 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.hw_accel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hardware Acceleration"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "하드웨어 가속"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.hw_accel.auto_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server automatically decides whether to use hardware acceleration based on the environment."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 환경에 맞춰 하드웨어 가속 사용 여부를 자동으로 결정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.hw_accel.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set policy for requesting hardware acceleration for server encoding."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 인코딩의 하드웨어 가속 요청 정책을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.hw_accel.disabled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabled"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용 안 함"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.hw_accel.disabled_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request hardware acceleration from the server.\nNote: Option name appears as false due to legacy compatibility."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에게 하드웨어 가속 사용을 요청합니다.\n참고: 옵션 이름은 legacy 호환성 때문에 false로 표시됩니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.max_resolution" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max Resolution"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 해상도"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.max_resolution.auto_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Determine maximum resolution based on client negotiation."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트의 협상 내용을 기반으로 최대 해상도를 결정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.max_resolution.set_desc_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set max resolution to %@."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 해상도를 %@으로 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Profile"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 프로파일"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.auto_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically select optimal codec profile."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최적의 코덱 프로파일을 자동으로 선택합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set codec profile."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 프로파일을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.h264_baseline" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baseline Profile (Highest compatibility, Low compression)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Baseline Profile (가장 높은 호환성, 압축률 낮음)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.h264_baseline_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use highly compatible Baseline Profile.\nCompression and quality are lower because advanced codec features cannot be used."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호환성이 높은 Baseline Profile을 사용합니다.\n코덱의 고급 기능을 사용할 수 없기 때문에 압축률과 화질이 낮습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.h264_high" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High Profile (Lowest compatibility, High compression)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "High Profile (가장 낮은 호환성, 압축률 높음)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.h264_high_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use High Profile.\nUses advanced features to provide the best compression and image quality."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "High Profile을 사용합니다.\n고급 기능을 사용하여 최고의 압축률과 화질을 제공합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.h264_main_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Main Profile.\nProvides adequate compatibility and compression for most devices."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.hevc_main_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Main Profile.\nProvides adequate compatibility and compression for most devices."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.hevc_main10" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main10 Profile (10-bit color support)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main10 Profile (10-bit 색상 지원)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.profile.hevc_main10_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Main10 Profile.\nProvides richer colors with 10-bit color support."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main10 Profile을 사용합니다.\n10-bit 색상 지원으로 더 풍부한 색상을 제공합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.title_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Codec Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ 코덱 설정"
+          }
+        }
+      }
+    },
+    "session-settings.projection.negotiation" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Negotiation Policy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 협상 정책"
+          }
+        }
+      }
+    },
+    "session-settings.projection.negotiation_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set codec negotiation policy with server."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와의 코덱 협상 정책을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.negotiation.mandatory" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requirements First"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "요구 사항 우선"
+          }
+        }
+      }
+    },
+    "session-settings.projection.negotiation.mandatory_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark all user-specified codec requirements as mandatory.\nNegotiation may fail if the server cannot meet the requirements.\nAlso, requirements may be ignored depending on the server's codec negotiation policy."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자가 지정한 코덱 관련 요구 사항을 전부 필수적인 것으로 마킹합니다.\n서버가 요구 사항을 충족하지 못할 경우 협상에 실패할 수 있습니다.\n또한, 서버 측의 코덱 협상 정책에 따라 요구 사항이 무시될 수도 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.negotiation.optional" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compatibility First **(Recommended)**"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호환성 우선 **(권장)**"
+          }
+        }
+      }
+    },
+    "session-settings.projection.negotiation.optional_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark all user-specified codec requirements as optional.\nAllows flexible negotiation, but requirements may not be fully met."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자가 지정한 코덱 관련 요구 사항을 전부 필수적이지 않은 것으로 마킹합니다.\n유연하게 협상이 가능하지만 요구 사항이 전부 충족되지 않을 수도 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.save_and_connect.short" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save & Connect"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "저장 후 연결"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the type of credential to add."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "추가할 자격 증명 유형을 선택하세요."
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.display_name_placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display Name (Optional)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "표시 이름 (선택 사항)"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.password.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username-Password"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명-비밀번호"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.password.password" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.password.username" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.simple_password.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simple Password"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "간단 비밀번호"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.simple_password.password" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.ssh_key.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH Key"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SSH 키"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.ssh_key.private_key_placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Public Key (Supports OpenSSH / PEM format)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "개인 키 (OpenSSH 형식 / PEM 형식을 지원합니다)"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.template.password.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authenticate using username and password."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명과 비밀번호를 사용한 인증을 수행합니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.template.password.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username-Password Auth"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명-비밀번호 인증"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.template.simple_password.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authenticate using only a password."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호만을 사용한 인증을 수행합니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.template.simple_password.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simple Password Auth"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "간단 비밀번호 인증"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.template.ssh_key.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authenticate using SSH public/private keys."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SSH 공개 키/개인 키 기반 인증을 수행합니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.template.ssh_key.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH Key Auth"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SSH 키 인증"
+          }
+        }
+      }
+    },
+    "session-settings.security.credential_add.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Credential"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자격 증명 추가"
+          }
+        }
+      }
+    },
+    "session-settings.security.credentials" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credentials"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자격 증명"
+          }
+        }
+      }
+    },
+    "session-settings.security.credentials.description.global" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Global credentials are used automatically for all hosts."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.credentials.description.session" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure credentials for the selected host."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "선택된 호스트에 대한 자격 증명을 구성합니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.credentials.empty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(No credentials configured)\nClick the Add button to register credentials."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요."
+          }
+        }
+      }
+    },
+    "session-settings.security.credentials.no_contact_selected" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot manage credentials because no contact is selected."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.credentials.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credentials List"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자격 증명 목록"
+          }
+        }
+      }
+    },
+    "session-settings.security.protocol" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protocol"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로토콜"
+          }
+        }
+      }
+    },
+    "session-settings.security.protocol_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure how the Sirius protocol behaves."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sirius 프로토콜의 동작 방식을 구성합니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.protocol.disable_version" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do Not Announce Client Version"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트 버전을 알리지 않기"
+          }
+        }
+      }
+    },
+    "session-settings.security.protocol.disable_version_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do not announce the client version to the server.\nSome servers may refuse connection or limit functionality."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트 버전을 서버에게 알리지 않습니다.\n일부 서버에서는 접속을 거절하거나 기능을 제한할 수도 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.default" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본"
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accommodates the situation where not all hosts can get SSL/TLS certificates from trusted CAs.\nDisplays a warning popup for hosts using self-signed certificates."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모든 호스트가 신뢰받은 인증 기관으로부터 SSL/TLS 인증서를 발급받을 수 없다는 상황을 감안합니다.\n자가 서명 인증서를 사용한 호스트의 경우 경고 팝업을 표시합니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.policy" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Validation Policy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유효성 검사 정책"
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.policy_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set validation level for server SSL/TLS certificate."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 SSL/TLS 인증서의 유효성 검사 수준을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.strict" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strict"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "엄격히"
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.strict_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strictly validate server SSL/TLS certificates against the system trust store.\nConnections to hosts using self-signed certificates may fail."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "시스템의 트러스트 스토어를 기준으로 서버의 SSL/TLS 인증서를 엄격하게 검사합니다.\n자가 서명 인증서를 사용 중인 호스트의 경우 연결에 실패할 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.unsafe" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do Not Perform **(Dangerous!)**"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "수행하지 않기 **(위험!)**"
+          }
+        }
+      }
+    },
+    "session-settings.security.tls.unsafe_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do not validate the server's SSL/TLS certificate.\nNot recommended as it is vulnerable to Man-in-the-Middle (MITM) attacks where a third party could eavesdrop on or tamper with communication."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 SSL/TLS 인증서의 유효성 검사를 수행하지 않습니다.\n제 3자가 통신 내용을 훔쳐보거나 변조하는 중간자 공격 (MITM)에 취약하므로 권장하지 않습니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.transport" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transport Layer"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "트랜스포트 레이어"
+          }
+        }
+      }
+    },
+    "session-settings.security.transport_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca communicates using the QUIC protocol."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca에서는 QUIC 프로토콜을 사용하여 통신합니다."
+          }
+        }
+      }
+    },
+    "session-settings.tabs.general" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일반"
+          }
+        }
+      }
+    },
+    "session-settings.tabs.input" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "입력"
+          }
+        }
+      }
+    },
+    "session-settings.tabs.projection" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projection"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로젝션"
+          }
+        }
+      }
+    },
+    "session-settings.tabs.security" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Security"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "보안"
+          }
+        }
+      }
+    },
+    "settings.general.default_connection.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change default settings used for quick connection."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "빠른 연결 시 사용할 기본 설정을 변경합니다."
+          }
+        }
+      }
+    },
+    "settings.general.default_connection.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Connection Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본 연결 설정"
+          }
+        }
+      }
+    },
+    "settings.general.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일반"
+          }
+        }
+      }
+    },
+    "settings.input.advanced.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "고급 설정"
+          }
+        }
+      }
+    },
+    "settings.input.advanced.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure advanced input settings."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "입력 관련 고급 설정을 구성합니다."
+          }
+        }
+      }
+    },
+    "settings.input.advanced.scroll_multiplier.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply a multiplier to mouse scroll events.\nHigher values result in faster scrolling."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 스크롤에 배수 값을 적용하여 전송합니다.\n값이 클수록 스크롤 속도가 빨라집니다."
+          }
+        }
+      }
+    },
+    "settings.input.advanced.scroll_multiplier.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mouse Scroll Multiplier"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 스크롤 배수"
+          }
+        }
+      }
+    },
+    "settings.input.exclusive_mode.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable exclusive mode which locks keyboard and mouse.\n- All keyboard shortcuts including ⌘Q will be passed through.\n- Mouse input is delivered as relative coordinates. Useful for 3D tools or FPS games."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드와 마우스를 잠그는 독점 모드를 활성화합니다.\n- ⌘Q를 포함한 모든 키보드 단축키를 그대로 사용할 수 있게 됩니다.\n- 마우스 입력이 상대 좌표로 전달됩니다. 3D 툴이나 FPS 게임 등에서 유용하게 동작합니다."
+          }
+        }
+      }
+    },
+    "settings.input.exclusive_mode.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Exclusive Mode"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "독점 모드 활성화"
+          }
+        }
+      }
+    },
+    "settings.input.exclusive_mode.unavailable.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusive mode is unavailable because Input Monitoring permission is not granted.\nYou must restart Noctiluca Navigator after changing settings."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "입력 모니터링 권한이 주어지지 않아 독점 모드를 사용할 수 없습니다.\n설정을 변경한 후에는 Noctiluca Navigator를 다시 시작해야 합니다."
+          }
+        }
+      }
+    },
+    "settings.input.exclusive_mode.unavailable.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusive Mode Unavailable"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "독점 모드 사용할 수 없음"
+          }
+        }
+      }
+    },
+    "settings.input.exclusive_mode.unlock_shortcut.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set shortcut to unlock exclusive mode when keyboard/mouse are locked."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드 / 마우스가 잠긴 상태에서 독점 모드를 해제하는 단축키를 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.input.exclusive_mode.unlock_shortcut.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusive Mode Unlock Shortcut"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "독점 모드 해제 단축키"
+          }
+        }
+      }
+    },
+    "settings.input.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "입력 설정"
+          }
+        }
+      }
+    },
+    "settings.input.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure general input settings."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전반적인 입력 설정을 구성합니다."
+          }
+        }
+      }
+    },
+    "settings.input.key_mapping.display_mode.apple" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Style"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Apple 스타일"
+          }
+        }
+      }
+    },
+    "settings.input.key_mapping.display_mode.generic" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generic Style"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일반 스타일"
+          }
+        }
+      }
+    },
+    "settings.input.key_mapping.display_mode.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key Display Mode"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키 표시 방식"
+          }
+        }
+      }
+    },
+    "settings.input.key_mapping.editor.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key Mapping Table Editor"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키매핑 테이블 편집기"
+          }
+        }
+      }
+    },
+    "settings.input.keyboard_redirection.method.cocoa_event_tap.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redirects input using macOS Cocoa Event Tap API.\nAll shortcuts work normally, but Input Monitoring permission is required."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "macOS의 Cocoa Event Tap API를 사용하여 입력을 리디렉션합니다.\n모든 단축키가 정상적으로 동작하지만, 입력 모니터링 권한을 필요로 합니다."
+          }
+        }
+      }
+    },
+    "settings.input.keyboard_redirection.method.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure how keyboard input is redirected to the remote computer."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드 입력을 원격 컴퓨터로 리디렉션하는 방법을 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.input.keyboard_redirection.method.game_controller.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses Apple's Game Controller framework.\nShortcuts like App Switch (⌘Tab), Close Window (⌘W), and Quit App (⌘Q) may not work."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Apple의 게임 컨트롤러 프레임워크를 사용합니다.\nApp 전환 (⌘Tab), 창 닫기(⌘W), App 종료(⌘Q) 등의 단축키가 동작하지 않을 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.input.keyboard_redirection.method.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input Redirection Method"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "입력 리디렉션 방법"
+          }
+        }
+      }
+    },
+    "settings.input.keyboard.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keyboard Input Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드 입력 설정"
+          }
+        }
+      }
+    },
+    "settings.input.keyboard.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure settings related to keyboard input."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드 입력과 관련된 설정을 구성합니다."
+          }
+        }
+      }
+    },
+    "settings.input.modifier_override.caps_lock" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caps Lock(⇪) Key"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Caps Lock(⇪) 키"
+          }
+        }
+      }
+    },
+    "settings.input.modifier_override.command" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Command(⌘) Key"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Command(⌘) 키"
+          }
+        }
+      }
+    },
+    "settings.input.modifier_override.control" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control(⌃) Key"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Control(⌃) 키"
+          }
+        }
+      }
+    },
+    "settings.input.modifier_override.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure how each modifier key behaves on the remote computer."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "각 보조 키가 원격 컴퓨터에서 다르게 동작하도록 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.input.modifier_override.label" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier Key Override"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "보조 키 오버라이드"
+          }
+        }
+      }
+    },
+    "settings.input.modifier_override.option" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Option(⌥) Key"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Option(⌥) 키"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mouse Input Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 입력 설정"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure settings related to mouse input."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 입력과 관련된 설정을 구성합니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_buttons.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap the left and right buttons of a 2-button mouse.\nThis can be helpful for left-handed users."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "2-버튼 마우스의 좌우 버튼 위치를 반전하여 사용합니다.\n왼손을 주로 사용하는 사용자에게 도움이 될 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_buttons.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap Mouse Buttons"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 좌우 버튼을 반전하기"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_horizontal_scroll.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert horizontal scrolling direction."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가로 스크롤 시 좌우 방향을 반전시킵니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_horizontal_scroll.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert Horizontal↔ Scroll"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가로↔ 스크롤 방향을 반전하기"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_vertical_scroll.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert vertical scrolling direction."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세로 스크롤 시 상하 방향을 반전시킵니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_vertical_scroll.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert Vertical↕ Scroll"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세로↕ 스크롤 방향을 반전하기"
+          }
+        }
+      }
+    },
+    "settings.input.troubleshoot.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Troubleshoot"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "문제 해결"
+          }
+        }
+      }
+    },
+    "settings.input.troubleshoot.reset.button" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Input Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "입력 관련 설정 초기화"
+          }
+        }
+      }
+    },
+    "settings.input.troubleshoot.reset.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click this button to reset input settings."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 버튼을 누르면 입력 관련 설정이 초기화됩니다."
+          }
+        }
+      }
+    },
+    "settings.input.troubleshoot.reset.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help, I messed up the settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "도와주세요, 잘못 건드렸더니 망가졌어요"
+          }
+        }
+      }
+    },
+    "settings.misc.experimental.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimental"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "실험 기능"
+          }
+        }
+      }
+    },
+    "settings.misc.hidio_qos.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request the MsQuic scheduler to apply high QoS priority to streams related to the HIDIO channel, striving to minimize input latency even in low-throughput environments."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "MsQuic 스케줄러에게 HIDIO 채널과 관련된 스트림에 대해 높은 QoS 우선순위를 적용하도록 요청하여, 낮은 스루풋 환경에서도 입력 지연을 최소화 하기 위해 노력합니다."
+          }
+        }
+      }
+    },
+    "settings.misc.hidio_qos.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply High QoS Priority to HIDIO Channel"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "HIDIO 채널에 높은 QoS 우선순위 적용하기"
+          }
+        }
+      }
+    },
+    "settings.misc.performance_overlay.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display debug statistics."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디버그용 통계 정보를 표시합니다."
+          }
+        }
+      }
+    },
+    "settings.misc.performance_overlay.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Debug Statistics"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디버그용 통계 정보 표시하기"
+          }
+        }
+      }
+    },
+    "settings.plugins.coming_soon" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming soon."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "준비 중입니다."
+          }
+        }
+      }
+    },
+    "settings.plugins.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugins"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "플러그인"
+          }
+        }
+      }
+    },
+    "settings.projection.advanced.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure advanced projection settings."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로젝션과 관련된 고급 설정을 구성합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.advanced.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "고급 설정"
+          }
+        }
+      }
+    },
+    "settings.projection.audio_policy.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set policies related to audio projection behavior."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션의 동작과 관련된 정책을 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_policy.latency_first.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure codec to minimize latency and keep the audio jitter buffer as small as possible.\nIf timing is missed even slightly, audio frames are actively dropped."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지연 시간을 최대한 줄이도록 코덱을 구성하고, 오디오의 지터 버퍼를 최대한 작게 잡습니다.\n조금이라도 타이밍을 놓칠 것 같으면, 오디오 프레임을 적극적으로 건너뜁니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_policy.latency_first.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize Low Latency"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "낮은 지연 시간을 우선하기"
+          }
+        }
+      }
+    },
+    "settings.projection.audio_policy.stability_first.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure codec to prioritize quality and maintain an appropriate audio jitter buffer size.\nMinimizes audio stuttering even in unstable network conditions."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "품질을 우선하도록 코덱을 구성하고, 오디오의 지터 버퍼를 적절한 크기로 유지합니다.\n네트워크 상태가 불안정한 경우에도 오디오 끊김 현상을 최소화합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.audio_policy.stability_first.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize Stability"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "안정성을 우선하기"
+          }
+        }
+      }
+    },
+    "settings.projection.audio_policy.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio Projection Policy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션 정책"
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer_preset.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust the balance between jitter buffer latency and stability."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지터 버퍼의 지연 시간과 안정성 사이의 균형을 조절합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer_preset.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jitter Buffer Preset"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지터 버퍼 프리셋"
+          }
+        }
+      }
+    },
+    "settings.projection.navigation_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projection Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로젝션 설정"
+          }
+        }
+      }
+    },
+    "settings.projection.video_policy.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set policies related to screen projection."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 프로젝션과 관련된 정책을 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.video_policy.fast.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display screen data as soon as it arrives.\nDelay is minimal, but network jitter may cause some visual discomfort."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 데이터가 도착하는 대로 최대한 빠르게 표시합니다.\n딜레이는 적지만, 네트워크 지터(Jitter)로 인하여 약간의 불쾌감이 들 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.video_policy.fast.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display As Fast As Possible"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대한 빠르게 표시하기"
+          }
+        }
+      }
+    },
+    "settings.projection.video_policy.jitter_buffer.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attempts to buffer screen data and play it back at regular intervals.\nScreen display delay increases slightly."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 데이터를 조금씩 모아두었다가 일정한 간격으로 재생하려 노력합니다.\n화면 표시 딜레이가 조금 늘어납니다."
+          }
+        }
+      }
+    },
+    "settings.projection.video_policy.jitter_buffer.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Jitter Buffer"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지터 버퍼 사용하기"
+          }
+        }
+      }
+    },
+    "settings.projection.video_policy.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screen Projection Policy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 프로젝션 정책"
+          }
+        }
+      }
+    },
+    "settings.security.protocol.disable_version_announcement.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do not announce the client version to the server.\nSome servers may refuse connection or limit functionality."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트 버전을 서버에게 알리지 않습니다.\n일부 서버에서는 접속을 거절하거나 기능을 제한할 수도 있습니다."
+          }
+        }
+      }
+    },
+    "settings.security.protocol.disable_version_announcement.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do Not Announce Client Version"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트 버전을 알리지 않기"
+          }
+        }
+      }
+    },
+    "settings.security.protocol.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protocol"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로토콜"
+          }
+        }
+      }
+    },
+    "settings.security.protocol.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure how the Sirius protocol behaves."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sirius 프로토콜의 동작 방식을 구성합니다."
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.default.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accommodates the situation where not all hosts can get SSL/TLS certificates from trusted CAs.\nDisplays a warning popup for hosts using self-signed certificates."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모든 호스트가 신뢰받은 인증 기관으로부터 SSL/TLS 인증서를 발급받을 수 없다는 상황을 감안합니다.\n자가 서명 인증서를 사용한 호스트의 경우 경고 팝업을 표시합니다."
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.default.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본"
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set validation level for server SSL/TLS certificate."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 SSL/TLS 인증서의 유효성 검사 수준을 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.strict.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strictly validate server SSL/TLS certificates against the system trust store.\nConnections to hosts using self-signed certificates may fail."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "시스템의 트러스트 스토어를 기준으로 서버의 SSL/TLS 인증서를 엄격하게 검사합니다.\n자가 서명 인증서를 사용 중인 호스트의 경우 연결에 실패할 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.strict.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strict"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "엄격히"
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Validation Policy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유효성 검사 정책"
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.unsafe.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do not validate the server's SSL/TLS certificate.\nNot recommended as it is vulnerable to Man-in-the-Middle (MITM) attacks where a third party could eavesdrop on or tamper with communication."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 SSL/TLS 인증서의 유효성 검사를 수행하지 않습니다.\n제 3자가 통신 내용을 훔쳐보거나 변조하는 중간자 공격 (MITM)에 취약하므로 권장하지 않습니다."
+          }
+        }
+      }
+    },
+    "settings.security.tls_validation.unsafe.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do Not Perform **(Dangerous!)**"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "수행하지 않기 **(위험!)**"
+          }
+        }
+      }
+    },
+    "settings.security.transport.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transport Layer"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "트랜스포트 레이어"
+          }
+        }
+      }
+    },
+    "settings.security.transport.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca communicates using the QUIC protocol."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca에서는 QUIC 프로토콜을 사용하여 통신합니다."
+          }
+        }
+      }
+    },
+    "settings.tabs.about" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "정보"
+          }
+        }
+      }
+    },
+    "settings.tabs.general" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일반"
+          }
+        }
+      }
+    },
+    "settings.tabs.input" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "입력"
+          }
+        }
+      }
+    },
+    "settings.tabs.misc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misc"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기타"
+          }
+        }
+      }
+    },
+    "settings.tabs.plugins" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugins"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "플러그인"
+          }
+        }
+      }
+    },
+    "settings.tabs.projection" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projection"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로젝션"
+          }
+        }
+      }
+    },
+    "settings.tabs.security" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Security"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "보안"
+          }
+        }
+      }
+    },
+    "test" : {
+
+    },
+    "YUV 4:2:0" : {
+
+    },
+    "YUV 4:4:4" : {
+
+    },
+    "디스플레이 구성을 로드하고 있습니다" : {
+
+    },
+    "삭제" : {
+
+    },
+    "세션 준비 중..." : {
+
+    },
+    "추가" : {
+
+    },
+    "편집" : {
+
+    },
+    "프로젝션 채널 초기화 중..." : {
+
+    },
+    "항목을 찾을 수 없습니다." : {
+
+    }
+  },
+  "version" : "1.1"
+}

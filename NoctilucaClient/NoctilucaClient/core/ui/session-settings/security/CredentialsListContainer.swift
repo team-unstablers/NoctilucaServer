@@ -69,7 +69,7 @@ struct CredentialsListContainer: View {
         if !canManageEntries {
             VStack(alignment: .leading, spacing: 12) {
                 headerView
-                Text("연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다.")
+                Text(String(localized: "session-settings.security.credentials.no_contact_selected", defaultValue: "연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다."))
                     .foregroundStyle(.secondary)
                 Spacer()
             }
@@ -78,9 +78,9 @@ struct CredentialsListContainer: View {
                 items: $entries,
                 id: \.id,
                 selection: $selection,
-                title: "자격 증명 목록",
-                description: scope == .global ? "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다." : "선택된 호스트에 대한 자격 증명을 구성합니다.",
-                emptyText: "(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요.",
+                title: String(localized: "session-settings.security.credentials.title", defaultValue: "자격 증명 목록"),
+                description: scope == .global ? String(localized: "session-settings.security.credentials.description.global", defaultValue: "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다.") : String(localized: "session-settings.security.credentials.description.session", defaultValue: "선택된 호스트에 대한 자격 증명을 구성합니다."),
+                emptyText: String(localized: "session-settings.security.credentials.empty", defaultValue: "(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요."),
                 rowContent: { entry in
                     CredentialEntryRow(entry: entry)
                 },
@@ -96,8 +96,8 @@ struct CredentialsListContainer: View {
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("자격 증명 목록")
-            Text(scope == .global ? "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다." : "선택된 호스트에 대한 자격 증명을 구성합니다.")
+            Text(String(localized: "session-settings.security.credentials.title", defaultValue: "자격 증명 목록"))
+            Text(scope == .global ? String(localized: "session-settings.security.credentials.description.global", defaultValue: "글로벌 자격 증명은 모든 호스트에 대해 자동으로 사용됩니다.") : String(localized: "session-settings.security.credentials.description.session", defaultValue: "선택된 호스트에 대한 자격 증명을 구성합니다."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -112,7 +112,7 @@ struct CredentialsListContainer: View {
             Divider()
             
             if !canManageEntries {
-                Text("연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다.")
+                Text(String(localized: "session-settings.security.credentials.no_contact_selected", defaultValue: "연락처가 선택되지 않아 자격 증명을 관리할 수 없습니다."))
                     .foregroundStyle(.secondary)
             } else {
                 EditableList(
@@ -121,7 +121,7 @@ struct CredentialsListContainer: View {
                     selection: $selection,
                     title: nil,
                     description: nil,
-                    emptyText: "(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요.",
+                    emptyText: String(localized: "session-settings.security.credentials.empty", defaultValue: "(구성된 자격 증명이 없습니다)\n추가 버튼을 눌러 자격 증명을 등록하세요."),
                     rowContent: { entry in
                         CredentialEntryRow(entry: entry)
                     },

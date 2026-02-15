@@ -24,10 +24,10 @@ struct InputWarningBanner: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 8) {
-                Button("설정 열기") {
+                Button(String(localized: "common.open_settings", defaultValue: "설정 열기")) {
                     openSettings()
                 }
-                Button("다시 시도") {
+                Button(String(localized: "common.retry", defaultValue: "다시 시도")) {
                     retry()
                 }
                 .keyboardShortcut(.defaultAction)

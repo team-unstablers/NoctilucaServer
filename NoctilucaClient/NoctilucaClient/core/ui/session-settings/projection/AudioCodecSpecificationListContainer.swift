@@ -27,7 +27,7 @@ struct AudioCodecSpecificationSheet: View {
         VStack {
             Form {
                 Section {
-                    Text("이 코덱에는 설정할 수 있는 옵션이 없습니다.")
+                    Text(String(localized: "session-settings.projection.audio_codec_list.no_options", defaultValue: "이 코덱에는 설정할 수 있는 옵션이 없습니다."))
                         .foregroundStyle(.secondary)
                 } header: {
                     Text(specification.displayTitle)
@@ -36,10 +36,10 @@ struct AudioCodecSpecificationSheet: View {
             .formStyle(.grouped)
 
             HStack {
-                Button("취소") {
+                Button(String(localized: "common.cancel", defaultValue: "취소")) {
                     dismiss()
                 }
-                Button("저장") {
+                Button(String(localized: "common.save", defaultValue: "저장")) {
                     onSave(specification)
                 }
             }
@@ -71,9 +71,9 @@ struct AudioCodecSpecificationListContainer: View {
             items: $codecSpecifications,
             id: \.self,
             selection: $selection,
-            title: "오디오 코덱 우선순위 설정",
-            description: "사용할 오디오 코덱의 우선순위를 설정합니다. 우선순위가 높은 코덱부터 서버와 협상을 시도합니다.",
-            emptyText: "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요.",
+            title: String(localized: "session-settings.projection.audio_codec_list.title", defaultValue: "오디오 코덱 우선순위 설정"),
+            description: String(localized: "session-settings.projection.audio_codec_list.description", defaultValue: "사용할 오디오 코덱의 우선순위를 설정합니다. 우선순위가 높은 코덱부터 서버와 협상을 시도합니다."),
+            emptyText: String(localized: "session-settings.projection.audio_codec_list.empty", defaultValue: "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요."),
             rowContent: { specification in
                 AudioCodecSpecificationListEntry(specification: specification)
             },
@@ -94,8 +94,8 @@ struct AudioCodecSpecificationListContainer: View {
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("오디오 코덱 우선순위 설정")
-            Text("사용할 오디오 코덱의 우선순위를 설정합니다. 우선순위가 높은 코덱부터 서버와 협상을 시도합니다.")
+            Text(String(localized: "session-settings.projection.audio_codec_list.title", defaultValue: "오디오 코덱 우선순위 설정"))
+            Text(String(localized: "session-settings.projection.audio_codec_list.description", defaultValue: "사용할 오디오 코덱의 우선순위를 설정합니다. 우선순위가 높은 코덱부터 서버와 협상을 시도합니다."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -115,7 +115,7 @@ struct AudioCodecSpecificationListContainer: View {
                 selection: $selection,
                 title: nil,
                 description: nil,
-                emptyText: "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요.",
+                emptyText: String(localized: "session-settings.projection.audio_codec_list.empty", defaultValue: "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요."),
                 rowContent: { specification in
                     AudioCodecSpecificationListEntry(specification: specification)
                 },
@@ -178,18 +178,18 @@ struct AudioCodecSpecificationAddSheet: View {
     static let templates: [Template] = [
         .init(
             specification: .opus,
-            title: "Opus",
-            description: "높은 음질과 낮은 지연 시간을 제공하는 현대적인 오디오 코덱입니다."
+            title: String(localized: "session-settings.projection.audio_codec_list.template.opus.title", defaultValue: "Opus"),
+            description: String(localized: "session-settings.projection.audio_codec_list.template.opus.description", defaultValue: "높은 음질과 낮은 지연 시간을 제공하는 현대적인 오디오 코덱입니다.")
         ),
         .init(
             specification: .pcmu,
-            title: "G.711 u-law",
-            description: "전통적인 전화망에서 사용되는 표준 코덱입니다. 호환성이 높습니다."
+            title: String(localized: "session-settings.projection.audio_codec_list.template.pcmu.title", defaultValue: "G.711 u-law"),
+            description: String(localized: "session-settings.projection.audio_codec_list.template.pcmu.description", defaultValue: "전통적인 전화망에서 사용되는 표준 코덱입니다. 호환성이 높습니다.")
         ),
         .init(
             specification: .pcma,
-            title: "G.711 a-law",
-            description: "유럽 등지에서 주로 사용되는 G.711 변형입니다."
+            title: String(localized: "session-settings.projection.audio_codec_list.template.pcma.title", defaultValue: "G.711 a-law"),
+            description: String(localized: "session-settings.projection.audio_codec_list.template.pcma.description", defaultValue: "유럽 등지에서 주로 사용되는 G.711 변형입니다.")
         )
     ]
 
@@ -204,9 +204,9 @@ struct AudioCodecSpecificationAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading) {
-                Text("코덱 선택")
+                Text(String(localized: "session-settings.projection.audio_codec_list.add.title", defaultValue: "코덱 선택"))
                     .font(.title2.bold())
-                Text("추가할 코덱 유형을 선택하세요.")
+                Text(String(localized: "session-settings.projection.audio_codec_list.add.description", defaultValue: "추가할 코덱 유형을 선택하세요."))
                     .foregroundStyle(.secondary)
             }
 
@@ -231,10 +231,10 @@ struct AudioCodecSpecificationAddSheet: View {
 
             HStack {
                 Spacer()
-                Button("취소") {
+                Button(String(localized: "common.cancel", defaultValue: "취소")) {
                     dismiss()
                 }
-                Button("추가") {
+                Button(String(localized: "common.add", defaultValue: "추가")) {
                     guard let selected = selected else { return }
                     handler(selected.specification)
                 }

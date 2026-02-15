@@ -27,16 +27,16 @@ struct UIKitSettingsWindow: View {
     var body: some View {
         Form {
             Section {
-                NavigationLink("일반", value: NavigationItem.settingsDetail(.general))
-                NavigationLink("프로젝션", value: NavigationItem.settingsDetail(.projection))
-                NavigationLink("입력", value: NavigationItem.settingsDetail(.input))
-                NavigationLink("보안", value: NavigationItem.settingsDetail(.security))
-                NavigationLink("기타", value: NavigationItem.settingsDetail(.misc))
-                NavigationLink("플러그인", value: NavigationItem.settingsDetail(.plugins))
-                NavigationLink("정보", value: NavigationItem.settingsDetail(.about))
+                NavigationLink(String(localized: "settings.tabs.general", defaultValue: "일반"), value: NavigationItem.settingsDetail(.general))
+                NavigationLink(String(localized: "settings.tabs.projection", defaultValue: "프로젝션"), value: NavigationItem.settingsDetail(.projection))
+                NavigationLink(String(localized: "settings.tabs.input", defaultValue: "입력"), value: NavigationItem.settingsDetail(.input))
+                NavigationLink(String(localized: "settings.tabs.security", defaultValue: "보안"), value: NavigationItem.settingsDetail(.security))
+                NavigationLink(String(localized: "settings.tabs.misc", defaultValue: "기타"), value: NavigationItem.settingsDetail(.misc))
+                NavigationLink(String(localized: "settings.tabs.plugins", defaultValue: "플러그인"), value: NavigationItem.settingsDetail(.plugins))
+                NavigationLink(String(localized: "settings.tabs.about", defaultValue: "정보"), value: NavigationItem.settingsDetail(.about))
             }
         }
-        .navigationTitle("설정")
+        .navigationTitle(String(localized: "settings.title", defaultValue: "설정"))
     }
 }
 

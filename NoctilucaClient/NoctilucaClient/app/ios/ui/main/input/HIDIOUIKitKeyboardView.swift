@@ -21,7 +21,7 @@ struct HIDIOUIKitCJKCompositionPreviewView: View {
                 .font(.system(size: 18))
                 .padding(4)
             HStack {
-                Text("스페이스 바 / ↩︎ 키로 확정 — CJK Composition Preview")
+                Text(String(localized: "main.input.keyboard.cjk_hint", defaultValue: "스페이스 바 / ↩︎ 키로 확정 — CJK Composition Preview"))
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .font(.caption2)
                     .italic()

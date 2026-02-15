@@ -25,13 +25,13 @@ struct MainWindowConnectingPhaseContentView: View {
                 Spacer()
 
                 HStack(spacing: 0) {
-                    Text("연결 중")
+                    Text(String(localized: "main.connecting.title", defaultValue: "연결 중"))
                         .font(.largeTitle)
                         .fontWeight(.light)
                 }
                 .padding(.bottom, 2)
 
-                Text("\(self.viewModel.endpointURL)에 연결하고 있습니다...")
+                Text(String(format: String(localized: "main.connecting.message_format", defaultValue: "%@에 연결하고 있습니다..."), self.viewModel.endpointURL))
                     .padding(.bottom, 32)
 
                 Spacer()

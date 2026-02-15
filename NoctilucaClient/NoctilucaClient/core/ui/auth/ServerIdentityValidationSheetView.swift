@@ -67,18 +67,18 @@ struct ServerIdentityValidationSheetView: View {
             switch extraInfo {
             case .fingerprintMismatch(let expectedFingerprint, let actualFingerprint):
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("위험")
+                    Text(String(localized: "auth.identity.danger", defaultValue: "위험"))
                         .font(.title)
                         .foregroundStyle(.red)
-                    Text("서버 인증서 지문이 일치하지 않습니다!")
+                    Text(String(localized: "auth.identity.fingerprint_mismatch.title", defaultValue: "서버 인증서 지문이 일치하지 않습니다!"))
                         .font(.title2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .bold()
                 .padding(.bottom, 6)
                 .foregroundStyle(.primary)
-                
-                Text("`\(hostname)`에서 인증서를 제시했지만, 인증서 지문이 저번에 접속했을 때와 다릅니다.")
+
+                Text(String(format: String(localized: "auth.identity.fingerprint_mismatch_format", defaultValue: "`%@`에서 인증서를 제시했지만, 인증서 지문이 저번에 접속했을 때와 다릅니다."), hostname))
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.85))
                     .padding(.bottom, 12)
@@ -87,7 +87,7 @@ struct ServerIdentityValidationSheetView: View {
                     Spacer()
                     
                     VStack(alignment: .leading) {
-                        Text("이 클라이언트가 기억하고 있는 인증서 지문")
+                        Text(String(localized: "auth.identity.expected_fingerprint", defaultValue: "이 클라이언트가 기억하고 있는 인증서 지문"))
                             .font(.system(size: 14))
                             .bold()
                         
@@ -101,7 +101,7 @@ struct ServerIdentityValidationSheetView: View {
                     }
                     
                     VStack(alignment: .leading) {
-                        Text("서버에서 제시한 인증서 지문")
+                        Text(String(localized: "auth.identity.actual_fingerprint", defaultValue: "서버에서 제시한 인증서 지문"))
                             .font(.system(size: 14))
                             .bold()
 
@@ -120,18 +120,18 @@ struct ServerIdentityValidationSheetView: View {
             case .none:
                 Spacer()
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("경고")
+                    Text(String(localized: "auth.identity.warning", defaultValue: "경고"))
                         .font(.title)
                         .foregroundStyle(.yellow)
-                    Text("서버의 인증서를 검증할 수 없습니다.")
+                    Text(String(localized: "auth.identity.untrusted.title", defaultValue: "서버의 인증서를 검증할 수 없습니다."))
                         .font(.title2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .bold()
                 .padding(.bottom, 6)
                 .foregroundStyle(.primary)
-                
-                Text("`\(hostname)`에서 인증서를 제시했지만, 시스템의 트러스트 스토어에서 이를 신뢰할 수 없다고 판단했습니다.")
+
+                Text(String(format: String(localized: "auth.identity.untrusted_format", defaultValue: "`%@`에서 인증서를 제시했지만, 시스템의 트러스트 스토어에서 이를 신뢰할 수 없다고 판단했습니다."), hostname))
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.85))
                     .padding(.bottom, 12)
@@ -158,14 +158,14 @@ struct ServerIdentityValidationSheetView: View {
                 case .fingerprintMismatch(_, _):
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("다른 컴퓨터가 **신분을 위조**해서 사기를 치려고 하는 것 같습니다.")
-                            Text("Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)의 복사본을 받아둡니다. 이번에 받은 신분증은 저번에 받은 것과 일치하지 않았기 때문에 경고를 표시합니다.")
+                            Text(String(localized: "auth.identity.help.simple_explanation.mismatch.body_1", defaultValue: "다른 컴퓨터가 **신분을 위조**해서 사기를 치려고 하는 것 같습니다."))
+                            Text(String(localized: "auth.identity.help.simple_explanation.mismatch.body_2", defaultValue: "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)의 복사본을 받아둡니다. 이번에 받은 신분증은 저번에 받은 것과 일치하지 않았기 때문에 경고를 표시합니다."))
                         }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.callout)
                     } label: {
-                        Text("무슨 의미인지 하나도 모르겠어요. 최대한 쉽게 설명해 주세요.")
+                        Text(String(localized: "auth.identity.help.what_happened.title", defaultValue: "무슨 의미인지 하나도 모르겠어요. 최대한 쉽게 설명해 주세요."))
                             .multilineTextAlignment(.leading)
                             .disclosureLabelStyle()
                     }
@@ -173,43 +173,43 @@ struct ServerIdentityValidationSheetView: View {
                     
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("이 경고는 다음과 같은 상황에서 발생할 수 있습니다:")
-                            Text("• 서버 관리자가 인증서를 교체하였습니다.")
-                            Text("• **중간자 공격**(MITM)의 가능성이 있습니다: 누군가가 악의적인 목적으로 통신 내용을 훔쳐보거나 변조하려 할 수도 있습니다.")
+                            Text(String(localized: "auth.identity.help.why_warning.mismatch.body_1", defaultValue: "이 경고는 다음과 같은 상황에서 발생할 수 있습니다:"))
+                            Text(String(localized: "auth.identity.help.why_warning.mismatch.body_2", defaultValue: "• 서버 관리자가 인증서를 교체하였습니다."))
+                            Text(String(localized: "auth.identity.help.why_warning.mismatch.body_3", defaultValue: "• **중간자 공격**(MITM)의 가능성이 있습니다: 누군가가 악의적인 목적으로 통신 내용을 훔쳐보거나 변조하려 할 수도 있습니다."))
                         }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.callout)
                     } label: {
-                        Text("이 경고는 왜 표시되나요?")
+                        Text(String(localized: "auth.identity.help.why_warning.title", defaultValue: "이 경고는 왜 표시되나요?"))
                             .disclosureLabelStyle()
                     }
                     .padding(.bottom, 12)
-                    
+
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("최악의 경우, 비밀번호나 기밀 정보가 유출될 수 있습니다.")
+                            Text(String(localized: "auth.identity.help.consequences.mismatch.body_1", defaultValue: "최악의 경우, 비밀번호나 기밀 정보가 유출될 수 있습니다."))
                         }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.callout)
                     } label: {
-                        Text("만약 계속 진행하면 어떻게 되나요?")
+                        Text(String(localized: "auth.identity.help.consequences.title", defaultValue: "만약 계속 진행하면 어떻게 되나요?"))
                             .multilineTextAlignment(.leading)
                             .disclosureLabelStyle()
                     }
                     .padding(.bottom, 12)
-                    
+
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("• 안전하지 않은 인터넷 환경 (공개된 Wi-Fi 등)에서 작업하고 있다면, 접속을 해제하고 안전이 보장되는 환경에서 다시 시도하십시오.")
-                            Text("• 만약 최근에 인증서를 직접 교체한 기억이 있으시다면 계속 진행하셔도 괜찮습니다.")
+                            Text(String(localized: "auth.identity.help.what_to_do.mismatch.body_1", defaultValue: "• 안전하지 않은 인터넷 환경 (공개된 Wi-Fi 등)에서 작업하고 있다면, 접속을 해제하고 안전이 보장되는 환경에서 다시 시도하십시오."))
+                            Text(String(localized: "auth.identity.help.what_to_do.mismatch.body_2", defaultValue: "• 만약 최근에 인증서를 직접 교체한 기억이 있으시다면 계속 진행하셔도 괜찮습니다."))
                         }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.callout)
                     } label: {
-                        Text("그럼 저는 어떻게 해야 하나요?")
+                        Text(String(localized: "auth.identity.help.what_to_do.title", defaultValue: "그럼 저는 어떻게 해야 하나요?"))
                             .multilineTextAlignment(.leading)
                             .disclosureLabelStyle()
                     }
@@ -217,33 +217,33 @@ struct ServerIdentityValidationSheetView: View {
                 default:
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("컴퓨터가 제시한 신분증 (인증서)의 진위를 검증할 수 없기 때문에 이 경고가 표시되었습니다.\n")
-                            Text("컴퓨터끼리 암호화된 통신을 할 때는, 신분증 (인증서)이 필요합니다. 인증서를 발급 받는 방법은 크게 2가지가 있습니다.\n")
-                            Text("• **신뢰받는 인증 기관에서 발급받기**: 지금 보고 계신 것과 같은 경고가 표시되지 않게 되지만, 비용을 지불해야 합니다.")
-                            Text("• **자가 서명 인증서 발급하기**: 자기 자신의 인증서를 직접 만드는 방법입니다. 다른 컴퓨터들이 진위를 검증할 수 없기 때문에 이러한 오류가 표시됩니다.\n")
-                            Text("이번에 접속을 시도한 컴퓨터는 진위를 알 수 없는 신분증을 제시하였습니다.")
+                            Text(String(localized: "auth.identity.help.simple_explanation.untrusted.body_1", defaultValue: "컴퓨터가 제시한 신분증 (인증서)의 진위를 검증할 수 없기 때문에 이 경고가 표시되었습니다.\n"))
+                            Text(String(localized: "auth.identity.help.simple_explanation.untrusted.body_2", defaultValue: "컴퓨터끼리 암호화된 통신을 할 때는, 신분증 (인증서)이 필요합니다. 인증서를 발급 받는 방법은 크게 2가지가 있습니다.\n"))
+                            Text(String(localized: "auth.identity.help.simple_explanation.untrusted.body_3", defaultValue: "• **신뢰받는 인증 기관에서 발급받기**: 지금 보고 계신 것과 같은 경고가 표시되지 않게 되지만, 비용을 지불해야 합니다."))
+                            Text(String(localized: "auth.identity.help.simple_explanation.untrusted.body_4", defaultValue: "• **자가 서명 인증서 발급하기**: 자기 자신의 인증서를 직접 만드는 방법입니다. 다른 컴퓨터들이 진위를 검증할 수 없기 때문에 이러한 오류가 표시됩니다.\n"))
+                            Text(String(localized: "auth.identity.help.simple_explanation.untrusted.body_5", defaultValue: "이번에 접속을 시도한 컴퓨터는 진위를 알 수 없는 신분증을 제시하였습니다."))
                         }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.callout)
                     } label: {
-                        Text("무슨 의미인지 하나도 모르겠어요. 최대한 쉽게 설명해 주세요.")
+                        Text(String(localized: "auth.identity.help.what_happened.title", defaultValue: "무슨 의미인지 하나도 모르겠어요. 최대한 쉽게 설명해 주세요."))
                             .multilineTextAlignment(.leading)
                             .disclosureLabelStyle()
                     }
                     .padding(.bottom, 12)
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("이 경고는 다음과 같은 상황에서 표시될 수 있습니다:")
-                            Text("• 자가 서명 인증서를 사용한 경우")
-                            Text("• 시스템의 트러스트 스토어가 낡은 상태인 경우")
-                            Text("• 시스템의 시계가 틀어져 실제 시각과 커다란 차이가 나는 경우")
+                            Text(String(localized: "auth.identity.help.why_warning.untrusted.body_1", defaultValue: "이 경고는 다음과 같은 상황에서 표시될 수 있습니다:"))
+                            Text(String(localized: "auth.identity.help.why_warning.untrusted.body_2", defaultValue: "• 자가 서명 인증서를 사용한 경우"))
+                            Text(String(localized: "auth.identity.help.why_warning.untrusted.body_3", defaultValue: "• 시스템의 트러스트 스토어가 낡은 상태인 경우"))
+                            Text(String(localized: "auth.identity.help.why_warning.untrusted.body_4", defaultValue: "• 시스템의 시계가 틀어져 실제 시각과 커다란 차이가 나는 경우"))
                         }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.callout)
                     } label: {
-                        Text("이 경고는 왜 표시되나요?")
+                        Text(String(localized: "auth.identity.help.why_warning.title", defaultValue: "이 경고는 왜 표시되나요?"))
                             .disclosureLabelStyle()
                     }
                     .padding(.bottom, 12)
@@ -259,23 +259,23 @@ struct ServerIdentityValidationSheetView: View {
                 self.summaryTab
                     .tabItem {
                         Image(systemName: "exclamationmark.triangle.fill")
-                        Text("경고")
+                        Text(String(localized: "auth.identity.tab.warning", defaultValue: "경고"))
                     }
                     .tag(Tab.summary)
                     .id(Tab.summary)
-                
+
                 self.certificateInfoTab
                     .tabItem {
                         Image(systemName: "info.square.fill")
-                        Text("인증서 정보")
+                        Text(String(localized: "auth.identity.tab.certificate_info", defaultValue: "인증서 정보"))
                     }
                     .tag(Tab.certificateInfo)
                     .id(Tab.certificateInfo)
-                
+
                 self.helpTab
                     .tabItem {
                         Image(systemName: "questionmark.circle.fill")
-                        Text("도움말")
+                        Text(String(localized: "auth.identity.tab.help", defaultValue: "도움말"))
                     }
                     .tag(Tab.help)
                     .id(Tab.help)
@@ -283,7 +283,7 @@ struct ServerIdentityValidationSheetView: View {
             }
             
             .tabViewStyle(.tabBarOnly)
-            .navigationTitle("인증서 검증 실패")
+            .navigationTitle(String(localized: "auth.identity.navigation_title", defaultValue: "인증서 검증 실패"))
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #else
@@ -301,14 +301,14 @@ struct ServerIdentityValidationSheetView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
-                        Button("이번만 신뢰하기") {
+                        Button(String(localized: "auth.identity.trust_once", defaultValue: "이번만 신뢰하기")) {
                             handler(.proceed(.once))
                         }
-                        Button("항상 신뢰하기") {
+                        Button(String(localized: "auth.identity.trust_always", defaultValue: "항상 신뢰하기")) {
                             handler(.proceed(.always))
                         }
                     } label: {
-                        Text("계속 진행")
+                        Text(String(localized: "auth.identity.proceed", defaultValue: "계속 진행"))
                     }
                 }
 #else
@@ -322,14 +322,14 @@ struct ServerIdentityValidationSheetView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        Button("이번만 신뢰하기") {
+                        Button(String(localized: "auth.identity.trust_once", defaultValue: "이번만 신뢰하기")) {
                             handler(.proceed(.once))
                         }
-                        Button("항상 신뢰하기") {
+                        Button(String(localized: "auth.identity.trust_always", defaultValue: "항상 신뢰하기")) {
                             handler(.proceed(.always))
                         }
                     } label: {
-                        Text("계속 진행")
+                        Text(String(localized: "auth.identity.proceed", defaultValue: "계속 진행"))
                     }
                 }
 #endif

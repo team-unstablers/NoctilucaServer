@@ -35,7 +35,7 @@ struct NOCCertificateView: View {
             List(selection: $selection) {
                 HStack(spacing: 0) {
                     Text(leaf.commonName)
-                    Text(" - 리프 인증서")
+                    Text(String(localized: "auth.certificate.leaf_suffix", defaultValue: " - 리프 인증서"))
                         .italic()
                         .foregroundStyle(.secondary)
                 }
@@ -47,7 +47,7 @@ struct NOCCertificateView: View {
                     let intermediate = chain[index]
                     HStack(spacing: 0) {
                         Text(intermediate.commonName)
-                        Text(" - 체인 인증서")
+                        Text(String(localized: "auth.certificate.chain_suffix", defaultValue: " - 체인 인증서"))
                             .italic()
                             .foregroundStyle(.secondary)
                     }
@@ -79,7 +79,7 @@ struct NOCCertificateView: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text("인증서 체인")
+            Text(String(localized: "auth.certificate.chain", defaultValue: "인증서 체인"))
                 .font(.headline)
                 .padding(.bottom, 8)
                 .foregroundStyle(.primary)
@@ -87,7 +87,7 @@ struct NOCCertificateView: View {
             
             chainSelector
             
-            Text("인증서 정보")
+            Text(String(localized: "auth.certificate.info", defaultValue: "인증서 정보"))
                 .font(.headline)
                 .padding(.vertical, 8)
                 .foregroundStyle(.primary)
@@ -218,13 +218,13 @@ struct NOCCertificateDetailView: View {
     private var validityStatus: (text: String, color: Color) {
         let now = Date()
         if let notBefore = certificate.notBefore, now < notBefore {
-            return ("아직 유효하지 않음", .orange)
+            return (String(localized: "auth.certificate.validity.not_yet_valid", defaultValue: "아직 유효하지 않음"), .orange)
         } else if let notAfter = certificate.notAfter, now > notAfter {
-            return ("만료됨", .red)
+            return (String(localized: "auth.certificate.validity.expired", defaultValue: "만료됨"), .red)
         } else if certificate.notBefore != nil && certificate.notAfter != nil {
-            return ("유효", .green)
+            return (String(localized: "auth.certificate.validity.valid", defaultValue: "유효"), .green)
         } else {
-            return ("알 수 없음", .secondary)
+            return (String(localized: "common.unknown", defaultValue: "알 수 없음"), .secondary)
         }
     }
 
@@ -237,7 +237,7 @@ struct NOCCertificateDetailView: View {
                         .bold()
                     
                     if let issuer = certificate.issuer {
-                        Text("\(issuer)가 발급함")
+                        Text(String(format: String(localized: "auth.certificate.issued_by_format", defaultValue: "%@가 발급함"), issuer))
                             .font(.footnote)
                     }
                 }
@@ -260,13 +260,13 @@ struct NOCCertificateDetailView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Label {
-                    Text("\(certificate.notBefore?.formatted(date: .abbreviated, time: .omitted) ?? "알 수 없음") 부터 유효")
+                    Text(String(format: String(localized: "auth.certificate.valid_from_format", defaultValue: "%@ 부터 유효"), certificate.notBefore?.formatted(date: .abbreviated, time: .omitted) ?? String(localized: "common.unknown", defaultValue: "알 수 없음")))
                 } icon: {
                     Image(systemName: "calendar")
                 }
 
                 Label {
-                    Text("\(certificate.notAfter?.formatted(date: .abbreviated, time: .omitted) ?? "알 수 없음") 에 만료")
+                    Text(String(format: String(localized: "auth.certificate.expires_at_format", defaultValue: "%@ 에 만료"), certificate.notAfter?.formatted(date: .abbreviated, time: .omitted) ?? String(localized: "common.unknown", defaultValue: "알 수 없음")))
                 } icon: {
                     Image(systemName: "calendar.badge.clock")
                 }
@@ -276,7 +276,7 @@ struct NOCCertificateDetailView: View {
 
             if let fingerprint = certificate.fingerprint {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("SHA-256 지문")
+                    Text(String(localized: "auth.certificate.sha256_fingerprint", defaultValue: "SHA-256 지문"))
                         .font(.footnote)
                         .bold()
 
@@ -289,7 +289,7 @@ struct NOCCertificateDetailView: View {
             
             if let algorithmDescription = certificate.algorithmDescription {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("키 알고리즘")
+                    Text(String(localized: "auth.certificate.key_algorithm", defaultValue: "키 알고리즘"))
                         .font(.footnote)
                         .bold()
 
@@ -302,7 +302,7 @@ struct NOCCertificateDetailView: View {
             
             if let publicKey = certificate.publicKey {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("공개 키")
+                    Text(String(localized: "auth.certificate.public_key", defaultValue: "공개 키"))
                         .font(.footnote)
                         .bold()
 

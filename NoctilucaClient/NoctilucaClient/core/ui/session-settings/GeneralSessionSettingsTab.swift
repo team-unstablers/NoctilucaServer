@@ -66,25 +66,25 @@ struct GeneralSessionSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                TextField("연락처 이름", text: displayName)
+                TextField(String(localized: "session-settings.general.name.placeholder", defaultValue: "연락처 이름"), text: displayName)
             } header: {
-                Text("이름")
+                Text(String(localized: "session-settings.general.name", defaultValue: "이름"))
             }
 
             Section {
-                TextField("호스트 주소 (host:port)", text: endpointURL)
+                TextField(String(localized: "session-settings.general.endpoint.placeholder", defaultValue: "호스트 주소 (host:port)"), text: endpointURL)
 #if os(iOS)
                     .textInputAutocapitalization(.never)
 #endif
                     .autocorrectionDisabled(true)
             } header: {
-                Text("호스트 주소")
-                Text("예: office.example.com:8282")
+                Text(String(localized: "session-settings.general.endpoint", defaultValue: "호스트 주소"))
+                Text(String(localized: "session-settings.general.endpoint.example", defaultValue: "예: office.example.com:8282"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
-            Section("아이콘") {
+            Section(String(localized: "session-settings.general.icon", defaultValue: "아이콘")) {
                 // 미리보기
                 HStack {
                     Spacer()
@@ -98,7 +98,7 @@ struct GeneralSessionSettingsTab: View {
 
                 // 심볼 선택
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("심볼")
+                    Text(String(localized: "session-settings.general.icon.symbol", defaultValue: "심볼"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -127,7 +127,7 @@ struct GeneralSessionSettingsTab: View {
 
                 // 배경색 선택
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("배경색")
+                    Text(String(localized: "session-settings.general.icon.background", defaultValue: "배경색"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 

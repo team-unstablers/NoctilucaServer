@@ -123,7 +123,7 @@ struct AddressBar: View {
                 .opacity(focusPhase.labelTextOpacity)
             } else {
                 if endpointURL.isEmpty {
-                    Text("호스트 주소를 입력하세요")
+                    Text(String(localized: "main.address_bar.placeholder", defaultValue: "호스트 주소를 입력하세요"))
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                         .opacity(focusPhase.labelTextOpacity)
@@ -143,7 +143,7 @@ struct AddressBar: View {
 
     @ViewBuilder
     private var textFieldView: some View {
-        TextField("호스트 주소를 입력하세요", text: $viewModel.draftURL)
+        TextField(String(localized: "main.address_bar.placeholder", defaultValue: "호스트 주소를 입력하세요"), text: $viewModel.draftURL)
 #if os(iOS)
             .keyboardType(.URL)
             .submitLabel(.go)

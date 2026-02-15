@@ -23,7 +23,7 @@ struct AddContactTileView: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 48, height: 48)
 
-                Text("새 호스트 추가")
+                Text(String(localized: "contacts.add.title", defaultValue: "새 호스트 추가"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

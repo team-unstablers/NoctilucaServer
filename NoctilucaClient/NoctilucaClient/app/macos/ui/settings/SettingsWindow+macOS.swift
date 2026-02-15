@@ -32,43 +32,43 @@ struct AppKitSettingsWindow: View {
             TabView(selection: $selectedTab) {
                 GeneralSettingsTab()
                     .tabItem {
-                        Text("일반")
+                        Text(String(localized: "settings.tabs.general", defaultValue: "일반"))
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
                 ProjectionSettingsTab()
                     .tabItem {
-                        Text("프로젝션")
+                        Text(String(localized: "settings.tabs.projection", defaultValue: "프로젝션"))
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
                 InputSettingsTab()
                     .tabItem {
-                        Text("입력")
+                        Text(String(localized: "settings.tabs.input", defaultValue: "입력"))
                     }
                     .tag(SettingsTab.input)
                     .id(SettingsTab.input)
                 SecuritySettingsTab()
                     .tabItem {
-                        Text("보안")
+                        Text(String(localized: "settings.tabs.security", defaultValue: "보안"))
                     }
                     .tag(SettingsTab.security)
                     .id(SettingsTab.security)
                 MiscSettingsTab(settings: $settingsStore.settings)
                     .tabItem {
-                        Text("기타")
+                        Text(String(localized: "settings.tabs.misc", defaultValue: "기타"))
                     }
                     .tag(SettingsTab.misc)
                     .id(SettingsTab.misc)
                 PluginsSettingsTab()
                     .tabItem {
-                        Text("플러그인")
+                        Text(String(localized: "settings.tabs.plugins", defaultValue: "플러그인"))
                     }
                     .tag(SettingsTab.plugins)
                     .id(SettingsTab.plugins)
                 AboutSettingsTab()
                     .tabItem {
-                        Text("정보")
+                        Text(String(localized: "settings.tabs.about", defaultValue: "정보"))
                     }
                     .tag(SettingsTab.about)
                     .id(SettingsTab.about)

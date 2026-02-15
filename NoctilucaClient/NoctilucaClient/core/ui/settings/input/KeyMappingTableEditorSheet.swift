@@ -241,7 +241,7 @@ struct KeyMappingTableEditorSheet: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("키매핑 테이블 편집기")
+                    Text(String(localized: "settings.input.key_mapping.editor.title", defaultValue: "키매핑 테이블 편집기"))
                         .font(.headline)
                         .padding(.bottom, 4)
                         .foregroundStyle(.primary)
@@ -255,14 +255,14 @@ struct KeyMappingTableEditorSheet: View {
                 
                 HStack {
                     Picker(selection: $fromKeyDisplayMode) {
-                        Text("Apple 스타일").tag(KeyDisplayMode.appleStyle)
-                        Text("일반 스타일").tag(KeyDisplayMode.generic)
+                        Text(String(localized: "settings.input.key_mapping.display_mode.apple", defaultValue: "Apple 스타일")).tag(KeyDisplayMode.appleStyle)
+                        Text(String(localized: "settings.input.key_mapping.display_mode.generic", defaultValue: "일반 스타일")).tag(KeyDisplayMode.generic)
                     } label: {
-                        Text("키 표시 방식")
+                        Text(String(localized: "settings.input.key_mapping.display_mode.label", defaultValue: "키 표시 방식"))
                     }
                     Picker(selection: $toKeyDisplayMode) {
-                        Text("Apple 스타일").tag(KeyDisplayMode.appleStyle)
-                        Text("일반 스타일").tag(KeyDisplayMode.generic)
+                        Text(String(localized: "settings.input.key_mapping.display_mode.apple", defaultValue: "Apple 스타일")).tag(KeyDisplayMode.appleStyle)
+                        Text(String(localized: "settings.input.key_mapping.display_mode.generic", defaultValue: "일반 스타일")).tag(KeyDisplayMode.generic)
                     } label: {
                         Text("→")
                     }
@@ -286,10 +286,10 @@ struct KeyMappingTableEditorSheet: View {
             
             HStack {
                 Spacer()
-                Button("취소", role: .cancel) {
+                Button(String(localized: "common.cancel", defaultValue: "취소"), role: .cancel) {
                 }
                 .keyboardShortcut(.escape)
-                Button("확인", role: .compatibleConfirm) {
+                Button(String(localized: "common.confirm", defaultValue: "확인"), role: .compatibleConfirm) {
                 }
             }
         }

@@ -9,17 +9,17 @@ struct GeneralSettingsTab: View {
     
     var body: some View {
         Form {
-            Section("일반") {
+            Section(String(localized: "settings.general.title", defaultValue: "일반")) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading) {
-                        Text("기본 연결 설정")
-                        Text("빠른 연결 시 사용할 기본 설정을 변경합니다.")
+                        Text(String(localized: "settings.general.default_connection.title", defaultValue: "기본 연결 설정"))
+                        Text(String(localized: "settings.general.default_connection.description", defaultValue: "빠른 연결 시 사용할 기본 설정을 변경합니다."))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
                     VStack(alignment: .trailing) {
-                        Button("설정…") {
+                        Button(String(localized: "common.settings", defaultValue: "설정…")) {
                             shouldPresentDefaultConnectionSettingsSheet = true
                         }
                     }

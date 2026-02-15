@@ -42,9 +42,9 @@ struct CredentialAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading) {
-                Text("자격 증명 추가")
+                Text(String(localized: "session-settings.security.credential_add.title", defaultValue: "자격 증명 추가"))
                     .font(.title2.bold())
-                Text("추가할 자격 증명 유형을 선택하세요.")
+                Text(String(localized: "session-settings.security.credential_add.description", defaultValue: "추가할 자격 증명 유형을 선택하세요."))
                     .foregroundStyle(.secondary)
             }
 
@@ -60,7 +60,7 @@ struct CredentialAddSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                TextField("표시 이름 (선택 사항)", text: $displayName)
+                TextField(String(localized: "session-settings.security.credential_add.display_name_placeholder", defaultValue: "표시 이름 (선택 사항)"), text: $displayName)
                     .textFieldStyle(.roundedBorder)
 
                 templateDetailInputs
@@ -70,10 +70,10 @@ struct CredentialAddSheet: View {
 
             HStack {
                 Spacer()
-                Button("취소") {
+                Button(String(localized: "common.cancel", defaultValue: "취소")) {
                     dismiss()
                 }
-                Button("추가") {
+                Button(String(localized: "common.add", defaultValue: "추가")) {
                     handleSubmit()
                 }
                 .disabled(!canCommitSelection)
@@ -102,25 +102,25 @@ struct CredentialAddSheet: View {
         switch selectedTemplate {
         case .password:
             VStack(alignment: .leading, spacing: 8) {
-                Text("사용자명-비밀번호")
+                Text(String(localized: "session-settings.security.credential_add.password.header", defaultValue: "사용자명-비밀번호"))
                     .font(.headline)
-                TextField("사용자명", text: $username)
+                TextField(String(localized: "session-settings.security.credential_add.password.username", defaultValue: "사용자명"), text: $username)
                     .textFieldStyle(.roundedBorder)
-                SecureField("비밀번호", text: $password)
+                SecureField(String(localized: "session-settings.security.credential_add.password.password", defaultValue: "비밀번호"), text: $password)
                     .textFieldStyle(.roundedBorder)
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
-                Text("간단 비밀번호")
+                Text(String(localized: "session-settings.security.credential_add.simple_password.header", defaultValue: "간단 비밀번호"))
                     .font(.headline)
-                SecureField("비밀번호", text: $simplePassword)
+                SecureField(String(localized: "session-settings.security.credential_add.simple_password.password", defaultValue: "비밀번호"), text: $simplePassword)
                     .textFieldStyle(.roundedBorder)
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {
-                Text("SSH 키")
+                Text(String(localized: "session-settings.security.credential_add.ssh_key.header", defaultValue: "SSH 키"))
                     .font(.headline)
-                TextField("개인 키 (OpenSSH 형식 / PEM 형식을 지원합니다)", text: $privateKey, axis: .vertical)
+                TextField(String(localized: "session-settings.security.credential_add.ssh_key.private_key_placeholder", defaultValue: "공개    키 (OpenSSH 형식 / PEM 형식을 지원합니다)"), text: $privateKey, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(3...6)
@@ -220,22 +220,22 @@ extension CredentialAddSheet {
         var title: String {
             switch self {
             case .password:
-                return "사용자명-비밀번호 인증"
+                return String(localized: "session-settings.security.credential_add.template.password.title", defaultValue: "사용자명-비밀번호 인증")
             case .simplePassword:
-                return "간단 비밀번호 인증"
+                return String(localized: "session-settings.security.credential_add.template.simple_password.title", defaultValue: "간단 비밀번호 인증")
             case .sshKey:
-                return "SSH 키 인증"
+                return String(localized: "session-settings.security.credential_add.template.ssh_key.title", defaultValue: "SSH 키 인증")
             }
         }
 
         var description: String {
             switch self {
             case .password:
-                return "사용자명과 비밀번호를 사용한 인증을 수행합니다."
+                return String(localized: "session-settings.security.credential_add.template.password.description", defaultValue: "사용자명과 비밀번호를 사용한 인증을 수행합니다.")
             case .simplePassword:
-                return "비밀번호만을 사용한 인증을 수행합니다."
+                return String(localized: "session-settings.security.credential_add.template.simple_password.description", defaultValue: "비밀번호만을 사용한 인증을 수행합니다.")
             case .sshKey:
-                return "SSH 공개 키/개인 키 기반 인증을 수행합니다."
+                return String(localized: "session-settings.security.credential_add.template.ssh_key.description", defaultValue: "SSH 공개 키/개인 키 기반 인증을 수행합니다.")
             }
         }
     }

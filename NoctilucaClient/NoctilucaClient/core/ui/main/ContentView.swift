@@ -45,8 +45,8 @@ struct ContentView: View {
     
     var body: some View {
         HStack {
-            TextField("서버 주소", text: $viewModel.serverAddress)
-            Button("연결") {
+            TextField(String(localized: "main.server_address", defaultValue: "서버 주소"), text: $viewModel.serverAddress)
+            Button(String(localized: "common.connect", defaultValue: "연결")) {
                 Task {
                     do {
                         try await viewModel.connect()

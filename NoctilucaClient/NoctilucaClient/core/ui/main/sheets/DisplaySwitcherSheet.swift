@@ -28,7 +28,7 @@ struct DisplaySwitcherSheet: View {
 
     var body: some View {
         VStack {
-            Text("디스플레이 전환")
+            Text(String(localized: "main.display_switcher.title", defaultValue: "디스플레이 전환"))
                 .font(.headline)
                 .padding()
 
@@ -42,7 +42,7 @@ struct DisplaySwitcherSheet: View {
                             } label: {
                                 VStack {
                                     displayThumbnailView(for: display)
-                                    Text(display.displayName.withFallback("(이름 없음)"))
+                                    Text(display.displayName.withFallback(String(localized: "main.display_switcher.unnamed", defaultValue: "(이름 없음)")))
                                         .lineLimit(1)
                                 }
                                 .frame(width: 160)
@@ -56,7 +56,7 @@ struct DisplaySwitcherSheet: View {
                                         dismiss()
                                     }
                                 } label: {
-                                    Label("별도 창으로 열기", systemImage: "macwindow.badge.plus")
+                                    Label(String(localized: "main.display_switcher.open_in_new_window", defaultValue: "별도 창으로 열기"), systemImage: "macwindow.badge.plus")
                                         .font(.caption)
                                 }
                                 .buttonStyle(.plain)

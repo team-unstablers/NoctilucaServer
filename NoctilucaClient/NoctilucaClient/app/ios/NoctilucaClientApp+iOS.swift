@@ -22,7 +22,7 @@ struct NoctilucaClientApp: App {
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("New Window") {
+                Button(String(localized: "menu.new_window", defaultValue: "New Window")) {
                     UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil, errorHandler: nil)
                 }
                 .keyboardShortcut("N", modifiers: [.command, .shift, .option])
@@ -30,13 +30,13 @@ struct NoctilucaClientApp: App {
         }
         .commands {
             CommandGroup(replacing: .appSettings) {
-                Button("Settings…") {
+                Button(String(localized: "menu.settings", defaultValue: "Settings…")) {
                     openSettings()
                 }
                 .keyboardShortcut(",", modifiers: [.command])
             }
             CommandGroup(replacing: .appInfo) {
-                Button("About Noctiluca Navigator") {
+                Button(String(localized: "menu.about", defaultValue: "About Noctiluca Navigator")) {
                     UIApplication.shared.requestSceneSessionActivation(
                         nil,
                         userActivity: NSUserActivity(activityType: "app.noctiluca.client.about"),

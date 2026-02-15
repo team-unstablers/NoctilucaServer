@@ -24,15 +24,15 @@ private struct AddressBarCandidateItemView: View {
                     Text(item.endpointURL)
                         .foregroundColor(isFocused ? Color.white.opacity(0.8) : Color.secondary)
                     
-                    Text("— 연락처에 등록된 컴퓨터")
+                    Text(String(localized: "main.address_bar.candidate.registered_contact", defaultValue: "— 연락처에 등록된 컴퓨터"))
                         .foregroundColor(isFocused ? Color.white.opacity(0.6) : Color.secondary)
                 }
                 if case .quickConnect(let endpointURL) = candidate {
-                    Text("기본 설정을 사용하여 \(endpointURL) 으로 빠르게 연결하기")
+                    Text(String(format: String(localized: "main.address_bar.candidate.quick_connect_format", defaultValue: "기본 설정을 사용하여 %@ 으로 빠르게 연결하기"), endpointURL))
                         .foregroundColor(isFocused ? Color.white.opacity(0.8) : Color.secondary)
                 }
                 if case .connect(let endpointURL) = candidate {
-                    Text("설정 검토 후 \(endpointURL) 으로 연결하기")
+                    Text(String(format: String(localized: "main.address_bar.candidate.connect_format", defaultValue: "설정 검토 후 %@ 으로 연결하기"), endpointURL))
                         .foregroundColor(isFocused ? Color.white.opacity(0.8) : Color.secondary)
                 }
             }

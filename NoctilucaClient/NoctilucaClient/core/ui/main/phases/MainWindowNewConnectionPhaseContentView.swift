@@ -53,7 +53,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             .fontWeight(.light)
                     }
 
-                    Text("버전 \(NoctilucaMeta.version)")
+                    Text(String(format: String(localized: "main.new_connection.version_format", defaultValue: "버전 %@"), NoctilucaMeta.version))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -95,7 +95,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
 
                 // MARK: - 저장된 호스트 섹션
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("저장된 호스트")
+                    Text(String(localized: "main.new_connection.saved_hosts", defaultValue: "저장된 호스트"))
                         .font(.title3)
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -106,7 +106,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             .padding(.vertical, 32)
                     } else if let loadError = contactsStore.loadError {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("연락처 목록을 불러오지 못했습니다.")
+                            Text(String(localized: "main.new_connection.load_error", defaultValue: "연락처 목록을 불러오지 못했습니다."))
                                 .font(.headline)
                             Text(loadError)
                                 .font(.subheadline)
@@ -115,10 +115,10 @@ struct MainWindowNewConnectionPhaseContentView: View {
                         .padding(.vertical, 16)
                     } else if contactsStore.contacts.isEmpty {
                         VStack(spacing: 16) {
-                            Text("저장된 호스트가 없습니다")
+                            Text(String(localized: "main.new_connection.no_saved_hosts", defaultValue: "저장된 호스트가 없습니다"))
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
-                            Text("아래 버튼을 눌러 새 호스트를 추가하거나,\n상단 주소창에서 바로 연결하세요.")
+                            Text(String(localized: "main.new_connection.no_saved_hosts_hint", defaultValue: "아래 버튼을 눌러 새 호스트를 추가하거나,\n상단 주소창에서 바로 연결하세요."))
                                 .font(.subheadline)
                                 .foregroundStyle(.tertiary)
                                 .multilineTextAlignment(.center)
@@ -151,14 +151,14 @@ struct MainWindowNewConnectionPhaseContentView: View {
             .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .alert("호스트 삭제", isPresented: Binding(
+        .alert(String(localized: "main.new_connection.delete_host_title", defaultValue: "호스트 삭제"), isPresented: Binding(
             get: { contactToDelete != nil },
             set: { if !$0 { contactToDelete = nil } }
         )) {
-            Button("취소", role: .cancel) {
+            Button(String(localized: "common.cancel", defaultValue: "취소"), role: .cancel) {
                 contactToDelete = nil
             }
-            Button("삭제", role: .destructive) {
+            Button(String(localized: "common.delete", defaultValue: "삭제"), role: .destructive) {
                 if let contact = contactToDelete {
                     try? ContactsStore.shared.remove(id: contact.id)
                     contactToDelete = nil
@@ -166,7 +166,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
             }
         } message: {
             if let contact = contactToDelete {
-                Text("'\(contact.displayName)'을(를) 삭제하시겠습니까?")
+                Text(String(format: String(localized: "main.new_connection.delete_confirm_format", defaultValue: "'%@'을(를) 삭제하시겠습니까?"), contact.displayName))
             }
         }
     }
@@ -187,7 +187,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
             contactToDelete = item
         case .duplicate:
             var duplicated = ContactItem(
-                name: "\(item.displayName) (복사본)",
+                name: String(format: String(localized: "main.new_connection.duplicate_name_format", defaultValue: "%@ (복사본)"), item.displayName),
                 endpointURL: item.endpointURL,
                 preset: item.settings
             )

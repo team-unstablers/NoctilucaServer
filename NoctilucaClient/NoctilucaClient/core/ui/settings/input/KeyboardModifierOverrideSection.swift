@@ -28,14 +28,14 @@ struct KeyboardModifierOverrideSection: View {
         Text("⎋ (Escape)")
             .tag(AppSettings.ModifierKeyOverride.escape)
         
-        Text("비활성화")
+        Text(String(localized: "common.disabled", defaultValue: "비활성화"))
             .tag(AppSettings.ModifierKeyOverride.disabled)
     }
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text("보조 키 오버라이드")
-            Text("각 보조 키가 원격 컴퓨터에서 다르게 동작하도록 설정합니다.")
+            Text(String(localized: "settings.input.modifier_override.label", defaultValue: "보조 키 오버라이드"))
+            Text(String(localized: "settings.input.modifier_override.description", defaultValue: "각 보조 키가 원격 컴퓨터에서 다르게 동작하도록 설정합니다."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -43,25 +43,25 @@ struct KeyboardModifierOverrideSection: View {
         Picker(selection: $input.modifierKeyOverrides.capsLock) {
             pickerBody
         } label: {
-            Text("Caps Lock(⇪) 키")
+            Text(String(localized: "settings.input.modifier_override.caps_lock", defaultValue: "Caps Lock(⇪) 키"))
         }
         
         Picker(selection: $input.modifierKeyOverrides.control) {
             pickerBody
         } label: {
-            Text("Control(⌃) 키")
+            Text(String(localized: "settings.input.modifier_override.control", defaultValue: "Control(⌃) 키"))
         }
         
         Picker(selection: $input.modifierKeyOverrides.option) {
             pickerBody
         } label: {
-            Text("Option(⌥) 키")
+            Text(String(localized: "settings.input.modifier_override.option", defaultValue: "Option(⌥) 키"))
         }
         
         Picker(selection: $input.modifierKeyOverrides.command) {
             pickerBody
         } label: {
-            Text("Command(⌘) 키")
+            Text(String(localized: "settings.input.modifier_override.command", defaultValue: "Command(⌘) 키"))
         }
     }
 }

@@ -66,9 +66,9 @@ struct MainWindowRootView: View {
                 let error = viewModel.errors.last
 
                 return Alert(
-                    title: Text(error?.alertTitle ?? "오류 발생"),
-                    message: Text(error?.localizedDescription ?? "알 수 없는 오류가 발생했습니다."),
-                    dismissButton: .default(Text("확인")) {
+                    title: Text(error?.alertTitle ?? String(localized: "main.error.title", defaultValue: "오류 발생")),
+                    message: Text(error?.localizedDescription ?? String(localized: "main.error.unknown", defaultValue: "알 수 없는 오류가 발생했습니다.")),
+                    dismissButton: .default(Text(String(localized: "common.confirm", defaultValue: "확인"))) {
                         viewModel.dismissLastError()
                     }
                 )

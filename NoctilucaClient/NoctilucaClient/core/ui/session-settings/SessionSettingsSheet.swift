@@ -59,7 +59,7 @@ struct SessionSettingsSheet: View {
                 GeneralSessionSettingsTab(sessionSettings: $sessionSettings)
                     .tabItem {
                         Image(systemName: "gearshape.fill")
-                        Text("일반")
+                        Text(String(localized: "session-settings.tabs.general", defaultValue: "일반"))
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
@@ -68,7 +68,7 @@ struct SessionSettingsSheet: View {
             ProjectionSessionSettingsTab(projection: $sessionSettings.projection, scope: scope)
                 .tabItem {
                     Image(systemName: "display")
-                    Text("프로젝션")
+                    Text(String(localized: "session-settings.tabs.projection", defaultValue: "프로젝션"))
                 }
                 .tag(SettingsTab.projection)
                 .id(SettingsTab.projection)
@@ -76,7 +76,7 @@ struct SessionSettingsSheet: View {
             InputSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
                 .tabItem {
                     Image(systemName: "keyboard.fill")
-                    Text("입력")
+                    Text(String(localized: "session-settings.tabs.input", defaultValue: "입력"))
                 }
                 .tag(SettingsTab.input)
                 .id(SettingsTab.input)
@@ -88,7 +88,7 @@ struct SessionSettingsSheet: View {
             )
                 .tabItem {
                     Image(systemName: "lock.fill")
-                    Text("보안")
+                    Text(String(localized: "session-settings.tabs.security", defaultValue: "보안"))
                 }
                 .tag(SettingsTab.security)
                 .id(SettingsTab.security)
@@ -108,15 +108,15 @@ struct SessionSettingsSheet: View {
             .toolbar {
                 toolbarItems
             }
-            .alert("연락처 삭제", isPresented: $shouldPresentDeleteContactConfirmation) {
-                Button("삭제", role: .destructive) {
+            .alert(String(localized: "session-settings.delete_contact.title", defaultValue: "연락처 삭제"), isPresented: $shouldPresentDeleteContactConfirmation) {
+                Button(String(localized: "common.delete", defaultValue: "삭제"), role: .destructive) {
                     self.actionHandler(.delete)
                 }
-                Button("취소", role: .cancel) {
+                Button(String(localized: "common.cancel", defaultValue: "취소"), role: .cancel) {
                     shouldPresentDeleteContactConfirmation = false
                 }
             } message: {
-                Text("이 연락처를 삭제하면 복구할 수 없습니다.")
+                Text(String(localized: "session-settings.delete_contact.message", defaultValue: "이 연락처를 삭제하면 복구할 수 없습니다."))
             }
     }
     
@@ -134,10 +134,10 @@ struct SessionSettingsSheet: View {
         ToolbarItemGroup(placement: .topBarTrailing) {
             if scope == .session && contactId == nil {
                 Menu {
-                    Button("연결하기") {
+                    Button(String(localized: "common.connect", defaultValue: "연결하기")) {
                         self.actionHandler(.connect)
                     }
-                    Button("연락처에 저장 후 연결하기") {
+                    Button(String(localized: "session-settings.save_and_connect", defaultValue: "연락처에 저장 후 연결하기")) {
                         self.actionHandler(.saveAndConnect)
                     }
                 } label: {
@@ -164,13 +164,13 @@ struct SessionSettingsSheet: View {
             Button(role: .cancel) {
                 self.actionHandler(.cancel)
             } label: {
-                Text("취소")
+                Text(String(localized: "common.cancel", defaultValue: "취소"))
             }
         }
-        
+
         if scope == .session && contactId == nil {
             ToolbarItemGroup(placement: .cancellationAction) {
-                Button("저장 후 연결") {
+                Button(String(localized: "session-settings.save_and_connect.short", defaultValue: "저장 후 연결")) {
                     self.actionHandler(.saveAndConnect)
                 }
             }
@@ -180,7 +180,7 @@ struct SessionSettingsSheet: View {
                 Button(role: .compatibleConfirm) {
                     self.actionHandler(.connect)
                 } label: {
-                    Text("연결")
+                    Text(String(localized: "common.connect", defaultValue: "연결"))
                 }
             }
         } else {
@@ -189,7 +189,7 @@ struct SessionSettingsSheet: View {
                     Button(role: .destructive) {
                         shouldPresentDeleteContactConfirmation = true
                     } label: {
-                        Text("삭제")
+                        Text(String(localized: "common.delete", defaultValue: "삭제"))
                     }
                 }
             }
@@ -198,7 +198,7 @@ struct SessionSettingsSheet: View {
                 Button(role: .compatibleConfirm) {
                     self.actionHandler(.save)
                 } label: {
-                    Text("저장")
+                    Text(String(localized: "common.save", defaultValue: "저장"))
                 }
             }
         }
@@ -213,7 +213,7 @@ struct SessionSettingsSheet: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("세션 설정")
+                .navigationTitle(String(localized: "session-settings.title", defaultValue: "세션 설정"))
                 .navigationBarTitleDisplayMode(.inline)
         }
         .interactiveDismissDisabled(true)
