@@ -10,10 +10,11 @@ import Foundation
 import UserNotifications
 
 enum AppNotificationCategory: String {
-    case clientEvents = "noctiluca.client.events"
-    case serverEvents = "noctiluca.server.events"
-    case licenseEvents = "noctiluca.license.events"
-    case updateEvents = "noctiluca.update.events"
+    case clientEvents  = "app.noctiluca.server.notification-events.client"
+    case serverEvents  = "app.noctiluca.server.notification-events.server"
+    case licenseEvents = "app.noctiluca.server.notification-events.license"
+    case updateEvents  = "app.noctiluca.server.notification-events.update"
+    case securityEvents = "app.noctiluca.server.notification-events.security"
 }
 
 enum AppNotification: Identifiable {
@@ -38,6 +39,7 @@ enum AppNotification: Identifiable {
     case updateAvailable(version: String)
     // TODO: 긴급 업데이트 요청
     case criticalUpdateRequired(version: String, isInvalidLicense: Bool)
+    case pluginBundleRejectedBySecurityPolicy(metadata: any PluginBundleMetadata, currentPolicy: PluginBundleSecurityPolicy)
     
     var id: String {
         switch self {
@@ -59,6 +61,8 @@ enum AppNotification: Identifiable {
             return "update_available"
         case .criticalUpdateRequired:
             return "critical_update_required"
+        case .pluginBundleRejectedBySecurityPolicy:
+            return "plugin_bundle_rejected_by_security_policy"
         }
     }
     
@@ -72,6 +76,8 @@ enum AppNotification: Identifiable {
             return .licenseEvents
         case .updateAvailable, .criticalUpdateRequired:
             return .updateEvents
+        case .pluginBundleRejectedBySecurityPolicy:
+            return .securityEvents
         }
     }
     
@@ -96,6 +102,8 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.update_available.title", defaultValue: "새 업데이트 사용 가능")
         case .criticalUpdateRequired:
             return String(localized: "notification.critical_update_required.title", defaultValue: "긴급 업데이트 필요")
+        case .pluginBundleRejectedBySecurityPolicy:
+            return String(localized: "notificaiton.plugin_bundle_rejected_by_security_policy.title", defaultValue: "플러그인 번들 로드 거부됨")
         }
     }
     
@@ -133,11 +141,20 @@ enum AppNotification: Identifiable {
         case .criticalUpdateRequired(let version, let isInvalidLicense):
             var message = String(format: String(localized: "notification.critical_update_required.message", defaultValue: "심각한 보안 문제가 발견되어 버전 %@으로의 긴급 업데이트가 필요합니다."), version)
             if isInvalidLicense {
-                message += "\n" + String(localized: "notification.critical_update_required.piracy_notice", defaultValue: "이 업데이트는 불법 복제본 사용자에게도 제공됩니다. 업데이트를 긍정적으로 고려해 주세요.")
+                message += "\n" + String(localized: "notification.critical_update_required.piracy_notice.message", defaultValue: "이 업데이트는 불법 복제본 사용자에게도 제공됩니다. 업데이트를 긍정적으로 고려해 주세요.")
             }
 
             return message
+        case .pluginBundleRejectedBySecurityPolicy(let metadata, let currentPolicy):
+            return String(
+                format: String(
+                    localized: "notification.plugin_bundle_rejected_by_security_policy.message",
+                    defaultValue: "플러그인 번들 '%@'이 코드 서명 정책을 위반하여 로드될 수 없었습니다."
+                ),
+                metadata.id
+            )
         }
+        
     }
     
     @MainActor

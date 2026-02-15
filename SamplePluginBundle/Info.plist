@@ -2,18 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NoctilucaPluginBundleExports</key>
+	<key>NOCBundleAuthors</key>
 	<array>
-		<dict>
-			<key>NoctilucaPluginBundleExportType</key>
-			<string>auth</string>
-			<key>NoctilucaPluginBundleExportIdentifier</key>
-			<string>app.noctiluca.server.plugin.test.null</string>
-			<key>NoctilucaPluginBundleAuthPluginMethods</key>
-			<array>
-				<string>com.example.authmethod.none</string>
-			</array>
-		</dict>
+		<string>Gyuhwan Park &lt;unstabler@unstabler.pl&gt;</string>
 	</array>
+	<key>NOCBundleDescription</key>
+	<string>A sample plugin bundle for testing purposes.</string>
+	<key>NOCBundleExports</key>
+	<array/>
+	<key>NOCBundleLicense</key>
+	<string>CC0-1.0</string>
+	<key>NOCPluginKitVersion</key>
+	<integer>65536</integer>
 </dict>
 </plist>

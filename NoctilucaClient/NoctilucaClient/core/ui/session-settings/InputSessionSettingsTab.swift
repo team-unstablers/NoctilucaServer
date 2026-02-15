@@ -6,6 +6,19 @@ struct InputSessionSettingsTab: View {
 
     let scope: SessionSettingsScope
 
+    private func hackToggleBinding(_ hackId: String) -> Binding<Bool> {
+        Binding<Bool>(
+            get: { sessionSettings.input.enabledKeyboardHacks.contains(hackId) },
+            set: { enabled in
+                if enabled {
+                    sessionSettings.input.enabledKeyboardHacks.insert(hackId)
+                } else {
+                    sessionSettings.input.enabledKeyboardHacks.remove(hackId)
+                }
+            }
+        )
+    }
+
     var body: some View {
         Form {
             Section {
@@ -14,8 +27,8 @@ struct InputSessionSettingsTab: View {
                     subtitle: "사용자 편의를 위해 키보드 동작을 수정하거나 보완하도록 서버에 요청합니다.\n- 모든 서버가 이 Hack들을 지원하는 것은 아닙니다.\n- 일부 Hack은 상호 배타적입니다. 동시 사용 시 예기치 않은 동작이 발생할 수 있습니다."
                 ) {
                 }
-                
-                Toggle(isOn: .constant(false)) {
+
+                Toggle(isOn: hackToggleBinding("app.noctiluca.hidio.hack.cjk.emulate_win32_ime_switch")) {
                     Text("Windows 스타일의 IME 전환")
                     Group {
                         Text("app.noctiluca.hidio.hack.cjk.emulate_win32_ime_switch")
@@ -25,8 +38,8 @@ struct InputSessionSettingsTab: View {
                     }
                         .foregroundStyle(.secondary)
                 }
-                
-                Toggle(isOn: .constant(false)) {
+
+                Toggle(isOn: hackToggleBinding("app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle")) {
                     Text("한국어: Windows 스타일의 한/영 전환")
                     Group {
                         Text("app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle")
@@ -36,8 +49,8 @@ struct InputSessionSettingsTab: View {
                     }
                         .foregroundStyle(.secondary)
                 }
-                
-                Toggle(isOn: .constant(false)) {
+
+                Toggle(isOn: hackToggleBinding("app.noctiluca.hidio.hack.cjk.emulate_win32_kana_toggle")) {
                     Text("일본어: Windows 스타일의 가나 / 로마자 전환")
                     Group {
                         Text("app.noctiluca.hidio.hack.cjk.emulate_win32_kana_toggle")
@@ -56,7 +69,7 @@ struct InputSessionSettingsTab: View {
 }
 
 #Preview {
-    ProjectionSessionSettingsTab(
+    InputSessionSettingsTab(
         sessionSettings: .constant(SessionSettings(scope: .global)),
         scope: .global
     )

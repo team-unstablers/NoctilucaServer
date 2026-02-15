@@ -15,22 +15,23 @@ import NoctilucaPluginKit
 
 struct PluginBundleDetailView: View {
     let metadata: any PluginBundleMetadata
-    
+    let signingResult: CodeSigningVerificationResult?
+
     @State
     var showingInfoSheet = false
-    
+
     var body: some View {
         HStack(alignment: .center) {
             Image(nsImage: NSWorkspace.shared.icon(for: .applicationExtension))
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 32, height: 32)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(metadata.displayName)
                         .font(.headline)
-                    
+
                     Text("(\(metadata.id))")
                         .font(.subheadline.monospaced())
                         .foregroundStyle(.secondary)
@@ -47,11 +48,11 @@ struct PluginBundleDetailView: View {
             }
         }
         .sheet(isPresented: $showingInfoSheet) {
-            PluginBundleDetailSheet(metadata: metadata) {
+            PluginBundleDetailSheet(metadata: metadata, signingResult: signingResult) {
                 showingInfoSheet = false
             }
         }
-        
+
         SettingsEntry(title: String(localized: "settings.plugins.detail.developer", defaultValue: "개발자")) {
             VStack(alignment: .trailing) {
                 ForEach(metadata.authors, id: \.self) { author in
@@ -60,47 +61,42 @@ struct PluginBundleDetailView: View {
             }
             .foregroundStyle(.secondary)
         }
-        
+
         SettingsEntry(title: String(localized: "settings.plugins.detail.license", defaultValue: "라이선스")) {
             SoftwareLicenseText(license: metadata.license)
                 .foregroundStyle(.secondary)
         }
-        
-        /*
-         HStack(alignment: .top) {
-         Text("유형")
-         Spacer()
-         if plugin is BuiltInAuthPluginV1 {
-         Text("내장 플러그인")
-         .foregroundStyle(.secondary)
-         } else {
-         Text("외부 플러그인")
-         .foregroundStyle(.secondary)
-         }
-         }
-         
-         HStack(alignment: .top) {
-         Text("지원하는 인증 매커니즘")
-         Spacer()
-         VStack {
-         ForEach(Array(metaType.supportedMethods), id: \.self) { method in
-         Text(method.rawValue)
-         }
-         }
-         .foregroundStyle(.secondary)
-         }
-         */
-        
+
         SettingsEntry(title: String(localized: "settings.plugins.detail.signature", defaultValue: "서명 정보")) {
-            Text("Apple Development: Kirino Kousaka (ABCDE12345)")
+            signingResultSummaryText
                 .foregroundStyle(.secondary)
         }
-        
-        
-        
+
         SettingsEntry(title: String(localized: "settings.plugins.detail.version", defaultValue: "버전")) {
             Text("\(metadata.displayVersion) (\(metadata.version))")
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var signingResultSummaryText: some View {
+        switch signingResult {
+        case .validSignature(let teamID, let identity, _):
+            if let identity {
+                Text("\(identity)\n(Team ID: \(teamID))")
+                    .multilineTextAlignment(.trailing)
+            } else {
+                Text(teamID)
+                    .multilineTextAlignment(.trailing)
+            }
+        case .adHocSignature:
+            Text(String(localized: "settings.plugins.detail.signature.adhoc", defaultValue: "Ad-hoc 서명"))
+        case .unsigned:
+            Text(String(localized: "settings.plugins.detail.signature.unsigned", defaultValue: "서명 없음"))
+        case .invalid(let error):
+            Text(String(localized: "settings.plugins.detail.signature.invalid", defaultValue: "서명 검증 실패 (OSStatus: \(error))"))
+        case nil:
+            Text(String(localized: "settings.plugins.detail.signature.builtin", defaultValue: "내장 플러그인"))
         }
     }
 }

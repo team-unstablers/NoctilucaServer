@@ -47,7 +47,7 @@ public struct KeyboardHack: SiriusMessage {
     public let args: [String: String]
 
 
-    init(identifier: String, args: [String: String]) {
+    public init(identifier: String, args: [String: String]) {
         self.identifier = identifier
         self.args = args
     }

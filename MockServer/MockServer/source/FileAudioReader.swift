@@ -43,12 +43,12 @@ class FileAudioReader {
     private func setupReader(asset: AVAsset, track: AVAssetTrack) throws {
         let reader = try AVAssetReader(asset: asset)
 
-        // Linear PCM Float32 출력 (OpusAudioEncoder 입력 포맷에 맞춤)
+        // Linear PCM Float32 non-interleaved 출력 (OpusAudioEncoder가 non-interleaved 전제로 동작)
         let outputSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVLinearPCMBitDepthKey: 32,
             AVLinearPCMIsFloatKey: true,
-            AVLinearPCMIsNonInterleaved: false,
+            AVLinearPCMIsNonInterleaved: true,
             AVSampleRateKey: 48000.0,
             AVNumberOfChannelsKey: 2,
         ]

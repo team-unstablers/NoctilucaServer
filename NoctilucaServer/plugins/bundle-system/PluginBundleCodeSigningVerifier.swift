@@ -8,10 +8,12 @@
 import Foundation
 import Security
 
+import SiriusKit
+
 /// 코드 서명 검증 결과
 enum CodeSigningVerificationResult {
     /// Apple Developer 서명이 유효하며, Team ID가 확인됨
-    case validSignature(teamID: String)
+    case validSignature(teamID: String, identity: String?, certificates: [SecCertificate])
 
     /// Ad-hoc 서명 (Team ID 없음)
     case adHocSignature
@@ -64,9 +66,13 @@ struct PluginBundleCodeSigningVerifier {
             return .invalid(error: infoStatus)
         }
 
+        // 인증서 체인 추출
+        let certificates = (info[kSecCodeInfoCertificates as String] as? [SecCertificate]) ?? []
+        let identity = certificates.first?.extractCommonName()
+
         // Team ID 추출
         if let teamID = info[kSecCodeInfoTeamIdentifier as String] as? String {
-            return .validSignature(teamID: teamID)
+            return .validSignature(teamID: teamID, identity: identity, certificates: certificates)
         }
 
         return .adHocSignature
@@ -85,7 +91,7 @@ struct PluginBundleCodeSigningVerifier {
             ))
 
         case .allowTeamUnstablers:
-            guard case .validSignature(let teamID) = result,
+            guard case .validSignature(let teamID, _, _) = result,
                   teamID == teamUnstablersTeamID
             else {
                 return .failure(.securityPolicyViolation(

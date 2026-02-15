@@ -69,6 +69,7 @@ enum PluginBundleRegistryError: LocalizedError {
 struct PluginBundleHandle {
     let bundleClass: NoctilucaPluginBundle.Type
     let metadata: any PluginBundleMetadata
+    let signingResult: CodeSigningVerificationResult?
 }
 
 class PluginBundleRegistry {
@@ -108,13 +109,16 @@ class PluginBundleRegistry {
     
     /// 주어진 URL의 플러그인 번들 정보를 가져온다
     func loadPluginBundleMetadata(from bundle: Bundle) -> Result<PluginBundlePlistMetadata, PluginBundleRegistryError> {
-        guard let bundleInfo = bundle.infoDictionary,
-              let metadata = PluginBundlePlistMetadata(from: bundleInfo)
-        else {
+        guard let bundleInfo = bundle.infoDictionary else {
             return .failure(.invalidBundle)
         }
-        
-        return .success(metadata)
+
+        do {
+            let metadata = try PluginBundlePlistMetadata(from: bundleInfo)
+            return .success(metadata)
+        } catch {
+            return .failure(.metadataValidationFailed(reason: error.localizedDescription))
+        }
     }
     
     /// 플러그인 번들을 URL로부터 로드한다.
@@ -145,6 +149,10 @@ class PluginBundleRegistry {
 
         if case .failure(let error) = allowResult {
             logger.warning("Plugin bundle \(metadata.id) rejected by security policy (\(effectivePolicy.rawValue)): \(error.localizedDescription ?? "")")
+            Task { @MainActor [metadata, effectivePolicy] in
+                AppNotification.pluginBundleRejectedBySecurityPolicy(metadata: metadata, currentPolicy: effectivePolicy)
+                    .post()
+            }
             return .failure(error)
         }
 
@@ -172,11 +180,12 @@ class PluginBundleRegistry {
             return .failure(.invalidBundle)
         }
                 
-        return await registerBundle(bundleClass: bundleClass, metadata: metadata)
+        return await registerBundle(bundleClass: bundleClass, metadata: metadata, signingResult: verificationResult)
     }
     
     /// 플러그인 번들을 등록한다.
-    func registerBundle(bundleClass: NoctilucaPluginBundle.Type, metadata: any PluginBundleMetadata) async -> Result<any PluginBundleMetadata, PluginBundleRegistryError> {
+    @discardableResult
+    func registerBundle(bundleClass: NoctilucaPluginBundle.Type, metadata: any PluginBundleMetadata, signingResult: CodeSigningVerificationResult? = nil) async -> Result<any PluginBundleMetadata, PluginBundleRegistryError> {
         guard !self.bundles.keys.contains(metadata.id) else {
             logger.error("Failed to register plugin bundle: duplicate bundle id \(metadata.id)")
             return .failure(.duplicateBundle(id: metadata.id))
@@ -194,13 +203,13 @@ class PluginBundleRegistry {
         }
         
         if let metadata = metadata as? PluginBundlePlistMetadata {
-            guard self.validateBundleExports(bundleClass: bundleClass, with: metadata) else {
-                logger.error("Failed to load plugin bundle \(metadata.id): metadata validation failed")
-                return .failure(.metadataValidationFailed(reason: "Exported plugins do not match metadata"))
+            if let reason = self.validateBundleExports(bundleClass: bundleClass, with: metadata) {
+                logger.error("Failed to load plugin bundle \(metadata.id): \(reason)")
+                return .failure(.metadataValidationFailed(reason: reason))
             }
         }
         
-        let handle = PluginBundleHandle(bundleClass: bundleClass, metadata: metadata)
+        let handle = PluginBundleHandle(bundleClass: bundleClass, metadata: metadata, signingResult: signingResult)
         self.bundles[metadata.id] = handle
         
         for export in bundleClass.exports {
@@ -211,6 +220,9 @@ class PluginBundleRegistry {
             case .extension(let extensionPlugin):
                 // TODO: ExtensionPluginRegistry 연동 (향후 구현)
                 logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(metadata.id)")
+            case .keyboardHack(let keyboardHack):
+                HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
+                logger.info("Registered keyboard hack: \(type(of: keyboardHack).id) from bundle: \(metadata.id)")
             }
         }
         
@@ -318,31 +330,52 @@ class PluginBundleRegistry {
 
 extension PluginBundleRegistry {
     /// 플러그인 번들에서 export한 플러그인 목록이 메타데이터와 일치하는지 검증한다.
-    func validateBundleExports(bundleClass: NoctilucaPluginBundle.Type, with metadata: PluginBundlePlistMetadata) -> Bool {
-        // 1. Export된 플러그인 수가 일치하는지 확인
-        guard bundleClass.exports.count == metadata.exports.count else {
-            return false
-        }
-        
+    /// - Returns: 검증 성공 시 `nil`, 실패 시 상세 사유 문자열
+    func validateBundleExports(bundleClass: NoctilucaPluginBundle.Type, with metadata: PluginBundlePlistMetadata) -> String? {
         let pluginsMetadata = metadata.exports as! [PluginBundleExportPlistMetadata]
-        
+
+        // 1. Export된 플러그인 수가 일치하는지 확인
+        if bundleClass.exports.count != pluginsMetadata.count {
+            let exportIds = bundleClass.exports.map { $0.id }
+            let metadataIds = pluginsMetadata.map { $0.id }
+            return "Export count mismatch: bundle exports \(bundleClass.exports.count) plugin(s) \(exportIds),"
+                + " but metadata declares \(pluginsMetadata.count) plugin(s) \(metadataIds)"
+        }
+
         // 2. 각 플러그인의 ID와 타입이 일치하는지 확인
+        var reasons: [String] = []
         for pluginExport in bundleClass.exports {
-            guard validatePluginMetadata(pluginExport: pluginExport, with: pluginsMetadata) else {
-                self.logger.error("Plugin export validation failed for export: \(pluginExport.id)")
-                return false
+            if let reason = validatePluginMetadata(pluginExport: pluginExport, with: pluginsMetadata) {
+                reasons.append(reason)
             }
         }
-        
-        return true
+
+        return reasons.isEmpty ? nil : reasons.joined(separator: "; ")
     }
-    
-    func validatePluginMetadata(pluginExport: NoctilucaPluginExport, with pluginsMetadata: [PluginBundleExportPlistMetadata]) -> Bool {
-        switch pluginExport {
-        case .auth(let authPlugin):
-            return pluginsMetadata.contains { metadata in metadata.id == authPlugin.id && metadata.type == .auth }
-        case .extension(let extensionPlugin):
-            return pluginsMetadata.contains { metadata in metadata.id == type(of: extensionPlugin).id && metadata.type == .extension }
+
+    /// - Returns: 검증 성공 시 `nil`, 실패 시 상세 사유 문자열
+    func validatePluginMetadata(pluginExport: NoctilucaPluginExport, with pluginsMetadata: [PluginBundleExportPlistMetadata]) -> String? {
+        let exportId = pluginExport.id
+        let exportType: NoctilucaPluginType = switch pluginExport {
+        case .auth: .auth
+        case .extension: .extension
+        case .keyboardHack: .keyboardHack
         }
+
+        let matchingById = pluginsMetadata.filter { $0.id == exportId }
+
+        if matchingById.isEmpty {
+            let available = pluginsMetadata.map { "\($0.id) (\($0.type.rawValue))" }
+            return "Export '\(exportId)' (type: \(exportType.rawValue)) not found in metadata."
+                + " Available: [\(available.joined(separator: ", "))]"
+        }
+
+        if !matchingById.contains(where: { $0.type == exportType }) {
+            let actualTypes = matchingById.map { $0.type.rawValue }
+            return "Export '\(exportId)' type mismatch: bundle declares '\(exportType.rawValue)',"
+                + " but metadata has '\(actualTypes.joined(separator: ", "))'"
+        }
+
+        return nil
     }
 }

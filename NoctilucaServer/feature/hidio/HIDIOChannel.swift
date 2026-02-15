@@ -6,12 +6,15 @@
 //
 
 import SiriusKit
+import NoctilucaPluginKit
 
 class HIDIOChannel: Channel {
     let logger = NoctilucaLogger(category: "HIDIOChannel")
     
     let eventInjector = EventInjector()
     let cursorStateHolder = CursorStateHolder.shared
+    
+    private var keyboardHacks: [KeyboardHackPluginV1] = []
     
     override var serviceClass: ServiceClass { .userInput }
 
@@ -45,10 +48,10 @@ class HIDIOChannel: Channel {
                 // not implemented
                 break
             case is KeyboardSetupEvent:
-                // TODO
+                await self.handleKeyboardSetupEvent(event as! KeyboardSetupEvent)
                 break
             case is KeyboardEvent:
-                self.inject(keyboardEvent: event as! KeyboardEvent)
+                await self.inject(keyboardEvent: event as! KeyboardEvent)
                 break
             case is MouseMoveEvent:
                 self.inject(mouseMoveEvent: event as! MouseMoveEvent)
@@ -66,23 +69,58 @@ class HIDIOChannel: Channel {
         }
     }
     
-    func inject(keyboardEvent: KeyboardEvent) {
+    func handleKeyboardSetupEvent(_ event: KeyboardSetupEvent) async {
+        let registry = HIDIOKeyboardHackRegistry.shared
+        
+        self.keyboardHacks.removeAll()
+        
+        for hack in event.hacks {
+            let identifier = hack.identifier
+            
+            guard let hack = registry.hacks[identifier] else {
+                continue
+            }
+            
+            self.keyboardHacks.append(hack)
+        }
+    }
+    
+    func inject(keyboardEvent: KeyboardEvent) async {
         switch keyboardEvent.eventType {
         case .ucs4:
             injectUcs4Key(keyboardEvent)
         case .keyDown, .keyUp:
-            injectNormalKey(keyboardEvent)
+            await injectNormalKey(keyboardEvent)
         default:
             logger.warning("unhandled keyboard event type: \(keyboardEvent.eventType)")
         }
     }
     
-    private func injectNormalKey(_ event: KeyboardEvent) {
-        guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(event.keyCode)).toCarbonKeycode else {
+    private func injectNormalKey(_ event: KeyboardEvent) async {
+        var keyCode = NoctilucaPluginKit.LinuxKeycode(rawValue: UInt16(event.keyCode))
+        
+        for hack in self.keyboardHacks.filter({ $0.evaluate(keyCode) }) {
+            let decision = switch event.eventType {
+            case .keyDown:
+                await hack.onKeyDown(keyCode)
+            case .keyUp:
+                await hack.onKeyUp(keyCode)
+            default:
+                await hack.onKeyDown(keyCode)
+            }
+            
+            if case .modify(let modified) = decision {
+                keyCode = modified
+            } else if case .stop = decision {
+                break
+            }
+        }
+        
+        guard let carbonKeyCode = LinuxKeycode(rawValue: UInt16(keyCode.rawValue)).toCarbonKeycode else {
             logger.warning("failed to map linux keycode \(event.keyCode) to carbon keycode")
             return
         }
-        
+       
         switch event.eventType {
         case .keyDown:
             eventInjector.postKeyDown(carbonKeyCode)
@@ -107,5 +145,11 @@ class HIDIOChannel: Channel {
     
     override func handleStreamError(error: (any Error)) {
         eventInjector.resetKeyboardState()
+    }
+}
+
+fileprivate extension KeyboardHackPluginV1 {
+    func evaluate(_ keyCode: NoctilucaPluginKit.LinuxKeycode) -> Bool {
+        return type(of: self).desiredKeyEvents.contains(keyCode)
     }
 }

@@ -1,47 +1,34 @@
 import Foundation
-import CoreGraphics
+import Carbon
 
 import Gesu
 
 typealias CGSConnectionID = Int
 
-@PrivateLibrary(path: "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
-class CGPrivateLibrary {
+@PrivateLibrary(path: "/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/HIToolbox")
+class HIToolboxPrivate {
     #PrivateFunction(
-        "CGSMainConnectionID",
-        args: (),
-        ret: CGSConnectionID.self
-    )
-    
-    #PrivateFunction(
-        "CGSGetGlobalCursorDataSize",
-        args: (CGSConnectionID.self, UnsafeMutablePointer<size_t>.self),
-        ret: CGError.self
+        "TSMSelectInputSource",
+        args: (TISInputSource.self),
+        ret: UInt.self
     )
 }
 
 func main() {
-    try! CGPrivateLibrary.open()
+    try! HIToolboxPrivate.open()
     
-    guard let CGSMainConnectionID = CGPrivateLibrary.CGSMainConnectionID else {
-        fatalError("CGSMainConnectionID() not available")
+    let current = TISCopyCurrentKeyboardInputSource()
+    
+    let x = TISCreateInputSourceList([
+        kTISPropertyInputModeID: "com.apple.inputmethod.Korean.2SetKorean" as CFString
+    ] as CFDictionary, false)
+    guard let methods = x?.takeRetainedValue() as? [TISInputSource],
+          var ko2Bulsik = methods.first else {
+        return
     }
     
-    let connectionID = CGSMainConnectionID()
-    print("connection id = \(connectionID)")
-    
-    guard let CGSGetGlobalCursorDataSize = CGPrivateLibrary.CGSGetGlobalCursorDataSize else {
-        fatalError("CGSGetGlobalCursorDataSize() not available")
-    }
-    
-    var cursorSize: size_t = 0
-    let error = CGSGetGlobalCursorDataSize(connectionID, &cursorSize)
-    
-    guard error == .success else {
-        fatalError("CGSGetGlobalCursorDataSize() failed: \(error)")
-    }
-    
-    print("cursor size = \(cursorSize)")
+    let result = HIToolboxPrivate.TSMSelectInputSource?(ko2Bulsik)
+    print(result)
 }
 
 main()

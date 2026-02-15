@@ -47,6 +47,7 @@ extension RemoteSession {
 #endif
                 
                 self.setupKeyEventPipeline()
+                self.sendKeyboardSetupIfNeeded()
                 try? self.session.startSession()
                 self.installEscapeHook()
             }
@@ -67,6 +68,20 @@ extension RemoteSession {
                     ModifierKeyRebindingConfigurator.apply(overrides, to: self.rebinder)
                 }
                 .store(in: &cancellables)
+        }
+
+    
+        @MainActor
+        private func sendKeyboardSetupIfNeeded() {
+            let sessionSettings = parent.ref.client.sessionSettings
+            let appSettings = SettingsStore.shared.settings!
+            let enabledHacks = sessionSettings?.input.enabledKeyboardHacks
+                ?? appSettings.sessionDefaults.input.enabledKeyboardHacks
+
+            guard !enabledHacks.isEmpty else { return }
+
+            let hacks = enabledHacks.map { KeyboardHack(identifier: $0, args: [:]) }
+            controller.sendKeyboardSetup(hacks: hacks)
         }
 
         private func installEscapeHook() {

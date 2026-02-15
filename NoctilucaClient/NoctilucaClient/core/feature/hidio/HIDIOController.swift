@@ -134,6 +134,15 @@ class HIDIOController {
         keyPressState.reset()
     }
     
+    func sendKeyboardSetup(hacks: [KeyboardHack]) {
+        let event = KeyboardSetupEvent(
+            preferredLayouts: [],
+            hacks: hacks,
+            flags: 0
+        )
+        self.eventStreamContinuation.yield(event)
+    }
+
     func keyDown(keyCode: LinuxKeycode) {
         self.keyPressState.keyDown(keyCode)
         self.evaluateHooks()
