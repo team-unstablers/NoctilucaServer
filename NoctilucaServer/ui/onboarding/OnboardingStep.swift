@@ -21,6 +21,18 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
             return false
         }
     }
+    
+    func skipConfirmationDialog() -> NOCAlert? {
+        if self == .permissions {
+            let alert = NOCAlert()
+            alert.title = String(localized: "onboarding.permissions.skip_alert.title", defaultValue: "권한 설정 건너뛰기")
+            alert.message = String(localized: "onboarding.permissions.skip_alert.message", defaultValue: "권한 설정을 건너뛰면 Noctiluca Server가 제대로 작동하지 않을 수 있습니다. 그래도 건너뛰시겠습니까?")
+            
+            return alert
+        } else {
+            return nil
+        }
+    }
 }
 
 @Observable
@@ -32,13 +44,15 @@ final class OnboardingNavigationModel {
 
     private(set) var currentStep: OnboardingStep = .welcome
     private(set) var direction: NavigationDirection = .forward
+    
+    var forwardMask: Bool = false
 
     var canGoBack: Bool {
         currentStep != .welcome
     }
 
     var canGoForward: Bool {
-        currentStep != .completion
+        !forwardMask && (currentStep != .completion)
     }
 
     func goForward() {

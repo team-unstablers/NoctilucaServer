@@ -9,6 +9,7 @@ import Foundation
 import Cocoa
 import ApplicationServices
 import UserNotifications
+import CoreGraphics
 
 enum TCCScope {
     case accessibility
@@ -28,6 +29,10 @@ class TCCUtil {
             grantedScopes.insert(.accessibility)
         }
         
+        if CGPreflightScreenCaptureAccess() {
+            grantedScopes.insert(.screenCapture)
+        }
+        
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         switch settings.authorizationStatus {
         case .authorized, .provisional, .ephemeral:
@@ -45,8 +50,7 @@ class TCCUtil {
             ]
             AXIsProcessTrustedWithOptions(options as CFDictionary)
         case .screenCapture:
-            // No API to request screen capture permission programmatically.
-            break
+            CGRequestScreenCaptureAccess()
         case .notifications:
             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         }

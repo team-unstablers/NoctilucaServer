@@ -6,7 +6,8 @@
 import SwiftUI
 
 struct OnboardingWindow: View {
-    @State private var navigation = OnboardingNavigationModel()
+    @State
+    private var navigation = OnboardingNavigationModel()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -33,9 +34,10 @@ struct OnboardingWindow: View {
         case .welcome:
             OnboardingWelcomeStepView()
         case .permissions:
-            OnboardingPermissionsStepView()
+            OnboardingPermissionsStepView(navigation: navigation)
         case .configuration:
             OnboardingConfigurationStepView()
+                .environmentObject(NoctilucaServer.shared)
         case .completion:
             OnboardingCompletionStepView()
         }
@@ -60,7 +62,8 @@ struct OnboardingWindow: View {
 // MARK: - Navigation Bar
 
 private struct OnboardingNavigationBar: View {
-    @Bindable var navigation: OnboardingNavigationModel
+    @Bindable
+    var navigation: OnboardingNavigationModel
 
     var body: some View {
         ZStack {
@@ -89,10 +92,25 @@ private struct OnboardingNavigationBar: View {
                 Spacer()
 
                 // Forward / Finish button
-                if navigation.canGoForward {
+                if navigation.currentStep != .completion {
                     if navigation.currentStep.isSkippable {
                         Button(String(localized: "onboarding.navigation.skip", defaultValue: "건너뛰기")) {
-                            navigation.goForward()
+                            guard let dialog = navigation.currentStep.skipConfirmationDialog() else {
+                                return
+                            }
+                            
+                            dialog.addButton(title: String(localized: "onboarding.permissions.skip_alert.confirm", defaultValue: "건너뛰기")) {
+                                navigation.forwardMask = false
+                                navigation.goForward()
+                            }
+                            
+                            dialog.addButton(title: String(localized: "onboarding.permissions.skip_alert.cancel", defaultValue: "취소")) {
+                                // do nothing
+                            }
+                            
+                            Task {
+                                await dialog.present(to: NSApp.keyWindow!)
+                            }
                         }
                         .buttonStyle(.borderless)
                         .padding(.trailing, 8)
@@ -102,6 +120,7 @@ private struct OnboardingNavigationBar: View {
                         navigation.goForward()
                     }
                     .keyboardShortcut(.defaultAction)
+                    .disabled(!navigation.canGoForward)
                 } else {
                     Button(String(localized: "onboarding.navigation.finish", defaultValue: "시작하기")) {
                         finishOnboarding()
@@ -115,8 +134,13 @@ private struct OnboardingNavigationBar: View {
     }
 
     private func finishOnboarding() {
-        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-        NSApp.keyWindow?.close()
+        Task { @MainActor in
+            try? NoctilucaServer.shared.settings.save()
+            try? await NoctilucaServer.shared.startup()
+            
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            NSApp.keyWindow?.close()
+        }
     }
 }
 
