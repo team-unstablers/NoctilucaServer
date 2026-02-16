@@ -106,7 +106,7 @@ struct ClientSessionListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .background(.white)
+        .background(.background)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .padding()
         .frame(width: 300, height: 300)
