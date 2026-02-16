@@ -1,6 +1,8 @@
 import ServiceManagement
 import SwiftUI
 
+import Sparkle
+
 struct GeneralSettingsTab: View {
     @Binding
     var settings: AppSettings
@@ -10,6 +12,14 @@ struct GeneralSettingsTab: View {
 
     @State
     private var launchAtLoginRequiresApproval: Bool = false
+    
+    @State
+    private var automaticallyChecksForUpdates: Bool = AppUpdater.shared.updaterController.updater.automaticallyChecksForUpdates
+    
+    @State
+    private var automaticallyDownloadsUpdates: Bool = AppUpdater.shared.updaterController.updater.automaticallyDownloadsUpdates
+    
+    
 
     var body: some View {
         Form {
@@ -54,6 +64,22 @@ struct GeneralSettingsTab: View {
                     Text(markdown: String(localized: "settings.general.max_concurrent_sessions.description", defaultValue: "Noctiluca가 허용할 최대 동시 접속 수를 설정합니다."))
                 }
                  */
+                
+                Toggle(isOn: $automaticallyChecksForUpdates) {
+                    Text(markdown: String(localized: "settings.general.autoupdate.check.title", defaultValue: "자동으로 업데이트 확인하기"))
+                    Text(markdown: String(localized: "settings.general.autoupdate.check.description", defaultValue: "자동으로 Noctilcua Server의 업데이트를 확인합니다."))
+                }
+                .onChange(of: automaticallyChecksForUpdates) { _, newValue in
+                    AppUpdater.shared.updaterController.updater.automaticallyChecksForUpdates = newValue
+                }
+                
+                Toggle(isOn: $automaticallyDownloadsUpdates) {
+                    Text(markdown: String(localized: "settings.general.autoupdate.download.title", defaultValue: "자동으로 업데이트 다운로드하기"))
+                    Text(markdown: String(localized: "settings.general.autoupdate.download.description", defaultValue: "자동으로 Noctilcua Server의 업데이트를 다운로드합니다."))
+                }
+                .onChange(of: automaticallyDownloadsUpdates) { _, newValue in
+                    AppUpdater.shared.updaterController.updater.automaticallyDownloadsUpdates = newValue
+                }
             }
 
             Section(String(localized: "settings.notification.title", defaultValue: "알림")) {

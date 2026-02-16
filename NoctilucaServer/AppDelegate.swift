@@ -13,6 +13,8 @@ import UserNotifications
 import SiriusKit
 import SwiftMsQuicHelper
 
+import Sparkle
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let server = NoctilucaServer.shared
@@ -25,6 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let sessionListViewModel = ClientSessionListViewModel()
     private let startStopItem = NSMenuItem(title: "서버 시작", action: nil, keyEquivalent: "")
     private let settingsItem = NSMenuItem(title: "설정", action: nil, keyEquivalent: ",")
+    private let checkUpdatesItem = NSMenuItem(title: "업데이트 확인", action: nil, keyEquivalent: "")
     private let quitItem = NSMenuItem(title: "종료", action: nil, keyEquivalent: "q")
 
     static func main() {
@@ -144,12 +147,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settingsItem.action = #selector(showSettingsWindow(_:))
         quitItem.target = self
         quitItem.action = #selector(quitApplication(_:))
+        
+        checkUpdatesItem.target = AppUpdater.shared.updaterController
+        checkUpdatesItem.action = #selector(SPUStandardUpdaterController.checkForUpdates(_:))
 
         menu.addItem(sessionListItem)
         menu.addItem(startStopItem)
         menu.addItem(.separator())
         menu.addItem(settingsItem)
         menu.addItem(.separator())
+        menu.addItem(checkUpdatesItem)
         menu.addItem(quitItem)
 
         statusItem.menu = menu

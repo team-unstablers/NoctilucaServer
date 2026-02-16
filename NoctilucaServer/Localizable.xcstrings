@@ -3532,6 +3532,28 @@
         }
       }
     },
+    "settings.general.autolaunch.scoped.open_settings" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인 항목 설정 열기…"
+          }
+        }
+      }
+    },
+    "settings.general.autolaunch.scoped.requires_approval" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "시스템 설정에서 승인이 필요합니다."
+          }
+        }
+      }
+    },
     "settings.general.autolaunch.scoped.title" : {
       "localizations" : {
         "en" : {
@@ -3643,6 +3665,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "应用启动时自动启动服务器"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.check.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 Noctilcua Server의 업데이트를 확인합니다."
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.check.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 업데이트 확인하기"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.download.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 Noctilcua Server의 업데이트를 다운로드합니다."
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.download.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 업데이트 다운로드하기"
           }
         }
       }

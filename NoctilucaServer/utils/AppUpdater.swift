@@ -1,0 +1,41 @@
+//
+//  Updater.swift
+//  NoctilucaServer
+//
+//  Created by Gyuhwan Park on 2/16/26.
+//
+
+import Foundation
+
+import Sparkle
+
+class AppUpdater: NSObject {
+    static let shared = AppUpdater()
+    
+    private let logger = NoctilucaLogger(category: "AppUpdater")
+    private(set) var updaterController: SPUStandardUpdaterController!
+    
+    private override init() {
+        super.init()
+        
+        self.updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: self,
+            userDriverDelegate: nil
+        )
+    }
+}
+
+extension AppUpdater: SPUUpdaterDelegate {
+    func feedURLString(for updater: SPUUpdater) -> String? {
+#if DEBUG
+        return "http://localhost:9000/appcast.xml"
+#else
+        return "https://swupdate.noctiluca.app/server/appcast.xml"
+#endif
+    }
+    
+    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
+        
+    }
+}
