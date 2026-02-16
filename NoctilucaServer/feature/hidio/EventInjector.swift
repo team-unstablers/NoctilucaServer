@@ -117,12 +117,34 @@ class EventInjector {
         else {
             return
         }
+            
+        var charCode: UniChar = switch keyCode {
+            case kVK_Tab: 0x09 // Tab
+            case kVK_LeftArrow: 0xF702 // Left
+            case kVK_RightArrow: 0xF703 // Right
+            case kVK_DownArrow: 0xF701 // Down
+            case kVK_UpArrow: 0xF700 // Up
+            default: 0
+        }
+        
+        if charCode != 0 {
+            cgEvent.keyboardSetUnicodeString(stringLength: 1, unicodeString: &charCode)
+        }
 
         if isRepeat {
             cgEvent.setIntegerValueField(.keyboardEventAutorepeat, value: 1)
         }
-
+        
         cgEvent.sanitizeModifierFlags(with: keyDownState)
+        
+        switch keyCode {
+        case kVK_LeftArrow, kVK_RightArrow, kVK_DownArrow, kVK_UpArrow:
+            // HACK: 이 플래그를 넣지 않으면 Xcode vim mode에서 방향키 네비게이션이 불가능해짐
+            cgEvent.flags.insert(.maskNumericPad)
+        default:
+            break
+        }
+        
         cgEvent.post(tap: .cgSessionEventTap)
     }
 }
@@ -130,12 +152,16 @@ class EventInjector {
 extension CGEvent {
     func sanitizeModifierFlags(with keyDownState: Set<Int>) {
         // HACK: 이유는 모르겠으나 fn 키가 계속 눌림
+        
+        flags = []
+        /*
         flags.remove(.maskSecondaryFn)
         flags.remove(.maskNumericPad)
         flags.remove(.maskShift)
         flags.remove(.maskAlternate)
         flags.remove(.maskControl)
         flags.remove(.maskCommand)
+         */
 
         if ((keyDownState.contains(kVK_Shift) ||
               keyDownState.contains(kVK_RightShift))) {
