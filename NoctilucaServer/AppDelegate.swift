@@ -39,6 +39,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // FIXME: 아직 라이선스 시스템이 없으므로 2026년 3월 31일 이후로 앱 사용을 막도록 한다
+        let expirationDate = Date(timeIntervalSince1970: 1774882800.0)
+        if Date.now.timeIntervalSince1970 > expirationDate.timeIntervalSince1970 {
+            let alert = NSAlert()
+            alert.messageText = "테스트 기간 만료"
+            alert.informativeText = "Noctiluca Server의 테스트 기간이 만료되었습니다. 최신 버전으로 업데이트해 주세요."
+            alert.alertStyle = .critical
+            alert.addButton(withTitle: "확인")
+            alert.runModal()
+            NSApp.terminate(nil)
+            
+            return
+        }
+        
         // load MsQuic
         _ = MsQuicLoader.shared
 
