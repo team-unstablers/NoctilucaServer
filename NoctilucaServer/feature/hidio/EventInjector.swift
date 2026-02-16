@@ -43,8 +43,9 @@ class EventInjector {
     let minimumRepeatDelay: TimeInterval = 0.05
     let minimumRepeatInterval: TimeInterval = 0.01
 
-    var mouseClickedButton: Int64 = 0
-    var mouseClickedAt: Double = 0
+    var lastClickButton: UInt32 = 0
+    var lastClickTime: TimeInterval = 0
+    var clickCount: Int64 = 0
 
     var mouseDownState: UInt16 = 0
     var lastMousePosition: CGPoint? = nil

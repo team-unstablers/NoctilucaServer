@@ -244,51 +244,51 @@ extension EventInjector {
     
     private func postMouseButtonEventOnQueue(_ event: MouseButtonEvent) {
         var mouseType: CGEventType = .null
-        
+        var cgMouseButton: CGMouseButton = .left
 
-        switch (event.button) {
+        switch event.button {
         case .left:
-            let mask = EventInjector.MOUSE_DOWN_STATE_LEFT
-
             mouseType = (event.eventType == .up ? .leftMouseUp : .leftMouseDown)
+            cgMouseButton = .left
             mouseDownState =
-                    (mouseDownState & EventInjector.MOUSE_DOWN_STATE_RIGHT) |
-                    (event.eventType == .up ? 0b0 : EventInjector.MOUSE_DOWN_STATE_LEFT)
-            break
+                (mouseDownState & EventInjector.MOUSE_DOWN_STATE_RIGHT) |
+                (event.eventType == .up ? 0b0 : EventInjector.MOUSE_DOWN_STATE_LEFT)
         case .right:
-            let mask = EventInjector.MOUSE_DOWN_STATE_RIGHT
-
             mouseType = (event.eventType == .up ? .rightMouseUp : .rightMouseDown)
+            cgMouseButton = .right
             mouseDownState =
-                    (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT) |
-                    (event.eventType == .up ? 0b0 : EventInjector.MOUSE_DOWN_STATE_RIGHT)
-            break
-
+                (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT) |
+                (event.eventType == .up ? 0b0 : EventInjector.MOUSE_DOWN_STATE_RIGHT)
         default:
             break
         }
 
         guard let cgEvent = CGEvent(
-                mouseEventSource: eventSource,
-                mouseType: mouseType,
-                mouseCursorPosition: lastMousePosition ?? CGEvent(source: nil)!.location,
-                mouseButton: .center
+            mouseEventSource: eventSource,
+            mouseType: mouseType,
+            mouseCursorPosition: lastMousePosition ?? CGEvent(source: nil)!.location,
+            mouseButton: cgMouseButton
         )
         else {
             return
         }
 
-        let now = Date().timeIntervalSince1970
-        if (event.eventType == .up) {
-            // double click을 에뮬레이트 했어야 했던 걸로 기억한다
-            if ((now - mouseClickedAt) < 0.5) {
-                cgEvent.setIntegerValueField(.mouseEventClickState, value: 2)
+        if event.eventType == .down {
+            let now = Date().timeIntervalSince1970
+            let sameButton = (event.button.rawValue == lastClickButton)
+            let withinInterval = (now - lastClickTime) < NSEvent.doubleClickInterval
+
+            if sameButton && withinInterval && clickCount < 3 {
+                clickCount += 1
+            } else {
+                clickCount = 1
             }
 
-            mouseClickedButton = Int64(event.button.rawValue)
-            mouseClickedAt = now
+            lastClickButton = event.button.rawValue
+            lastClickTime = now
         }
 
+        cgEvent.setIntegerValueField(.mouseEventClickState, value: clickCount)
         cgEvent.sanitizeModifierFlags(with: keyDownState)
         cgEvent.post(tap: .cgSessionEventTap)
     }
