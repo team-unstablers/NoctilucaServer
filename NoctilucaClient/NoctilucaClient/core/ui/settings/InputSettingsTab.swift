@@ -23,11 +23,11 @@ struct InputSettingsTab: View {
                 if !isMonitoringTCCGranted {
                     SettingsEntry(
                         title: String(localized: "settings.input.exclusive_mode.unavailable.title", defaultValue: "독점 모드 사용할 수 없음"),
-                        subtitle: String(localized: "settings.input.exclusive_mode.unavailable.description", defaultValue: "입력 모니터링 권한이 주어지지 않아 독점 모드를 사용할 수 없습니다.\n설정을 변경한 후에는 Noctiluca Navigator를 다시 시작해야 합니다.")
+                        subtitle: String(localized: "settings.input.exclusive_mode.unavailable.description", defaultValue: "'손쉬운 사용' 권한이 주어지지 않아 독점 모드를 사용할 수 없습니다.\n설정을 변경한 후에는 Noctiluca Navigator를 다시 시작해야 합니다.")
                     ) {
                         HStack(spacing: 8) {
                             Button(String(localized: "common.open_settings", defaultValue: "설정 열기")) {
-                                TCCUtil.shared.openSystemPreferences(for: .inputMonitoring)
+                                TCCUtil.shared.openSystemPreferences(for: .accessibility)
                             }
                         }
                     }

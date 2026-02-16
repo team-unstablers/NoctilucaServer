@@ -9982,25 +9982,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Exclusive mode is unavailable because Input Monitoring permission is not granted.\nYou must restart Noctiluca Navigator after changing settings."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "入力監視の権限がないため、排他モードを使用できません。\n設定を変更した後、Noctiluca Navigatorを再起動する必要があります。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "입력 모니터링 권한이 주어지지 않아 독점 모드를 사용할 수 없습니다.\n설정을 변경한 후에는 Noctiluca Navigator를 다시 시작해야 합니다."
+            "value" : "'손쉬운 사용' 권한이 주어지지 않아 독점 모드를 사용할 수 없습니다.\n설정을 변경한 후에는 Noctiluca Navigator를 다시 시작해야 합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "由于未授予输入监控权限，无法使用独占模式。\n更改设置后，您需要重新启动 Noctiluca Navigator。"
           }
         }
