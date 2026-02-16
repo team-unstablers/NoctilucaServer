@@ -30,7 +30,7 @@ extension AppSettings {
         var isAudioProjectionEnabled: Bool = true
         
         /// 오디오 코덱 우선순위
-        var audioCodecSpecifications: [AudioCodecSpecification] = [.opus]
+        var audioCodecSpecifications: [AudioCodecSpecification] = [.opus, .pcmu, .pcma]
 
         init() {}
 

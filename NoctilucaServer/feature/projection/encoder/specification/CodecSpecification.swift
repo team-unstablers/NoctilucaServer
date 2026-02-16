@@ -135,22 +135,23 @@ extension CodecSpecification {
         .option(.colorFormat, .kColorFormatRGB565)
         .option(.compressionLevel, .init(rawValue: "3"))
         .option(.tileSize, .kTileSize256x256)
-        .option(.quantizeLevel, .kQuantizeLevel3)
+        .option(.quantizeLevel, .kQuantizeLevel4)
         .also { $0.frameRate = 10 }
     
     static let webp = CodecSpecification(fourCC: .webp)
         .option(.colorFormat, .kColorFormatYUV444)
-        .option(.compressionLevel, .init(rawValue: "80"))
-        .option(.tileSize, .kTileSize256x256)
-        .option(.quantizeLevel, .kQuantizeLevelNone)
-        .also { $0.frameRate = 30 }
+        .option(.compressionLevel, .init(rawValue: "65"))
+        .option(.tileSize, .kTileSize128x128)
+        .option(.quantizeLevel, .kQuantizeLevel2)
+        .also { $0.frameRate = 15 }
  
     
     static let mjpg = CodecSpecification(fourCC: .mjpg)
         .option(.colorFormat, .kColorFormatYUV420)
-        .option(.tileSize, .kTileSize256x256)
-        .option(.compressionLevel, .init(rawValue: "28"))
-        .option(.quantizeLevel, .kQuantizeLevelNone)
+        .option(.tileSize, .kTileSize128x128)
+        .option(.compressionLevel, .init(rawValue: "25"))
+        .option(.quantizeLevel, .kQuantizeLevel2)
+        .also { $0.frameRate = 15 }
 }
 
 extension CodecSpecification {
