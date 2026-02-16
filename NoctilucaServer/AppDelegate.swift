@@ -7,8 +7,10 @@
 
 import AppKit
 import Combine
+import SwiftUI
 import UserNotifications
 
+import SiriusKit
 import SwiftMsQuicHelper
 
 @main
@@ -19,7 +21,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
-    private let sessionStatusItem = NSMenuItem(title: "현재 활성 중인 세션 없음", action: nil, keyEquivalent: "")
+    private let sessionListItem = NSMenuItem()
+    private let sessionListViewModel = ClientSessionListViewModel()
     private let startStopItem = NSMenuItem(title: "서버 시작", action: nil, keyEquivalent: "")
     private let settingsItem = NSMenuItem(title: "설정", action: nil, keyEquivalent: ",")
     private let quitItem = NSMenuItem(title: "종료", action: nil, keyEquivalent: "q")
@@ -36,9 +39,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // load MsQuic
         _ = MsQuicLoader.shared
 
-#if !DEBUG
         NSApp.setActivationPolicy(.accessory)
-#endif
+        
         TCCUtil.shared.requestAccess(for: .notifications)
         
         UNUserNotificationCenter.current().delegate = self
@@ -47,7 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         bindServerState()
         updateMenuState()
 
-        if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+        if getuid() != 0 && !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
             showOnboardingWindow()
         }
     }
@@ -57,6 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        sessionListViewModel.refresh(from: server)
         updateMenuState()
     }
 
@@ -133,15 +136,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu()
         menu.delegate = self
 
-        sessionStatusItem.isEnabled = false
+        setupSessionListView()
+
         startStopItem.target = self
-        
+
         settingsItem.target = self
         settingsItem.action = #selector(showSettingsWindow(_:))
         quitItem.target = self
         quitItem.action = #selector(quitApplication(_:))
 
-        menu.addItem(sessionStatusItem)
+        menu.addItem(sessionListItem)
         menu.addItem(startStopItem)
         menu.addItem(.separator())
         menu.addItem(settingsItem)
@@ -170,9 +174,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             .store(in: &cancellables)
     }
 
-    private func updateMenuState() {
-        sessionStatusItem.isEnabled = false
+    private func setupSessionListView() {
+        sessionListViewModel.bind(to: server)
+        sessionListViewModel.disconnectHandler = { [weak self] sessionIDs in
+            self?.disconnectSessions(sessionIDs)
+        }
 
+        let listView = ClientSessionListView(viewModel: sessionListViewModel)
+        let hostingView = NSHostingView(rootView: listView)
+        let fittingSize = hostingView.fittingSize
+        hostingView.frame = NSRect(origin: .zero, size: fittingSize)
+        sessionListItem.view = hostingView
+    }
+
+    private func disconnectSessions(_ sessionIDs: Set<UUID>) {
+        for sessionID in sessionIDs {
+            guard let session = server.clients[sessionID] else { continue }
+            Task {
+                await session.closeWithGoodbye(code: .successful, message: nil)
+            }
+        }
+    }
+
+    private func updateMenuState() {
         switch server.state {
         case .idle:
             startStopItem.title = "서버 시작"
