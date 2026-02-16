@@ -25,10 +25,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var trayMenu: NSMenu?
     private let sessionListItem = NSMenuItem()
     private let sessionListViewModel = ClientSessionListViewModel()
-    private let startStopItem = NSMenuItem(title: "서버 시작", action: nil, keyEquivalent: "")
-    private let settingsItem = NSMenuItem(title: "설정", action: nil, keyEquivalent: ",")
-    private let checkUpdatesItem = NSMenuItem(title: "업데이트 확인", action: nil, keyEquivalent: "")
-    private let quitItem = NSMenuItem(title: "종료", action: nil, keyEquivalent: "q")
+    private let startStopItem = NSMenuItem(title: String(localized: "menu.start-server", defaultValue: "서버 시작"), action: nil, keyEquivalent: "")
+    private let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "설정"), action: nil, keyEquivalent: ",")
+    private let checkUpdatesItem = NSMenuItem(title: String(localized: "menu.check-updates", defaultValue: "업데이트 확인"), action: nil, keyEquivalent: "")
+    private let quitItem = NSMenuItem(title: String(localized: "menu.quit", defaultValue: "종료"), action: nil, keyEquivalent: "q")
 
     static func main() {
         let app = NSApplication.shared
@@ -43,10 +43,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let expirationDate = Date(timeIntervalSince1970: 1774882800.0)
         if Date.now.timeIntervalSince1970 > expirationDate.timeIntervalSince1970 {
             let alert = NSAlert()
-            alert.messageText = "테스트 기간 만료"
-            alert.informativeText = "Noctiluca Server의 테스트 기간이 만료되었습니다. 최신 버전으로 업데이트해 주세요."
+            alert.messageText = String(localized: "alert.trial-expired.title", defaultValue: "테스트 기간 만료")
+            alert.informativeText = String(localized: "alert.trial-expired.message", defaultValue: "Noctiluca Server의 테스트 기간이 만료되었습니다. 최신 버전으로 업데이트해 주세요.")
             alert.alertStyle = .critical
-            alert.addButton(withTitle: "확인")
+            alert.addButton(withTitle: String(localized: "alert.trial-expired.confirm", defaultValue: "확인"))
             alert.runModal()
             NSApp.terminate(nil)
             
@@ -220,15 +220,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateMenuState() {
         switch server.state {
         case .idle:
-            startStopItem.title = "서버 시작"
+            startStopItem.title = String(localized: "menu.start-server", defaultValue: "서버 시작")
             startStopItem.action = #selector(startServer(_:))
             startStopItem.isEnabled = true
         case .preparing:
-            startStopItem.title = "서버 시작"
+            startStopItem.title = String(localized: "menu.start-server", defaultValue: "서버 시작")
             startStopItem.action = #selector(startServer(_:))
             startStopItem.isEnabled = false
         case .running:
-            startStopItem.title = "서버 중지"
+            startStopItem.title = String(localized: "menu.stop-server", defaultValue: "서버 중지")
             startStopItem.action = #selector(stopServer(_:))
             startStopItem.isEnabled = true
         }
