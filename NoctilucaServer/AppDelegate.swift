@@ -181,14 +181,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func bindServerState() {
         server.$state
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateMenuState()
             }
             .store(in: &cancellables)
 
         server.$clients
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateMenuState()
             }

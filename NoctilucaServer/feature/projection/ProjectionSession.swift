@@ -90,7 +90,7 @@ class ProjectionSession: Identifiable {
         self.encoder = VTVideoEncoder()
         
         self.screenLockCancellable = await ScreenLockObserver.shared.$isScreenLocked
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] isLocked in
@@ -292,7 +292,7 @@ class ProjectionSession: Identifiable {
         // 디스플레이 해상도 변경 구독 (최초 prepare 시에만 설정)
         if displayChangeCancellable == nil {
             displayChangeCancellable = DisplayLayoutManager.shared.displayLayoutChangeSubject
-                .receive(on: RunLoop.main)
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] layouts in
                     Task {
                         await self?.handleDisplayLayoutChange(layouts)

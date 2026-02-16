@@ -41,7 +41,7 @@ class ScreenLockObserver: ObservableObject {
 
     private func startObserve() {
         notificationCenter.publisher(for: NSNotification.Name("com.apple.screenIsLocked"))
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
                 
@@ -54,7 +54,7 @@ class ScreenLockObserver: ObservableObject {
             .store(in: &cancellables)
         
          notificationCenter.publisher(for: NSNotification.Name("com.apple.screenIsUnlocked"))
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
                 

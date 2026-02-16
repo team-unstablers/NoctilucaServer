@@ -30,8 +30,8 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
         }
         
         self.subscription = displayLayoutManager.displayLayoutChangeSubject
-            .debounce(for: .milliseconds(1000), scheduler: RunLoop.main)
-            .receive(on: RunLoop.main)
+            .debounce(for: .milliseconds(1000), scheduler: DispatchQueue.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] snapshot in
                 self?.updateWindows(for: snapshot)
             }

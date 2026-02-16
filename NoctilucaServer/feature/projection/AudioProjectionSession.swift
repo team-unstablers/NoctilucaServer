@@ -179,7 +179,7 @@ class AudioProjectionSession: Identifiable {
         // 화면 잠금 구독 (최초 prepare 시에만 설정)
         if screenLockCancellable == nil {
             screenLockCancellable = await ScreenLockObserver.shared.$isScreenLocked
-                .receive(on: RunLoop.main)
+                .receive(on: DispatchQueue.main)
                 .removeDuplicates()
                 .dropFirst()
                 .sink { [weak self] isLocked in
