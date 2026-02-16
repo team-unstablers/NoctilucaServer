@@ -213,7 +213,7 @@ class NoctilucaClient: ObservableObject {
     }
     
     private func setupValidationPolicy() {
-        let policy = sessionSettings?.security.tlsValidationPolicy ?? SettingsStore.shared.settings.security.tlsValidationPolicy
+        let policy = SettingsStore.shared.settings.security.tlsValidationPolicy
         
         let validationBlock: ServerIdentityValidationBlock = { [weak self] identity in
             /// CONTEXT: 이 validation block은 시스템 트러스트 스토어 검증이 실패한 것입니다.

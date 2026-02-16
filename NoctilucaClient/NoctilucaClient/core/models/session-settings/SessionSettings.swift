@@ -187,7 +187,6 @@ extension SessionSettings {
 
 extension SessionSettings {
     struct Security: Codable, Sendable {
-        var tlsValidationPolicy: AppSettings.TLSValidationPolicy = .default
         var disableClientVersionAnnouncement: Bool = false
         var pinning: CertificatePinning? = nil
     }
