@@ -1,15 +1,46 @@
+import ServiceManagement
 import SwiftUI
 
 struct GeneralSettingsTab: View {
     @Binding
     var settings: AppSettings
 
+    @State
+    private var launchAtLogin: Bool = false
+
+    @State
+    private var launchAtLoginRequiresApproval: Bool = false
+
     var body: some View {
         Form {
             Section(String(localized: "settings.general.title", defaultValue: "일반")) {
-                Toggle(isOn: .constant(false)) {
+                Toggle(isOn: $launchAtLogin) {
                     Text(markdown: String(localized: "settings.general.autolaunch.scoped.title", defaultValue: "사용자 로그온 시 자동으로 Noctiluca Server 시작하기"))
                     Text(markdown: String(localized: "settings.general.autolaunch.scoped.description", defaultValue: "현재 사용자가 시스템에 로그온 시 자동으로 Noctiluca Server를 시작합니다."))
+                }
+                .onChange(of: launchAtLogin) { _, newValue in
+                    let currentlyEnabled = SMAppService.mainApp.status == .enabled
+                    guard newValue != currentlyEnabled else { return }
+                    do {
+                        if newValue {
+                            try SMAppService.mainApp.register()
+                        } else {
+                            try SMAppService.mainApp.unregister()
+                        }
+                    } catch {}
+                    syncLaunchAtLoginStatus()
+                }
+
+                if launchAtLoginRequiresApproval {
+                    HStack(spacing: 4) {
+                        Text(String(localized: "settings.general.autolaunch.scoped.requires_approval", defaultValue: "시스템 설정에서 승인이 필요합니다."))
+                            .foregroundStyle(.secondary)
+                            .font(.subheadline)
+                        Button(String(localized: "settings.general.autolaunch.scoped.open_settings", defaultValue: "로그인 항목 설정 열기…")) {
+                            SMAppService.openSystemSettingsLoginItems()
+                        }
+                        .font(.subheadline)
+                    }
                 }
                 
                 Toggle(isOn: $settings.general.autoStart) {
@@ -53,5 +84,14 @@ struct GeneralSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear {
+            syncLaunchAtLoginStatus()
+        }
+    }
+
+    private func syncLaunchAtLoginStatus() {
+        let status = SMAppService.mainApp.status
+        launchAtLogin = (status == .enabled)
+        launchAtLoginRequiresApproval = (status == .requiresApproval)
     }
 }
