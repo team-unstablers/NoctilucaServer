@@ -85,7 +85,7 @@ struct AuthChallengeSheetView: View {
                 authFormInputs
             }
             .padding(12)
-            .background(Color.gray.mix(with: .white, by: 0.9))
+            .background(Color.gray.opacity(0.1))
             .clipShape(.rect(cornerRadius: 8))
             .padding(.bottom, 12)
         }
