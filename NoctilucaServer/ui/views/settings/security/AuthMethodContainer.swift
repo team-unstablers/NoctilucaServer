@@ -192,10 +192,8 @@ private struct AuthMethodSelectionSheet: View {
                 Text(markdown: String(localized: "settings.security.auth_method.simple_password.description", defaultValue: "입력된 비밀번호는 SHA-512 + bcrypt로 이중 해시 처리되어 저장됩니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                TextField(String(localized: "settings.security.auth_method.simple_password.placeholder", defaultValue: "비밀번호 입력"), text: $simplePasswordValue, axis: .vertical)
+                SecureField(String(localized: "settings.security.auth_method.simple_password.placeholder", defaultValue: "비밀번호 입력"), text: $simplePasswordValue)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(.body, design: .monospaced))
-                    .lineLimit(1...3)
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {
