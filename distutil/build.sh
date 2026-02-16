@@ -12,7 +12,7 @@ if [[ -n `git status --porcelain` ]]; then
 fi
 
 PRODUCT_NAME="Noctiluca Server"
-VERSION="1.0.0"
+VERSION=$(grep 'MARKETING_VERSION = ' 'NoctilucaServer.xcodeproj/project.pbxproj' | tail -n 1 | perl -nE '/= ([\d\.]+);/;print $1')
 IDENTIFIER="app.noctiluca.server"
 
 # [중요] Notarytool 프로필 이름 (터미널에서 'xcrun notarytool store-credentials'로 생성 필요)
@@ -94,7 +94,6 @@ function package_nocserver() {
                -destination 'generic/platform=macOS' \
                -derivedDataPath "$DERIVED_DATA_PATH" \
                -archivePath "$ARCHIVE_PATH" \
-               ARCHS=arm64 \
                archive
     
     # ExportOptions.plist 동적 생성
@@ -113,7 +112,7 @@ function package_nocserver() {
     <key>provisioningProfiles</key>
     <dict>
         <key>app.noctiluca.server</key>
-        <string>Noctiluca_Server</string>
+        <string>Noctiluca Server</string>
     </dict>
 </dict>
 </plist>

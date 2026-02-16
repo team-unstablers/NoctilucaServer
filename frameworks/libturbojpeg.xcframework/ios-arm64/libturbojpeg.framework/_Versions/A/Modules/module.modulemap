@@ -1,5 +1,0 @@
-framework module libturbojpeg {
-    umbrella header "turbojpeg.h"
-    export *
-    module * { export * }
-}

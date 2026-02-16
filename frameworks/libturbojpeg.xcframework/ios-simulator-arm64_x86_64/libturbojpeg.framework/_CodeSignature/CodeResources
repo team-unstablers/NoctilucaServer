@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/Info.plist</key>
 		<data>
-		gKQGKhUgLguPRWeYIiF+Hqe871Q=
+		NnxlFVlfFoCOLElmTGAVlCFySUg=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -57,69 +57,8 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			CXoc3LqI0MJju2kcX2ADSBMYzKPaAFe3+ox7X4o1Ijk=
+			6mx+a0uCOm61bo1qptsmarMg3HGZqaAw0qzH2RwU1rc=
 			</data>
-		</dict>
-		<key>_Versions/A/Headers/jconfig.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			U0TITK96d5SpVGI7S51pvsg7A1wRcyqbMnXVy4TPO/4=
-			</data>
-		</dict>
-		<key>_Versions/A/Headers/jerror.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			NTVNFI6m2iNLrNVDUVXQ7B3pwFgzYCIypn8c8YTASSU=
-			</data>
-		</dict>
-		<key>_Versions/A/Headers/jmorecfg.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			gKl/ReyyjYMxAkfuzsKjhltf05ug7MSQtIo2+sYxjiY=
-			</data>
-		</dict>
-		<key>_Versions/A/Headers/jpeglib.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			3D6CIPNLfp+eSGIPXLjcBwg0/rMhS7EruteEeOuynmA=
-			</data>
-		</dict>
-		<key>_Versions/A/Headers/turbojpeg.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			ybHe5zOsiOaVSGdYXDWrd1C5/tZAZNiJwpDcHnUynRY=
-			</data>
-		</dict>
-		<key>_Versions/A/Modules/module.modulemap</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			QqeIcT8U57oNOZz4i7cNu5vIR73Tsj4ZCJlJ8APJjYY=
-			</data>
-		</dict>
-		<key>_Versions/A/Resources/Info.plist</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			CXoc3LqI0MJju2kcX2ADSBMYzKPaAFe3+ox7X4o1Ijk=
-			</data>
-		</dict>
-		<key>_Versions/A/libturbojpeg</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			rs/90fPhk3wDV9UQsgs5DFpO3lKz7h9YEeSEfK4FYSY=
-			</data>
-		</dict>
-		<key>_Versions/Current</key>
-		<dict>
-			<key>symlink</key>
-			<string>A</string>
 		</dict>
 	</dict>
 	<key>rules</key>
