@@ -10,7 +10,7 @@ import Foundation
 extension AppSettings {
     struct General: Category {
         /// 서버 자동 시작 여부
-        var autoStart: Bool = false
+        var autoStart: Bool = true
         
         /// 최대 동시 접속 세션 수
         var maxConcurrentSessions: Int = 1

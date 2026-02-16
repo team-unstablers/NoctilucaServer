@@ -75,16 +75,17 @@ struct MiscSettingsTab: View {
                 }
                 .disabled(!settings.logging.enableFileLogging)
 
-                SettingsPicker(selection: $settings.logging.minimumLogLevel) {
-                    SettingsPickerItem(value: "trace") { Text("Trace") }
-                    SettingsPickerItem(value: "debug") { Text("Debug") }
-                    SettingsPickerItem(value: "info") { Text("Info") }
-                    SettingsPickerItem(value: "warning") { Text("Warning") }
-                    SettingsPickerItem(value: "error") { Text("Error") }
+                Picker(selection: $settings.logging.minimumLogLevel) {
+                    Text("Trace").tag("trace")
+                    Text("Debug").tag("debug")
+                    Text("Info").tag("info")
+                    Text("Warning").tag("warning")
+                    Text("Error").tag("error")
                 } label: {
                     Text(markdown: String(localized: "settings.misc.logging.minimum_log_level.title",
                          defaultValue: "최소 로그 레벨"))
                 }
+                .pickerStyle(.menu)
 
                 SettingsEntry(
                     title: String(localized: "settings.misc.logging.max_file_size.title",
@@ -95,7 +96,6 @@ struct MiscSettingsTab: View {
                         set: { settings.logging.maxFileSize = UInt64(max($0, 1)) * 1_048_576 }
                     ), format: .number)
                     .frame(width: 80)
-                    .textFieldStyle(.roundedBorder)
                 }
                 .disabled(!settings.logging.enableFileLogging || !settings.logging.enableLogRotation)
 
@@ -107,6 +107,7 @@ struct MiscSettingsTab: View {
                         Text("\(settings.logging.maxFileCount)")
                             .monospacedDigit()
                     }
+                    .frame(maxWidth: 60)
                 }
                 .disabled(!settings.logging.enableFileLogging || !settings.logging.enableLogRotation)
 
@@ -141,6 +142,7 @@ struct MiscSettingsTab: View {
                     Button(String(localized: "settings.misc.connectivity_test.request", defaultValue: "접속 테스트 요청하기")) {}
                 }
             }
+            .disabled(true)
         }
         .formStyle(.grouped)
     }

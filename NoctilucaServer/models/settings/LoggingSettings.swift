@@ -9,7 +9,7 @@ extension AppSettings {
     struct Logging: Category {
         var enableFileLogging: Bool = false
         var enableLogRotation: Bool = true
-        var minimumLogLevel: String = "trace"
+        var minimumLogLevel: String = "info"
         var maxFileSize: UInt64 = 10_485_760  // 10MB
         var maxFileCount: Int = 5
 
