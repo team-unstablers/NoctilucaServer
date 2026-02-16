@@ -4528,6 +4528,93 @@
         }
       }
     },
+    "mainwindow.content.initializing-projection-channel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initializing projection channel..."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロジェクションチャンネルを初期化中..."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로젝션 채널 초기화 중..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在初始化投影通道..."
+          }
+        }
+      }
+    },
+    "mainwindow.content.preparing-session" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing session..."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セッションを準備中..."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세션 준비 중..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在准备会话..."
+          }
+        }
+      }
+    },
+    "mainwindow.remote-session.loading-display-layout" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading display configuration..."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ディスプレイ構成を読み込んでいます..."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 구성을 로드하고 있습니다"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载显示配置..."
+          }
+        }
+      }
+    },
     "menu.about" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -8620,25 +8707,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Public Key (Supports OpenSSH / PEM format)"
+            "value" : "Private Key (Supports OpenSSH / PEM format)"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "公開鍵 (OpenSSH形式 / PEM形式をサポートします)"
+            "value" : "秘密鍵 (OpenSSH形式 / PEM形式をサポートします)"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "공개    키 (OpenSSH 형식 / PEM 형식을 지원합니다)"
+            "value" : "개인 키 (OpenSSH 형식 / PEM 형식을 지원합니다)"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "公钥 (支持 OpenSSH 格式 / PEM 格式)"
+            "value" : "私钥 (支持 OpenSSH 格式 / PEM 格式)"
           }
         }
       }
@@ -9137,7 +9224,7 @@
       }
     },
     "session-settings.security.tls.default" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9166,7 +9253,7 @@
       }
     },
     "session-settings.security.tls.default_desc" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9195,7 +9282,7 @@
       }
     },
     "session-settings.security.tls.policy" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9224,7 +9311,7 @@
       }
     },
     "session-settings.security.tls.policy_desc" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9253,7 +9340,7 @@
       }
     },
     "session-settings.security.tls.strict" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9282,7 +9369,7 @@
       }
     },
     "session-settings.security.tls.strict_desc" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9311,7 +9398,7 @@
       }
     },
     "session-settings.security.tls.unsafe" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9340,7 +9427,7 @@
       }
     },
     "session-settings.security.tls.unsafe_desc" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9369,7 +9456,7 @@
       }
     },
     "session-settings.security.transport" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9398,7 +9485,7 @@
       }
     },
     "session-settings.security.transport_desc" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12848,15 +12935,6 @@
 
     },
     "YUV 4:4:4" : {
-
-    },
-    "디스플레이 구성을 로드하고 있습니다" : {
-
-    },
-    "세션 준비 중..." : {
-
-    },
-    "프로젝션 채널 초기화 중..." : {
 
     }
   },

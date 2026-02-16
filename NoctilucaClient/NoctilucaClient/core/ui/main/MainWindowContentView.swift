@@ -94,11 +94,11 @@ fileprivate struct MainWindowContentViewInternal: View {
                 {
                     MainWindowRemoteSessionView(remoteSession: remoteSession, projection: projection, hidio: hidio)
                 } else {
-                    ProgressView("프로젝션 채널 초기화 중...")
+                    ProgressView(String(localized: "mainwindow.content.initializing-projection-channel", defaultValue: "프로젝션 채널 초기화 중..."))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else {
-                ProgressView("세션 준비 중...")
+                ProgressView(String(localized: "mainwindow.content.preparing-session", defaultValue: "세션 준비 중..."))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         default:

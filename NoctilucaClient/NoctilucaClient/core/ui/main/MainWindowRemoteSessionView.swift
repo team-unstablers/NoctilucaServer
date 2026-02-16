@@ -41,7 +41,7 @@ struct MainWindowRemoteSessionView: View {
                     subscription: subscription
                 )
             } else {
-                ProgressView("디스플레이 구성을 로드하고 있습니다")
+                ProgressView(String(localized: "mainwindow.remote-session.loading-display-layout", defaultValue: "디스플레이 구성을 로드하고 있습니다"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .task {
                         // 혹시 정보가 누락되었을 경우를 대비해 재요청

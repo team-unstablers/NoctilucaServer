@@ -120,7 +120,7 @@ struct CredentialAddSheet: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(markdown: String(localized: "session-settings.security.credential_add.ssh_key.header", defaultValue: "SSH 키"))
                     .font(.headline)
-                TextField(String(localized: "session-settings.security.credential_add.ssh_key.private_key_placeholder", defaultValue: "공개    키 (OpenSSH 형식 / PEM 형식을 지원합니다)"), text: $privateKey, axis: .vertical)
+                TextField(String(localized: "session-settings.security.credential_add.ssh_key.private_key_placeholder", defaultValue: "개인 키 (OpenSSH 형식 / PEM 형식을 지원합니다)"), text: $privateKey, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(3...6)
