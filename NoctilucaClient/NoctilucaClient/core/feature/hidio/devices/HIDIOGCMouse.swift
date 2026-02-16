@@ -63,6 +63,10 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     private var controller: HIDIOController?
 
 #if os(macOS)
+    weak var window: NSWindow?
+#endif
+
+#if os(macOS)
     private static let recenterIntervalNanoseconds: UInt64 = 8_000_000
     private let shouldRecenterCursor = ManagedAtomic<Bool>(false)
     private var recenterTask: Task<Void, Never>?
@@ -218,6 +222,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         self.controller = nil
         self.destroyMouseInputHandler()
 #if os(macOS)
+        self.window = nil
         self.stopRecenterLoop()
 #endif
     }
@@ -271,11 +276,11 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
 fileprivate extension HIDIOGCMouse {
     /// 이 윈도우가 속한 디스플레이를 반환합니다.
     func currentDisplayID() -> CGDirectDisplayID? {
-        if let screen = NSApp.keyWindow?.screen {
+        if let screen = self.window?.screen {
             let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as! CGDirectDisplayID
             return displayID
         }
-        
+
         return nil
     }
     
@@ -301,20 +306,18 @@ fileprivate extension HIDIOGCMouse {
     
     @MainActor
     func centerCursor() {
-        guard let keyWindow = NSApp.keyWindow,
-              let screen = keyWindow.screen
+        guard let window = self.window,
+              window.screen != nil
         else {
             return
         }
-        
-        // keyWindow의 중앙
+
+        let mainScreenHeight = NSScreen.screens.first?.frame.height ?? 0
         let center = NSPoint(
-            x: keyWindow.frame.origin.x + (keyWindow.frame.size.width / 2),
-            y: screen.frame.height - (keyWindow.frame.origin.y + (keyWindow.frame.size.height / 2))
+            x: window.frame.midX,
+            y: mainScreenHeight - window.frame.midY
         )
-        
-        logger.debug("Centering cursor to: \(center)")
-        
+
         CGWarpMouseCursorPosition(center)
     }
 }

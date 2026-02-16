@@ -127,6 +127,7 @@ extension HIDIOSession {
                     
                     // 2. exclusive mode에서는 relative 마우스를 연결한다
                     if let mouse = HIDIOGCMouse.shared() {
+                        mouse.window = session.window
                         self.currentMouse = mouse
                         controller.connect(mouse)
                     } else {

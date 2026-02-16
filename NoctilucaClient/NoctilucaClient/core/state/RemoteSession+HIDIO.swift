@@ -8,6 +8,10 @@
 import Foundation
 import Combine
 
+#if os(macOS)
+import AppKit
+#endif
+
 import SiriusKitCore
 
 extension RemoteSession {
@@ -45,7 +49,10 @@ extension RemoteSession {
 #if os(iOS)
                 session.rootViewController = self.parent.ref.parent?.ref.rootViewController
 #endif
-                
+#if os(macOS)
+                session.window = self.parent.ref.parent?.ref.mainWindowController?.ref.window
+#endif
+
                 self.setupKeyEventPipeline()
                 self.sendKeyboardSetupIfNeeded()
                 try? self.session.startSession()

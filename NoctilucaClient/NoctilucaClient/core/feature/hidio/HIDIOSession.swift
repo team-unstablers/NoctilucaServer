@@ -8,6 +8,10 @@
 import Foundation
 import Combine
 
+#if os(macOS)
+import AppKit
+#endif
+
 enum HIDIOSessionMode: Equatable, Hashable {
     /// 공유 모드 (Shared Mode)
     ///
@@ -113,10 +117,13 @@ class HIDIOSession: ObservableObject {
     var defaultSubMouse: HIDIOVirtualDevice {
         (driver as! IOSDriver).defaultSubMouse
     }
-    
+
     var rootViewController: Weak<RootViewController>? = nil
 #endif
-    
+#if os(macOS)
+    weak var window: NSWindow? = nil
+#endif
+
     var currentMouse: HIDIOVirtualDevice? {
         driver.currentMouse
     }
