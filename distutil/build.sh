@@ -12,7 +12,7 @@ if [[ -n `git status --porcelain` ]]; then
 fi
 
 PRODUCT_NAME="Noctiluca Server"
-VERSION="0.1.0"
+VERSION="1.0.0"
 IDENTIFIER="app.noctiluca.server"
 
 # [중요] Notarytool 프로필 이름 (터미널에서 'xcrun notarytool store-credentials'로 생성 필요)
@@ -28,14 +28,19 @@ NOCSERVER_ID="app.noctiluca.server"
 # 빌드 출력 및 임시 경로
 DIST_DIR="$SRCROOT/dist"
 INTERMEDIATE_DIR="$DIST_DIR/intermediate"
-PACKAGES_DIR="$DIST_DIR/packages"
+PACKAGES_DIR="$SRCROOT/dist/packages"
+UPDATES_DIR="$SRCROOT/dist_updates"
+# DerivedData를 빌드 디렉토리 내에 고정 (SPM 아티팩트 경로 예측 가능)
+DERIVED_DATA_PATH="$DIST_DIR/DerivedData"
 # RESOURCES_DIR="$DIST_DIR/Resources" # 배경이미지, EULA 등이 위치할 폴더
-FINAL_PKG="$DIST_DIR/noctiluca-server-signed-$VERSION-$GIT_TAG.pkg"
+FINAL_PKG="$UPDATES_DIR/noctiluca-server-signed-$VERSION-$GIT_TAG-RELEASE.pkg"
+FINAL_DMG="$UPDATES_DIR/noctiluca-server-signed-$VERSION-$GIT_TAG-RELEASE.dmg"
 
 # 초기화
 rm -rf "$DIST_DIR"
 mkdir -p "$INTERMEDIATE_DIR"
 mkdir -p "$PACKAGES_DIR"
+mkdir -p "$UPDATES_DIR"
 
 # ==============================================================================
 # 2. 빌드 및 컴포넌트 패키징 함수 (DSTROOT 방식 유지)
@@ -87,7 +92,9 @@ function package_nocserver() {
                -scheme "NoctilucaServer" \
                -configuration Release \
                -destination 'generic/platform=macOS' \
+               -derivedDataPath "$DERIVED_DATA_PATH" \
                -archivePath "$ARCHIVE_PATH" \
+               ARCHS=arm64 \
                archive
     
     # ExportOptions.plist 동적 생성
@@ -125,6 +132,20 @@ EOF
         "$PACKAGES_DIR/NoctilucaServer.pkg"
 }
 
+function package_sparkle_dmg() {
+    echo "💿 Creating Sparkle update DMG..."
+
+    hdiutil create \
+        -volname "Noctiluca Server" \
+        -srcfolder "$APP_PATH" \
+        -ov -format UDZO \
+        "$FINAL_DMG"
+
+    codesign --force --sign "$APP_CERT_ID" \
+        --timestamp \
+        "$FINAL_DMG"
+}
+
 # --- 실행: 각 컴포넌트 패키지 생성 ---
 echo "📦 Start Packaging Components..."
 # package_sessionbroker
@@ -133,6 +154,7 @@ echo "📦 Start Packaging Components..."
 
 package_nocserver
 package_nocserver_pam_d
+package_sparkle_dmg
 
 # ==============================================================================
 # 3. Distribution XML 생성 (UI 커스터마이징)
@@ -163,7 +185,12 @@ productbuild --distribution "$DIST_XML" \
 # ==============================================================================
 echo "🛡️  Submitting to Apple Notary Service..."
 
+# pkg, DMG 동시 공증 제출
 xcrun notarytool submit "$FINAL_PKG" \
+                 --keychain-profile "$NOTARY_KEYCHAIN_PROFILE" \
+                 --wait
+
+xcrun notarytool submit "$FINAL_DMG" \
                  --keychain-profile "$NOTARY_KEYCHAIN_PROFILE" \
                  --wait
 
@@ -173,12 +200,40 @@ xcrun notarytool submit "$FINAL_PKG" \
 echo "📎 Stapling Ticket..."
 
 xcrun stapler staple "$FINAL_PKG"
+xcrun stapler staple "$FINAL_DMG"
 
-if [ $? -eq 0 ]; then
-    echo "✅ 배포 준비 완료: $FINAL_PKG"
-    # 검증
-    spctl --assess --type install --context context:primary-signature -v "$FINAL_PKG"
-else
-    echo "❌ Stapling Failed"
-    exit 1
-fi
+# pkg 검증
+echo "🔍 Verifying PKG..."
+spctl --assess --type install --context context:primary-signature -v "$FINAL_PKG"
+
+# DMG 검증
+echo "🔍 Verifying DMG..."
+spctl --assess --type open --context context:primary-signature -v "$FINAL_DMG"
+
+# ==============================================================================
+# 7. Sparkle Appcast 생성
+#    - EdDSA 키가 Keychain에 있어야 합니다 (generate_keys로 생성)
+#    - SURequireSignedFeed: appcast.xml 자체에 EdDSA 서명 포함
+#    - SUVerifyUpdateBeforeExtraction: 각 아이템의 edSignature로 DMG 검증
+# ==============================================================================
+# echo "📡 Generating Sparkle Appcast..."
+# 
+# # SPM 아티팩트에서 Sparkle bin 탐색
+# SPARKLE_BIN=$(dirname "$(find "$DERIVED_DATA_PATH/SourcePackages/artifacts" \
+#     -name "generate_appcast" -print -quit 2>/dev/null)")
+# 
+# if [ -z "$SPARKLE_BIN" ]; then
+#     echo "❌ Sparkle bin을 DerivedData에서 찾을 수 없습니다."
+#     echo "   DERIVED_DATA_PATH: $DERIVED_DATA_PATH"
+#     exit 1
+# fi
+# 
+# echo "🔍 Sparkle bin: $SPARKLE_BIN"
+# 
+# cp "$FINAL_DMG" "$UPDATES_DIR/"
+# "$SPARKLE_BIN/generate_appcast" "$UPDATES_DIR"
+# 
+# echo "✅ 배포 준비 완료"
+# echo "   PKG: $FINAL_PKG"
+# echo "   DMG: $FINAL_DMG"
+# echo "   Appcast: $UPDATES_DIR/appcast.xml"

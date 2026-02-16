@@ -315,3 +315,5 @@ playground.xcworkspace
 dist/
 
 *.pkg
+
+dist_updates/
