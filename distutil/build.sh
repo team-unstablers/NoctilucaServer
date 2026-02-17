@@ -29,17 +29,19 @@ NOCSERVER_ID="app.noctiluca.server"
 DIST_DIR="$SRCROOT/dist"
 INTERMEDIATE_DIR="$DIST_DIR/intermediate"
 PACKAGES_DIR="$SRCROOT/dist/packages"
+PACKAGES_OUT_DIR="$SRCROOT/dist_packages"
 UPDATES_DIR="$SRCROOT/dist_updates"
 # DerivedData를 빌드 디렉토리 내에 고정 (SPM 아티팩트 경로 예측 가능)
 DERIVED_DATA_PATH="$DIST_DIR/DerivedData"
 # RESOURCES_DIR="$DIST_DIR/Resources" # 배경이미지, EULA 등이 위치할 폴더
-FINAL_PKG="$UPDATES_DIR/noctiluca-server-signed-$VERSION-$GIT_TAG-RELEASE.pkg"
+FINAL_PKG="$PACKAGES_OUT_DIR/noctiluca-server-signed-$VERSION-$GIT_TAG-RELEASE.pkg"
 FINAL_DMG="$UPDATES_DIR/noctiluca-server-signed-$VERSION-$GIT_TAG-RELEASE.dmg"
 
 # 초기화
 rm -rf "$DIST_DIR"
 mkdir -p "$INTERMEDIATE_DIR"
 mkdir -p "$PACKAGES_DIR"
+mkdir -p "$PACKAGES_OUT_DIR"
 mkdir -p "$UPDATES_DIR"
 
 # ==============================================================================

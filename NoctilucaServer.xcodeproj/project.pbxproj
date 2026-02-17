@@ -109,7 +109,6 @@
 				"installer-templates/distribution.xml",
 				"installer-templates/Resources/Localizable.strings",
 				"installer-templates/Resources/readme.html",
-				"installer-templates/Resources/welcome.html",
 			);
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
 		};

@@ -4,7 +4,7 @@
     
     <options customize="allow" require-scripts="false" hostArchitectures="x86_64,arm64"/>
 
-    <welcome file="welcome.html" mime-type="text/html" />
+        <!--<welcome file="welcome.html" mime-type="text/html" /> -->
     <readme file="readme.html" mime-type="text/html" />
     <license file="license.html" mime-type="text/html" />
     
