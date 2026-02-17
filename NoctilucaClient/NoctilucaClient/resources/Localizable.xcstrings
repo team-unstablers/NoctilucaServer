@@ -9223,6 +9223,50 @@
         }
       }
     },
+    "session-settings.security.protocol.urara.desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "君の 夢は うららかに"
+          }
+        }
+      }
+    },
+    "session-settings.security.protocol.urara.h3" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "ALPN 어나운스 시 'h3'을 대신 사용하기"
+          }
+        }
+      }
+    },
+    "session-settings.security.protocol.urara.h3.desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일부 네트워크 환경에서의 호환성을 개선시킬 수 있을거라 믿고 싶습니다."
+          }
+        }
+      }
+    },
+    "session-settings.security.protocol.urara.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "개발용 설정: 麗 (우라라) 모드"
+          }
+        }
+      }
+    },
     "session-settings.security.tls.default" : {
       "extractionState" : "stale",
       "localizations" : {
