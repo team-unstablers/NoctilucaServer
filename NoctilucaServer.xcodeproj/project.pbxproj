@@ -96,6 +96,10 @@
 		F624FDB72EE2D41B007A68B3 /* Exceptions for "NoctilucaServer" folder in "NoctilucaServer" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				.claude/settings.local.json,
+				AGENTS.md,
+				CLAUDE.md,
+				GEMINI.md,
 				Info.plist,
 			);
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
@@ -105,10 +109,18 @@
 			membershipExceptions = (
 				"/Localized: installer-templates/Resources/license.html",
 				"/Localized: installer-templates/Resources/Localizable.strings",
+				build_client.sh,
 				build.sh,
 				"installer-templates/distribution.xml",
 				"installer-templates/Resources/Localizable.strings",
 				"installer-templates/Resources/readme.html",
+			);
+			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
+		};
+		F6682C6B2F445AC70042F213 /* Exceptions for "pam.d" folder in "NoctilucaServer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				noctiluca,
 			);
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
 		};
@@ -122,6 +134,9 @@
 		};
 		F6379F9C2EEAAFD9004BC795 /* pam.d */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F6682C6B2F445AC70042F213 /* Exceptions for "pam.d" folder in "NoctilucaServer" target */,
+			);
 			path = pam.d;
 			sourceTree = "<group>";
 		};
