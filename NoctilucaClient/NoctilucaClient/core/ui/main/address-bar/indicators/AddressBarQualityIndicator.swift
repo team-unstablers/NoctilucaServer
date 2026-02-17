@@ -6,8 +6,15 @@
 import SwiftUI
 
 struct AddressBarQualityIndicator: View {
+    @Environment(\.colorScheme)
+    var colorScheme
+
     let state: AddressBarQualityIndicatorState
     let rtt: TimeInterval
+    
+    var primaryColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
 
     var tooltipTitle: String {
         switch state {
@@ -44,19 +51,19 @@ struct AddressBarQualityIndicator: View {
         switch state {
         case .unknown:
             Image(systemName: "cellularbars", variableValue: 0.0)
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(primaryColor.opacity(0.7))
         case .poor:
             Image(systemName: "cellularbars", variableValue: 0.25)
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(primaryColor.opacity(0.7))
         case .bad:
             Image(systemName: "cellularbars", variableValue: 0.5)
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(primaryColor.opacity(0.7))
         case .good:
             Image(systemName: "cellularbars", variableValue: 0.75)
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(primaryColor.opacity(0.7))
         case .excellent:
             Image(systemName: "cellularbars", variableValue: 1)
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(primaryColor.opacity(0.7))
         }
     }
 

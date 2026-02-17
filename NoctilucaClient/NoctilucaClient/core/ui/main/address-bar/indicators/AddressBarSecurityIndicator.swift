@@ -6,6 +6,9 @@
 import SwiftUI
 
 struct AddressBarSecurityIndicator: View {
+    @Environment(\.colorScheme)
+    var colorScheme
+    
     let state: AddressBarSecurityIndicatorState
 
     @State
@@ -13,19 +16,23 @@ struct AddressBarSecurityIndicator: View {
 
     @State
     var tooltipSize: CGSize = .zero
+    
+    var primaryColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
 
     @ViewBuilder
     var iconView: some View {
         switch state {
         case .neutral:
             Image(systemName: "lock.fill")
-                .foregroundColor(.black.opacity(0.6))
+                .foregroundColor(primaryColor.opacity(0.7))
         case .dangerous:
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.red.mix(with: .black, by: 0.2))
+                .foregroundColor(.red.mix(with: primaryColor, by: 0.2))
         case .trustable:
             Image(systemName: "lock.fill")
-                .foregroundColor(.green.mix(with: .black, by: 0.2))
+                .foregroundColor(.green.mix(with: primaryColor, by: 0.2))
         }
     }
 

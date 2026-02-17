@@ -6,7 +6,14 @@
 import SwiftUI
 
 struct AddressBarDegradationIndicator: View {
+    @Environment(\.colorScheme)
+    var colorScheme
+
     let state: AddressBarDegradationIndicatorState
+    
+    var primaryColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
 
     private var reasonText: String {
         var parts: [String] = []
@@ -58,7 +65,7 @@ struct AddressBarDegradationIndicator: View {
     var body: some View {
         AddressBarIndicatorView {
             Image(systemName: "cloud.bolt.rain.fill")
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(primaryColor.opacity(0.7))
         } tooltip: {
             Text(markdown: String(localized: "main.address_bar.degradation.title", defaultValue: "화면 품질이 저하되었습니다"))
                 .font(.system(size: 12))
