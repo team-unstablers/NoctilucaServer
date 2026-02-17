@@ -14,6 +14,9 @@ import SiriusKitClient
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // ignore SIGPIPE to prevent app from crashing when trying to write to a closed socket
+        signal(SIGPIPE, SIG_IGN);
+        
         SiriusLogger.configure(
             minimumLevel: .trace
         )

@@ -33,6 +33,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     static func main() {
         let app = NSApplication.shared
         
+        // ignore SIGPIPE to prevent app from crashing when trying to write to a closed socket
+        signal(SIGPIPE, SIG_IGN);
+
         let delegate = AppDelegate()
         app.delegate = delegate
         _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
