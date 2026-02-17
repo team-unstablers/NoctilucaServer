@@ -10,6 +10,16 @@
 		F627116D2F08626200E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F627116C2F08626200E8A3D7 /* libzstd */; };
 		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */; };
+		F6682AC92F43F8930042F213 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
+		F6682ACA2F43F8930042F213 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC02F43F8930042F213 /* libzstd */; };
+		F6682ACB2F43F8930042F213 /* SiriusKitClient in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC22F43F8930042F213 /* SiriusKitClient */; };
+		F6682ACC2F43F8930042F213 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6682ABE2F43F8930042F213 /* AsyncAlgorithms */; };
+		F6682ACD2F43F8930042F213 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC32F43F8930042F213 /* Xuanxue */; };
+		F6682AD02F43F8930042F213 /* NoctilucaWebPDecoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F6682AD12F43F8930042F213 /* Xuanxue in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC32F43F8930042F213 /* Xuanxue */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F6682AD22F43F8930042F213 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F6682AD32F43F8930042F213 /* SiriusKitClient in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC22F43F8930042F213 /* SiriusKitClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFEE2F3A23C8004383CF /* SiriusKitClient in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7C2F306B6C0024513A /* SiriusKitClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF12F3A34C8004383CF /* NoctilucaWebPDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF02F3A34C8004383CF /* NoctilucaWebPDecoder */; };
 		F686CFF22F3A34C8004383CF /* NoctilucaWebPDecoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF02F3A34C8004383CF /* NoctilucaWebPDecoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -30,6 +40,20 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		F6682ACF2F43F8930042F213 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				F6682AD02F43F8930042F213 /* NoctilucaWebPDecoder in Embed Frameworks */,
+				F6682AD12F43F8930042F213 /* Xuanxue in Embed Frameworks */,
+				F6682AD22F43F8930042F213 /* libturbojpeg.xcframework in Embed Frameworks */,
+				F6682AD32F43F8930042F213 /* SiriusKitClient in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6D2D1352EF026F0002596D1 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -52,18 +76,28 @@
 		F6561F132F08B6F10090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/macos-arm64_x86_64/libturbojpeg.framework"; sourceTree = "<group>"; };
 		F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = ../frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
 		F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaClientTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6682AD72F43F8930042F213 /* Noctiluca Navigator (Explicit Edition).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator (Explicit Edition).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6B2AB7B2F2A71AE00B7CF41 /* WebPDecoder.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = WebPDecoder.xcframework; path = ../frameworks/WebPDecoder.xcframework; sourceTree = "<group>"; };
 		F6B2AB812F2A736F00B7CF41 /* SharpYuv.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SharpYuv.xcframework; path = ../frameworks/SharpYuv.xcframework; sourceTree = "<group>"; };
 		F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "NoctilucaClient" target */ = {
+		F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				resources/Info.plist,
+				"resources/Users/cheesekun/works/noctiluca/NoctilucaServer/NoctilucaClient/NoctilucaClient/resources/Info-ExplicitEdition.plist",
 			);
-			target = F6BD3E952EDA1AF6000011DF /* NoctilucaClient */;
+			target = F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */;
+		};
+		F6682AD82F43F8930042F213 /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator (Explicit Edition)" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				resources/Info.plist,
+				"resources/Users/cheesekun/works/noctiluca/NoctilucaServer/NoctilucaClient/NoctilucaClient/resources/Info-ExplicitEdition.plist",
+			);
+			target = F6682ABD2F43F8930042F213 /* Noctiluca Navigator (Explicit Edition) */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -76,7 +110,8 @@
 		F6BD3E982EDA1AF6000011DF /* NoctilucaClient */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "NoctilucaClient" target */,
+				F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator" target */,
+				F6682AD82F43F8930042F213 /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator (Explicit Edition)" target */,
 			);
 			path = NoctilucaClient;
 			sourceTree = "<group>";
@@ -88,6 +123,19 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6682AC72F43F8930042F213 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */,
+				F6682AC92F43F8930042F213 /* libturbojpeg.xcframework in Frameworks */,
+				F6682ACA2F43F8930042F213 /* libzstd in Frameworks */,
+				F6682ACB2F43F8930042F213 /* SiriusKitClient in Frameworks */,
+				F6682ACC2F43F8930042F213 /* AsyncAlgorithms in Frameworks */,
+				F6682ACD2F43F8930042F213 /* Xuanxue in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -122,6 +170,7 @@
 			children = (
 				F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */,
 				F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */,
+				F6682AD72F43F8930042F213 /* Noctiluca Navigator (Explicit Edition).app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -165,9 +214,37 @@
 			productReference = F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		F6BD3E952EDA1AF6000011DF /* NoctilucaClient */ = {
+		F6682ABD2F43F8930042F213 /* Noctiluca Navigator (Explicit Edition) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F6BD3EA12EDA1AF8000011DF /* Build configuration list for PBXNativeTarget "NoctilucaClient" */;
+			buildConfigurationList = F6682AD42F43F8930042F213 /* Build configuration list for PBXNativeTarget "Noctiluca Navigator (Explicit Edition)" */;
+			buildPhases = (
+				F6682AC62F43F8930042F213 /* Sources */,
+				F6682AC72F43F8930042F213 /* Frameworks */,
+				F6682ACE2F43F8930042F213 /* Resources */,
+				F6682ACF2F43F8930042F213 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F6BD3E982EDA1AF6000011DF /* NoctilucaClient */,
+			);
+			name = "Noctiluca Navigator (Explicit Edition)";
+			packageProductDependencies = (
+				F6682ABE2F43F8930042F213 /* AsyncAlgorithms */,
+				F6682AC02F43F8930042F213 /* libzstd */,
+				F6682AC22F43F8930042F213 /* SiriusKitClient */,
+				F6682AC32F43F8930042F213 /* Xuanxue */,
+				F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */,
+			);
+			productName = NoctilucaClient;
+			productReference = F6682AD72F43F8930042F213 /* Noctiluca Navigator (Explicit Edition).app */;
+			productType = "com.apple.product-type.application";
+		};
+		F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F6BD3EA12EDA1AF8000011DF /* Build configuration list for PBXNativeTarget "Noctiluca Navigator" */;
 			buildPhases = (
 				F6BD3E922EDA1AF6000011DF /* Sources */,
 				F6BD3E932EDA1AF6000011DF /* Frameworks */,
@@ -181,7 +258,7 @@
 			fileSystemSynchronizedGroups = (
 				F6BD3E982EDA1AF6000011DF /* NoctilucaClient */,
 			);
-			name = NoctilucaClient;
+			name = "Noctiluca Navigator";
 			packageProductDependencies = (
 				F6C2ADFC2EFDCD960089E63C /* AsyncAlgorithms */,
 				F627116C2F08626200E8A3D7 /* libzstd */,
@@ -235,14 +312,22 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F6BD3E952EDA1AF6000011DF /* NoctilucaClient */,
+				F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */,
 				F65FDE162EF868720014239E /* NoctilucaClientTests */,
+				F6682ABD2F43F8930042F213 /* Noctiluca Navigator (Explicit Edition) */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		F65FDE152EF868720014239E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6682ACE2F43F8930042F213 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,6 +351,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F6682AC62F43F8930042F213 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6BD3E922EDA1AF6000011DF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -278,7 +370,7 @@
 /* Begin PBXTargetDependency section */
 		F65FDE1C2EF868720014239E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = F6BD3E952EDA1AF6000011DF /* NoctilucaClient */;
+			target = F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */;
 			targetProxy = F65FDE1B2EF868720014239E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -323,6 +415,129 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Noctiluca Navigator.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Noctiluca Navigator";
+			};
+			name = Release;
+		};
+		F6682AD52F43F8930042F213 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon_test;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				EXCLUDED_ARCHS = "";
+				FRAMEWORK_SEARCH_PATHS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "NoctilucaClient/resources/Info-ExplicitEdition.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 team unstablers Inc.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.9.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.noctiluca.client.explicit-edition";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/resources/NoctilucaClient-Bridging-Header.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F6682AD62F43F8930042F213 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon_test;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = NO;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = XHA76UVA95;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				EXCLUDED_ARCHS = "";
+				FRAMEWORK_SEARCH_PATHS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "NoctilucaClient/resources/Info-ExplicitEdition.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Noctiluca Navigator";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 team unstablers Inc.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.9.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.noctiluca.client.explicit-edition";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = NoctilucaClient_ExplicitEdition;
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaClient/resources/NoctilucaClient-Bridging-Header.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -577,6 +792,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F6682AD42F43F8930042F213 /* Build configuration list for PBXNativeTarget "Noctiluca Navigator (Explicit Edition)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F6682AD52F43F8930042F213 /* Debug */,
+				F6682AD62F43F8930042F213 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F6BD3E912EDA1AF6000011DF /* Build configuration list for PBXProject "NoctilucaClient" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -586,7 +810,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F6BD3EA12EDA1AF8000011DF /* Build configuration list for PBXNativeTarget "NoctilucaClient" */ = {
+		F6BD3EA12EDA1AF8000011DF /* Build configuration list for PBXNativeTarget "Noctiluca Navigator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F6BD3EA22EDA1AF8000011DF /* Debug */,
@@ -621,6 +845,30 @@
 				minimumVersion = 1.0.4;
 			};
 		};
+		F6682ABF2F43F8930042F213 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
+		F6682AC12F43F8930042F213 /* XCRemoteSwiftPackageReference "zstd" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/zstd";
+			requirement = {
+				kind = exactVersion;
+				version = 1.5.7;
+			};
+		};
+		F6682AC42F43F8930042F213 /* XCRemoteSwiftPackageReference "Xuanxue" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.4;
+			};
+		};
 		F6C2ADFB2EFDCD960089E63C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
@@ -636,6 +884,29 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
+		};
+		F6682ABE2F43F8930042F213 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6682ABF2F43F8930042F213 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+		F6682AC02F43F8930042F213 /* libzstd */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6682AC12F43F8930042F213 /* XCRemoteSwiftPackageReference "zstd" */;
+			productName = libzstd;
+		};
+		F6682AC22F43F8930042F213 /* SiriusKitClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SiriusKitClient;
+		};
+		F6682AC32F43F8930042F213 /* Xuanxue */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6682AC42F43F8930042F213 /* XCRemoteSwiftPackageReference "Xuanxue" */;
+			productName = Xuanxue;
+		};
+		F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NoctilucaWebPDecoder;
 		};
 		F686CFF02F3A34C8004383CF /* NoctilucaWebPDecoder */ = {
 			isa = XCSwiftPackageProductDependency;

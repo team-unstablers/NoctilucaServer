@@ -317,3 +317,5 @@ dist/
 *.pkg
 
 dist_updates/
+dist_client/
+dist_client_updates/
