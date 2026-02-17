@@ -255,13 +255,21 @@ class SessionWindowViewModel: ObservableObject {
     
     func performReconnect(decision: SucceedValidationDecision) async throws {
         remoteSession?.shouldPresentIdentityValidationSheet = false
-        
+
         await self.cleanupForReconnect()
-        try await self.startSession(
-            endpoint: .quickConnect(endpointURL: self.endpointURL),
-            settingsOverride: self.sessionSettings,
-            succeedValidationDecision: decision
-        )
+        do {
+            try await self.startSession(
+                endpoint: .quickConnect(endpointURL: self.endpointURL),
+                settingsOverride: self.sessionSettings,
+                succeedValidationDecision: decision
+            )
+        } catch {
+            // cleanupForReconnect 이후 startSession 실패 시 phase 복구
+            if phase != .newConnection {
+                phase = .newConnection
+            }
+            throw error
+        }
     }
 
     private func cleanupForReconnect() async {
@@ -443,6 +451,7 @@ class SessionWindowViewModel: ObservableObject {
     private func detachRemoteSession() {
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
+        remoteSession?.prepareForDetach()
         remoteSession = nil
         pingRTT = nil
         degradationNotice = nil

@@ -111,6 +111,12 @@ class RemoteSession: ObservableObject {
         self.eventSubscription = nil
     }
 
+    /// ViewModel에서 세션을 분리할 때 호출. 이벤트 구독과 parent 참조를 정리한다.
+    func prepareForDetach() {
+        unsubscribeClientEvents()
+        parent = nil
+    }
+
     private func handleEvent(_ event: NoctilucaClientUIEvent) {
         switch event {
         case .phaseChanged(let phase):
@@ -150,8 +156,9 @@ class RemoteSession: ObservableObject {
                 do {
                     try await self.handleIdentityValidationRequest(identity: identity)
                 } catch {
-                    // TODO: 에러 처리
                     logger.error("Failed to handle identity validation request: \(error.localizedDescription)")
+                    self.errorEvents.send(.connectionFailed(error))
+                    await self.parent?._ref?.stopSession(force: true)
                 }
             }
         }
@@ -167,13 +174,19 @@ class RemoteSession: ObservableObject {
         
         if let knownHost = try await KeychainBackedKnownHostStore.shared.getKnownHost(endpoint: endpointURL) {
             let fingerprint = try identity.fingerprint()
-            
+
             if knownHost.fingerprint == fingerprint {
                 // 이미 신뢰된 호스트임
                 logger.info("Server identity matches known host. Automatically trusting.")
-                try await parent.performReconnect(decision: SucceedValidationDecision(fingerprint: fingerprint, decision: .allow))
-                
-                return
+                do {
+                    try await parent.performReconnect(decision: SucceedValidationDecision(fingerprint: fingerprint, decision: .allow))
+                    return
+                } catch {
+                    // auto-trust 재접속 실패 시 에러 표시 (performReconnect가 이미 세션을 정리했으므로 시트 폴백 불가)
+                    logger.warning("Auto-trust reconnect failed: \(error.localizedDescription)")
+                    parent.presentConnectionError(error)
+                    return
+                }
             } else {
                 // 지문 불일치 일어남, 사용자에게 경고해야 함.
                 extraInfo = .fingerprintMismatch(

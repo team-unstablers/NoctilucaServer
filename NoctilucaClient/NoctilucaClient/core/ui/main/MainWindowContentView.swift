@@ -20,68 +20,58 @@ fileprivate struct MainWindowContentViewInternal: View {
         switch viewModel.phase {
         case .connecting:
             MainWindowConnectingPhaseContentView()
-                .if(remoteSession.shouldPresentAuthChallengeSheet) {
+                .dialog(isPresented: Binding(
+                    get: { remoteSession.shouldPresentAuthChallengeSheet },
+                    set: { remoteSession.shouldPresentAuthChallengeSheet = $0 }
+                )) {
                     if let authChallenge = remoteSession.authChallenge {
-                        // AuthChallenge 바인딩
-                        let isPresentedBinding = Binding(
-                            get: { remoteSession.shouldPresentAuthChallengeSheet },
-                            set: { remoteSession.shouldPresentAuthChallengeSheet = $0 }
-                        )
-
-                        $0.dialog(isPresented: isPresentedBinding) {
-                            AuthChallengeSheetView(
-                                authChallenge: authChallenge,
-                                availableMethods: remoteSession.availableAuthMethods.filter { $0 != .sshKey }
-                            ) { action in
-                                Task { @MainActor in
-                                    await viewModel.handleAuthChallengeResponse(action)
-                                }
+                        AuthChallengeSheetView(
+                            authChallenge: authChallenge,
+                            availableMethods: remoteSession.availableAuthMethods.filter { $0 != .sshKey }
+                        ) { action in
+                            Task { @MainActor in
+                                await viewModel.handleAuthChallengeResponse(action)
                             }
-                            .id(authChallenge.nonce)
                         }
+                        .id(authChallenge.nonce)
                     }
                 }
-                .if(remoteSession.shouldPresentIdentityValidationSheet) {
+                .detachedSheet(isPresented: Binding(
+                    get: { remoteSession.shouldPresentIdentityValidationSheet },
+                    set: { remoteSession.shouldPresentIdentityValidationSheet = $0 }
+                )) {
                     if let identity = remoteSession.pendingServerIdentity,
                        case .sslCertificate(let leaf, let chain) = identity {
-                        let isPresentedBinding = Binding(
-                            get: { remoteSession.shouldPresentIdentityValidationSheet },
-                            set: { remoteSession.shouldPresentIdentityValidationSheet = $0 }
-                        )
-
-                        $0.detachedSheet(isPresented: isPresentedBinding) {
-                            ServerIdentityValidationSheetView(
-                                hostname: viewModel.endpointURL,
-                                leaf: leaf,
-                                chain: chain,
-                                extraInfo: remoteSession.identityValidationExtraInfo
-                            ) { action in
-                                Task { @MainActor in
-                                    if case .proceed(let type) = action {
-                                        do {
-                                            guard let fingerprint = leaf.extractFingerprint() else {
-                                                print("서버 인증서에서 지문을 추출하지 못했습니다.")
-                                                return
-                                            }
-                                            
-                                            if type == .always {
-                                                // persist
-                                                let entry = KnownHostEntry(
-                                                    endpoint: viewModel.endpointURL,
-                                                    fingerprint: fingerprint
-                                                )
-                                                try await KeychainBackedKnownHostStore.shared.saveKnownHost(entry)
-                                            }
-                                            
-                                            try await viewModel.performReconnect(decision: SucceedValidationDecision(
-                                                fingerprint: fingerprint, decision: .allow
-                                            ))
-                                        } catch {
-                                            viewModel.presentConnectionError(error)
+                        ServerIdentityValidationSheetView(
+                            hostname: viewModel.endpointURL,
+                            leaf: leaf,
+                            chain: chain,
+                            extraInfo: remoteSession.identityValidationExtraInfo
+                        ) { action in
+                            Task { @MainActor in
+                                if case .proceed(let type) = action {
+                                    do {
+                                        guard let fingerprint = leaf.extractFingerprint() else {
+                                            print("서버 인증서에서 지문을 추출하지 못했습니다.")
+                                            return
                                         }
-                                    } else {
-                                        await viewModel.stopSession(force: true)
+
+                                        if type == .always {
+                                            let entry = KnownHostEntry(
+                                                endpoint: viewModel.endpointURL,
+                                                fingerprint: fingerprint
+                                            )
+                                            try await KeychainBackedKnownHostStore.shared.saveKnownHost(entry)
+                                        }
+
+                                        try await viewModel.performReconnect(decision: SucceedValidationDecision(
+                                            fingerprint: fingerprint, decision: .allow
+                                        ))
+                                    } catch {
+                                        viewModel.presentConnectionError(error)
                                     }
+                                } else {
+                                    await viewModel.stopSession(force: true)
                                 }
                             }
                         }
