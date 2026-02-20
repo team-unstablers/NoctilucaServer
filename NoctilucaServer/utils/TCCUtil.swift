@@ -11,6 +11,8 @@ import ApplicationServices
 import UserNotifications
 import CoreGraphics
 
+import SiriusKitCore
+
 enum TCCScope {
     case accessibility
     case screenCapture
@@ -20,6 +22,7 @@ enum TCCScope {
 class TCCUtil {
     public static let shared = TCCUtil()
     
+    private let logger = NoctilucaLogger(category: "TCCUtil")
     private(set) public var grantedScopes: Set<TCCScope> = []
     
     func refresh() async {
@@ -71,5 +74,35 @@ class TCCUtil {
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
+    }
+    
+    /// 자기 자신을 재기동합니다
+    func relaunchApp() -> Bool {
+        let appURL = Bundle.main.bundleURL
+        let pid = ProcessInfo.processInfo.processIdentifier
+        
+        let script = """
+        while kill -0 \(pid) 2>/dev/null; do 
+            sleep 1
+        done
+        
+        open "\(appURL.path)"
+        """
+        
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = ["-c", script]
+        
+        do {
+            try process.run()
+            
+            exit(0)
+            
+            return true
+        } catch {
+            logger.error("Failed to relaunch app: \(error)")
+        }
+        
+        return false
     }
 }

@@ -51,6 +51,20 @@ struct OnboardingPermissionsStepView: View {
             if !isAccessibilityGranted || !isScreenRecordingGranted {
                 Button {
                     Task {
+                        if !isScreenRecordingGranted {
+                            let alert = NOCAlert()
+                            alert.title = String(localized: "onboarding.permissions.restart_required.title", defaultValue: "다시 시작 필요")
+                            alert.message = String(localized: "onboarding.permissions.restart_required.description", defaultValue: "녹화 권한을 확인하려면 Noctiluca Server를 다시 시작해야 합니다.\n\n다시 시작하시겠습니까?")
+                            alert.addButton(title: String(localized: "onboarding.permissions.restart_required.confirm", defaultValue: "예")) {
+                                _ = TCCUtil.shared.relaunchApp()
+                            }
+                            
+                            alert.addButton(title: String(localized: "onboarding.permissions.restart_required.cancel", defaultValue: "아니오")) {
+                            }
+                            
+                            await alert.present(to: NSApp.keyWindow!)
+                        }
+                        
                         await updateTCCStatus()
                     }
                 } label: {
