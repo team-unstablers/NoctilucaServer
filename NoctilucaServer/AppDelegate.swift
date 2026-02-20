@@ -29,6 +29,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "설정"), action: nil, keyEquivalent: ",")
     private let checkUpdatesItem = NSMenuItem(title: String(localized: "menu.check-updates", defaultValue: "업데이트 확인"), action: nil, keyEquivalent: "")
     private let quitItem = NSMenuItem(title: String(localized: "menu.quit", defaultValue: "종료"), action: nil, keyEquivalent: "q")
+    
+#if DEBUG
+    private let showOnboardingWindowItem = NSMenuItem(title: "Show Onboarding Window", action: nil, keyEquivalent: "")
+#endif
 
     static func main() {
         let app = NSApplication.shared
@@ -70,7 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateMenuState()
 
         if getuid() != 0 && !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
-            showOnboardingWindow()
+            showOnboardingWindow(nil)
         }
     }
 
@@ -83,7 +87,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateMenuState()
     }
 
-    private func showOnboardingWindow() {
+    @objc
+    func showOnboardingWindow(_ sender: Any?) {
         if onboardingWindowController == nil {
             onboardingWindowController = OnboardingWindowController()
         }
@@ -167,6 +172,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         checkUpdatesItem.target = AppUpdater.shared.updaterController
         checkUpdatesItem.action = #selector(SPUStandardUpdaterController.checkForUpdates(_:))
+        
+#if DEBUG
+        showOnboardingWindowItem.target = self
+        showOnboardingWindowItem.action = #selector(showOnboardingWindow)
+#endif
 
         menu.addItem(sessionListItem)
         menu.addItem(startStopItem)
@@ -174,6 +184,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(settingsItem)
         menu.addItem(.separator())
         menu.addItem(checkUpdatesItem)
+#if DEBUG
+        menu.addItem(showOnboardingWindowItem)
+#endif
         menu.addItem(quitItem)
 
         statusItem.menu = menu
