@@ -149,10 +149,12 @@ class PluginBundleRegistry {
 
         if case .failure(let error) = allowResult {
             logger.warning("Plugin bundle \(metadata.id) rejected by security policy (\(effectivePolicy.rawValue)): \(error.localizedDescription ?? "")")
+#if NOC_SERVER
             Task { @MainActor [metadata, effectivePolicy] in
                 AppNotification.pluginBundleRejectedBySecurityPolicy(metadata: metadata, currentPolicy: effectivePolicy)
                     .post()
             }
+#endif
             return .failure(error)
         }
 
@@ -220,9 +222,13 @@ class PluginBundleRegistry {
             case .extension(let extensionPlugin):
                 // TODO: ExtensionPluginRegistry 연동 (향후 구현)
                 logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(metadata.id)")
+#if NOC_SERVER
             case .keyboardHack(let keyboardHack):
                 HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
                 logger.info("Registered keyboard hack: \(type(of: keyboardHack).id) from bundle: \(metadata.id)")
+#endif
+            default:
+                break
             }
         }
         
@@ -284,11 +290,15 @@ class PluginBundleRegistry {
             paths.append(builtInPlugInsURL)
         }
 
+#if NOC_SERVER
         // 2. Application Support의 Plugins 디렉토리
         if let appSupportDir = try? AppSettings.applicationSupportDirectory() {
             let pluginsDir = appSupportDir.appendingPathComponent("Plugins", isDirectory: true)
             paths.append(pluginsDir)
         }
+#else
+        #warning("이거 제대로 처리해야 해요")
+#endif
 
         return paths
     }

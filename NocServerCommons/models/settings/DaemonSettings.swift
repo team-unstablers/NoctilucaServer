@@ -9,14 +9,10 @@ import Foundation
 
 import SiriusKit
 
-struct AppSettings: Codable, Sendable {
+struct DaemonSettings: Codable, Sendable {
     // MARK: - General Settings
     
     var general: General = .init()
-    var notifications: Notifications = .init()
-    
-    // MARK: - Projection Settings
-    var projection: Projection = .init()
     
     // MARK: - Security Settings
     
@@ -33,8 +29,6 @@ struct AppSettings: Codable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case general
-        case notifications
-        case projection
         case security
         case transport
         case quicTransport
@@ -50,8 +44,6 @@ struct AppSettings: Codable, Sendable {
         }
 
         general = container.decodeSafe(General.self, forKey: .general, default: general)
-        notifications = container.decodeSafe(Notifications.self, forKey: .notifications, default: notifications)
-        projection = container.decodeSafe(Projection.self, forKey: .projection, default: projection)
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         transport = container.decodeSafe(Transport.self, forKey: .transport, default: transport)
         quicTransport = container.decodeSafe(QUICTransport.self, forKey: .quicTransport, default: quicTransport)
@@ -63,8 +55,6 @@ struct AppSettings: Codable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(general, forKey: .general)
-        try container.encode(notifications, forKey: .notifications)
-        try container.encode(projection, forKey: .projection)
         try container.encode(security, forKey: .security)
         try container.encode(transport, forKey: .transport)
         try container.encode(quicTransport, forKey: .quicTransport)
@@ -73,12 +63,12 @@ struct AppSettings: Codable, Sendable {
     }
 }
 
-enum AppSettingsError: LocalizedError {
+enum DaemonSettingsError: LocalizedError {
     case configNotFound
 }
 
-extension AppSettings {
-    static let logger = NoctilucaLogger(category: "AppSettings")
+extension DaemonSettings {
+    static let logger = NoctilucaLogger(category: "DaemonSettings")
     
     fileprivate static let jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -100,24 +90,27 @@ extension AppSettings {
     }
     
     protocol SecureCategory: Category {
-        func saveSecureEntries() throws
-        mutating func loadSecureEntries() throws
+#if NOC_DAEMON
+        func saveSecureEntries(scope: DaemonScope) throws
+        mutating func loadSecureEntries(scope: DaemonScope) throws
+#endif
     }
     
-    static func applicationSupportDirectory() throws -> URL {
+#if NOC_DAEMON
+    static func applicationSupportDirectory(scope: DaemonScope) throws -> URL {
         let fileManager = FileManager.default
         
         return try fileManager.url(
             for: .applicationSupportDirectory,
-            in: .userDomainMask,
+            in: scope == .global ? .systemDomainMask : .userDomainMask,
             appropriateFor: nil,
             create: true
         ).appendingPathComponent(NoctilucaMeta.bundleIdentifier, isDirectory: true)
     }
     
-    private func savePublicConfig() throws {
+    private func savePublicConfig(scope: DaemonScope) throws {
         let fileManager = FileManager.default
-        let applicationSupportDirectory = try Self.applicationSupportDirectory()
+        let applicationSupportDirectory = try Self.applicationSupportDirectory(scope: scope)
         
         let json = try Self.jsonEncoder.encode(self)
         
@@ -139,58 +132,60 @@ extension AppSettings {
         )
     }
     
-    private func saveSecureConfig() throws {
-        try security.saveSecureEntries()
+    private func saveSecureConfig(scope: DaemonScope) throws {
+        try security.saveSecureEntries(scope: scope)
     }
     
-    func save() throws {
-        try saveSecureConfig()
-        try savePublicConfig()
+    func save(scope: DaemonScope) throws {
+        try saveSecureConfig(scope: scope)
+        try savePublicConfig(scope: scope)
     }
     
-    private static func loadPublicConfig() throws -> AppSettings {
+    private static func loadPublicConfig(scope: DaemonScope) throws -> DaemonSettings {
         let fileManager = FileManager.default
-        let applicationSupportDirectory = try Self.applicationSupportDirectory()
+        let applicationSupportDirectory = try Self.applicationSupportDirectory(scope: scope)
         
         let settingsURL = applicationSupportDirectory.appendingPathComponent("settings.json", isDirectory: false)
         
         guard fileManager.fileExists(atPath: settingsURL.path) else {
-            throw AppSettingsError.configNotFound
+            throw DaemonSettingsError.configNotFound
         }
 
         let settings = try Self.jsonDecoder.decode(
-            AppSettings.self,
+            DaemonSettings.self,
             from: try Data(contentsOf: settingsURL),
         )
         
         return consume settings
     }
     
-    private mutating func loadSecureConfig() throws {
-        try security.loadSecureEntries()
+    private mutating func loadSecureConfig(scope: DaemonScope) throws {
+        try security.loadSecureEntries(scope: scope)
     }
     
-    static func load() throws -> AppSettings {
+    static func load(scope: DaemonScope) throws -> DaemonSettings {
         do {
             logger.debug("Loading public configuration...")
-            var settings = try loadPublicConfig()
+            var settings = try loadPublicConfig(scope: scope)
             
             logger.debug("Loading secure configuration...")
-            try settings.loadSecureConfig()
+            try settings.loadSecureConfig(scope: scope)
             
             logger.info("Configuration loaded successfully.")
             return consume settings
         } catch {
             logger.error("Failed to load AppSettings: \(error.localizedDescription), using default settings instead.")
-            return AppSettings()
+            return DaemonSettings()
         }
     }
+#endif
 }
 
-extension AppSettings.SecureCategory {
+#if NOC_DAEMON
+extension DaemonSettings.SecureCategory {
     func saveSecureEntry(_ entry: Codable, forKey key: String) throws {
         let keychain = SRKeychain.shared
-        let data = try AppSettings.jsonEncoder.encode(entry)
+        let data = try DaemonSettings.jsonEncoder.encode(entry)
         
         _ = try keychain.setSecureData(consume data, key: key, scope: .system).get()
     }
@@ -211,11 +206,10 @@ extension AppSettings.SecureCategory {
         _ = try keychain.removeSecureData(key: key, scope: .system).get()
     }
 }
+#endif
 
-/*
- extension KeyedDecodingContainer {
- func decodeSafe<T: Decodable>(_ type: T.Type, forKey key: Key, default defaultValue: @autoclosure () -> T) -> T {
- return (try? decodeIfPresent(type, forKey: key)) ?? defaultValue()
- }
- }
- */
+extension KeyedDecodingContainer {
+    func decodeSafe<T: Decodable>(_ type: T.Type, forKey key: Key, default defaultValue: @autoclosure () -> T) -> T {
+        return (try? decodeIfPresent(type, forKey: key)) ?? defaultValue()
+    }
+}

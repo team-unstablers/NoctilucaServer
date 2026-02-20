@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 12/7/25.
 //
 
+import Foundation
 import NoctilucaPluginKit
 
 struct PluginBundleMetadataParsingError: LocalizedError {

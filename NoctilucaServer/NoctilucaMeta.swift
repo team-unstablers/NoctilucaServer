@@ -11,11 +11,21 @@ import NoctilucaPluginKit
 
 struct NoctilucaMeta {
     static var productName: String {
+#if NOC_SERVER
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "NoctilucaServer"
+#endif
+#if NOC_DAEMON
+        return "noctilucad"
+#endif
     }
     
     static var bundleIdentifier: String {
+#if NOC_SERVER
         return Bundle.main.bundleIdentifier ?? "app.noctiluca.server"
+#endif
+#if NOC_DAEMON
+        return "app.noctiluca.server.noctilucad"
+#endif
     }
     
     static var version: String {

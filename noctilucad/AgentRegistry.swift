@@ -21,6 +21,8 @@ class AgentRegistry {
         /// 이 에이전트에 연결된 클라이언트 프록시 목록
         var clientProxies: [UUID: XPCTransportProxy] = [:]
     }
+    
+    private let logger = NoctilucaLogger(category: "AgentRegistry")
 
     private var agents: [uid_t: AgentEntry] = [:]
 
@@ -36,6 +38,7 @@ class AgentRegistry {
     ///   - connection: 에이전트와의 NSXPCConnection
     ///   - proxy: 에이전트의 SiriusAgentXPCInterface 프록시 객체
     func registerAgent(uid: uid_t, connection: NSXPCConnection, proxy: SiriusAgentXPCInterface) {
+        self.logger.info("new agent registered \(uid)")
         agents[uid] = AgentEntry(uid: uid, connection: connection, proxy: proxy)
     }
 

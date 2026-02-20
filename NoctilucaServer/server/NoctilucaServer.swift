@@ -209,7 +209,7 @@ class NoctilucaServer: ObservableObject {
             
             let result = try SiriusServerBuilder()
                 .useFeatureProvider(featureProvider)
-                .useTransportProtocol(.quic(implementation: implementation, port: settings.quicTransport.listenPort, identitySource: identity.identitySource))
+                .useTransportProtocol(.xpc(machServiceName: "pl.unstabler.noctiluca.server.noctilucad"))
                 .withExtraConfiguration("someValue", forKey: "someKey")
                 .build()
             
