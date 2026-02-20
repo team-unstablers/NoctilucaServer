@@ -106,6 +106,19 @@ open class Channel {
         try await self.stream.close()
     }
 
+    /// 채널에서 스트림을 분리한다.
+    ///
+    /// streamEventLoop 태스크를 취소하고 underlying Stream을 반환한다.
+    /// 반환된 스트림의 AsyncStream 버퍼에 남아있는 이벤트는
+    /// 새로운 소비자(예: XPCStreamProxy)가 이어받아 처리할 수 있다.
+    ///
+    /// - Important: 이 메서드 호출 후 채널은 더 이상 프레임 이벤트를 수신하지 않는다.
+    public func detachStream() -> Stream {
+        streamEventLoopTask?.cancel()
+        streamEventLoopTask = nil
+        return stream
+    }
+
     public func send(frame: consuming SiriusFrame) async throws {
 #if DEBUG
         // self.logger.trace("[\(self.identifier)] frame SEND - opcode \(frame.opcode.hexString), length \(frame.data.count)")

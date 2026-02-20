@@ -19,7 +19,7 @@ public class ClientSession: SiriusSession {
     public let id: UUID
 
     let clientTransport: any ServerRoleClientTransport
-    package var transport: any TransportLayer { clientTransport }
+    public var transport: any TransportLayer { clientTransport }
 
     public var remoteEndpoint: SREndpoint? {
         clientTransport.remoteEndpoint
@@ -50,6 +50,14 @@ public class ClientSession: SiriusSession {
 
     public func close() async {
         await self.clientTransport.disconnect()
+    }
+
+    /// 트랜스포트의 delegate를 외부 객체로 교체한다.
+    ///
+    /// noctilucad에서 인증 완료 후 XPCTransportProxy로 핸드오프할 때 사용한다.
+    /// 이 메서드 호출 후 ClientSession은 더 이상 트랜스포트 이벤트를 수신하지 않는다.
+    public func replaceTransportDelegate(_ newDelegate: ServerRoleClientTransportDelegate) {
+        clientTransport.delegate = newDelegate
     }
     
     /// 트랜스포트 레이어 레벨의 세션 재개 티켓을 클라이언트에게 발행합니다.
