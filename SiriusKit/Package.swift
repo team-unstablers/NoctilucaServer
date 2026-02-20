@@ -16,6 +16,11 @@ let package = Package(
             targets: ["SiriusKit"]
         ),
         .library(
+            name: "SiriusKitStatic",
+            type: .static,
+            targets: ["SiriusKit"]
+        ),
+        .library(
             name: "SiriusKitClient",
             type: .dynamic,
             targets: ["SiriusKitClient"]

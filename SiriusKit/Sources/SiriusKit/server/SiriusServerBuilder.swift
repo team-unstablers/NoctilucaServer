@@ -18,13 +18,14 @@ public struct SiriusServerBuilder {
         case quic(implementation: String,
                   port: UInt16,
                   identitySource: QUICServerIdentitySource)
+        case xpc(machServiceName: String)
 
         func buildServerTransport() -> ServerRoleRootTransport {
             switch self {
             case .quic(let implementation, let port, let identitySource):
                 let port = NWEndpoint.Port(rawValue: port)!
                 let identity = identitySource.build()
-                
+
                 switch implementation {
                 case TransportLayerImplementation.appleQuic.identifier:
                     return ServerRoleQUICRootTransport(port: port, using: identity)
@@ -35,6 +36,8 @@ public struct SiriusServerBuilder {
                     return ServerRoleMsQuicRootTransport(port: port.rawValue, using: identity)
                 }
 
+            case .xpc(let machServiceName):
+                return XPCServerRoleRootTransport(machServiceName: machServiceName)
             }
         }
     }

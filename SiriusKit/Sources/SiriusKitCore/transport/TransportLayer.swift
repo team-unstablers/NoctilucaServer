@@ -9,14 +9,14 @@ import Foundation
 
 public typealias TransportLayerIdentifier = UUID
 
-package enum TransportLayerError: Error {
+public enum TransportLayerError: Error {
     case notImplemented
     case connectionFailed(error: Error?)
     case openStreamFailed(error: Error?)
     case mainChannelOpenFailed
 }
 
-package protocol TransportLayer: AnyObject, Identifiable {
+public protocol TransportLayer: AnyObject, Identifiable {
     var id: TransportLayerIdentifier { get }
 
     func disconnect() async

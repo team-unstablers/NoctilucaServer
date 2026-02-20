@@ -57,7 +57,15 @@ public extension TransportLayerImplementation {
         isBundled: true
     )
     
+    /// XPC (Daemon Proxy)
+    static let xpc = Self(
+        protocol: .custom(name: "XPC"),
+        identifier: "xpc",
+        displayName: "XPC (Daemon Proxy)",
+        isBundled: true
+    )
+
     static var bundledImplementations: [TransportLayerImplementation] {
-        return [.appleQuic, .msQuic]
+        return [.appleQuic, .msQuic, .xpc]
     }
 }

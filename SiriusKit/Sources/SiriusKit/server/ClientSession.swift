@@ -25,6 +25,12 @@ public class ClientSession: SiriusSession {
         clientTransport.remoteEndpoint
     }
 
+    /// XPC 프록시 트랜스포트를 통해 수신된 세션인 경우, 사전 인증 메타데이터를 반환한다.
+    /// 직접 QUIC 연결인 경우 nil.
+    public var preAuthMetadata: SiriusXPCAuthMetadata? {
+        (clientTransport as? XPCServerRoleClientTransport)?.metadata
+    }
+
     package let featureProvider: (any FeatureProvider)
 
     public var channelManager: ChannelManager!
@@ -60,7 +66,7 @@ public class ClientSession: SiriusSession {
 }
 
 extension ClientSession: ServerRoleClientTransportDelegate {
-    func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async throws {
+    public func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async throws {
         logger.info("ClientSession \(self.id) received remote stream open.")
 
         if await channelManager.mainChannel == nil {
@@ -78,14 +84,14 @@ extension ClientSession: ServerRoleClientTransportDelegate {
         try await channelManager.handleStreamOpen(stream: stream)
     }
 
-    func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async {
+    public func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async {
         //
     }
 
-    func clientTransportDidClose(_ transport: any ServerRoleClientTransport) async {
+    public func clientTransportDidClose(_ transport: any ServerRoleClientTransport) async {
         self.delegate?.clientSessionDidCloseTransport(self)
     }
 
-    func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async {
+    public func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async {
     }
 }

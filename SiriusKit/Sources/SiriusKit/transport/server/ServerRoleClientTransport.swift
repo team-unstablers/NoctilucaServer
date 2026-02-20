@@ -8,9 +8,9 @@
 import Foundation
 import SiriusKitCore
 
-typealias ServerRoleClientTransportIdentifier = TransportLayerIdentifier
+public typealias ServerRoleClientTransportIdentifier = TransportLayerIdentifier
 
-protocol ServerRoleClientTransportDelegate: AnyObject {
+public protocol ServerRoleClientTransportDelegate: AnyObject {
     /// - NOTE: 리모트에서 스트림을 열었을 때에만 호출됩니다.
     func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async throws
     func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async
@@ -19,7 +19,7 @@ protocol ServerRoleClientTransportDelegate: AnyObject {
     func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async
 }
 
-protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerRoleClientTransportIdentifier {
+public protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerRoleClientTransportIdentifier {
     var delegate: ServerRoleClientTransportDelegate? { get set }
 
     var remoteEndpoint: SREndpoint? { get }
@@ -27,7 +27,7 @@ protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerR
     func issueResumeTicket() async throws
 }
 
-extension ServerRoleClientTransport {
+public extension ServerRoleClientTransport {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
