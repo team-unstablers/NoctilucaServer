@@ -180,6 +180,7 @@
 				"plugins/bundle-system/SoftwareLicense+SPDX.swift",
 				server/identity/TLSIdentity.swift,
 				"server/identity/TLSIdentity+load.swift",
+				sysinfo/hostname.swift,
 				utils/MsQuicLoader.swift,
 				utils/NoctilucaLogger.swift,
 			);
