@@ -188,17 +188,17 @@ extension DaemonSettings.QUICTransport {
             return
         }
         
-        /*
         // 아이덴티티를 새로 만들자!
-        AppSettings.logger.info("Creating new auto-configured identity...")
+        DaemonSettings.logger.info("Creating new auto-configured identity...")
         
         let hostname = hostname()
         let commonName = "Noctiluca Server: self-signed server identity (\(hostname))"
-        self.identity = .keychain(identifier: commonName)
+        self.identity = .pemFile(certFilePath: "/Users/cheesekun/works/noctiluca/swift-msquic/server.crt", keyFilePath: "/Users/cheesekun/works/noctiluca/swift-msquic/server.key")
         
+        /*
         // 아이덴티티를 매번 새로 생성하게 함 -- 하기 try-catch에서 재생성 시도할 때 이 부분을 타야 함
         // if (!(try KeychainQUICServerIdentity.checkIdentityExistance(label: commonName))) {
-        AppSettings.logger.info("Creating self-signed identity with label: \(commonName)...")
+        DaemonSettings.logger.info("Creating self-signed identity with label: \(commonName)...")
         
         let args = QUICServerIdentityCreationArgs(
             // identityLabel하고 commonName이 같지 않으면 생성에 실패함
@@ -207,7 +207,7 @@ extension DaemonSettings.QUICTransport {
             organizationName: "Noctiluca Server",
             organizationalUnitName: "Auto-configured Identity",
             countryName: "KR",
-            validityPeriodInDays: 365
+            validityPeriodInDays: 365,
         )
         
         _ = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)
