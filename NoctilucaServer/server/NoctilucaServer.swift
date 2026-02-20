@@ -200,11 +200,13 @@ class NoctilucaServer: ObservableObject {
             
             logger.info("Starting up NoctilucaServer...")
             
+            /*
             try await self.loadIdentity()
             guard let identity = self.identity else {
                 throw NoctilucaServerError.noIdentityConfigured
             }
-            
+            */
+             
             let implementation = settings.transport.implementation
             
             let result = try SiriusServerBuilder()

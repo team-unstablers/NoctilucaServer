@@ -285,12 +285,12 @@ class PluginBundleRegistry {
     private func buildPluginSearchPaths() -> [URL] {
         var paths: [URL] = []
 
+#if NOC_SERVER
         // 1. 앱 번들 내장 PlugIns 디렉토리
         if let builtInPlugInsURL = Bundle.main.builtInPlugInsURL {
             paths.append(builtInPlugInsURL)
         }
 
-#if NOC_SERVER
         // 2. Application Support의 Plugins 디렉토리
         if let appSupportDir = try? AppSettings.applicationSupportDirectory() {
             let pluginsDir = appSupportDir.appendingPathComponent("Plugins", isDirectory: true)

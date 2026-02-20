@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>pl.unstabler.noctiluca.server.noctilucad</string>
+
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/noctilucad</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>Contents/MacOS/noctilucad</string>
+		<string>--scope</string>
+		<string>global</string>
+	</array>
+
+	<key>MachServices</key>
+	<dict>
+		<key>pl.unstabler.noctiluca.server.noctilucad</key>
+		<true/>
+		<key>pl.unstabler.noctiluca.server.noctilucad.settings</key>
+		<true/>
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+
+	<key>KeepAlive</key>
+	<true/>
+
+	<key>ProcessType</key>
+	<string>Interactive</string>
+
+	<key>SoftResourceLimits</key>
+	<dict>
+		<key>NumberOfFiles</key>
+		<integer>4096</integer>
+	</dict>
+</dict>
+</plist>

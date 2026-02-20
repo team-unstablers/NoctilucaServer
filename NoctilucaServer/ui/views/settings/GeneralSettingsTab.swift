@@ -14,6 +14,9 @@ struct GeneralSettingsTab: View {
     private var launchAtLoginRequiresApproval: Bool = false
     
     @State
+    private var daemonInstalled: Bool = false
+    
+    @State
     private var automaticallyChecksForUpdates: Bool = AppUpdater.shared.updaterController.updater.automaticallyChecksForUpdates
     
     @State
@@ -93,12 +96,42 @@ struct GeneralSettingsTab: View {
                 }
             }
             
-            Section(String(localized: "settings.general.maybe-removed.title", defaultValue: "어쩌면 삭제될 수도 있는 기능들")) {
-                Toggle(isOn: .constant(false)) {
+            Section(String(localized: "settings.general.experimental.title", defaultValue: "실험적인 기능들")) {
+                Toggle(isOn: $daemonInstalled) {
                     Text(markdown: String(localized: "settings.general.elevate_scope.title", defaultValue: "Noctiluca Server의 실행 스코프를 시스템 레벨으로 격상시키기"))
-                    Text(markdown: String(localized: "settings.general.elevate_scope.description", defaultValue: "실행 스코프를 시스템 레벨로 격상시키면, 모든 사용자가 Noctiluca Server를 통해 각자의 세션을 동시에 사용할 수 있게 됩니다.\n하지만 이는 macOS EULA를 위반하는 행위이므로, 현재는 이 기능을 제공해드릴 수 없습니다."))
+                    Text(markdown: String(localized: "settings.general.elevate_scope.description", defaultValue: "실행 스코프를 시스템 레벨로 격상시키면, 시스템 기동 직후 잠금을 해제하지 않고도 원격으로 Mac을 제어할 수 있게 됩니다."))
                 }
-                .disabled(true)
+                .onChange(of: daemonInstalled) { _, newValue in
+                    if newValue {
+                        Task {
+                            let alert = NOCAlert()
+                            alert.title = "실행 스코프를 시스템으로 격상하시겠습니까?"
+                            alert.message = "실행 스코프를 시스템 레벨로 격상시키면, 시스템 기동 직후 잠금을 해제하지 않고도 원격으로 Mac을 제어할 수 있게 됩니다.\n하지만, 데몬으로 동작하게 되는 특성상 Noctiluca Server는 최고 관리자 권한 (root)을 통해 실행되기 때문에 보안 문제를 최소화하기 위해 아래 제한 사항이 적용됩니다.\n\n- 사용 가능한 인증 수단이 PAM 인증으로 제한됩니다.\n- 키체인 기반 인증서를 사용할 수 없게 됩니다.\n- 일부 외부 플러그인을 사용할 수 없게 됩니다.\n\n계속하시겠습니까?"
+                            
+                            
+                            alert.addButton(title: "격상시키기") {
+                                Task {
+                                    do {
+                                        try? await DaemonUtils.uninstallDaemon()
+                                        try DaemonUtils.installDaemon()
+                                    } catch {
+                                        print(error)
+                                    }
+                                }
+                            }
+                            alert.addButton(title: "취소") {
+                                daemonInstalled = false
+                            }
+                            
+                            await alert.present(to: NSApp.keyWindow!)
+                        }
+                    } else {
+                        Task {
+                            try await DaemonUtils.uninstallDaemon()
+                        }
+                    }
+                }
+                
                 
                 Toggle(isOn: .constant(false)) {
                     Text(markdown: String(localized: "settings.general.autolaunch.global.title", defaultValue: "시스템 기동 시 자동으로 Noctiluca Server 시작하기"))

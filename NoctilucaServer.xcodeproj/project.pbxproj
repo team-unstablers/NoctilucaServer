@@ -33,6 +33,7 @@
 		F6ACB95A2F483DF10014D2A2 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6ACB9592F483DF10014D2A2 /* NoctilucaPluginKit.framework */; };
 		F6ACB95B2F483DF10014D2A2 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6ACB9592F483DF10014D2A2 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6ACB9862F48418C0014D2A2 /* libpam.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD862EE2B2E6007A68B3 /* libpam.tbd */; };
+		F6ACB9AB2F48801E0014D2A2 /* noctilucad in CopyFiles */ = {isa = PBXBuildFile; fileRef = F6293EE32F4813340067CCFF /* noctilucad */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; };
 /* End PBXBuildFile section */
 
@@ -51,6 +52,13 @@
 			remoteGlobalIDString = F669650A2ECF26770032EF4E;
 			remoteInfo = NoctilucaServer;
 		};
+		F6ACB9AF2F4881270014D2A2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F66965032ECF26770032EF4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F6293EE22F4813340067CCFF;
+			remoteInfo = noctilucad;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -64,15 +72,6 @@
 			);
 			name = "Bundle PlugIns";
 			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F6293EE12F4813340067CCFF /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
 		};
 		F6293EF02F481AC00067CCFF /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -100,6 +99,25 @@
 				F625DABA2F41A8DE00AE4E2B /* Gesu in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6ACB9AA2F4880150014D2A2 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				F6ACB9AB2F48801E0014D2A2 /* noctilucad in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6ACB9AC2F48809E0014D2A2 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -210,6 +228,16 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		F6ACB9AE2F4880A90014D2A2 /* Exceptions for "noctilucad" folder in "Copy Files" phase from "NoctilucaServer" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = F6ACB9AC2F48809E0014D2A2 /* CopyFiles */;
+			membershipExceptions = (
+				pl.unstabler.noctiluca.server.noctilucad.plist,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F61AB31C2F41275F00BB69AF /* CJKKeyboardHacks */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -218,6 +246,9 @@
 		};
 		F6293EE42F4813340067CCFF /* noctilucad */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F6ACB9AE2F4880A90014D2A2 /* Exceptions for "noctilucad" folder in "Copy Files" phase from "NoctilucaServer" target */,
+			);
 			path = noctilucad;
 			sourceTree = "<group>";
 		};
@@ -400,7 +431,6 @@
 			buildPhases = (
 				F6293EDF2F4813340067CCFF /* Sources */,
 				F6293EE02F4813340067CCFF /* Frameworks */,
-				F6293EE12F4813340067CCFF /* CopyFiles */,
 				F6293EF02F481AC00067CCFF /* Embed Frameworks */,
 			);
 			buildRules = (
@@ -451,12 +481,15 @@
 				F66965072ECF26770032EF4E /* Sources */,
 				F66965082ECF26770032EF4E /* Frameworks */,
 				F66965092ECF26770032EF4E /* Resources */,
+				F6ACB9AA2F4880150014D2A2 /* CopyFiles */,
+				F6ACB9AC2F48809E0014D2A2 /* CopyFiles */,
 				F66965392ECF27110032EF4E /* Embed Frameworks */,
 				F61AB3292F41288800BB69AF /* Bundle PlugIns */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F6ACB9B02F4881270014D2A2 /* PBXTargetDependency */,
 				F61AB32C2F41293A00BB69AF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -602,6 +635,11 @@
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
 			targetProxy = F659BDF62EF3C1730010A18E /* PBXContainerItemProxy */;
 		};
+		F6ACB9B02F4881270014D2A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F6293EE22F4813340067CCFF /* noctilucad */;
+			targetProxy = F6ACB9AF2F4881270014D2A2 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -676,6 +714,7 @@
 					"NOC_DAEMON=1",
 					"NOC_SERVER=0",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server.noctilucad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -705,6 +744,7 @@
 					"NOC_DAEMON=1",
 					"NOC_SERVER=0",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server.noctilucad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -65,7 +65,7 @@ internal class InMemoryQUICServerIdentity: QUICServerIdentity {
             try keychain.addTemporaryItem(secPrivateKey, clazz: .privateKey, label: args.identityLabel, extras: keyAttributes).get()
 
             // 4. 신뢰 설정 적용
-            try security.trustCertificate(secCertificate, scope: .user).get()
+            // try security.trustCertificate(secCertificate, scope: .user).get()
 
             // 5. SecIdentity 생성
             // 이거 꼭 필요한가?

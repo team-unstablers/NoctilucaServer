@@ -3935,25 +3935,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Elevating the execution scope to the system level allows all users to use their own sessions simultaneously via Noctiluca Server.\nHowever, as this violates the macOS EULA, we cannot provide this feature at this time."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "実行スコープをシステムレベルに昇格させると、すべてのユーザーがNoctiluca Serverを通じて各自のセッションを同時に使用できるようになります。\nしかし、これはmacOSの使用許諾契約(EULA)に違反するため、現在この機能は提供できません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "실행 스코프를 시스템 레벨로 격상시키면, 모든 사용자가 Noctiluca Server를 통해 각자의 세션을 동시에 사용할 수 있게 됩니다.\n하지만 이는 macOS EULA를 위반하는 행위이므로, 현재는 이 기능을 제공해드릴 수 없습니다."
+            "value" : "실행 스코프를 시스템 레벨로 격상시키면, 시스템 기동 직후 잠금을 해제하지 않고도 원격으로 Mac을 제어할 수 있게 됩니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "将执行范围提升至系统级别允许所有用户通过 Noctiluca Server 同时使用各自的会话。\n但是，由于这违反了 macOS EULA，我们目前无法提供此功能。"
           }
         }
@@ -3983,6 +3983,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "将执行范围提升至系统级别"
+          }
+        }
+      }
+    },
+    "settings.general.experimental.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "실험적인 기능들"
           }
         }
       }
@@ -4046,6 +4057,7 @@
       }
     },
     "settings.general.maybe-removed.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
