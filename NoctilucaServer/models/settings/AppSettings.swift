@@ -192,13 +192,13 @@ extension AppSettings.SecureCategory {
         let keychain = SRKeychain.shared
         let data = try AppSettings.jsonEncoder.encode(entry)
         
-        _ = try keychain.setSecureData(consume data, key: key).get()
+        _ = try keychain.setSecureData(consume data, key: key, scope: .system).get()
     }
     
     func loadSecureEntry<T: Codable>(forKey key: String, as type: T.Type) throws -> T? {
         let keychain = SRKeychain.shared
         
-        guard let data = try keychain.getSecureData(key: key).get() else {
+        guard let data = try keychain.getSecureData(key: key, scope: .system).get() else {
             return nil
         }
         
@@ -208,7 +208,7 @@ extension AppSettings.SecureCategory {
     func removeSecureEntry(forKey key: String) throws {
         let keychain = SRKeychain.shared
         
-        _ = try keychain.removeSecureData(key: key).get()
+        _ = try keychain.removeSecureData(key: key, scope: .system).get()
     }
 }
 

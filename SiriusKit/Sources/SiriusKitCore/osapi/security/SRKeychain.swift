@@ -41,27 +41,88 @@ public enum SRKeychainItemClass {
     }
 }
 
-public enum SRKeychainError: Error {
+public enum SRKeychainScope {
+    /// 사용자별 키체인 (기본 키체인)
+    case login
+    /// System.keychain (시스템 전체)
+    case system
+    /// 임의의 경로에 있는 키체인
+    case custom(String)
+}
+
+public enum SRKeychainError: LocalizedError {
     case itemNotFound
 
     case unexpectedStatus(OSStatus)
     case assertionFailed(reason: String)
+    
+    public var errorDescription: String? {
+        switch self {
+        case .itemNotFound:
+            return "Keychain item not found."
+        case .unexpectedStatus(let status):
+            if let message = SecCopyErrorMessageString(status, nil) as String? {
+                return "Keychain operation failed with status \(status): \(message)"
+            } else {
+                return "Keychain operation failed with unknown status: \(status)"
+            }
+        case .assertionFailed(let reason):
+            return "Assertion failed: \(reason)"
+        }
+    }
+    
 }
 
 /// 'S'i'R'ius Keychain - macOS Security.framework의 Keychain 관련 기능을 wrap합니다.
 public class SRKeychain {
     public static let shared = SRKeychain()
 
+    // MARK: - Keychain Scope Helpers
+
+#if os(macOS)
+    private func resolveKeychain(for scope: SRKeychainScope) -> SecKeychain? {
+        var keychain: SecKeychain?
+        switch scope {
+        case .login:
+            SecKeychainCopyDomainDefault(.user, &keychain)
+        case .system:
+            SecKeychainCopyDomainDefault(.system, &keychain)
+        case .custom(let path):
+            SecKeychainOpen(path, &keychain)
+        }
+        return keychain
+    }
+
+    /// 조회/삭제 시 사용할 kSecMatchSearchList 엔트리
+    private func searchScopeEntries(for scope: SRKeychainScope) -> [String: Any] {
+        guard let keychain = resolveKeychain(for: scope) else { return [:] }
+        return [kSecMatchSearchList as String: [keychain]]
+    }
+
+    /// 추가 시 사용할 kSecUseKeychain 엔트리
+    private func addScopeEntries(for scope: SRKeychainScope) -> [String: Any] {
+        guard let keychain = resolveKeychain(for: scope) else { return [:] }
+        return [kSecUseKeychain as String: keychain]
+    }
+#else
+    private func searchScopeEntries(for scope: SRKeychainScope) -> [String: Any] { [:] }
+    private func addScopeEntries(for scope: SRKeychainScope) -> [String: Any] { [:] }
+#endif
+
+    // MARK: - Query
+
     /// 특정 라벨과 클래스에 해당하는 Keychain 아이템을 조회합니다.
-    public func queryItem(by label: String, clazz: SRKeychainItemClass, extras: [String: Any] = [:]) -> Result<CFTypeRef, SRKeychainError> {
+    public func queryItem(by label: String, clazz: SRKeychainItemClass, scope: SRKeychainScope = .login, extras: [String: Any] = [:]) -> Result<CFTypeRef, SRKeychainError> {
         assert(clazz != .identity, "Use separate method for identity existence check.")
 
-        let query: [String: Any] = extras.merging([
-            kSecClass as String: clazz.secClass,
-            kSecAttrLabel as String: label,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecReturnRef as String: true
-        ], uniquingKeysWith: { (_, new) in new })
+        let query: [String: Any] = searchScopeEntries(for: scope)
+            .merging(extras, uniquingKeysWith: { (_, new) in new })
+            .merging([
+                kSecClass as String: clazz.secClass,
+                kSecAttrLabel as String: label,
+                kSecMatchLimit as String: kSecMatchLimitOne,
+                kSecReturnRef as String: true
+            ], uniquingKeysWith: { (_, new) in new })
 
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
@@ -81,8 +142,8 @@ public class SRKeychain {
         return .success(foundItem)
     }
 
-    public func queryItemExistance(by label: String, clazz: SRKeychainItemClass, extras: [String: Any] = [:]) -> Result<Bool, SRKeychainError> {
-        let queryResult = self.queryItem(by: label, clazz: clazz, extras: extras)
+    public func queryItemExistance(by label: String, clazz: SRKeychainItemClass, scope: SRKeychainScope = .login, extras: [String: Any] = [:]) -> Result<Bool, SRKeychainError> {
+        let queryResult = self.queryItem(by: label, clazz: clazz, scope: scope, extras: extras)
 
         switch queryResult {
         case .success:
@@ -97,8 +158,8 @@ public class SRKeychain {
     }
 
 #if os(macOS)
-    public func queryIdentity(by label: String) -> Result<SecIdentity, SRKeychainError> {
-        let certQueryResult = self.queryItem(by: label, clazz: .certificate)
+    public func queryIdentity(by label: String, scope: SRKeychainScope = .login) -> Result<SecIdentity, SRKeychainError> {
+        let certQueryResult = self.queryItem(by: label, clazz: .certificate, scope: scope)
 
         do {
             // swiftlint:disable:next force_cast
@@ -121,8 +182,8 @@ public class SRKeychain {
         }
     }
 
-    public func queryIdentityExistance(by label: String) -> Result<Bool, SRKeychainError> {
-        let identityResult = self.queryIdentity(by: label)
+    public func queryIdentityExistance(by label: String, scope: SRKeychainScope = .login) -> Result<Bool, SRKeychainError> {
+        let identityResult = self.queryIdentity(by: label, scope: scope)
 
         switch identityResult {
         case .success:
@@ -137,11 +198,13 @@ public class SRKeychain {
     }
 #endif
 
-    public func deleteItem(by label: String, clazz: SRKeychainItemClass) -> Result<Void, SRKeychainError> {
-        let query: [String: Any] = [
+    // MARK: - Delete
+
+    public func deleteItem(by label: String, clazz: SRKeychainItemClass, scope: SRKeychainScope = .login) -> Result<Void, SRKeychainError> {
+        let query: [String: Any] = searchScopeEntries(for: scope).merging([
             kSecClass as String: clazz.secClass,
             kSecAttrLabel as String: label
-        ]
+        ], uniquingKeysWith: { (_, new) in new })
 
         let status = SecItemDelete(query as CFDictionary)
 
@@ -152,13 +215,15 @@ public class SRKeychain {
         return .success(())
     }
 
-    public func addItem(_ item: CFTypeRef, clazz: SRKeychainItemClass, label: String, extras: [String: Any] = [:]) -> Result<Void, SRKeychainError> {
-        let baseAttributes: [String: Any] = [
+    // MARK: - Add
+
+    public func addItem(_ item: CFTypeRef, clazz: SRKeychainItemClass, label: String, scope: SRKeychainScope = .login, extras: [String: Any] = [:]) -> Result<Void, SRKeychainError> {
+        let baseAttributes: [String: Any] = addScopeEntries(for: scope).merging([
             kSecClass as String: clazz.secClass,
             kSecAttrLabel as String: label,
             kSecValueRef as String: item,
             kSecAttrIsPermanent as String: true
-        ]
+        ], uniquingKeysWith: { (_, new) in new })
 
         let attributes = baseAttributes.merging(extras, uniquingKeysWith: { (_, new) in new })
 
@@ -171,27 +236,34 @@ public class SRKeychain {
         return .success(())
     }
 
-    public func addTemporaryItem(_ item: CFTypeRef, clazz: SRKeychainItemClass, label: String, extras: [String: Any] = [:]) -> Result<Void, SRKeychainError> {
+    public func addTemporaryItem(_ item: CFTypeRef, clazz: SRKeychainItemClass, label: String, scope: SRKeychainScope = .login, extras: [String: Any] = [:]) -> Result<Void, SRKeychainError> {
         let extras: [String: Any] = extras.merging([
             kSecAttrIsPermanent as String: false
         ], uniquingKeysWith: { (_, new) in new })
 
-        return self.addItem(item, clazz: clazz, label: label, extras: extras)
+        return self.addItem(item, clazz: clazz, label: label, scope: scope, extras: extras)
     }
 
+    // MARK: - Secure Data (Generic Password)
+
     /// 설정 데이터(JSON 등)를 저장할 때 사용 (Generic Password 타입 전용)
-    public func setSecureData(_ data: Data, key: String) -> Result<Void, SRKeychainError> {
-        let query: [String: Any] = [
+    public func setSecureData(_ data: Data, key: String, scope: SRKeychainScope = .login) -> Result<Void, SRKeychainError> {
+        // 1. 기존 데이터 삭제 (덮어쓰기 위해)
+        let deleteQuery: [String: Any] = searchScopeEntries(for: scope).merging([
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: key
+        ], uniquingKeysWith: { (_, new) in new })
+
+        SecItemDelete(deleteQuery as CFDictionary)
+
+        // 2. 데이터 추가
+        let addQuery: [String: Any] = addScopeEntries(for: scope).merging([
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: key,
             kSecValueData as String: data
-        ]
+        ], uniquingKeysWith: { (_, new) in new })
 
-        // 1. 기존 데이터 삭제 (덮어쓰기 위해)
-        SecItemDelete(query as CFDictionary)
-
-        // 2. 데이터 추가
-        let status = SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
 
         guard status == errSecSuccess else {
             return .failure(.unexpectedStatus(status))
@@ -201,13 +273,13 @@ public class SRKeychain {
     }
 
     /// 설정 데이터를 불러올 때 사용
-    public func getSecureData(key: String) -> Result<Data?, SRKeychainError> {
-        let query: [String: Any] = [
+    public func getSecureData(key: String, scope: SRKeychainScope = .login) -> Result<Data?, SRKeychainError> {
+        let query: [String: Any] = searchScopeEntries(for: scope).merging([
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: key,
             kSecReturnData as String: true, // [중요] Ref가 아니라 Data를 달라고 해야 함
             kSecMatchLimit as String: kSecMatchLimitOne
-        ]
+        ], uniquingKeysWith: { (_, new) in new })
 
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
@@ -227,11 +299,11 @@ public class SRKeychain {
     }
 
     /// 데이터 삭제
-    public func removeSecureData(key: String) -> Result<Void, SRKeychainError> {
-        let query: [String: Any] = [
+    public func removeSecureData(key: String, scope: SRKeychainScope = .login) -> Result<Void, SRKeychainError> {
+        let query: [String: Any] = searchScopeEntries(for: scope).merging([
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: key
-        ]
+        ], uniquingKeysWith: { (_, new) in new })
 
         let status = SecItemDelete(query as CFDictionary)
 
