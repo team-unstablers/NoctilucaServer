@@ -82,13 +82,29 @@ class NoctilucaClientSession: Identifiable {
         self.session = session
         self.server = server
         self.remoteAddress = "(unknown)"
-        
+
         self.session.delegate = self
+    }
+
+    /// XPC 프록시를 통해 사전 인증된 클라이언트 세션을 생성한다.
+    ///
+    /// noctilucad가 MainChannel 핸드셰이크/인증을 완료한 후 에이전트에 전달한 메타데이터를 사용하여
+    /// `.ready` 상태로 직행한다. 핸드셰이크/인증 절차는 생략된다.
+    convenience init(session: ClientSession, server: ServerContext, preAuthenticated metadata: SiriusXPCAuthMetadata) {
+        self.init(session: session, server: server)
+        self.clientInfo = ClientInfo(
+            agentName: metadata.agentName,
+            protocolVersion: SiriusProtocolVersion(rawValue: metadata.protocolVersionRaw)
+        )
+        self.remoteAddress = metadata.remoteAddress
+        self.phase = .ready
+        self.session.shouldAcceptChannelCreation = true
     }
     
     func initialize() {
         guard self.phase == .initial else {
-            logger.warning("initialize() called, but phase is not initial. Current phase: \(self.phase)")
+            // pre-authenticated 모드 (.ready)인 경우 타이머 불필요
+            logger.info("initialize() skipped: phase is already \(self.phase)")
             return
         }
         
@@ -131,6 +147,31 @@ class NoctilucaClientSession: Identifiable {
         await self.close()
     }
     
+    /// noctilucad에 의해 사전 인증된 세션 전용 메인 채널 이벤트 루프.
+    ///
+    /// 핸드셰이크/인증 메시지(ClientHello, AuthRequest)는 이미 데몬에서 처리되었으므로,
+    /// keepalive(Ping/Pong)와 Goodbye만 처리한다.
+    private func mainChannelPostAuthEventLoop() async {
+        do {
+            for await event in mainChannel.events {
+                switch event {
+                case .receivedPing:
+                    try await self.mainChannel.sendPong()
+                case .receivedGoodbye(let message):
+                    logger.info("Received Goodbye from client: code=\(message.code.rawValue), message=\(message.message ?? "(none)")")
+                    await self.close()
+                    return
+                default:
+                    break
+                }
+            }
+        } catch {
+            await self.panic("Error in mainChannelPostAuthEventLoop: \(error)")
+        }
+
+        await self.close()
+    }
+
     @inline(__always) // 이게 효과가 있을지?
     func assertPhase(expected: NoctilucaClientSessionPhase) throws {
         guard self.phase == expected else {
@@ -256,8 +297,16 @@ extension NoctilucaClientSession: ClientSessionDelegate {
     
     func clientSessionDidCreateMainChannel(_ session: SiriusKit.ClientSession, mainChannel: MainChannel) {
         self.mainChannel = mainChannel
-        self.eventLoopTask = Task {
-            await mainChannelEventLoop()
+
+        if self.phase == .ready {
+            // pre-authenticated 모드: 인증 관련 메시지 처리 불필요
+            self.eventLoopTask = Task {
+                await mainChannelPostAuthEventLoop()
+            }
+        } else {
+            self.eventLoopTask = Task {
+                await mainChannelEventLoop()
+            }
         }
     }
 }

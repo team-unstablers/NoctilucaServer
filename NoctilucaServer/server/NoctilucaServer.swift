@@ -271,12 +271,25 @@ extension NoctilucaServer: SiriusServerDelegate {
     }
     
     func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
-        let session = NoctilucaClientSession(session: session, server: context)
-        session.delegate = self
-        session.initialize()
-        
+        let noctilucaSession: NoctilucaClientSession
+
+        if let metadata = session.preAuthMetadata {
+            // XPC 프록시 모드: noctilucad가 이미 핸드셰이크/인증을 완료함
+            noctilucaSession = NoctilucaClientSession(
+                session: session,
+                server: context,
+                preAuthenticated: metadata
+            )
+        } else {
+            // 직접 연결 모드: 기존 핸드셰이크/인증 흐름
+            noctilucaSession = NoctilucaClientSession(session: session, server: context)
+        }
+
+        noctilucaSession.delegate = self
+        noctilucaSession.initialize()
+
         Task { @MainActor in
-            self.clients[session.id] = session
+            self.clients[noctilucaSession.id] = noctilucaSession
         }
     }
     
