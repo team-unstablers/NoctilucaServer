@@ -2314,6 +2314,50 @@
         }
       }
     },
+    "onboarding.permissions.restart_required.cancel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아니오"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.restart_required.confirm" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "예"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.restart_required.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "녹화 권한을 확인하려면 Noctiluca Server를 다시 시작해야 합니다.\n\n다시 시작하시겠습니까?"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.restart_required.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다시 시작 필요"
+          }
+        }
+      }
+    },
     "onboarding.permissions.screen_recording.description" : {
       "localizations" : {
         "en" : {
@@ -12556,7 +12600,7 @@
       }
     },
     "settings.save" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
