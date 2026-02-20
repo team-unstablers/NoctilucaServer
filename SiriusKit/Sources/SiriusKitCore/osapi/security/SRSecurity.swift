@@ -95,7 +95,7 @@ public class SRSecurity {
             kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
             kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
             kSecAttrKeySizeInBits as String: 256,
-            kSecAttrApplicationLabel as String: applicationLabel, // <--- 여기가 핵심 연결 고리!
+            // kSecAttrApplicationLabel as String: applicationLabel, // <--- 여기가 핵심 연결 고리!
             kSecAttrIsExtractable as String: true
         ]
 
@@ -115,7 +115,7 @@ public class SRSecurity {
             kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
             kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
             kSecAttrKeySizeInBits as String: privateKey.keySizeInBits,
-            kSecAttrApplicationLabel as String: applicationLabel,
+            // kSecAttrApplicationLabel as String: applicationLabel,
             kSecAttrIsExtractable as String: true
         ]
 

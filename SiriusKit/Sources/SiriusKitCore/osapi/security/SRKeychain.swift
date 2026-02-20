@@ -80,7 +80,7 @@ public class SRKeychain {
     // MARK: - Keychain Scope Helpers
 
 #if os(macOS)
-    private func resolveKeychain(for scope: SRKeychainScope) -> SecKeychain? {
+    package func resolveKeychain(for scope: SRKeychainScope) -> SecKeychain? {
         var keychain: SecKeychain?
         switch scope {
         case .login:
