@@ -28,7 +28,7 @@ let logger = SiriusLogger(category: "noctilucad")
 struct NoctilucaDaemonCLI: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "noctilucad",
-        abstract: ""
+        abstract: "Noctiluca system daemon"
     )
 
     @Option(name: .long, help: "데몬의 실행 스코프. (미지정 시 auto determine을 수행한다)")
@@ -39,12 +39,22 @@ struct NoctilucaDaemonCLI: ParsableCommand {
 
     mutating func run() throws {
         let daemon = NoctilucaDaemon(scope: scope)
+        _ = MsQuicLoader.shared.success
+
+        Task {
+            await daemon.prepare()
+            
+            do {
+                try await daemon.start()
+            } catch {
+                logger.error("Failed to start daemon: \(error)")
+                throw error
+            }
+            
+            logger.info("noctilucad is running. Waiting for connections...")
+        }
         
-        daemon.prepare()
-        daemon.start()
-        
-        logger.info("noctilucad is running. Waiting for agent connections...")
-        RunLoop.current.run()
+        RunLoop.main.run()
     }
 }
 

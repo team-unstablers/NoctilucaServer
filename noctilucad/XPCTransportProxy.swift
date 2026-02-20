@@ -18,6 +18,9 @@ class XPCTransportProxy {
     let transport: any ServerRoleClientTransport
     let agentProxy: SiriusAgentXPCInterface
 
+    /// 연결이 종료되었을 때 호출되는 콜백. AgentRegistry에서 프록시를 제거하는 데 사용한다.
+    var onClose: ((UUID) -> Void)?
+
     private var streamProxies: [StreamIdentifier: XPCStreamProxy] = [:]
 
     init(
@@ -43,7 +46,18 @@ class XPCTransportProxy {
             agentProxy: agentProxy
         )
         streamProxies[mainChannelStream.id] = mainProxy
-        mainProxy.startForwarding()
+
+        // 에이전트에 MainChannel 스트림 열림을 알린다.
+        // 에이전트의 XPCServerRoleClientTransport가 이 알림을 받아야
+        // ClientSession이 MainChannel을 생성할 수 있다.
+        agentProxy.clientDidOpenRemoteStream(
+            clientID as NSUUID,
+            streamID: mainChannelStream.id as NSUUID
+        ) { accepted in
+            guard accepted else { return }
+            // 에이전트가 스트림을 수락한 후 데이터 포워딩 시작
+            mainProxy.startForwarding()
+        }
     }
 
     /// 에이전트에서 새 스트림 열기 요청을 받았을 때 호출한다.
@@ -92,26 +106,25 @@ class XPCTransportProxy {
 
     /// 에이전트에서 클라이언트 연결 끊기 요청을 받았을 때 호출한다.
     func handleAgentDisconnect() async {
-        let snapshot = Array(streamProxies.values)
-        streamProxies.removeAll()
-
-        for proxy in snapshot {
-            proxy.stopForwarding()
-        }
-
+        cleanupStreamProxies()
         await transport.disconnect()
+        onClose?(clientID)
     }
 
     /// 클라이언트 측(QUIC)에서 연결이 종료되었을 때 호출한다.
     func handleTransportClose() {
+        cleanupStreamProxies()
+        agentProxy.clientDidDisconnect(clientID as NSUUID)
+        onClose?(clientID)
+    }
+
+    private func cleanupStreamProxies() {
         let snapshot = Array(streamProxies.values)
         streamProxies.removeAll()
 
         for proxy in snapshot {
             proxy.stopForwarding()
         }
-
-        agentProxy.clientDidDisconnect(clientID as NSUUID)
     }
 }
 

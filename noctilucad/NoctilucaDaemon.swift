@@ -33,6 +33,16 @@ class NoctilucaDaemon {
     private let xpcService: DaemonXPCService
     private var settingsXPCService: SettingsXPCService!
 
+    // MARK: - QUIC Server
+
+    let featureProvider = DaemonFeatureProvider()
+    let authPluginRegistry = AuthPluginRegistry.shared
+    let pluginBundleRegistry = PluginBundleRegistry.shared
+    let authenticator: Authenticator
+
+    private var server: SiriusServer?
+    private var daemonSessions: [UUID: DaemonClientSession] = [:]
+
     /// 설정 접근을 직렬화하기 위한 큐.
     /// XPC 핸들러에서 설정을 동시에 읽기/쓰기할 수 있으므로 직렬 큐로 보호한다.
     private let settingsQueue = DispatchQueue(label: "noctilucad.settings")
@@ -41,38 +51,162 @@ class NoctilucaDaemon {
     init(scope: DaemonScope) {
         self.scope = scope
 
+        self.authenticator = Authenticator(registry: authPluginRegistry)
         self.xpcService = DaemonXPCService(agentRegistry: agentRegistry)
         self.settingsXPCService = SettingsXPCService(daemon: self)
     }
 
-    /// 설정을 로드하고, 뭔가 준비한다
-    func prepare() {
+    /// 설정을 로드하고, 인증 플러그인을 준비한다.
+    func prepare() async {
+        // 1. 설정 로드
         do {
             self.settings = try DaemonSettings.load(scope: scope)
         } catch {
             self.logger.error("failed to load settings: \(error)")
         }
 
+        let settings = readSettings()
+
+        // 2. 인증 플러그인 등록
+        pluginBundleRegistry.configure(policy: settings.security.pluginBundleSecurityPolicy)
+
+        do {
+            try await pluginBundleRegistry.registerBuiltinBundles()
+        } catch {
+            self.logger.error("failed to register builtin bundles: \(error)")
+        }
+
+        if settings.security.pluginBundleSecurityPolicy != .disallowAll {
+            await pluginBundleRegistry.loadExternalBundles()
+        }
+
+        // 3. 인증 엔트리 설정
+        await authenticator.setupAllowedEntires(settings.security.allowedEntries)
     }
 
-    func start() {
+    func start() async throws {
         xpcService.start()
         settingsXPCService.start()
 
-        // TODO: QUIC 서버를 시작하여 클라이언트 연결을 수락한다.
-        //
-        // 구현 시 필요한 흐름:
-        // 1. 시스템 설정 로드 (/Library/Application Support/noctilucad/settings.json)
-        // 2. PEM 파일에서 TLS 아이덴티티 로드
-        // 3. SiriusServerBuilder로 QUIC 서버 생성
-        // 4. 연결 수락 시:
-        //    a. MainChannel 핸드셰이크 처리 (ClientHello → ServerHello + AuthChallenge)
-        //    b. 인증 처리 (AuthRequest → Authenticator → AuthResponse)
-        //    c. UID 확정 후 AgentRegistry에서 대상 에이전트 조회
-        //    d. SiriusXPCAuthMetadata 생성
-        //    e. agentProxy.acceptPreAuthenticatedClient() 호출
-        //    f. XPCTransportProxy 생성 → MainChannel 스트림 포워딩 시작
-        //    g. transport.delegate를 XPCTransportProxy로 교체
+        var settings = readSettings()
+
+        
+        // TLS 아이덴티티 로드
+        if settings.quicTransport.identity == nil {
+            try settings.quicTransport.autoconfigureIdentity()
+            try settings.save(scope: scope)
+        }
+        
+        
+        guard let identity = settings.quicTransport.identity else {
+            logger.error("No TLS identity configured. QUIC server will not start.")
+            return
+        }
+
+        let identitySource = identity.identitySource
+
+        // SiriusServer 빌드 (QUIC 트랜스포트)
+        let result = SiriusServerBuilder()
+            .useFeatureProvider(featureProvider)
+            .useTransportProtocol(.quic(
+                implementation: settings.transport.implementation,
+                port: settings.quicTransport.listenPort,
+                identitySource: identitySource
+            ))
+            .build()
+
+        switch result {
+        case .success(let server):
+            self.server = server
+            server.delegate = self
+
+            try await server.setup()
+            try await server.startup()
+
+            logger.info("QUIC server started on port \(settings.quicTransport.listenPort)")
+
+        case .failure(let error):
+            logger.error("Failed to build SiriusServer: \(error)")
+            throw error
+        }
+    }
+
+    func shutdown() async {
+        if let server {
+            do {
+                try await server.shutdown()
+            } catch {
+                logger.error("Failed to shutdown SiriusServer: \(error)")
+            }
+            self.server = nil
+        }
+
+        let sessions = daemonSessions.values
+        for session in sessions {
+            await session.close()
+        }
+        daemonSessions.removeAll()
+    }
+
+    // MARK: - Daemon Session Management
+
+    func removeDaemonSession(id: UUID) {
+        daemonSessions.removeValue(forKey: id)
+    }
+
+    /// DaemonClientSession이 인증 완료 후 에이전트에 핸드오프할 때 호출한다.
+    func handoffToAgent(
+        daemonSession: DaemonClientSession,
+        uid: uid_t,
+        metadata: SiriusXPCAuthMetadata,
+        mainChannelStream: SiriusKitCore.Stream
+    ) {
+        guard let agent = agentRegistry.agentWithFallback(for: uid) else {
+            logger.error("No agent found for uid \(uid), disconnecting client")
+            Task { await daemonSession.close() }
+            return
+        }
+
+        let clientID = daemonSession.session.id
+        let agentUID = agent.uid
+        let proxy = XPCTransportProxy(
+            clientID: clientID,
+            transport: daemonSession.session.transport as! any ServerRoleClientTransport,
+            agentProxy: agent.proxy
+        )
+
+        // 연결 종료 시 AgentRegistry에서 프록시 정리
+        proxy.onClose = { [weak self] closedClientID in
+            self?.agentRegistry.unregisterClientProxy(clientID: closedClientID, for: agentUID)
+            self?.logger.info("Client proxy \(closedClientID) cleaned up from agent uid=\(agentUID)")
+        }
+
+        agentRegistry.registerClientProxy(proxy, for: agentUID)
+
+        // 에이전트에 사전 인증 클라이언트 전달
+        agent.proxy.acceptPreAuthenticatedClient(
+            clientID as NSUUID,
+            metadata: metadata
+        ) { [weak self] accepted in
+            guard let self else { return }
+
+            guard accepted else {
+                self.logger.error("Agent rejected client \(clientID)")
+                self.agentRegistry.unregisterClientProxy(clientID: clientID, for: agent.uid)
+                return
+            }
+
+            // MainChannel 스트림 프록시 시작
+            proxy.startProxying(mainChannelStream: mainChannelStream)
+
+            // transport delegate를 XPCTransportProxy로 교체
+            daemonSession.session.replaceTransportDelegate(proxy)
+
+            self.logger.info("Client \(clientID) handed off to agent uid=\(agent.uid)")
+        }
+
+        // 데몬 세션 정리
+        daemonSessions.removeValue(forKey: daemonSession.session.id)
     }
 
     // MARK: - Settings Access (Thread-Safe)
@@ -119,5 +253,33 @@ class NoctilucaDaemon {
 
             return removed
         }
+    }
+}
+
+// MARK: - SiriusServerDelegate
+
+extension NoctilucaDaemon: SiriusServerDelegate {
+    func siriusServerDidStart(_ server: SiriusServer) {
+        logger.info("QUIC server is now listening")
+    }
+
+    func siriusServerDidStop(_ server: SiriusServer) {
+        logger.info("QUIC server stopped")
+    }
+
+    func siriusServer(_ server: SiriusServer, didEncounterError error: any Error) {
+        logger.error("QUIC server error: \(error)")
+    }
+
+    func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession) {
+        logger.info("Accepted new client connection: \(session.id)")
+
+        let daemonSession = DaemonClientSession(session: session, daemon: self)
+        daemonSessions[session.id] = daemonSession
+        daemonSession.start()
+    }
+
+    func siriusServerDidFailToAcceptClientSession(_ server: SiriusServer, error: any Error) {
+        logger.error("Failed to accept client session: \(error)")
     }
 }
