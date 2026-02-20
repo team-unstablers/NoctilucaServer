@@ -183,27 +183,27 @@ extension DaemonSettings {
 
 #if NOC_DAEMON
 extension DaemonSettings.SecureCategory {
-    func saveSecureEntry(_ entry: Codable, forKey key: String) throws {
+    func saveSecureEntry(_ entry: Codable, forKey key: String, scope: DaemonScope) throws {
         let keychain = SRKeychain.shared
         let data = try DaemonSettings.jsonEncoder.encode(entry)
         
-        _ = try keychain.setSecureData(consume data, key: key, scope: .system).get()
+        _ = try keychain.setSecureData(consume data, key: key, scope: scope == .global ? .system : .login).get()
     }
     
-    func loadSecureEntry<T: Codable>(forKey key: String, as type: T.Type) throws -> T? {
+    func loadSecureEntry<T: Codable>(forKey key: String, as type: T.Type, scope: DaemonScope) throws -> T? {
         let keychain = SRKeychain.shared
         
-        guard let data = try keychain.getSecureData(key: key, scope: .system).get() else {
+        guard let data = try keychain.getSecureData(key: key, scope: scope == .global ? .system : .login).get() else {
             return nil
         }
         
         return try JSONDecoder().decode(type, from: consume data)
     }
     
-    func removeSecureEntry(forKey key: String) throws {
+    func removeSecureEntry(forKey key: String, scope: DaemonScope) throws {
         let keychain = SRKeychain.shared
         
-        _ = try keychain.removeSecureData(key: key, scope: .system).get()
+        _ = try keychain.removeSecureData(key: key, scope: scope == .global ? .system : .login).get()
     }
 }
 #endif

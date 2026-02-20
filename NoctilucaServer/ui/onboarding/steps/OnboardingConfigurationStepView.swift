@@ -33,7 +33,7 @@ struct OnboardingConfigurationStepView: View {
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 8)
                     
-                    AuthMethodContainer(authMethods: $settingsStore.settings.security.allowedEntries)
+                    // AuthMethodContainer(authMethods: $settingsStore.settings.security.allowedEntries)
                 }
                 .padding()
                 .background(.background.secondary)

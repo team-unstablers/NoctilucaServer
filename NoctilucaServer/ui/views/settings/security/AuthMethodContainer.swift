@@ -18,11 +18,11 @@ import NoctilucaPluginKit
 
 struct AuthMethodContainer: View {
     @Binding
-    var authMethods: [AuthEntry]
-    @State private var selection = Set<AuthEntry>()
+    var authMethods: [RedactedAuthEntry]
+    @State private var selection = Set<RedactedAuthEntry>()
     @State private var isAddSheetPresented = false
     
-    init(authMethods: Binding<[AuthEntry]>) {
+    init(authMethods: Binding<[RedactedAuthEntry]>) {
         self._authMethods = authMethods
     }
     
@@ -64,9 +64,23 @@ struct AuthMethodContainer: View {
         }
         .sheet(isPresented: $isAddSheetPresented) {
             AuthMethodSelectionSheet(isPresented: $isAddSheetPresented) { newMethod in
-                guard !authMethods.contains(newMethod) else { return }
-                authMethods.append(newMethod)
+                guard !authMethods.contains(where: { $0.method == newMethod.method && $0.identifier == newMethod.identifier }) else {
+                    return
+                }
+                
+                Task {
+                    try? await SettingsStore.shared.daemonSettingsClient.addAuthEntry(
+                        method: newMethod.method,
+                        identifier: newMethod.identifier,
+                        credential: newMethod.data ?? Data()
+                    )
+                    
+                    self.authMethods = (try? await SettingsStore.shared.daemonSettingsClient.getAuthEntries()) ?? []
+                }
             }
+        }
+        .task {
+            self.authMethods = (try? await SettingsStore.shared.daemonSettingsClient.getAuthEntries()) ?? []
         }
     }
     
@@ -77,6 +91,12 @@ struct AuthMethodContainer: View {
     private func removeSelected() {
         guard !selection.isEmpty else { return }
         authMethods.removeAll { selection.contains($0) }
+        for x in selection {
+            Task {
+                try? await SettingsStore.shared.daemonSettingsClient.removeAuthEntry(method: x.method, identifier: x.identifier)
+            }
+        }
+        
         selection.removeAll()
     }
 }

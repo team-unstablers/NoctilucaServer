@@ -47,11 +47,11 @@ extension DaemonSettings {
         
 #if NOC_DAEMON
         func saveSecureEntries(scope: DaemonScope) throws {
-            try saveSecureEntry(allowedEntries, forKey: Self.KEY_ALLOWED_ENTRIES)
+            try saveSecureEntry(allowedEntries, forKey: Self.KEY_ALLOWED_ENTRIES, scope: scope)
         }
         
         mutating func loadSecureEntries(scope: DaemonScope) throws {
-            allowedEntries = (try loadSecureEntry(forKey: Self.KEY_ALLOWED_ENTRIES, as: [AuthEntry].self)) ?? []
+            allowedEntries = (try loadSecureEntry(forKey: Self.KEY_ALLOWED_ENTRIES, as: [AuthEntry].self, scope: scope)) ?? []
         }
 #endif
     }

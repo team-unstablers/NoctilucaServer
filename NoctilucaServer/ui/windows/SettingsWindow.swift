@@ -22,6 +22,13 @@ struct SettingsWindow: View {
 
     @State
     private var selectedTab: SettingsTab = .general
+    
+    var daemonSettings: Binding<DaemonSettings> {
+        Binding(
+            get: { settingsStore.daemonSettings ?? DaemonSettings() },
+            set: { if settingsStore.daemonSettings != nil { settingsStore.daemonSettings = $0 } }
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -38,7 +45,7 @@ struct SettingsWindow: View {
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
-                SecuritySettingsTab(settings: $settingsStore.settings)
+                SecuritySettingsTab(settings: daemonSettings)
                     .tabItem {
                         Text(markdown: String(localized: "settings.tab.security", defaultValue: "보안"))
                     }
@@ -67,6 +74,9 @@ struct SettingsWindow: View {
         }
         .navigationTitle("test")
         .navigationSubtitle("test")
+        .task {
+            await settingsStore.loadDaemonSettings()
+        }
     }
 }
 

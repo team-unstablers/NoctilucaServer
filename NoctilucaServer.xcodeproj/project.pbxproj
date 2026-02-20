@@ -259,6 +259,11 @@
 			path = models;
 			sourceTree = "<group>";
 		};
+		F6ACB98C2F4851E50014D2A2 /* xpc */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = xpc;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -356,6 +361,7 @@
 		F6ACB95C2F483E2A0014D2A2 /* NocServerCommons */ = {
 			isa = PBXGroup;
 			children = (
+				F6ACB98C2F4851E50014D2A2 /* xpc */,
 				F6ACB9652F483E3D0014D2A2 /* models */,
 			);
 			path = NocServerCommons;
@@ -402,6 +408,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				F6293EE42F4813340067CCFF /* noctilucad */,
+				F6ACB98C2F4851E50014D2A2 /* xpc */,
 			);
 			name = noctilucad;
 			packageProductDependencies = (
@@ -455,6 +462,7 @@
 				F6379F9C2EEAAFD9004BC795 /* pam.d */,
 				F64C01132F1B98E1009781D8 /* distutil */,
 				F669650D2ECF26770032EF4E /* NoctilucaServer */,
+				F6ACB98C2F4851E50014D2A2 /* xpc */,
 			);
 			name = NoctilucaServer;
 			packageProductDependencies = (

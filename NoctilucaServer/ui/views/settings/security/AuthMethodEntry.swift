@@ -11,7 +11,7 @@ import SwiftUI
 import NoctilucaPluginKit
 
 struct AuthMethodEntry: View {
-    let entry: AuthEntry
+    let entry: RedactedAuthEntry
     
     var methodTypeLabel: String {
         switch entry.method {

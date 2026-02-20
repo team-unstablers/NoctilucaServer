@@ -44,6 +44,11 @@ extension DaemonXPCService: NSXPCListenerDelegate {
         _ listener: NSXPCListener,
         shouldAcceptNewConnection newConnection: NSXPCConnection
     ) -> Bool {
+        // 같은 팀(XHA76UVA95)이 서명한 NoctilucaServer 에이전트만 허용
+        newConnection.setCodeSigningRequirement(
+            "identifier \"app.noctiluca.server\" and anchor apple generic and certificate leaf[subject.OU] = \"XHA76UVA95\""
+        )
+
         // 양방향 인터페이스 설정
         newConnection.exportedInterface = createSiriusDaemonXPCInterface()
         newConnection.remoteObjectInterface = createSiriusAgentXPCInterface()

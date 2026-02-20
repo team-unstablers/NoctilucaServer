@@ -41,7 +41,7 @@ fileprivate enum SecuritySettingsTabAlertCase: AlertCase {
 
 struct SecuritySettingsTab: View {
     @Binding
-    var settings: AppSettings
+    var settings: DaemonSettings
     
     @State
     var identityInfo: QUICServerIdentityInfo? = nil
@@ -56,12 +56,15 @@ struct SecuritySettingsTab: View {
     var showCertificateDetailSheet: Bool = false
     
     @State
+    var allowedEntries: [RedactedAuthEntry] = []
+    
+    @State
     fileprivate var alertCase: SecuritySettingsTabAlertCase? = nil
 
     var body: some View {
         Form {
             Section {
-                AuthMethodContainer(authMethods: $settings.security.allowedEntries)
+                AuthMethodContainer(authMethods: $allowedEntries)
             } header: {
                 Text(markdown: String(localized: "settings.security.auth_methods.title", defaultValue: "인증 수단"))
                 Text(markdown: String(localized: "settings.security.auth_methods.description", defaultValue: "이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. 드래그-드롭으로 우선 순위를 변경할 수 있습니다. [더 알아보기…](http://google.com)"))

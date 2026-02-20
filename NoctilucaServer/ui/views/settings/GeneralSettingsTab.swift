@@ -19,8 +19,6 @@ struct GeneralSettingsTab: View {
     @State
     private var automaticallyDownloadsUpdates: Bool = AppUpdater.shared.updaterController.updater.automaticallyDownloadsUpdates
     
-    
-
     var body: some View {
         Form {
             Section(String(localized: "settings.general.title", defaultValue: "일반")) {
