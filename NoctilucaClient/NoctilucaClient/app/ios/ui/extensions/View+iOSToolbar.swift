@@ -143,9 +143,11 @@ struct ToolbarModifierIPad: ViewModifier {
     var isAddressBarFocused: Bool
 
     func body(content: Content) -> some View {
-        content
-            .if(!viewModel.isFullscreen) {
-                $0.safeAreaInset(edge: .top) {
+        if viewModel.isFullscreen {
+            content
+        } else {
+            content
+                .safeAreaInset(edge: .top) {
                     HStack {
                         MainToolbarAddressBar(
                             viewModel: viewModel,
@@ -168,141 +170,144 @@ struct ToolbarModifierIPad: ViewModifier {
                     .ignoresSafeArea()
                     .frame(maxHeight: 0)
                 }
-            }
-            .toolbar(viewModel.isFullscreen ? .hidden : .automatic, for: .navigationBar)
-            .if(shouldPresentAddressBar) {
-                $0.overlay {
-                    ZStack {
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                isAddressBarFocused = false
-                            }
-                        
-                        HStack {
-                            MainToolbarAddressBar(
-                                viewModel: viewModel,
-                                settingsStore: settingsStore,
-                                focusBinding: $isAddressBarFocused
-                            )
-                            .onAppear {
-                                isAddressBarFocused = true
-                            }
-                            .onChange(of: isAddressBarFocused) { oldValue, newValue in
-                                if (newValue == false) {
-                                    shouldPresentAddressBar = false
+                .toolbar(viewModel.isFullscreen ? .hidden : .automatic, for: .navigationBar)
+                .if(shouldPresentAddressBar) {
+                    $0.overlay {
+                        ZStack {
+                            Rectangle()
+                                .fill(.ultraThinMaterial)
+                                .onTapGesture {
+                                    isAddressBarFocused = false
+                                }
+                            
+                            HStack {
+                                MainToolbarAddressBar(
+                                    viewModel: viewModel,
+                                    settingsStore: settingsStore,
+                                    focusBinding: $isAddressBarFocused
+                                )
+                                .onAppear {
+                                    shouldPresentAddressBar = true
+                                    isAddressBarFocused = true
+                                }
+                                .onChange(of: isAddressBarFocused) { oldValue, newValue in
+                                    if (newValue == false) {
+                                        shouldPresentAddressBar = false
+                                    }
                                 }
                             }
-                        }
-                        .if(toolbarStyle == .standard) {
-                            $0
-                                .frame(maxWidth: 400)
-                                .position(x: principalFrame.midX, y: principalFrame.midY)
-                        }
-                        .if(toolbarStyle == .compact) {
-                            $0
-                                .frame(maxWidth: 400)
-                                .position(x: principalFrame.midX, y: principalFrame.midY)
-                        }
-                    }
-                    .ignoresSafeArea(.all)
-                    .background(.ultraThinMaterial)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-        .ignoresSafeArea(.container, edges: .bottom)
-        // .ignoresSafeArea(.all)
-        .onGeometryChange(for: CGSize.self) {
-            return $0.size
-        } action: {
-            if $0.width <= 650 {
-                toolbarStyle = .compact
-            } else {
-                toolbarStyle = .standard
-            }
-        }
-        .if(!shouldPresentAddressBar) {
-            $0.toolbar {
-                ToolbarItem(placement: .principal) {
-                    Button {
-                        shouldPresentAddressBar = true
-                    } label: {
-                        Text("...")
-                            .opacity(0.001)
-                            .frame(width: 400, height: 38)
-                            .overlay {
-                                GeometryReader { geom in
-                                    Text("test")
-                                        .opacity(0.001)
-                                        .onAppear {
-                                            principalFrame = geom.frame(in: .global)
-                                        }
-                                        .onChange(of: geom.frame(in: .global)) { _, newFrame in
-                                            principalFrame = newFrame
-                                        }
-                                }
+                            .if(toolbarStyle == .standard) {
+                                $0
+                                    .frame(maxWidth: 400)
+                                    .position(x: principalFrame.midX, y: principalFrame.midY)
                             }
-                    }
-                    .frame(width: 400, height: 38)
-                }
-                
-                if viewModel.phase == .newConnection {
-                    let toolbarPlacement: ToolbarItemPlacement = (toolbarStyle == .standard) ? .topBarTrailing : .bottomBar
-                    ToolbarItem(placement: toolbarPlacement) {
-                        Button {
-                            mobileUIMainViewModel.navState.append(.settings)
-                        } label: {
-                            Image(systemName: "gearshape")
-                        }
-                    }
-                    ToolbarItem(placement: toolbarPlacement) {
-                        Button {
-                            viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
-                        } label: {
-                            Image(systemName: "plus.app")
-                        }
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            Task { @MainActor in
-                                await viewModel.stopSession()
+                            .if(toolbarStyle == .compact) {
+                                $0
+                                    .frame(maxWidth: 400)
+                                    .position(x: principalFrame.midX, y: principalFrame.midY)
                             }
-                        } label: {
-                            Image(systemName: "xmark")
                         }
+                        .ignoresSafeArea(.all)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .ignoresSafeArea(.container, edges: .bottom)
+            // .ignoresSafeArea(.all)
+                .onGeometryChange(for: CGSize.self) {
+                    return $0.size
+                } action: {
+                    if $0.width <= 650 {
+                        toolbarStyle = .compact
+                    } else {
+                        toolbarStyle = .standard
                     }
                     
-                    if viewModel.phase == .connected {
-                        ToolbarItem(placement: .topBarTrailing) {
+                    // HACK:
+                    if shouldPresentAddressBar {
+                        principalFrame.origin.x = ($0.width / 2) - (principalFrame.width / 2)
+                    }
+                }
+                .if(!shouldPresentAddressBar) {
+                    $0.toolbar {
+                        ToolbarItem(placement: .principal) {
                             Button {
-                                viewModel.shouldPresentDisplaySwitchSheet = true
+                                shouldPresentAddressBar = true
                             } label: {
-                                Image(systemName: "display.2")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .foregroundStyle(.foreground, .clear)
-                                    .frame(width: 28, height: 28)
+                                Text("...")
+                                    .opacity(0.001)
+                                    .frame(width: 400, height: 38)
+                                    .overlay {
+                                        GeometryReader { geom in
+                                            Text("test")
+                                                .opacity(0.001)
+                                                .onAppear {
+                                                    principalFrame = geom.frame(in: .global)
+                                                }
+                                                .onChange(of: geom.frame(in: .global)) { _, newFrame in
+                                                    principalFrame = newFrame
+                                                }
+                                        }
+                                    }
                             }
+                            .frame(width: 400, height: 38)
                         }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    viewModel.isFullscreen = true
+                        
+                        if viewModel.phase == .newConnection {
+                            let toolbarPlacement: ToolbarItemPlacement = (toolbarStyle == .standard) ? .topBarTrailing : .bottomBar
+                            ToolbarItem(placement: toolbarPlacement) {
+                                Button {
+                                    mobileUIMainViewModel.navState.append(.settings)
+                                } label: {
+                                    Image(systemName: "gearshape")
                                 }
-                            } label: {
-                                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 16, height: 16)
+                            }
+                            ToolbarItem(placement: toolbarPlacement) {
+                                Button {
+                                    viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
+                                } label: {
+                                    Image(systemName: "plus.app")
+                                }
+                            }
+                        } else {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button {
+                                    Task { @MainActor in
+                                        await viewModel.stopSession()
+                                    }
+                                } label: {
+                                    Image(systemName: "xmark")
+                                }
+                            }
+                            
+                            if viewModel.phase == .connected {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    Button {
+                                        viewModel.shouldPresentDisplaySwitchSheet = true
+                                    } label: {
+                                        Image(systemName: "display.2")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .foregroundStyle(.foreground, .clear)
+                                            .frame(width: 28, height: 28)
+                                    }
+                                }
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            viewModel.isFullscreen = true
+                                        }
+                                    } label: {
+                                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
         }
-
-
     }
 }
 
