@@ -7,7 +7,7 @@ import SwiftUI
 
 struct OnboardingConfigurationStepView: View {
     @EnvironmentObject
-    var server: NoctilucaServer
+    var settingsStore: SettingsStore
     
     var body: some View {
         VStack(spacing: 32) {
@@ -33,7 +33,7 @@ struct OnboardingConfigurationStepView: View {
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 8)
                     
-                    AuthMethodContainer(authMethods: $server.settings.security.allowedEntries)
+                    AuthMethodContainer(authMethods: $settingsStore.settings.security.allowedEntries)
                 }
                 .padding()
                 .background(.background.secondary)

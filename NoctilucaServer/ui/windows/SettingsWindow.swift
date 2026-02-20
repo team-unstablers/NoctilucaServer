@@ -18,39 +18,39 @@ struct SettingsWindow: View {
     }
     
     @EnvironmentObject
-    private var server: NoctilucaServer
-    
+    private var settingsStore: SettingsStore
+
     @State
     private var selectedTab: SettingsTab = .general
 
     var body: some View {
         NavigationStack {
             TabView(selection: $selectedTab) {
-                GeneralSettingsTab(settings: $server.settings)
+                GeneralSettingsTab(settings: $settingsStore.settings)
                     .tabItem {
                         Text(markdown: String(localized: "settings.tab.general", defaultValue: "일반"))
                     }
                     .tag(SettingsTab.general)
                     .id(SettingsTab.general)
-                ProjectionSettingsTab(settings: $server.settings)
+                ProjectionSettingsTab(settings: $settingsStore.settings)
                     .tabItem {
                         Text(markdown: String(localized: "settings.tab.projection", defaultValue: "프로젝션"))
                     }
                     .tag(SettingsTab.projection)
                     .id(SettingsTab.projection)
-                SecuritySettingsTab(settings: $server.settings)
+                SecuritySettingsTab(settings: $settingsStore.settings)
                     .tabItem {
                         Text(markdown: String(localized: "settings.tab.security", defaultValue: "보안"))
                     }
                     .tag(SettingsTab.security)
                     .id(SettingsTab.security)
-                MiscSettingsTab(settings: $server.settings)
+                MiscSettingsTab(settings: $settingsStore.settings)
                     .tabItem {
                         Text(markdown: String(localized: "settings.tab.misc", defaultValue: "기타"))
                     }
                     .tag(SettingsTab.misc)
                     .id(SettingsTab.misc)
-                PluginsSettingsTab(settings: $server.settings)
+                PluginsSettingsTab(settings: $settingsStore.settings)
                     .tabItem {
                         Text(markdown: String(localized: "settings.tab.plugins", defaultValue: "플러그인"))
                     }
@@ -67,19 +67,6 @@ struct SettingsWindow: View {
         }
         .navigationTitle("test")
         .navigationSubtitle("test")
-        .toolbar {
-            ToolbarItem {
-                Button(String(localized: "settings.save", defaultValue: "설정 저장"), role: .compatibleConfirm) {
-                    do {
-                        try server.settings.save()
-                        NoctilucaLoggingConfigurator.apply(settings: server.settings.logging)
-                    } catch {
-                        // FIXME: 다이얼로그를 띄우던 뭘 하던 하십시오
-                        print(error)
-                    }
-                }
-            }
-        }
     }
 }
 

@@ -37,7 +37,7 @@ struct OnboardingWindow: View {
             OnboardingPermissionsStepView(navigation: navigation)
         case .configuration:
             OnboardingConfigurationStepView()
-                .environmentObject(NoctilucaServer.shared)
+                .environmentObject(SettingsStore.shared)
         case .completion:
             OnboardingCompletionStepView()
         }
@@ -135,7 +135,7 @@ private struct OnboardingNavigationBar: View {
 
     private func finishOnboarding() {
         Task { @MainActor in
-            try? NoctilucaServer.shared.settings.save()
+            SettingsStore.shared.save()
             try? await NoctilucaServer.shared.startup()
             
             UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")

@@ -11,7 +11,7 @@ import SwiftUI
 final class AppKitSettingsWindowController: NSWindowController {
     init() {
         let contentView = SettingsWindow()
-            .environmentObject(NoctilucaServer.shared)
+            .environmentObject(SettingsStore.shared)
         let hostingView = NSHostingView(rootView: contentView)
 
         let window = NSWindow(

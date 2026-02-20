@@ -9,6 +9,7 @@ import Foundation
 import Combine
 
 import SiriusKit
+import NoctilucaPluginKit
 
 enum NoctilucaServerError: LocalizedError {
     case noIdentityConfigured
@@ -32,12 +33,12 @@ enum NoctilucaServerState {
 
 class NoctilucaServerContext: ServerContext {
     private let server: NoctilucaServer
-    
+
     var featureProvider: NoctilucaFeatureProvider { server.featureProvider }
-    
+
     var authenticator: Authenticator { server.authenticator }
-    var settings: AppSettings { server.settings }
-    
+    var settings: AppSettings { SettingsStore.shared.settings }
+
     init(server: NoctilucaServer) {
         self.server = server
     }
@@ -57,51 +58,44 @@ class NoctilucaServerContext: ServerContext {
 // @MainActor <- 근데 과거의 나는 이걸 왜 붙였지? 인생 편하게 살고 싶었나..?
 class NoctilucaServer: ObservableObject {
     static let shared = NoctilucaServer()
-    
+
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "app.noctiluca.server")
-    
+
     let featureProvider = NoctilucaFeatureProvider()
-    
+
     let authPluginRegistry = AuthPluginRegistry.shared
     let pluginBundleRegistry = PluginBundleRegistry.shared
-    
+
     private(set) public var identity: TLSIdentity?
-    
+
     let authenticator: Authenticator
-    
+
     var context: NoctilucaServerContext!
-    
-    @Published
-    var settings: AppSettings = AppSettings()
+
+    var settings: AppSettings {
+        get { SettingsStore.shared.settings }
+        set { SettingsStore.shared.settings = newValue }
+    }
 
     @Published
     var clients: [UUID: NoctilucaClientSession] = [:]
-    
+
     @Published
     var state: NoctilucaServerState = .idle
+
+    private var cancellables: Set<AnyCancellable> = []
+    private var previousAllowedEntries: [AuthEntry] = []
 
     init() {
         self.authenticator = Authenticator(registry: authPluginRegistry)
         self.context = NoctilucaServerContext(server: self)
 
         logger.info("NoctilucaServer initialized")
-        
+
         Task {
             // FIXME
             try await initialize()
         }
-        
-        /*
-        let bundlePath = "/Users/cheesekun/Library/Developer/Xcode/DerivedData/NoctilucaServer-bmvtwemvjsiisrajoyirlzkenmct/Build/Products/Debug/SamplePluginBundle.nocbundle"
-        let bundleURL = URL(fileURLWithPath: bundlePath)
-        Task {
-            do {
-                try await pluginBundleRegistry.loadBundle(from: bundleURL)
-            } catch {
-                logger.error("Failed to load plugin bundle from \(bundlePath): \(error)")
-            }
-        }
-         */
     }
     
     private func loadIdentity() async throws {
@@ -146,9 +140,9 @@ class NoctilucaServer: ObservableObject {
     func initialize() async throws {
         DisplayLayoutManager.shared.startMonitoring()
         DisplayLayoutManager.shared.updateDisplayLayouts()
-        
-        self.settings = try AppSettings.load()
-        NoctilucaLoggingConfigurator.apply(settings: self.settings.logging)
+
+        let settings = SettingsStore.shared.settings!
+        NoctilucaLoggingConfigurator.apply(settings: settings.logging)
 
         // 보안 정책 주입
         pluginBundleRegistry.configure(policy: settings.security.pluginBundleSecurityPolicy)
@@ -162,15 +156,37 @@ class NoctilucaServer: ObservableObject {
         }
 
         // 3. 인증 엔트리 설정 (외부 auth 플러그인 포함)
-        await authenticator.setupAllowedEntires(self.settings.security.allowedEntries)
-        
+        await authenticator.setupAllowedEntires(settings.security.allowedEntries)
+        self.previousAllowedEntries = settings.security.allowedEntries
+
+        // 4. 인증 수단 변경 감지 구독
+        subscribeToAuthEntryChanges()
+
         ScreenCaptureKitWorkaroundDummyWindow.windowManager.startup()
-        
+
         if settings.general.autoStart {
             Task {
                 try await startup()
             }
         }
+    }
+
+    private func subscribeToAuthEntryChanges() {
+        SettingsStore.shared.$settings
+            .compactMap { $0 }
+            .map(\.security.allowedEntries)
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newEntries in
+                guard let self else { return }
+                let oldEntries = self.previousAllowedEntries
+                self.previousAllowedEntries = newEntries
+                Task {
+                    await self.authenticator.updateAllowedEntries(from: oldEntries, to: newEntries)
+                }
+            }
+            .store(in: &cancellables)
     }
     
     @MainActor

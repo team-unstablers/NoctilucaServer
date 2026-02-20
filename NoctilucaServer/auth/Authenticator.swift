@@ -41,6 +41,32 @@ class Authenticator {
             }
         }
     }
+
+    func updateAllowedEntries(from oldEntries: [AuthEntry], to newEntries: [AuthEntry]) async {
+        let oldSet = Set(oldEntries)
+        let newSet = Set(newEntries)
+
+        let added = newSet.subtracting(oldSet)
+        let removed = oldSet.subtracting(newSet)
+
+        for entry in removed {
+            for plugin in plugins.filter({ type(of: $0).supportedMethods.contains(entry.method) }) {
+                logger.debug("updateAllowedEntries: denying entry \(entry.identifier) (method: \(entry.method))")
+                try? await plugin.deny(entry)
+            }
+        }
+
+        for entry in added {
+            for plugin in plugins.filter({ type(of: $0).supportedMethods.contains(entry.method) }) {
+                logger.debug("updateAllowedEntries: allowing entry \(entry.identifier) (method: \(entry.method))")
+                try? await plugin.allow(entry)
+            }
+        }
+
+        if !added.isEmpty || !removed.isEmpty {
+            logger.info("updateAllowedEntries: \(added.count) added, \(removed.count) removed")
+        }
+    }
     
     func authenticate(using method: NoctilucaPluginKit.AuthMethod, payload: consuming Data, nonce: Data) async -> Result<uid_t, AuthError> {
         let LOG_TAG = "authenticate(using: \(method))"
