@@ -460,17 +460,32 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return zoomMode == .free
         }
 
-        // Free zoom mode: block all mouse-related gesture recognizers
-        if zoomMode == .free {
-            if gestureRecognizer == tapRecognizer ||
-               gestureRecognizer == twoFingerTapRecognizer ||
-               gestureRecognizer == twoFingerPanRecognizer ||
-               gestureRecognizer == chordedDragRecognizer {
+        /*
+        // 줌 활성 시 chordedDrag는 비활성화 (핀치와 충돌 방지)
+        if zoomMode != .off {
+            if gestureRecognizer == chordedDragRecognizer {
                 return false
             }
-            // panRecognizer is allowed in free mode → used for drag panning
+        }
+         */
+
+        // Free zoom mode: block mouse-related gesture recognizers
+        // 단, 터치 모드에서는 탭(클릭)과 2-finger 탭(우클릭)은 허용
+        if zoomMode == .free {
             if gestureRecognizer == panRecognizer {
+                // panRecognizer는 free mode에서 drag panning 용도
                 return true
+            }
+            if inputMode == .touch {
+                // 터치 모드: 탭/2-finger 탭 허용 (클릭/우클릭)
+                if gestureRecognizer == tapRecognizer ||
+                   gestureRecognizer == twoFingerTapRecognizer {
+                    return true
+                }
+            }
+            if gestureRecognizer == tapRecognizer ||
+               gestureRecognizer == twoFingerTapRecognizer {
+                return false
             }
         }
 
@@ -494,9 +509,18 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        // 프리 줌 + 터치 모드: 탭 위치로 클릭
+        if zoomMode == .free, inputMode == .touch {
+            let location = locationInContentRect(recognizer.location(in: self))
+            pointer.moveAbsolute(to: location)
+            pointer.buttonDown(.left)
+            pointer.buttonUp(.left)
+            return
+        }
+
         switch inputMode {
         case .touch:
-            // Should be handled by PanRecognizer in .began
+            // Should be handled by touchesBegan/Moved/Ended
             break
         case .trackpad:
             pointer.buttonDown(.left)
