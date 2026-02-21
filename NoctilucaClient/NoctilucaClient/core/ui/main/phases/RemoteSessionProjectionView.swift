@@ -165,15 +165,16 @@ struct RemoteSessionProjectionView: View {
                             mode: $settingsStore.settings.input.touchInputMode,
                             trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
                             zoomMode: zoomController.mode,
+                            contentRect: rect,
+                            zoomScale: zoomController.scale,
+                            zoomOffset: zoomController.offset,
                             onPinchChanged: { zoomController.handlePinchChanged(magnification: $0) },
                             onPinchEnded: { zoomController.handlePinchEnded() },
                             onDoubleTap: { zoomController.resetZoomLevel() },
                             onFreeDragChanged: { zoomController.handleFreeDragChanged(translation: $0) },
                             onFreeDragEnded: { zoomController.handleFreeDragEnded() }
                         )
-                        .offset(currentOffset)
-                        .frame(width: rect.width, height: rect.height)
-                        .position(x: rect.midX, y: rect.midY)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     
                     HIDIOUIKitKeyboardInputHost(

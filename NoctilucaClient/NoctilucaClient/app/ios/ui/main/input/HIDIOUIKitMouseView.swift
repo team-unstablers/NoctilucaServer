@@ -18,6 +18,9 @@ struct HIDIOUIKitMouseView: View {
     @Binding var trackpadMoveMultiplier: Double
 
     var zoomMode: ProjectionZoomMode = .off
+    var contentRect: CGRect = .zero
+    var zoomScale: CGFloat = 1.0
+    var zoomOffset: CGSize = .zero
     var onPinchChanged: ((CGFloat) -> Void)?
     var onPinchEnded: (() -> Void)?
     var onDoubleTap: (() -> Void)?
@@ -30,6 +33,9 @@ struct HIDIOUIKitMouseView: View {
             mode: $mode,
             trackpadMoveMultiplier: $trackpadMoveMultiplier,
             zoomMode: zoomMode,
+            contentRect: contentRect,
+            zoomScale: zoomScale,
+            zoomOffset: zoomOffset,
             onPinchChanged: onPinchChanged,
             onPinchEnded: onPinchEnded,
             onDoubleTap: onDoubleTap,
@@ -46,6 +52,9 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
     @Binding var trackpadMoveMultiplier: Double
 
     var zoomMode: ProjectionZoomMode = .off
+    var contentRect: CGRect = .zero
+    var zoomScale: CGFloat = 1.0
+    var zoomOffset: CGSize = .zero
     var onPinchChanged: ((CGFloat) -> Void)?
     var onPinchEnded: (() -> Void)?
     var onDoubleTap: (() -> Void)?
@@ -56,6 +65,7 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
         let view = MouseInputCaptureView(pointer: pointer)
         view.updateInputMode(mode, trackpadMoveMultiplier: trackpadMoveMultiplier)
         view.updateZoomMode(zoomMode)
+        view.updateContentRect(contentRect, zoomScale: zoomScale, zoomOffset: zoomOffset)
         view.onPinchChanged = onPinchChanged
         view.onPinchEnded = onPinchEnded
         view.onDoubleTap = onDoubleTap
@@ -67,6 +77,7 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
     func updateUIView(_ uiView: MouseInputCaptureView, context: Context) {
         uiView.updateInputMode(mode, trackpadMoveMultiplier: trackpadMoveMultiplier)
         uiView.updateZoomMode(zoomMode)
+        uiView.updateContentRect(contentRect, zoomScale: zoomScale, zoomOffset: zoomOffset)
         uiView.onPinchChanged = onPinchChanged
         uiView.onPinchEnded = onPinchEnded
         uiView.onDoubleTap = onDoubleTap
@@ -99,7 +110,12 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private var isChordedDragging: Bool = false
     private var isScrolling: Bool = false
 
-    // Zoom state
+    // Content rect & zoom state for coordinate mapping
+    private var contentRect: CGRect = .zero
+    private var zoomScale: CGFloat = 1.0
+    private var zoomOffset: CGSize = .zero
+
+    // Zoom mode
     private(set) var zoomMode: ProjectionZoomMode = .off
     var onPinchChanged: ((CGFloat) -> Void)?
     var onPinchEnded: (() -> Void)?
@@ -133,7 +149,12 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        pointer.updateGeometry(bounds.size)
+        // geometry는 contentRect.size를 사용 (updateContentRect에서 설정)
+        // layoutSubviews는 bounds 변경 시 호출되지만, 좌표 정규화는 contentRect 기준이므로
+        // bounds.size가 아닌 contentRect.size가 올바른 geometry이다.
+        if contentRect.width > 0, contentRect.height > 0 {
+            pointer.updateGeometry(contentRect.size)
+        }
     }
 
     func updateInputMode(_ mode: AppSettings.TouchInputMode, trackpadMoveMultiplier: Double) {
@@ -149,6 +170,28 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     func updateZoomMode(_ mode: ProjectionZoomMode) {
         zoomMode = mode
+    }
+
+    func updateContentRect(_ rect: CGRect, zoomScale: CGFloat, zoomOffset: CGSize) {
+        contentRect = rect
+        self.zoomScale = zoomScale
+        self.zoomOffset = zoomOffset
+        pointer.updateGeometry(rect.size)
+    }
+
+    /// 화면 터치 좌표 → 콘텐츠 로컬 좌표 변환 (줌 역변환 + 클램핑)
+    ///
+    /// video view의 변환 체인:
+    ///   .offset(zoomOffset) → .frame(rect) → .position(rect.mid) → .scaleEffect(zoomScale)
+    /// 역변환:
+    ///   contentLocal = (screenPoint - rect.mid) / scale + rect.size/2 - zoomOffset
+    private func locationInContentRect(_ screenPoint: CGPoint) -> CGPoint {
+        let cx = (screenPoint.x - contentRect.midX) / zoomScale + contentRect.width / 2 - zoomOffset.width
+        let cy = (screenPoint.y - contentRect.midY) / zoomScale + contentRect.height / 2 - zoomOffset.height
+        return CGPoint(
+            x: min(max(cx, 0), contentRect.width),
+            y: min(max(cy, 0), contentRect.height)
+        )
     }
 
     private func setupRecognizers() {
@@ -243,7 +286,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
         // Hardware mouse: handle regardless of input mode or zoom mode
         if touch.type == .indirectPointer {
-            let location = touch.location(in: self)
+            let location = locationInContentRect(touch.location(in: self))
             pointer.moveAbsolute(to: location)
 
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
@@ -268,7 +311,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
-        let location = touch.location(in: self)
+        let location = locationInContentRect(touch.location(in: self))
         pointer.moveAbsolute(to: location)
         pointer.buttonDown(.left)
     }
@@ -280,7 +323,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
 
         if touch.type == .indirectPointer {
-            let location = touch.location(in: self)
+            let location = locationInContentRect(touch.location(in: self))
             pointer.moveAbsolute(to: location)
             return
         }
@@ -297,7 +340,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
-        let location = touch.location(in: self)
+        let location = locationInContentRect(touch.location(in: self))
         pointer.moveAbsolute(to: location)
     }
     
@@ -308,7 +351,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
 
         if touch.type == .indirectPointer {
-            let location = touch.location(in: self)
+            let location = locationInContentRect(touch.location(in: self))
             pointer.moveAbsolute(to: location)
 
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
@@ -331,7 +374,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
-        let location = touch.location(in: self)
+        let location = locationInContentRect(touch.location(in: self))
         pointer.moveAbsolute(to: location)
         pointer.buttonUp(.left)
     }
@@ -343,7 +386,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
 
         if touch.type == .indirectPointer {
-            let location = touch.location(in: self)
+            let location = locationInContentRect(touch.location(in: self))
             pointer.moveAbsolute(to: location)
 
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
@@ -364,7 +407,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
-        let location = touch.location(in: self)
+        let location = locationInContentRect(touch.location(in: self))
         pointer.moveAbsolute(to: location)
         pointer.buttonUp(.left)
     }
@@ -468,7 +511,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
         switch inputMode {
         case .touch:
-            let location = averageLocation(for: recognizer)
+            let location = locationInContentRect(averageLocation(for: recognizer))
             pointer.moveAbsolute(to: location)
             pointer.buttonDown(.right)
             pointer.buttonUp(.right)
@@ -559,10 +602,9 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
     
     @objc private func handleMouseMove(_ recognizer: UIHoverGestureRecognizer) {
-        let location = recognizer.location(in: self)
-
         switch recognizer.state {
         case .changed:
+            let location = locationInContentRect(recognizer.location(in: self))
             pointer.moveAbsolute(to: location)
         default:
             break

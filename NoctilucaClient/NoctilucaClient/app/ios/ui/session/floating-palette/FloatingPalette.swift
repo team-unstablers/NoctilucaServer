@@ -144,7 +144,13 @@ struct FloatingPalette: View {
             FloatingPaletteButton(isPressing: isDragging, isHovering: isHovering)
                 .overlay(alignment: .leading) {
                     if shouldPresentMenu && isOnLeft {
-                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode, handler: handler)
+                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode) { action in
+                            handler?(action)
+                            
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                shouldPresentMenu = false
+                            }
+                        }
                             .fixedSize()
                             .offset(x: buttonSize + menuSpacing)
                             .transition(
@@ -155,7 +161,13 @@ struct FloatingPalette: View {
                 }
                 .overlay(alignment: .trailing) {
                     if shouldPresentMenu && !isOnLeft {
-                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode, handler: handler)
+                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode) { action in
+                            handler?(action)
+                            
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                shouldPresentMenu = false
+                            }
+                        }
                             .fixedSize()
                             .offset(x: -(buttonSize + menuSpacing))
                             .transition(
