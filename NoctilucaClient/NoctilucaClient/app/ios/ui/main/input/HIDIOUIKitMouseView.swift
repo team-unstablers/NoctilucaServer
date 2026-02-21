@@ -96,6 +96,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private let panRecognizer = UIPanGestureRecognizer()
     private let twoFingerPanRecognizer = UIPanGestureRecognizer()
     private let chordedDragRecognizer = ChordedDragGestureRecognizer()
+    private let threeFingerPanRecognizer = UIPanGestureRecognizer()
 
     private let mouseMoveRecognizer        = UIHoverGestureRecognizer()
     private let mouseLeftClickRecognizer   = UITapGestureRecognizer()
@@ -208,6 +209,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         twoFingerPanRecognizer.minimumNumberOfTouches = 2
         twoFingerPanRecognizer.maximumNumberOfTouches = 2
         twoFingerPanRecognizer.addTarget(self, action: #selector(handleTwoFingerPan(_:)))
+        
+        threeFingerPanRecognizer.minimumNumberOfTouches = 3
+        threeFingerPanRecognizer.maximumNumberOfTouches = 3
+        threeFingerPanRecognizer.addTarget(self, action: #selector(handleThreeFingerPan(_:)))
 
         chordedDragRecognizer.maximumFirstTouchMovement = 8
         chordedDragRecognizer.minimumFirstTouchHoldDuration = 0.08
@@ -228,6 +233,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         addGestureRecognizer(twoFingerPanRecognizer)
         addGestureRecognizer(panRecognizer)
         addGestureRecognizer(chordedDragRecognizer)
+        addGestureRecognizer(threeFingerPanRecognizer)
         
         mouseMoveRecognizer.addTarget(self, action: #selector(handleMouseMove(_:)))
 
@@ -297,11 +303,14 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
-        // Free zoom mode: block all direct touch mouse input
-        guard zoomMode != .free else {
+        /*
+        // Free zoom + trackpad: block direct touch mouse input
+        // Free zoom + touch: allow direct touch (커서 이동 + 클릭)
+        guard !(zoomMode == .free && inputMode != .touch) else {
             super.touchesBegan(touches, with: event)
             return
         }
+         */
 
         // Direct touch: only in touch mode
         guard inputMode == .touch,
@@ -328,14 +337,22 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        /*
         guard zoomMode != .free else {
             super.touchesMoved(touches, with: event)
             return
         }
+         */
 
         guard inputMode == .touch,
               event?.allTouches?.count == 1
         else {
+            
+            if event?.allTouches?.count != 1 {
+                // reset button state on multi-touch to prevent stuck buttons
+                pointer.buttonUp(.left)
+            }
+            
             super.touchesMoved(touches, with: event)
             return
         }
@@ -362,10 +379,12 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        /*
         guard zoomMode != .free else {
             super.touchesEnded(touches, with: event)
             return
         }
+         */
 
         guard inputMode == .touch,
               event?.allTouches?.count == 1
@@ -454,23 +473,21 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return zoomMode == .free
         }
 
-        // Free zoom mode: block mouse-related gesture recognizers
-        // 단, 터치 모드에서는 탭(클릭)과 2-finger 탭(우클릭)은 허용
+        // Free zoom mode
         if zoomMode == .free {
-            if gestureRecognizer == panRecognizer {
-                // panRecognizer는 free mode에서 drag panning 용도
-                return true
-            }
-            if inputMode == .touch {
-                // 터치 모드: 탭/2-finger 탭 허용 (클릭/우클릭)
-                if gestureRecognizer == tapRecognizer ||
-                   gestureRecognizer == twoFingerTapRecognizer {
+            // 터치 모드: 모든 터치 제스처 허용 (커서 이동, 클릭, 우클릭 등)
+            // → 이 경우 아래의 input mode 정책으로 넘어감
+            if inputMode != .touch {
+                // 트랙패드 모드: twoFingerPan만 허용 (줌 패닝), 나머지 블록
+                if gestureRecognizer == twoFingerPanRecognizer {
                     return true
                 }
-            }
-            if gestureRecognizer == tapRecognizer ||
-               gestureRecognizer == twoFingerTapRecognizer {
-                return false
+                if gestureRecognizer == tapRecognizer ||
+                   gestureRecognizer == twoFingerTapRecognizer ||
+                   gestureRecognizer == panRecognizer ||
+                   gestureRecognizer == chordedDragRecognizer {
+                    return false
+                }
             }
         }
 
@@ -531,20 +548,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
 
     @objc private func handlePan(_ recognizer: UIPanGestureRecognizer) {
-        // Free zoom: 1-finger drag = zoom panning
-        if zoomMode == .free {
-            let translation = recognizer.translation(in: self)
-            switch recognizer.state {
-            case .began, .changed:
-                onFreeDragChanged?(CGSize(width: translation.x, height: translation.y))
-            case .ended, .cancelled, .failed:
-                onFreeDragEnded?()
-            default:
-                break
-            }
-            return
-        }
-
         if isChordedDragging {
             return
         }
@@ -607,6 +610,21 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             }
         default:
             break
+        }
+    }
+    
+    @objc private func handleThreeFingerPan(_ recognizer: UIPanGestureRecognizer) {
+        if zoomMode == .free {
+            let translation = recognizer.translation(in: self)
+            switch recognizer.state {
+            case .began, .changed:
+                onFreeDragChanged?(CGSize(width: translation.x, height: translation.y))
+            case .ended, .cancelled, .failed:
+                onFreeDragEnded?()
+            default:
+                break
+            }
+            return
         }
     }
     
