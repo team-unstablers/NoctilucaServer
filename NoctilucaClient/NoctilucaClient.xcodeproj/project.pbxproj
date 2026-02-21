@@ -87,7 +87,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				resources/Info.plist,
-				"resources/Users/cheesekun/works/noctiluca/NoctilucaServer/NoctilucaClient/NoctilucaClient/resources/Info-ExplicitEdition.plist",
 			);
 			target = F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */;
 		};
@@ -95,7 +94,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				resources/Info.plist,
-				"resources/Users/cheesekun/works/noctiluca/NoctilucaServer/NoctilucaClient/NoctilucaClient/resources/Info-ExplicitEdition.plist",
 			);
 			target = F6682ABD2F43F8930042F213 /* Noctiluca Navigator (Explicit Edition) */;
 		};
