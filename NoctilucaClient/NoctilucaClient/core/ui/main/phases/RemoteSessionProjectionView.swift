@@ -252,8 +252,9 @@ struct RemoteSessionProjectionView: View {
 #if os(iOS)
                 .onChange(of: keyboardObserver.isKeyboardVisible) { _, isVisible in
                     if isVisible {
-                        let visibleRatio = 1.0 - (keyboardObserver.keyboardHeight / geometry.size.height)
-                        zoomController.enterKeyboardZoom(visibleRatio: visibleRatio)
+                        // let visibleRatio = 1.0 - (keyboardObserver.keyboardHeight / geometry.size.height)
+                        zoomController.enterKeyboardZoom(visibleRatio: 1.25)
+                        snapViewportToCursor()
                     } else {
                         zoomController.handleKeyboardDismissed()
                     }
@@ -353,7 +354,21 @@ struct RemoteSessionProjectionView: View {
             shouldPresentKeyboard.toggle()
         case .toggleZoomMode:
             zoomController.cycleMode()
+            // 커서추적 모드 진입 직후, 현재 커서 위치로 즉시 뷰포트 이동
+            if zoomController.mode == .cursorTracking {
+                snapViewportToCursor()
+            }
         }
+    }
+
+    private func snapViewportToCursor() {
+        guard sourceSize.width > 0, sourceSize.height > 0 else { return }
+        let pos = projection.cursorState.position
+        let normalized = CGPoint(
+            x: pos.x / sourceSize.width,
+            y: pos.y / sourceSize.height
+        )
+        zoomController.centerViewportOnCursor(normalizedCursorPosition: normalized)
     }
 #endif
     

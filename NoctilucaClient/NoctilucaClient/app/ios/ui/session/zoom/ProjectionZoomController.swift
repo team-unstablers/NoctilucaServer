@@ -82,15 +82,17 @@ final class ProjectionZoomController: ObservableObject {
     func enterKeyboardZoom(visibleRatio: CGFloat) {
         guard mode == .off else { return }
 
+        /*
         let clampedRatio = max(0.1, min(1.0, visibleRatio))
         let autoScale = min(1.0 / clampedRatio, Self.maxScale)
+         */
 
         mode = .cursorTracking
         trigger = .keyboard
         didManuallyAdvanceFromKeyboardZoom = false
 
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            scale = max(autoScale, Self.minScale)
+            scale = visibleRatio // max(autoScale, Self.minScale)
             offset = .zero
         }
     }
@@ -155,6 +157,30 @@ final class ProjectionZoomController: ObservableObject {
     }
 
     // MARK: - Cursor Tracking
+
+    /// 뷰포트를 커서 위치 중심으로 즉시 이동한다. 모드 진입 직후 호출용.
+    func centerViewportOnCursor(normalizedCursorPosition: CGPoint) {
+        guard mode == .cursorTracking, scale > 1.0 else { return }
+
+        // 커서가 뷰포트 중앙에 오도록 offset 계산
+        let cursorInContent = CGPoint(
+            x: contentRect.origin.x + normalizedCursorPosition.x * contentRect.width,
+            y: contentRect.origin.y + normalizedCursorPosition.y * contentRect.height
+        )
+        let containerCenter = CGPoint(
+            x: containerSize.width / 2,
+            y: containerSize.height / 2
+        )
+        let rawOffset = CGSize(
+            width: containerCenter.x - cursorInContent.x,
+            height: containerCenter.y - cursorInContent.y
+        )
+        let clamped = clampedOffset(rawOffset, contentRect: contentRect, containerSize: containerSize)
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            offset = clamped
+            lastOffset = clamped
+        }
+    }
 
     /// 커서 위치가 변경될 때 뷰포트를 조정한다.
     /// - Parameters:
