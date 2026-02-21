@@ -8,9 +8,14 @@ struct AboutSettingsTab: View {
             Section {
                 SettingsEntry(title: String(localized: "settings.about.server_version.title", defaultValue: "Noctiluca Server 버전")) {
                     VStack(alignment: .trailing) {
-                        Text("0.1.0-alpha1")
+                        Text(NoctilucaMeta.version)
+#if DEBUG
                         Text(markdown: String(localized: "settings.about.server_version.development", defaultValue: "개발 버전"))
                             .font(.subheadline)
+#else
+                        Text(markdown: String(localized: "settings.about.server_version.release", defaultValue: "릴리즈 버전"))
+                            .font(.subheadline)
+#endif
                     }
                 }
                 SettingsEntry(title: String(localized: "settings.about.siriuskit_version.title", defaultValue: "SiriusKit 버전")) {
@@ -46,13 +51,7 @@ struct AboutSettingsTab: View {
                 Text(markdown: String(localized: "settings.about.footer.oss_notice", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](http://google.com)"))
                 Text(markdown: String(localized: "settings.about.footer.sirius_protocol", defaultValue: "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."))
                 Text("")
-                Text(markdown: String(localized: "settings.about.footer.copyright", defaultValue: "© 2024 team unstablers Inc. All rights reserved."))
-            }
-
-            Section {
-                AuthPluginListContainer()
-            } header: {
-                Text(markdown: String(localized: "settings.about.auth_plugins.title", defaultValue: "로드된 인증 플러그인 목록"))
+                Text(markdown: String(localized: "settings.about.footer.copyright", defaultValue: "© 2026 team unstablers Inc. All rights reserved."))
             }
         }
         .formStyle(.grouped)
