@@ -42,6 +42,7 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
+        rootViewController?.mainWindowViewModel?.isSceneActive = false
         if DeviceKind.current == .iPhone {
             if NOCAudioEngine.shared.activeNodes != 0 {
                 AppNotification.backgroundSessionActive.post()
@@ -50,6 +51,7 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneWillEnterForeground(_ scene: UIScene) {
+        rootViewController?.mainWindowViewModel?.isSceneActive = true
         if DeviceKind.current == .iPhone {
             AppNotification.backgroundSessionActive.dismiss()
         }

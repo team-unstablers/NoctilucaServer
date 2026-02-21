@@ -26,10 +26,10 @@ struct MainWindowRemoteSessionView: View {
 
     @State
     var subscription: ProjectionSessionSubscription?
-    
+
     @State
     var sourceDescriptor: ProjectionSourceDescriptor = .displayID(-1)
-    
+
     var body: some View {
         VStack {
             if case .displayID(let displayID) = sourceDescriptor, displayID != -1 {
@@ -53,16 +53,17 @@ struct MainWindowRemoteSessionView: View {
             }
         }
         #if os(iOS)
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-            subscription = nil
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            if subscription == nil,
-               case .displayID(let displayID) = sourceDescriptor,
-               displayID != -1 {
-                Task.detached {
-                    try? await self.updateProjectionTarget(displayID)
+        .onChange(of: viewModel.isSceneActive) { _, isActive in
+            if isActive {
+                if subscription == nil,
+                   case .displayID(let displayID) = sourceDescriptor,
+                   displayID != -1 {
+                    Task.detached {
+                        try? await self.updateProjectionTarget(displayID)
+                    }
                 }
+            } else {
+                subscription = nil
             }
         }
         #endif
