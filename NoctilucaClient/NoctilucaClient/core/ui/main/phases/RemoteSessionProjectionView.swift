@@ -170,7 +170,6 @@ struct RemoteSessionProjectionView: View {
                             zoomOffset: zoomController.offset,
                             onPinchChanged: { zoomController.handlePinchChanged(magnification: $0) },
                             onPinchEnded: { zoomController.handlePinchEnded() },
-                            onDoubleTap: { zoomController.resetZoomLevel() },
                             onFreeDragChanged: { zoomController.handleFreeDragChanged(translation: $0) },
                             onFreeDragEnded: { zoomController.handleFreeDragEnded() }
                         )
@@ -231,6 +230,7 @@ struct RemoteSessionProjectionView: View {
                     syncMouseScope()
 #if os(iOS)
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
+                    zoomController.mode = .defaultFor(settingsStore.settings.input.touchInputMode)
                     zoomController.updateGeometry(contentRect: rect, containerSize: geometry.size)
 #endif
                 }
@@ -251,15 +251,6 @@ struct RemoteSessionProjectionView: View {
                     syncMouseScope()
                 }
 #if os(iOS)
-                .onChange(of: keyboardObserver.isKeyboardVisible) { _, isVisible in
-                    if isVisible {
-                        // let visibleRatio = 1.0 - (keyboardObserver.keyboardHeight / geometry.size.height)
-                        zoomController.enterKeyboardZoom(visibleRatio: 1.25)
-                        snapViewportToCursor()
-                    } else {
-                        zoomController.handleKeyboardDismissed()
-                    }
-                }
                 .onReceive(projection.cursorState.$position) { newPosition in
                     guard sourceSize.width > 0, sourceSize.height > 0 else { return }
                     let normalized = CGPoint(
@@ -306,8 +297,7 @@ struct RemoteSessionProjectionView: View {
                 
 #if os(iOS)
                 FloatingPalette(
-                    actions: [.softwareKeyboard, .toggleZoomMode],
-                    zoomMode: zoomController.mode
+                    actions: [.softwareKeyboard, .toggleZoomMode(zoomController.mode == .cursorTracking ? .free : .cursorTracking)],
                 ) { action in
                     self.handlePaletteAction(action)
                 }

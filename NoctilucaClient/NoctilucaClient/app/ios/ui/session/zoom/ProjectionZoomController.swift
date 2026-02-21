@@ -13,7 +13,7 @@ import Combine
 final class ProjectionZoomController: ObservableObject {
     // MARK: - Published State
 
-    @Published private(set) var mode: ProjectionZoomMode = .off
+    @Published var mode: ProjectionZoomMode = .free
     @Published var scale: CGFloat = 1.0
     @Published var offset: CGSize = .zero
 
@@ -21,10 +21,6 @@ final class ProjectionZoomController: ObservableObject {
 
     private(set) var lastScale: CGFloat = 1.0
     private(set) var lastOffset: CGSize = .zero
-    private(set) var trigger: CursorTrackingZoomTrigger?
-
-    /// 키보드 자동진입 후 사용자가 수동으로 Free 모드로 전환했는지 추적
-    private var didManuallyAdvanceFromKeyboardZoom: Bool = false
 
     /// 뷰에서 업데이트하는 geometry 정보 (클램핑 계산에 사용)
     private(set) var contentRect: CGRect = .zero
@@ -49,67 +45,11 @@ final class ProjectionZoomController: ObservableObject {
 
     /// 팔레트 버튼으로 모드 순환: OFF → 커서추적 → 프리 → OFF
     func cycleMode() {
-        let nextMode = mode.next
-
-        switch (mode, nextMode) {
-        case (_, .off):
-            // → OFF: 완전 리셋
-            resetToOff()
-
-        case (.off, .cursorTracking):
-            // OFF → 커서추적 (수동)
-            mode = .cursorTracking
-            trigger = .manual
-            didManuallyAdvanceFromKeyboardZoom = false
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                scale = Self.manualCursorTrackingScale
-                offset = .zero
-            }
-
-        case (.cursorTracking, .free):
-            // 커서추적 → 프리
-            if trigger == .keyboard {
-                didManuallyAdvanceFromKeyboardZoom = true
-            }
-            mode = .free
-
-        default:
-            mode = nextMode
+        if mode == .cursorTracking {
+            self.mode = .free
+        } else {
+            self.mode = .cursorTracking
         }
-    }
-
-    /// 키보드 등장 시 자동 진입
-    func enterKeyboardZoom(visibleRatio: CGFloat) {
-        guard mode == .off else { return }
-
-        /*
-        let clampedRatio = max(0.1, min(1.0, visibleRatio))
-        let autoScale = min(1.0 / clampedRatio, Self.maxScale)
-         */
-
-        mode = .cursorTracking
-        trigger = .keyboard
-        didManuallyAdvanceFromKeyboardZoom = false
-
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            scale = visibleRatio // max(autoScale, Self.minScale)
-            offset = .zero
-        }
-    }
-
-    /// 키보드 dismiss 시 처리
-    func handleKeyboardDismissed() {
-        guard trigger == .keyboard else { return }
-
-        if didManuallyAdvanceFromKeyboardZoom {
-            // 사용자가 수동으로 프리 줌으로 전환했으면 유지
-            trigger = nil
-            didManuallyAdvanceFromKeyboardZoom = false
-            return
-        }
-
-        // 키보드로 자동진입했으면 자동 해제
-        resetToOff()
     }
 
     /// 더블 탭으로 리셋 (모드는 유지, scale/offset만 초기화)
@@ -286,9 +226,12 @@ final class ProjectionZoomController: ObservableObject {
     }
 
     private func resetToOff() {
+        /*
         mode = .off
         trigger = nil
         didManuallyAdvanceFromKeyboardZoom = false
+         */
+        
         lastScale = 1.0
         lastOffset = .zero
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {

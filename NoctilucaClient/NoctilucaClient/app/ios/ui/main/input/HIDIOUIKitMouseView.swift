@@ -17,13 +17,12 @@ struct HIDIOUIKitMouseView: View {
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
 
-    var zoomMode: ProjectionZoomMode = .off
+    var zoomMode: ProjectionZoomMode = .free
     var contentRect: CGRect = .zero
     var zoomScale: CGFloat = 1.0
     var zoomOffset: CGSize = .zero
     var onPinchChanged: ((CGFloat) -> Void)?
     var onPinchEnded: (() -> Void)?
-    var onDoubleTap: (() -> Void)?
     var onFreeDragChanged: ((CGSize) -> Void)?
     var onFreeDragEnded: (() -> Void)?
 
@@ -38,7 +37,6 @@ struct HIDIOUIKitMouseView: View {
             zoomOffset: zoomOffset,
             onPinchChanged: onPinchChanged,
             onPinchEnded: onPinchEnded,
-            onDoubleTap: onDoubleTap,
             onFreeDragChanged: onFreeDragChanged,
             onFreeDragEnded: onFreeDragEnded
         )
@@ -51,13 +49,12 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
 
-    var zoomMode: ProjectionZoomMode = .off
+    var zoomMode: ProjectionZoomMode = .free
     var contentRect: CGRect = .zero
     var zoomScale: CGFloat = 1.0
     var zoomOffset: CGSize = .zero
     var onPinchChanged: ((CGFloat) -> Void)?
     var onPinchEnded: (() -> Void)?
-    var onDoubleTap: (() -> Void)?
     var onFreeDragChanged: ((CGSize) -> Void)?
     var onFreeDragEnded: (() -> Void)?
 
@@ -68,7 +65,6 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
         view.updateContentRect(contentRect, zoomScale: zoomScale, zoomOffset: zoomOffset)
         view.onPinchChanged = onPinchChanged
         view.onPinchEnded = onPinchEnded
-        view.onDoubleTap = onDoubleTap
         view.onFreeDragChanged = onFreeDragChanged
         view.onFreeDragEnded = onFreeDragEnded
         return view
@@ -80,7 +76,6 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
         uiView.updateContentRect(contentRect, zoomScale: zoomScale, zoomOffset: zoomOffset)
         uiView.onPinchChanged = onPinchChanged
         uiView.onPinchEnded = onPinchEnded
-        uiView.onDoubleTap = onDoubleTap
         uiView.onFreeDragChanged = onFreeDragChanged
         uiView.onFreeDragEnded = onFreeDragEnded
     }
@@ -116,10 +111,9 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private var zoomOffset: CGSize = .zero
 
     // Zoom mode
-    private(set) var zoomMode: ProjectionZoomMode = .off
+    private(set) var zoomMode: ProjectionZoomMode = .free
     var onPinchChanged: ((CGFloat) -> Void)?
     var onPinchEnded: (() -> Void)?
-    var onDoubleTap: (() -> Void)?
     var onFreeDragChanged: ((CGSize) -> Void)?
     var onFreeDragEnded: (() -> Void)?
 
@@ -458,10 +452,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         // Zoom gesture recognizers
-        if gestureRecognizer == pinchRecognizer {
-            return zoomMode != .off
-        }
-
         /*
         // Free zoom mode
         if zoomMode == .free {

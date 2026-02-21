@@ -9,15 +9,15 @@
 import Foundation
 import SwiftUI
 
-enum FloatingPaletteAction {
+enum FloatingPaletteAction: Equatable, Hashable {
     /// 줌 모드 / 터치 입력 모드를 전환한다
-    case toggleZoomMode
+    case toggleZoomMode(ProjectionZoomMode)
     
     /// 소프트웨어 키보드를 표시한다.
     case softwareKeyboard
     
     @ViewBuilder
-    func label(zoomMode: ProjectionZoomMode = .off) -> some View {
+    var label: some View {
         switch self {
         case .softwareKeyboard:
             VStack {
@@ -26,20 +26,18 @@ enum FloatingPaletteAction {
             }
                 .frame(width: 18, height: 18)
             Text("소프트웨어 키보드 토글")
-        case .toggleZoomMode:
+        case .toggleZoomMode(let zoomMode):
             VStack {
-                Image(systemName: Self.zoomModeIcon(for: zoomMode.next))
+                Image(systemName: Self.zoomModeIcon(for: zoomMode))
                     .font(.system(size: 18, weight: .medium))
             }
                 .frame(width: 18, height: 18)
-            Text(Self.zoomModeLabel(for: zoomMode.next))
+            Text(Self.zoomModeLabel(for: zoomMode))
         }
     }
 
     private static func zoomModeIcon(for mode: ProjectionZoomMode) -> String {
         switch mode {
-        case .off:
-            return "arrow.up.left.and.down.right.magnifyingglass"
         case .cursorTracking:
             return "scope"
         case .free:
@@ -49,8 +47,6 @@ enum FloatingPaletteAction {
 
     private static func zoomModeLabel(for mode: ProjectionZoomMode) -> String {
         switch mode {
-        case .off:
-            return "줌 해제"
         case .cursorTracking:
             return "커서 추적 줌"
         case .free:
@@ -61,7 +57,6 @@ enum FloatingPaletteAction {
 
 struct FloatingPaletteMenu: View {
     var actions: [FloatingPaletteAction]
-    var zoomMode: ProjectionZoomMode = .off
     var handler: ((FloatingPaletteAction) -> Void)?
 
     var body: some View {
@@ -71,7 +66,7 @@ struct FloatingPaletteMenu: View {
                     handler?(action)
                 } label: {
                     HStack {
-                        action.label(zoomMode: zoomMode)
+                        action.label
                     }
                 }
                 .buttonStyle(.plain)
@@ -112,7 +107,6 @@ struct FloatingPaletteButton: View {
 
 struct FloatingPalette: View {
     var actions: [FloatingPaletteAction]
-    var zoomMode: ProjectionZoomMode = .off
     var handler: ((FloatingPaletteAction) -> Void)?
 
     private let buttonSize: CGFloat = 72
@@ -144,7 +138,7 @@ struct FloatingPalette: View {
             FloatingPaletteButton(isPressing: isDragging, isHovering: isHovering)
                 .overlay(alignment: .leading) {
                     if shouldPresentMenu && isOnLeft {
-                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode) { action in
+                        FloatingPaletteMenu(actions: actions) { action in
                             handler?(action)
                             
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -161,7 +155,7 @@ struct FloatingPalette: View {
                 }
                 .overlay(alignment: .trailing) {
                     if shouldPresentMenu && !isOnLeft {
-                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode) { action in
+                        FloatingPaletteMenu(actions: actions) { action in
                             handler?(action)
                             
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -251,7 +245,7 @@ struct FloatingPalette: View {
 
 #Preview {
     VStack {
-        FloatingPalette(actions: [.softwareKeyboard, .toggleZoomMode]) { action in
+        FloatingPalette(actions: [.softwareKeyboard, .toggleZoomMode(.cursorTracking)]) { action in
             print("Selected action: \(action)")
         }
     }
