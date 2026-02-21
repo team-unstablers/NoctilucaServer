@@ -79,16 +79,14 @@ final class MainContentHostingController: UIHostingController<AnyView> {
 
         let hostingVC = UIHostingController(rootView: AnyView(addressBarView))
         hostingVC.view.backgroundColor = .clear
-        hostingVC.view.isHidden = true
         hostingVC.view.translatesAutoresizingMaskIntoConstraints = true
         addressBarHostingController = hostingVC
 
         let proxy = ToolbarGeometryProxyView()
         proxy.geometryUpdateHandler = { [weak hostingVC] globalFrame in
             guard let floatingView = hostingVC?.view else { return }
-            floatingView.frame = globalFrame
-            if floatingView.isHidden {
-                floatingView.isHidden = false
+            UIView.animate(withDuration: 0.3) {
+                floatingView.frame = globalFrame
             }
         }
 
@@ -108,12 +106,18 @@ final class MainContentHostingController: UIHostingController<AnyView> {
         super.viewDidAppear(animated)
         attachAddressBarToWindow()
         startObservingNavigationBar()
-        addressBarHostingController?.view.isHidden = false
+        
+        UIView.animate(withDuration: 0.3) {
+            self.addressBarHostingController?.view.isHidden = false
+            self.addressBarHostingController?.view.layer.opacity = 1.0
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        addressBarHostingController?.view.isHidden = true
+        
+        self.addressBarHostingController?.view.layer.opacity = 0.0
+        self.addressBarHostingController?.view.isHidden = true
     }
 
     private func attachAddressBarToWindow() {
