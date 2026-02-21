@@ -61,7 +61,7 @@ struct NoctilucaClientApp: App {
             return
         }
         
-        rootViewController.mainUIViewModel?.navState = [.settings]
+        rootViewController.pushSettings()
     }
 }
 #endif

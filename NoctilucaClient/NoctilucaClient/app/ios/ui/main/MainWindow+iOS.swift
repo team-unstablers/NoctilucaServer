@@ -13,11 +13,6 @@ import Combine
 
 import SiriusKitClient
 
-enum MainWindowToolbarStyle {
-    case standard
-    case compact
-}
-
 struct UIKitMainWindow: View {
     @EnvironmentObject
     var viewModel: SessionWindowViewModel
@@ -35,7 +30,6 @@ struct UIKitMainWindow: View {
                     MainWindowContentView()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .setupMainToolbar(for: .current)
             }
 
             if viewModel.isFullscreen && viewModel.isFullscreenOverlayVisible {
@@ -44,8 +38,6 @@ struct UIKitMainWindow: View {
         }
         .ignoresSafeArea(.all, edges: viewModel.isFullscreen ? .all : [])
         .statusBarHidden(viewModel.isFullscreen)
-        .navigationBarTitleDisplayMode(.inline)
-        .windowToolbarFullScreenVisibility(.automatic)
         .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {
             let error = viewModel.errors.last
 
