@@ -228,10 +228,24 @@ struct RemoteSessionProjectionView: View {
                 .onAppear {
                     syncSourceMetadata()
                     syncMouseScope()
+#if os(iOS)
+                    let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
+                    zoomController.updateGeometry(contentRect: rect, containerSize: geometry.size)
+#endif
                 }
                 .onChange(of: source?.id) { _, _ in
                     syncSourceMetadata()
                 }
+#if os(iOS)
+                .onChange(of: geometry.size) { _, newSize in
+                    let rect = fittedProjectionRect(in: newSize, aspectRatio: projectionAspectRatio)
+                    zoomController.updateGeometry(contentRect: rect, containerSize: newSize)
+                }
+                .onChange(of: projectionAspectRatio) { _, newRatio in
+                    let rect = fittedProjectionRect(in: geometry.size, aspectRatio: newRatio)
+                    zoomController.updateGeometry(contentRect: rect, containerSize: geometry.size)
+                }
+#endif
                 .onChange(of: sourceDescriptor) { _, _ in
                     syncMouseScope()
                 }

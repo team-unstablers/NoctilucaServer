@@ -26,12 +26,24 @@ final class ProjectionZoomController: ObservableObject {
     /// 키보드 자동진입 후 사용자가 수동으로 Free 모드로 전환했는지 추적
     private var didManuallyAdvanceFromKeyboardZoom: Bool = false
 
+    /// 뷰에서 업데이트하는 geometry 정보 (클램핑 계산에 사용)
+    private(set) var contentRect: CGRect = .zero
+    private(set) var containerSize: CGSize = .zero
+
     // MARK: - Constants
 
     static let manualCursorTrackingScale: CGFloat = 1.5
     static let minScale: CGFloat = 1.0
     static let maxScale: CGFloat = 5.0
     static let deadzoneRatio: CGFloat = 0.30
+
+    // MARK: - Geometry
+
+    /// 뷰에서 geometry 변경 시 호출. 클램핑 계산에 사용됨.
+    func updateGeometry(contentRect: CGRect, containerSize: CGSize) {
+        self.contentRect = contentRect
+        self.containerSize = containerSize
+    }
 
     // MARK: - Mode Transitions
 
@@ -113,12 +125,17 @@ final class ProjectionZoomController: ObservableObject {
     func handlePinchChanged(magnification: CGFloat) {
         let newScale = lastScale * magnification
         scale = min(max(newScale, Self.minScale), Self.maxScale)
+        // scale 변경에 따라 offset 재클램핑 (빈 공간 방지)
+        autoClampOffset()
     }
 
     func handlePinchEnded() {
         lastScale = scale
         if scale <= Self.minScale {
             resetZoomLevel()
+        } else {
+            autoClampOffset()
+            lastOffset = offset
         }
     }
 
@@ -126,10 +143,11 @@ final class ProjectionZoomController: ObservableObject {
 
     func handleFreeDragChanged(translation: CGSize) {
         guard mode == .free else { return }
-        offset = CGSize(
+        let raw = CGSize(
             width: lastOffset.width + translation.width,
             height: lastOffset.height + translation.height
         )
+        offset = clampedOffset(raw, contentRect: contentRect, containerSize: containerSize)
     }
 
     func handleFreeDragEnded() {
@@ -157,6 +175,8 @@ final class ProjectionZoomController: ObservableObject {
         )
 
         // 2) 현재 보이는 영역 계산 (scaleEffect center anchor 기준)
+        // offset은 pre-scale 좌표이므로 화면상 이동량 = offset * scale
+        // 가시 영역의 중심은 화면 중심에서 offset만큼 반대로 이동
         let visibleWidth = containerSize.width / scale
         let visibleHeight = containerSize.height / scale
         let visibleCenterX = containerSize.width / 2 - offset.width
@@ -216,11 +236,13 @@ final class ProjectionZoomController: ObservableObject {
             return .zero
         }
 
-        // 확대된 콘텐츠가 뷰포트를 벗어나지 않도록 최대 이동 범위 계산
+        // .offset()은 .scaleEffect() 안쪽에 적용되므로,
+        // 화면상 실제 이동량 = offset * scale 이다.
+        // 따라서 최대 offset = 최대 화면 이동량 / scale.
         let scaledContentWidth = contentRect.width * scale
         let scaledContentHeight = contentRect.height * scale
-        let maxOffsetX = max(0, (scaledContentWidth - containerSize.width) / 2)
-        let maxOffsetY = max(0, (scaledContentHeight - containerSize.height) / 2)
+        let maxOffsetX = max(0, (scaledContentWidth - containerSize.width) / (2 * scale))
+        let maxOffsetY = max(0, (scaledContentHeight - containerSize.height) / (2 * scale))
 
         return CGSize(
             width: min(max(offset.width, -maxOffsetX), maxOffsetX),
@@ -229,6 +251,13 @@ final class ProjectionZoomController: ObservableObject {
     }
 
     // MARK: - Private Helpers
+
+    private func autoClampOffset() {
+        let clamped = clampedOffset(offset, contentRect: contentRect, containerSize: containerSize)
+        if clamped != offset {
+            offset = clamped
+        }
+    }
 
     private func resetToOff() {
         mode = .off
