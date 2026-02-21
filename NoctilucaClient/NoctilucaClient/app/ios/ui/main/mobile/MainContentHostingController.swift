@@ -94,7 +94,7 @@ final class MainContentHostingController: UIHostingController<AnyView> {
 
         // DEBUG
         proxy.backgroundColor = .clear
-        proxy.layer.opacity = 0.25
+        // proxy.layer.opacity = 0.25
 
         proxy.translatesAutoresizingMaskIntoConstraints = true
         proxy.heightAnchor.constraint(equalToConstant: 38).isActive = true

@@ -12,6 +12,15 @@ class ToolbarGeometryProxyView: UIView {
 
     private weak var observedObject: NSObject?
     private var observedKeyPath: String?
+    
+    override var bounds: CGRect {
+        didSet {
+            guard let window = self.window else { return }
+            DispatchQueue.main.async {
+                self.geometryUpdateHandler?(self.convert(self.bounds, to: window))
+            }
+        }
+    }
 
     func observe(_ object: NSObject, keyPath: String) {
         removeCurrentObserver()
