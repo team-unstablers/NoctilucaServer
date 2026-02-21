@@ -148,6 +148,12 @@ final class MainContentHostingController: UIHostingController<AnyView> {
         fullscreenCancellable = viewModel.$isFullscreen
             .receive(on: RunLoop.main)
             .sink { [weak self] isFullscreen in
+                guard let parent = self?.parent as? RootViewController else {
+                    return
+                }
+                
+                // parent.navigationController?.isNavigationBarHidden = true
+                parent.navigationBar.isHidden = isFullscreen
                 self?.addressBarHostingController?.view.isHidden = isFullscreen
             }
     }
