@@ -13,33 +13,65 @@ import SiriusKitClient
 
 struct HIDIOUIKitMouseView: View {
     let mouse: HIDIOUIKitMouse
-    
+
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
+
+    var zoomMode: ProjectionZoomMode = .off
+    var onPinchChanged: ((CGFloat) -> Void)?
+    var onPinchEnded: (() -> Void)?
+    var onDoubleTap: (() -> Void)?
+    var onFreeDragChanged: ((CGSize) -> Void)?
+    var onFreeDragEnded: (() -> Void)?
 
     var body: some View {
         HIDIOUIKitMouseCaptureView(
             pointer: mouse,
             mode: $mode,
-            trackpadMoveMultiplier: $trackpadMoveMultiplier
+            trackpadMoveMultiplier: $trackpadMoveMultiplier,
+            zoomMode: zoomMode,
+            onPinchChanged: onPinchChanged,
+            onPinchEnded: onPinchEnded,
+            onDoubleTap: onDoubleTap,
+            onFreeDragChanged: onFreeDragChanged,
+            onFreeDragEnded: onFreeDragEnded
         )
     }
 }
 
 private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
     let pointer: HIDIOUIKitMouse
-    
+
     @Binding var mode: AppSettings.TouchInputMode
     @Binding var trackpadMoveMultiplier: Double
+
+    var zoomMode: ProjectionZoomMode = .off
+    var onPinchChanged: ((CGFloat) -> Void)?
+    var onPinchEnded: (() -> Void)?
+    var onDoubleTap: (() -> Void)?
+    var onFreeDragChanged: ((CGSize) -> Void)?
+    var onFreeDragEnded: (() -> Void)?
 
     func makeUIView(context: Context) -> MouseInputCaptureView {
         let view = MouseInputCaptureView(pointer: pointer)
         view.updateInputMode(mode, trackpadMoveMultiplier: trackpadMoveMultiplier)
+        view.updateZoomMode(zoomMode)
+        view.onPinchChanged = onPinchChanged
+        view.onPinchEnded = onPinchEnded
+        view.onDoubleTap = onDoubleTap
+        view.onFreeDragChanged = onFreeDragChanged
+        view.onFreeDragEnded = onFreeDragEnded
         return view
     }
 
     func updateUIView(_ uiView: MouseInputCaptureView, context: Context) {
         uiView.updateInputMode(mode, trackpadMoveMultiplier: trackpadMoveMultiplier)
+        uiView.updateZoomMode(zoomMode)
+        uiView.onPinchChanged = onPinchChanged
+        uiView.onPinchEnded = onPinchEnded
+        uiView.onDoubleTap = onDoubleTap
+        uiView.onFreeDragChanged = onFreeDragChanged
+        uiView.onFreeDragEnded = onFreeDragEnded
     }
 }
 
@@ -53,20 +85,32 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private let panRecognizer = UIPanGestureRecognizer()
     private let twoFingerPanRecognizer = UIPanGestureRecognizer()
     private let chordedDragRecognizer = ChordedDragGestureRecognizer()
-    
+
     private let mouseMoveRecognizer        = UIHoverGestureRecognizer()
     private let mouseLeftClickRecognizer   = UITapGestureRecognizer()
     private let mouseRightClickRecognizer  = UITapGestureRecognizer()
     private let mouseCenterClickRecognizer = UITapGestureRecognizer()
     private let mouseScrollRecognizer      = UIPanGestureRecognizer()
 
+    // Zoom gesture recognizers
+    private let pinchRecognizer = UIPinchGestureRecognizer()
+    private let doubleTapForZoomRecognizer = UITapGestureRecognizer()
+
     private var isChordedDragging: Bool = false
     private var isScrolling: Bool = false
-    
+
+    // Zoom state
+    private(set) var zoomMode: ProjectionZoomMode = .off
+    var onPinchChanged: ((CGFloat) -> Void)?
+    var onPinchEnded: (() -> Void)?
+    var onDoubleTap: (() -> Void)?
+    var onFreeDragChanged: ((CGSize) -> Void)?
+    var onFreeDragEnded: (() -> Void)?
+
     // Unified Inertia Engine
     private var inertiaDisplayLink: CADisplayLink?
     private var inertiaLastTimestamp: CFTimeInterval?
-    
+
     private var moveInertiaVelocity: CGPoint = .zero
     private var scrollInertiaVelocity: CGPoint = .zero
 
@@ -101,6 +145,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         scrollInertiaVelocity = .zero
         checkInertiaState()
         // No explicit configureRecognizerState() needed as delegate handles it dynamically.
+    }
+
+    func updateZoomMode(_ mode: ProjectionZoomMode) {
+        zoomMode = mode
     }
 
     private func setupRecognizers() {
@@ -168,6 +216,17 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         addGestureRecognizer(mouseLeftClickRecognizer)
         addGestureRecognizer(mouseRightClickRecognizer)
         addGestureRecognizer(mouseScrollRecognizer)
+
+        // Zoom gesture recognizers
+        pinchRecognizer.delegate = self
+        pinchRecognizer.addTarget(self, action: #selector(handlePinch(_:)))
+        addGestureRecognizer(pinchRecognizer)
+
+        doubleTapForZoomRecognizer.numberOfTapsRequired = 2
+        doubleTapForZoomRecognizer.numberOfTouchesRequired = 1
+        doubleTapForZoomRecognizer.delegate = self
+        doubleTapForZoomRecognizer.addTarget(self, action: #selector(handleDoubleTapForZoom(_:)))
+        addGestureRecognizer(doubleTapForZoomRecognizer)
     }
 
     // MARK: - Touch Handling (Direct)
@@ -182,7 +241,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
-        // Hardware mouse: handle regardless of input mode
+        // Hardware mouse: handle regardless of input mode or zoom mode
         if touch.type == .indirectPointer {
             let location = touch.location(in: self)
             pointer.moveAbsolute(to: location)
@@ -192,6 +251,12 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             } else {
                 pointer.buttonDown(.left)
             }
+            return
+        }
+
+        // Free zoom mode: block all direct touch mouse input
+        guard zoomMode != .free else {
+            super.touchesBegan(touches, with: event)
             return
         }
 
@@ -217,6 +282,11 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         if touch.type == .indirectPointer {
             let location = touch.location(in: self)
             pointer.moveAbsolute(to: location)
+            return
+        }
+
+        guard zoomMode != .free else {
+            super.touchesMoved(touches, with: event)
             return
         }
 
@@ -249,6 +319,11 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        guard zoomMode != .free else {
+            super.touchesEnded(touches, with: event)
+            return
+        }
+
         guard inputMode == .touch,
               event?.allTouches?.count == 1
         else {
@@ -260,7 +335,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         pointer.moveAbsolute(to: location)
         pointer.buttonUp(.left)
     }
-    
+
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else {
             super.touchesCancelled(touches, with: event)
@@ -279,6 +354,11 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        guard zoomMode != .free else {
+            super.touchesCancelled(touches, with: event)
+            return
+        }
+
         guard inputMode == .touch else {
             super.touchesCancelled(touches, with: event)
             return
@@ -294,12 +374,14 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if touch.type == .indirectPointer {
             // Hardware mouse touches are handled directly in touches* methods,
-            // so block touch-mode gesture recognizers from receiving them.
+            // so block touch-mode and zoom gesture recognizers from receiving them.
             if gestureRecognizer == tapRecognizer ||
                gestureRecognizer == twoFingerTapRecognizer ||
                gestureRecognizer == panRecognizer ||
                gestureRecognizer == twoFingerPanRecognizer ||
-               gestureRecognizer == chordedDragRecognizer {
+               gestureRecognizer == chordedDragRecognizer ||
+               gestureRecognizer == pinchRecognizer ||
+               gestureRecognizer == doubleTapForZoomRecognizer {
                 return false
             }
         } else {
@@ -313,12 +395,47 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         return true
     }
 
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        // Allow pinch and 2-finger pan (scroll) to coexist.
+        // UIKit distinguishes them: pinch = fingers spreading/contracting, pan = same direction.
+        if (gestureRecognizer == pinchRecognizer && otherGestureRecognizer == twoFingerPanRecognizer)
+            || (gestureRecognizer == twoFingerPanRecognizer && otherGestureRecognizer == pinchRecognizer) {
+            return true
+        }
+        return false
+    }
+
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Zoom gesture recognizers
+        if gestureRecognizer == pinchRecognizer {
+            return zoomMode != .off
+        }
+        if gestureRecognizer == doubleTapForZoomRecognizer {
+            return zoomMode == .free
+        }
+
+        // Free zoom mode: block all mouse-related gesture recognizers
+        if zoomMode == .free {
+            if gestureRecognizer == tapRecognizer ||
+               gestureRecognizer == twoFingerTapRecognizer ||
+               gestureRecognizer == twoFingerPanRecognizer ||
+               gestureRecognizer == chordedDragRecognizer {
+                return false
+            }
+            // panRecognizer is allowed in free mode → used for drag panning
+            if gestureRecognizer == panRecognizer {
+                return true
+            }
+        }
+
         // Enforce input mode policies at the start of gestures
         switch inputMode {
         case .touch:
             // In Touch mode, single finger pan/tap is handled directly by touchesBegan/Moved/Ended
-            if gestureRecognizer == tapRecognizer || 
+            if gestureRecognizer == tapRecognizer ||
                gestureRecognizer == chordedDragRecognizer ||
                gestureRecognizer == panRecognizer { // Disable PanRecognizer for single touch
                 return false
@@ -362,6 +479,20 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
 
     @objc private func handlePan(_ recognizer: UIPanGestureRecognizer) {
+        // Free zoom: 1-finger drag = zoom panning
+        if zoomMode == .free {
+            let translation = recognizer.translation(in: self)
+            switch recognizer.state {
+            case .began, .changed:
+                onFreeDragChanged?(CGSize(width: translation.x, height: translation.y))
+            case .ended, .cancelled, .failed:
+                onFreeDragEnded?()
+            default:
+                break
+            }
+            return
+        }
+
         if isChordedDragging {
             return
         }
@@ -525,6 +656,27 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             break
         }
     }
+
+    // MARK: - Zoom Gesture Handlers
+
+    @objc private func handlePinch(_ recognizer: UIPinchGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed:
+            onPinchChanged?(recognizer.scale)
+        case .ended, .cancelled, .failed:
+            onPinchEnded?()
+            recognizer.scale = 1.0
+        default:
+            break
+        }
+    }
+
+    @objc private func handleDoubleTapForZoom(_ recognizer: UITapGestureRecognizer) {
+        guard recognizer.state == .ended else { return }
+        onDoubleTap?()
+    }
+
+    // MARK: - Helpers
 
     private func averageLocation(for recognizer: UIGestureRecognizer) -> CGPoint {
         let count = recognizer.numberOfTouches

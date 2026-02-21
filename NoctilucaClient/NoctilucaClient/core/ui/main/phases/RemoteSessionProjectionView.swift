@@ -56,27 +56,35 @@ struct RemoteSessionProjectionView: View {
     
     @State
     var sourceSize: CGSize = .zero
-   
-    @State
-    private var scale: CGFloat = 1.0
-    @State
-    private var lastScale: CGFloat = 1.0
-    @State
-    private var offset: CGSize = .zero
-    @State
-    private var lastOffset: CGSize = .zero
-    @State
-    private var cursorPosition: CGPoint = CGPoint(x: 0.5, y: 0.5)
+
     @State
     private var projectionAspectRatio: CGFloat = 16.0 / 9.0
     @State
     private var lastPerformanceReport: ProjectionPerformanceReport?
-    
+
 #if os(iOS)
     @State private var shouldPresentKeyboard: Bool = false
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
+    @StateObject private var zoomController = ProjectionZoomController()
+    @StateObject private var keyboardObserver = KeyboardHeightObserver()
     @EnvironmentObject private var windowViewModel: SessionWindowViewModel
 #endif
+
+    private var currentScale: CGFloat {
+#if os(iOS)
+        zoomController.scale
+#else
+        1.0
+#endif
+    }
+
+    private var currentOffset: CGSize {
+#if os(iOS)
+        zoomController.offset
+#else
+        .zero
+#endif
+    }
     
     private func syncSourceMetadata() {
         guard let source else { return }
@@ -121,10 +129,10 @@ struct RemoteSessionProjectionView: View {
                     if let displayLayer = subscription?.displayLayer {
                         SampleBufferDisplayView(displayLayer: displayLayer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .offset(offset)
+                            .offset(currentOffset)
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
-                            .scaleEffect(scale)
+                            .scaleEffect(currentScale)
                     }
                     
                     // Metal Cursor Overlay
@@ -133,11 +141,11 @@ struct RemoteSessionProjectionView: View {
                     // displayID 기반 visibility는 CursorRenderer 내부에서 처리 (SwiftUI 업데이트 지연 방지)
                     if case .displayID(let displayID) = sourceDescriptor {
                         MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize, targetDisplayID: displayID)
-                            .offset(offset)
+                            .offset(currentOffset)
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
                             .allowsHitTesting(false)
-                            .scaleEffect(scale)
+                            .scaleEffect(currentScale)
                     }
                     
 #if os(macOS)
@@ -145,7 +153,7 @@ struct RemoteSessionProjectionView: View {
                        let mouse = hidio.session.currentMouse as? HIDIOAppKitPointer
                     {
                         HIDIOAppKitMouseView(pointer: mouse)
-                            .offset(offset)
+                            .offset(currentOffset)
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
                     }
@@ -156,8 +164,14 @@ struct RemoteSessionProjectionView: View {
                             mouse: mouse,
                             mode: $settingsStore.settings.input.touchInputMode,
                             trackpadMoveMultiplier: $settingsStore.settings.input.trackpadMoveMultiplier,
+                            zoomMode: zoomController.mode,
+                            onPinchChanged: { zoomController.handlePinchChanged(magnification: $0) },
+                            onPinchEnded: { zoomController.handlePinchEnded() },
+                            onDoubleTap: { zoomController.resetZoomLevel() },
+                            onFreeDragChanged: { zoomController.handleFreeDragChanged(translation: $0) },
+                            onFreeDragEnded: { zoomController.handleFreeDragEnded() }
                         )
-                        .offset(offset)
+                        .offset(currentOffset)
                         .frame(width: rect.width, height: rect.height)
                         .position(x: rect.midX, y: rect.midY)
                     }
@@ -221,6 +235,29 @@ struct RemoteSessionProjectionView: View {
                 .onChange(of: sourceDescriptor) { _, _ in
                     syncMouseScope()
                 }
+#if os(iOS)
+                .onChange(of: keyboardObserver.isKeyboardVisible) { _, isVisible in
+                    if isVisible {
+                        let visibleRatio = 1.0 - (keyboardObserver.keyboardHeight / geometry.size.height)
+                        zoomController.enterKeyboardZoom(visibleRatio: visibleRatio)
+                    } else {
+                        zoomController.handleKeyboardDismissed()
+                    }
+                }
+                .onReceive(projection.cursorState.$position) { newPosition in
+                    guard sourceSize.width > 0, sourceSize.height > 0 else { return }
+                    let normalized = CGPoint(
+                        x: newPosition.x / sourceSize.width,
+                        y: newPosition.y / sourceSize.height
+                    )
+                    let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
+                    zoomController.updateViewportForCursor(
+                        normalizedCursorPosition: normalized,
+                        contentRect: rect,
+                        containerSize: geometry.size
+                    )
+                }
+#endif
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .if(subscription != nil) {
                     $0
@@ -252,7 +289,10 @@ struct RemoteSessionProjectionView: View {
 #endif
                 
 #if os(iOS)
-                FloatingPalette(actions: [.softwareKeyboard, .toggleZoomMode]) { action in
+                FloatingPalette(
+                    actions: [.softwareKeyboard, .toggleZoomMode],
+                    zoomMode: zoomController.mode
+                ) { action in
                     self.handlePaletteAction(action)
                 }
 #endif
@@ -298,7 +338,7 @@ struct RemoteSessionProjectionView: View {
         case .softwareKeyboard:
             shouldPresentKeyboard.toggle()
         case .toggleZoomMode:
-            break
+            zoomController.cycleMode()
         }
     }
 #endif

@@ -17,7 +17,7 @@ enum FloatingPaletteAction {
     case softwareKeyboard
     
     @ViewBuilder
-    var label: some View {
+    func label(zoomMode: ProjectionZoomMode = .off) -> some View {
         switch self {
         case .softwareKeyboard:
             VStack {
@@ -28,19 +28,42 @@ enum FloatingPaletteAction {
             Text("소프트웨어 키보드 토글")
         case .toggleZoomMode:
             VStack {
-                Image(systemName: "arrow.up.left.and.down.right.magnifyingglass")
+                Image(systemName: Self.zoomModeIcon(for: zoomMode.next))
                     .font(.system(size: 18, weight: .medium))
             }
                 .frame(width: 18, height: 18)
-            Text("줌 모드 / 터치 모드 전환")
+            Text(Self.zoomModeLabel(for: zoomMode.next))
+        }
+    }
+
+    private static func zoomModeIcon(for mode: ProjectionZoomMode) -> String {
+        switch mode {
+        case .off:
+            return "arrow.up.left.and.down.right.magnifyingglass"
+        case .cursorTracking:
+            return "scope"
+        case .free:
+            return "hand.pinch"
+        }
+    }
+
+    private static func zoomModeLabel(for mode: ProjectionZoomMode) -> String {
+        switch mode {
+        case .off:
+            return "줌 해제"
+        case .cursorTracking:
+            return "커서 추적 줌"
+        case .free:
+            return "프리 줌"
         }
     }
 }
 
 struct FloatingPaletteMenu: View {
     var actions: [FloatingPaletteAction]
+    var zoomMode: ProjectionZoomMode = .off
     var handler: ((FloatingPaletteAction) -> Void)?
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(actions, id: \.self) { action in
@@ -48,7 +71,7 @@ struct FloatingPaletteMenu: View {
                     handler?(action)
                 } label: {
                     HStack {
-                        action.label
+                        action.label(zoomMode: zoomMode)
                     }
                 }
                 .buttonStyle(.plain)
@@ -89,6 +112,7 @@ struct FloatingPaletteButton: View {
 
 struct FloatingPalette: View {
     var actions: [FloatingPaletteAction]
+    var zoomMode: ProjectionZoomMode = .off
     var handler: ((FloatingPaletteAction) -> Void)?
 
     private let buttonSize: CGFloat = 72
@@ -120,7 +144,7 @@ struct FloatingPalette: View {
             FloatingPaletteButton(isPressing: isDragging, isHovering: isHovering)
                 .overlay(alignment: .leading) {
                     if shouldPresentMenu && isOnLeft {
-                        FloatingPaletteMenu(actions: actions, handler: handler)
+                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode, handler: handler)
                             .fixedSize()
                             .offset(x: buttonSize + menuSpacing)
                             .transition(
@@ -131,7 +155,7 @@ struct FloatingPalette: View {
                 }
                 .overlay(alignment: .trailing) {
                     if shouldPresentMenu && !isOnLeft {
-                        FloatingPaletteMenu(actions: actions, handler: handler)
+                        FloatingPaletteMenu(actions: actions, zoomMode: zoomMode, handler: handler)
                             .fixedSize()
                             .offset(x: -(buttonSize + menuSpacing))
                             .transition(
