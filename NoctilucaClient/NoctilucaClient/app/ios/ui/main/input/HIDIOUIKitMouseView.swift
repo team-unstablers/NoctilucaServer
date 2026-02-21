@@ -106,7 +106,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     // Zoom gesture recognizers
     private let pinchRecognizer = UIPinchGestureRecognizer()
-    private let doubleTapForZoomRecognizer = UITapGestureRecognizer()
 
     private var isChordedDragging: Bool = false
     private var isScrolling: Bool = false
@@ -270,12 +269,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         pinchRecognizer.delegate = self
         pinchRecognizer.addTarget(self, action: #selector(handlePinch(_:)))
         addGestureRecognizer(pinchRecognizer)
-
-        doubleTapForZoomRecognizer.numberOfTapsRequired = 2
-        doubleTapForZoomRecognizer.numberOfTouchesRequired = 1
-        doubleTapForZoomRecognizer.delegate = self
-        doubleTapForZoomRecognizer.addTarget(self, action: #selector(handleDoubleTapForZoom(_:)))
-        addGestureRecognizer(doubleTapForZoomRecognizer)
     }
 
     // MARK: - Touch Handling (Direct)
@@ -442,8 +435,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
                gestureRecognizer == panRecognizer ||
                gestureRecognizer == twoFingerPanRecognizer ||
                gestureRecognizer == chordedDragRecognizer ||
-               gestureRecognizer == pinchRecognizer ||
-               gestureRecognizer == doubleTapForZoomRecognizer {
+               gestureRecognizer == pinchRecognizer {
                 return false
             }
         } else {
@@ -469,10 +461,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         if gestureRecognizer == pinchRecognizer {
             return zoomMode != .off
         }
-        if gestureRecognizer == doubleTapForZoomRecognizer {
-            return zoomMode == .free
-        }
 
+        /*
         // Free zoom mode
         if zoomMode == .free {
             // 터치 모드: 모든 터치 제스처 허용 (커서 이동, 클릭, 우클릭 등)
@@ -490,6 +480,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
                 }
             }
         }
+         */
 
         // Enforce input mode policies at the start of gestures
         switch inputMode {
@@ -738,11 +729,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         default:
             break
         }
-    }
-
-    @objc private func handleDoubleTapForZoom(_ recognizer: UITapGestureRecognizer) {
-        guard recognizer.state == .ended else { return }
-        onDoubleTap?()
     }
 
     // MARK: - Helpers
