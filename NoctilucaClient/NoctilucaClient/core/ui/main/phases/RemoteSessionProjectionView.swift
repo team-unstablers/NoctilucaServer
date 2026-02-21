@@ -182,6 +182,7 @@ struct RemoteSessionProjectionView: View {
                         .padding(16)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     } else {
+                        /*
                         Button {
                             shouldPresentKeyboard.toggle()
                         } label: {
@@ -192,6 +193,7 @@ struct RemoteSessionProjectionView: View {
                         .background(.ultraThinMaterial, in: Circle())
                         .padding(16)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                         */
                     }
 #endif
                     
@@ -248,6 +250,12 @@ struct RemoteSessionProjectionView: View {
                  }
                  */
 #endif
+                
+#if os(iOS)
+                FloatingPalette(actions: [.softwareKeyboard, .toggleZoomMode]) { action in
+                    self.handlePaletteAction(action)
+                }
+#endif
             } // zstack
         } // geometryreader
     }
@@ -283,5 +291,16 @@ struct RemoteSessionProjectionView: View {
         }
     }
     
+    
+#if os(iOS)
+    func handlePaletteAction(_ action: FloatingPaletteAction) {
+        switch action {
+        case .softwareKeyboard:
+            shouldPresentKeyboard.toggle()
+        case .toggleZoomMode:
+            break
+        }
+    }
+#endif
     
 }
