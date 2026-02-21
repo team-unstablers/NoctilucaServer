@@ -84,19 +84,29 @@ struct FloatingPaletteButton: View {
 
     private var currentOpacity: Double {
         if isPressing { return 1.0 }
-        if isHovering { return 0.75 }
-        return 0.25
+        if isHovering { return 0.85 }
+        return 0.35
     }
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
                 .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(.separator, lineWidth: 0.5)
+                )
                 .frame(width: 64, height: 64)
+                .shadow(radius: isPressing ? 8 : 4, y: isPressing ? 4 : 2)
 
             Circle()
-                .fill(.ultraThinMaterial)
+                .fill(.thickMaterial)
+                .overlay(
+                    Circle()
+                        .strokeBorder(.separator, lineWidth: 0.5)
+                )
                 .frame(width: 40, height: 40)
+                .shadow(radius: isPressing ? 6 : 3, y: isPressing ? 3 : 1.5)
         }
         .opacity(currentOpacity)
         .scaleEffect(isPressing ? 1.05 : 1.0)
