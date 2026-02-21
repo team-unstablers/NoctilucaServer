@@ -14,7 +14,7 @@ extension NoctilucaClient {
     func clientHelloMessage() -> ClientHello {
         let clientHello = ClientHello(
             protocolVersion: .v1_0,
-            agentName: "\(NoctilucaMeta.productName)/\(NoctilucaMeta.version)"
+            agentName: "\(NoctilucaMeta.productName)/\(NoctilucaMeta.version) (\(DeviceKind.current.osDescription))"
         )
         
         return consume clientHello

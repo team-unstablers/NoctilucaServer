@@ -28,3 +28,27 @@ enum DeviceKind {
 #endif
     }
 }
+
+extension DeviceKind: CustomStringConvertible {
+    var description: String {
+        switch self {
+        case .iPad:
+            return "iPad"
+        case .iPhone:
+            return "iPhone"
+        case .mac:
+            return "Mac"
+        }
+    }
+    
+    var osDescription: String {
+        switch self {
+        case .iPad:
+            return "iPadOS"
+        case .iPhone:
+            return "iOS"
+        case .mac:
+            return "macOS"
+        }
+    }
+}

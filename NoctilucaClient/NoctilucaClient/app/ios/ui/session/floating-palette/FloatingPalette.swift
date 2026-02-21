@@ -253,3 +253,4 @@ struct FloatingPalette: View {
     .background(.red)
 }
 #endif
+
