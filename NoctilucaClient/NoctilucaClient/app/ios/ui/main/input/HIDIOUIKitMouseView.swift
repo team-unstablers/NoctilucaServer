@@ -442,12 +442,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         _ gestureRecognizer: UIGestureRecognizer,
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
     ) -> Bool {
-        // Allow pinch and 2-finger pan (scroll) to coexist.
-        // UIKit distinguishes them: pinch = fingers spreading/contracting, pan = same direction.
-        if (gestureRecognizer == pinchRecognizer && otherGestureRecognizer == twoFingerPanRecognizer)
-            || (gestureRecognizer == twoFingerPanRecognizer && otherGestureRecognizer == pinchRecognizer) {
-            return true
-        }
         return false
     }
 
@@ -459,15 +453,6 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         if gestureRecognizer == doubleTapForZoomRecognizer {
             return zoomMode == .free
         }
-
-        /*
-        // 줌 활성 시 chordedDrag는 비활성화 (핀치와 충돌 방지)
-        if zoomMode != .off {
-            if gestureRecognizer == chordedDragRecognizer {
-                return false
-            }
-        }
-         */
 
         // Free zoom mode: block mouse-related gesture recognizers
         // 단, 터치 모드에서는 탭(클릭)과 2-finger 탭(우클릭)은 허용
