@@ -105,69 +105,163 @@ struct HIDIOUIKitKeyboardInputHost: View {
 }
 
 struct HIDIOUIKitKeyboardHelperView: View {
-    @ObservedObject var keyboard: HIDIOUIKitKeyboard
+    @ObservedObject
+    var keyboard: HIDIOUIKitKeyboard
     let isVisible: Bool
 
     var body: some View {
         if isVisible {
-            VStack(spacing: 0) {
+            VStack(spacing: 8) {
                 Divider()
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        modifierToggle(label: "Ctrl", keyCode: .KEY_LEFTCTRL)
-                        modifierToggle(label: "Opt", keyCode: .KEY_LEFTALT)
-                        modifierToggle(label: "Cmd", keyCode: .KEY_LEFTMETA)
-                        modifierToggle(label: "Shift", keyCode: .KEY_LEFTSHIFT)
+                HStack(spacing: 12) {
+                    actionButton(label: "esc", keyCode: .KEY_ESC)
+                        .frame(width: 112)
+                    
+                    actionButton(label: "tab", symbol: "⇥", keyCode: .KEY_TAB)
+                        .frame(width: 112)
 
-                        // TODO: ESC / Home / End / PgUp / PgDn 등의 추가 버튼을 지원한다.
-                        actionButton(label: "Tab") {
-                            keyboard.sendKey(.KEY_TAB)
-                        }
-
-                        actionButton(label: "Left") {
-                            keyboard.sendKey(.KEY_LEFT)
-                        }
-                        actionButton(label: "Down") {
-                            keyboard.sendKey(.KEY_DOWN)
-                        }
-                        actionButton(label: "Up") {
-                            keyboard.sendKey(.KEY_UP)
-                        }
-                        actionButton(label: "Right") {
-                            keyboard.sendKey(.KEY_RIGHT)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    Spacer()
+                    
+                    actionButton(label: "delete", symbol: "⌫", keyCode: .KEY_BACKSPACE)
+                        .frame(width: 112)
                 }
+                    .padding(.horizontal, 12)
+                HStack(spacing: 12) {
+                    actionButton(
+                        label: "control",
+                        symbol: "^",
+                        keyCode: .KEY_LEFTCTRL
+                    )
+                        .frame(width: 72)
+                    actionButton(
+                        label: "option",
+                        symbol: "⌥",
+                        keyCode: .KEY_LEFTALT
+                    )
+                        .frame(width: 72)
+                    actionButton(
+                        label: "command",
+                        symbol: "⌘",
+                        keyCode: .KEY_LEFTMETA
+                    )
+                        .frame(width: 96)
+
+                    actionButton(
+                        label: "shift",
+                        symbol: "⇧",
+                        keyCode: .KEY_LEFTSHIFT
+                    )
+                        .frame(width: 112)
+
+                    // TODO: ESC / Home / End / PgUp / PgDn 등의 추가 버튼을 지원한다.
+
+                    Spacer()
+
+                    HStack(alignment: .bottom) {
+                        directionalButton(label: "←", keyCode: .KEY_LEFT)
+                            .frame(width: 72)
+                        VStack {
+                            directionalButton(label: "↑", keyCode: .KEY_UP)
+                                .frame(width: 72)
+                            directionalButton(label: "↓", keyCode: .KEY_DOWN)
+                                .frame(width: 72)
+                        }
+                        directionalButton(label: "→", keyCode: .KEY_RIGHT)
+                            .frame(width: 72)
+                    }
+                }
+                .padding(.horizontal, 12)
             }
+            .padding(.bottom, 8)
             .frame(maxWidth: .infinity)
             .background(Color(.secondarySystemBackground))
         }
     }
 
-    private func modifierToggle(label: String, keyCode: LinuxKeycode) -> some View {
+    private func modifierToggle(label: String, symbol: String = "", keyCode: LinuxKeycode) -> some View {
         let isActive = keyboard.isModifierActive(keyCode)
 
         return Button {
             keyboard.toggleModifier(keyCode)
         } label: {
-            Text(label)
-                .font(.system(size: 16, weight: .semibold))
-                .frame(minWidth: 36, minHeight: 32)
-                .padding(.horizontal, 4)
+            VStack {
+                Text(symbol)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                Spacer()
+                Text(label)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(8)
+            .frame(minWidth: 72, maxHeight: 72)
         }
         .buttonStyle(HIDIOUIKitKeyboardKeyButtonStyle(isActive: isActive))
     }
 
-    private func actionButton(label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(.system(size: 14, weight: .semibold))
-                .frame(minWidth: 36, minHeight: 32)
-                .padding(.horizontal, 4)
+    private func actionButton(label: String, symbol: String = "", keyCode: LinuxKeycode) -> some View {
+        HIDIOUIKitKeyPressButton(
+            onPress: { keyboard.keyDown(keyCode) },
+            onRelease: { keyboard.keyUp(keyCode) }
+        ) {
+            VStack {
+                Text(symbol)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                Spacer()
+                Text(label)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(8)
+            .frame(minWidth: 72, maxHeight: 72)
         }
-        .buttonStyle(HIDIOUIKitKeyboardKeyButtonStyle(isActive: false))
+    }
+
+    private func directionalButton(label: String, keyCode: LinuxKeycode) -> some View {
+        HIDIOUIKitKeyPressButton(
+            onPress: { keyboard.keyDown(keyCode) },
+            onRelease: { keyboard.keyUp(keyCode) }
+        ) {
+            VStack {
+                Text(label)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .padding(8)
+            .frame(minWidth: 72, maxHeight: 36)
+        }
+    }
+}
+
+/// 누르는 동안 keyDown, 떼면 keyUp을 전송하는 제스처 기반 키 버튼.
+private struct HIDIOUIKitKeyPressButton<Label: View>: View {
+    let onPress: () -> Void
+    let onRelease: () -> Void
+    @ViewBuilder let label: () -> Label
+
+    @GestureState private var isPressed = false
+
+    var body: some View {
+        label()
+            .foregroundStyle(Color.primary)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isPressed ? Color(.systemGray4) : Color(.systemGray5))
+            )
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .updating($isPressed) { _, state, _ in
+                        state = true
+                    }
+            )
+            .onChange(of: isPressed) { _, newValue in
+                if newValue {
+                    onPress()
+                } else {
+                    onRelease()
+                }
+            }
     }
 }
 
@@ -200,7 +294,7 @@ final class HIDIOUIKitKeyboardAccessoryView: UIInputView {
         let content = HIDIOUIKitKeyboardHelperView(keyboard: keyboard, isVisible: true)
         self.hostingController = UIHostingController(rootView: content)
 
-        super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 48), inputViewStyle: .keyboard)
+        super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 160), inputViewStyle: .keyboard)
 
         self.allowsSelfSizing = true
 
@@ -427,6 +521,11 @@ extension UITextInputMode {
 
 #Preview {
     HIDIOUIKitCJKCompositionPreviewView(compositingText: "안녕하세요!")
+}
+
+#Preview("HelperView") {
+    let keyboard = HIDIOUIKitKeyboard()
+    HIDIOUIKitKeyboardHelperView(keyboard: keyboard, isVisible: true)
 }
 
 #endif

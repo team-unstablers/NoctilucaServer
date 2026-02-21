@@ -79,6 +79,14 @@ final class HIDIOUIKitKeyboard: ObservableObject, HIDIOVirtualDevice {
         activeModifiers = []
     }
 
+    func keyDown(_ keyCode: LinuxKeycode) {
+        controller?.keyDown(keyCode: keyCode)
+    }
+
+    func keyUp(_ keyCode: LinuxKeycode) {
+        controller?.keyUp(keyCode: keyCode)
+    }
+
     func sendKey(_ keyCode: LinuxKeycode) {
         guard let controller else {
             return
