@@ -6,6 +6,7 @@ struct MetalCursorView: NSViewRepresentable {
     var cursorState: RemoteSession.CursorState
     var sourceSize: CGSize
     var targetDisplayID: Int
+    var cursorScale: CGFloat = 1.0
 
     func makeCoordinator() -> CursorRenderer? {
         guard let device = MTLCreateSystemDefaultDevice() else { return nil }
@@ -26,6 +27,7 @@ struct MetalCursorView: NSViewRepresentable {
 
         // Combine 기반 직접 구독 (SwiftUI 뷰 업데이트 파이프라인 우회)
         context.coordinator?.bind(to: view, cursorState: cursorState, sourceSize: sourceSize, targetDisplayID: targetDisplayID)
+        context.coordinator?.setCursorScale(cursorScale)
 
         return view
     }
@@ -33,6 +35,7 @@ struct MetalCursorView: NSViewRepresentable {
     func updateNSView(_ nsView: MTKView, context: Context) {
         // sourceSize/targetDisplayID 변경 시에만 반영 (커서 상태는 Combine으로 직접 처리)
         context.coordinator?.updateSourceParameters(sourceSize: sourceSize, targetDisplayID: targetDisplayID)
+        context.coordinator?.setCursorScale(cursorScale)
     }
 }
 #endif
@@ -42,6 +45,7 @@ struct MetalCursorView: UIViewRepresentable {
     var cursorState: RemoteSession.CursorState
     var sourceSize: CGSize
     var targetDisplayID: Int
+    var cursorScale: CGFloat = 1.0
 
     func makeCoordinator() -> CursorRenderer? {
         guard let device = MTLCreateSystemDefaultDevice() else { return nil }
@@ -62,6 +66,7 @@ struct MetalCursorView: UIViewRepresentable {
 
         // Combine 기반 직접 구독 (SwiftUI 뷰 업데이트 파이프라인 우회)
         context.coordinator?.bind(to: view, cursorState: cursorState, sourceSize: sourceSize, targetDisplayID: targetDisplayID)
+        context.coordinator?.setCursorScale(cursorScale)
 
         return view
     }
@@ -69,6 +74,7 @@ struct MetalCursorView: UIViewRepresentable {
     func updateUIView(_ uiView: MTKView, context: Context) {
         // sourceSize/targetDisplayID 변경 시에만 반영 (커서 상태는 Combine으로 직접 처리)
         context.coordinator?.updateSourceParameters(sourceSize: sourceSize, targetDisplayID: targetDisplayID)
+        context.coordinator?.setCursorScale(cursorScale)
     }
 }
 #endif

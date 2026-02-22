@@ -122,6 +122,14 @@ struct InputSettingsTab: View {
                     }
                 }
 #endif
+                SettingsEntry(title: String(localized: "settings.input.advanced.cursor_scale.title", defaultValue: "커서 크기"), subtitle: String(localized: "settings.input.advanced.cursor_scale.description", defaultValue: "원격 커서의 표시 크기를 조절합니다.")) {
+                    Slider(value: $settingsStore.settings.input.cursorScale, in: 0.5...1.5, step: 0.25) {
+                    } minimumValueLabel: {
+                        Text("0.5x")
+                    } maximumValueLabel: {
+                        Text("1.5x")
+                    }
+                }
                 SettingsEntry(title: String(localized: "settings.input.advanced.scroll_multiplier.title", defaultValue: "마우스 스크롤 배수"), subtitle: String(localized: "settings.input.advanced.scroll_multiplier.description", defaultValue: "마우스 스크롤에 배수 값을 적용하여 전송합니다.\n값이 클수록 스크롤 속도가 빨라집니다.")) {
                     Slider(value: $settingsStore.settings.input.mouseScrollMultiplier, in: 0.5...1.5, step: 0.25) {
                         

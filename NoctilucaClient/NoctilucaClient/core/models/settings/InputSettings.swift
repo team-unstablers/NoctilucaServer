@@ -127,6 +127,7 @@ extension AppSettings {
         var pointerInputMode: PointerInputMode = .automatic
         var touchInputMode: TouchInputMode = .touch
         var trackpadMoveMultiplier: Double = 1.0
+        var cursorScale: Double = 1.0
         var invertMouseButtons: Bool = false
         var invertVerticalScroll: Bool = false
         var invertHorizontalScroll: Bool = false
@@ -145,6 +146,7 @@ extension AppSettings {
             case pointerInputMode
             case touchInputMode
             case trackpadMoveMultiplier
+            case cursorScale
             case invertMouseButtons
             case invertVerticalScroll
             case invertHorizontalScroll
@@ -168,6 +170,7 @@ extension AppSettings {
             pointerInputMode = container.decodeSafe(PointerInputMode.self, forKey: .pointerInputMode, default: pointerInputMode)
             touchInputMode = container.decodeSafe(TouchInputMode.self, forKey: .touchInputMode, default: touchInputMode)
             trackpadMoveMultiplier = container.decodeSafe(Double.self, forKey: .trackpadMoveMultiplier, default: trackpadMoveMultiplier)
+            cursorScale = container.decodeSafe(Double.self, forKey: .cursorScale, default: cursorScale)
             invertMouseButtons = container.decodeSafe(Bool.self, forKey: .invertMouseButtons, default: invertMouseButtons)
             invertVerticalScroll = container.decodeSafe(Bool.self, forKey: .invertVerticalScroll, default: invertVerticalScroll)
             invertHorizontalScroll = container.decodeSafe(Bool.self, forKey: .invertHorizontalScroll, default: invertHorizontalScroll)
@@ -186,6 +189,7 @@ extension AppSettings {
             try container.encode(pointerInputMode, forKey: .pointerInputMode)
             try container.encode(touchInputMode, forKey: .touchInputMode)
             try container.encode(trackpadMoveMultiplier, forKey: .trackpadMoveMultiplier)
+            try container.encode(cursorScale, forKey: .cursorScale)
             try container.encode(invertMouseButtons, forKey: .invertMouseButtons)
             try container.encode(invertVerticalScroll, forKey: .invertVerticalScroll)
             try container.encode(invertHorizontalScroll, forKey: .invertHorizontalScroll)

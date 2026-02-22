@@ -17,6 +17,9 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     private var currentSourceSize: CGSize = .zero
     private var viewportSize: CGSize = .zero
 
+    // 커서 크기 배율 (1.0 = 원본 크기)
+    private(set) var cursorScale: CGFloat = 1.0
+
     // displayID 기반 visibility (SwiftUI .opacity() 대체)
     private var targetDisplayID: Int = -1
     private var currentDisplayID: Int? = nil
@@ -91,6 +94,17 @@ class CursorRenderer: NSObject, MTKViewDelegate {
         samplerState = device.makeSamplerState(descriptor: descriptor)
     }
     
+    // MARK: - Cursor Scale
+
+    func setCursorScale(_ scale: CGFloat) {
+        let clamped = max(0.25, min(scale, 4.0))
+        guard cursorScale != clamped else { return }
+        cursorScale = clamped
+        if let view = boundView {
+            view.setNeedsDisplay(view.bounds)
+        }
+    }
+
     // MARK: - Combine Binding (SwiftUI 우회)
 
     /// CursorState를 Combine으로 직접 구독하여 SwiftUI 뷰 업데이트 파이프라인을 우회합니다.
@@ -237,12 +251,12 @@ class CursorRenderer: NSObject, MTKViewDelegate {
             y: currentPosition.y * scaleY
         )
         let scaledSize = CGSize(
-            width: currentCursorSize.width * scaleX,
-            height: currentCursorSize.height * scaleY
+            width: currentCursorSize.width * scaleX * cursorScale,
+            height: currentCursorSize.height * scaleY * cursorScale
         )
         let scaledHotspot = CGPoint(
-            x: currentHotspot.x * scaleX,
-            y: currentHotspot.y * scaleY
+            x: currentHotspot.x * scaleX * cursorScale,
+            y: currentHotspot.y * scaleY * cursorScale
         )
 
         var uniforms = CursorUniforms(

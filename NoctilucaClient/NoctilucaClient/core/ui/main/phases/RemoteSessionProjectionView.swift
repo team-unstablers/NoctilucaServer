@@ -140,7 +140,7 @@ struct RemoteSessionProjectionView: View {
                     // allowsHitTesting(false) 필수: 마우스 클릭이 아래 뷰(입력 캡처)로 전달되어야 함.
                     // displayID 기반 visibility는 CursorRenderer 내부에서 처리 (SwiftUI 업데이트 지연 방지)
                     if case .displayID(let displayID) = sourceDescriptor {
-                        MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize, targetDisplayID: displayID)
+                        MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize, targetDisplayID: displayID, cursorScale: settingsStore.settings.input.cursorScale)
                             .offset(currentOffset)
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
