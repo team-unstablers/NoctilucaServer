@@ -11,7 +11,7 @@ struct SettingsWindow: View {
     enum SettingsTab: Hashable {
         case general
         case projection
-        case appProjection
+        case appStream
         case security
         case misc
         case plugins
@@ -31,10 +31,8 @@ struct SettingsWindow: View {
                     .tag(SettingsTab.general)
                 Label(String(localized: "settings.tab.projection", defaultValue: "프로젝션"), systemImage: "rectangle.on.rectangle")
                     .tag(SettingsTab.projection)
-                /*
-                Label(String(localized: "settings.tab.app_projection", defaultValue: "앱 프로젝션"), systemImage: "app")
-                    .tag(SettingsTab.appProjection)
-                 */
+                Label(String(localized: "settings.tab.app_stream", defaultValue: "AppStream"), systemImage: "app")
+                    .tag(SettingsTab.appStream)
                 Label(String(localized: "settings.tab.security", defaultValue: "보안"), systemImage: "lock")
                     .tag(SettingsTab.security)
                 Label(String(localized: "settings.tab.misc", defaultValue: "기타"), systemImage: "ellipsis.circle")
@@ -50,8 +48,8 @@ struct SettingsWindow: View {
                 GeneralSettingsTab(settings: $settingsStore.settings)
             case .projection:
                 ProjectionSettingsTab(settings: $settingsStore.settings)
-            case .appProjection:
-                EmptyView()
+            case .appStream:
+                AppStreamSettingsTab(settings: $settingsStore.settings)
             case .security:
                 SecuritySettingsTab(settings: $settingsStore.settings)
             case .misc:

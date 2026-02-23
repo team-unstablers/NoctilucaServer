@@ -66,4 +66,43 @@ extension AppSettings {
             try container.encode(audioCodecSpecifications, forKey: .audioCodecSpecifications)
         }
     }
+    
+    struct AppStream: Category {
+        struct AllowedApp: Codable, Identifiable, Hashable {
+            var id: String {
+                self.bundleIdentifier
+            }
+            
+            let appName: String
+            let bundleIdentifier: String
+            let path: String
+        }
+        
+        var enabled: Bool = false
+        var allowedApps: [AllowedApp] = []
+        
+        init() {}
+
+        enum CodingKeys: String, CodingKey {
+            case enabled
+            case allowedApps
+        }
+
+        init(from decoder: any Decoder) throws {
+            self.init()
+
+            guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+                return
+            }
+
+            enabled = container.decodeSafe(Bool.self, forKey: .enabled, default: enabled)
+            allowedApps = container.decodeSafe([AllowedApp].self, forKey: .allowedApps, default: allowedApps)
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(enabled, forKey: .enabled)
+            try container.encode(allowedApps, forKey: .allowedApps)
+        }
+    }
 }
