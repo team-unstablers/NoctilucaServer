@@ -21,6 +21,8 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     private weak var mainWindow: NSWindow?
     
     private var subDisplayWindowManager: SubDisplayWindowManager?
+    private var appStreamWindowManager: AppStreamWindowManager?
+    
     private var remoteSessionCancellable: AnyCancellable?
     
     init(settingsStore: SettingsStore) {
@@ -67,12 +69,18 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
                 guard let self else { return }
                 if let session {
                     self.subDisplayWindowManager = SubDisplayWindowManager(remoteSession: session)
+                    self.appStreamWindowManager = AppStreamWindowManager(remoteSession: session)
+                    self.viewModel.appStreamWindowManager = self.appStreamWindowManager
+                    
                     self.viewModel.onDetachDisplay = { [weak self] displayID in
                         try await self?.subDisplayWindowManager?.spawn(for: displayID)
                     }
                 } else {
                     self.subDisplayWindowManager?.destroyAll()
                     self.subDisplayWindowManager = nil
+                    self.appStreamWindowManager?.destroyAll()
+                    self.appStreamWindowManager = nil
+                    self.viewModel.appStreamWindowManager = nil
                     self.viewModel.onDetachDisplay = nil
                 }
             }
@@ -81,6 +89,9 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         subDisplayWindowManager?.destroyAll()
         subDisplayWindowManager = nil
+        
+        appStreamWindowManager?.destroyAll()
+        appStreamWindowManager = nil
 
         let viewModel = self.viewModel
         if viewModel.remoteSession != nil {

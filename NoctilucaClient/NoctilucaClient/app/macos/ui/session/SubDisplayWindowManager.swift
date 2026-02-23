@@ -33,7 +33,7 @@ class SubDisplayWindowManager: NSObject, NSWindowDelegate {
 
         guard let projection = remoteSession.projection else { return }
 
-        let subscription = try await projection.subscribeProjectionSession(for: displayID)
+        let subscription = try await projection.subscribeProjectionSession(for: .displayID(displayID))
         let window = SubDisplayWindow(displayID: displayID, remoteSession: remoteSession, subscription: subscription)
         window.delegate = self
 

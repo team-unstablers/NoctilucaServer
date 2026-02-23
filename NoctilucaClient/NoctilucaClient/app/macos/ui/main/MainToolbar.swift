@@ -151,6 +151,12 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 systemSymbolName: "lock.display",
                 label: "Toggle Exclusive Input Mode"
             )
+        case .nocAppStream:
+            return makeSymbolItem(
+                identifier: .nocAppStream,
+                systemSymbolName: "app.shadow",
+                label: "AppStream"
+            )
         default:
             return nil
         }
@@ -187,7 +193,8 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 .nocAddressBar,
                 .flexibleSpace,
                 .nocSwitchDisplay,
-                .nocEnableExclusiveInputMode
+                .nocEnableExclusiveInputMode,
+                .nocAppStream
             ]
         }
     }
@@ -247,6 +254,8 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
             viewModel.shouldPresentDisplaySwitchSheet = true
         case .nocEnableExclusiveInputMode:
             try? viewModel.remoteSession?.hidio?.session.switchMode(to: .exclusive, reason: .userInitiated)
+        case .nocAppStream:
+            viewModel.appStreamState = .active(bundleIdentifier: "com.apple.dt.Xcode")
         default:
             break
         }
@@ -260,5 +269,6 @@ extension NSToolbarItem.Identifier {
     static let nocStopSession = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.StopSession")
     static let nocSwitchDisplay = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.SwitchDisplay")
     static let nocEnableExclusiveInputMode = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.EnableExclusiveInputMode")
+    static let nocAppStream = NSToolbarItem.Identifier("app.noctiluca.client.ui.MainWindow.MainToolbar.AppStream")
 }
 #endif
