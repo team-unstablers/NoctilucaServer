@@ -15269,6 +15269,17 @@
         }
       }
     },
+    "settings.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "설정"
+          }
+        }
+      }
+    },
     "software_license.custom" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -15395,7 +15406,7 @@
 
     },
     "window.settings.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

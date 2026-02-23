@@ -12,20 +12,25 @@ final class AppKitSettingsWindowController: NSWindowController {
     init() {
         let contentView = SettingsWindow()
             .environmentObject(SettingsStore.shared)
-        let hostingView = NSHostingView(rootView: contentView)
+        let hostingView = NSHostingController(rootView: contentView)
 
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.contentView = hostingView
-        window.title = String(localized: "window.settings.title", defaultValue: "Noctiluca Server 설정")
+        let window = NSWindow(contentViewController: hostingView)
+        window.title = "Noctiluca Server"
         window.minSize = NSSize(width: 640, height: 480)
         window.collectionBehavior = [.fullScreenNone]
         window.isReleasedWhenClosed = false
         window.standardWindowButton(.zoomButton)?.isEnabled = false
+        
+        let toolbar = NSToolbar(identifier: "NoctilucaServer.SettingsToolbar")
+        toolbar.displayMode = .iconOnly
+        window.toolbar = toolbar
+        window.toolbarStyle = .unified
+        toolbar.allowsUserCustomization = false
+        
+        if #available(macOS 15.0, *) {
+            toolbar.allowsDisplayModeCustomization = false
+        }
+
         window.setFrameAutosaveName("NoctilucaServer.SettingsWindow")
         window.center()
 

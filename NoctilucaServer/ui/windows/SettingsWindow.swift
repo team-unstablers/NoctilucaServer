@@ -11,6 +11,7 @@ struct SettingsWindow: View {
     enum SettingsTab: Hashable {
         case general
         case projection
+        case appProjection
         case security
         case misc
         case plugins
@@ -24,49 +25,47 @@ struct SettingsWindow: View {
     private var selectedTab: SettingsTab = .general
 
     var body: some View {
-        NavigationStack {
-            TabView(selection: $selectedTab) {
-                GeneralSettingsTab(settings: $settingsStore.settings)
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tab.general", defaultValue: "일반"))
-                    }
+        NavigationSplitView {
+            List(selection: $selectedTab) {
+                Label(String(localized: "settings.tab.general", defaultValue: "일반"), systemImage: "gearshape")
                     .tag(SettingsTab.general)
-                    .id(SettingsTab.general)
-                ProjectionSettingsTab(settings: $settingsStore.settings)
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tab.projection", defaultValue: "프로젝션"))
-                    }
+                Label(String(localized: "settings.tab.projection", defaultValue: "프로젝션"), systemImage: "rectangle.on.rectangle")
                     .tag(SettingsTab.projection)
-                    .id(SettingsTab.projection)
-                SecuritySettingsTab(settings: $settingsStore.settings)
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tab.security", defaultValue: "보안"))
-                    }
+                /*
+                Label(String(localized: "settings.tab.app_projection", defaultValue: "앱 프로젝션"), systemImage: "app")
+                    .tag(SettingsTab.appProjection)
+                 */
+                Label(String(localized: "settings.tab.security", defaultValue: "보안"), systemImage: "lock")
                     .tag(SettingsTab.security)
-                    .id(SettingsTab.security)
-                MiscSettingsTab(settings: $settingsStore.settings)
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tab.misc", defaultValue: "기타"))
-                    }
+                Label(String(localized: "settings.tab.misc", defaultValue: "기타"), systemImage: "ellipsis.circle")
                     .tag(SettingsTab.misc)
-                    .id(SettingsTab.misc)
-                PluginsSettingsTab(settings: $settingsStore.settings)
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tab.plugins", defaultValue: "플러그인"))
-                    }
+                Label(String(localized: "settings.tab.plugins", defaultValue: "플러그인"), systemImage: "puzzlepiece.extension")
                     .tag(SettingsTab.plugins)
-                    .id(SettingsTab.plugins)
-                AboutSettingsTab()
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tab.about", defaultValue: "정보"))
-                    }
+                Label(String(localized: "settings.tab.about", defaultValue: "정보"), systemImage: "info.circle")
                     .tag(SettingsTab.about)
-                    .id(SettingsTab.about)
             }
-            .frame(minWidth: 640)
+        } detail: {
+            switch selectedTab {
+            case .general:
+                GeneralSettingsTab(settings: $settingsStore.settings)
+            case .projection:
+                ProjectionSettingsTab(settings: $settingsStore.settings)
+            case .appProjection:
+                EmptyView()
+            case .security:
+                SecuritySettingsTab(settings: $settingsStore.settings)
+            case .misc:
+                MiscSettingsTab(settings: $settingsStore.settings)
+            case .plugins:
+                PluginsSettingsTab(settings: $settingsStore.settings)
+            case .about:
+                AboutSettingsTab()
+            }
         }
-        .navigationTitle("test")
-        .navigationSubtitle("test")
+        .navigationSplitViewStyle(.balanced)
+        .toolbar(removing: .sidebarToggle)
+        .frame(minWidth: 640)
+        .navigationSubtitle(String(localized: "settings.title", defaultValue: "설정"))
     }
 }
 
