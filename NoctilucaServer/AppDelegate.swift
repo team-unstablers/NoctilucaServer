@@ -93,9 +93,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             onboardingWindowController = OnboardingWindowController()
         }
 
-        onboardingWindowController?.showWindow(nil)
-        onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.async {
+            self.onboardingWindowController?.showWindow(nil)
+            self.onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     @objc
@@ -104,9 +106,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             settingsWindowController = AppKitSettingsWindowController()
         }
 
-        settingsWindowController?.showWindow(nil)
-        settingsWindowController?.window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.async {
+            self.settingsWindowController?.showWindow(nil)
+            self.settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     @objc
