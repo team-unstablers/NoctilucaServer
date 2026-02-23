@@ -72,9 +72,6 @@
     "%lld" : {
 
     },
-    "0.1.0-alpha1" : {
-
-    },
     "alert.trial-expired.confirm" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -2314,6 +2311,50 @@
         }
       }
     },
+    "onboarding.permissions.restart_required.cancel" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아니오"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.restart_required.confirm" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "예"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.restart_required.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "녹화 권한을 확인하려면 Noctiluca Server를 다시 시작해야 합니다.\n\n다시 시작하시겠습니까?"
+          }
+        }
+      }
+    },
+    "onboarding.permissions.restart_required.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "다시 시작 필요"
+          }
+        }
+      }
+    },
     "onboarding.permissions.screen_recording.description" : {
       "localizations" : {
         "en" : {
@@ -3043,7 +3084,7 @@
 
     },
     "settings.about.auth_plugins.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3105,25 +3146,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "© 2024 team unstablers Inc. All rights reserved."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "© 2024 team unstablers Inc. All rights reserved."
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "© 2024 team unstablers Inc. All rights reserved."
+            "value" : "© 2026 team unstablers Inc. All rights reserved."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "© 2024 team unstablers Inc. All rights reserved."
           }
         }
@@ -3623,6 +3664,7 @@
       }
     },
     "settings.general.autolaunch.global.description" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3651,6 +3693,7 @@
       }
     },
     "settings.general.autolaunch.global.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3888,6 +3931,7 @@
       }
     },
     "settings.general.elevate_scope.description" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3916,6 +3960,7 @@
       }
     },
     "settings.general.elevate_scope.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4002,6 +4047,7 @@
       }
     },
     "settings.general.maybe-removed.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12556,7 +12602,7 @@
       }
     },
     "settings.save" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

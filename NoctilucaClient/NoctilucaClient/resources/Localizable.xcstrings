@@ -9786,6 +9786,28 @@
         }
       }
     },
+    "settings.input.advanced.cursor_scale.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 커서의 표시 크기를 조절합니다."
+          }
+        }
+      }
+    },
+    "settings.input.advanced.cursor_scale.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "커서 크기"
+          }
+        }
+      }
+    },
     "settings.input.advanced.header" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
