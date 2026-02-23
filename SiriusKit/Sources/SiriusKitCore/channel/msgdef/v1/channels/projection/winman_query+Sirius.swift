@@ -86,7 +86,7 @@ public struct WindowListRequest: SiriusMessage {
     }
 }
 
-public struct WindowInfo: SiriusMessage {
+public struct WindowInfo: SiriusMessage, Equatable {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_WindowInfo
     
     public let windowID: UInt64

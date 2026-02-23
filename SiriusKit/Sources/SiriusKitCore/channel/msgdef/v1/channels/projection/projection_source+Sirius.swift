@@ -38,7 +38,7 @@ public struct DisplayRegionProjectionSource: SiriusMessage {
     public let displayID: Int32
     public let region: SRRect
 
-    init(displayID: Int32, region: SRRect) {
+    public init(displayID: Int32, region: SRRect) {
         self.displayID = displayID
         self.region = region
     }
@@ -65,7 +65,7 @@ public struct SingleWindowProjectionSource: SiriusMessage {
     public let flags: SingleWindowProjectionSourceFlags
 
 
-    init(windowID: Int64?, flags: SingleWindowProjectionSourceFlags) {
+    public init(windowID: Int64?, flags: SingleWindowProjectionSourceFlags) {
         self.windowID = windowID
         self.flags = flags
     }
