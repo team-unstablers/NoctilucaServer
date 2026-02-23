@@ -9,10 +9,15 @@ import ApplicationServices // For AXUIElement
 import AppKit
 import Combine
 
+import SiriusKit
+
 // MARK: - Core Types
 
 let kAXWindowNumberAttribute = "AXWindowNumber"
 
+typealias WindowID = CGWindowID
+
+/*
 /// winman.proto의 WindowInfo와 매핑되기 쉽도록 구조화
 struct WindowInfo: Identifiable, Equatable, Hashable {
     typealias ID = CGWindowID // UInt32
@@ -27,6 +32,7 @@ struct WindowInfo: Identifiable, Equatable, Hashable {
     let layer: Int32
     let ownerPID: pid_t
 }
+ */
 
 enum AppIdentifier: Hashable, CustomStringConvertible {
     case bundleID(String)
@@ -56,7 +62,7 @@ struct AppMenuNode {
 enum DesktopContextError: Error {
     case accessibilityPermissionMissing
     case cannotCreateAXObserver(AXError)
-    case windowNotFound(WindowInfo.ID)
+    case windowNotFound(WindowID)
     case appNotRunning
     case invalidWindowFrame
     case failedToSetFocusedWindow(AXError)
@@ -90,10 +96,10 @@ protocol AppSessionDelegate: AnyObject {
     func appSession(_ session: AppSession, didUpdateWindow window: WindowInfo)
     
     /// 윈도우가 닫힘 (winman.proto: WindowClosedEvent)
-    func appSession(_ session: AppSession, didCloseWindow windowID: WindowInfo.ID)
+    func appSession(_ session: AppSession, didCloseWindow windowID: WindowID)
     
     /// 앱 내에서 윈도우 포커스가 변경됨 (winman.proto: WindowFocusChangedEvent)
-    func appSession(_ session: AppSession, didChangeWindowFocusTo windowID: WindowInfo.ID?)
+    func appSession(_ session: AppSession, didChangeWindowFocusTo windowID: WindowID?)
 }
 
 /// 시스템 전체(DesktopContextManager)에서 발생하는 이벤트를 수신
@@ -121,7 +127,7 @@ final class AppSession {
     private let runningApplication: NSRunningApplication
 
     // 내부 캐시 (WindowID -> Info)
-    private(set) var monitoredWindows: [WindowInfo.ID: WindowInfo] = [:]
+    private(set) var monitoredWindows: [WindowID: WindowInfo] = [:]
 
     weak var delegate: AppSessionDelegate?
 
@@ -220,10 +226,10 @@ final class AppSession {
     /// 전체 윈도우 정보 강제 갱신 (Polling 방식이 필요할 때 사용)
     func refreshWindows() {
         let previousWindows = self.monitoredWindows
-        let previousFocusID = previousWindows.values.first(where: { $0.isActive })?.id
+        let previousFocusID = previousWindows.values.first(where: { $0.flags.contains(.isFocused) })?.windowID
 
         let windows = self.fetchWindowList()
-        let newFocusID = windows.values.first(where: { $0.isActive })?.id
+        let newFocusID = windows.values.first(where: { $0.flags.contains(.isFocused) })?.windowID
 
         self.monitoredWindows = windows
 
@@ -251,12 +257,12 @@ final class AppSession {
         }
 
         if previousFocusID != newFocusID {
-            delegate.appSession(self, didChangeWindowFocusTo: newFocusID)
+            delegate.appSession(self, didChangeWindowFocusTo: newFocusID != nil ? WindowID(newFocusID!) : nil)
         }
     }
     
     /// 특정 윈도우로 포커스 이동 (winman.proto: WindowFocusRequest)
-    func focusWindow(id: WindowInfo.ID) throws {
+    func focusWindow(id: WindowID) throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
         
@@ -276,7 +282,7 @@ final class AppSession {
     }
     
     /// 윈도우 닫기
-    func closeWindow(id: WindowInfo.ID) throws {
+    func closeWindow(id: WindowID) throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
         
@@ -299,7 +305,7 @@ final class AppSession {
     }
     
     /// 윈도우 이동/크기 조절 (Noctiluca 기능 확장 시 필요)
-    func setWindowFrame(id: WindowInfo.ID, frame: CGRect) throws {
+    func setWindowFrame(id: WindowID, frame: CGRect) throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
         
@@ -394,7 +400,7 @@ final class AppSession {
         }
     }
     
-    private func windowElement(for id: WindowInfo.ID) throws -> AXUIElement {
+    private func windowElement(for id: WindowID) throws -> AXUIElement {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
         guard result == .success else {
@@ -412,7 +418,7 @@ final class AppSession {
                 continue
             }
             
-            if let number = windowNumberValue as? NSNumber, WindowInfo.ID(number.uint32Value) == id {
+            if let number = windowNumberValue as? NSNumber, WindowID(number.uint32Value) == id {
                 return element
             }
         }
@@ -420,7 +426,7 @@ final class AppSession {
         throw DesktopContextError.windowNotFound(id)
     }
     
-    private func axFocusedWindowID() -> WindowInfo.ID? {
+    private func axFocusedWindowID() -> WindowID? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &value)
         guard result == .success, value != nil else {
@@ -435,10 +441,10 @@ final class AppSession {
             return nil
         }
         
-        return WindowInfo.ID(number.uint32Value)
+        return WindowID(number.uint32Value)
     }
     
-    private func fetchWindowList() -> [WindowInfo.ID: WindowInfo] {
+    private func fetchWindowList() -> [WindowID: WindowInfo] {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
             return [:]
@@ -471,14 +477,37 @@ final class AppSession {
             let isVisible = isOnscreen && alpha > 0.01
             let isActive = focusedID == windowID
             
+            var hints: WindowHint = [
+                .hasShadow,
+                .hasTransparency,
+            ]
+            var flags: WindowInfoFlags = []
+            
+            if isActive {
+                flags.insert(.isFocused)
+            }
+            
+            if !isVisible || !isOnscreen {
+                flags.insert(.isHidden)
+            }
+            
             return (windowID, WindowInfo(
-                id: windowID,
-                title: title,
-                frame: bounds,
-                isVisible: isVisible,
-                isActive: isActive,
-                layer: layer,
-                ownerPID: ownerPID
+                windowID: UInt64(windowID),
+                pid: UInt64(ownerPID),
+                windowTitle: title,
+                applicationName: runningApplication.localizedName ?? "(unknown)",
+                applicationBundleID: runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
+                windowClass: runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
+                role: .normal, // FIXME
+                bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
+                iconHash: nil, // TODO
+                thumbnail: nil, // TODO
+                metadata: [
+                    "app.noctiluca.server.x-window-layer": "\(layer)",
+                    "app.noctiluca.server.x-window-alpha": "\(alpha)"
+                ],
+                hints: hints, // TODO
+                flags: flags // TODO
             ))
         })
     }
@@ -497,11 +526,15 @@ final class DesktopContextManager {
     private let workspace: NSWorkspace
     private var workspaceObservers: [Any] = []
     
-    init(workspace: NSWorkspace = .shared) {
+    nonisolated init(workspace: NSWorkspace = .shared) {
         self.workspace = workspace
-        self.registerWorkspaceNotifications()
+        
+        Task { [weak self] in
+            await self?.registerWorkspaceNotifications()
+        }
     }
     
+    @MainActor
     deinit {
         workspaceObservers.forEach { observer in
             workspace.notificationCenter.removeObserver(observer)
@@ -525,6 +558,14 @@ final class DesktopContextManager {
         return accessibilityGranted && screenRecordingGranted
     }
     
+    func runningApplications() -> [NSRunningApplication] {
+        return workspace.runningApplications.filter(shouldMonitor)
+    }
+    
+    func frontmostApplication() -> NSRunningApplication? {
+        return workspace.frontmostApplication
+    }
+   
     /// 현재 실행 중인 모든 앱 스캔 (초기화 용)
     func scanRunningApplications() {
         workspace.runningApplications
@@ -577,6 +618,7 @@ final class DesktopContextManager {
             return []
         }
 
+        let runningApps = self.runningApplications()
         let frontmostWindowID = infoList.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
 
         return infoList.compactMap { info in
@@ -588,6 +630,11 @@ final class DesktopContextManager {
             guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
                 return nil
             }
+            
+            let relatedApp = runningApps.first { app in
+                guard let pid = info[kCGWindowOwnerPID as String] as? pid_t else { return false }
+                return app.processIdentifier == pid
+            }
 
             let windowID = info[kCGWindowNumber as String] as? CGWindowID ?? 0
             let layer = Int32(info[kCGWindowLayer as String] as? Int ?? 0)
@@ -597,15 +644,38 @@ final class DesktopContextManager {
             let alpha = info[kCGWindowAlpha as String] as? Double ?? 0.0
             let isVisible = isOnscreen && alpha > 0.01
             let isActive = frontmostWindowID == windowID
-
+            
+            var hints: WindowHint = [
+                .hasShadow,
+                .hasTransparency,
+            ]
+            var flags: WindowInfoFlags = []
+            
+            if isActive {
+                flags.insert(.isFocused)
+            }
+            
+            if !isVisible || !isOnscreen {
+                flags.insert(.isHidden)
+            }
+            
             return WindowInfo(
-                id: windowID,
-                title: title,
-                frame: bounds,
-                isVisible: isVisible,
-                isActive: isActive,
-                layer: layer,
-                ownerPID: ownerPID
+                windowID: UInt64(windowID),
+                pid: UInt64(ownerPID),
+                windowTitle: title,
+                applicationName: relatedApp?.localizedName ?? "(unknown)",
+                applicationBundleID: relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
+                windowClass: relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
+                role: .normal, // FIXME
+                bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
+                iconHash: nil, // TODO
+                thumbnail: nil, // TODO
+                metadata: [
+                    "app.noctiluca.server.x-window-layer": "\(layer)",
+                    "app.noctiluca.server.x-window-alpha": "\(alpha)"
+                ],
+                hints: hints, // TODO
+                flags: flags // TODO
             )
         }
     }

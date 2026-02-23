@@ -17,6 +17,8 @@ class ProjectionChannel: Channel {
     private let cursorStateHolder = CursorStateHolder.shared
     let state = ProjectionChannelState()
     private var displayChangesCancellable: AnyCancellable?
+    
+    let desktopContextManager = DesktopContextManager()
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -177,6 +179,36 @@ class ProjectionChannel: Channel {
             let request = try UnsubscribeDisplayChangesRequest.fromProtobufBytes(frame.data)
             try await handleUnsubscribeDisplayChangesRequest(request)
 
+        // MARK: Window Management (Query)
+        case .windowListRequest:
+            let request = try WindowListRequest.fromProtobufBytes(frame.data)
+            try await handleWindowListRequest(request)
+
+        case .getWindowInfoRequest:
+            let request = try GetWindowInfoRequest.fromProtobufBytes(frame.data)
+            try await handleGetWindowInfoRequest(request)
+
+        case .getWindowIconRequest:
+            let request = try GetWindowIconRequest.fromProtobufBytes(frame.data)
+            try await handleGetWindowIconRequest(request)
+
+        case .getWindowThumbnailRequest:
+            let request = try GetWindowThumbnailRequest.fromProtobufBytes(frame.data)
+            try await handleGetWindowThumbnailRequest(request)
+
+        case .subscribeWindowEventsRequest:
+            let request = try SubscribeWindowEventsRequest.fromProtobufBytes(frame.data)
+            try await handleSubscribeWindowEventsRequest(request)
+
+        case .unsubscribeWindowEventsRequest:
+            let request = try UnsubscribeWindowEventsRequest.fromProtobufBytes(frame.data)
+            try await handleUnsubscribeWindowEventsRequest(request)
+
+        // MARK: Window Management (Manipulation)
+        case .windowManipulationRequest:
+            let request = try WindowManipulationRequest.fromProtobufBytes(frame.data)
+            try await handleWindowManipulationRequest(request)
+
         default:
             print("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
         }
@@ -244,7 +276,7 @@ class ProjectionChannel: Channel {
                     quality: negotiatedCodec.quality
                 )
             } else {
-                let contentSize = await request.viewport.contentSize
+                let contentSize = await request.viewport.contentSize(self)
 
                 negotiatedCodec = Codec(
                     fourCC: negotiatedCodec.fourCC,
@@ -541,7 +573,7 @@ extension ProjectionChannel: ProjectionSessionDelegate {
 
 fileprivate extension ProjectionSource {
     @MainActor
-    var contentSize: SRSize? {
+    func contentSize(_ context: ProjectionChannel) -> SRSize? {
         switch value {
         case .entireDisplay(let source):
             let layoutManager = DisplayLayoutManager.shared
@@ -563,8 +595,15 @@ fileprivate extension ProjectionSource {
         case .region(let region):
             return SRSize(width: region.region.width, height: region.region.height)
 
-        case .singleWindow:
-            fatalError("not implemented yet")
+        case .singleWindow(let window):
+            let contextManager = context.desktopContextManager
+            // FIXME
+            guard let windowInfo = contextManager.globalWindowList().first(where: { $0.windowID == window.windowID! }) else {
+                return nil
+            }
+            
+            let size = SRSize(width: windowInfo.bounds.width, height: windowInfo.bounds.height)
+            return size
 
         default:
             return nil
