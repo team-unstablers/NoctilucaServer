@@ -16,7 +16,7 @@ class ProjectionSessionSubscription {
     let session: ProjectionSession
     private let ticket: RemoteSession.SessionReferenceTicket
 
-    var displayID: Int { session.displayID }
+    var sourceDescriptor: ProjectionSourceDescriptor { session.sourceDescriptor }
 
     init(session: ProjectionSession, ticket: RemoteSession.SessionReferenceTicket) {
         self.session = session

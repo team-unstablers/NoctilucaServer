@@ -32,24 +32,31 @@ struct MainWindowRemoteSessionView: View {
 
     var body: some View {
         VStack {
-            if case .displayID(let displayID) = sourceDescriptor, displayID != -1 {
-                RemoteSessionProjectionView(
-                    remoteSession: remoteSession,
-                    projection: projection,
-                    hidio: hidio,
-                    sourceDescriptor: $sourceDescriptor,
-                    subscription: subscription
-                )
-            } else {
-                ProgressView(String(localized: "mainwindow.remote-session.loading-display-layout", defaultValue: "디스플레이 구성을 로드하고 있습니다"))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .task {
-                        // 혹시 정보가 누락되었을 경우를 대비해 재요청
-                        await Task.detached {
-                            try? await remoteSession.client.projectionChannel.updateDisplayLayout()
-                        }.value
-                        try? await self.decideTargetDisplayID()
+            if case .active(_) =  viewModel.appStreamState {
+                Text("AppStream 활성화됨")
+                    .onAppear {
+                        subscription = nil
                     }
+            } else {
+                if case .displayID(let displayID) = sourceDescriptor, displayID != -1 {
+                    RemoteSessionProjectionView(
+                        remoteSession: remoteSession,
+                        projection: projection,
+                        hidio: hidio,
+                        sourceDescriptor: $sourceDescriptor,
+                        subscription: subscription
+                    )
+                } else {
+                    ProgressView(String(localized: "mainwindow.remote-session.loading-display-layout", defaultValue: "디스플레이 구성을 로드하고 있습니다"))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .task {
+                            // 혹시 정보가 누락되었을 경우를 대비해 재요청
+                            await Task.detached {
+                                try? await remoteSession.client.projectionChannel.updateDisplayLayout()
+                            }.value
+                            try? await self.decideTargetDisplayID()
+                        }
+                }
             }
         }
         #if os(iOS)
@@ -59,7 +66,7 @@ struct MainWindowRemoteSessionView: View {
                    case .displayID(let displayID) = sourceDescriptor,
                    displayID != -1 {
                     Task.detached {
-                        try? await self.updateProjectionTarget(displayID)
+                        try? await self.updateProjectionTarget(.displayID(displayID))
                     }
                 }
             } else {
@@ -78,7 +85,7 @@ struct MainWindowRemoteSessionView: View {
                     action: { newSourceDisplayID in
                         Task.detached {
                             do {
-                                try await self.updateProjectionTarget(newSourceDisplayID)
+                                try await self.updateProjectionTarget(.displayID(newSourceDisplayID))
                             } catch {
                                 Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
                             }
@@ -107,20 +114,25 @@ struct MainWindowRemoteSessionView: View {
                     }
             }
         }
+#if os(macOS)
+        .sheet(isPresented: $viewModel.isAppStreamAppSelectorPresented) {
+            
+        }
+#endif
     }
     
     func decideTargetDisplayID() async throws {
         if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
-            try await updateProjectionTarget(primaryDisplayID)
+            try await updateProjectionTarget(.displayID(primaryDisplayID))
         }
     }
-    
-    func updateProjectionTarget(_ displayID: Int) async throws {
-        let subscription = try await projection.subscribeProjectionSession(for: displayID)
+
+    func updateProjectionTarget(_ source: ProjectionSourceDescriptor) async throws {
+        let subscription = try await projection.subscribeProjectionSession(for: source)
 
         await MainActor.run {
             self.subscription = subscription
-            self.sourceDescriptor = .displayID(displayID)
+            self.sourceDescriptor = source
         }
     }
 }

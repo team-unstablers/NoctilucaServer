@@ -122,6 +122,42 @@ class ProjectionChannel: Channel {
             let event = try DisplayChangedEvent.fromProtobufBytes(frame.data)
             try await self.handleDisplayChangedEvent(event)
 
+        // MARK: - Window Manager opcodes
+
+        case .windowListResponse:
+            let response = try WindowListResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .getWindowInfoResponse:
+            let response = try GetWindowInfoResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .getWindowIconResponse:
+            let response = try GetWindowIconResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .getWindowThumbnailResponse:
+            let response = try GetWindowThumbnailResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .subscribeWindowEventsResponse:
+            let response = try SubscribeWindowEventsResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .unsubscribeWindowEventsResponse:
+            let response = try UnsubscribeWindowEventsResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .windowManipulationResponse:
+            let response = try WindowManipulationResponse.fromProtobufBytes(frame.data)
+            // WindowManipulationResponse에는 requestID가 없으므로 별도 처리
+            // TODO: implement dispatch mechanism
+            break
+
+        case .windowChangedEvent:
+            let event = try WindowChangedEvent.fromProtobufBytes(frame.data)
+            await self.handleWindowChangedEvent(event)
+
         // MARK: - Audio projection opcodes
 
         case .audioSessionCreatedEvent:

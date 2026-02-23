@@ -14,20 +14,6 @@ import SiriusKitClient
 import AppKit
 #endif
 
-enum ProjectionSourceDescriptor: CustomDebugStringConvertible, Equatable, Hashable {
-    case sessionID(UUID)
-    case displayID(Int)
-    
-    var debugDescription: String {
-        switch self {
-        case .sessionID(let sessionID):
-            return "Session ID (\(sessionID))"
-        case .displayID(let displayID):
-            return "Display ID #\(displayID)"
-        }
-    }
-}
-
 struct RemoteSessionProjectionView: View {
     static let logger = NoctilucaLogger(category: "RemoteSessionProjectionView")
     
@@ -95,11 +81,7 @@ struct RemoteSessionProjectionView: View {
     }
 
     private func syncMouseScope() {
-        guard case .displayID(let displayID) = sourceDescriptor else {
-            return
-        }
-
-        let scope = CursorPositionScope.displayId(Int32(displayID))
+        let scope = sourceDescriptor.toCursorPositionScope()
 
 #if os(macOS)
         if let mouse = hidio.session.currentMouse as? HIDIOAppKitPointer {

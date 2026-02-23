@@ -607,6 +607,9 @@
     "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle" : {
 
     },
+    "AppStream 활성화됨" : {
+
+    },
     "auth.certificate.chain" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {

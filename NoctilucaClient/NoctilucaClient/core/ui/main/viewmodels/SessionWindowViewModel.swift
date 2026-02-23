@@ -81,6 +81,31 @@ class SessionWindowViewModel: ObservableObject {
 
     @Published
     private(set) var remoteSession: RemoteSession? = nil
+    
+#if os(macOS)
+    @Published
+    var isAppStreamAppSelectorPresented: Bool = false
+    
+    @Published
+    var appStreamWindowManager: AppStreamWindowManager? = nil
+    
+    @Published
+    var appStreamState: AppStreamUIState = .inactive {
+        didSet {
+            if appStreamState == .presentAppSelector {
+                isAppStreamAppSelectorPresented = true
+            } else {
+                Task {
+                    do {
+                        try await appStreamWindowManager?.start()
+                    } catch {
+                        print(error)
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     private var client: NoctilucaClient? {
         remoteSession?.client

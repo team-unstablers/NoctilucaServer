@@ -62,7 +62,7 @@ class ProjectionSession: Identifiable {
     private let jitterBufferPreset: AppSettings.JitterBufferPreset
     private var jitterBuffer: VideoJitterBuffer?
 
-    let displayID: Int
+    let sourceDescriptor: ProjectionSourceDescriptor
 
     private var displayLayersLock = NSLock()
     private var displayLayers: [ObjectIdentifier: AVSampleBufferDisplayLayer] = [:]
@@ -124,9 +124,9 @@ class ProjectionSession: Identifiable {
     let events = PassthroughSubject<ProjectionSessionEvent, Never>()
 
     @MainActor
-    init(id: UUID, displayID: Int, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel, enableJitterBuffer: Bool = false, jitterBufferPreset: AppSettings.JitterBufferPreset = .lowLatency) {
+    init(id: UUID, sourceDescriptor: ProjectionSourceDescriptor, dataChannel: ProjectionDataChannel, controlChannel: ProjectionChannel, enableJitterBuffer: Bool = false, jitterBufferPreset: AppSettings.JitterBufferPreset = .lowLatency) {
         self.id = id
-        self.displayID = displayID
+        self.sourceDescriptor = sourceDescriptor
 
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel

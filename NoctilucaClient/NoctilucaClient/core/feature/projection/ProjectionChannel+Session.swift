@@ -13,17 +13,14 @@ import SiriusKitClient
 extension ProjectionChannel {
 
     /// 프로젝션 세션 생성 요청을 보냅니다.
-    private func requestSession(identifier: UUID, displayID: Int32, preferredCodecs: [Codec]) async throws -> ProjectionSessionCreatedEvent {
+    private func requestSession(identifier: UUID, source: ProjectionSourceDescriptor, preferredCodecs: [Codec]) async throws -> ProjectionSessionCreatedEvent {
 
         let response = try await self.sendSessionRequest(
             sessionID: identifier,
             opcode: .projectionRequest,
             message: ProjectionRequest(
                 identifier: identifier,
-                viewport: ProjectionSource(
-                    value: .entireDisplay(EntireDisplayProjectionSource(displayID: displayID)),
-                    flags: []
-                ),
+                viewport: source.toProjectionSource(),
                 preferredCodecs: preferredCodecs
             ),
         ) as ProjectionSessionCreatedEvent
@@ -117,7 +114,7 @@ extension ProjectionChannel {
     }
 
 
-    func createSession(for displayID: Int = -1, projectionSettings: SessionSettings.Projection?) async throws -> ProjectionSession {
+    func createSession(for source: ProjectionSourceDescriptor, projectionSettings: SessionSettings.Projection?) async throws -> ProjectionSession {
         guard let clientSession = self.clientSession else {
             fatalError()
         }
@@ -125,14 +122,14 @@ extension ProjectionChannel {
         let identifier = UUID()
 
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
-        let response = try await requestSession(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
+        let response = try await requestSession(identifier: identifier, source: source, preferredCodecs: preferredCodecs)
 
         let channel = await clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
 
         let projectionAppSettings = SettingsStore.shared.settings.projection
         let enableJitterBuffer = projectionAppSettings.enableJitterBuffer
         let jitterBufferPreset = projectionAppSettings.jitterBufferPreset
-        let session = await ProjectionSession(id: identifier, displayID: Int(displayID), dataChannel: channel, controlChannel: self, enableJitterBuffer: enableJitterBuffer, jitterBufferPreset: jitterBufferPreset)
+        let session = await ProjectionSession(id: identifier, sourceDescriptor: source, dataChannel: channel, controlChannel: self, enableJitterBuffer: enableJitterBuffer, jitterBufferPreset: jitterBufferPreset)
 
         try await session.prepare(codec: response.codec)
         try await session.start()
