@@ -210,6 +210,10 @@ class ProjectionSession: Identifiable {
             case .frameSkipped:
                 recentEncodingFailure = true
             case .errorOccurred(let error):
+                if let encoderError = error as? VideoEncoderError,
+                   encoderError == .notStarted {
+                    continue
+                }
                 self.logger.error("Encoder error occurred in projection session \(self.id): \(error)")
                 throw error
             case .stopped:

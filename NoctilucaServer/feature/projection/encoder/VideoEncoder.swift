@@ -117,7 +117,7 @@ extension VideoEncoder {
 }
 
 
-enum VideoEncoderError: LocalizedError {
+enum VideoEncoderError: LocalizedError, Equatable {
     case notPrepared
     case alreadyPrepared
     case notStarted
