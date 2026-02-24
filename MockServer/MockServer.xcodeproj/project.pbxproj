@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F68D166F2F4D810400E1393C /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F68D166E2F4D810400E1393C /* SiriusKit */; };
+		F68D16702F4D810400E1393C /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F68D166E2F4D810400E1393C /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F6D16B102F3F1EFF003D4C79 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F6D16B0F2F3F1EFF003D4C79 /* ArgumentParser */; };
-		F6D16B132F3F1F0A003D4C79 /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6D16B122F3F1F0A003D4C79 /* SiriusKit */; };
-		F6D16B142F3F1F0A003D4C79 /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6D16B122F3F1F0A003D4C79 /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F6D16B172F3F2054003D4C79 /* libbcrypt.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6D16B162F3F2054003D4C79 /* libbcrypt.framework */; };
 		F6D16B182F3F2054003D4C79 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6D16B162F3F2054003D4C79 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -30,8 +30,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				F68D16702F4D810400E1393C /* SiriusKit in Embed Frameworks */,
 				F6D16B182F3F2054003D4C79 /* libbcrypt.framework in Embed Frameworks */,
-				F6D16B142F3F1F0A003D4C79 /* SiriusKit in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -57,8 +57,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				F6D16B172F3F2054003D4C79 /* libbcrypt.framework in Frameworks */,
-				F6D16B132F3F1F0A003D4C79 /* SiriusKit in Frameworks */,
 				F6D16B102F3F1EFF003D4C79 /* ArgumentParser in Frameworks */,
+				F68D166F2F4D810400E1393C /* SiriusKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,7 +112,7 @@
 			name = MockServer;
 			packageProductDependencies = (
 				F6D16B0F2F3F1EFF003D4C79 /* ArgumentParser */,
-				F6D16B122F3F1F0A003D4C79 /* SiriusKit */,
+				F68D166E2F4D810400E1393C /* SiriusKit */,
 			);
 			productName = MockServer;
 			productReference = F6D16B042F3F1CA0003D4C79 /* MockServer */;
@@ -375,14 +375,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F68D166E2F4D810400E1393C /* SiriusKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SiriusKit;
+		};
 		F6D16B0F2F3F1EFF003D4C79 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F6D16B0E2F3F1EFF003D4C79 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
-		};
-		F6D16B122F3F1F0A003D4C79 /* SiriusKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SiriusKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

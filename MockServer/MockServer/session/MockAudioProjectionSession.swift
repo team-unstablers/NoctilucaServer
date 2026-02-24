@@ -73,9 +73,19 @@ class MockAudioProjectionSession: Identifiable {
             }
         }
 
-        // Sender loop: frameQueue -> dataChannel
+        // Sender loop: frameQueue -> dataChannel (프레임 단위 실시간 페이싱)
+        // Opus 인코더는 20ms(960 samples @ 48kHz) 단위로 프레임을 생산하지만,
+        // AVFoundation이 가변 크기 청크를 반환하기 때문에 encoder가 여러 프레임을 한꺼번에
+        // 생산할 수 있다. sender에서 프레임 간 간격을 두어 클라이언트 버퍼 오버플로우를 방지한다.
         self.senderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
+
+            // Opus: 960 samples @ 48kHz = 20ms per frame
+            let frameDuration = Duration.milliseconds(20)
+            let maxDriftThreshold = Duration.milliseconds(150)
+
+            var nextSendTime: ContinuousClock.Instant? = nil
+
             while !Task.isCancelled {
                 let frame: EncodedAudioFrame
                 do {
@@ -83,7 +93,30 @@ class MockAudioProjectionSession: Identifiable {
                 } catch is CancellationError {
                     return
                 }
+
+                // 페이싱: 다음 전송 시간까지 대기
+                if let sendTime = nextSendTime {
+                    let now = ContinuousClock.now
+                    if sendTime > now {
+                        do {
+                            try await Task.sleep(until: sendTime, clock: .continuous)
+                        } catch is CancellationError {
+                            return
+                        }
+                    } else if now - sendTime > maxDriftThreshold {
+                        // 큐가 비어 대기하다 복귀한 경우 등 — 타이밍 리셋
+                        nextSendTime = nil
+                    }
+                }
+
                 try await self.dataChannel.send(audioFrame: frame)
+
+                // 다음 전송 시간 갱신
+                if let sendTime = nextSendTime {
+                    nextSendTime = sendTime + frameDuration
+                } else {
+                    nextSendTime = ContinuousClock.now + frameDuration
+                }
             }
         }
 
@@ -94,7 +127,11 @@ class MockAudioProjectionSession: Identifiable {
         self.readerLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
 
-            let startTime = ContinuousClock.now
+            // 드리프트가 이 임계값을 초과하면 따라잡기(burst) 대신 타이밍 베이스라인을 리셋한다.
+            // EOF 재시작이나 일시적인 인코딩 지연 등으로 인한 burst 현상을 방지.
+            let maxDriftThreshold = Duration.milliseconds(150)
+
+            var startTime = ContinuousClock.now
             var totalSamplesRead: Int64 = 0
 
             while !Task.isCancelled {
@@ -109,14 +146,28 @@ class MockAudioProjectionSession: Identifiable {
                     let expectedElapsed = Duration.microseconds(Int64(Double(totalSamplesRead) / sampleRate * 1_000_000))
                     let targetTime = startTime + expectedElapsed
                     let now = ContinuousClock.now
+
                     if targetTime > now {
                         try await Task.sleep(until: targetTime, clock: .continuous)
+                    } else {
+                        let drift = now - targetTime
+                        if drift > maxDriftThreshold {
+                            self.logger.warning(
+                                "Audio pacing drift (\(drift)) exceeds threshold (\(maxDriftThreshold)), resetting timing baseline"
+                            )
+                            startTime = now
+                            totalSamplesRead = 0
+                        }
                     }
                 } catch is CancellationError {
                     return
                 } catch {
                     self.logger.error("Audio reader loop error: \(error)")
                     try? await Task.sleep(for: .milliseconds(100))
+
+                    // 에러 복구 후 타이밍 베이스라인 리셋 (burst 방지)
+                    startTime = ContinuousClock.now
+                    totalSamplesRead = 0
                 }
             }
         }
