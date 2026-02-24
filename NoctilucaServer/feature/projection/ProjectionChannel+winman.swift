@@ -8,6 +8,8 @@
 import Foundation
 import SiriusKit
 
+import AppKit
+
 
 extension ProjectionChannel {
 
@@ -52,6 +54,30 @@ extension ProjectionChannel {
     // MARK: - Window Manipulation Handlers
 
     func handleWindowManipulationRequest(_ request: WindowManipulationRequest) async throws {
+        guard let xcode = await desktopContextManager.runningApplications().first(where: { $0.bundleIdentifier == "com.apple.dt.Xcode" }) else {
+            return
+        }
+        
+        
+        let session = try await desktopContextManager.startMonitoring(app: xcode)
+        
+        switch request.operation {
+        case .stateCommand(let command):
+            break
+        case .focus(let focused):
+            if focused {
+                try await session.focusWindow(id: WindowID(request.windowID))
+            }
+        case .setGeometry(_):
+            break
+        case .setFlags(_):
+            break
+        case .clearFlags(_):
+            break
+        }
+        
+        await desktopContextManager.stopMonitoring(pid: session.pid)
+        
         // TODO: implement
     }
 }

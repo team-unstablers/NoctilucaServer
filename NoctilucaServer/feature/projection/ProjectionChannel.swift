@@ -18,7 +18,7 @@ class ProjectionChannel: Channel {
     let state = ProjectionChannelState()
     private var displayChangesCancellable: AnyCancellable?
     
-    let desktopContextManager = DesktopContextManager()
+    let desktopContextManager = DesktopContextManager.shared
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)

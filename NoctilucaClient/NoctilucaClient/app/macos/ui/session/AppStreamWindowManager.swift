@@ -38,6 +38,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         let windows = response.windows.filter { $0.applicationBundleID == "com.apple.dt.Xcode" }
         
         for window in windows {
+            print("spawning window: \(window.windowTitle)")
             try? await self.spawn(window)
         }
     }
@@ -78,6 +79,13 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     
     func windowDidBecomeKey(_ notification: Notification) {
         guard let window = notification.object as? AppStreamWindow else { return }
+        guard let projectionChannel = self.remoteSession.projection?.channel else {
+            return
+        }
+        
+        Task {
+            try await projectionChannel.requestWindowManipulation(windowID: UInt64(window.windowID), operation: .focus(true))
+        }
     }
 
     func windowWillClose(_ notification: Notification) {
