@@ -67,6 +67,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         TCCUtil.shared.requestAccess(for: .notifications)
         
+        try? ApplicationServicesPrivate.open()
+        
         UNUserNotificationCenter.current().delegate = self
         
         setupStatusItem()

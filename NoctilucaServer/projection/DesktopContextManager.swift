@@ -412,13 +412,17 @@ final class AppSession {
         }
         
         for element in windows {
-            var windowNumberValue: CFTypeRef?
-            let numberResult = AXUIElementCopyAttributeValue(element, kAXWindowNumberAttribute as CFString, &windowNumberValue)
-            if numberResult != .success {
+            print(element)
+            
+            var number: CGWindowID = 0
+            
+            guard let error = ApplicationServicesPrivate._AXUIElementGetWindow?(element, &number),
+                  error == .success
+            else {
                 continue
             }
             
-            if let number = windowNumberValue as? NSNumber, WindowID(number.uint32Value) == id {
+            if number == id {
                 return element
             }
         }
@@ -517,6 +521,7 @@ final class AppSession {
 /// (기존 WindowManagerOrSpy)
 @MainActor
 final class DesktopContextManager {
+    public static let shared = DesktopContextManager()
     
     weak var delegate: DesktopContextManagerDelegate?
     
