@@ -59,35 +59,44 @@ extension EventInjector {
     private func performMouseMoveAbsoluteOnQueue(percentage position: CursorPositionPercent, scope: CursorPositionScope) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
-        
-        let displayID: CGDirectDisplayID
+
+        let targetPosition: CGPoint
+
         switch scope {
+        case .windowId(let windowId):
+            guard let bounds = Self.queryWindowBounds(CGWindowID(windowId)) else {
+                return
+            }
+            targetPosition = CGPoint(
+                x: bounds.minX + (bounds.width * CGFloat(position.x)),
+                y: bounds.minY + (bounds.height * CGFloat(position.y))
+            )
+
         case .displayId(let id):
+            let displayID: CGDirectDisplayID
             if id == -1 {
                 displayID = CGMainDisplayID()
             } else {
                 displayID = CGDirectDisplayID(UInt32(bitPattern: id))
             }
-        default:
-            displayID = CGMainDisplayID()
+
+            let displayLayoutManager = DisplayLayoutManager.shared
+            let layouts = displayLayoutManager.displayLayouts.snapshot()
+            let mainScreen = layouts[CGMainDisplayID()]
+            let targetScreen = layouts[displayID] ?? mainScreen
+
+            guard let screen = targetScreen else {
+                return
+            }
+
+            let x11Point = CGPoint(
+                x: screen.frame.minX + (screen.frame.width * CGFloat(position.x)),
+                y: screen.frame.minY + (screen.frame.height * CGFloat(position.y))
+            )
+
+            let clampedX11 = CursorState.clampToNearestScreen(x11Point, layouts: layouts)
+            targetPosition = mainScreen.map { CursorState.toCoreGraphicsCoordinate(clampedX11, mainScreen: $0) } ?? clampedX11
         }
-        
-        let displayLayoutManager = DisplayLayoutManager.shared
-        let layouts = displayLayoutManager.displayLayouts.snapshot()
-        let mainScreen = layouts[CGMainDisplayID()]
-        let targetScreen = layouts[displayID] ?? mainScreen
-        
-        guard let screen = targetScreen else {
-            return
-        }
-        
-        let x11Point = CGPoint(
-            x: screen.frame.minX + (screen.frame.width * CGFloat(position.x)),
-            y: screen.frame.minY + (screen.frame.height * CGFloat(position.y))
-        )
-        
-        let clampedX11 = CursorState.clampToNearestScreen(x11Point, layouts: layouts)
-        let position = mainScreen.map { CursorState.toCoreGraphicsCoordinate(clampedX11, mainScreen: $0) } ?? clampedX11
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -98,7 +107,7 @@ extension EventInjector {
         guard let cgEvent = CGEvent(
                 mouseEventSource: eventSource,
                 mouseType: mouseType,
-                mouseCursorPosition: position,
+                mouseCursorPosition: targetPosition,
                 mouseButton: mouseButton
         )
         else {
@@ -108,8 +117,19 @@ extension EventInjector {
         cgEvent.sanitizeModifierFlags(with: keyDownState)
         cgEvent.post(tap: .cgSessionEventTap)
 
-        lastMousePosition = position
-        
+        lastMousePosition = targetPosition
+
+    }
+
+    private static func queryWindowBounds(_ windowID: CGWindowID) -> CGRect? {
+        guard let infoList = CGWindowListCopyWindowInfo(.optionIncludingWindow, windowID) as? [[String: Any]],
+              let info = infoList.first,
+              info.keys.contains(kCGWindowBounds as String)
+        else {
+            return nil
+        }
+        let boundsCF = info[kCGWindowBounds as String] as! CFDictionary
+        return CGRect(dictionaryRepresentation: boundsCF)
     }
     
     func performMouseMoveRelative(pixel position: CursorPositionPixel) {
