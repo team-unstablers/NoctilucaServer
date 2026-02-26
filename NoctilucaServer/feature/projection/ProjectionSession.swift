@@ -327,23 +327,26 @@ class ProjectionSession: Identifiable {
             inputFormatDescription: nil
         ))
         
-        let (qualityPlanner, frameRate) = Self.makeQualityPlanner(codec: codec)
-        self.qualityPlanner = qualityPlanner
-        self.originalFrameRate = frameRate
-        self.currentAppliedFrameRate = nil
-        self.lastSentDegradationNotice = nil
-        self.recentEncodingFailure = false
-        frameDropController.configure(frameRate: frameRate)
-
-        if let autoPlanner = qualityPlanner as? AutoQualityPlanner {
-            autoPlanner.onQualityAdjustment = { [weak self] event in
-                self?.handleQualityAdjustment(event, planner: autoPlanner)
+        
+        if case .auto(_) = codec.quality {
+            let (qualityPlanner, frameRate) = Self.makeQualityPlanner(codec: codec)
+            self.qualityPlanner = qualityPlanner
+            self.originalFrameRate = frameRate
+            self.currentAppliedFrameRate = nil
+            self.lastSentDegradationNotice = nil
+            self.recentEncodingFailure = false
+            frameDropController.configure(frameRate: frameRate)
+            
+            if let autoPlanner = qualityPlanner as? AutoQualityPlanner {
+                autoPlanner.onQualityAdjustment = { [weak self] event in
+                    self?.handleQualityAdjustment(event, planner: autoPlanner)
+                }
             }
-        }
-
-        if let planner = self.qualityPlanner {
-            _ = self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
-            _ = self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
+            
+            if let planner = self.qualityPlanner {
+                _ = self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
+                _ = self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
+            }
         }
         
         
