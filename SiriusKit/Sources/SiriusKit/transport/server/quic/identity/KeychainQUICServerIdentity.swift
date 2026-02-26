@@ -44,9 +44,15 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
          */
 
         if try keychain.queryIdentityExistance(by: args.identityLabel).get() {
-            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .identity).get()
+            // swiftlint:disable:next force_cast
+            let existingCert = try keychain.queryItem(by: args.identityLabel, clazz: .certificate).get() as! SecCertificate
+            let applicationLabel = try existingCert.extractApplicationLabel()
+
             _ = try keychain.deleteItem(by: args.identityLabel, clazz: .certificate).get()
-            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .privateKey).get()
+            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .privateKey, extras: [
+                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+                kSecAttrApplicationLabel as String: applicationLabel
+            ]).get()
         }
 
         do {
@@ -90,7 +96,9 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
         } catch {
             // cleanup
             _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .certificate).get()
-            _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .privateKey).get()
+            _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .privateKey, extras: [
+                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate
+            ]).get()
 
             throw error
         }

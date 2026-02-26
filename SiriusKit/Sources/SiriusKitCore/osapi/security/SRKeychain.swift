@@ -137,11 +137,11 @@ public class SRKeychain {
     }
 #endif
 
-    public func deleteItem(by label: String, clazz: SRKeychainItemClass) -> Result<Void, SRKeychainError> {
-        let query: [String: Any] = [
+    public func deleteItem(by label: String, clazz: SRKeychainItemClass, extras: [String: Any] = [:]) -> Result<Void, SRKeychainError> {
+        let query: [String: Any] = extras.merging([
             kSecClass as String: clazz.secClass,
             kSecAttrLabel as String: label
-        ]
+        ], uniquingKeysWith: { (_, new) in new })
 
         let status = SecItemDelete(query as CFDictionary)
 

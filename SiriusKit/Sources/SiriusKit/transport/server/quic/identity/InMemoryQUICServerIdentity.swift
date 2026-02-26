@@ -75,7 +75,9 @@ internal class InMemoryQUICServerIdentity: QUICServerIdentity {
         } catch {
             // cleanup
             _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .certificate).get()
-            _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .privateKey).get()
+            _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .privateKey, extras: [
+                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate
+            ]).get()
 
             throw error
         }
