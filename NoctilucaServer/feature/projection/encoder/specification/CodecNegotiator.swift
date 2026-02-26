@@ -74,26 +74,25 @@ class BalancedCodecNegotiator: CodecNegotiator {
     }
     
     override func negotiate(with theirs: [SiriusKit.Codec]) -> SiriusKit.Codec? {
-        /*
-        // 1. 엄격한 합집합 우선 - exact match를 기반으로 결정을 시도한다
-        let strictCandidates = unionStrict(self.ours, theirs)
-        if let realizable = strictCandidates.first(where: { $0.isRealizable() }) {
-            return realizable
+        // 1. 호환성 기반 머지 + 실현 가능성 체크
+        //    클라이언트의 순서를 존중하면서 서버 스펙과 머지하여 실현 가능한 코덱을 찾는다
+        for theirsSpec in theirs {
+            for oursSpec in ours {
+                if oursSpec.isCompatible(with: theirsSpec) {
+                    let merged = oursSpec.merging(with: theirsSpec)
+                    if merged.isRealizable() {
+                        return merged.toSiriusKitCodec(quality: theirsSpec.quality)
+                    }
+                }
+            }
         }
-         */
-        
-        // 2. 완화된 합집합 시도 - isCompatible() 기반으로 결정을 시도한다
-        let candidates = union(self.ours, theirs)
-        if let realizable = candidates.first(where: { $0.isRealizable() }) {
-            return realizable.toSiriusKitCodec()
-        }
-       
-        // 3. 호환되는 코덱 스펙이 없으므로 클라이언트와 서버 양쪽 다 처리 가능한 코덱 중 하나를 임의로 선택한다
+
+        // 2. 호환되는 코덱 스펙이 없으므로 클라이언트와 서버 양쪽 다 처리 가능한 코덱 중 하나를 임의로 선택한다
         if let fallback = selectFallbackCodec(self.ours, theirs) {
             return fallback.toSiriusKitCodec()
         }
-        
-        // 4. 최종 실패
+
+        // 3. 최종 실패
         return nil
     }
 }

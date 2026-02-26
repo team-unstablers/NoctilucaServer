@@ -145,6 +145,37 @@ extension CodecSpecification {
     }
     
     
+    /// 서버 스펙에 클라이언트의 선호 사항을 병합합니다.
+    /// - 서버가 "auto"인 옵션은 클라이언트의 선호값으로 대체됩니다.
+    /// - 서버가 구체적 값을 가진 옵션은 서버 값이 유지됩니다.
+    /// - 서버에 없는 옵션 중 클라이언트가 가진 것은 채택됩니다.
+    func merging(with client: borrowing SiriusKit.Codec) -> CodecSpecification {
+        var merged = self
+
+        // 클라이언트의 모든 옵션 순회 (mandatory가 optional보다 우선)
+        let allClientOptions = client.options.mandatory
+            .merging(client.options.optional) { mandatory, _ in mandatory }
+
+        for (key, clientValue) in allClientOptions {
+            if let serverValue = merged.options[key] {
+                // 서버가 auto이면 클라이언트 선호 채택
+                if serverValue.rawValue == "auto" && clientValue.rawValue != "auto" {
+                    merged.options[key] = clientValue
+                }
+            } else {
+                // 서버에 해당 키가 없으면 클라이언트 값 채택
+                merged.options[key] = clientValue
+            }
+        }
+
+        // frameRate: 서버 0(auto)이면 클라이언트 값 채택
+        if merged.frameRate == 0, let clientFrameRate = client.frameRate, clientFrameRate > 0 {
+            merged.frameRate = Double(clientFrameRate)
+        }
+
+        return merged
+    }
+
     func isFrameRateCompatible(with another: borrowing SiriusKit.Codec) -> Bool {
         let oursFrameRate = self.frameRate
         let theirsFrameRate = Double(another.frameRate ?? 0.0)

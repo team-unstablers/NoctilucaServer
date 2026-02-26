@@ -43,16 +43,15 @@ extension CodecSpecification {
         return consume options
     }
     
-    func toSiriusKitCodec() -> SiriusKit.Codec {
+    func toSiriusKitCodec(quality: SiriusKit.Codec.Quality? = nil) -> SiriusKit.Codec {
         var codec = SiriusKit.Codec(
             fourCC: self.fourCC,
             frameRate: Float(self.frameRate),
             size: SRSize(width: 0, height: 0),
             options: self.siriusKitCodecOptions,
-            // FIXME - CodecSpecification에 품질 정책 없음!!
-            quality: .auto(mode: .balancedPriority)
+            quality: quality ?? .auto(mode: .balancedPriority)
         )
-            
+
         return codec
     }
 }
