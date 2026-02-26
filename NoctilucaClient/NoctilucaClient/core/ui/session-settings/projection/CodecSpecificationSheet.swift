@@ -19,14 +19,14 @@ struct CodecSpecificationSheet: View {
 
     @State
     var specification: CodecSpecification = .h264
-
+    
     init(specification: CodecSpecification, onSave: @escaping (CodecSpecification) -> Void) {
         self.specification = specification
         self.onSave = onSave
     }
-
+    
     @ViewBuilder
-    var _body: some View {
+    var detailsTab: some View {
         VStack {
             Form {
                 Section {
@@ -149,14 +149,198 @@ struct CodecSpecificationSheet: View {
                     Text(String(format: String(localized: "session-settings.projection.codec.title_format", defaultValue: "%@ 코덱 설정"), specification.displayTitle))
 #endif
                 }
+            }
+        }
+    }
 
+    @ViewBuilder
+    var _body: some View {
+        var qualityBinding = Binding<String>(
+            get: {
+                switch specification.quality {
+                case .auto(_):
+                    return "auto"
+                    
+                case .constantBitrate(_):
+                    return "constantBitrate"
+                    
+                case .fixedQuality(_):
+                    return "fixedQuality"
+                    
+                case .lossless(_):
+                    return "lossless"
+                    
+                case .variableBitrate(_, _):
+                    return "variableBitrate"
+                }
+            },
+            set: { [self] qualityStr in
+                var specification = self.specification
+                switch qualityStr {
+                case "auto":
+                    specification.quality = .auto(mode: .balancedPriority)
+                case "constantBitrate":
+                    specification.quality = .constantBitrate(bitrateKbps: 3000)
+                case "lossless":
+                    specification.quality = .lossless(mode: .balancedPriority)
+                case "variableBitrate":
+                    specification.quality = .variableBitrate(targetBitrateKbps: 3000, maxBitrateKbps: 6000)
+                default:
+                    specification.quality = .auto(mode: .balancedPriority)
+                }
+                
+                self.specification = specification
+            }
+        )
+        
+        VStack {
+            Form {
+                Section {
+                    Picker(selection: qualityBinding) {
+                        Text(markdown: String(localized: "session-settings.projection.codec.quality.auto", defaultValue: "자동 조정 (권장)"))
+                            .tag("auto")
+                        Text(markdown: String(localized: "session-settings.projection.codec.quality.constantBitrate", defaultValue: "고정 비트레이트"))
+                            .tag("constantBitrate")
+                        Text(markdown: String(localized: "session-settings.projection.codec.quality.variableBitrate", defaultValue: "가변 비트레이트"))
+                            .tag("variableBitrate")
+                        Text(markdown: String(localized: "session-settings.projection.codec.quality.lossless", defaultValue: "무손실 (권장하지 않음)"))
+                            .tag("lossless")
+                    } label: {
+                        Text(markdown: String(localized: "session-settings.projection.codec.quality.title", defaultValue: "품질 정책"))
+                        switch qualityBinding.wrappedValue {
+                        case "auto":
+                            Text(markdown: String(
+                                localized: "session-settings.projection.codec.auto.description",
+                                defaultValue: "서버가 네트워크 환경과 클라이언트 측의 컴퓨팅 속도에 맞춰 자동으로 화면 품질을 결정합니다."
+                            ))
+                        case "constantBitrate":
+                            Text(markdown: String(
+                                localized: "session-settings.projection.codec.constantBitrate.description",
+                                defaultValue: "사용자가 지정한 비트레이트 값을 사용하도록 서버에게 요구합니다."
+                            ))
+                        case "variableBitrate":
+                            Text(markdown: String(
+                                localized: "session-settings.projection.codec.variableBitrate.description",
+                                defaultValue: "가변 비트레이트를 사용하도록 서버에게 요구합니다."
+                            ))
+                        case "lossless":
+                            Text(markdown: String(
+                                localized: "session-settings.projection.codec.lossless.description",
+                                defaultValue: "무손실 압축을 사용하도록 요구합니다.\n상당한 네트워크 대역폭을 사용하기 때문에 빠른 속도의 인터넷 연결을 필요로 합니다."
+                            ))
+                        default:
+                            Text(markdown: String(localized: "session-settings.projection.codec.hw_accel.default_desc", defaultValue: "서버 인코딩의 하드웨어 가속 요청 정책을 설정합니다."))
+                        }
+                    }
+                    
+                    if case .constantBitrate(let bitrateKbps) = self.specification.quality {
+                        var bitrateKbpsBinding = Binding<Double>(
+                            get: { Double(bitrateKbps) },
+                            set: { self.specification.quality = .constantBitrate(bitrateKbps: Int32($0)) }
+                        )
+                        SettingsEntry(
+                            title: String(localized: "session-settings.projection.codec.constantBitrateSlider.title", defaultValue: "비트레이트"),
+                            subtitle: String(
+                                localized: "session-settings.projection.codec.constantBitrateSlider.subtitle",
+                                defaultValue: "\(bitrateKbps / 1000)Mbps"
+                            )
+                        ) {
+                            Slider(
+                                value: bitrateKbpsBinding,
+                                in: 1000...20000,
+                                step: 1000,
+                                minimumValueLabel: Text("1Mbps"),
+                                maximumValueLabel: Text("20Mbps")
+                            ) {
+                            }
+                        }
+                    }
+                    
+                    if case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps) = self.specification.quality {
+                        var targetBitrateKbpsBinding = Binding<Double>(
+                            get: { Double(targetBitrateKbps) },
+                            set: { self.specification.quality = .variableBitrate(targetBitrateKbps: Int32($0), maxBitrateKbps: maxBitrateKbps) }
+                        )
+                        var maxBitrateKbpsBinding = Binding<Double>(
+                            get: { Double(maxBitrateKbps) },
+                            set: { self.specification.quality = .variableBitrate(targetBitrateKbps: targetBitrateKbps, maxBitrateKbps: Int32($0)) }
+                        )
+                        
+                        SettingsEntry(
+                            title: String(localized: "session-settings.projection.codec.variableBitrate.targetBitrateSlider.title", defaultValue: "타겟 비트레이트"),
+                            subtitle: String(
+                                localized: "session-settings.projection.codec.constantBitrateSlider.subtitle",
+                                defaultValue: "\(targetBitrateKbps / 1000)Mbps"
+                            )
+                        ) {
+                            Slider(
+                                value: targetBitrateKbpsBinding,
+                                in: 1000...20000,
+                                step: 1000,
+                                minimumValueLabel: Text("1Mbps"),
+                                maximumValueLabel: Text("20Mbps")
+                            ) {
+                            }
+                        }
+                        
+                        SettingsEntry(
+                            title: String(localized: "session-settings.projection.codec.variableBitrate.maxBitrateSlider.title", defaultValue: "최대 비트레이트"),
+                            subtitle: String(
+                                localized: "session-settings.projection.codec.constantBitrateSlider.subtitle",
+                                defaultValue: "\(maxBitrateKbps / 1000)Mbps"
+                            )
+                        ) {
+                            Slider(
+                                value: maxBitrateKbpsBinding,
+                                in: 1000...20000,
+                                step: 1000,
+                                minimumValueLabel: Text("1Mbps"),
+                                maximumValueLabel: Text("20Mbps")
+                            ) {
+                            }
+                        }
+                    }
+                    
+                    if case .lossless(let mode) = self.specification.quality {
+                        Picker(selection: $specification.quality) {
+                            Text("자동")
+                                .tag(Codec.Quality.lossless(mode: .balancedPriority))
+                            
+                            Text("압축률 우선")
+                                .tag(Codec.Quality.lossless(mode: .compressionPriority))
+                            
+                            Text("압축 속도 우선")
+                                .tag(Codec.Quality.lossless(mode: .speedPriority))
+                        } label: {
+                            Text("무손실 압축 모드")
+                            
+                            switch mode {
+                            case .balancedPriority:
+                                Text("성능과 압축률 간의 균형을 맞춥니다.")
+                            case .compressionPriority:
+                                Text("압축률을 우선시 합니다. 딜레이가 늘어날 수 있습니다.")
+                            case .speedPriority:
+                                Text("압축 속도를 우선시 합니다. 대역폭 사용량이 늘어날 수 있습니다.")
+                            default:
+                                Text("무손실 압축 모드를 선택합니다.")
+                            }
+                        }
+                    }
+                    
+                    
+                } footer: {
+                    if qualityBinding.wrappedValue != "auto" {
+                        Text("참고: 이 정책을 사용하면 네트워크 상태에 따른 퀄리티 디그레이드가 동작하지 않게 됩니다.")
+                    }
+                }
+                
                 Section {
                     SettingsEntry(
                         title: String(localized: "session-settings.projection.codec.max_resolution", defaultValue: "최대 해상도"),
                         subtitle: specification.maximumResolutionLevel == .unlimited ? (
-                            String(localized: "session-settings.projection.codec.max_resolution.auto_desc", defaultValue: "클라이언트의 협상 내용을 기반으로 최대 해상도를 결정합니다.")
+                            String(localized: "session-settings.projection.codec.max_resolution.auto_desc", defaultValue: "최대 해상도의 결정을 서버에게 맡깁니다.")
                         ) : (
-                            String(format: String(localized: "session-settings.projection.codec.max_resolution.set_desc_format", defaultValue: "최대 해상도를 %@으로 설정합니다."), specification.maximumResolutionLevel.displayText)
+                            String(format: String(localized: "session-settings.projection.codec.max_resolution.set_desc_format", defaultValue: "최대 해상도를 %@으로 제한합니다."), specification.maximumResolutionLevel.displayText)
                         )
                     ) {
                         Slider(
@@ -168,29 +352,7 @@ struct CodecSpecificationSheet: View {
                         ) {
                         }
                     }
-                }
-
-                Section {
-                    SettingsEntry(
-                        title: String(localized: "session-settings.projection.codec.frame_rate", defaultValue: "프레임 속도"),
-                        subtitle: specification.frameRate == 0 ? (
-                            String(localized: "session-settings.projection.codec.frame_rate.auto_desc", defaultValue: "클라이언트의 협상 내용을 기반으로 프레임 속도를 결정합니다.")
-                        ) : (
-                            String(format: String(localized: "session-settings.projection.codec.frame_rate.set_desc_format", defaultValue: "프레임 속도를 최대 %d FPS로 설정합니다."), Int(specification.frameRate))
-                        )
-                    ) {
-                        Slider(
-                            value: $specification.frameRate,
-                            in: 0...60,
-                            step: 15,
-                            minimumValueLabel: Text(markdown: String(localized: "common.auto", defaultValue: "자동")),
-                            maximumValueLabel: Text("60 FPS")
-                        ) {
-                        }
-                    }
-                }
-
-                Section {
+                    
                     Picker(selection: $specification.options[.displayDensity]) {
                         Text(markdown: String(localized: "common.auto", defaultValue: "자동"))
                             .tag(CodecOptionValue.kDisplayDensityAuto)
@@ -212,6 +374,26 @@ struct CodecSpecificationSheet: View {
 
                         default:
                             Text(markdown: String(localized: "session-settings.projection.codec.display_density.default_desc", defaultValue: "디스플레이 밀도를 설정합니다."))
+                        }
+                    }
+                }
+
+                Section {
+                    SettingsEntry(
+                        title: String(localized: "session-settings.projection.codec.frame_rate", defaultValue: "프레임 속도"),
+                        subtitle: specification.frameRate == 0 ? (
+                            String(localized: "session-settings.projection.codec.frame_rate.auto_desc", defaultValue: "최대 프레임 속도의 결정을 서버에게 맡깁니다.")
+                        ) : (
+                            String(format: String(localized: "session-settings.projection.codec.frame_rate.set_desc_format", defaultValue: "프레임 속도를 최대 %d FPS로 제한합니다."), Int(specification.frameRate))
+                        )
+                    ) {
+                        Slider(
+                            value: $specification.frameRate,
+                            in: 0...60,
+                            step: 15,
+                            minimumValueLabel: Text(markdown: String(localized: "common.auto", defaultValue: "자동")),
+                            maximumValueLabel: Text("60 FPS")
+                        ) {
                         }
                     }
                 }
@@ -240,7 +422,18 @@ struct CodecSpecificationSheet: View {
 #elseif os(iOS)
     var body: some View {
         NavigationStack {
-            _body
+            TabView {
+                _body
+                    .tabItem {
+                        Image(systemName: "videoprojector.fill")
+                        Text("기본 설정")
+                    }
+                detailsTab
+                    .tabItem {
+                        Image(systemName: "gearshape.2.fill")
+                        Text("고급 설정")
+                    }
+            }
                 .navigationTitle(String(format: String(localized: "session-settings.projection.codec.title_format", defaultValue: "%@ 코덱 설정"), specification.displayTitle))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
