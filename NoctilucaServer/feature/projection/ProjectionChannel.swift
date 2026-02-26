@@ -244,7 +244,7 @@ class ProjectionChannel: Channel {
                     quality: negotiatedCodec.quality
                 )
             } else {
-                let contentSize = await request.viewport.contentSize
+                let contentSize = await request.viewport.contentSize(codec: negotiatedCodec)
 
                 negotiatedCodec = Codec(
                     fourCC: negotiatedCodec.fourCC,
@@ -541,7 +541,7 @@ extension ProjectionChannel: ProjectionSessionDelegate {
 
 fileprivate extension ProjectionSource {
     @MainActor
-    var contentSize: SRSize? {
+    func contentSize(codec: Codec) -> SRSize? {
         switch value {
         case .entireDisplay(let source):
             let layoutManager = DisplayLayoutManager.shared
@@ -554,8 +554,13 @@ fileprivate extension ProjectionSource {
                 CGDirectDisplayID(source.displayID)
             }
 
-            if let displaySize = DisplayLayoutManager.shared.displayLayouts[displayID]?.frame.size {
-                return SRSize(width: displaySize.width, height: displaySize.height)
+            if let display = DisplayLayoutManager.shared.displayLayouts[displayID] {
+                switch codec.option(.displayDensity) {
+                case .kDisplayDensityBest:
+                    return SRSize(width: display.displayResolution.width, height: display.displayResolution.height)
+                default:
+                    return SRSize(width: display.frame.size.width, height: display.frame.size.height)
+                }
             } else {
                 return nil
             }
