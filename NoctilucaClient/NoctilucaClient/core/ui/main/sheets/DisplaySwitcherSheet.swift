@@ -113,6 +113,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .hdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            scaleFactor: 1.0,
             thumbnail: nil,
             metadata: [:],
             flags: 0
@@ -128,6 +129,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            scaleFactor: 1.0,
             thumbnail: nil,
             metadata: [:],
             flags: 0
@@ -143,6 +145,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            scaleFactor: 1.0,
             thumbnail: nil,
             metadata: [:],
             flags: 0
@@ -158,6 +161,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            scaleFactor: 1.0,
             thumbnail: nil,
             metadata: [:],
             flags: 0
@@ -173,6 +177,7 @@ struct DisplaySwitcherSheet: View {
             dynamicRange: .sdr,
             colorProfile: .dciP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
+            scaleFactor: 1.0,
             thumbnail: nil,
             metadata: [:],
             flags: 0
