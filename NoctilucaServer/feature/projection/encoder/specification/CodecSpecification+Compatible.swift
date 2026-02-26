@@ -146,24 +146,28 @@ extension CodecSpecification {
     
     
     /// 서버 스펙에 클라이언트의 선호 사항을 병합합니다.
-    /// - 서버가 "auto"인 옵션은 클라이언트의 선호값으로 대체됩니다.
-    /// - 서버가 구체적 값을 가진 옵션은 서버 값이 유지됩니다.
+    /// - 클라이언트의 mandatory 옵션은 항상 클라이언트 값으로 대체됩니다.
+    /// - 클라이언트의 optional 옵션은 서버가 "auto"인 경우에만 대체됩니다.
     /// - 서버에 없는 옵션 중 클라이언트가 가진 것은 채택됩니다.
     func merging(with client: borrowing SiriusKit.Codec) -> CodecSpecification {
         var merged = self
 
-        // 클라이언트의 모든 옵션 순회 (mandatory가 optional보다 우선)
-        let allClientOptions = client.options.mandatory
-            .merging(client.options.optional) { mandatory, _ in mandatory }
+        // 1) 클라이언트의 mandatory 옵션: 항상 클라이언트 값으로 덮어씀
+        for (key, clientValue) in client.options.mandatory {
+            merged.options[key] = clientValue
+        }
 
-        for (key, clientValue) in allClientOptions {
+        // 2) 클라이언트의 optional 옵션: 서버가 auto이거나 해당 키가 없을 때만 채택
+        for (key, clientValue) in client.options.optional {
             if let serverValue = merged.options[key] {
-                // 서버가 auto이면 클라이언트 선호 채택
                 if serverValue.rawValue == "auto" && clientValue.rawValue != "auto" {
                     merged.options[key] = clientValue
                 }
+                if key == .colorRange {
+                    // HOTFIX: colorRange는 auto가 없음
+                    merged.options[key] = clientValue
+                }
             } else {
-                // 서버에 해당 키가 없으면 클라이언트 값 채택
                 merged.options[key] = clientValue
             }
         }
