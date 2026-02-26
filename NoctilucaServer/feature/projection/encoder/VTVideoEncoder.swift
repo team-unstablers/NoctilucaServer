@@ -529,27 +529,30 @@ private extension VTVideoEncoder {
             switch quality {
             case .auto(_):
                 break
-            
+
             case .constantBitrate(let bitrateKbps):
                 applyAverageBitrate(Int(bitrateKbps), to: session)
                 applyMaxBitrate(Int(bitrateKbps), to: session)
                 return
-                
+
             case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
                 self.targetBitrateKbps = Int(targetBitrateKbps)
                 self.maxBitrateKbps = Int(maxBitrateKbps)
-                
+
                 applyAverageBitrate(Int(targetBitrateKbps), to: session)
                 applyMaxBitrate(Int(maxBitrateKbps), to: session)
                 return
 
-            case .lossless(let mode):
-                // 도와주세요, 클로드 선생님!
+            case .fixedQuality(let factor):
+                let clamped = max(0, min(Int(factor), 100))
+                let vtQuality = Float(clamped) / 100.0
+                setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: vtQuality))
+                return
+
+            case .lossless(_):
                 setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: 1.0))
-                break
-                
-            default:
-                break
+                setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
+                return
             }
         }
     

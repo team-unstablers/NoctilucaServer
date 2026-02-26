@@ -41,23 +41,6 @@ class BalancedCodecNegotiator: CodecNegotiator {
     }
      */
     
-    /// 두 스펙 셋의 완화된 합집합을 구합니다.
-    func union(_ ours: [CodecSpecification], _ theirs: [SiriusKit.Codec]) -> [CodecSpecification] {
-        var result: [CodecSpecification] = []
-        
-        // 최대한 클라이언트의 순서를 존중한다
-        for theirsSpec in theirs {
-            for oursSpec in ours {
-                if oursSpec.isCompatible(with: theirsSpec) {
-                    result.append(oursSpec)
-                    break
-                }
-            }
-        }
-        
-        return result
-    }
-    
     func selectFallbackCodec(_ ours: [CodecSpecification],
                              _ theirs: [SiriusKit.Codec]) -> CodecSpecification?
     {
