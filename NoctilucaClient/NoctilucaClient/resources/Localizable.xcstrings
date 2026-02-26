@@ -7271,7 +7271,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "사용자가 지정한 비트레이트 값을 사용합니다."
+            "value" : "사용자가 지정한 비트레이트 값을 사용하도록 서버에게 요구합니다."
           }
         }
       }
@@ -7855,7 +7855,95 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "무손실 압축을 사용합니다.\n상당한 네트워크 대역폭을 사용하기 때문에 빠른 속도의 인터넷 연결을 필요로 합니다."
+            "value" : "무손실 압축을 사용하도록 요구합니다.\n상당한 네트워크 대역폭을 사용하기 때문에 빠른 속도의 인터넷 연결을 필요로 합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.balanced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.balanced_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "성능과 압축률 간의 균형을 맞춥니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.compression" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축률 우선"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.compression_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축률을 우선시 합니다. 딜레이가 늘어날 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "무손실 압축 모드를 선택합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.speed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축 속도 우선"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.speed_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축 속도를 우선시 합니다. 대역폭 사용량이 늘어날 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "무손실 압축 모드"
           }
         }
       }
@@ -8288,6 +8376,17 @@
         }
       }
     },
+    "session-settings.projection.codec.quality.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "품질 정책을 설정합니다."
+          }
+        }
+      }
+    },
     "session-settings.projection.codec.quality.lossless" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -8295,6 +8394,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "무손실 (권장하지 않음)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.quality.manual_warning" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "참고: 이 정책을 사용하면 네트워크 상태에 따른 퀄리티 디그레이드가 동작하지 않게 됩니다."
           }
         }
       }
@@ -8317,6 +8427,28 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "가변 비트레이트"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.tab.advanced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "고급 설정"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.tab.basic" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본 설정"
           }
         }
       }
@@ -8356,7 +8488,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "가변 비트레이트를 사용합니다."
+            "value" : "가변 비트레이트를 사용하도록 서버에게 요구합니다."
           }
         }
       }
@@ -13149,16 +13281,7 @@
     "YUV 4:4:4" : {
 
     },
-    "고급 설정" : {
-
-    },
-    "기본 설정" : {
-
-    },
     "소프트웨어 키보드 토글" : {
-
-    },
-    "참고: 이 정책을 사용하면 네트워크 상태에 따른 퀄리티 디그레이드가 동작하지 않게 됩니다." : {
 
     }
   },
