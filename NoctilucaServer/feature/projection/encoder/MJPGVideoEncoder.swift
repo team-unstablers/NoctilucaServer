@@ -7,7 +7,38 @@ import SiriusKit
 import UniformTypeIdentifiers
 import VideoToolbox
 
-import libturbojpeg
+// MARK: - JPEG Compression Mode
+
+/// JPEG 압축 모드.
+/// 표준 quality 파라미터 기반 또는 커스텀 양자화 테이블 기반 압축을 선택한다.
+private enum JPEGCompressionMode {
+    /// 표준 JPEG quality (1-100). libjpeg의 jpeg_set_quality에 매핑된다.
+    case quality(Int32)
+
+    /// 커스텀 양자화 테이블 기반 압축.
+    case quantizationTables(JPEGQuantizationTables)
+}
+
+/// JPEG 커스텀 양자화 테이블 세트.
+/// luminance(휘도)와 chrominance(색차) 각각 64개의 양자화 계수를 가진다.
+private struct JPEGQuantizationTables {
+    /// 휘도(Luminance) 양자화 테이블 (64개 값, natural/raster order)
+    let luminance: [UInt32]
+    /// 색차(Chrominance) 양자화 테이블 (64개 값, natural/raster order)
+    let chrominance: [UInt32]
+    /// true면 양자화 값을 baseline JPEG 호환 범위(1-255)로 클램프한다.
+    let forceBaseline: Bool
+
+    init(luminance: [UInt32], chrominance: [UInt32], forceBaseline: Bool = true) {
+        precondition(luminance.count == 64, "Luminance table must have exactly 64 values")
+        precondition(chrominance.count == 64, "Chrominance table must have exactly 64 values")
+        self.luminance = luminance
+        self.chrominance = chrominance
+        self.forceBaseline = forceBaseline
+    }
+}
+
+// MARK: - MJPGVideoEncoder
 
 final class MJPGVideoEncoder: VideoEncoder {
     private let logger = NoctilucaLogger(category: "MJPGVideoEncoder")
@@ -18,9 +49,9 @@ final class MJPGVideoEncoder: VideoEncoder {
     fileprivate var configuration: VideoEncoderConfiguration?
 
     private var colorFormat: CodecOptionValue = .kColorFormatYUV420
-    private var compressionLevel: Int32 = 90
+    private var compressMode: JPEGCompressionMode = .quality(90)
     private var quantizeLevel: Int = 0
-    private var subsampling: Int32 = TJSAMP_420.rawValue
+    private var jpegSubsamplingMode: NJPEGSubsampling = NJPEGSubsampling420
     private var tileSize: Int = 256
 
     private let maxEncoderFrameRate: Float = 15.0
@@ -33,9 +64,6 @@ final class MJPGVideoEncoder: VideoEncoder {
 
     private var frameTiler: FrameTiler!
     private var frameTileDiffer: FrameTileDiffer!
-    
-    private var compressHandle: tjhandle? = nil
-    
 
     init() {
         self.workerQueue = DispatchQueue(label: "app.noctiluca.server.projection.encoder.mjpg.worker", qos: .userInitiated)
@@ -45,16 +73,16 @@ final class MJPGVideoEncoder: VideoEncoder {
         } else {
             self.ciContext = CIContext()
         }
-        
+
         var continuationLocal: AsyncStream<VideoEncoderEvent>.Continuation!
-        
+
         self.events = AsyncStream<VideoEncoderEvent>(VideoEncoderEvent.self, bufferingPolicy: .unbounded) { continuation in
             continuationLocal = continuation
         }
-        
+
         self.continuation = continuationLocal
     }
-    
+
     init(workerQueue: DispatchQueue, callbackQueue: DispatchQueue) {
         self.workerQueue = workerQueue
         self.callbackQueue = callbackQueue
@@ -63,39 +91,30 @@ final class MJPGVideoEncoder: VideoEncoder {
         } else {
             self.ciContext = CIContext()
         }
-        
+
         var continuationLocal: AsyncStream<VideoEncoderEvent>.Continuation!
-        
+
         self.events = AsyncStream<VideoEncoderEvent>(VideoEncoderEvent.self, bufferingPolicy: .unbounded) { continuation in
             continuationLocal = continuation
         }
-        
+
         self.continuation = continuationLocal
     }
-    
+
     deinit {
         continuation.finish()
-        if let handle = compressHandle {
-            tjDestroy(handle)
-            compressHandle = nil
-        }
     }
-    
+
     func prepare(with configuration: VideoEncoderConfiguration) throws {
         guard self.configuration == nil else {
             throw VideoEncoderError.alreadyPrepared
         }
-        
+
         guard configuration.codec.fourCC == .mjpg else {
             throw VideoEncoderError.unsupportedCodec(configuration.codec.fourCC.stringRepresentation)
         }
-        
+
         self.configuration = configuration
-        
-        self.compressHandle = tjInitCompress()
-        guard self.compressHandle != nil else {
-            throw MJPGVideoEncoderError.compressorUnavailable
-        }
 
         // MJPG: kColorFormatAuto는 YUV420과 동일하게 처리
         if let configuredColorFormat = configuration.codec.option(.colorFormat) {
@@ -103,14 +122,16 @@ final class MJPGVideoEncoder: VideoEncoder {
         } else {
             self.colorFormat = .kColorFormatYUV420
         }
-        self.subsampling = self.jpegSubsampling(for: self.colorFormat)
-        
+        self.jpegSubsamplingMode = (self.colorFormat == .kColorFormatYUV444)
+            ? NJPEGSubsampling444
+            : NJPEGSubsampling420
+
         // JPEG quality (1...100)
         let levelString = configuration.codec.option(.compressionLevel)?.rawValue ?? "90"
         if let parsedLevel = Int32(levelString) {
-            self.compressionLevel = max(1, min(100, parsedLevel))
+            self.compressMode = .quality(max(1, min(100, parsedLevel)))
         } else {
-            self.compressionLevel = 90
+            self.compressMode = .quality(90)
         }
 
         // 양자화 레벨 (0...5)
@@ -133,27 +154,23 @@ final class MJPGVideoEncoder: VideoEncoder {
         self.frameTiler = FrameTiler(tileSize: self.tileSize)
         self.frameTileDiffer = FrameTileDiffer()
     }
-    
+
     func start() throws {
         guard configuration != nil else {
             throw VideoEncoderError.notPrepared
         }
         isStarted = true
     }
-    
+
     func stop() throws {
         workerQueue.sync {
             isStarted = false
         }
     }
-    
+
     func flush() throws {
-        /*
-        guard let session = compressionSession else { return }
-        VTCompressionSessionCompleteFrames(session, untilPresentationTimeStamp: .invalid)
-         */
     }
-    
+
     func encode(frameID: UInt64, sampleBuffer: CMSampleBuffer) throws {
         guard isStarted else {
             let error = VideoEncoderError.notStarted
@@ -165,7 +182,7 @@ final class MJPGVideoEncoder: VideoEncoder {
             continuation.yield(with: .success(.errorOccurred(error)))
             throw error
         }
-        
+
         workerQueue.async { [self] in
             guard self.isStarted else { return }
 
@@ -194,7 +211,7 @@ final class MJPGVideoEncoder: VideoEncoder {
                 } else {
                     throw VideoEncoderError.invalidSampleBuffer
                 }
-                
+
                 // 타일 인코딩을 행한다
                 let rgbTiles = frameTiler.tile(pixelBuffer)
                 guard !rgbTiles.isEmpty else { return }
@@ -207,40 +224,40 @@ final class MJPGVideoEncoder: VideoEncoder {
                 if diffIndices.isEmpty {
                     return
                 }
-                
+
                 // 변경된 각 타일을 JPEG로 인코딩한다
                 // TODO: 가능한 경우 병렬 처리를 행한다
-                
+
                 let tileSize = frameTiler.tileSize
                 let paddedWidth = paddedDimension(CVPixelBufferGetWidth(pixelBuffer), tileSize: tileSize)
                 let tilesPerRow = max(1, paddedWidth / tileSize)
-                
+
                 var encodedTiles: [ProjectionFrameTile] = []
                 encodedTiles.reserveCapacity(diffIndices.count)
-                
-                let jpegQuality = self.jpegQuality()
+
+                let currentMode = self.compressMode
                 for index in diffIndices {
                     let tile = rgbTiles[index]
-                    
-                    let jpeg = try encodeJPEG(tile, quality: jpegQuality)
+
+                    let jpeg = try encodeJPEG(tile, mode: currentMode)
 
                     let geometry = geometryForTile(
                         index: index,
                         tilesPerRow: tilesPerRow,
                         tileSize: tileSize
                     )
-                    
+
                     encodedTiles.append(ProjectionFrameTile(geometry: geometry, data: jpeg))
                 }
-                
+
                 // emit frame
                 // see SiriusKit/channel/msgdef/v1/channels/projection_data/TiledFrame.swift
-                
+
                 let frameData = try ProjectionFrameTile.encode(encodedTiles)
                 guard frameData.count <= Int(UInt32.max) else {
                     throw VideoEncoderError.payloadTooLarge(frameData.count)
                 }
-                
+
                 let isKeyframe = diffIndices.count == rgbTiles.count
                 let frameHeader = FrameDataHeader(
                     frameID: frameID,
@@ -255,15 +272,15 @@ final class MJPGVideoEncoder: VideoEncoder {
             }
         }
     }
-    
+
     // MARK: - On-the-fly controls
-    
+
     func forceKeyframe() {
         logger.info("Force keyframe requested.")
         // 타일 차이 기록 초기화를 행한다
         self.frameTileDiffer.reset()
     }
-    
+
     @discardableResult
     func updateTargetBitrate(_ bitrateKbps: Int) -> Bool {
         return true
@@ -278,7 +295,7 @@ final class MJPGVideoEncoder: VideoEncoder {
     func updateQuality(_ quality: Float) -> Bool {
         let clamped = min(max(quality, 0.0), 1.0)
         // 0.0 → 15 (최저), 1.0 → 45 (최고)
-        self.compressionLevel = Int32(15.0 + clamped * 30.0)
+        self.compressMode = .quality(Int32(15.0 + clamped * 30.0))
         return true
     }
 
@@ -291,12 +308,13 @@ final class MJPGVideoEncoder: VideoEncoder {
 
 // MARK: - Helpers
 
-    private enum MJPGVideoEncoderError: LocalizedError {
-        case compressorUnavailable
-        case cgImageCreationFailed
-        case destinationCreationFailed
-        case destinationFinalizeFailed
-    
+private enum MJPGVideoEncoderError: LocalizedError {
+    case compressorUnavailable
+    case cgImageCreationFailed
+    case destinationCreationFailed
+    case destinationFinalizeFailed
+    case jpegCompressionFailed(String)
+
     var errorDescription: String? {
         switch self {
         case .compressorUnavailable:
@@ -307,75 +325,84 @@ final class MJPGVideoEncoder: VideoEncoder {
             return "MJPG failed to create image destination."
         case .destinationFinalizeFailed:
             return "MJPG failed to finalize image destination."
+        case .jpegCompressionFailed(let message):
+            return "JPEG compression failed: \(message)"
         }
     }
 }
 
 private extension MJPGVideoEncoder {
-    func jpegQuality() -> Int32 {
-        return max(1, min(100, compressionLevel))
-    }
-
-    func jpegSubsampling(for colorFormat: CodecOptionValue) -> Int32 {
-        if colorFormat == .kColorFormatYUV444 {
-            return TJSAMP_444.rawValue
-        }
-        return TJSAMP_420.rawValue
-    }
-    
-    func encodeJPEG(_ pixelBuffer: CVPixelBuffer, quality: Int32) throws -> Data {
+    func encodeJPEG(_ pixelBuffer: CVPixelBuffer, mode: JPEGCompressionMode) throws -> Data {
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
         let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-        
-        CVPixelBufferLockBaseAddress(pixelBuffer, [])
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
-        
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
         guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
-            // FIXME
-            throw MJPGVideoEncoderError.cgImageCreationFailed
-        }
-        
-        
-        guard let handle = compressHandle else {
             throw MJPGVideoEncoderError.compressorUnavailable
         }
 
-        var outPtr: UnsafeMutablePointer<UInt8>? = nil
-        var outSize: UInt = 0
-        
-        let retval = withUnsafeMutablePointer(to: &outSize) { outSizePtr in
-            tjCompress2(
-                handle,
-                baseAddress,
-                Int32(width),
-                Int32(bytesPerRow),
-                Int32(height),
-                TJPF_BGRA.rawValue,
-                &outPtr,
-                outSizePtr,
-                subsampling,
-                quality,
-                0
-            )
+        var params = NJPEGCompressParams()
+        params.width = Int32(width)
+        params.height = Int32(height)
+        params.bytesPerRow = Int32(bytesPerRow)
+        params.inputBGRA = UnsafePointer(baseAddress.assumingMemoryBound(to: UInt8.self))
+        params.subsampling = self.jpegSubsamplingMode
+
+        switch mode {
+        case .quality(let quality):
+            params.mode = NJPEGCompressModeQuality
+            params.quality = quality
+            return try compressWithParams(&params)
+
+        case .quantizationTables(let tables):
+            params.mode = NJPEGCompressModeQuantTable
+            var cTables = NJPEGQuantTables()
+
+            withUnsafeMutablePointer(to: &cTables.luminance) { tuplePtr in
+                tuplePtr.withMemoryRebound(to: UInt32.self, capacity: 64) { ptr in
+                    for i in 0..<64 {
+                        ptr[i] = tables.luminance[i]
+                    }
+                }
+            }
+            withUnsafeMutablePointer(to: &cTables.chrominance) { tuplePtr in
+                tuplePtr.withMemoryRebound(to: UInt32.self, capacity: 64) { ptr in
+                    for i in 0..<64 {
+                        ptr[i] = tables.chrominance[i]
+                    }
+                }
+            }
+            cTables.forceBaseline = tables.forceBaseline
+
+            return try withUnsafePointer(to: &cTables) { tablesPtr in
+                params.quantTables = tablesPtr
+                return try compressWithParams(&params)
+            }
         }
-        
-        guard retval == 0 else {
-            throw MJPGVideoEncoderError.destinationFinalizeFailed
-        }
-        
-        
-        guard let outPtr else {
-            throw MJPGVideoEncoderError.destinationFinalizeFailed
+    }
+
+    func compressWithParams(_ params: inout NJPEGCompressParams) throws -> Data {
+        var errorMsg = [CChar](repeating: 0, count: 200)
+        let result = njpeg_compress(&params, &errorMsg)
+
+        guard result == 0 else {
+            let msg = String(cString: errorMsg)
+            throw MJPGVideoEncoderError.jpegCompressionFailed(msg)
         }
 
-        let data = Data(bytes: outPtr, count: Int(outSize))
-        
-        tjFree(outPtr)
-        
-        return consume data
+        guard let outPtr = params.outBuffer else {
+            throw MJPGVideoEncoderError.compressorUnavailable
+        }
+
+        let data = Data(bytes: outPtr, count: Int(params.outSize))
+        njpeg_free(outPtr)
+
+        return data
     }
-    
+
     func microseconds(from time: CMTime) -> UInt64 {
         guard time.isValid, time.timescale != 0 else { return 0 }
         let scaled = CMTimeConvertScale(time, timescale: 1_000_000, method: .default)
@@ -384,12 +411,12 @@ private extension MJPGVideoEncoder {
         }
         return UInt64(scaled.value)
     }
-    
+
     func paddedDimension(_ value: Int, tileSize: Int) -> Int {
         guard tileSize > 0 else { return value }
         return ((value + tileSize - 1) / tileSize) * tileSize
     }
-    
+
     func geometryForTile(index: Int, tilesPerRow: Int, tileSize: Int) -> CGRect {
         let x = (index % tilesPerRow) * tileSize
         let y = (index / tilesPerRow) * tileSize
@@ -405,23 +432,23 @@ private extension CMSampleBuffer {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(self) else {
             throw VideoEncoderError.invalidSampleBuffer
         }
-        
+
         let desiredPixelFormat = kCVPixelFormatType_32BGRA
         let currentPixelFormat = CVPixelBufferGetPixelFormatType(imageBuffer)
         if currentPixelFormat == desiredPixelFormat {
             return self
         }
-        
+
         let width = CVPixelBufferGetWidth(imageBuffer)
         let height = CVPixelBufferGetHeight(imageBuffer)
-        
+
         var convertedBuffer: CVPixelBuffer?
         let attrs: CFDictionary = [
             kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue as Any,
             kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue as Any,
             kCVPixelBufferMetalCompatibilityKey: kCFBooleanTrue as Any
         ] as CFDictionary
-        
+
         let status = CVPixelBufferCreate(
             kCFAllocatorDefault,
             width,
@@ -430,19 +457,19 @@ private extension CMSampleBuffer {
             attrs,
             &convertedBuffer
         )
-        
+
         guard status == kCVReturnSuccess, let convertedBuffer else {
             throw VideoEncoderError.invalidSampleBuffer
         }
-        
+
         let ciImage = CIImage(cvImageBuffer: imageBuffer)
         let colorSpace = CVImageBufferGetColorSpace(imageBuffer)?.takeUnretainedValue() ?? CGColorSpaceCreateDeviceRGB()
         CVBufferPropagateAttachments(imageBuffer, convertedBuffer)
         ciContext.render(ciImage, to: convertedBuffer, bounds: ciImage.extent, colorSpace: colorSpace)
-        
+
         var timingInfo = CMSampleTimingInfo()
         _ = CMSampleBufferGetSampleTimingInfo(self, at: 0, timingInfoOut: &timingInfo)
-        
+
         var formatDescription: CMVideoFormatDescription?
         let formatStatus = CMVideoFormatDescriptionCreateForImageBuffer(
             allocator: kCFAllocatorDefault,
@@ -452,7 +479,7 @@ private extension CMSampleBuffer {
         guard formatStatus == noErr, let formatDescription else {
             throw VideoEncoderError.invalidSampleBuffer
         }
-        
+
         var convertedSampleBuffer: CMSampleBuffer?
         let sampleStatus = CMSampleBufferCreateForImageBuffer(
             allocator: kCFAllocatorDefault,
@@ -464,11 +491,11 @@ private extension CMSampleBuffer {
             sampleTiming: &timingInfo,
             sampleBufferOut: &convertedSampleBuffer
         )
-        
+
         guard sampleStatus == noErr, let convertedSampleBuffer else {
             throw VideoEncoderError.invalidSampleBuffer
         }
-        
+
         return convertedSampleBuffer
     }
 }

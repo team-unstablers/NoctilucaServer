@@ -4,3 +4,4 @@
 
 
 #import "plugins/builtins/auth/plugins/pam/PAMAuthPlugin.h"
+#include "feature/projection/encoder/jpeg/NoctilucaJPEGCompressor.h"
