@@ -11,7 +11,7 @@ import CoreVideo
 import Metal
 
 /// GPU 기반 타일 합성기
-final class MetalTileCompositor: TileCompositor {
+final class MetalTileCompositor: CanvasTileCompositor {
     var frameSize: CGSize {
         didSet {
             if frameSize != oldValue {
@@ -20,10 +20,10 @@ final class MetalTileCompositor: TileCompositor {
         }
     }
 
-    private let device: MTLDevice
+    let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private var compositeTexture: MTLTexture?
-    private var canvasTexture: MTLTexture?
+    private(set) var canvasTexture: MTLTexture?
     private let tileTexturePool: TileTexturePool
     
     // ✨ 추가: CoreVideo와 Metal을 연결해주는 캐시
@@ -59,38 +59,69 @@ final class MetalTileCompositor: TileCompositor {
         invalidate()
     }
 
-    // MARK: - TileCompositor
+    // MARK: - CanvasTileCompositor
+
+    func compositeToCanvas(_ frame: DecodedTileFrame) throws {
+        if frameSize != frame.frameSize {
+            frameSize = frame.frameSize
+            recreateTextures()
+        }
+
+        guard let commandBuffer = commandQueue.makeCommandBuffer(),
+              let blitEncoder = commandBuffer.makeBlitCommandEncoder(),
+              let canvasTexture = self.canvasTexture else {
+            throw TileCompositorError.commandBufferCreationFailed
+        }
+
+        if frame.isKeyFrame {
+            clearTexture(canvasTexture, encoder: blitEncoder)
+        }
+
+        var usedTileTextures: [MTLTexture] = []
+        for tile in frame.tiles {
+            if let tileTexture = try blitTile(tile, to: canvasTexture, encoder: blitEncoder) {
+                usedTileTextures.append(tileTexture)
+            }
+        }
+
+        blitEncoder.endEncoding()
+
+        commandBuffer.addCompletedHandler { [weak self] _ in
+            for texture in usedTileTextures {
+                self?.tileTexturePool.release(texture)
+            }
+        }
+
+        commandBuffer.commit()
+    }
+
+    // MARK: - TileCompositor (legacy: CVPixelBuffer 출력)
 
     func composite(_ frame: DecodedTileFrame) throws -> CVPixelBuffer {
         if frameSize != frame.frameSize {
             frameSize = frame.frameSize
             recreateTextures()
         }
-        
+
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let blitEncoder = commandBuffer.makeBlitCommandEncoder(),
-              let canvasTexture = self.canvasTexture else { // Canvas가 있어야 함
+              let canvasTexture = self.canvasTexture else {
             throw TileCompositorError.commandBufferCreationFailed
         }
-        
-        // 1. 키프레임이면 Canvas를 클리어 (전체 갱신이므로)
-        // P-Frame(부분 변경)이면 이 단계 건너뜀 -> 이전 화면 유지됨! 👍
+
         if frame.isKeyFrame {
             clearTexture(canvasTexture, encoder: blitEncoder)
         }
-        
-        // 2. 타일들을 'Canvas'에 그리기 (누적 업데이트)
+
         var usedTileTextures: [MTLTexture] = []
         for tile in frame.tiles {
-            // target을 output이 아니라 canvasTexture로 변경
             if let tileTexture = try blitTile(tile, to: canvasTexture, encoder: blitEncoder) {
                 usedTileTextures.append(tileTexture)
             }
         }
-        
-        // 3. ✨ [핵심] Canvas(완성본)를 Output(CVPixelBuffer)으로 통째로 복사
+
         let outputBuffer = try acquireOutputBuffer()
-        
+
         if let outputTexture = createTexture(from: outputBuffer) {
             blitEncoder.copy(
                 from: canvasTexture,
@@ -104,18 +135,17 @@ final class MetalTileCompositor: TileCompositor {
                 destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0)
             )
         }
-        
+
         blitEncoder.endEncoding()
-        
-        // 4. 리소스 정리 핸들러
+
         commandBuffer.addCompletedHandler { [weak self] _ in
             for texture in usedTileTextures {
                 self?.tileTexturePool.release(texture)
             }
         }
-        
+
         commandBuffer.commit()
-        
+
         return outputBuffer
     }
 
