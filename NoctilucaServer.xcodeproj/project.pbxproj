@@ -19,7 +19,6 @@
 		F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6561F1C2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1D2F08C0CD0090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		F680ED402F504AAF00281E21 /* CJKKeyboardHacks.nocbundle in Bundle PlugIns */ = {isa = PBXBuildFile; fileRef = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
 		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -29,17 +28,11 @@
 		F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */; };
 		F6B57F162F5049F8002BBDDC /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6B57F152F5049F8002BBDDC /* SiriusKit */; };
 		F6B57F172F5049F8002BBDDC /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6B57F152F5049F8002BBDDC /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F6CC7D3D2F51904400AA6DC2 /* CJKKeyboardHacks.nocbundle in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		F61AB32B2F41293A00BB69AF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F66965032ECF26770032EF4E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F61AB3172F41274E00BB69AF;
-			remoteInfo = CJKKeyboardHacks;
-		};
 		F659BDF62EF3C1730010A18E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F66965032ECF26770032EF4E /* Project object */;
@@ -47,20 +40,16 @@
 			remoteGlobalIDString = F669650A2ECF26770032EF4E;
 			remoteInfo = NoctilucaServer;
 		};
+		F6CC7D3E2F51904400AA6DC2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F66965032ECF26770032EF4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F61AB3172F41274E00BB69AF;
+			remoteInfo = CJKKeyboardHacks;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F61AB3292F41288800BB69AF /* Bundle PlugIns */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				F680ED402F504AAF00281E21 /* CJKKeyboardHacks.nocbundle in Bundle PlugIns */,
-			);
-			name = "Bundle PlugIns";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F66965392ECF27110032EF4E /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -96,6 +85,17 @@
 				F6B57F172F5049F8002BBDDC /* SiriusKit in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6CC7D3C2F51903500AA6DC2 /* Embed PlugIns */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F6CC7D3D2F51904400AA6DC2 /* CJKKeyboardHacks.nocbundle in Embed PlugIns */,
+			);
+			name = "Embed PlugIns";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -322,12 +322,12 @@
 				F66965082ECF26770032EF4E /* Frameworks */,
 				F66965092ECF26770032EF4E /* Resources */,
 				F66965392ECF27110032EF4E /* Embed Frameworks */,
-				F61AB3292F41288800BB69AF /* Bundle PlugIns */,
+				F6CC7D3C2F51903500AA6DC2 /* Embed PlugIns */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				F61AB32C2F41293A00BB69AF /* PBXTargetDependency */,
+				F6CC7D3F2F51904400AA6DC2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F6379F9C2EEAAFD9004BC795 /* pam.d */,
@@ -449,15 +449,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		F61AB32C2F41293A00BB69AF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */;
-			targetProxy = F61AB32B2F41293A00BB69AF /* PBXContainerItemProxy */;
-		};
 		F659BDF72EF3C1730010A18E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
 			targetProxy = F659BDF62EF3C1730010A18E /* PBXContainerItemProxy */;
+		};
+		F6CC7D3F2F51904400AA6DC2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */;
+			targetProxy = F6CC7D3E2F51904400AA6DC2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
