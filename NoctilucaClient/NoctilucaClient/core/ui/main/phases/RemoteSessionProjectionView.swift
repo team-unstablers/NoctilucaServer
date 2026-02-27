@@ -137,7 +137,16 @@ struct RemoteSessionProjectionView: View {
                     
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     
-                    if let displayLayer = subscription?.displayLayer {
+                    if let renderer = subscription?.canvasRenderer {
+                        // Metal 캔버스 직접 렌더링 경로 (타일 코덱)
+                        MetalProjectionView(renderer: renderer)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .offset(currentOffset)
+                            .frame(width: rect.width, height: rect.height)
+                            .position(x: rect.midX, y: rect.midY)
+                            .scaleEffect(currentScale)
+                    } else if let displayLayer = subscription?.displayLayer {
+                        // AVSampleBufferDisplayLayer 경로 (VT 코덱)
                         SampleBufferDisplayView(displayLayer: displayLayer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .offset(currentOffset)
@@ -289,6 +298,8 @@ struct RemoteSessionProjectionView: View {
                                 }
                             case .performanceReportEmitted(let report):
                                 lastPerformanceReport = report
+                            case .codecConfigured(let isTiledCodec):
+                                subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
                             default:
                                 break
                             }
