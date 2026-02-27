@@ -981,8 +981,10 @@ EXTERN(void) jpeg_destroy_decompress(j_decompress_ptr cinfo);
 
 /* Standard data source and destination managers: stdio streams. */
 /* Caller is responsible for opening the file before and closing after. */
+/* Commented out to avoid FILE* dependency in Swift module import.
 EXTERN(void) jpeg_stdio_dest(j_compress_ptr cinfo, FILE *outfile);
 EXTERN(void) jpeg_stdio_src(j_decompress_ptr cinfo, FILE *infile);
+*/
 
 /* Data source and destination managers: memory buffers. */
 EXTERN(void) jpeg_mem_dest(j_compress_ptr cinfo, unsigned char **outbuffer,
