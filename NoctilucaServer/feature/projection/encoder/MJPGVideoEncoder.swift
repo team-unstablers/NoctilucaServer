@@ -38,6 +38,94 @@ private struct JPEGQuantizationTables {
     }
 }
 
+extension JPEGQuantizationTables {
+    
+    /// [Preset 1] UHQ (Ultra High Quality)
+    /// 시각적 무손실. 대역폭 소모가 가장 크지만 텍스트가 로컬 화면처럼 쨍합니다.
+    static var uhq: JPEGQuantizationTables {
+        let q: [UInt32] = Array(repeating: 2, count: 64)
+        return JPEGQuantizationTables(luminance: q, chrominance: q)
+    }
+    
+    /// [Preset 2] HQ (High Quality)
+    /// 노이즈를 억제하면서 용량을 다이어트합니다. 텍스트 판독이 매우 깔끔합니다.
+    static var hq: JPEGQuantizationTables {
+        let luma: [UInt32] = [
+             8,  8,  8, 10, 12, 14, 16, 16,
+             8,  8, 10, 12, 14, 16, 16, 16,
+             8, 10, 12, 14, 16, 16, 16, 16,
+            10, 12, 14, 16, 16, 16, 16, 16,
+            12, 14, 16, 16, 16, 16, 16, 16,
+            14, 16, 16, 16, 16, 16, 16, 16,
+            16, 16, 16, 16, 16, 16, 16, 16,
+            16, 16, 16, 16, 16, 16, 16, 16
+        ]
+        let chroma = luma.map { min(255, $0 + 4) }
+        return JPEGQuantizationTables(luminance: luma, chrominance: chroma)
+    }
+    
+    /// [Preset 3] Standard (기본값 추천)
+    /// 표준적인 품질. Quality 50~60 수준의 대역폭을 쓰지만, 텍스트의 가독성에 집중한 형태입니다.
+    static var standard: JPEGQuantizationTables {
+        let luma: [UInt32] = [
+            16, 16, 16, 20, 24, 28, 32, 40,
+            16, 16, 20, 24, 28, 32, 40, 48,
+            16, 20, 24, 28, 32, 40, 48, 56,
+            20, 24, 28, 32, 40, 48, 56, 64,
+            24, 28, 32, 40, 48, 56, 64, 64,
+            28, 32, 40, 48, 56, 64, 64, 64,
+            32, 40, 48, 56, 64, 64, 64, 64,
+            40, 48, 56, 64, 64, 64, 64, 64
+        ]
+        let chroma = luma.map { min(255, $0 + 16) }
+        return JPEGQuantizationTables(luminance: luma, chrominance: chroma)
+    }
+    
+    /// [Preset 4] LQ (Low Quality)
+    /// 고주파 대역을 강하게 절삭합니다. 글씨가 약간 뭉뚝해지기 시작하지만 대역폭이 크게 감소합니다.
+    static var lq: JPEGQuantizationTables {
+        let luma: [UInt32] = [
+            32,  32,  40,  48,  64,  80, 128, 255,
+            32,  40,  48,  64,  80, 128, 255, 255,
+            40,  48,  64,  80, 128, 255, 255, 255,
+            48,  64,  80, 128, 255, 255, 255, 255,
+            64,  80, 128, 255, 255, 255, 255, 255,
+            80, 128, 255, 255, 255, 255, 255, 255,
+           128, 255, 255, 255, 255, 255, 255, 255,
+           255, 255, 255, 255, 255, 255, 255, 255
+        ]
+        let chroma = luma.map { min(255, $0 + 32) }
+        return JPEGQuantizationTables(luminance: luma, chrominance: chroma)
+    }
+    
+    /// [Preset 5] ULQ (Ultra Low Quality)
+    /// "화면을 어떻게든 알아볼 수만 있게 전송한다."
+    /// 대부분의 주파수 대역을 255(최대 압축)로 밀어버려 대역폭이 극한으로 줄어듭니다.
+    static var ulq: JPEGQuantizationTables {
+        let luma: [UInt32] = [
+             64,  96, 128, 255, 255, 255, 255, 255,
+             96, 128, 255, 255, 255, 255, 255, 255,
+            128, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255
+        ]
+        let chroma: [UInt32] = [
+            128, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255
+        ]
+        return JPEGQuantizationTables(luminance: luma, chrominance: chroma)
+    }
+}
+
 // MARK: - MJPGVideoEncoder
 
 final class MJPGVideoEncoder: VideoEncoder {
