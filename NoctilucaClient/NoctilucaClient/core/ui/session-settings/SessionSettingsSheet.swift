@@ -160,13 +160,15 @@ struct SessionSettingsSheet: View {
             }
         }
 #else
-        ToolbarItemGroup(placement: .destructiveAction) {
-            Button(role: .cancel) {
-                self.actionHandler(.cancel)
-            } label: {
-                Text(markdown: String(localized: "common.cancel", defaultValue: "취소"))
+        if scope == .session {
+                ToolbarItemGroup(placement: .destructiveAction) {
+                    Button(role: .destructive) {
+                        shouldPresentDeleteContactConfirmation = true
+                    } label: {
+                        Text(markdown: String(localized: "common.delete", defaultValue: "삭제"))
+                    }
+                }
             }
-        }
 
         if scope == .session && contactId == nil {
             ToolbarItemGroup(placement: .cancellationAction) {
@@ -184,13 +186,11 @@ struct SessionSettingsSheet: View {
                 }
             }
         } else {
-            if scope == .session {
-                ToolbarItemGroup(placement: .cancellationAction) {
-                    Button(role: .destructive) {
-                        shouldPresentDeleteContactConfirmation = true
-                    } label: {
-                        Text(markdown: String(localized: "common.delete", defaultValue: "삭제"))
-                    }
+            ToolbarItemGroup(placement: .cancellationAction) {
+                Button(role: .cancel) {
+                    self.actionHandler(.cancel)
+                } label: {
+                    Text(markdown: String(localized: "common.cancel", defaultValue: "취소"))
                 }
             }
             

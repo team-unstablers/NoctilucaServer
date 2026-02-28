@@ -219,12 +219,9 @@ struct CodecSpecificationSheet: View {
                         }
                     }.disabled(!specification.isEligibleForHDR.isEligible)
 
-                } header: {
-#if os(macOS)
-                    Text(String(format: String(localized: "session-settings.projection.codec.title_format", defaultValue: "%@ 코덱 설정"), specification.displayTitle))
-#endif
                 }
             }
+            .formStyle(.grouped)
         }
     }
 
