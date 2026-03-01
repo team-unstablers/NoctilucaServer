@@ -39,9 +39,6 @@ class ProjectionSessionSubscription {
         self.session = session
         self.ticket = ticket
         session.registerDisplayLayer(displayLayer)
-
-        // 세션에 이미 타일 코덱이 설정되어 있으면 렌더러를 바로 생성
-        tryCreateCanvasRenderer()
     }
 
     deinit {

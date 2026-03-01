@@ -62,6 +62,9 @@ struct RemoteSessionProjectionView: View {
     @State
     private var lastPerformanceReport: ProjectionPerformanceReport?
 
+    @State
+    private var useCanvasRendering: Bool = false
+
 #if os(iOS)
     @State private var shouldPresentKeyboard: Bool = false
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
@@ -137,7 +140,7 @@ struct RemoteSessionProjectionView: View {
                     
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     
-                    if let renderer = subscription?.canvasRenderer {
+                    if useCanvasRendering, let renderer = subscription?.canvasRenderer {
                         // Metal 캔버스 직접 렌더링 경로 (타일 코덱)
                         MetalProjectionView(renderer: renderer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -300,6 +303,7 @@ struct RemoteSessionProjectionView: View {
                                 lastPerformanceReport = report
                             case .codecConfigured(let isTiledCodec):
                                 subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
+                                useCanvasRendering = isTiledCodec
                             default:
                                 break
                             }
