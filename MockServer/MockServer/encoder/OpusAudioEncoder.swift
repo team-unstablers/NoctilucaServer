@@ -31,9 +31,12 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
 
     /// Opus frame size in samples (20ms @ 48kHz = 960 samples)
     private let opusFrameSamples: AVAudioFrameCount = 960
+    private let opusSampleRate: Double = 48_000.0
+    private let opusFrameDurationUs: UInt64 = 20_000
 
     private var isStarted = false
     private var frameCounter: UInt64 = 0
+    private var nextOutputPTSUs: UInt64?
 
     /// Default bitrate for Opus encoding (kbps)
     private var targetBitrateKbps: Int = 64
@@ -82,6 +85,8 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         guard configuration != nil else {
             throw AudioEncoderError.notPrepared
         }
+        frameCounter = 0
+        nextOutputPTSUs = nil
         isStarted = true
     }
 
@@ -94,6 +99,8 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
             self.outputFormat = nil
             self.accumulationBuffer = nil
             self.accumulatedFrameCount = 0
+            self.frameCounter = 0
+            self.nextOutputPTSUs = nil
             self.isStarted = false
         }
         continuation.finish()
@@ -122,7 +129,11 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
                         buffer.frameLength = framesToEncode
                     }
 
-                    try encodeAccumulatedBuffer(converter: converter, pts: .invalid)
+                    let framePTSUs = self.nextOutputPTSUs ?? 0
+                    let emitted = try encodeAccumulatedBuffer(converter: converter, framePTSUs: framePTSUs)
+                    if emitted {
+                        self.nextOutputPTSUs = framePTSUs &+ self.opusFrameDurationUs
+                    }
                 } catch {
                     continuation.yield(.errorOccurred(error))
                 }
@@ -170,7 +181,6 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         }
         self.inputFormat = inputFormat
 
-        let opusSampleRate: Double = 48000.0
         let outputChannelCount = min(inputFormat.channelCount, 2)
 
         // Stage 1: Create resampler if input is not 48kHz
@@ -232,7 +242,7 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         self.accumulatedFrameCount = 0
 
         if self.resamplerConverter != nil {
-            logger.info("Created Opus converter: \(inputFormat.sampleRate)Hz \(inputFormat.channelCount)ch -> [resample to \(opusSampleRate)Hz] -> Opus \(self.targetBitrateKbps)kbps")
+            logger.info("Created Opus converter: \(inputFormat.sampleRate)Hz \(inputFormat.channelCount)ch -> [resample to \(self.opusSampleRate)Hz] -> Opus \(self.targetBitrateKbps)kbps")
         } else {
             logger.info("Created Opus converter: \(inputFormat.sampleRate)Hz \(inputFormat.channelCount)ch -> Opus \(self.targetBitrateKbps)kbps")
         }
@@ -251,7 +261,9 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
             throw AudioEncoderError.invalidSampleBuffer
         }
 
-        let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        if self.nextOutputPTSUs == nil {
+            self.nextOutputPTSUs = microseconds(from: CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
+        }
 
         // Resample to 48kHz if needed
         let bufferToAccumulate: AVAudioPCMBuffer
@@ -315,13 +327,19 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
             // If we have enough samples, encode
             if accumulatedFrameCount >= opusFrameSamples {
                 accumulationBuffer.frameLength = opusFrameSamples
-                try encodeAccumulatedBuffer(converter: converter, pts: pts)
+                guard let framePTSUs = self.nextOutputPTSUs else {
+                    throw AudioEncoderError.internalError("Missing output PTS while encoding Opus frame")
+                }
+                let emitted = try encodeAccumulatedBuffer(converter: converter, framePTSUs: framePTSUs)
+                if emitted {
+                    self.nextOutputPTSUs = framePTSUs &+ self.opusFrameDurationUs
+                }
                 accumulatedFrameCount = 0
             }
         }
     }
 
-    private func encodeAccumulatedBuffer(converter: AVAudioConverter, pts: CMTime) throws {
+    private func encodeAccumulatedBuffer(converter: AVAudioConverter, framePTSUs: UInt64) throws -> Bool {
         guard let outputFormat = self.outputFormat,
               let accumulationBuffer = self.accumulationBuffer else {
             throw AudioEncoderError.notPrepared
@@ -357,20 +375,17 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         let outputData = Data(bytes: outputBuffer.data, count: Int(outputBuffer.byteLength))
 
         guard !outputData.isEmpty else {
-            return
+            return false
         }
 
         guard outputData.count <= Int(UInt32.max) else {
             throw AudioEncoderError.payloadTooLarge(outputData.count)
         }
 
-        // Create frame header
-        let ptsUs = microseconds(from: pts)
-
         let header = FrameDataHeader(
             frameID: frameCounter,
             frameLength: UInt32(outputData.count),
-            presentationTimestamp: ptsUs,
+            presentationTimestamp: framePTSUs,
             flags: []
         )
 
@@ -382,6 +397,7 @@ final class OpusAudioEncoder: NSObject, AudioEncoder {
         )
 
         continuation.yield(.frameEncoded(encodedFrame))
+        return true
     }
 
     private func createPCMBuffer(from sampleBuffer: CMSampleBuffer, format: AVAudioFormat) -> AVAudioPCMBuffer? {

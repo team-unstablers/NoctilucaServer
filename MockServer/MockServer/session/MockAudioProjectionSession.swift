@@ -23,7 +23,7 @@ class MockAudioProjectionSession: Identifiable {
     private var reader: FileAudioReader?
     private var encoder: (any AudioEncoder)?
 
-    private let frameQueue = FrameQueue<EncodedAudioFrame>(capacity: 4)
+    private let frameQueue = FrameQueue<EncodedAudioFrame>(capacity: 48)
 
     private var readerLoopTask: Task<Void, Never>?
     private var encoderEventLoopTask: Task<Void, Error>?
@@ -63,7 +63,10 @@ class MockAudioProjectionSession: Identifiable {
             for await event in encoder.events {
                 switch event {
                 case .frameEncoded(let encodedFrame):
-                    await self.frameQueue.enqueue(encodedFrame)
+                    let didDrop = await self.frameQueue.enqueue(encodedFrame)
+                    if didDrop {
+                        self.logger.warning("Audio frame queue overflow in session \(self.id), dropping oldest frame")
+                    }
                 case .errorOccurred(let error):
                     self.logger.error("Audio encoder error: \(error)")
                     throw error
@@ -80,21 +83,29 @@ class MockAudioProjectionSession: Identifiable {
         self.senderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
 
-            // Opus: 960 samples @ 48kHz = 20ms per frame
-            let frameDuration = Duration.milliseconds(20)
-            let maxDriftThreshold = Duration.milliseconds(150)
+            let defaultFrameDuration = Duration.milliseconds(20)
+            let idleResetThreshold = Duration.milliseconds(120)
 
             var nextSendTime: ContinuousClock.Instant? = nil
+            var lastFramePTSUs: UInt64? = nil
 
             while !Task.isCancelled {
+                let dequeueStart = ContinuousClock.now
                 let frame: EncodedAudioFrame
                 do {
                     frame = try await self.frameQueue.next()
                 } catch is CancellationError {
                     return
                 }
+                let dequeueWait = ContinuousClock.now - dequeueStart
 
-                // 페이싱: 다음 전송 시간까지 대기
+                // 큐가 비어 오래 대기했다면 타이밍 기준을 재설정한다.
+                if dequeueWait > idleResetThreshold {
+                    nextSendTime = nil
+                    lastFramePTSUs = nil
+                }
+
+                // 페이싱: 예정 시각보다 빠른 경우에만 대기하고, 늦은 경우엔 즉시 전송해 backlog를 따라잡는다.
                 if let sendTime = nextSendTime {
                     let now = ContinuousClock.now
                     if sendTime > now {
@@ -103,20 +114,27 @@ class MockAudioProjectionSession: Identifiable {
                         } catch is CancellationError {
                             return
                         }
-                    } else if now - sendTime > maxDriftThreshold {
-                        // 큐가 비어 대기하다 복귀한 경우 등 — 타이밍 리셋
-                        nextSendTime = nil
                     }
                 }
 
                 try await self.dataChannel.send(audioFrame: frame)
 
-                // 다음 전송 시간 갱신
-                if let sendTime = nextSendTime {
-                    nextSendTime = sendTime + frameDuration
+                // 다음 전송 시간 갱신 (프레임 PTS 기반)
+                if let previousPTSUs = lastFramePTSUs,
+                   frame.header.presentationTimestamp > previousPTSUs {
+                    let deltaUs = frame.header.presentationTimestamp - previousPTSUs
+                    let delta = Duration.microseconds(Int64(deltaUs))
+
+                    if let sendTime = nextSendTime {
+                        nextSendTime = sendTime + delta
+                    } else {
+                        nextSendTime = ContinuousClock.now + delta
+                    }
                 } else {
-                    nextSendTime = ContinuousClock.now + frameDuration
+                    nextSendTime = ContinuousClock.now + defaultFrameDuration
                 }
+
+                lastFramePTSUs = frame.header.presentationTimestamp
             }
         }
 
