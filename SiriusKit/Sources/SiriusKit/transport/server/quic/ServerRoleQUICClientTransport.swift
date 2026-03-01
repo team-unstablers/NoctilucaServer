@@ -39,6 +39,10 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
         self.serverTransport = serverTransport
         self.connectionGroup = connectionGroup
     }
+    
+    func getStreams() async -> [StreamIdentifier: SiriusKitCore.Stream] {
+        return self.streams
+    }
 
     func disconnect() async {
         guard !isFinalized else {

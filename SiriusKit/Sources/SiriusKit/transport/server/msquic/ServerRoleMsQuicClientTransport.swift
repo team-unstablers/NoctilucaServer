@@ -56,6 +56,10 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
             Self.logger.warning("MsQuic client transport deinitialized without disconnect. id=\(self.id)")
         }
     }
+    
+    func getStreams() async -> [StreamIdentifier: SiriusKitCore.Stream] {
+        return self.streams
+    }
 
     // MARK: - TransportLayer Protocol
 
