@@ -12,6 +12,11 @@ public typealias StreamIdentifier = UUID
 public enum StreamError: Error {
     case notImplemented
     case endOfStream
+
+    case streamClosed
+    case aborted
+    case resourceExhausted
+    case writeFailed(Error)
 }
 
 public enum StreamEvent {
