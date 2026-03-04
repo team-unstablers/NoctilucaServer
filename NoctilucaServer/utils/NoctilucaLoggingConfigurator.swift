@@ -20,12 +20,14 @@ enum NoctilucaLoggingConfigurator {
     }
 
     static func apply(settings: AppSettings.Logging) {
-        let level = SiriusLogLevel.from(label: settings.minimumLogLevel) ?? .trace
+        // SiriusLogger: OSLog만 사용 (파일 destination 제거)
+        SiriusLogger.resetDestinationBuilder()
 
+        // SiriusEventLogger: 설정에 따라 파일 destination 추가
         if settings.enableFileLogging {
-            let fileDestination: SiriusFileLogDestination
+            let fileDestination: SiriusEventFileLogDestination
             if settings.enableLogRotation {
-                fileDestination = SiriusFileLogDestination(
+                fileDestination = SiriusEventFileLogDestination(
                     fileURL: logFileURL,
                     rotationPolicy: .init(
                         maxFileSize: settings.maxFileSize,
@@ -33,20 +35,19 @@ enum NoctilucaLoggingConfigurator {
                     )
                 )
             } else {
-                fileDestination = SiriusFileLogDestination(fileURL: logFileURL)
+                fileDestination = SiriusEventFileLogDestination(fileURL: logFileURL)
             }
 
-            SiriusLogger.configure(minimumLevel: level, destinationBuilder: { subsystem, category in
-                var destinations: [any SiriusLogDestination] = []
+            SiriusEventLogger.configure(destinationBuilder: {
+                var destinations: [any SiriusEventLogDestination] = []
                 if #available(macOS 11.0, *) {
-                    destinations.append(SiriusOSLogDestination(subsystem: subsystem, category: category))
+                    destinations.append(SiriusOSEventLogDestination())
                 }
                 destinations.append(fileDestination)
                 return destinations
             })
         } else {
-            SiriusLogger.resetDestinationBuilder()
-            SiriusLogger.configure(minimumLevel: level)
+            SiriusEventLogger.configure(destinationBuilder: nil)
         }
     }
 }

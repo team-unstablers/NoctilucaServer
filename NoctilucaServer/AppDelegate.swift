@@ -144,6 +144,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } catch {
                 print("shutdown failed: \(error.localizedDescription)")
             }
+            SiriusEventFileLogDestination.flushAll()
+            SiriusFileLogDestination.flushAll()
             await MainActor.run {
                 NSApp.reply(toApplicationShouldTerminate: true)
             }
