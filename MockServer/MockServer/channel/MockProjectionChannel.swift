@@ -119,10 +119,10 @@ class MockProjectionChannel: Channel {
 
         // H.265 고정 코덱
         let codec = Codec(
-            fourCC: .avc1,
+            fourCC: .hvc1,
             frameRate: 60.0,
             size: SRSize(width: 1920, height: 1080),
-            options: CodecOptions(),
+            options: request.preferredCodecs.first!.options,
             quality: .auto(mode: .balancedPriority)
         )
 
