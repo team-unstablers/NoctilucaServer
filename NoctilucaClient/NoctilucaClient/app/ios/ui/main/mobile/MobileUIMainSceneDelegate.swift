@@ -51,6 +51,7 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneWillEnterForeground(_ scene: UIScene) {
+        // iPadOS에서 이거 잘 안불리는듯
         rootViewController?.mainWindowViewModel?.isSceneActive = true
         if DeviceKind.current == .iPhone {
             AppNotification.backgroundSessionActive.dismiss()
