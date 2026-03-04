@@ -7,6 +7,12 @@
 
 import Foundation
 
+
+fileprivate extension SiriusEventLogger.EventType {
+    static let channelOpen  = Self(rawValue: "CHANNEL_OPEN")
+    static let channelClose = Self(rawValue: "CHANNEL_CLOSE")
+}
+
 enum ChannelManagerError: Error {
     case channelOpenFailed
     case channelOpenTimedOut
@@ -20,6 +26,7 @@ public protocol ChannelManagerDelegate: AnyObject {
 
 public actor ChannelManager {
     private let logger = SiriusLogger(category: "ChannelManager")
+    private var eventLogger: SiriusEventLogger?
 
     internal let session: (any SiriusSession)
     private let channelOpenTimeout: TimeInterval
@@ -28,10 +35,15 @@ public actor ChannelManager {
     private(set) public var channels: [UUID: Channel] = [:]
 
     private weak var delegate: ChannelManagerDelegate?
+    
 
     package init(session: (any SiriusSession), channelOpenTimeout: TimeInterval = 5) {
         self.session = session
         self.channelOpenTimeout = channelOpenTimeout
+    }
+    
+    package func createEventLogger(_ context: SharedState<SiriusEventLogger.Context>) {
+        self.eventLogger = SiriusEventLogger("SiriusKit::ChannelManager", context: context)
     }
 
     public func setDelegate(_ delegate: ChannelManagerDelegate?) {
@@ -83,6 +95,16 @@ public actor ChannelManager {
     }
 
     public func openChannel(for feature: SiriusFeature, identifier: ChannelIdentifier, args: [String] = []) async throws -> Channel {
+        var success = false
+        defer {
+            self.eventLogger?.log(.channelOpen, args: [
+                "direction": "LOCAL",
+                "channel_id": identifier.uuidString,
+                "feature_id": feature.rawValue.uuidString,
+                "success": success.description,
+            ])
+        }
+        
         guard session.featureProvider.supports(feature) else {
             // 이거 에러가 너무 제너릭하지 않아?
             logger.error("Feature \(feature) is not supported by the session's feature provider")
@@ -103,7 +125,7 @@ public actor ChannelManager {
                 timeout: channelOpenTimeout
             )
             try await openTask.perform()
-
+            
             let channel = session.featureProvider.createChannel(
                 for: feature,
                 using: StreamHolder(stream: stream),
@@ -112,6 +134,8 @@ public actor ChannelManager {
                 args: args
             )
             channel.session = self.session
+            
+            success = true
 
             logger.info("Opened channel \(channel.identifier) for feature \(feature)")
 
@@ -144,11 +168,21 @@ public actor ChannelManager {
         let openTask = RemoteChannelOpenTask(stream: stream, timeout: channelOpenTimeout)
         try await openTask.perform { request in
             let feature = SiriusFeature(rawValue: request.featureID!)
+            
+            var success = false
+            defer {
+                self.eventLogger?.log(.channelOpen, args: [
+                    "direction": "REMOTE",
+                    "channel_id": request.channelID?.uuidString ?? "(none)",
+                    "feature_id": request.featureID?.uuidString ?? "(none)",
+                    "success": success.description,
+                ])
+            }
 
             guard session.featureProvider.supports(feature) else {
                 return false
             }
-
+            
             let channel: Channel = session.featureProvider.createChannel(
                 for: feature,
                 using: StreamHolder(stream: stream),
@@ -159,6 +193,8 @@ public actor ChannelManager {
             channel.session = self.session
 
             try self.registerChannel(channel, for: feature)
+            success = true
+
             return true
         }
     }

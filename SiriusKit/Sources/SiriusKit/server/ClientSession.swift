@@ -47,6 +47,7 @@ public class ClientSession: SiriusSession {
         self.channelManager = ChannelManager(session: self)
 
         Task {
+            await self.channelManager.createEventLogger(self.eventLoggerContext)
             await self.initialize()
         }
     }
