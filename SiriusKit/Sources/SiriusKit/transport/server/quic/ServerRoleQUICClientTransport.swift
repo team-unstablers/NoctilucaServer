@@ -24,6 +24,9 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     private let queue = DispatchQueue(label: "io.siriuskit.quic.server.client")
 
     private var isFinalized: Bool = false
+    
+    // TODO: Network.framework 구현체를 버리긴 버리더라도 쓰는 동안은 구현 제대로 해야 하지 않을까...
+    private var eventLoggerContext: SharedState<SiriusEventLogger.Context> = SharedState(SiriusEventLogger.Context())
 
     nonisolated var remoteEndpoint: SREndpoint? {
         guard let endpoint = self.connectionGroup.descriptor.members.first else {
@@ -88,6 +91,10 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     
     func issueResumeTicket() async throws {
         // NO-OP: Network.framework (NWConnection)에서는 resumption ticket 발행을 직접 지원하지 않음
+    }
+    
+    func eventLoggerContext() async -> SharedState<SiriusEventLogger.Context> {
+        return eventLoggerContext
     }
 
     internal func setup() {
