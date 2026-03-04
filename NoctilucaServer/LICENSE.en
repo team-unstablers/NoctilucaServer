@@ -1,0 +1,204 @@
+Noctiluca Server End User License Agreement (EULA)
+==================================================
+
+Last updated: 2026-03-04
+Provider: team unstablers Inc. ("Company")
+Product: Noctiluca Server and related components ("Software")
+
+NOTICE: This English translation is provided for reference purposes only.
+In the event of any discrepancy between this translation and the Korean
+original (LICENSE), the Korean original shall prevail.
+
+This agreement applies to all acts of installing, running, using, downloading,
+activating, or accessing the Software. By doing so, you agree to be bound by
+this agreement. If you do not agree, do not use the Software.
+
+
+1. DEFINITIONS
+
+  - Host: A device on which the Software (server) is installed and provides
+    remote control (e.g., a macOS device).
+  - Client: A device/app that remotely connects to a Host.
+  - Seat: A unit of usage rights for one Host under a license.
+  - License Holder: The user registered to a license (e.g., name + email).
+  - Activation: The act of registering/linking a license to a specific Host.
+  - Concurrent Connections: The number of Clients simultaneously connected
+    to a single Host.
+
+
+2. GRANT OF LICENSE
+
+The Company grants you a non-exclusive, non-transferable, non-sublicensable
+license to use the Software, subject to the terms of this agreement and
+purchase conditions.
+
+The Software is licensed, not sold.
+
+
+3. LICENSE TYPES AND SCOPE OF USE
+
+The Software is provided under one of the license types below. Specific terms
+displayed on the purchase screen, invoice, or management page shall take
+precedence over this section, which serves as a summary.
+
+3.1 Full License
+
+  - Purchase model: One-time purchase (perpetual license)
+  - Seats allowed: Up to 2 Hosts per license
+  - Concurrent connections: Up to 2 Clients per Host
+  - Update policy: This license covers versions v1.0.0 through less than
+    v2.0.0. To use v2.0.0 or later (including subsequent major updates),
+    a discounted upgrade license (separate purchase) from the Company may
+    be required.
+  - Support: Email support
+
+3.2 Trial License
+
+  - Duration: Up to 7 days
+  - Seats allowed: 1 Host per License Holder
+  - Issuance limit: Once per License Holder
+  - The Company may restrict or deny trial license issuance to prevent abuse.
+
+
+4. SEATS / ACTIVATION / REVOCATION
+
+  - Licenses have seat (Host count) limits. Once the limit is reached, no
+    further activations are possible.
+  - You may revoke the activation of a specific Host through the management
+    page or procedures provided by the Company.
+  - The Company may request additional verification or restrict activations
+    if abuse or abnormal activation patterns are detected.
+
+
+5. RESTRICTIONS
+
+You may NOT:
+
+  (a) Reverse engineer, decompile, or disassemble the Software (except to
+      the minimum extent permitted by applicable law).
+  (b) Bypass license key/authentication, or circumvent concurrent connection
+      or seat limits.
+  (c) Illegally copy, redistribute, resell, rent, lease, or transfer the
+      Software (unless expressly permitted).
+  (d) Use the Software for any purpose that infringes third-party rights or
+      constitutes illegal activity.
+  (e) Tamper with or remove security features, logs, or identification
+      information.
+
+
+6. INTELLECTUAL PROPERTY
+
+All rights, title, and interest in the Software and related documentation,
+logos, trademarks, updates, and derivatives remain with the Company or its
+licensors. This agreement does not transfer any ownership rights to you.
+
+
+7. UPDATES AND CHANGES
+
+The Company may update the Software for performance improvements, security,
+stability, or policy changes. However, update availability and scope may vary
+depending on license type and version policy.
+
+
+8. SUPPORT
+
+Support scope, response time, and support channels may vary depending on
+license type and Company policy. The Company does not guarantee support for
+(a) feature requests, (b) user environment issues, or (c) third-party
+software/network issues.
+
+
+9. DATA AND TELEMETRY
+
+The Company processes data as described below for the proper operation and
+improvement of the Software. For details, refer to the Privacy Policy.
+
+9.1 License Authentication Data
+
+  - To verify licenses and prevent unauthorized copying, a Device Identifier
+    is transmitted to and stored on team unstablers Inc. servers when a
+    license is activated.
+  - The Device Identifier is retained until the license is revoked
+    (deactivated) on that device.
+
+9.2 Telemetry and Error Reporting
+
+  - The Software includes built-in telemetry to assist with development and
+    quality improvement.
+  - This feature is OFF by default for privacy protection and only operates
+    when the user explicitly enables it (opt-in) in the settings.
+  - Data collected: OS version, error messages, stack traces, and comparable
+    program execution context information.
+  - Privacy protection:
+      - Personally identifiable information (PII) is transmitted in a
+        masked state.
+      - Data is transmitted on a session basis with a randomly assigned
+        identifier, which the user may reset at any time.
+  - Storage and retention: Collected data is stored in Sentry US Region
+    and deleted after a maximum of 6 months.
+  - Regional restriction: Telemetry cannot be enabled on devices whose
+    macOS region setting corresponds to a country within the European
+    Economic Area (EEA) or the United Kingdom.
+
+
+10. DISCLAIMER OF WARRANTIES (AS IS)
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED
+"AS IS" AND "AS AVAILABLE". THE COMPANY DOES NOT WARRANT THAT THE SOFTWARE
+WILL OPERATE WITHOUT INTERRUPTION OR ERROR, THAT IT IS FIT FOR A PARTICULAR
+PURPOSE, OR THAT IT WILL MEET THE USER'S EXPECTATIONS.
+
+
+11. LIMITATION OF LIABILITY
+
+11.1 General Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE COMPANY SHALL NOT BE
+LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, PUNITIVE, OR CONSEQUENTIAL
+DAMAGES (INCLUDING LOSS OF DATA, LOSS OF BUSINESS, OR LOSS OF PROFITS) OR
+FOR DAMAGES ARISING FROM USER NEGLIGENCE.
+
+11.2 Plugin-Related Limitation of Liability
+
+The Software may be extended through a plugin system. Except for official
+plugins provided by the Company, the Company shall not be liable for any
+damages arising from the use of third-party plugins, including but not
+limited to:
+
+  (a) Plugins developed by third parties.
+  (b) Unsigned plugins or plugins with ad-hoc signatures of unclear origin.
+  (c) Plugins that have been unauthorized modified through reverse
+      engineering or similar means.
+
+
+12. TERMINATION
+
+  - The Company may immediately terminate or restrict the license if you
+    violate this agreement.
+  - Upon termination, you must cease all use of the Software and destroy
+    all license keys/activations.
+  - Provisions regarding restrictions, intellectual property, and limitation
+    of liability shall survive termination.
+
+
+13. NON-TRANSFERABILITY
+
+You may not assign or transfer any rights or obligations under this agreement
+without the prior written consent of the Company.
+
+
+14. GOVERNING LAW AND JURISDICTION
+
+This agreement shall be governed by and construed in accordance with the
+laws of the Republic of Korea. Any disputes arising out of or in connection
+with this agreement shall be subject to the exclusive jurisdiction of the
+Seoul Central District Court.
+
+
+15. CONTACT
+
+  Email: support@unstabler.pl
+  Website: https://noctiluca.app
+
+
+Copyright (c) 2026 team unstablers Inc. All rights reserved.
