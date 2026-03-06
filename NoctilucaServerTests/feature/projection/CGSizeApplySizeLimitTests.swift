@@ -8,7 +8,7 @@
 import CoreGraphics
 import XCTest
 
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 final class CGSizeApplySizeLimitTests: XCTestCase {
     // MARK: - desired가 원본보다 크거나 같은 경우

@@ -35,16 +35,35 @@ class ProjectionSessionSubscription {
         canvasRenderer != nil
     }
 
+    private var isInvalidated = false
+
     init(session: ProjectionSession, ticket: RemoteSession.SessionReferenceTicket) {
         self.session = session
         self.ticket = ticket
         session.registerDisplayLayer(displayLayer)
     }
 
-    deinit {
+    /// 명시적 리소스 해제. 호출 즉시 display layer/renderer를 해제하고 ticket을 반환한다.
+    func invalidate() {
+        guard !isInvalidated else { return }
+        isInvalidated = true
+
         session.unregisterDisplayLayer(displayLayer)
         if let renderer = canvasRenderer {
             session.unregisterCanvasRenderer(renderer)
+            canvasRenderer = nil
+        }
+        ticket.release()
+    }
+
+    deinit {
+        // safety-net: invalidate() 미호출 시에도 리소스 누수 방지
+        if !isInvalidated {
+            session.unregisterDisplayLayer(displayLayer)
+            if let renderer = canvasRenderer {
+                session.unregisterCanvasRenderer(renderer)
+            }
+            // ticket.deinit이 release를 처리
         }
     }
 

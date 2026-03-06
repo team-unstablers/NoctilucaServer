@@ -64,15 +64,40 @@ public struct CodecOptions: Codable, Equatable, Hashable {
     public var mandatory: [CodecOptionKey: CodecOptionValue]
     /// '선택' 옵션들 - 희망 사항으로써 둡니다. 해당 옵션들이 서로 지원되지 않아도 호환된다고 판정됩니다
     public var `optional`: [CodecOptionKey: CodecOptionValue]
-    
+
     public init() {
         self.mandatory = [:]
         self.optional = [:]
     }
-    
+
     public init(mandatory: [CodecOptionKey: CodecOptionValue], optional: [CodecOptionKey: CodecOptionValue]) {
         self.mandatory = mandatory
         self.optional = optional
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case mandatory
+        case `optional`
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let mandatoryRaw = (try? container.decode([String: String].self, forKey: .mandatory)) ?? [:]
+        let optionalRaw = (try? container.decode([String: String].self, forKey: .optional)) ?? [:]
+        self.mandatory = Dictionary(uniqueKeysWithValues: mandatoryRaw.map {
+            (CodecOptionKey(rawValue: $0.key), CodecOptionValue(rawValue: $0.value))
+        })
+        self.optional = Dictionary(uniqueKeysWithValues: optionalRaw.map {
+            (CodecOptionKey(rawValue: $0.key), CodecOptionValue(rawValue: $0.value))
+        })
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        let mandatoryRaw = Dictionary(uniqueKeysWithValues: mandatory.map { ($0.key.rawValue, $0.value.rawValue) })
+        let optionalRaw = Dictionary(uniqueKeysWithValues: self.optional.map { ($0.key.rawValue, $0.value.rawValue) })
+        try container.encode(mandatoryRaw, forKey: .mandatory)
+        try container.encode(optionalRaw, forKey: .optional)
     }
 }
 

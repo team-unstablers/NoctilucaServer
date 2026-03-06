@@ -139,7 +139,7 @@ enum AppNotification: Identifiable {
         case .updateAvailable(let version):
             return String(format: String(localized: "notification.update_available.message", defaultValue: "새 버전 %@이(가) 사용 가능합니다."), version)
         case .criticalUpdateRequired(let version, let isInvalidLicense):
-            var message = String(format: String(localized: "notification.critical_update_required.message", defaultValue: "심각한 보안 문제가 발견되어 버전 %@으로의 긴급 업데이트가 필요합니다."), version)
+            var message = String(format: String(localized: "notification.critical_update_required.message", defaultValue: "현재 버전에서 심각한 보안 문제가 발견되어 버전 %@으로의 긴급히 업데이트가 필요합니다."), version)
             if isInvalidLicense {
                 message += "\n" + String(localized: "notification.critical_update_required.piracy_notice.message", defaultValue: "이 업데이트는 불법 복제본 사용자에게도 제공됩니다. 업데이트를 긍정적으로 고려해 주세요.")
             }

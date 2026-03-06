@@ -56,9 +56,6 @@ class SessionWindowViewModel: ObservableObject {
 
 #if os(iOS)
     @Published
-    var isSceneActive: Bool = true
-    
-    @Published
     var isFullscreen: Bool = false
 
     @Published

@@ -38,7 +38,7 @@ public struct ServerNoticeCode: RawRepresentable, Equatable, Hashable {
     /// 서버가 미래 버전의 Sirius 프로토콜에 추가되었거나, 아직 지원하지 않는 유형의 메시지를 받았을 때 사용됩니다.
     public static let unsupportedOpcode = ServerNoticeCode(rawValue: 0x4005)
     public static let unsupportedAuthMethod = ServerNoticeCode(rawValue: 0x4006)
-    public static let nonceDismatch = ServerNoticeCode(rawValue: 0x4007)
+    public static let nonceMismatch = ServerNoticeCode(rawValue: 0x4007)
 
     /// 클라이언트가 주어진 시간 내에 응답하지 않았습니다.
     public static let timeout = ServerNoticeCode(rawValue: 0x4008)

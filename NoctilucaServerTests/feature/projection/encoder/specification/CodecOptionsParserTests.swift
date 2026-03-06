@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 /*
 final class CodecOptionsParserTests: XCTestCase {

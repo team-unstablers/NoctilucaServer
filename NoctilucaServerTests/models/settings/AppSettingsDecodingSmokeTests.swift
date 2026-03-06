@@ -7,7 +7,7 @@
 
 import XCTest
 import SiriusKit
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 final class AppSettingsDecodingSmokeTests: XCTestCase {
     func testDecodeWithPartialAndInvalidValuesDoesNotThrow() {

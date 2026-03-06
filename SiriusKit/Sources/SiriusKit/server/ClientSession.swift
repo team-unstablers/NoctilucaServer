@@ -31,15 +31,23 @@ public class ClientSession: SiriusSession {
     public var shouldAcceptChannelCreation: Bool = false
 
     public weak var delegate: (any ClientSessionDelegate)?
+    
+    private(set) public var eventLoggerContext: SharedState<SiriusEventLogger.Context>
+    private let eventLogger: SiriusEventLogger
 
-    init(id: UUID, transport: any ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
+    init(id: UUID, transport: any ServerRoleClientTransport, featureProvider: (any FeatureProvider), eventLoggerContext: SharedState<SiriusEventLogger.Context>) {
         self.id = id
 
         self.clientTransport = transport
         self.featureProvider = featureProvider
+        
+        self.eventLoggerContext = eventLoggerContext
+        self.eventLogger = SiriusEventLogger("SiriusKit::ClientSession", context: eventLoggerContext)
+        
         self.channelManager = ChannelManager(session: self)
 
         Task {
+            await self.channelManager.createEventLogger(self.eventLoggerContext)
             await self.initialize()
         }
     }

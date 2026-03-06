@@ -13,6 +13,12 @@ import SwiftMsQuicHelper
 internal import Atomics
 import SiriusKitCore
 
+fileprivate extension SiriusEventLogger.EventType {
+    static let connectionAccepted = Self(rawValue: "CONNECTION_ACCEPTED")
+    static let connectionShutdown = Self(rawValue: "CONNECTION_SHUTDOWN")
+    static let peerAddressChanged = Self(rawValue: "PEER_ADDRESS_CHANGED")
+}
+
 enum ServerRoleMsQuicClientTransportError: Error {
     case streamOpenFailed
     case connectionNotReady
@@ -34,10 +40,14 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     private var streams: [StreamIdentifier: ServerRoleMsQuicStream] = [:]
     private let isFinalized = ManagedAtomic(false)
     private let remoteEndpointLock: OSAllocatedUnfairLock<SREndpoint?>
+    
+    private var eventLoggerContext: SharedState<SiriusEventLogger.Context>
+    private var eventLogger: SiriusEventLogger
 
     nonisolated var remoteEndpoint: SREndpoint? {
         remoteEndpointLock.withLock { $0 }
     }
+    
 
     init(
         connection: QuicConnection,
@@ -48,7 +58,17 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         self.id = id
         self.connection = connection
         self.serverTransport = serverTransport
+        self.eventLoggerContext = SharedState(SiriusEventLogger.Context())
         self.remoteEndpointLock = OSAllocatedUnfairLock(initialState: remoteEndpoint)
+        
+        self.eventLogger = SiriusEventLogger("SiriusKit::ServerRoleMsQuicClientTransport", context: eventLoggerContext)
+        
+        self.eventLoggerContext.mutate { prevValue in
+            var context = prevValue
+            context.remoteAddr = remoteEndpoint
+            
+            return context
+        }
     }
 
     deinit {
@@ -87,6 +107,8 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         if let serverTransport = serverTransport {
             await serverTransport.unregisterClientTransport(self)
         }
+        
+        self.eventLogger.log(.connectionShutdown)
     }
 
     func openStream() async -> Result<SiriusKitCore.Stream, TransportLayerError> {
@@ -118,6 +140,10 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         assert(resumptionData.count < QUIC_MAX_RESUMPTION_APP_DATA_LENGTH, "Resumption data exceeds maximum allowed length.")
         try connection.sendResumptionTicket(resumptionData: resumptionData)
     }
+    
+    func eventLoggerContext() async -> SharedState<SiriusEventLogger.Context> {
+        return eventLoggerContext
+    }
 
     // MARK: - Internal Setup
 
@@ -128,6 +154,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     internal func start() async {
         // MsQuic connection은 이미 시작됨 (서버가 수락한 연결)
         // 추가 시작 로직 필요 없음
+        self.eventLogger.log(.connectionAccepted)
     }
 
     // MARK: - Stream Handling
@@ -164,8 +191,13 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         guard previousEndpoint != updatedEndpoint else {
             return
         }
-
+        
         Self.logger.debug("MsQuic peer address changed. id=\(self.id), old=\(previousEndpoint?.description ?? "(unknown)"), new=\(updatedEndpoint)")
+        
+        self.eventLogger.log(.peerAddressChanged, args: [
+            "from": previousEndpoint?.description ?? "(unknown)",
+            "to": updatedEndpoint.description
+        ])
     }
 
     internal func registerStream(_ stream: ServerRoleMsQuicStream) {

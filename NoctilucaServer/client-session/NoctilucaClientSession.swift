@@ -8,6 +8,18 @@
 import Foundation
 import SiriusKit
 
+extension SiriusEventLogger.EventType {
+    typealias EventType = Self
+    struct NoctilucaClientSession {
+        static let phaseShift = EventType(rawValue: "PHASE_SHIFT")
+        static let phaseAssertionFailed = EventType(rawValue: "PHASE_ASSERTION_FAILED")
+        
+        static let clientHello = EventType(rawValue: "CLIENT_HELLO")
+        static let authenticate = EventType(rawValue: "AUTHENTICATE")
+        static let goodbye = EventType(rawValue: "GOODBYE")
+    }
+}
+
 struct ClientInfo {
     let agentName: String
     let protocolVersion: SiriusProtocolVersion
@@ -18,7 +30,7 @@ enum NoctilucaClientSessionError: LocalizedError {
     case invalidPhase
 }
 
-enum NoctilucaClientSessionPhase {
+enum NoctilucaClientSessionPhase: CustomStringConvertible {
     /// 연결 직후. 아직 ClientHello를 받지 않은 상태.
     case initial
     
@@ -48,6 +60,16 @@ enum NoctilucaClientSessionPhase {
             return []
         }
     }
+    
+    var description: String {
+        switch self {
+        case .initial: return "initial"
+        case .awaitingAuthentication: return "awaitingAuthentication"
+        case .ready: return "ready"
+        case .panic: return "panic"
+        case .closed: return "closed"
+        }
+    }
 }
 
 protocol NoctilucaClientSessionDelegate: AnyObject {
@@ -56,6 +78,7 @@ protocol NoctilucaClientSessionDelegate: AnyObject {
 
 class NoctilucaClientSession: Identifiable {
     let logger = SiriusLogger(category: "NoctilucaClientSession", subsystem: "app.noctiluca.server")
+    let eventLogger: SiriusEventLogger
     
     var id: UUID { session.id }
     
@@ -63,6 +86,10 @@ class NoctilucaClientSession: Identifiable {
     let server: ServerContext
     
     var mainChannel: MainChannel!
+    
+    var eventLoggerContext: SharedState<SiriusEventLogger.Context> {
+        session.eventLoggerContext
+    }
     
     weak var delegate: NoctilucaClientSessionDelegate?
 
@@ -82,6 +109,7 @@ class NoctilucaClientSession: Identifiable {
         self.session = session
         self.server = server
         self.remoteAddress = "(unknown)"
+        self.eventLogger = SiriusEventLogger("NoctilucaServer::ClientSession", context: session.eventLoggerContext)
         
         self.session.delegate = self
     }
@@ -109,6 +137,9 @@ class NoctilucaClientSession: Identifiable {
                     try await handleAuthRequest(message)
                 case .receivedGoodbye(let message):
                     logger.info("Received Goodbye from client: code=\(message.code.rawValue), message=\(message.message ?? "(none)")")
+                    self.eventLogger.log(.NoctilucaClientSession.goodbye, args: [
+                        "code": String(message.code.rawValue),
+                    ])
                     // Goodbye 수신 시에는 재전송 없이 정리만 수행
                     await self.close()
                     return
@@ -148,6 +179,12 @@ class NoctilucaClientSession: Identifiable {
             throw NoctilucaClientSessionError.invalidPhase
         }
         
+        defer {
+            self.eventLogger.log(.NoctilucaClientSession.phaseShift, args: [
+                "phase": newPhase.description
+            ])
+        }
+        
         if newPhase == .ready {
             // 인증 완료된 상태이므로 추가 채널을 만들 수 있도록 한다.
             self.session.shouldAcceptChannelCreation = true
@@ -178,6 +215,11 @@ class NoctilucaClientSession: Identifiable {
 
             if self.phase != phase {
                 self.logger.fatal("Phase shift assertion failed: expected phase \(phase) within \(seconds) seconds, but current phase is \(self.phase)")
+                self.eventLogger.log(.NoctilucaClientSession.phaseAssertionFailed, args: [
+                    "expected": phase.description,
+                    "current": self.phase.description
+                ])
+
                 await self.closeWithGoodbye(code: .protocolError, message: "Phase shift timeout")
             }
         }
