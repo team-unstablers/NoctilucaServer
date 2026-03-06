@@ -62,13 +62,32 @@ extension NoctilucaClientSession {
     }
     
     func handleClientHello(_ message: ClientHello) async throws {
+        var accepted: Bool = false
+        
         try self.assertPhase(expected: .initial)
         logger.debug("Received ClientHello from agent: \(message.agentName), protocol version: \(message.protocolVersion)")
+        
+        eventLoggerContext.mutate { prevValue in
+            var context = prevValue
+            context.agentName = message.agentName
+            
+            return context
+        }
+        
+        defer {
+            eventLogger.log(.NoctilucaClientSession.clientHello, args: [
+                "protocol_version": message.protocolVersion.displayVersion,
+                "agent_name": message.agentName,
+                "accepted": accepted ? "true" : "false"
+            ])
+        }
         
         // negotiate protocol version, features, etc.
         guard message.protocolVersion == .v1_0 else {
             throw NoctilucaClientSessionError.unsupportedProtocolVersion
         }
+        
+        accepted = true
         
         // OK, 우선 ClientInfo를 심는다
         self.clientInfo = ClientInfo(
@@ -90,6 +109,7 @@ extension NoctilucaClientSession {
         self.startPhaseShiftAssertion(expect: .ready, within: 60)
     }
     
+    /// TODO: 동시 진입 불가능하도록 락 걸어야 함
     func handleAuthRequest(_ message: consuming AuthRequest) async throws {
         /// 인증 실패 처리.
         /// nonce를 재설정하고, 새로운 AuthChallenge를 보낸다.
@@ -123,6 +143,12 @@ extension NoctilucaClientSession {
         let method = AuthMethod(rawValue: message.method)
         guard server.authenticator.supports(method: method) else {
             // unsupported method는 뱉어낸다.
+            eventLogger.log(.NoctilucaClientSession.authenticate, args: [
+                "method": message.method,
+                "result": "FAILED",
+                "reason": "UNSUPPORTED_AUTH_METHOD"
+            ])
+            
             try? await self.notice(.error, code: .unsupportedAuthMethod)
             try await __failure()
             return
@@ -131,8 +157,14 @@ extension NoctilucaClientSession {
         guard let authNonce = self.authNonce,
               message.nonce == authNonce
         else {
+            eventLogger.log(.NoctilucaClientSession.authenticate, args: [
+                "method": message.method,
+                "result": "FAILED",
+                "reason": "NONCE_MISMATCH"
+            ])
+            
             // nonce가 일치하지 않는 경우 실패 처리한다
-            try? await self.notice(.error, code: .nonceDismatch)
+            try? await self.notice(.error, code: .nonceMismatch)
             try await __failure()
             return
         }
@@ -141,6 +173,19 @@ extension NoctilucaClientSession {
         
         switch result {
         case .success(let uid):
+            eventLoggerContext.mutate { prevValue in
+                var context = prevValue
+                context.uid = uid
+                context.authMethod = message.method
+                
+                return context
+            }
+            
+            eventLogger.log(.NoctilucaClientSession.authenticate, args: [
+                "method": message.method,
+                "result": "SUCCEED",
+            ])
+            
             // 인증에 성공했으므로 추가 채널을 만들 수 있도록 허용한다
             session.shouldAcceptChannelCreation = true
             try self.shiftPhase(to: .ready)
@@ -153,6 +198,12 @@ extension NoctilucaClientSession {
             return
             
         case .failure(let error):
+            eventLogger.log(.NoctilucaClientSession.authenticate, args: [
+                "method": message.method,
+                "result": "FAILED",
+                "reason": "AUTHENTICATION_FAILED"
+            ])
+            
             logger.error("Authentication failed: \(error.localizedDescription)")
             try await __failure()
             

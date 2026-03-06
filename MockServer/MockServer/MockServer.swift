@@ -37,7 +37,10 @@ class MockServer {
             .useTransportProtocol(.quic(
                 implementation: TransportLayerImplementation.msQuic.identifier,
                 port: port,
-                identitySource: .keychain(label: "babo")
+                identitySource: .certFile(
+                    pemPath: "/Users/cheesekun/works/noctiluca/swift-msquic/server.crt",
+                    keyPath: "/Users/cheesekun/works/noctiluca/swift-msquic/server.key"
+                )
             ))
             .build()
 
@@ -48,8 +51,8 @@ class MockServer {
         SwiftMsQuicAPI.open()
 
         try await server.setup()
-        print("OK")
         try await server.startup()
+        print("OK")
     }
 
     func waitForShutdown() async {
@@ -59,15 +62,18 @@ class MockServer {
 
         signal(SIGINT, SIG_IGN)
         signal(SIGTERM, SIG_IGN)
+        signal(SIGPIPE, SIG_IGN)
 
         sigintSource.setEventHandler { [weak self] in
             Task {
                 await self?.shutdown()
+                exit(1)
             }
         }
         sigtermSource.setEventHandler { [weak self] in
             Task {
                 await self?.shutdown()
+                exit(1)
             }
         }
 

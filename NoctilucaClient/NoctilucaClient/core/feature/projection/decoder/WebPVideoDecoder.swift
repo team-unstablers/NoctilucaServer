@@ -128,19 +128,31 @@ private extension WebPVideoDecoder {
     }
 
     func decodeTilesToPixelData(_ tiles: [WebPTile]) throws -> [DecodedTile] {
-        var decodedTiles: [DecodedTile] = []
-        decodedTiles.reserveCapacity(tiles.count)
+        let count = tiles.count
+        let results = UnsafeMutableBufferPointer<DecodedTile?>.allocate(capacity: count)
+        results.initialize(repeating: nil)
+        defer { results.deallocate() }
 
-        for tile in tiles {
-            let pixelData = try decodeWebP(tile)
+        var firstError: Error?
+        let errorLock = NSLock()
 
-            decodedTiles.append(DecodedTile(
-                rect: CGRect(x: tile.originX, y: tile.originY, width: tile.width, height: tile.height),
-                pixelData: pixelData
-            ))
+        DispatchQueue.concurrentPerform(iterations: count) { index in
+            do {
+                let tile = tiles[index]
+                let pixelData = try decodeWebP(tile)
+                results[index] = DecodedTile(
+                    rect: CGRect(x: tile.originX, y: tile.originY, width: tile.width, height: tile.height),
+                    pixelData: pixelData
+                )
+            } catch {
+                errorLock.withLock {
+                    if firstError == nil { firstError = error }
+                }
+            }
         }
 
-        return decodedTiles
+        if let error = firstError { throw error }
+        return results.compactMap { $0 }
     }
 }
 

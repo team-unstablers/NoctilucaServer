@@ -1,5 +1,8 @@
 framework module libturbojpeg {
-    umbrella header "turbojpeg.h"
+    header "turbojpeg.h"
+    header "jpeglib.h"
+    header "jerror.h"
+    header "jconfig.h"
+    header "jmorecfg.h"
     export *
-    module * { export * }
 }

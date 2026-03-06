@@ -266,7 +266,8 @@ class ProjectionChannel: Channel {
                 await cleanupTerminationTargets(targets, closeDataChannel: true)
                 return
             }
-
+            
+            /*
             if let desiredSize = request.preferredCodecs.compactMap({ $0.size }).first {
                 negotiatedCodec = Codec(
                     fourCC: negotiatedCodec.fourCC,
@@ -276,7 +277,7 @@ class ProjectionChannel: Channel {
                     quality: negotiatedCodec.quality
                 )
             } else {
-                let contentSize = await request.viewport.contentSize(self)
+                let contentSize = await request.viewport.contentSize(codec: negotiatedCodec)
 
                 negotiatedCodec = Codec(
                     fourCC: negotiatedCodec.fourCC,
@@ -286,6 +287,29 @@ class ProjectionChannel: Channel {
                     quality: negotiatedCodec.quality
                 )
             }
+             */
+            
+            let desiredSize = request.preferredCodecs.first?.size?.cgSize
+            guard let contentSize = await request.viewport.contentSize(codec: negotiatedCodec)?.cgSize else {
+                // 현 시점에서 contentSize는 nil을 반환하면 안됨
+                // TODO: 프로젝션 리퀘스트에 응답할 수 없다고 할 것
+                fatalError()
+            }
+            
+            // 클라이언트 / 서버가 원하는 해상도 제한이 적용된 '진짜 해상도'를 반환한다
+            let actualSize = if let desiredSize {
+                contentSize.applySizeLimit(desiredSize)
+            } else {
+                contentSize
+            }
+
+            negotiatedCodec = Codec(
+                fourCC: negotiatedCodec.fourCC,
+                frameRate: negotiatedCodec.frameRate,
+                size: SRSize(width: actualSize.width, height: actualSize.height),
+                options: negotiatedCodec.options,
+                quality: negotiatedCodec.quality
+            )
 
             let openedChannel = try await session.channelManager.openChannel(for: .projectionData, identifier: identifier) as! ProjectionDataChannel
             logger.info("Opened ProjectionDataChannel with id: \(openedChannel.identifier)")
@@ -573,7 +597,7 @@ extension ProjectionChannel: ProjectionSessionDelegate {
 
 fileprivate extension ProjectionSource {
     @MainActor
-    func contentSize(_ context: ProjectionChannel) -> SRSize? {
+    func contentSize(codec: Codec) -> SRSize? {
         switch value {
         case .entireDisplay(let source):
             let layoutManager = DisplayLayoutManager.shared
@@ -586,8 +610,13 @@ fileprivate extension ProjectionSource {
                 CGDirectDisplayID(source.displayID)
             }
 
-            if let displaySize = DisplayLayoutManager.shared.displayLayouts[displayID]?.frame.size {
-                return SRSize(width: displaySize.width, height: displaySize.height)
+            if let display = DisplayLayoutManager.shared.displayLayouts[displayID] {
+                switch codec.option(.displayDensity) {
+                case .kDisplayDensityBest:
+                    return SRSize(width: display.displayResolution.width, height: display.displayResolution.height)
+                default:
+                    return SRSize(width: display.frame.size.width, height: display.frame.size.height)
+                }
             } else {
                 return nil
             }
@@ -596,12 +625,12 @@ fileprivate extension ProjectionSource {
             return SRSize(width: region.region.width, height: region.region.height)
 
         case .singleWindow(let window):
-            let contextManager = context.desktopContextManager
-            // FIXME
+            let contextManager = DesktopContextManager.shared
+            // FIXME: window가 속한 display를 끌어다가 scale factor를 곱해야 한다
             guard let windowInfo = contextManager.globalWindowList().first(where: { $0.windowID == window.windowID! }) else {
                 return nil
             }
-            
+
             let size = SRSize(width: windowInfo.bounds.width, height: windowInfo.bounds.height)
             return size
 

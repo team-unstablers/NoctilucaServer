@@ -51,27 +51,35 @@ struct CodecResolutionLevel: RawRepresentable, Codable, Hashable, Equatable {
         }
     }
     
+    /// 이 해상도 레벨에서 통상적으로 쓰이는 해상도를 반환합니다.
     /// 이.. 이딴식으로 이걸 구현해도 되는건가...
     /// 4:3 기준으로 처리한다 - 16:9나 16:10보다 픽셀 수가 많기 때문에 대체로 다 걸림
-    var pixelCount: Int {
+    var genericSize: CGSize? {
         switch self {
         case .unlimited:
-            // FIXME
-            return Int.max
+            return nil
         case .sd480p:
-            return 720 * 480
+            return CGSize(width: 720, height: 480)
         case .hd720p:
-            return 1280 * 960
+            return CGSize(width: 1280, height: 960)
         case .hd1080p:
-            return 1920 * 1440
+            return CGSize(width: 1920, height: 1440)
         case .hd2k:
-            return 2560 * 1920
+            return CGSize(width: 2560, height: 1920)
         case .hd4k:
-            return 3840 * 2880
-        
+            return CGSize(width: 3840, height: 1880)
+            
         default:
+            return nil
+        }
+    }
+    
+    var pixelCount: Int {
+        guard let genericSize = genericSize else {
             return Int.max
         }
+        
+        return Int(genericSize.width) * Int(genericSize.height)
     }
 }
 

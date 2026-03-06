@@ -111,6 +111,7 @@ extension ProjectionChannel {
                 dynamicRange: .sdr,
                 colorProfile: nil,
                 physicalSizeInfo: nil,
+                scaleFactor: 1.0,
                 thumbnail: nil,
                 metadata: [:],
                 flags: 0
@@ -200,6 +201,7 @@ extension ProjectionChannel {
             dynamicRange: dynamicRange,
             colorProfile: colorProfile,
             physicalSizeInfo: physicalSizeInfo,
+            scaleFactor: Float(screen.scaleFactor),
             thumbnail: thumbnailData,
             metadata: metadata,
             flags: 0

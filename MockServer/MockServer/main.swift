@@ -34,7 +34,7 @@ struct MockServerCLI: ParsableCommand {
             await server.waitForShutdown()
         }
         
-        sleep(100)
+        sleep(1048576)
     }
 }
 

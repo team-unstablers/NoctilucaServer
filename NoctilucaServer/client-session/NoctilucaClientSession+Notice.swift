@@ -43,7 +43,7 @@ extension ServerNoticeCode {
             return "The server received a message with an unsupported operation code."
         case .unsupportedAuthMethod:
             return "The authentication method requested by the client is not supported by the server."
-        case .nonceDismatch:
+        case .nonceMismatch:
             return "The nonce provided by the client does not match the expected value."
         case .timeout:
             return "The client did not respond within the expected time frame."

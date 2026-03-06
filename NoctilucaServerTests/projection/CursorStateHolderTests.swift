@@ -8,7 +8,7 @@
 import CoreGraphics
 import XCTest
 
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 final class CursorStateHolderTests: XCTestCase {
     private struct MockScreen: NSScreenLike {
@@ -75,7 +75,7 @@ final class CursorStateHolderTests: XCTestCase {
         let mainScreen = NOCScreen(
             id: 1,
             frame: CGRect(x: 0, y: 100, width: 100, height: 100),
-            scaleFactor: 1.0
+            displayResolution: CGSize(width: 100, height: 100)
         )
 
         let x11Point = CGPoint(x: 10, y: 150)
@@ -89,7 +89,7 @@ final class CursorStateHolderTests: XCTestCase {
         let mainScreen = NOCScreen(
             id: 1,
             frame: CGRect(x: 0, y: 100, width: 100, height: 100),
-            scaleFactor: 1.0
+            displayResolution: CGSize(width: 100, height: 100)
         )
 
         let cgPoint = CGPoint(x: 10, y: 50)
@@ -103,7 +103,7 @@ final class CursorStateHolderTests: XCTestCase {
         let mainScreen = NOCScreen(
             id: 1,
             frame: CGRect(x: -50, y: 80, width: 200, height: 150),
-            scaleFactor: 1.0
+            displayResolution: CGSize(width: 200, height: 150)
         )
 
         let x11Point = CGPoint(x: 30, y: 120)

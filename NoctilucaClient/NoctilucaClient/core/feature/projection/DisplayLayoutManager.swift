@@ -65,6 +65,7 @@ class DisplayLayoutManager: ObservableObject {
             dynamicRange: new.dynamicRange,
             colorProfile: new.colorProfile,
             physicalSizeInfo: new.physicalSizeInfo,
+            scaleFactor: new.scaleFactor,
             thumbnail: thumbnail,
             metadata: new.metadata,
             flags: new.flags

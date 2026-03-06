@@ -63,3 +63,27 @@ fragment float4 cursor_fragment(
     // Swift 코드에서 텍스처가 없으면 draw call을 안 하는 게 더 효율적임.
     return tex.sample(samp, interpolated.textureCoordinate);
 }
+
+// MARK: - Projection (Canvas → Screen)
+
+// Fullscreen quad vertex shader.
+// vertex_id 0~3으로 삼각형 스트립 2개를 만들어 화면 전체를 덮는다.
+vertex VertexOut projection_vertex(unsigned int vid [[ vertex_id ]]) {
+    // triangle strip: (0,0) → (1,0) → (0,1) → (1,1)
+    float2 uv = float2(vid & 1, (vid >> 1) & 1);
+
+    VertexOut out;
+    // NDC: x [-1, 1], y [-1, 1]
+    out.position = float4(uv * 2.0 - 1.0, 0.0, 1.0);
+    // UV: y를 뒤집어야 함 (Metal 텍스처 원점 = top-left, NDC y축 = bottom-up)
+    out.textureCoordinate = float2(uv.x, 1.0 - uv.y);
+    return out;
+}
+
+fragment float4 projection_fragment(
+    VertexOut interpolated [[stage_in]],
+    texture2d<float> tex [[ texture(0) ]],
+    sampler           samp [[ sampler(0) ]]
+) {
+    return tex.sample(samp, interpolated.textureCoordinate);
+}

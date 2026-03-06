@@ -15,6 +15,7 @@ import CoreGraphics
 import CoreMedia
 
 import AVFoundation
+import Metal
 
 import SiriusKitClient
 
@@ -43,7 +44,9 @@ enum ProjectionSessionEvent: Sendable {
     /// 서버로부터 DegradationNotice를 수신하였습니다.
     case degradationNoticeReceived(DegradationNotice)
 
-    // TODO: reconfiguration 이벤트 있어야 하지 않아? 디코더 교체나 그런건 언제든 있을 수 있는건데...
+    /// 코덱 구성이 변경되었습니다 (디코더 교체, 렌더링 경로 변경 등).
+    /// `isTiledCodec`이 true이면 Metal 캔버스 직접 렌더링을 사용해야 합니다.
+    case codecConfigured(isTiledCodec: Bool)
 }
 
 class ProjectionSession: Identifiable {
@@ -83,6 +86,45 @@ class ProjectionSession: Identifiable {
         displayLayersLock.withLock {
             for layer in displayLayers.values {
                 layer.enqueue(sampleBuffer)
+            }
+        }
+    }
+
+    // MARK: - Canvas Renderer Management (Metal 직접 렌더링)
+
+    private var canvasRenderersLock = NSLock()
+    private var canvasRenderers: [ObjectIdentifier: ProjectionCanvasRenderer] = [:]
+
+    nonisolated func registerCanvasRenderer(_ renderer: ProjectionCanvasRenderer) {
+        canvasRenderersLock.withLock {
+            canvasRenderers[ObjectIdentifier(renderer)] = renderer
+        }
+        // 이미 캔버스가 있으면 즉시 연결
+        if let canvasCompositor = tileCompositor as? CanvasTileCompositor {
+            renderer.canvasTexture = canvasCompositor.canvasTexture
+        }
+    }
+
+    nonisolated func unregisterCanvasRenderer(_ renderer: ProjectionCanvasRenderer) {
+        canvasRenderersLock.withLock {
+            canvasRenderers.removeValue(forKey: ObjectIdentifier(renderer))
+        }
+    }
+
+    /// 모든 캔버스 렌더러에 다시 그리기를 요청한다.
+    nonisolated private func notifyAllCanvasRenderers() {
+        canvasRenderersLock.withLock {
+            for renderer in canvasRenderers.values {
+                renderer.setNeedsDisplay()
+            }
+        }
+    }
+
+    /// 캔버스 텍스처가 변경되었을 때 (리사이즈 등) 모든 렌더러에 새 텍스처를 전달한다.
+    nonisolated private func updateCanvasTextureForAllRenderers(_ texture: MTLTexture?) {
+        canvasRenderersLock.withLock {
+            for renderer in canvasRenderers.values {
+                renderer.canvasTexture = texture
             }
         }
     }
@@ -203,6 +245,11 @@ class ProjectionSession: Identifiable {
             tileCompositor = nil
         }
         try decoder?.prepare(with: .init(codec: codec))
+
+        let isTiled = tileCompositor != nil
+        Task { @MainActor in
+            events.send(.codecConfigured(isTiledCodec: isTiled))
+        }
     }
     
     /// 서버로부터 코덱/해상도 변경 통지를 받았을 때 디코더를 재구성합니다.
@@ -367,12 +414,27 @@ extension ProjectionSession: TiledVideoDecoderDelegate {
         }
 
         do {
-            let pixelBuffer = try compositor.composite(frame)
-            performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
-
             if size == .zero {
                 size = frame.frameSize
             }
+
+            // Metal 캔버스 직접 렌더링 경로:
+            // CanvasTileCompositor인 경우 캔버스만 업데이트하고
+            // 등록된 MetalProjectionView에 다시 그리기를 요청한다.
+            // CVPixelBuffer → CMSampleBuffer → AVSampleBufferDisplayLayer 경유를 제거.
+            if let canvasCompositor = compositor as? CanvasTileCompositor {
+                try canvasCompositor.compositeToCanvas(frame)
+                performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
+
+                // 캔버스 텍스처가 변경되었을 수 있음 (리사이즈)
+                updateCanvasTextureForAllRenderers(canvasCompositor.canvasTexture)
+                notifyAllCanvasRenderers()
+                return
+            }
+
+            // Legacy 경로: CVPixelBuffer → CMSampleBuffer → AVSampleBufferDisplayLayer
+            let pixelBuffer = try compositor.composite(frame)
+            performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
 
             if let jitterBuffer {
                 jitterBuffer.enqueue(pixelBuffer: pixelBuffer, remotePTS: frame.pts.seconds)

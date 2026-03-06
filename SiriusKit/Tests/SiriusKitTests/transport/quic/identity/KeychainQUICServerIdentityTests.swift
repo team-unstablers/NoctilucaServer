@@ -39,7 +39,9 @@ struct KeychainQUICServerIdentityTests {
         
         defer {
             try? keychain.deleteItem(by: commonName, clazz: .certificate).get()
-            try? keychain.deleteItem(by: commonName, clazz: .privateKey).get()
+            try? keychain.deleteItem(by: commonName, clazz: .privateKey, extras: [
+                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate
+            ]).get()
         }
         
         let identity = try KeychainQUICServerIdentity.createSelfSignedIdentity(args: args)

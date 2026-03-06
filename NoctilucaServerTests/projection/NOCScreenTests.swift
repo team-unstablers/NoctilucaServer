@@ -8,7 +8,7 @@
 import CoreGraphics
 import XCTest
 
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 final class NOCScreenTests: XCTestCase {
     private struct MockScreen: NSScreenLike {

@@ -33,16 +33,19 @@ extension CodecSpecification {
     }
     
     func toSiriusKitCodec() -> SiriusKitClient.Codec {
-        var codec = SiriusKitClient.Codec(
+        let desiredSize: SRSize? = if let size = self.maximumResolutionLevel.genericSize {
+            
+            SRSize(width: size.width, height: size.height)
+        } else {
+            nil
+        }
+        
+        let codec = SiriusKitClient.Codec(
             fourCC: self.fourCC,
             frameRate: Float(self.frameRate),
-            
-            // FIXME
-            size: nil,
+            size: desiredSize,
             options: self.siriusKitCodecOptions,
-            
-            // FIXME - CodecSpecification에 품질 정책 없음!!
-            quality: .auto(mode: .balancedPriority)
+            quality: self.quality
         )
             
         return codec
@@ -50,8 +53,6 @@ extension CodecSpecification {
 }
 
 extension CodecResolutionLevel {
-
-    
     /// CodecResolutionLevel을 만듭니다. (다만 Requirement 관점으로)
     static func fromCGSize(size: CGSize) -> CodecResolutionLevel {
         let pixels = Int(size.width * size.height)

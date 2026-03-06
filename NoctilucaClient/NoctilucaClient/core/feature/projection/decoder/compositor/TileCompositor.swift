@@ -9,6 +9,7 @@ import Foundation
 import CoreGraphics
 import CoreMedia
 import CoreVideo
+import Metal
 
 /// 디코딩된 단일 타일
 struct DecodedTile {
@@ -58,4 +59,20 @@ protocol TileCompositor: AnyObject {
 
     /// 리소스 해제
     func invalidate()
+}
+
+/// GPU 캔버스에 직접 접근할 수 있는 타일 합성기 프로토콜.
+///
+/// MetalProjectionView가 캔버스 텍스처를 직접 렌더링할 수 있도록
+/// CVPixelBuffer 복사 없이 캔버스만 업데이트하는 경로를 제공한다.
+protocol CanvasTileCompositor: TileCompositor {
+    /// GPU 캔버스 텍스처 (read-only). 타일이 블리팅된 최종 합성 결과.
+    var canvasTexture: MTLTexture? { get }
+
+    /// Metal 디바이스
+    var device: MTLDevice { get }
+
+    /// 타일을 캔버스에만 합성한다 (CVPixelBuffer 복사 없음).
+    /// - Parameter frame: 디코딩된 타일 프레임
+    func compositeToCanvas(_ frame: DecodedTileFrame) throws
 }

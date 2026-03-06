@@ -141,19 +141,40 @@ private extension MJPGVideoDecoder {
     }
 
     func decodeTilesToPixelData(_ tiles: [MJPGTile]) throws -> [DecodedTile] {
-        var decodedTiles: [DecodedTile] = []
-        decodedTiles.reserveCapacity(tiles.count)
+        let count = tiles.count
+        let results = UnsafeMutableBufferPointer<DecodedTile?>.allocate(capacity: count)
+        results.initialize(repeating: nil)
+        defer { results.deallocate() }
 
-        for tile in tiles {
-            let pixelData = try decodeJPEG(tile)
+        var firstError: Error?
+        let errorLock = NSLock()
 
-            decodedTiles.append(DecodedTile(
-                rect: CGRect(x: tile.originX, y: tile.originY, width: tile.width, height: tile.height),
-                pixelData: pixelData
-            ))
+        DispatchQueue.concurrentPerform(iterations: count) { index in
+            // tjhandle은 thread-safe가 아니므로 이터레이션마다 독립 핸들 생성
+            guard let handle = tjInitDecompress() else {
+                errorLock.withLock {
+                    if firstError == nil { firstError = MJPGVideoDecoderError.decompressorUnavailable }
+                }
+                return
+            }
+            defer { tjDestroy(handle) }
+
+            do {
+                let tile = tiles[index]
+                let pixelData = try decodeJPEG(tile, handle: handle)
+                results[index] = DecodedTile(
+                    rect: CGRect(x: tile.originX, y: tile.originY, width: tile.width, height: tile.height),
+                    pixelData: pixelData
+                )
+            } catch {
+                errorLock.withLock {
+                    if firstError == nil { firstError = error }
+                }
+            }
         }
 
-        return decodedTiles
+        if let error = firstError { throw error }
+        return results.compactMap { $0 }
     }
 }
 
@@ -219,7 +240,7 @@ private extension MJPGVideoDecoder {
         return (maxX, maxY)
     }
     
-    func decodeJPEG(_ tile: borrowing MJPGTile) throws -> Data {
+    func decodeJPEG(_ tile: borrowing MJPGTile, handle: tjhandle? = nil) throws -> Data {
         let bytesPerPixel = 4
         guard tile.width > 0, tile.height > 0 else {
             throw MJPGVideoDecoderError.invalidTileData("invalid tile size")
@@ -233,14 +254,14 @@ private extension MJPGVideoDecoder {
         let bufferSize = tile.width * tile.height * bytesPerPixel
         var dstData = Data(count: bufferSize)
 
-        guard let handle = self.decompressHandle else {
+        guard let resolvedHandle = handle ?? self.decompressHandle else {
             throw MJPGVideoDecoderError.decompressorUnavailable
         }
-        
+
         let retval = dstData.withUnsafeMutableBytes { dstPtr in
             tile.data.withUnsafeBytes { jpegPtr in
                 tjDecompress2(
-                    handle,
+                    resolvedHandle,
                     jpegPtr,
                     UInt(tile.data.count),
                     dstPtr,
@@ -252,11 +273,11 @@ private extension MJPGVideoDecoder {
                 )
             }
         }
-        
+
         guard retval == 0 else {
             throw MJPGVideoDecoderError.jpegDecodeFailed
         }
-        
+
         return consume dstData
     }
     

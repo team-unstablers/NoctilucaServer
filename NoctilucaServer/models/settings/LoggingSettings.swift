@@ -9,7 +9,6 @@ extension AppSettings {
     struct Logging: Category {
         var enableFileLogging: Bool = false
         var enableLogRotation: Bool = true
-        var minimumLogLevel: String = "info"
         var maxFileSize: UInt64 = 10_485_760  // 10MB
         var maxFileCount: Int = 5
 
@@ -18,7 +17,6 @@ extension AppSettings {
         enum CodingKeys: String, CodingKey {
             case enableFileLogging
             case enableLogRotation
-            case minimumLogLevel
             case maxFileSize
             case maxFileCount
         }
@@ -32,7 +30,6 @@ extension AppSettings {
 
             enableFileLogging = container.decodeSafe(Bool.self, forKey: .enableFileLogging, default: enableFileLogging)
             enableLogRotation = container.decodeSafe(Bool.self, forKey: .enableLogRotation, default: enableLogRotation)
-            minimumLogLevel = container.decodeSafe(String.self, forKey: .minimumLogLevel, default: minimumLogLevel)
             maxFileSize = container.decodeSafe(UInt64.self, forKey: .maxFileSize, default: maxFileSize)
             maxFileCount = container.decodeSafe(Int.self, forKey: .maxFileCount, default: maxFileCount)
         }
@@ -41,7 +38,6 @@ extension AppSettings {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(enableFileLogging, forKey: .enableFileLogging)
             try container.encode(enableLogRotation, forKey: .enableLogRotation)
-            try container.encode(minimumLogLevel, forKey: .minimumLogLevel)
             try container.encode(maxFileSize, forKey: .maxFileSize)
             try container.encode(maxFileCount, forKey: .maxFileCount)
         }

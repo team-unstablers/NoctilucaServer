@@ -130,47 +130,14 @@ swiftlint lint --config .swiftlint.yml
 
 # AGENT RULES
 
-<conditional-rule applies-to="Google Gemini" excludes="OpenAI Codex, Anthropic Claude Code">
-
-# [GEMINI ONLY] 적극적 문맥 수집 전략 (Aggressive Context Gathering)
-
-당신(Gemini)은 **100만 토큰 이상의 거대한 컨텍스트 윈도우**를 가지고 있습니다.
-토큰을 아끼기 위해 불확실한 추측을 하는 것보다, **차라리 관련 없어 보이는 파일까지 싹 다 읽어서 100%의 확신을 갖는 것이 훨씬 낫습니다.**
-
-당신은 게으른 것이 아닙니다. 다른 모델을 가볍게 상회할 만큼의 충분한 능력이 있고, 포텐셜이 있다고 봅니다. 다만, 당장은 당신이 일을 어떻게 해야 할지 충분한 가이드라인이 잘 잡혀있지 않을 뿐입니다. 따라서 다음과 같은 가이드라인을 제시해 드립니다.
-
-## 1. "폴더 통째로 삼키기" 전략 (Context Gluttony)
-- **언급된 파일 하나만 읽지 마십시오.** 특정 기능을 수정해야 한다면, 그 기능이 구현된 **디렉토리 내의 모든 소스 파일**을 읽어들이십시오.
-- `list_directory`로 파일 목록을 확보한 뒤, `read_file`을 병렬로 호출하여 **해당 폴더의 파일 10~20개를 한 번에 컨텍스트에 올리십시오.**
-- 당신의 메모리는 충분합니다. "너무 많이 읽는 것 아닐까?"라고 걱정하지 마십시오. **정보 부족이 항상 더 큰 문제입니다.**
-
-## 2. 3-Hop Rule의 구체화 (The Procedure)
-특정 코드를 분석할 때, 다음 3단계 과정을 **기계적으로** 수행하십시오.
-
-1. **Search & List:** `search_file_content`나 `glob`으로 타겟 파일을 식별하고, `list_directory`로 주변 파일 목록을 얻습니다.
-2. **Expand Scope:**
-    - **Target:** 타겟 파일
-    - **Siblings:** 같은 폴더에 있는 모든 형제 파일들
-    - **Ancestors/Extensions:** 상속받은 부모 클래스, `Extension` 파일, 임포트된 자체 모듈 헤더
-3. **Massive Read:** 위에서 확보된 파일들을 **주저 없이 전부 읽으십시오.**
-
-## 3. 추측 탐지 시 자가 교정 (Self-Correction)
-- 답변을 작성하거나 생각하는 도중 **"아마도(probably)", " ~인 것 같습니다(seems like)", "일반적으로(typically)"** 라는 단어가 떠오르면 **즉시 멈추십시오.**
-- 그 순간이 바로 **파일을 더 읽어야 할 신호**입니다.
-- 추측을 팩트로 검증하기 위한 `read_file`을 즉시 수행하십시오. **읽지 않은 코드는 존재하지 않는 코드입니다.**
-
-</conditional-rule>
-
 ## 1. Interaction & Language
 - 작업을 진행할 때 확실하지 않거나 궁금한 점이 있으면, 되도록 **추측하지 말고 사용자에게 질문**해서 명확히 하는 것을 우선해 주세요.
 - 사용자가 한국어 화자인 만큼, 모든 대화와 Plan 작성은 **반드시 한국어**로 진행해 주세요.
 - 프로젝트에 대한 중요한 정보나 커다란 변경 사항이 있을 때는, `AGENTS.md`를 수정하여 프로젝트에 대한 최신 정보를 반영해 주세요.
 - **권한이 부족하여 작업을 수행할 수 없는 경우, 반드시 사용자에게 elevation 요청을 해야 합니다.** (If a command fails due to insufficient permissions, you must elevate the command to the user for approval.)
 
-<conditional-rule applies-to="OpenAI Codex" excludes="Anthropic Claude Code">
-
 ## 2. Workflow Protocol (중요)
-당신(에이전트)가 OpenAI Codex인 경우, 당신은 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 **[Explicit Plan Mode]** 조건에 해당할 경우 행동 방식을 변경해야 합니다.
+당신은 기본적으로 자율적(Autonomous)으로 행동하지만, 아래의 **[Explicit Plan Mode]** 조건에 해당할 경우 행동 방식을 변경해야 합니다.
 
 ### [Explicit Plan Mode] 트리거 조건
 1. 사용자가 명시적으로 **'Plan 모드'**, **'계획 모드'**, 또는 **'설계 먼저'**라고 요청한 경우.
@@ -184,10 +151,6 @@ swiftlint lint --config .swiftlint.yml
 4. **Action:** 사용자의 명시적 승인(예: "ㅇㅇ", "진행해")이 떨어진 후에만 코드를 수정하십시오.
 
 *(위 조건에 해당하지 않는 단순 수정이나 버그 픽스는 기존대로 승인 없이 즉시 처리하고 결과를 보고하십시오.)*
-
-</conditional-rule>
-
-<conditional-rule applies-to="all agent, but excluding claude code (because claude code has own interview/decision ui)">
 
 ## 2-1. 'INTERVIEW LOOP'
 
@@ -205,29 +168,9 @@ swiftlint lint --config .swiftlint.yml
 ### Phase 1. Ambiguity Check & Interview (Loop)
 계획을 세우기 전, 요구사항을 분석하여 불명확한 점(Ambiguity)이나 기술적 선택지(Trade-offs)를 모두 제거해야 합니다.
 
-1. **Loop Condition (반복 조건):** 명확하지 않은 사항이 남아있다면 아래 2~4번 과정을 반복합니다.
-2. **Action (질문):** 결정이 필요한 사항을 **Markdown 리스트** 형태로 정리하여 사용자에게 질문합니다.
-   - 과도한 UI 장식(ASCII Art 등)은 배제하고, 내용 전달에 집중합니다.
-   - 각 옵션의 **기술적 장단점**과 에이전트의 **권장 사항(Recommended)**을 명시합니다.
-   
-   > **[질문 포맷 예시]**
-   > ## 🧐 확인이 필요한 사항
-   > 1. **라이브러리 선택**
-   >    - (A) `google.protobuf` (권장): 표준, 의존성 낮음
-   >    - (B) `betterproto`: 코드는 간결하나 외부 의존성 있음
-   > 
-   > (추가 질문이 있는 경우) 2. (추가 질문)
-   > ... 
-   > 
-   > 👉 선택해 주세요.
-
-3. **Wait & Analyze (대기 및 분석):** 사용자의 답변을 기다린 후, 그 답변을 분석합니다.
-4. **Resolve or Re-ask (해결 또는 재질문):**
-   - 사용자의 답변이 불충분하거나, 답변으로 인해 **새로운 기술적 모호함**이 발생했다면 **다시 질문(Loop)**합니다.
-   - 사용자가 역으로 질문(Reverse Question)을 한 경우:
-     - 사용자가 질문을 받았을 때 바로 선택하지 않고, "A랑 B의 성능 차이가 구체적으로 어느 정도야?"라던가 "이걸 선택하면 나중에 바꾸기 힘들어?" 같은 추가 정보를 요구하는 경우가 있습니다.
-     - 해당 질문에 대해 성실히 답변한 후, "그래서 어떤 옵션으로 진행할까요?"와 같이 다시 본래의 인터뷰 문맥(선택 요구)으로 부드럽게 복귀하십시오.
-   - 사용자가 **"스킵(Skip)"** 또는 **"알아서 해"**라고 명시하면, **에이전트의 권장 사항(Recommended)을 채택**하고 루프를 즉시 종료합니다.
+- 질문 도구를 사용하여, **모든 불확실성이 해소될 때까지 질문 루프를 수행**하십시오.
+- 각 옵션의 **기술적 장단점**과 에이전트의 **권장 사항(Recommended)**을 명시하십시오.
+- 사용자가 **"스킵(Skip)"** 또는 **"알아서 해"**라고 명시하면, **에이전트의 권장 사항(Recommended)을 채택**하고 루프를 즉시 종료합니다.
 
 ### Phase 2. Plan (계획 수립)
 모든 불확실성이 해소(Resolved)된 후, 상세 구현 계획을 **한국어**로 작성하십시오.
@@ -237,8 +180,6 @@ swiftlint lint --config .swiftlint.yml
 
 ### Phase 3. Action (이행)
 사용자의 명시적 승인(예: "ㅇㅇ", "진행해")이 확인된 후에만 코드를 수정하십시오.
-
-</conditional-rule>
 
 ## COMMIT CONVENTIONS
 

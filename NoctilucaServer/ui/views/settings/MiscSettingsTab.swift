@@ -55,12 +55,12 @@ struct MiscSettingsTab: View {
                 ))
             }
             
-            Section(String(localized: "settings.misc.logging.title", defaultValue: "로깅")) {
+            Section(String(localized: "settings.misc.logging.title", defaultValue: "이벤트 로깅")) {
                 Toggle(isOn: $settings.logging.enableFileLogging) {
                     Text(markdown: String(localized: "settings.misc.logging.enable_file_logging.title",
                          defaultValue: "파일 로깅 활성화"))
                     Text(markdown: String(localized: "settings.misc.logging.enable_file_logging.description",
-                         defaultValue: "로그를 ~/Library/Logs에 파일로 저장합니다."))
+                         defaultValue: "접속/접속 해제 등 주요 이벤트를 ~/Library/Logs에 파일로 기록합니다."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -74,18 +74,6 @@ struct MiscSettingsTab: View {
                         .foregroundStyle(.secondary)
                 }
                 .disabled(!settings.logging.enableFileLogging)
-
-                Picker(selection: $settings.logging.minimumLogLevel) {
-                    Text("Trace").tag("trace")
-                    Text("Debug").tag("debug")
-                    Text("Info").tag("info")
-                    Text("Warning").tag("warning")
-                    Text("Error").tag("error")
-                } label: {
-                    Text(markdown: String(localized: "settings.misc.logging.minimum_log_level.title",
-                         defaultValue: "최소 로그 레벨"))
-                }
-                .pickerStyle(.menu)
 
                 SettingsEntry(
                     title: String(localized: "settings.misc.logging.max_file_size.title",

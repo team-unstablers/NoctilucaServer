@@ -91,29 +91,41 @@ class MockProjectionSession: Identifiable {
             }
         }
 
-        // Reader loop: reader -> encoder (프레임 간격 유지)
+        // Reader loop: reader -> encoder (절대 시간 기준 실시간 페이싱)
         guard let reader = self.reader else { return }
-        let frameInterval = 1.0 / Double(reader.nominalFrameRate)
+        let frameRate = max(Double(reader.nominalFrameRate), 1.0)
+        let frameDurationNs = Int64((1.0 / frameRate) * 1_000_000_000.0)
+        let frameDuration = Duration.nanoseconds(frameDurationNs)
 
         self.readerLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             var frameCounter: UInt64 = 0
+            let maxDriftThreshold = Duration.milliseconds(200)
+            var nextFrameTime = ContinuousClock.now
 
             while !Task.isCancelled {
                 do {
+                    let now = ContinuousClock.now
+                    if nextFrameTime > now {
+                        try await Task.sleep(until: nextFrameTime, clock: .continuous)
+                    } else if now - nextFrameTime > maxDriftThreshold {
+                        // 인코더 지연/시스템 스톨 후에는 burst 대신 기준 시각을 재설정한다.
+                        nextFrameTime = now
+                    }
+
                     let sampleBuffer = try await reader.readNextFrame()
                     try encoder.encode(
                         frameID: frameCounter,
                         sampleBuffer: sampleBuffer
                     )
                     frameCounter += 1
-
-                    try await Task.sleep(for: .milliseconds(Int(frameInterval * 1000)))
+                    nextFrameTime += frameDuration
                 } catch is CancellationError {
                     return
                 } catch {
                     self.logger.error("Reader loop error: \(error)")
                     try? await Task.sleep(for: .milliseconds(100))
+                    nextFrameTime = ContinuousClock.now
                 }
             }
         }

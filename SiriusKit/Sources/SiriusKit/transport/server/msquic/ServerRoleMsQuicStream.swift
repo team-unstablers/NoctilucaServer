@@ -58,7 +58,23 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
             Task { [weak self] in
                 try? await self?.close()
             }
-            return .failure(.notImplemented) // TODO: Map error appropriately
+            return .failure(mapQuicError(error))
+        }
+    }
+
+    private func mapQuicError(_ error: Error) -> StreamError {
+        guard let quicError = error as? QuicError else {
+            return .writeFailed(error)
+        }
+        switch quicError {
+        case .invalidState:
+            return .streamClosed
+        case .aborted:
+            return .aborted
+        case .outOfMemory:
+            return .resourceExhausted
+        default:
+            return .writeFailed(error)
         }
     }
     

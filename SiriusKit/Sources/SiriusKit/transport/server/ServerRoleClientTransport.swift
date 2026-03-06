@@ -19,12 +19,14 @@ protocol ServerRoleClientTransportDelegate: AnyObject {
     func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async
 }
 
-protocol ServerRoleClientTransport: TransportLayer, Hashable where ID == ServerRoleClientTransportIdentifier {
+protocol ServerRoleClientTransport: TransportLayer, Hashable, SiriusEventLogger.ContextHolder where ID == ServerRoleClientTransportIdentifier {
     var delegate: ServerRoleClientTransportDelegate? { get set }
-
+    // swiftlint:disable:next identifier_name
     var remoteEndpoint: SREndpoint? { get }
     
     func issueResumeTicket() async throws
+    
+    func getStreams() async -> [StreamIdentifier: SiriusKitCore.Stream]
 }
 
 extension ServerRoleClientTransport {

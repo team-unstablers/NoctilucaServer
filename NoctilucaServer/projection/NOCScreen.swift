@@ -22,14 +22,14 @@ struct NOCScreen: Identifiable, Hashable, Equatable {
     /// 디스플레이 ID.
     let id: CGDirectDisplayID
     
-    /// 디스플레이의 프레임.
+    /// 뷰포트의 프레임.
     /// origin = 좌측 상단
-    /// size = 디스플레이 해상도 (픽셀 단위)
+    /// size = 뷰포트 사이즈 (포인트 단위)
     let frame: CGRect
     
-    /// scale factor가 적용된 로컬 뷰포트 사이즈 (= 포인트단위 = 1x 기준 뷰포트 사이즈)
-    let localViewport: CGSize
-
+    /// '실제' 디스플레이 해상도 (픽셀 단위)
+    let displayResolution: CGSize
+    
     /// 디스플레이의 스케일 팩터 (@1x, @2x, ...)
     let scaleFactor: CGFloat
     
@@ -37,12 +37,19 @@ struct NOCScreen: Identifiable, Hashable, Equatable {
     let backingNSScreen: NSScreen?
     
     
-    init(id: CGDirectDisplayID, frame: CGRect, scaleFactor: CGFloat, backingNSScreen: NSScreen? = nil) {
+    init(id: CGDirectDisplayID, frame: CGRect, displayResolution: CGSize, backingNSScreen: NSScreen? = nil) {
         self.id = id
         self.frame = frame
-        self.scaleFactor = scaleFactor
-        self.localViewport = CGSize(width: frame.size.width / scaleFactor, height: frame.size.height / scaleFactor)
+        self.displayResolution = displayResolution
         
+        let scaleFactorX = displayResolution.width / frame.size.width
+        let scaleFactorY = displayResolution.height / frame.size.height
+        
+        if (scaleFactorX != scaleFactorY) {
+            // TODO: 진짜 이럴 일 별로 없겠지만 만약 있으면 경고를 뱉어야 함
+        }
+        
+        self.scaleFactor = scaleFactorX
         self.backingNSScreen = backingNSScreen
     }
     
@@ -50,7 +57,7 @@ struct NOCScreen: Identifiable, Hashable, Equatable {
     static func ==(lhs: NOCScreen, rhs: NOCScreen) -> Bool {
         return lhs.id == rhs.id &&
                lhs.frame == rhs.frame &&
-               lhs.localViewport == rhs.localViewport &&
+               lhs.displayResolution == rhs.displayResolution &&
                lhs.scaleFactor == rhs.scaleFactor
     }
     
@@ -58,7 +65,7 @@ struct NOCScreen: Identifiable, Hashable, Equatable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(frame)
-        hasher.combine(localViewport)
+        hasher.combine(displayResolution)
         hasher.combine(scaleFactor)
     }
 }
@@ -88,6 +95,16 @@ extension NOCScreen {
             return nil
         }
         
+        // 실제 디스플레이 해상도 가져오기
+        var displayResolution = nsScreen.frame.size
+        
+        if let displayMode = CGDisplayCopyDisplayMode(displayID) {
+            let pixelWidth = displayMode.pixelWidth
+            let pixelHeight = displayMode.pixelHeight
+            
+            displayResolution = CGSize(width: pixelWidth, height: pixelHeight)
+        }
+        
         let frame = nsScreen.frame
         
         // NSScreen 좌표계를 NOCScreen 좌표계로 변환
@@ -100,7 +117,7 @@ extension NOCScreen {
        
         let nocFrame = CGRect(origin: nocOrigin, size: frame.size)
         
-        self.init(id: displayID, frame: nocFrame, scaleFactor: nsScreen.backingScaleFactor, backingNSScreen: nsScreen as? NSScreen)
+        self.init(id: displayID, frame: nocFrame, displayResolution: displayResolution, backingNSScreen: nsScreen as? NSScreen)
     }
 
 }

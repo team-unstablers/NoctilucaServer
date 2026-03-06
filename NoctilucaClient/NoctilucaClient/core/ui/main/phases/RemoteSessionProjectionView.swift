@@ -48,6 +48,9 @@ struct RemoteSessionProjectionView: View {
     @State
     private var lastPerformanceReport: ProjectionPerformanceReport?
 
+    @State
+    private var useCanvasRendering: Bool = false
+
 #if os(iOS)
     @State private var shouldPresentKeyboard: Bool = false
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
@@ -72,6 +75,17 @@ struct RemoteSessionProjectionView: View {
 #endif
     }
     
+    /// 커서 렌더링용 소스 크기: 디스플레이의 포인트(point) 단위 bounds.
+    /// HiDPI 캡처 시 codec sourceSize는 픽셀 단위지만 커서 좌표는 항상 포인트 단위이므로,
+    /// 커서 좌표 매핑에는 디스플레이 bounds를 사용해야 정확하다.
+    private var cursorSourceSize: CGSize {
+        if case .displayID(let displayID) = sourceDescriptor,
+           let layout = projection.channel.displayLayoutManager.displayLayouts[displayID] {
+            return layout.bounds.cgRect.size
+        }
+        return sourceSize
+    }
+
     private func syncSourceMetadata() {
         guard let source else { return }
         self.sourceSize = source.size
@@ -108,7 +122,16 @@ struct RemoteSessionProjectionView: View {
                     
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     
-                    if let displayLayer = subscription?.displayLayer {
+                    if useCanvasRendering, let renderer = subscription?.canvasRenderer {
+                        // Metal 캔버스 직접 렌더링 경로 (타일 코덱)
+                        MetalProjectionView(renderer: renderer)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .offset(currentOffset)
+                            .frame(width: rect.width, height: rect.height)
+                            .position(x: rect.midX, y: rect.midY)
+                            .scaleEffect(currentScale)
+                    } else if let displayLayer = subscription?.displayLayer {
+                        // AVSampleBufferDisplayLayer 경로 (VT 코덱)
                         SampleBufferDisplayView(displayLayer: displayLayer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .offset(currentOffset)
@@ -122,7 +145,7 @@ struct RemoteSessionProjectionView: View {
                     // allowsHitTesting(false) 필수: 마우스 클릭이 아래 뷰(입력 캡처)로 전달되어야 함.
                     // displayID 기반 visibility는 CursorRenderer 내부에서 처리 (SwiftUI 업데이트 지연 방지)
                     if case .displayID(let displayID) = sourceDescriptor {
-                        MetalCursorView(cursorState: projection.cursorState, sourceSize: sourceSize, targetDisplayID: displayID, cursorScale: settingsStore.settings.input.cursorScale)
+                        MetalCursorView(cursorState: projection.cursorState, sourceSize: cursorSourceSize, targetDisplayID: displayID, cursorScale: settingsStore.settings.input.cursorScale)
                             .offset(currentOffset)
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
@@ -234,10 +257,11 @@ struct RemoteSessionProjectionView: View {
                 }
 #if os(iOS)
                 .onReceive(projection.cursorState.$position) { newPosition in
-                    guard sourceSize.width > 0, sourceSize.height > 0 else { return }
+                    let csSize = cursorSourceSize
+                    guard csSize.width > 0, csSize.height > 0 else { return }
                     let normalized = CGPoint(
-                        x: newPosition.x / sourceSize.width,
-                        y: newPosition.y / sourceSize.height
+                        x: newPosition.x / csSize.width,
+                        y: newPosition.y / csSize.height
                     )
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     zoomController.updateViewportForCursor(
@@ -259,6 +283,9 @@ struct RemoteSessionProjectionView: View {
                                 }
                             case .performanceReportEmitted(let report):
                                 lastPerformanceReport = report
+                            case .codecConfigured(let isTiledCodec):
+                                subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
+                                useCanvasRendering = isTiledCodec
                             default:
                                 break
                             }
@@ -335,11 +362,12 @@ struct RemoteSessionProjectionView: View {
     }
 
     private func snapViewportToCursor() {
-        guard sourceSize.width > 0, sourceSize.height > 0 else { return }
+        let csSize = cursorSourceSize
+        guard csSize.width > 0, csSize.height > 0 else { return }
         let pos = projection.cursorState.position
         let normalized = CGPoint(
-            x: pos.x / sourceSize.width,
-            y: pos.y / sourceSize.height
+            x: pos.x / csSize.width,
+            y: pos.y / csSize.height
         )
         zoomController.centerViewportOnCursor(normalizedCursorPosition: normalized)
     }

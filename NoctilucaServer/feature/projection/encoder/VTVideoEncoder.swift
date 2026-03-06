@@ -20,6 +20,8 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     private let defaultTargetBitrateKbps = 1200
     private let defaultMaxBitrateKbps = 2400
     
+    private(set) var quality: SiriusKit.Codec.Quality?
+    
     fileprivate var configuration: VideoEncoderConfiguration?
     private var compressionSession: VTCompressionSession? {
         didSet {
@@ -373,6 +375,8 @@ private extension VTVideoEncoder {
         }
         let codec = configuration.codec
         
+        self.quality = codec.quality
+        
         let codecType = try codec.fourCC.codecType()
         let pixelBufferFormat = codec.cvPixelFormat
         
@@ -457,7 +461,10 @@ private extension VTVideoEncoder {
         setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
         
         // FIXME: 이거 제대로 된 값 설정해야됨
-        setProperty(session, key: kVTCompressionPropertyKey_MaxAllowedFrameQP, value: 32 as CFNumber)
+        if let quality = quality,
+           case .auto(_) = quality {
+            setProperty(session, key: kVTCompressionPropertyKey_MaxAllowedFrameQP, value: 32 as CFNumber)
+        }
         
         // setProperty(session, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Normal)
         
@@ -517,6 +524,38 @@ private extension VTVideoEncoder {
             
         }
          */
+        
+        if let quality {
+            switch quality {
+            case .auto(_):
+                break
+
+            case .constantBitrate(let bitrateKbps):
+                applyAverageBitrate(Int(bitrateKbps), to: session)
+                applyMaxBitrate(Int(bitrateKbps), to: session)
+                return
+
+            case .variableBitrate(let targetBitrateKbps, let maxBitrateKbps):
+                self.targetBitrateKbps = Int(targetBitrateKbps)
+                self.maxBitrateKbps = Int(maxBitrateKbps)
+
+                applyAverageBitrate(Int(targetBitrateKbps), to: session)
+                applyMaxBitrate(Int(maxBitrateKbps), to: session)
+                return
+
+            case .fixedQuality(let factor):
+                let clamped = max(0, min(Int(factor), 100))
+                let vtQuality = Float(clamped) / 100.0
+                setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: vtQuality))
+                return
+
+            case .lossless(_):
+                setProperty(session, key: kVTCompressionPropertyKey_Quality, value: NSNumber(value: 1.0))
+                setProperty(session, key: kVTCompressionPropertyKey_AllowFrameReordering, value: kCFBooleanFalse)
+                return
+            }
+        }
+    
         isVBRMode = false
         if targetBitrateKbps > 0 {
             applyAverageBitrate(targetBitrateKbps, to: session)
