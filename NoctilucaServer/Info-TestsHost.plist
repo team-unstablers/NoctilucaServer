@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>LSMultipleInstancesProhibited</key>
-	<true/>
+	<false/>
 	<key>SUPublicEDKey</key>
 	<string>LPWEHphp3JtwZ+9uBJM74TcJND9uzmGwt8Fz+1i8T5o=</string>
 	<key>SURequireSignedFeed</key>
