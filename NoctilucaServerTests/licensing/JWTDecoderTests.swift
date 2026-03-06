@@ -7,7 +7,7 @@
 
 import XCTest
 import Security
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 final class JWTDecoderTests: XCTestCase {
 
@@ -85,13 +85,12 @@ final class JWTDecoderTests: XCTestCase {
         let jwt = Self.createJWT(
             payload: [
                 "iss": "test",
-                "sub": "user",
+                "sub": "HWID-TEST",
                 "aud": "noctiluca",
                 "iat": Int(Date.now.timeIntervalSince1970),
                 "jti": "abc-123",
-                "license_id": "lic-001",
-                "hwid": "HWID-TEST",
-                "seat_label": "test-seat"
+                "x-noc-license-id": "lic-001",
+                "x-noc-seat-label": "test-seat"
             ],
             privateKey: Self.keyPair.privateKey
         )
@@ -100,7 +99,7 @@ final class JWTDecoderTests: XCTestCase {
         switch result {
         case .success(let proof):
             XCTAssertEqual(proof.iss, "test")
-            XCTAssertEqual(proof.sub, "user")
+            XCTAssertEqual(proof.sub, "HWID-TEST")
             XCTAssertEqual(proof.licenseId, "lic-001")
             XCTAssertEqual(proof.hwid, "HWID-TEST")
         case .failure(let error):
@@ -131,12 +130,11 @@ final class JWTDecoderTests: XCTestCase {
         let jwt = Self.createJWT(
             payload: [
                 "iss": "test",
-                "sub": "user",
+                "sub": "HWID-TEST",
                 "aud": "noctiluca",
                 "iat": Int(Date.now.timeIntervalSince1970),
                 "jti": "abc-123",
-                "license_id": "lic-001",
-                "hwid": "HWID-TEST"
+                "x-noc-license-id": "lic-001"
             ],
             privateKey: otherKeyPair.privateKey // 다른 키로 서명
         )
@@ -155,12 +153,11 @@ final class JWTDecoderTests: XCTestCase {
             header: ["alg": "HS256", "typ": "JWT"],
             payload: [
                 "iss": "test",
-                "sub": "user",
+                "sub": "HWID-TEST",
                 "aud": "noctiluca",
                 "iat": Int(Date.now.timeIntervalSince1970),
                 "jti": "abc-123",
-                "license_id": "lic-001",
-                "hwid": "HWID-TEST"
+                "x-noc-license-id": "lic-001"
             ],
             privateKey: Self.keyPair.privateKey
         )
@@ -177,13 +174,12 @@ final class JWTDecoderTests: XCTestCase {
         let jwt = Self.createJWT(
             payload: [
                 "iss": "test",
-                "sub": "user",
+                "sub": "HWID-TEST",
                 "aud": "noctiluca",
                 "iat": Int(Date.now.timeIntervalSince1970) - 7200,
                 "exp": Int(Date.now.timeIntervalSince1970) - 3600, // 1시간 전 만료
                 "jti": "abc-123",
-                "license_id": "lic-001",
-                "hwid": "HWID-TEST"
+                "x-noc-license-id": "lic-001"
             ],
             privateKey: Self.keyPair.privateKey
         )
@@ -200,12 +196,11 @@ final class JWTDecoderTests: XCTestCase {
         let jwt = Self.createJWT(
             payload: [
                 "iss": "test",
-                "sub": "user",
+                "sub": "HWID-TEST",
                 "aud": "noctiluca",
                 "iat": Int(Date.now.timeIntervalSince1970),
                 "jti": "abc-123",
-                "license_id": "lic-001",
-                "hwid": "HWID-TEST"
+                "x-noc-license-id": "lic-001"
             ],
             privateKey: Self.keyPair.privateKey
         )
@@ -227,13 +222,12 @@ final class JWTDecoderTests: XCTestCase {
         let jwt = Self.createJWT(
             payload: [
                 "iss": "test",
-                "sub": "user",
+                "sub": "HWID-TEST",
                 "aud": "noctiluca",
                 "iat": Int(Date.now.timeIntervalSince1970),
                 "exp": Int(Date.now.timeIntervalSince1970) + 3600, // 1시간 후 만료
                 "jti": "abc-123",
-                "license_id": "lic-001",
-                "hwid": "HWID-TEST"
+                "x-noc-license-id": "lic-001"
             ],
             privateKey: Self.keyPair.privateKey
         )
