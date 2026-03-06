@@ -8,7 +8,7 @@
 import XCTest
 import CoreGraphics
 import SiriusKit
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 final class AutoQualityPlannerTests: XCTestCase {
 
@@ -46,7 +46,9 @@ final class AutoQualityPlannerTests: XCTestCase {
         // Recovery requires BOTH clientScore and serverScore <= -3.
         // feed(report:) only decrements clientScore, so we also feed stable queuePressure
         // to bring serverScore down.
-        for _ in 0..<6 {
+        // EMA smoothing carries over from bad reports, so clientScore needs more iterations
+        // to reach -3 (emaDropRatio decays: 0.1 → 0.05 → 0.025 → ... → < 0.01).
+        for _ in 0..<10 {
             planner.feed(report: makeReport(received: 100, decoded: 100, dropped: 0, decodeMs: 3))
             planner.feed(queuePressure: 0.0)
         }
