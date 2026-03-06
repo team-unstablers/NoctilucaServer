@@ -230,6 +230,42 @@ actor LicenseManager {
         }
     }
 
+    // MARK: - Install (Trial)
+
+    /// 체험판 발급 결과를 로컬에 설치합니다.
+    func installTrialLicense(name: String, email: String, licenseKey: String, seatProof seatProofJwt: String) async throws {
+        guard validationState == .unlicensed || validationState == .invalid else {
+            throw LicenseManagerError.invalidState
+        }
+
+        // Seat proof JWT를 Keychain에 저장
+        guard let seatProofData = seatProofJwt.data(using: .utf8) else {
+            throw LicenseManagerError.installationFailed(nil)
+        }
+
+        let keychainResult = SRKeychain.shared.setSecureData(seatProofData, key: Self.keychainSeatProofKey)
+        if case .failure(let error) = keychainResult {
+            throw LicenseManagerError.installationFailed(error)
+        }
+
+        // 라이선스 정보 저장
+        let licenseInfo = LicenseInfo(name: name, email: email, licenseKey: licenseKey)
+        let infoData = try JSONEncoder().encode(licenseInfo)
+        _ = SRKeychain.shared.setSecureData(infoData, key: Self.keychainLicenseInfoKey)
+
+        // 로컬 상태 갱신
+        if let publicKey = LuvotomyKey.publicKey,
+           let jwtDecoder = try? JWTDecoder(publicKey),
+           let proof = try? jwtDecoder.decode(seatProofJwt, as: LicenseSeatProof.self).get()
+        {
+            self.seatProof = proof
+            self.seatProofJwt = seatProofJwt
+        }
+
+        validationState = .valid
+        logger.info("Trial license installed successfully")
+    }
+
     // MARK: - Remove
 
     /// 라이선스를 제거합니다.
