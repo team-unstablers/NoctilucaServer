@@ -7,7 +7,7 @@
 
 import XCTest
 import SiriusKit
-@testable import NoctilucaServer
+@testable import NoctilucaServerTestsHost
 
 final class CodecSpecificationMergingTests: XCTestCase {
 
@@ -59,8 +59,8 @@ final class CodecSpecificationMergingTests: XCTestCase {
 
         let merged = serverSpec.merging(with: clientCodec)
 
-        XCTAssertEqual(merged.options[.colorRange], .kColorRangeLimited,
-                       "서버의 구체적 값(limited)이 유지되어야 함")
+        // XCTAssertEqual(merged.options[.colorRange], .kColorRangeLimited, "서버의 구체적 값(limited)이 유지되어야 함")
+        XCTAssertEqual(merged.options[.colorRange], .kColorRangeFull, "color range에 한해서는 클라이언트의 요구 사항이 반영되어야 함")
         XCTAssertEqual(merged.options[.dynamicRange], .kDynamicRangeSDR,
                        "서버의 구체적 값(SDR)이 유지되어야 함")
     }
