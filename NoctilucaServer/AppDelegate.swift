@@ -20,6 +20,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let server = NoctilucaServer.shared
     private var settingsWindowController: AppKitSettingsWindowController?
     private var onboardingWindowController: OnboardingWindowController?
+    private var licensingWindowController: LicensingWindowController?
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
@@ -68,7 +69,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // 라이선스 로드 (비동기, 결과에 상관없이 앱은 계속 실행)
         Task {
             await LicenseManager.shared.loadLicense()
-            
+
+            if await LicenseManager.shared.validationState == .unlicensed,
+               UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+                await MainActor.run { showLicensingWindow(nil) }
+            }
+
             if server.settings.general.autoStart {
                 self.startServer(nil)
             }
@@ -93,6 +99,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         DispatchQueue.main.async {
             self.onboardingWindowController?.showWindow(nil)
             self.onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    @objc
+    func showLicensingWindow(_ sender: Any?) {
+        if licensingWindowController == nil {
+            licensingWindowController = LicensingWindowController()
+        }
+
+        DispatchQueue.main.async {
+            self.licensingWindowController?.showWindow(nil)
+            self.licensingWindowController?.window?.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
         }
     }

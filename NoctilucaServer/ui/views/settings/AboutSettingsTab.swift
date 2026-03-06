@@ -50,32 +50,32 @@ struct AboutSettingsTab: View {
                         switch licenseState {
                         case .valid:
                             Text(String(localized: "settings.about.license_status.valid", defaultValue: "예"))
-                            
+
                             HStack {
                                 Button("라이선스 등록 해제") {
-                                    
+                                    removeLicense()
                                 }
                             }
                         case .invalid:
                             Text(String(localized: "settings.about.license_status.invalid", defaultValue: "아니오"))
-                            
+
                             HStack {
                                 Button("새 라이선스 등록") {
-                                    
+                                    (NSApp.delegate as? AppDelegate)?.showLicensingWindow(nil)
                                 }
-                                
+
                                 Button("Noctiluca Server 구매하기…") {
                                     openURL(URL(string: "https://noctiluca.app/pricing")!)
                                 }
                             }
                         case .unlicensed:
                             Text(String(localized: "settings.about.license_status.unlicensed", defaultValue: "라이선스 없음"))
-                            
+
                             HStack {
                                 Button("새 라이선스 등록") {
-                                    
+                                    (NSApp.delegate as? AppDelegate)?.showLicensingWindow(nil)
                                 }
-                                
+
                                 Button("Noctiluca Server 구매하기…") {
                                     openURL(URL(string: "https://noctiluca.app/pricing")!)
                                 }
@@ -97,6 +97,13 @@ struct AboutSettingsTab: View {
         .formStyle(.grouped)
         .task {
             licenseState = (await LicenseManager.shared.validationState) ?? .valid
+        }
+    }
+
+    private func removeLicense() {
+        Task {
+            try? await LicenseManager.shared.removeLicense()
+            licenseState = (await LicenseManager.shared.validationState) ?? .unlicensed
         }
     }
 }
