@@ -15,6 +15,8 @@ import SwiftMsQuicHelper
 
 import Sparkle
 
+import Inject
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let server = NoctilucaServer.shared
@@ -29,8 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let startStopItem = NSMenuItem(title: String(localized: "menu.start-server", defaultValue: "서버 시작"), action: nil, keyEquivalent: "")
     private let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "설정"), action: nil, keyEquivalent: ",")
     private let checkUpdatesItem = NSMenuItem(title: String(localized: "menu.check-updates", defaultValue: "업데이트 확인"), action: nil, keyEquivalent: "")
+    private let licensingItem = NSMenuItem(title: String(localized: "menu.register-license", defaultValue: "라이선스 등록하기…"), action: nil, keyEquivalent: "")
     private let quitItem = NSMenuItem(title: String(localized: "menu.quit", defaultValue: "종료"), action: nil, keyEquivalent: "q")
-    
+
 #if DEBUG
     private let showOnboardingWindowItem = NSMenuItem(title: "Show Onboarding Window", action: nil, keyEquivalent: "")
 #endif
@@ -51,6 +54,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // load MsQuic
         _ = MsQuicLoader.shared
+        
+        InjectConfiguration.animation = .interactiveSpring()
 
         NSApp.setActivationPolicy(.accessory)
         
@@ -69,6 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // 라이선스 로드 (비동기, 결과에 상관없이 앱은 계속 실행)
         Task {
             await LicenseManager.shared.loadLicense()
+            await MainActor.run { updateLicensingMenuState() }
 
             if await LicenseManager.shared.validationState == .unlicensed,
                UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
@@ -88,6 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         sessionListViewModel.refresh(from: server)
         updateMenuState()
+        updateLicensingMenuState()
     }
 
     @objc
@@ -189,6 +196,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         settingsItem.target = self
         settingsItem.action = #selector(showSettingsWindow(_:))
+        licensingItem.target = self
+        licensingItem.action = #selector(showLicensingWindow(_:))
+        licensingItem.isHidden = true
         quitItem.target = self
         quitItem.action = #selector(quitApplication(_:))
         
@@ -203,6 +213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(sessionListItem)
         menu.addItem(startStopItem)
         menu.addItem(.separator())
+        menu.addItem(licensingItem)
         menu.addItem(settingsItem)
         menu.addItem(.separator())
         menu.addItem(checkUpdatesItem)
@@ -269,6 +280,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             startStopItem.title = String(localized: "menu.stop-server", defaultValue: "서버 중지")
             startStopItem.action = #selector(stopServer(_:))
             startStopItem.isEnabled = true
+        }
+    }
+
+    private func updateLicensingMenuState() {
+        Task {
+            let state = await LicenseManager.shared.validationState
+            await MainActor.run {
+                licensingItem.isHidden = (state == .valid)
+            }
         }
     }
 }

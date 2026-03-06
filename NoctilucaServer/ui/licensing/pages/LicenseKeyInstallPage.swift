@@ -4,8 +4,12 @@
 //
 
 import SwiftUI
+import Inject
 
 struct LicenseKeyInstallPage: View {
+    @ObserveInjection
+    var inject
+
     var navigation: LicensingNavigationModel
 
     @State private var computerName: String = Host.current().localizedName ?? "Mac"
@@ -38,6 +42,7 @@ struct LicenseKeyInstallPage: View {
 
                         LabeledContent(String(localized: "licensing.install.license_key", defaultValue: "라이선스 키")) {
                             TextEditor(text: $licenseKey)
+                                .multilineTextAlignment(.leading)
                                 .font(.system(.body, design: .monospaced))
                                 .frame(height: 80)
                                 .scrollContentBackground(.hidden)
@@ -93,7 +98,7 @@ struct LicenseKeyInstallPage: View {
             }
         }
         .alert(
-            String(localized: "licensing.install.error_title", defaultValue: "라이선스 설치 실패"),
+            String(localized: "licensing.install.error_title", defaultValue: "라이선스 등록 실패"),
             isPresented: $showError,
             presenting: errorMessage
         ) { _ in
@@ -109,6 +114,7 @@ struct LicenseKeyInstallPage: View {
                 navigation.licenseInfoForRetry = nil
             }
         }
+        .enableInjection()
     }
 
     private var canInstall: Bool {

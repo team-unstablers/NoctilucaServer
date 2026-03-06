@@ -12,14 +12,18 @@ final class LicensingWindowController: NSWindowController {
         let hostingView = NSHostingView(rootView: contentView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 420),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 480),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
 
         window.contentView = hostingView
-        window.title = String(localized: "licensing.window.title", defaultValue: "라이선스")
+        window.title = String(localized: "licensing.window.title", defaultValue: "라이선스 등록")
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.styleMask.insert(.fullSizeContentView)
+        window.toolbar?.showsBaselineSeparator = false
         window.isRestorable = false
         window.collectionBehavior = [.fullScreenNone]
         window.isReleasedWhenClosed = false

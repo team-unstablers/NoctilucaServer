@@ -5,7 +5,12 @@
 
 import SwiftUI
 
+import Inject
+
 struct LicensingWindow: View {
+    @ObserveInjection
+    var inject
+    
     @State
     private var navigation = LicensingNavigationModel()
 
@@ -23,6 +28,7 @@ struct LicensingWindow: View {
                 NSApp.keyWindow?.close()
             }
         }
+        .enableInjection()
     }
 
     @ViewBuilder

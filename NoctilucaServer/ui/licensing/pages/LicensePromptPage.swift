@@ -5,7 +5,12 @@
 
 import SwiftUI
 
+import Inject
+
 struct LicensePromptPage: View {
+    @ObserveInjection
+    var inject
+
     @Environment(\.openURL)
     private var openURL
 
@@ -60,5 +65,6 @@ struct LicensePromptPage: View {
             Spacer()
         }
         .padding(32)
+        .enableInjection()
     }
 }
