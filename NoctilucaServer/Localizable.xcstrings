@@ -878,7 +878,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "라이선스 설치 실패"
+            "value" : "라이선스 등록 실패"
           }
         }
       }
@@ -1366,6 +1366,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "退出"
+          }
+        }
+      }
+    },
+    "menu.register-license" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "라이선스 등록하기…"
           }
         }
       }
