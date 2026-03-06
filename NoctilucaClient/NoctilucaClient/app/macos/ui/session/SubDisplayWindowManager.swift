@@ -44,8 +44,8 @@ class SubDisplayWindowManager: NSObject, NSWindowDelegate {
     func destroy(for displayID: Int) {
         // 딕셔너리에서 먼저 제거하여 windowWillClose → destroy 재귀 호출 방지
         guard let state = windows.removeValue(forKey: displayID) else { return }
+        state.subscription.invalidate()
         state.window.close()
-        // state가 스코프를 벗어나면서 ticket deinit → 세션 참조 해제
     }
 
     func destroyAll() {

@@ -14,7 +14,7 @@ struct MainWindowRemoteSessionView: View {
     
     @EnvironmentObject
     var viewModel: SessionWindowViewModel
-
+    
     @ObservedObject
     var remoteSession: RemoteSession
     
@@ -53,8 +53,8 @@ struct MainWindowRemoteSessionView: View {
             }
         }
         #if os(iOS)
-        .onChange(of: viewModel.isSceneActive) { _, isActive in
-            if isActive {
+        .onReceive(AppStateHolder.shared.$state) { appState in
+            if appState == .foreground {
                 if subscription == nil,
                    case .displayID(let displayID) = sourceDescriptor,
                    displayID != -1 {
@@ -63,6 +63,7 @@ struct MainWindowRemoteSessionView: View {
                     }
                 }
             } else {
+                subscription?.invalidate()
                 subscription = nil
             }
         }

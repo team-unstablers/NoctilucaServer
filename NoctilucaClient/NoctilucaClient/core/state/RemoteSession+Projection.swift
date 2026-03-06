@@ -49,14 +49,24 @@ extension RemoteSession {
     class SessionReferenceTicket {
         let id: UUID
         let releaseAction: () -> Void
-        
+        private(set) var isReleased = false
+
         fileprivate init(id: UUID, releaseAction: @escaping () -> Void) {
             self.id = id
             self.releaseAction = releaseAction
         }
-        
-        deinit {
+
+        /// 명시적 해제. 중복 호출 안전.
+        func release() {
+            guard !isReleased else { return }
+            isReleased = true
             releaseAction()
+        }
+
+        deinit {
+            if !isReleased {
+                releaseAction()
+            }
         }
     }
     
