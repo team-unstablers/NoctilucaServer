@@ -3,6 +3,12 @@ import SwiftUI
 import SiriusKit
 
 struct AboutSettingsTab: View {
+    @Environment(\.openURL)
+    private var openURL
+    
+    @State
+    private var licenseState: LicenseValidationState = .unlicensed
+
     var body: some View {
         Form {
             Section {
@@ -39,22 +45,59 @@ struct AboutSettingsTab: View {
                         Text("ProjectionData")
                     }
                 }
-                SettingsEntry(title: String(localized: "settings.about.license.title", defaultValue: "유효한 라이선스")) {
+                SettingsEntry(title: String(localized: "settings.about.license_status.title", defaultValue: "유효한 라이선스")) {
                     VStack(alignment: .trailing) {
-                        Text(markdown: String(localized: "settings.about.license.no", defaultValue: "아니오"))
+                        switch licenseState {
+                        case .valid:
+                            Text(String(localized: "settings.about.license_status.valid", defaultValue: "예"))
+                            
+                            HStack {
+                                Button("라이선스 등록 해제") {
+                                    
+                                }
+                            }
+                        case .invalid:
+                            Text(String(localized: "settings.about.license_status.invalid", defaultValue: "아니오"))
+                            
+                            HStack {
+                                Button("새 라이선스 등록") {
+                                    
+                                }
+                                
+                                Button("Noctiluca Server 구매하기…") {
+                                    openURL(URL(string: "https://noctiluca.app/pricing")!)
+                                }
+                            }
+                        case .unlicensed:
+                            Text(String(localized: "settings.about.license_status.unlicensed", defaultValue: "라이선스 없음"))
+                            
+                            HStack {
+                                Button("새 라이선스 등록") {
+                                    
+                                }
+                                
+                                Button("Noctiluca Server 구매하기…") {
+                                    openURL(URL(string: "https://noctiluca.app/pricing")!)
+                                }
+                            }
+                        }
                     }
                 }
             } header: {
-                Text(markdown: String(localized: "settings.about.header.title", defaultValue: "Noctiluca Server (Explicit Edition) 정보"))
+                Text(markdown: String(localized: "settings.about.header.title", defaultValue: "Noctiluca Server 정보"))
                 Text("")
             } footer: {
                 Text(markdown: String(localized: "settings.about.footer.oss_notice", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](http://google.com)"))
-                Text(markdown: String(localized: "settings.about.footer.sirius_protocol", defaultValue: "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."))
+                // Text(markdown: String(localized: "settings.about.footer.sirius_protocol", defaultValue: "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."))
                 Text("")
                 Text(markdown: String(localized: "settings.about.footer.copyright", defaultValue: "© 2026 team unstablers Inc. All rights reserved."))
+                Text("[Noctiluca Server 사용권 계약 (EULA)](https://noctiluca.app/docs/eula/server) • [개인정보처리방침](https://noctiluca.app/docs/privacy-policy)")
             }
         }
         .formStyle(.grouped)
+        .task {
+            licenseState = (await LicenseManager.shared.validationState) ?? .valid
+        }
     }
 }
 

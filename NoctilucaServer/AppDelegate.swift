@@ -37,6 +37,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     static func main() {
         let app = NSApplication.shared
         
+        pleaseDontDisassembleThisAppImBeggingYou("please", "please", "please")
+
         // ignore SIGPIPE to prevent app from crashing when trying to write to a closed socket
         signal(SIGPIPE, SIG_IGN);
 
@@ -46,20 +48,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // FIXME: 아직 라이선스 시스템이 없으므로 2026년 3월 31일 이후로 앱 사용을 막도록 한다
-        let expirationDate = Date(timeIntervalSince1970: 1774882800.0)
-        if Date.now.timeIntervalSince1970 > expirationDate.timeIntervalSince1970 {
-            let alert = NSAlert()
-            alert.messageText = String(localized: "alert.trial-expired.title", defaultValue: "테스트 기간 만료")
-            alert.informativeText = String(localized: "alert.trial-expired.message", defaultValue: "Noctiluca Server의 테스트 기간이 만료되었습니다. 최신 버전으로 업데이트해 주세요.")
-            alert.alertStyle = .critical
-            alert.addButton(withTitle: String(localized: "alert.trial-expired.confirm", defaultValue: "확인"))
-            alert.runModal()
-            NSApp.terminate(nil)
-            
-            return
-        }
-        
         // load MsQuic
         _ = MsQuicLoader.shared
 
@@ -75,6 +63,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if getuid() != 0 && !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
             showOnboardingWindow(nil)
+        }
+        
+        // 라이선스 로드 (비동기, 결과에 상관없이 앱은 계속 실행)
+        Task {
+            await LicenseManager.shared.loadLicense()
+            
+            if server.settings.general.autoStart {
+                self.startServer(nil)
+            }
         }
     }
 

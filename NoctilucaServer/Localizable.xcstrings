@@ -10,6 +10,9 @@
     "(%@)" : {
 
     },
+    "[Noctiluca Server 사용권 계약 (EULA)](https://noctiluca.app/docs/eula/server) [개인정보처리방침](https://noctiluca.app/docs/privacy-policy)" : {
+
+    },
     "%@" : {
 
     },
@@ -73,7 +76,7 @@
 
     },
     "alert.trial-expired.confirm" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -102,7 +105,7 @@
       }
     },
     "alert.trial-expired.message" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -131,7 +134,7 @@
       }
     },
     "alert.trial-expired.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -766,12 +769,6 @@
     "Creative Commons Zero v1.0 Universal" : {
 
     },
-    "Debug" : {
-
-    },
-    "Error" : {
-
-    },
     "GNU General Public License v3.0" : {
 
     },
@@ -782,9 +779,6 @@
 
     },
     "HIDIO" : {
-
-    },
-    "Info" : {
 
     },
     "menu.check-updates" : {
@@ -1121,6 +1115,9 @@
     "MIT License" : {
 
     },
+    "Noctiluca Server 구매하기…" : {
+
+    },
     "notificaiton.plugin_bundle_rejected_by_security_policy.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1213,25 +1210,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "A critical security issue has been discovered, requiring an urgent update to version %@."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "深刻なセキュリティ問題が発見されたため、バージョン %@ への緊急アップデートが必要です。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "심각한 보안 문제가 발견되어 버전 %@으로의 긴급 업데이트가 필요합니다."
+            "value" : "현재 버전에서 심각한 보안 문제가 발견되어 버전 %@으로의 긴급히 업데이트가 필요합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "发现严重安全问题，需要紧急更新到版本 %@。"
           }
         }
@@ -3200,7 +3197,7 @@
       }
     },
     "settings.about.footer.sirius_protocol" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3233,32 +3230,76 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "About Noctiluca Server (Explicit Edition)"
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Noctiluca Server (Explicit Edition) 情報"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Noctiluca Server (Explicit Edition) 정보"
+            "value" : "Noctiluca Server 정보"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Noctiluca Server (Explicit Edition) 信息"
           }
         }
       }
     },
-    "settings.about.license.no" : {
+    "settings.about.license_status.invalid" : {
       "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아니오"
+          }
+        }
+      }
+    },
+    "settings.about.license_status.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유효한 라이선스"
+          }
+        }
+      }
+    },
+    "settings.about.license_status.unlicensed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "라이선스 없음"
+          }
+        }
+      }
+    },
+    "settings.about.license_status.valid" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "예"
+          }
+        }
+      }
+    },
+    "settings.about.license.no" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3287,7 +3328,7 @@
       }
     },
     "settings.about.license.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4254,25 +4295,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Saves logs to files in ~/Library/Logs."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "ログを ~/Library/Logs にファイルとして保存します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "로그를 ~/Library/Logs에 파일로 저장합니다."
+            "value" : "접속/접속 해제 등 주요 이벤트를 ~/Library/Logs에 파일로 기록합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "将日志作为文件保存到 ~/Library/Logs。"
           }
         }
@@ -4424,7 +4465,7 @@
       }
     },
     "settings.misc.logging.minimum_log_level.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4515,25 +4556,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Logging"
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "ロギング"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "로깅"
+            "value" : "이벤트 로깅"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "日志记录"
           }
         }
@@ -15399,12 +15440,6 @@
     "test" : {
 
     },
-    "Trace" : {
-
-    },
-    "Warning" : {
-
-    },
     "window.settings.title" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -15433,6 +15468,12 @@
           }
         }
       }
+    },
+    "라이선스 등록 해제" : {
+
+    },
+    "새 라이선스 등록" : {
+
     }
   },
   "version" : "1.1"
