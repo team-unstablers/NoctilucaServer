@@ -28,7 +28,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
-        
         if let activityType = options.userActivities.first?.activityType {
             let sceneConfig = UISceneConfiguration(
                 name: nil,

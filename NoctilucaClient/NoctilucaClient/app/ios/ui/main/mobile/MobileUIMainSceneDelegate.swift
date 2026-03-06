@@ -40,23 +40,6 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
             await rootViewController.mainWindowViewModel?.stopSession()
         }
     }
-    
-    func sceneWillResignActive(_ scene: UIScene) {
-        rootViewController?.mainWindowViewModel?.isSceneActive = false
-        if DeviceKind.current == .iPhone {
-            if NOCAudioEngine.shared.activeNodes != 0 {
-                AppNotification.backgroundSessionActive.post()
-            }
-        }
-    }
-    
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        // iPadOS에서 이거 잘 안불리는듯
-        rootViewController?.mainWindowViewModel?.isSceneActive = true
-        if DeviceKind.current == .iPhone {
-            AppNotification.backgroundSessionActive.dismiss()
-        }
-    }
 }
 
 #endif
