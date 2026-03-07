@@ -21,7 +21,7 @@ jOCUss8jpEn6P9PFfNDpN2GQ+gyDVJIC/1Bo1sF4G35dhp9GbN4ENB5xHdw59FpO
 +rztb7R1s6rmyDd4GQg0S1dtiDIlGzfp3BXbaXiIpOZd0jrAEf9LL8xtqNoEiYmR
 J9MO9uVT0ZaRDYRisc9xnu4DY7pKUB1CyqjGWLlWtL24Wq3J5CpL9Rwk/cpl9gYk
 HOGCiWLjphtJEXASAePsLH0CAwEAAQ==
-""")
+""", options: .ignoreUnknownCharacters)
 #else
     static let publicKey = Data(base64Encoded:
 """
@@ -37,6 +37,6 @@ ig1BoR0/5YDoqjvg0uxhCteJcdTZQxTkt0wOn+EIgrXHMdBjVkHeosRhZaHvTby9
 Z7x4EpcAC/cUHVOsda/Am1l1j+ijhuNsFmWeFIf+UuvxfI5KUkWuC28r/UkJ6Mjm
 JADGB6XeRjDfG1hKJV/owdpFtxsDRgbjnDqrjnU9j69DY99+f9wBm5+gQFoStLgl
 ULE1rlyjQ5DYUCoIWZaLak8CAwEAAQ==
-""")
+""", options: .ignoreUnknownCharacters)
 #endif
 }

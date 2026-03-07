@@ -67,6 +67,10 @@ struct LicenseSeatProof: Decodable {
     }
 }
 
+extension Notification.Name {
+    static let licenseValidationStateDidChange = Notification.Name("app.noctiluca.server.licenseValidationStateDidChange")
+}
+
 enum LicenseManagerError: Error {
     /// 현재 상태에서 이 동작은 허용되지 않습니다
     case invalidState
@@ -93,8 +97,11 @@ actor LicenseManager {
 
     private(set) var validationState: LicenseValidationState? {
         didSet {
+            NotificationCenter.default.post(name: .licenseValidationStateDidChange, object: nil)
+
             if validationState == .invalid {
                 Task {
+                    try? await Task.sleep(for: .seconds(5))
                     await AppNotification.invalidLicense.post()
                 }
             }
@@ -144,7 +151,7 @@ actor LicenseManager {
 
         // 운을 시험한다
         let randomValue = Int.random(in: 1..<10)
-        guard randomValue % 3 != 0 else {
+        guard randomValue % 2 != 0 else {
             // 운이 좋군! 이번엔 봐주도록 하지.
             return
         }
@@ -155,8 +162,16 @@ actor LicenseManager {
             if result.valid {
                 logger.info("Online license validation succeeded")
             } else {
-                logger.warning("Online license validation failed: \(result.reason ?? "unknown")")
-                validationState = .invalid
+                if result.reason == "seat_not_found" {
+                    logger.warning("Online license validation failed: seat not found (possibly revoked or invalidated)")
+                    
+                    // uninstall license
+                    _ = try? await removeLicense()
+                    validationState = .unlicensed
+                } else {
+                    logger.warning("Online license validation failed: \(result.reason ?? "unknown")")
+                    validationState = .invalid
+                }
             }
         } catch let error as LicenseAPIClientError {
             switch error {
