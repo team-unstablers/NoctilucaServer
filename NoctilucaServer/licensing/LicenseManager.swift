@@ -24,6 +24,9 @@ enum LicenseValidationState {
     /// 라이선스가 이 컴퓨터에 등록되어 있지만, 올바르지 않은 것으로 보입니다.
     case invalid
 
+    /// 라이선스가 만료되었습니다.
+    case expired
+
     /// 라이선스가 이 컴퓨터에 등록되어 있고, 올바른 라이선스로 확인되었습니다.
     case valid
 }
@@ -68,6 +71,12 @@ struct LicenseJWTClaim: Decodable {
     }
 
     var isEvaluation: Bool { licenseType == "evaluation" }
+
+    var isExpired: Bool {
+        guard let exp else { return false }
+        let expDate = Date(timeIntervalSince1970: TimeInterval(exp))
+        return expDate < Date.now
+    }
 
     enum CodingKeys: String, CodingKey {
         case iss, sub, aud, iat, nbf, exp
@@ -130,13 +139,22 @@ actor LicenseManager {
 
     private(set) var validationState: LicenseValidationState? {
         didSet {
+            guard validationState != oldValue else { return }
+
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: .licenseValidationStateDidChange, object: nil)
-                
+
                 if self.validationState == .invalid {
                     Task {
                         try? await Task.sleep(for: .seconds(5))
                         await AppNotification.invalidLicense.post()
+                    }
+                }
+
+                if self.validationState == .expired {
+                    Task {
+                        try? await Task.sleep(for: .seconds(5))
+                        await AppNotification.licenseExpired.post()
                     }
                 }
             }
@@ -168,13 +186,22 @@ actor LicenseManager {
         self.seatProofJwt = seatProofJwtString
 
         if let licenseInfo = loadLicenseInfo() {
-            self.licenseClaim = try? jwtDecoder.decode(licenseInfo.licenseKey, as: LicenseJWTClaim.self).get()
+            self.licenseClaim = try? jwtDecoder.decode(
+                licenseInfo.licenseKey,
+                as: LicenseJWTClaim.self,
+                skipExpirationCheck: true
+            ).get()
         }
 
         guard let hardwareIdentifier = SystemCapability.hardwareIdentifier(),
               seatProof.hwid == hardwareIdentifier
         else {
             validationState = .invalid
+            return
+        }
+
+        if let claim = licenseClaim, claim.isExpired {
+            validationState = .expired
             return
         }
 
@@ -234,7 +261,7 @@ actor LicenseManager {
 
     /// 라이선스를 설치합니다.
     func installLicense(_ licenseInfo: LicenseInfo) async throws {
-        guard validationState == .unlicensed || validationState == .invalid else {
+        guard validationState == .unlicensed || validationState == .invalid || validationState == .expired else {
             throw LicenseManagerError.invalidState
         }
 
@@ -279,6 +306,7 @@ actor LicenseManager {
             validationState = .valid
 
             logger.info("License installed successfully (seat: \(response.seatId))")
+            startPeriodicExpirationCheck()
         } catch let error as LicenseAPIClientError {
             logger.error("License activation failed: \(error)")
             throw LicenseManagerError.installationFailed(error)
@@ -289,7 +317,7 @@ actor LicenseManager {
 
     /// 체험판 발급 결과를 로컬에 설치합니다.
     func installTrialLicense(name: String, email: String, licenseKey: String, seatProof seatProofJwt: String) async throws {
-        guard validationState == .unlicensed || validationState == .invalid else {
+        guard validationState == .unlicensed || validationState == .invalid || validationState == .expired else {
             throw LicenseManagerError.invalidState
         }
 
@@ -320,6 +348,7 @@ actor LicenseManager {
 
         validationState = .valid
         logger.info("Trial license installed successfully")
+        startPeriodicExpirationCheck()
     }
 
     // MARK: - Remove
@@ -340,6 +369,8 @@ actor LicenseManager {
             }
         }
 
+        stopPeriodicExpirationCheck()
+
         // Keychain에서 제거
         _ = SRKeychain.shared.removeSecureData(key: Self.keychainSeatProofKey)
         _ = SRKeychain.shared.removeSecureData(key: Self.keychainLicenseInfoKey)
@@ -351,6 +382,44 @@ actor LicenseManager {
         validationState = .unlicensed
 
         logger.info("License removed locally")
+    }
+
+    // MARK: - Periodic Expiration Check
+
+    private var expirationCheckTask: Task<Void, Never>?
+
+    /// 체험판 라이선스의 주기적 만료 확인을 시작합니다.
+    func startPeriodicExpirationCheck() {
+        expirationCheckTask?.cancel()
+
+        guard let claim = licenseClaim, claim.isEvaluation else {
+            return
+        }
+
+        expirationCheckTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(6 * 60 * 60))
+                guard !Task.isCancelled else { break }
+
+                guard let claim = self.licenseClaim else { break }
+
+                if claim.isExpired {
+                    if self.validationState == .valid {
+                        self.validationState = .expired
+                    }
+                    break
+                }
+
+                if let remaining = claim.remainingDays, remaining <= 3, remaining > 0 {
+                    await AppNotification.licenseExpiringSoon(remainingDays: remaining).post()
+                }
+            }
+        }
+    }
+
+    func stopPeriodicExpirationCheck() {
+        expirationCheckTask?.cancel()
+        expirationCheckTask = nil
     }
 
     // MARK: - Private

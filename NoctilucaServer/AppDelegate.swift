@@ -77,13 +77,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             await LicenseManager.shared.loadLicense()
             await MainActor.run { updateLicensingMenuState() }
 
-            if await LicenseManager.shared.validationState == .unlicensed,
+            let licenseState = await LicenseManager.shared.validationState
+            if (licenseState == .unlicensed || licenseState == .expired),
                UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
                 await MainActor.run { showLicensingWindow(nil) }
             }
 
+            await LicenseManager.shared.startPeriodicExpirationCheck()
+
             if server.settings.general.autoStart {
                 self.startServer(nil)
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: .licenseValidationStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task {
+                let state = await LicenseManager.shared.validationState
+                if state == .expired {
+                    await MainActor.run {
+                        self?.showLicensingWindow(nil)
+                    }
+                }
             }
         }
     }

@@ -67,6 +67,18 @@ struct AboutSettingsTab: View {
                                     removeLicense()
                                 }
                             }
+                        case .expired:
+                            Text(String(localized: "settings.about.license_status.expired", defaultValue: "라이선스가 만료되었습니다"))
+
+                            HStack {
+                                Button("새 라이선스 등록") {
+                                    (NSApp.delegate as? AppDelegate)?.showLicensingWindow(nil)
+                                }
+
+                                Button("Noctiluca Server 구매하기…") {
+                                    openURL(URL(string: "https://noctiluca.app/pricing")!)
+                                }
+                            }
                         case .invalid:
                             Text(String(localized: "settings.about.license_status.invalid", defaultValue: "아니오"))
 
