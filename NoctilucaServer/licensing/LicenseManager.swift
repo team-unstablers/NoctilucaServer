@@ -47,6 +47,37 @@ struct LicenseInfo: Codable {
     let licenseKey: String
 }
 
+struct LicenseJWTClaim: Decodable {
+    let iss: String
+    let sub: String
+    let aud: String
+    let iat: Int
+    let nbf: Int?
+    /// personal인 경우 신경쓰지 않는다 (2099-12-31 쯤으로 되어있음)
+    let exp: Int?
+    /// personal, enterprise, evaluation
+    let licenseType: String
+    let licensedTo: String
+    let metadataJson: String?
+    let options: String
+    
+    var remainingDays: Int? {
+        guard let exp else { return nil }
+        let expDate = Date(timeIntervalSince1970: TimeInterval(exp))
+        return Calendar.current.dateComponents([.day], from: .now, to: expDate).day
+    }
+
+    var isEvaluation: Bool { licenseType == "evaluation" }
+
+    enum CodingKeys: String, CodingKey {
+        case iss, sub, aud, iat, nbf, exp
+        case licenseType = "x-noc-license-type"
+        case licensedTo = "x-noc-licensed-to"
+        case metadataJson = "x-noc-metadata"
+        case options = "x-noc-options"
+    }
+}
+
 /// 라이선스의 시트 할당 증명.
 struct LicenseSeatProof: Decodable {
     let iss: String
@@ -95,14 +126,18 @@ actor LicenseManager {
     private var seatProof: LicenseSeatProof?
     private var seatProofJwt: String?
 
+    private(set) var licenseClaim: LicenseJWTClaim?
+
     private(set) var validationState: LicenseValidationState? {
         didSet {
-            NotificationCenter.default.post(name: .licenseValidationStateDidChange, object: nil)
-
-            if validationState == .invalid {
-                Task {
-                    try? await Task.sleep(for: .seconds(5))
-                    await AppNotification.invalidLicense.post()
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .licenseValidationStateDidChange, object: nil)
+                
+                if self.validationState == .invalid {
+                    Task {
+                        try? await Task.sleep(for: .seconds(5))
+                        await AppNotification.invalidLicense.post()
+                    }
                 }
             }
         }
@@ -131,6 +166,7 @@ actor LicenseManager {
 
         self.seatProof = seatProof
         self.seatProofJwt = seatProofJwtString
+        self.licenseClaim = try? jwtDecoder.decode(seatProofJwtString, as: LicenseJWTClaim.self).get()
 
         guard let hardwareIdentifier = SystemCapability.hardwareIdentifier(),
               seatProof.hwid == hardwareIdentifier
@@ -236,6 +272,7 @@ actor LicenseManager {
 
             self.seatProof = proof
             self.seatProofJwt = response.seatProof
+            self.licenseClaim = try? jwtDecoder.decode(response.seatProof, as: LicenseJWTClaim.self).get()
             validationState = .valid
 
             logger.info("License installed successfully (seat: \(response.seatId))")
@@ -275,6 +312,7 @@ actor LicenseManager {
         {
             self.seatProof = proof
             self.seatProofJwt = seatProofJwt
+            self.licenseClaim = try? jwtDecoder.decode(seatProofJwt, as: LicenseJWTClaim.self).get()
         }
 
         validationState = .valid
@@ -306,6 +344,7 @@ actor LicenseManager {
         // 로컬 상태 초기화
         self.seatProof = nil
         self.seatProofJwt = nil
+        self.licenseClaim = nil
         validationState = .unlicensed
 
         logger.info("License removed locally")

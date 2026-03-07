@@ -9,6 +9,9 @@ struct AboutSettingsTab: View {
     @State
     private var licenseState: LicenseValidationState = .unlicensed
 
+    @State
+    private var licenseClaim: LicenseJWTClaim?
+
     var body: some View {
         Form {
             Section {
@@ -49,7 +52,15 @@ struct AboutSettingsTab: View {
                     VStack(alignment: .trailing) {
                         switch licenseState {
                         case .valid:
-                            Text(String(localized: "settings.about.license_status.valid", defaultValue: "예"))
+                            if let claim = licenseClaim {
+                                if claim.isEvaluation, let remaining = claim.remainingDays {
+                                    Text(String(localized: "settings.about.license_status.trial", defaultValue: "체험판 라이선스 — \(remaining)일 남음"))
+                                } else {
+                                    Text(String(localized: "settings.about.license_status.licensed_to", defaultValue: "\(claim.licensedTo)에게 라이선스됨"))
+                                }
+                            } else {
+                                Text(String(localized: "settings.about.license_status.valid", defaultValue: "예"))
+                            }
 
                             HStack {
                                 Button("라이선스 등록 해제") {
@@ -97,10 +108,12 @@ struct AboutSettingsTab: View {
         .formStyle(.grouped)
         .task {
             licenseState = (await LicenseManager.shared.validationState) ?? .valid
+            licenseClaim = await LicenseManager.shared.licenseClaim
         }
         .onReceive(NotificationCenter.default.publisher(for: .licenseValidationStateDidChange)) { _ in
             Task {
                 licenseState = (await LicenseManager.shared.validationState) ?? .unlicensed
+                licenseClaim = await LicenseManager.shared.licenseClaim
             }
         }
     }
@@ -109,6 +122,7 @@ struct AboutSettingsTab: View {
         Task {
             try? await LicenseManager.shared.removeLicense()
             licenseState = (await LicenseManager.shared.validationState) ?? .unlicensed
+            licenseClaim = await LicenseManager.shared.licenseClaim
         }
     }
 }
