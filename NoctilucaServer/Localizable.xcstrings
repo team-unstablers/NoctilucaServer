@@ -828,6 +828,17 @@
         }
       }
     },
+    "licensing.install.error_invalid_key" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유효하지 않은 라이선스 키입니다."
+          }
+        }
+      }
+    },
     "licensing.install.error_network" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {

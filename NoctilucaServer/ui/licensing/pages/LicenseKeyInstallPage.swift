@@ -142,7 +142,12 @@ struct LicenseKeyInstallPage: View {
             } catch {
                 await MainActor.run {
                     isInstalling = false
-                    errorMessage = error.localizedDescription
+                    switch error.localizedDescription {
+                        case "error.invalid_license_key":
+                            errorMessage = String(localized: "licensing.install.error_invalid_key", defaultValue: "유효하지 않은 라이선스 키입니다.")
+                        default:
+                            errorMessage = error.localizedDescription
+                    }
                     showError = true
                 }
             }

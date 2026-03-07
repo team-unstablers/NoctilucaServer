@@ -98,6 +98,11 @@ struct AboutSettingsTab: View {
         .task {
             licenseState = (await LicenseManager.shared.validationState) ?? .valid
         }
+        .onReceive(NotificationCenter.default.publisher(for: .licenseValidationStateDidChange)) { _ in
+            Task {
+                licenseState = (await LicenseManager.shared.validationState) ?? .unlicensed
+            }
+        }
     }
 
     private func removeLicense() {
