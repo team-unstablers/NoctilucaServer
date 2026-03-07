@@ -79,9 +79,17 @@ private struct APIErrorResponse: Decodable {
     let detail: String?
 }
 
+// MARK: - LicenseAPIClientProtocol
+
+protocol LicenseAPIClientProtocol: Sendable {
+    func activate(licenseInfo: LicenseInfo, hwid: String, label: String) async throws -> ActivateLicenseResponse
+    func validateSeat(seatProof: String) async throws -> ValidateSeatResponse
+    func revokeSeat(licenseInfo: LicenseInfo, seatId: String) async throws
+}
+
 // MARK: - LicenseAPIClient
 
-actor LicenseAPIClient {
+actor LicenseAPIClient: LicenseAPIClientProtocol {
 #if DEBUG
     private static let baseURL = "http://localhost:8901/api/v1"
 #else
