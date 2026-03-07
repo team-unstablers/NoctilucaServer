@@ -15,11 +15,12 @@ enum CodecNegotiationPolicy: String, Hashable, Equatable, Codable {
     
     /// 서버의 품질 설정을 우선시합니다. 클라이언트의 요청은 무시됩니다.
     case overrideFromServer = "override-from-server"
-}
+}   
 
 struct CodecSpecification: Codable {
     enum CodingKeys: String, CodingKey {
         case fourCC = "fourcc"
+        case quality = "quality"
         case options = "options"
         case extras = "extras"
         case frameRate = "frame_rate"
@@ -27,6 +28,8 @@ struct CodecSpecification: Codable {
     }
     
     let fourCC: CodecFourCC
+    
+    var quality: Codec.Quality
     var options: [CodecOptionKey: CodecOptionValue]
     var extras: String = ""
     
@@ -39,6 +42,7 @@ struct CodecSpecification: Codable {
     
     init(fourCC: CodecFourCC) {
         self.fourCC = fourCC
+        self.quality = .auto(mode: .balancedPriority)
         self.options = [:]
     }
     
@@ -46,6 +50,13 @@ struct CodecSpecification: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         fourCC = try container.decode(CodecFourCC.self, forKey: .fourCC)
+        
+        if let quality = try? container.decode(Codec.Quality.self, forKey: .quality) {
+            self.quality = quality
+        } else {
+            self.quality = .auto(mode: .balancedPriority)
+        }
+        
         options = try container.decode([CodecOptionKey: CodecOptionValue].self, forKey: .options)
         extras = try container.decodeIfPresent(String.self, forKey: .extras) ?? ""
         
@@ -57,10 +68,18 @@ struct CodecSpecification: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(fourCC, forKey: .fourCC)
+        try container.encode(quality, forKey: .quality)
         try container.encode(options, forKey: .options)
         try container.encode(extras, forKey: .extras)
         try container.encode(frameRate, forKey: .frameRate)
         try container.encode(maximumResolutionLevel, forKey: .maximumResolutionLevel)
+    }
+    
+    func quality(_ quality: Codec.Quality) -> Self {
+        var spec = self
+        
+        spec.quality = quality
+        return spec
     }
     
     func option(_ key: CodecOptionKey) -> CodecOptionValue? {

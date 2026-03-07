@@ -31,15 +31,51 @@ public class ClientSession: SiriusSession {
     public var shouldAcceptChannelCreation: Bool = false
 
     public weak var delegate: (any ClientSessionDelegate)?
+    
+    private(set) public var eventLoggerContext: SharedState<SiriusEventLogger.Context>
+    private let eventLogger: SiriusEventLogger
 
-    init(id: UUID, transport: any ServerRoleClientTransport, featureProvider: (any FeatureProvider)) {
+    init(id: UUID, transport: any ServerRoleClientTransport, featureProvider: (any FeatureProvider), eventLoggerContext: SharedState<SiriusEventLogger.Context>) {
         self.id = id
 
         self.clientTransport = transport
         self.featureProvider = featureProvider
+        
+        self.eventLoggerContext = eventLoggerContext
+        self.eventLogger = SiriusEventLogger("SiriusKit::ClientSession", context: eventLoggerContext)
+        
         self.channelManager = ChannelManager(session: self)
 
-        self.clientTransport.delegate = self
+        Task {
+            await self.channelManager.createEventLogger(self.eventLoggerContext)
+            await self.initialize()
+        }
+    }
+    
+    /// transport delegate 설정 전에 열린 스트림이 있으면 메인 채널로 승격시키고, delegate를 설정합니다.
+    private func initialize() async {
+        let streams = await clientTransport.getStreams().values
+
+        defer {
+            self.clientTransport.delegate = self
+        }
+
+        guard let mainChannelStream = streams.first else {
+            return
+        }
+
+        if streams.count > 1 {
+            logger.error("Multiple streams were opened before delegate was set, which is unexpected. Count: \(streams.count)")
+        }
+
+        logger.info("Found \(streams.count) pre-opened stream(s). Promoting the first one to main channel.")
+
+        try? await channelManager.handleStreamOpen(stream: mainChannelStream)
+        guard let mainChannel = await channelManager.mainChannel else {
+            logger.error("Main channel was not created after stream open.")
+            return
+        }
+        self.delegate?.clientSessionDidCreateMainChannel(self, mainChannel: mainChannel)
     }
 
     public func close() async {

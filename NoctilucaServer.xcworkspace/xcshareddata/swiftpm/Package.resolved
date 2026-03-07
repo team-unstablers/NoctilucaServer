@@ -1,6 +1,24 @@
 {
-  "originHash" : "cb0f0651e9aac45d71c11a44bd83b477cb177eb4c46b4c4d9daad04440becc1e",
+  "originHash" : "dbc259cc593fa426bc705e6d2eec5fefee215ff28195dcf2a62d6a946532c8e0",
   "pins" : [
+    {
+      "identity" : "alamofire",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Alamofire/Alamofire.git",
+      "state" : {
+        "revision" : "3f99050e75bbc6fe71fc323adabb039756680016",
+        "version" : "5.11.1"
+      }
+    },
+    {
+      "identity" : "inject",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krzysztofzablocki/Inject.git",
+      "state" : {
+        "revision" : "728c56639ecb3df441d51d5bc6747329afabcfc9",
+        "version" : "1.5.2"
+      }
+    },
     {
       "identity" : "sparkle",
       "kind" : "remoteSourceControl",

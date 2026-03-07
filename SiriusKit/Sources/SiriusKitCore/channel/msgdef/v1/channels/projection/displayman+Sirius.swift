@@ -116,6 +116,7 @@ public struct DisplayInfo: SiriusMessage {
     public let dynamicRange: DisplayDynamicRange
     public let colorProfile: DisplayColorProfile?
     public let physicalSizeInfo: DisplayPhysicalSizeInfo?
+    public let scaleFactor: Float
     public let thumbnail: Data?
     public let metadata: [String: String]
     public let flags: UInt32
@@ -132,6 +133,7 @@ public struct DisplayInfo: SiriusMessage {
         dynamicRange: DisplayDynamicRange,
         colorProfile: DisplayColorProfile?,
         physicalSizeInfo: DisplayPhysicalSizeInfo?,
+        scaleFactor: Float,
         thumbnail: Data?,
         metadata: [String: String],
         flags: UInt32
@@ -146,6 +148,7 @@ public struct DisplayInfo: SiriusMessage {
         self.dynamicRange = dynamicRange
         self.colorProfile = colorProfile
         self.physicalSizeInfo = physicalSizeInfo
+        self.scaleFactor = scaleFactor
         self.thumbnail = thumbnail
         self.metadata = metadata
         self.flags = flags
@@ -162,6 +165,7 @@ public struct DisplayInfo: SiriusMessage {
         self.dynamicRange = DisplayDynamicRange(rawValue: protobufMessage.dynamicRange)
         self.colorProfile = protobufMessage.hasColorProfile ? DisplayColorProfile(rawValue: protobufMessage.colorProfile) : nil
         self.physicalSizeInfo = protobufMessage.hasPhysicalSizeInfo ? try DisplayPhysicalSizeInfo(from: protobufMessage.physicalSizeInfo) : nil
+        self.scaleFactor = protobufMessage.scaleFactor == 0.0 ? 1.0 : protobufMessage.scaleFactor
         self.thumbnail = protobufMessage.hasThumbnail ? protobufMessage.thumbnail : nil
         self.metadata = protobufMessage.metadata
         self.flags = protobufMessage.flags
@@ -184,6 +188,7 @@ public struct DisplayInfo: SiriusMessage {
         if let physicalSizeInfo = self.physicalSizeInfo {
             message.physicalSizeInfo = physicalSizeInfo.toProtobufMessage()
         }
+        message.scaleFactor = self.scaleFactor
         if let thumbnail = self.thumbnail {
             message.thumbnail = thumbnail
         }

@@ -1,0 +1,42 @@
+//
+//  LuvotomyKey.swift
+//  NoctilucaServer
+//
+//  Created by Gyuhwan Park on 3/6/26.
+//
+
+struct LuvotomyKey {
+#if DEBUG
+    static let publicKey = Data(base64Encoded:
+"""
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAl/cL5IosADjL4kaNSyGZ
+1NDhnUVTlAcqoVWx0gKpI0ok9eBDXqnlHrxnqnheGFGRfepumli2EmbNa3EjYmEg
+awI0yWNVcyIIQ7xQE9+tdUa0y5FjjX0FKY8CGF4OMHZSTNN1tpGgR/zL2fYv+JeY
+GlyaRiXAQiOfXUqDvXD0qYLKLuO+dsg7qNOhKaVT0hP21sTXnoqIr5ZNr8XUiNfp
+Ouzg5rb/8PWjopSspOh4OSwYilnUsVmv8t+wydzIzZVqqbx6LiWrXbAqYljWIrfQ
+sbwgu78IeT8NDRssInyleKSa4RzgAb7uLSCQvuts9MEbIAkjDGnoTUdC1nQZcmpd
+4XBXDMJS/VsdPwhq0mWjlFuDCHE1pPbv7AmlEnKxhw1UPwwB9fL6rC/VX2+FHVBu
+KNj5CNyDlHYpQ7amTR6gtYHnpruaWXmh9Nf8dMszjRbRIhi/d/E699cW/gkUQBu+
+jOCUss8jpEn6P9PFfNDpN2GQ+gyDVJIC/1Bo1sF4G35dhp9GbN4ENB5xHdw59FpO
++rztb7R1s6rmyDd4GQg0S1dtiDIlGzfp3BXbaXiIpOZd0jrAEf9LL8xtqNoEiYmR
+J9MO9uVT0ZaRDYRisc9xnu4DY7pKUB1CyqjGWLlWtL24Wq3J5CpL9Rwk/cpl9gYk
+HOGCiWLjphtJEXASAePsLH0CAwEAAQ==
+""")
+#else
+    static let publicKey = Data(base64Encoded:
+"""
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAt6FgHsRJzEKZlIEYAvSk
+S39tnJLZz+8E0HW+Lxq6hFiw20iU/pivj6zhzDnzx62B2gK4P2zNdfpajf+sl2so
+cb5E93RiFGXLZ+Yph0kRRbmyBS3RE8fsQ1Ee0EFD7xgRXeZPl2gMIuelZhSBngyh
+sa6A5uGLT5wIDARwecST/tNKIC8VPqfJmHK5I+niH3ZZZrrGSpOuvVOxgBhlaGxT
+YcqpPu1xKPoiGcsIvTE8tJi/taAkzTgMkmdH4H4pHgYGZtfzp0flDnyBxU8Vsug2
+vw53K8uRuWAQ9YA7ip7+sDDykO5binMzsSTiifuoFd6q45CZk37H5oCj2HHyNpZv
+ig1BoR0/5YDoqjvg0uxhCteJcdTZQxTkt0wOn+EIgrXHMdBjVkHeosRhZaHvTby9
+5IAn8Ncp1HgBWN5eKQx7J29FYegr8J64BFom8a3/HmS7eiDuRa76lkAv0WBe4FWc
+6pXYo32F/NqQmQogAbXWDf7LWcyZFjP9NfvJgoTCkF4ecjYb4TST2FNxJzYLuP3u
+Z7x4EpcAC/cUHVOsda/Am1l1j+ijhuNsFmWeFIf+UuvxfI5KUkWuC28r/UkJ6Mjm
+JADGB6XeRjDfG1hKJV/owdpFtxsDRgbjnDqrjnU9j69DY99+f9wBm5+gQFoStLgl
+ULE1rlyjQ5DYUCoIWZaLak8CAwEAAQ==
+""")
+#endif
+}

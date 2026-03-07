@@ -161,6 +161,8 @@ class NoctilucaClient: ObservableObject {
     
     private var pingTask: Task<Void, Never>?
     private var pongHandler: (() -> Void)?
+    private var consecutivePongMisses = 0
+    private let maxConsecutivePongMisses = 3
     private(set) var pingRTTSamples: [TimeInterval] = []
     var averagePingRTT: TimeInterval {
         guard !pingRTTSamples.isEmpty else {
@@ -323,6 +325,7 @@ class NoctilucaClient: ObservableObject {
                 let didReceivePong = await pingWithTimeout()
 
                 if didReceivePong {
+                    self.consecutivePongMisses = 0
                     let rtt = Date().timeIntervalSince(startTime)
                     self.pingRTTSamples.append(rtt)
 
@@ -330,7 +333,14 @@ class NoctilucaClient: ObservableObject {
                         self.uiEvents.send(.pingRTTUpdated(self.averagePingRTT))
                     }
                 } else {
-                    logger.warning("Ping timeout: no pong received within 5 seconds")
+                    self.consecutivePongMisses += 1
+                    logger.warning("Ping timeout (consecutive misses: \(self.consecutivePongMisses)/\(self.maxConsecutivePongMisses))")
+
+                    if self.consecutivePongMisses >= self.maxConsecutivePongMisses {
+                        logger.error("Connection presumed lost: \(self.consecutivePongMisses) consecutive pong timeouts")
+                        await self.panic("connection lost (pong timeout)")
+                        return
+                    }
                 }
 
                 try await Task.sleep(for: .seconds(1))

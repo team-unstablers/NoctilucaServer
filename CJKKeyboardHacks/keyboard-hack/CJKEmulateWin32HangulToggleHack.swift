@@ -40,7 +40,8 @@ class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
 
     static var desiredKeyEvents: Set<NoctilucaPluginKit.LinuxKeycode> = [
         .KEY_RIGHTMETA,
-        .KEY_RIGHTALT
+        .KEY_RIGHTALT,
+        .KEY_HANGEUL,
     ]
 
     private var workaroundWindow: NSWindow
@@ -130,7 +131,8 @@ class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
     }
 
     func onKeyDown(_ keyCode: NoctilucaPluginKit.LinuxKeycode) async -> NoctilucaPluginKit.KeyboardHackResult {
-        if keyCode == .KEY_RIGHTALT || keyCode == .KEY_RIGHTMETA {
+        print(keyCode.rawValue)
+        if keyCode == .KEY_RIGHTALT || keyCode == .KEY_RIGHTMETA || keyCode == .KEY_HANGEUL {
             await Task { @MainActor in
                 let current = TISCopyCurrentKeyboardInputSource()?.takeUnretainedValue()
                 guard let abc = findASCIICapableInputSource(),
@@ -154,7 +156,7 @@ class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
     }
 
     func onKeyUp(_ keyCode: NoctilucaPluginKit.LinuxKeycode) async -> NoctilucaPluginKit.KeyboardHackResult {
-        if keyCode == .KEY_RIGHTALT || keyCode == .KEY_RIGHTMETA {
+        if keyCode == .KEY_RIGHTALT || keyCode == .KEY_RIGHTMETA || keyCode == .KEY_HANGEUL {
             return .stop
         }
         return .passthrough

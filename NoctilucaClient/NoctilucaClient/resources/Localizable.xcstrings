@@ -58,10 +58,16 @@
     "1.5x" : {
 
     },
+    "1Mbps" : {
+
+    },
     "2.0x" : {
 
     },
     "4K" : {
+
+    },
+    "20Mbps" : {
 
     },
     "25%" : {
@@ -6932,6 +6938,17 @@
         }
       }
     },
+    "session-settings.projection.codec.auto.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 네트워크 환경과 클라이언트 측의 컴퓨팅 속도에 맞춰 자동으로 화면 품질을 결정합니다."
+          }
+        }
+      }
+    },
     "session-settings.projection.codec.color_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -7247,6 +7264,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用有限色彩范围 %@。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.constantBitrate.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자가 지정한 비트레이트 값을 사용하도록 서버에게 요구합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.constantBitrateSlider.subtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%dMbps"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.constantBitrateSlider.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비트레이트"
           }
         }
       }
@@ -7604,25 +7654,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Determine frame rate based on client negotiation."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "クライアントのネゴシエーション内容に基づいてフレームレートを決定します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "클라이언트의 협상 내용을 기반으로 프레임 속도를 결정합니다."
+            "value" : "최대 프레임 속도의 결정을 서버에게 맡깁니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "根据客户端的协商内容决定帧率。"
           }
         }
@@ -7633,25 +7683,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Set max frame rate to %d FPS."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "フレームレートを最大 %d FPSに設定します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "프레임 속도를 최대 %d FPS로 설정합니다."
+            "value" : "프레임 속도를 최대 %d FPS로 제한합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "将帧率限制为最大 %d FPS。"
           }
         }
@@ -7802,6 +7852,105 @@
         }
       }
     },
+    "session-settings.projection.codec.lossless.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "무손실 압축을 사용하도록 요구합니다.\n상당한 네트워크 대역폭을 사용하기 때문에 빠른 속도의 인터넷 연결을 필요로 합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.balanced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.balanced_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "성능과 압축률 간의 균형을 맞춥니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.compression" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축률 우선"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.compression_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축률을 우선시 합니다. 딜레이가 늘어날 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "무손실 압축 모드를 선택합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.speed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축 속도 우선"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.speed_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "압축 속도를 우선시 합니다. 대역폭 사용량이 늘어날 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.lossless.mode.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "무손실 압축 모드"
+          }
+        }
+      }
+    },
     "session-settings.projection.codec.max_resolution" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -7836,25 +7985,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Determine maximum resolution based on client negotiation."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "クライアントのネゴシエーション内容に基づいて最大解像度を決定します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "클라이언트의 협상 내용을 기반으로 최대 해상도를 결정합니다."
+            "value" : "최대 해상도의 결정을 서버에게 맡깁니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "根据客户端的协商内容决定最大分辨率。"
           }
         }
@@ -7865,25 +8014,25 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Set max resolution to %@."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "最大解像度を %@ に設定します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "최대 해상도를 %@으로 설정합니다."
+            "value" : "최대 해상도를 %@으로 제한합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "将最大分辨率设置为 %@。"
           }
         }
@@ -8208,6 +8357,105 @@
         }
       }
     },
+    "session-settings.projection.codec.quality.auto" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동 조정 (권장)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.quality.constantBitrate" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "고정 비트레이트"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.quality.default_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "품질 정책을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.quality.lossless" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "무손실 (권장하지 않음)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.quality.manual_warning" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "참고: 이 정책을 사용하면 네트워크 상태에 따른 퀄리티 디그레이드가 동작하지 않게 됩니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.quality.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "품질 정책"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.quality.variableBitrate" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가변 비트레이트"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.tab.advanced" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "고급 설정"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.tab.basic" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본 설정"
+          }
+        }
+      }
+    },
     "session-settings.projection.codec.title_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -8233,6 +8481,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ 编解码器设置"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.variableBitrate.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가변 비트레이트를 사용하도록 서버에게 요구합니다."
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.variableBitrate.maxBitrateSlider.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 비트레이트"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec.variableBitrate.targetBitrateSlider.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타겟 비트레이트"
           }
         }
       }

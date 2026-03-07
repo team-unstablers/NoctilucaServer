@@ -83,12 +83,12 @@ fileprivate extension SCShareableContent {
 
 fileprivate extension ScreenRecorderSource {
     @MainActor
-    func contentSize() async throws -> CGSize? {
+    func contentSize(codec: Codec) async throws -> CGSize? {
         switch self {
         case .entireDisplay:
-            return __entireDisplay__contentSize()
+            return __entireDisplay__contentSize(codec: codec)
         case .window:
-            return try await __window__contentSize()
+            return try await __window__contentSize(codec: codec)
             
         case .displayRegion:
             fatalError("not implemented")
@@ -96,7 +96,7 @@ fileprivate extension ScreenRecorderSource {
     }
     
     @MainActor
-    func __entireDisplay__contentSize() -> CGSize? {
+    func __entireDisplay__contentSize(codec: Codec) -> CGSize? {
         guard case .entireDisplay(let rawDisplayID) = self else {
             fatalError("__entireDisplay__contentSize() called on non-entireDisplay source")
         }
@@ -111,11 +111,21 @@ fileprivate extension ScreenRecorderSource {
             return nil
         }
         
-        return display.frame.size
+        switch codec.option(.displayDensity) {
+        case .kDisplayDensityAuto, .kDisplayDensityPerformance:
+            // FIXME: 알아서 정할 수 있어야 함
+            return display.frame.size // 1x
+            
+        case .kDisplayDensityBest:
+            return display.displayResolution
+            
+        default:
+            return display.frame.size // 1x
+        }
     }
     
     @MainActor
-    func __window__contentSize() async throws -> CGSize? {
+    func __window__contentSize(codec: Codec) async throws -> CGSize? {
         guard case .window(let windowID) = self else {
             fatalError("__window__contentSize() called on non-window source")
         }
@@ -125,6 +135,8 @@ fileprivate extension ScreenRecorderSource {
         guard let window = shareableContent.windows.first(where: { $0.windowID == windowID }) else {
             throw ScreenRecorderPrepareError.invalidSource
         }
+        
+        // FIXME: window projection은 아직 hidpi를 지원하지 않음
         
         return window.frame.size
     }
@@ -251,7 +263,7 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
             case .kDisplayDensityPerformance:
                 configuration.captureResolution = .nominal
             default:
-                break
+                configuration.captureResolution = .nominal
             }
         }
         
@@ -264,7 +276,7 @@ class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
         }
          */
         
-        if let contentSize = try await source.contentSize() {
+        if let contentSize = try await source.contentSize(codec: codec) {
             configuration.width = Int(contentSize.width)
             configuration.height = Int(contentSize.height)
         }

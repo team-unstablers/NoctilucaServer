@@ -53,9 +53,11 @@ public class SiriusServer {
         try await serverTransport.shutdown()
     }
 
-    private func createClientSession(_ transport: any ServerRoleClientTransport) {
-        let session = ClientSession(id: UUID(), transport: transport, featureProvider: featureProvider)
+    private func createClientSession(_ transport: any ServerRoleClientTransport) async {
+        let eventLoggerContext = await transport.eventLoggerContext()
+        let session = ClientSession(id: UUID(), transport: transport, featureProvider: featureProvider, eventLoggerContext: eventLoggerContext)
 
+        // FIXME: self.sessions의 concurrent modification 가능성 있음
         self.sessions.append(session)
         self.delegate?.siriusServerDidAcceptClientSession(self, session: session)
     }
@@ -75,7 +77,10 @@ extension SiriusServer: ServerRoleRootTransportDelegate {
     }
 
     func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: any ServerRoleClientTransport) {
-        self.createClientSession(clientTransport)
+        // FIXME: self.sessions의 concurrent modification 가능성 있음
+        Task.detached {
+            await self.createClientSession(clientTransport)
+        }
     }
 
     func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: any Error) {

@@ -15,11 +15,14 @@ import SwiftMsQuicHelper
 
 import Sparkle
 
+import Inject
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let server = NoctilucaServer.shared
     private var settingsWindowController: AppKitSettingsWindowController?
     private var onboardingWindowController: OnboardingWindowController?
+    private var licensingWindowController: LicensingWindowController?
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
@@ -28,8 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let startStopItem = NSMenuItem(title: String(localized: "menu.start-server", defaultValue: "서버 시작"), action: nil, keyEquivalent: "")
     private let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "설정"), action: nil, keyEquivalent: ",")
     private let checkUpdatesItem = NSMenuItem(title: String(localized: "menu.check-updates", defaultValue: "업데이트 확인"), action: nil, keyEquivalent: "")
+    private let licensingItem = NSMenuItem(title: String(localized: "menu.register-license", defaultValue: "라이선스 등록하기…"), action: nil, keyEquivalent: "")
     private let quitItem = NSMenuItem(title: String(localized: "menu.quit", defaultValue: "종료"), action: nil, keyEquivalent: "q")
-    
+
 #if DEBUG
     private let showOnboardingWindowItem = NSMenuItem(title: "Show Onboarding Window", action: nil, keyEquivalent: "")
 #endif
@@ -37,6 +41,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     static func main() {
         let app = NSApplication.shared
         
+        pleaseDontDisassembleThisAppImBeggingYou("please", "please", "please")
+
         // ignore SIGPIPE to prevent app from crashing when trying to write to a closed socket
         signal(SIGPIPE, SIG_IGN);
 
@@ -46,22 +52,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // FIXME: 아직 라이선스 시스템이 없으므로 2026년 3월 31일 이후로 앱 사용을 막도록 한다
-        let expirationDate = Date(timeIntervalSince1970: 1774882800.0)
-        if Date.now.timeIntervalSince1970 > expirationDate.timeIntervalSince1970 {
-            let alert = NSAlert()
-            alert.messageText = String(localized: "alert.trial-expired.title", defaultValue: "테스트 기간 만료")
-            alert.informativeText = String(localized: "alert.trial-expired.message", defaultValue: "Noctiluca Server의 테스트 기간이 만료되었습니다. 최신 버전으로 업데이트해 주세요.")
-            alert.alertStyle = .critical
-            alert.addButton(withTitle: String(localized: "alert.trial-expired.confirm", defaultValue: "확인"))
-            alert.runModal()
-            NSApp.terminate(nil)
-            
-            return
-        }
-        
         // load MsQuic
         _ = MsQuicLoader.shared
+        
+        InjectConfiguration.animation = .interactiveSpring()
 
         NSApp.setActivationPolicy(.accessory)
         
@@ -71,12 +65,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         UNUserNotificationCenter.current().delegate = self
         
+        setupMainMenu()
         setupStatusItem()
         bindServerState()
         updateMenuState()
 
         if getuid() != 0 && !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
             showOnboardingWindow(nil)
+        }
+        
+        // 라이선스 로드 (비동기, 결과에 상관없이 앱은 계속 실행)
+        Task {
+            await LicenseManager.shared.loadLicense()
+            await MainActor.run { updateLicensingMenuState() }
+
+            if await LicenseManager.shared.validationState == .unlicensed,
+               UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+                await MainActor.run { showLicensingWindow(nil) }
+            }
+
+            if server.settings.general.autoStart {
+                self.startServer(nil)
+            }
         }
     }
 
@@ -87,6 +97,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         sessionListViewModel.refresh(from: server)
         updateMenuState()
+        updateLicensingMenuState()
     }
 
     @objc
@@ -98,6 +109,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         DispatchQueue.main.async {
             self.onboardingWindowController?.showWindow(nil)
             self.onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    @objc
+    func showLicensingWindow(_ sender: Any?) {
+        if licensingWindowController == nil {
+            licensingWindowController = LicensingWindowController()
+        }
+
+        DispatchQueue.main.async {
+            self.licensingWindowController?.showWindow(nil)
+            self.licensingWindowController?.window?.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
         }
     }
@@ -146,6 +170,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } catch {
                 print("shutdown failed: \(error.localizedDescription)")
             }
+            SiriusEventFileLogDestination.flushAll()
+            SiriusFileLogDestination.flushAll()
             await MainActor.run {
                 NSApp.reply(toApplicationShouldTerminate: true)
             }
@@ -156,6 +182,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc
     func quitApplication(_ sender: Any?) {
         NSApp.terminate(nil)
+    }
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        let editMenuItem = NSMenuItem()
+        let editMenu = NSMenu(title: "Edit")
+
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Delete", action: #selector(NSText.delete(_:)), keyEquivalent: "\u{8}")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+
+        editMenuItem.submenu = editMenu
+        mainMenu.addItem(editMenuItem)
+
+        NSApp.mainMenu = mainMenu
     }
 
     private func setupStatusItem() {
@@ -173,6 +220,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         settingsItem.target = self
         settingsItem.action = #selector(showSettingsWindow(_:))
+        licensingItem.target = self
+        licensingItem.action = #selector(showLicensingWindow(_:))
+        licensingItem.isHidden = true
         quitItem.target = self
         quitItem.action = #selector(quitApplication(_:))
         
@@ -187,6 +237,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(sessionListItem)
         menu.addItem(startStopItem)
         menu.addItem(.separator())
+        menu.addItem(licensingItem)
         menu.addItem(settingsItem)
         menu.addItem(.separator())
         menu.addItem(checkUpdatesItem)
@@ -253,6 +304,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             startStopItem.title = String(localized: "menu.stop-server", defaultValue: "서버 중지")
             startStopItem.action = #selector(stopServer(_:))
             startStopItem.isEnabled = true
+        }
+    }
+
+    private func updateLicensingMenuState() {
+        Task {
+            let state = await LicenseManager.shared.validationState
+            await MainActor.run {
+                licensingItem.isHidden = (state == .valid)
+            }
         }
     }
 }
