@@ -166,7 +166,10 @@ actor LicenseManager {
 
         self.seatProof = seatProof
         self.seatProofJwt = seatProofJwtString
-        self.licenseClaim = try? jwtDecoder.decode(seatProofJwtString, as: LicenseJWTClaim.self).get()
+
+        if let licenseInfo = loadLicenseInfo() {
+            self.licenseClaim = try? jwtDecoder.decode(licenseInfo.licenseKey, as: LicenseJWTClaim.self).get()
+        }
 
         guard let hardwareIdentifier = SystemCapability.hardwareIdentifier(),
               seatProof.hwid == hardwareIdentifier
@@ -272,7 +275,7 @@ actor LicenseManager {
 
             self.seatProof = proof
             self.seatProofJwt = response.seatProof
-            self.licenseClaim = try? jwtDecoder.decode(response.seatProof, as: LicenseJWTClaim.self).get()
+            self.licenseClaim = try? jwtDecoder.decode(licenseInfo.licenseKey, as: LicenseJWTClaim.self).get()
             validationState = .valid
 
             logger.info("License installed successfully (seat: \(response.seatId))")
@@ -312,7 +315,7 @@ actor LicenseManager {
         {
             self.seatProof = proof
             self.seatProofJwt = seatProofJwt
-            self.licenseClaim = try? jwtDecoder.decode(seatProofJwt, as: LicenseJWTClaim.self).get()
+            self.licenseClaim = try? jwtDecoder.decode(licenseKey, as: LicenseJWTClaim.self).get()
         }
 
         validationState = .valid
