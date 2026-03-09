@@ -13,11 +13,15 @@ struct AudioCodecSpecification: Codable {
         case fourCC = "fourcc"
         case options = "options"
         case extras = "extras"
+        case bitrateKbps = "bitrate_kbps"
+        case frameSizeMs = "frame_size_ms"
     }
 
     let fourCC: CodecFourCC
     var options: [CodecOptionKey: CodecOptionValue]
     var extras: String = ""
+    var bitrateKbps: Int32 = 64
+    var frameSizeMs: Int32 = 20
 
     init(fourCC: CodecFourCC) {
         self.fourCC = fourCC
@@ -49,6 +53,8 @@ struct AudioCodecSpecification: Codable {
         }
 
         extras = (try? container.decodeIfPresent(String.self, forKey: .extras)) ?? ""
+        bitrateKbps = (try? container.decodeIfPresent(Int32.self, forKey: .bitrateKbps)) ?? 64
+        frameSizeMs = (try? container.decodeIfPresent(Int32.self, forKey: .frameSizeMs)) ?? 20
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -57,6 +63,8 @@ struct AudioCodecSpecification: Codable {
         try container.encode(fourCC, forKey: .fourCC)
         try container.encode(options, forKey: .options)
         try container.encode(extras, forKey: .extras)
+        try container.encode(bitrateKbps, forKey: .bitrateKbps)
+        try container.encode(frameSizeMs, forKey: .frameSizeMs)
     }
     
     func option(_ key: CodecOptionKey) -> CodecOptionValue? {
@@ -84,6 +92,8 @@ extension AudioCodecSpecification: Hashable {
         hasher.combine(fourCC.rawValue)
         hasher.combine(options)
         hasher.combine(extras)
+        hasher.combine(bitrateKbps)
+        hasher.combine(frameSizeMs)
     }
 }
 

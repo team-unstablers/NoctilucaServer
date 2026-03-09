@@ -9,22 +9,20 @@ import Foundation
 import SwiftUI
 import SiriusKit
 
-enum AudioCodecSpecificationSheetAction {
-    case save(AudioCodecSpecification)
-    case cancel
-}
-
 struct AudioCodecSpecificationSheet: View {
-    let actionHandler: (AudioCodecSpecificationSheetAction) -> Void
-    
+    let onSave: (AudioCodecSpecification) -> Void
+
+    @Environment(\.dismiss)
+    private var dismiss
+
     @State
     var specification: AudioCodecSpecification
-    
-    init(specification: AudioCodecSpecification, actionHandler: @escaping (AudioCodecSpecificationSheetAction) -> Void) {
+
+    init(specification: AudioCodecSpecification, onSave: @escaping (AudioCodecSpecification) -> Void) {
         self._specification = State(initialValue: specification)
-        self.actionHandler = actionHandler
+        self.onSave = onSave
     }
-    
+
     var body: some View {
         VStack {
             Form {
@@ -36,13 +34,14 @@ struct AudioCodecSpecificationSheet: View {
                 }
             }
             .formStyle(.grouped)
-            
+
             HStack {
                 Button(String(localized: "settings.projection.codec_sheet.cancel", defaultValue: "취소")) {
-                    actionHandler(.cancel)
+                    dismiss()
                 }
                 Button(String(localized: "settings.projection.codec_sheet.save", defaultValue: "저장")) {
-                    actionHandler(.save(specification))
+                    onSave(specification)
+                    dismiss()
                 }
             }
             .padding(.bottom)
@@ -77,9 +76,16 @@ struct AudioCodecSpecificationListContainer: View {
                 .fixedSize()
             },
             editSheet: { specification, onComplete in
-                AudioCodecSpecificationSheet(specification: specification) { action in
-                    if case .save(let newSpecification) = action {
-                        onComplete(newSpecification)
+                Group {
+                    switch specification.fourCC {
+                    case .opus:
+                        OpusAudioCodecSpecificationSheet(specification: specification) { newSpec in
+                            onComplete(newSpec)
+                        }
+                    default:
+                        AudioCodecSpecificationSheet(specification: specification) { newSpec in
+                            onComplete(newSpec)
+                        }
                     }
                 }
             }
