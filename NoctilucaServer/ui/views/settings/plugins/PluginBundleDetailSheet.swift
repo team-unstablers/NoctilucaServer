@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 import Security
 import SecurityInterface
+import UniformTypeIdentifiers
 
 import NoctilucaPluginKit
 
@@ -18,31 +19,166 @@ struct PluginBundleDetailSheet: View {
     let metadata: any PluginBundleMetadata
     let signingResult: CodeSigningVerificationResult?
 
-    let dismissAction: () -> Void
+    @Environment(\.dismiss)
+    private var dismiss
 
-    var body: some View {
-        TabView() {
-            Text("test")
-                .tabItem {
-                    Text(markdown: String(localized: "settings.plugins.detail_sheet.tab.general", defaultValue: "기본"))
+    // MARK: - Computed Properties
+
+    private var exportsByCategory: [NoctilucaPluginType: [any PluginBundleExportMetadata]] {
+        Dictionary(grouping: metadata.exports, by: { $0.type })
+    }
+
+    // MARK: - Tab Views
+
+    @ViewBuilder
+    private var generalTab: some View {
+        VStack {
+            Form {
+                Section {
+                    HStack(spacing: 12) {
+                        Image(nsImage: NSWorkspace.shared.icon(for: .applicationExtension))
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 48, height: 48)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(metadata.displayName)
+                                .font(.title2.bold())
+                            Text(metadata.id)
+                                .font(.subheadline.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
                 }
-            codeSigningTabContent
-                .tabItem {
-                    Text(markdown: String(localized: "settings.plugins.detail_sheet.tab.signature", defaultValue: "서명"))
+
+                Section {
+                    Text(metadata.description)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-        }
-        .with {
-            if #available(macOS 15.0, *) {
-                $0.tabViewStyle(.grouped)
-            } else {
-                #warning("macOS 15.0 아래 버전에서 탭 표시 동작을 확인해야 합니다")
-                $0
+
+                Section {
+                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.developer", defaultValue: "개발자")) {
+                        VStack(alignment: .trailing) {
+                            ForEach(metadata.authors, id: \.self) { author in
+                                Text(verbatim: author)
+                            }
+                        }
+                    }
+
+                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.license", defaultValue: "라이선스")) {
+                        SoftwareLicenseText(license: metadata.license)
+                    }
+
+                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.version", defaultValue: "버전")) {
+                        Text("\(metadata.displayVersion) (\(metadata.version))")
+                    }
+
+                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.pluginkit_version", defaultValue: "PluginKit 버전")) {
+                        Text(String(format: "0x%08X", metadata.pluginKitVersion.rawValue))
+                            .font(.body.monospaced())
+                    }
+                }
             }
+            .formStyle(.grouped)
         }
     }
 
     @ViewBuilder
-    private var codeSigningTabContent: some View {
+    private func exportCategoryTab(type: NoctilucaPluginType, exports: [any PluginBundleExportMetadata]) -> some View {
+        VStack {
+            Form {
+                ForEach(exports, id: \.id) { export in
+                    Section {
+                        SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.name", defaultValue: "이름")) {
+                            Text(export.displayName)
+                        }
+
+                        SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.id", defaultValue: "ID")) {
+                            Text(export.id)
+                                .font(.body.monospaced())
+                                .textSelection(.enabled)
+                        }
+
+                        if !export.description.isEmpty {
+                            Text(export.description)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .foregroundStyle(.secondary)
+                        }
+                    } header: {
+                        Text(export.displayName)
+                    }
+                }
+            }
+            .formStyle(.grouped)
+        }
+    }
+
+    @ViewBuilder
+    private var codeSigningTab: some View {
+        VStack {
+            Form {
+                Section {
+                    codeSigningContent
+                }
+            }
+            .formStyle(.grouped)
+        }
+    }
+
+    // MARK: - Tab Content
+
+    @ViewBuilder
+    private var tabContent: some View {
+        TabView {
+            generalTab
+                .tabItem {
+                    Image(systemName: "info.circle.fill")
+                    Text(String(localized: "settings.plugins.detail_sheet.tab.general", defaultValue: "기본"))
+                }
+
+            ForEach(Array(exportsByCategory.keys.sorted(by: { $0.rawValue < $1.rawValue })), id: \.self) { type in
+                if let exports = exportsByCategory[type] {
+                    exportCategoryTab(type: type, exports: exports)
+                        .tabItem {
+                            Image(systemName: exportCategoryIcon(for: type))
+                            Text(exportCategoryDisplayName(for: type))
+                        }
+                }
+            }
+
+            codeSigningTab
+                .tabItem {
+                    Image(systemName: "signature")
+                    Text(String(localized: "settings.plugins.detail_sheet.tab.signature", defaultValue: "서명"))
+                }
+        }
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        VStack {
+            tabContent
+
+            HStack {
+                Spacer()
+                Button(String(localized: "common.close", defaultValue: "닫기")) {
+                    dismiss()
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+        }
+        .frame(minWidth: 480, minHeight: 360)
+    }
+}
+
+// MARK: - Code Signing Content
+
+private extension PluginBundleDetailSheet {
+    @ViewBuilder
+    var codeSigningContent: some View {
         switch signingResult {
         case .validSignature(let teamID, let identity, let certificates):
             VStack(alignment: .leading, spacing: 12) {
@@ -55,28 +191,25 @@ struct PluginBundleDetailSheet: View {
                 if let identity {
                     SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.signature.identity", defaultValue: "서명 ID")) {
                         Text(identity)
-                            .foregroundStyle(.secondary)
                     }
                 }
 
                 SettingsEntry(title: "Team ID") {
                     Text(teamID)
                         .font(.body.monospaced())
-                        .foregroundStyle(.secondary)
                         .textSelection(.enabled)
                 }
 
                 if let leafCert = certificates.first {
                     Divider()
 
-                    Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.certificate", defaultValue: "인증서 정보"))
+                    Text(String(localized: "settings.plugins.detail_sheet.signature.certificate", defaultValue: "인증서 정보"))
                         .font(.headline)
 
                     PluginBundleCertificateView(certificate: leafCert)
                         .frame(minHeight: 200)
                 }
             }
-            .padding()
 
         case .adHocSignature:
             VStack(spacing: 12) {
@@ -85,11 +218,10 @@ struct PluginBundleDetailSheet: View {
                     systemImage: "exclamationmark.triangle.fill",
                     color: .orange
                 )
-                Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.adhoc.description",
+                Text(String(localized: "settings.plugins.detail_sheet.signature.adhoc.description",
                             defaultValue: "이 플러그인 번들은 Ad-hoc으로 서명되어 있으며, 개발자 신원을 확인할 수 없습니다."))
                     .foregroundStyle(.secondary)
             }
-            .padding()
 
         case .unsigned:
             VStack(spacing: 12) {
@@ -98,11 +230,10 @@ struct PluginBundleDetailSheet: View {
                     systemImage: "xmark.seal.fill",
                     color: .red
                 )
-                Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.unsigned.description",
+                Text(String(localized: "settings.plugins.detail_sheet.signature.unsigned.description",
                             defaultValue: "이 플러그인 번들은 서명되어 있지 않습니다. 신뢰할 수 없는 출처의 플러그인일 수 있습니다."))
                     .foregroundStyle(.secondary)
             }
-            .padding()
 
         case .invalid(let error):
             VStack(spacing: 12) {
@@ -115,7 +246,6 @@ struct PluginBundleDetailSheet: View {
                     .font(.body.monospaced())
                     .foregroundStyle(.secondary)
             }
-            .padding()
 
         case nil:
             VStack(spacing: 12) {
@@ -124,23 +254,56 @@ struct PluginBundleDetailSheet: View {
                     systemImage: "checkmark.seal.fill",
                     color: .blue
                 )
-                Text(markdown: String(localized: "settings.plugins.detail_sheet.signature.builtin.description",
+                Text(String(localized: "settings.plugins.detail_sheet.signature.builtin.description",
                             defaultValue: "이 플러그인 번들은 애플리케이션에 내장되어 있습니다."))
                     .foregroundStyle(.secondary)
             }
-            .padding()
         }
     }
 
-    private func codeSigningStatusBadge(title: String, systemImage: String, color: Color) -> some View {
+    func codeSigningStatusBadge(title: String, systemImage: String, color: Color) -> some View {
         Label(title, systemImage: systemImage)
             .font(.title3)
             .foregroundStyle(color)
     }
 }
 
+// MARK: - Export Category Helpers
 
-// MARK: - SFCertificateView 래퍼
+private extension PluginBundleDetailSheet {
+    func exportCategoryIcon(for type: NoctilucaPluginType) -> String {
+        switch type {
+        case .auth:
+            return "person.badge.key.fill"
+        case .keyboardHack:
+            return "keyboard.fill"
+        case .feature:
+            return "puzzlepiece.fill"
+        case .extension:
+            return "gearshape.2.fill"
+        @unknown default:
+            return "questionmark.circle.fill"
+        }
+    }
+
+    func exportCategoryDisplayName(for type: NoctilucaPluginType) -> String {
+        switch type {
+        case .auth:
+            return String(localized: "settings.plugins.detail_sheet.tab.auth", defaultValue: "인증")
+        case .keyboardHack:
+            return String(localized: "settings.plugins.detail_sheet.tab.keyboard_hack", defaultValue: "키보드 핵")
+        case .feature:
+            return String(localized: "settings.plugins.detail_sheet.tab.feature", defaultValue: "기능")
+        case .extension:
+            return String(localized: "settings.plugins.detail_sheet.tab.extension", defaultValue: "익스텐션")
+        @unknown default:
+            return String(localized: "settings.plugins.detail_sheet.tab.unknown", defaultValue: "기타")
+        }
+    }
+}
+
+
+// MARK: - SFCertificateView Wrapper
 
 struct PluginBundleCertificateView: NSViewRepresentable {
     let certificate: SecCertificate

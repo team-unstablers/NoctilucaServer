@@ -48,9 +48,7 @@ struct PluginBundleDetailView: View {
             }
         }
         .sheet(isPresented: $showingInfoSheet) {
-            PluginBundleDetailSheet(metadata: metadata, signingResult: signingResult) {
-                showingInfoSheet = false
-            }
+            PluginBundleDetailSheet(metadata: metadata, signingResult: signingResult)
         }
 
         SettingsEntry(title: String(localized: "settings.plugins.detail.developer", defaultValue: "개발자")) {
