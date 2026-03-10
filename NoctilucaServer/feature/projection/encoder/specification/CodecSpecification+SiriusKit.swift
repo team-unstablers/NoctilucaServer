@@ -49,7 +49,7 @@ extension CodecSpecification {
             frameRate: Float(self.frameRate),
             size: SRSize(width: 0, height: 0),
             options: self.siriusKitCodecOptions,
-            quality: quality ?? .auto(mode: .balancedPriority)
+            quality: quality ?? self.quality
         )
 
         return codec
