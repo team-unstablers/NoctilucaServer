@@ -130,11 +130,19 @@ public extension SecCertificate {
     }
     
     func extractPublicKey() -> Data? {
-        
         guard let publicKey = try? X509.Certificate(self).publicKey.subjectPublicKeyInfoBytes else {
             return nil
         }
         
         return Data(publicKey)
+    }
+    
+    func isServerAuthenticationCapable() -> Bool {
+        guard let certificate = try? X509.Certificate(self) else {
+            return false
+        }
+        
+        // EKU 확장에 serverAuth가 포함되어 있는지 확인
+        return (try? certificate.extensions.extendedKeyUsage?.contains(.serverAuth)) == true
     }
 }
