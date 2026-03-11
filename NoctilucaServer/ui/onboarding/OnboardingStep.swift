@@ -72,6 +72,7 @@ final class OnboardingNavigationModel {
               currentIndex > OnboardingStep.allCases.startIndex
         else { return }
 
+        forwardMask = false
         direction = .backward
         currentStep = OnboardingStep.allCases[OnboardingStep.allCases.index(before: currentIndex)]
     }
