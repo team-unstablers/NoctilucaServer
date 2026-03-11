@@ -20,9 +20,9 @@ enum EndpointKind: Hashable, Equatable {
         case .contact(let item):
             return item.displayName
         case .quickConnect(let endpointURL):
-            return "빠른 연결: \(endpointURL)"
+            return String(format: String(localized: "endpoint.quick_connect_format", defaultValue: "빠른 연결: %@"), endpointURL)
         case .connect(let endpointURL):
-            return "연결: \(endpointURL)"
+            return String(format: String(localized: "endpoint.connect_format", defaultValue: "연결: %@"), endpointURL)
         }
     }
 

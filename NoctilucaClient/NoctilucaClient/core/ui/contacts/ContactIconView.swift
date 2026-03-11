@@ -23,14 +23,14 @@ extension SessionSettings.ContactIconSymbol {
 
     var displayName: String {
         switch self {
-        case .monitor:  return "모니터"
-        case .laptop:   return "노트북"
-        case .server:   return "서버"
-        case .terminal: return "터미널"
-        case .gamepad:  return "게임 컨트롤러"
-        case .sparkles: return "반짝임"
-        case .gear:     return "설정"
-        case .globe:    return "지구"
+        case .monitor:  return String(localized: "contact_icon.symbol.monitor", defaultValue: "모니터")
+        case .laptop:   return String(localized: "contact_icon.symbol.laptop", defaultValue: "노트북")
+        case .server:   return String(localized: "contact_icon.symbol.server", defaultValue: "서버")
+        case .terminal: return String(localized: "contact_icon.symbol.terminal", defaultValue: "터미널")
+        case .gamepad:  return String(localized: "contact_icon.symbol.gamepad", defaultValue: "게임 컨트롤러")
+        case .sparkles: return String(localized: "contact_icon.symbol.sparkles", defaultValue: "반짝임")
+        case .gear:     return String(localized: "contact_icon.symbol.gear", defaultValue: "설정")
+        case .globe:    return String(localized: "contact_icon.symbol.globe", defaultValue: "지구")
         }
     }
 }
@@ -38,14 +38,14 @@ extension SessionSettings.ContactIconSymbol {
 extension SessionSettings.ContactIconBackground {
     var displayName: String {
         switch self {
-        case .blue:   return "파랑"
-        case .green:  return "초록"
-        case .orange: return "주황"
-        case .purple: return "보라"
-        case .gray:   return "회색"
-        case .red:    return "빨강"
-        case .teal:   return "청록"
-        case .yellow: return "노랑"
+        case .blue:   return String(localized: "contact_icon.color.blue", defaultValue: "파랑")
+        case .green:  return String(localized: "contact_icon.color.green", defaultValue: "초록")
+        case .orange: return String(localized: "contact_icon.color.orange", defaultValue: "주황")
+        case .purple: return String(localized: "contact_icon.color.purple", defaultValue: "보라")
+        case .gray:   return String(localized: "contact_icon.color.gray", defaultValue: "회색")
+        case .red:    return String(localized: "contact_icon.color.red", defaultValue: "빨강")
+        case .teal:   return String(localized: "contact_icon.color.teal", defaultValue: "청록")
+        case .yellow: return String(localized: "contact_icon.color.yellow", defaultValue: "노랑")
         }
     }
 

@@ -67,7 +67,7 @@ struct GeneralSettingsTab: View {
                 
                 Toggle(isOn: $automaticallyChecksForUpdates) {
                     Text(markdown: String(localized: "settings.general.autoupdate.check.title", defaultValue: "자동으로 업데이트 확인하기"))
-                    Text(markdown: String(localized: "settings.general.autoupdate.check.description", defaultValue: "자동으로 Noctilcua Server의 업데이트를 확인합니다."))
+                    Text(markdown: String(localized: "settings.general.autoupdate.check.description", defaultValue: "자동으로 Noctiluca Server의 업데이트를 확인합니다."))
                 }
                 .onChange(of: automaticallyChecksForUpdates) { _, newValue in
                     AppUpdater.shared.updaterController.updater.automaticallyChecksForUpdates = newValue
@@ -75,7 +75,7 @@ struct GeneralSettingsTab: View {
                 
                 Toggle(isOn: $automaticallyDownloadsUpdates) {
                     Text(markdown: String(localized: "settings.general.autoupdate.download.title", defaultValue: "자동으로 업데이트 다운로드하기"))
-                    Text(markdown: String(localized: "settings.general.autoupdate.download.description", defaultValue: "자동으로 Noctilcua Server의 업데이트를 다운로드합니다."))
+                    Text(markdown: String(localized: "settings.general.autoupdate.download.description", defaultValue: "자동으로 Noctiluca Server의 업데이트를 다운로드합니다."))
                 }
                 .onChange(of: automaticallyDownloadsUpdates) { _, newValue in
                     AppUpdater.shared.updaterController.updater.automaticallyDownloadsUpdates = newValue

@@ -54,7 +54,7 @@ struct AboutSettingsTab: View {
             } header: {
                 Text(String(format: String(localized: "about.section_header_format", defaultValue: "%@ 정보"), productName))
             } footer: {
-                Text(markdown: String(localized: "about.oss_license_info", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](http://google.com)"))
+                Text(markdown: String(localized: "about.oss_license_info", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](https://noctiluca.app/docs/open-sources/navigator/apple)"))
                 Text(markdown: String(localized: "about.sirius_protocol_spec", defaultValue: "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."))
                 Text("")
                 Text("© 2025 team unstablers Inc. All rights reserved.")

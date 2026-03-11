@@ -319,3 +319,5 @@ dist/
 dist_updates/
 dist_client/
 dist_client_updates/
+
+.gemini/

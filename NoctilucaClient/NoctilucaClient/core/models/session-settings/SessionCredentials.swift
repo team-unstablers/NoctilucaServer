@@ -85,13 +85,13 @@ extension ClientAuthMethod {
     var displayName: String {
         switch self {
         case .password:
-            return "사용자명-비밀번호 인증"
+            return String(localized: "auth.method.password", defaultValue: "사용자명-비밀번호 인증")
         case .simplePassword:
-            return "간단 비밀번호 인증"
+            return String(localized: "auth.method.simple_password", defaultValue: "간단 비밀번호 인증")
         case .sshKey:
-            return "SSH 키 인증"
+            return String(localized: "auth.method.ssh_key", defaultValue: "SSH 키 인증")
         default:
-            return "외부 인증 방법 (\(rawValue))"
+            return String(format: String(localized: "auth.method.external", defaultValue: "외부 인증 방법 (%@)"), rawValue)
         }
     }
 

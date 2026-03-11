@@ -110,7 +110,7 @@ extension KeySequence: CustomStringConvertible {
     
     var description: String {
         guard self != .empty else {
-            return "(없음)"
+            return String(localized: "common.none", defaultValue: "(없음)")
         }
         
         if key == .KEY_UNKNOWN {

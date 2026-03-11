@@ -15,7 +15,7 @@ struct CodecNegotiationPolicyPicker: View {
         SettingsPicker(selection: $selection) {
             SettingsPickerItem(value: CodecNegotiationPolicy.balanced) {
                 Text(markdown: String(localized: "settings.projection.negotiation_policy.balanced.title", defaultValue: "균형 잡힌 결정 내리기 **(권장)**"))
-                Text(markdown: String(localized: "settings.projection.negotiation_policy.balanced.description", defaultValue: "클라이언트의 요청을 존중하면서 서버의 성능과 안정성을 해치지 않는 범위 내에서 최적의 코덱을 선택합니다.\n서버가 지원할 수 없는 명세의 코덱이 요청되었을 때에는 Noctilcua Server가 적절하다고 판단하는 코덱으로 임의 대체합니다."))
+                Text(markdown: String(localized: "settings.projection.negotiation_policy.balanced.description", defaultValue: "클라이언트의 요청을 존중하면서 서버의 성능과 안정성을 해치지 않는 범위 내에서 최적의 코덱을 선택합니다.\n서버가 지원할 수 없는 명세의 코덱이 요청되었을 때에는 Noctiluca Server가 적절하다고 판단하는 코덱으로 임의 대체합니다."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

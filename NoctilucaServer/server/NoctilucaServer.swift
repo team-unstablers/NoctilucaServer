@@ -25,7 +25,7 @@ enum NoctilucaServerError: LocalizedError {
             return "The configured identity failed validation."
             
         case .invalidLicense:
-            return "시스템에 올바른 라이선스가 설치되어 있지 않습니다."
+            return String(localized: "server.error.invalid_license", defaultValue: "시스템에 올바른 라이선스가 설치되어 있지 않습니다.")
         }
     }
 }

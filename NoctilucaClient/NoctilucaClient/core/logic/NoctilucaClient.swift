@@ -26,41 +26,41 @@ enum NoctilucaClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedProtocolVersion:
-            return "지원하지 않는 프로토콜 버전입니다."
+            return String(localized: "error.unsupported_protocol_version", defaultValue: "지원하지 않는 프로토콜 버전입니다.")
         case .invalidPhase:
-            return "잘못된 페이즈 전환이 시도되었습니다."
+            return String(localized: "error.invalid_phase", defaultValue: "잘못된 페이즈 전환이 시도되었습니다.")
         case .protocolVersionMismatch(let client, let server):
-            return "프로토콜 버전이 호환되지 않습니다.\nClient: \(client), Server: \(server)"
+            return String(format: String(localized: "error.protocol_version_mismatch", defaultValue: "프로토콜 버전이 호환되지 않습니다.\nClient: %@, Server: %@"), client, server)
         case .certificateValidationFailed:
-            return "서버 인증서 검증에 실패했습니다.\n신뢰할 수 있는 인증서가 아니거나, 인증서가 만료되었을 수 있습니다."
+            return String(localized: "error.certificate_validation_failed", defaultValue: "서버 인증서 검증에 실패했습니다.\n신뢰할 수 있는 인증서가 아니거나, 인증서가 만료되었을 수 있습니다.")
         case .remoteClosedConnection:
-            return "연결이 예기치 않게 끊어졌습니다."
+            return String(localized: "error.remote_closed_connection", defaultValue: "연결이 예기치 않게 끊어졌습니다.")
         case .authNegotiationFailed(let authMethods):
             if authMethods.isEmpty {
-                return "인증 방법 협상에 실패했습니다.\n서버에서 아무런 인증 방법도 제시하지 않았습니다."
+                return String(localized: "error.auth_negotiation_failed_empty", defaultValue: "인증 방법 협상에 실패했습니다.\n서버에서 아무런 인증 방법도 제시하지 않았습니다.")
             }
 
             let joined = authMethods.map { $0.rawValue }.joined(separator: ", ")
-            return "인증 방법 협상에 실패했습니다.\n서버에서 인증 방법으로 \(joined)를 제시했지만, 현재 버전의 클라이언트에서는 이 중 아무것도 지원하지 않습니다."
+            return String(format: String(localized: "error.auth_negotiation_failed", defaultValue: "인증 방법 협상에 실패했습니다.\n서버에서 인증 방법으로 %@를 제시했지만, 현재 버전의 클라이언트에서는 이 중 아무것도 지원하지 않습니다."), joined)
         case .sessionClosedByServer(let code, let message):
             return Self.descriptionForClosureCode(code, message: message)
         case .audioProjectionInitializationFailed(let message):
-            return "오디오 프로젝션 초기화에 실패했습니다.\n\(message)"
+            return String(format: String(localized: "error.audio_projection_init_failed", defaultValue: "오디오 프로젝션 초기화에 실패했습니다.\n%@"), message)
         case .connectionFailed(let error):
-            return "연결에 실패했습니다.\n\(error.localizedDescription)"
+            return String(format: String(localized: "error.connection_failed", defaultValue: "연결에 실패했습니다.\n%@"), error.localizedDescription)
         }
     }
 
     var alertTitle: String {
         switch self {
         case .sessionClosedByServer(let code, _) where code == .successful:
-            return "세션 종료"
+            return String(localized: "error.alert_title.session_closed", defaultValue: "세션 종료")
         case .audioProjectionInitializationFailed:
-            return "오디오 연결 실패"
+            return String(localized: "error.alert_title.audio_connection_failed", defaultValue: "오디오 연결 실패")
         case .connectionFailed:
-            return "연결 실패"
+            return String(localized: "error.alert_title.connection_failed", defaultValue: "연결 실패")
         default:
-            return "오류 발생"
+            return String(localized: "error.alert_title.error_occurred", defaultValue: "오류 발생")
         }
     }
 
@@ -68,17 +68,17 @@ enum NoctilucaClientError: LocalizedError {
         let base: String
         switch code {
         case .successful:
-            base = "호스트가 세션을 종료했습니다."
+            base = String(localized: "error.closure.successful", defaultValue: "호스트가 세션을 종료했습니다.")
         case .protocolError:
-            base = "프로토콜 오류로 인해 호스트가 연결을 종료했습니다."
+            base = String(localized: "error.closure.protocol_error", defaultValue: "프로토콜 오류로 인해 호스트가 연결을 종료했습니다.")
         case .internalServerError:
-            base = "호스트 내부 오류로 인해 연결이 종료되었습니다."
+            base = String(localized: "error.closure.internal_server_error", defaultValue: "호스트 내부 오류로 인해 연결이 종료되었습니다.")
         case .authenticationFailed:
-            base = "인증 실패로 인해 연결이 종료되었습니다."
+            base = String(localized: "error.closure.authentication_failed", defaultValue: "인증 실패로 인해 연결이 종료되었습니다.")
         case .sessionAllocationFailed:
-            base = "서버의 세션 할당 실패로 인해 연결이 종료되었습니다."
+            base = String(localized: "error.closure.session_allocation_failed", defaultValue: "서버의 세션 할당 실패로 인해 연결이 종료되었습니다.")
         default:
-            base = "호스트가 연결을 종료했습니다. (코드: \(code.rawValue))"
+            base = String(format: String(localized: "error.closure.unknown_code", defaultValue: "호스트가 연결을 종료했습니다. (코드: %@)"), String(code.rawValue))
         }
         if let message, !message.isEmpty {
             return "\(base)\n\(message)"

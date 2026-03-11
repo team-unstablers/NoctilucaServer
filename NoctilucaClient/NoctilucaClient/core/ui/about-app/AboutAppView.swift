@@ -9,6 +9,8 @@ import Foundation
 import SwiftUI
 
 struct AboutAppView: View {
+    @Environment(\.openURL)
+    var openURL
     
     @State
     var isLetterSectionVisible: Bool = false
@@ -61,13 +63,13 @@ struct AboutAppView: View {
                     VStack {
                         HStack {
                             Button {
-
+                                openURL(URL(string: "https://noctiluca.app/docs/eula/navigator/apple")!)
                             } label: {
-                                Text(markdown: String(localized: "about.terms_of_service", defaultValue: "사용 약관"))
+                                Text(markdown: String(localized: "about.terms_of_service", defaultValue: "사용권 계약"))
                             }
 
                             Button {
-
+                                openURL(URL(string: "https://noctiluca.app/docs/open-sources/navigator/apple")!)
                             } label: {
                                 Text(markdown: String(localized: "about.open_source_licenses", defaultValue: "오픈 소스 라이선스"))
                             }
@@ -114,7 +116,7 @@ struct AboutAppView: View {
             }
         }
         .padding(24)
-        .frame(minWidth: 560, maxWidth: 480)
+        .frame(minWidth: 580, maxWidth: 480)
             
     }
 }

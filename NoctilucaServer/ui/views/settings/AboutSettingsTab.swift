@@ -63,7 +63,7 @@ struct AboutSettingsTab: View {
                             }
 
                             HStack {
-                                Button("라이선스 등록 해제") {
+                                Button(String(localized: "settings.about.license.button.remove", defaultValue: "라이선스 등록 해제")) {
                                     removeLicense()
                                 }
                             }
@@ -71,11 +71,11 @@ struct AboutSettingsTab: View {
                             Text(String(localized: "settings.about.license_status.expired", defaultValue: "라이선스가 만료되었습니다"))
 
                             HStack {
-                                Button("새 라이선스 등록") {
+                                Button(String(localized: "settings.about.license.button.register_new", defaultValue: "새 라이선스 등록")) {
                                     (NSApp.delegate as? AppDelegate)?.showLicensingWindow(nil)
                                 }
 
-                                Button("Noctiluca Server 구매하기…") {
+                                Button(String(localized: "settings.about.license.button.purchase", defaultValue: "Noctiluca Server 구매하기…")) {
                                     openURL(URL(string: "https://noctiluca.app/pricing")!)
                                 }
                             }
@@ -83,11 +83,11 @@ struct AboutSettingsTab: View {
                             Text(String(localized: "settings.about.license_status.invalid", defaultValue: "아니오"))
 
                             HStack {
-                                Button("새 라이선스 등록") {
+                                Button(String(localized: "settings.about.license.button.register_new", defaultValue: "새 라이선스 등록")) {
                                     (NSApp.delegate as? AppDelegate)?.showLicensingWindow(nil)
                                 }
 
-                                Button("Noctiluca Server 구매하기…") {
+                                Button(String(localized: "settings.about.license.button.purchase", defaultValue: "Noctiluca Server 구매하기…")) {
                                     openURL(URL(string: "https://noctiluca.app/pricing")!)
                                 }
                             }
@@ -95,11 +95,11 @@ struct AboutSettingsTab: View {
                             Text(String(localized: "settings.about.license_status.unlicensed", defaultValue: "라이선스 없음"))
 
                             HStack {
-                                Button("새 라이선스 등록") {
+                                Button(String(localized: "settings.about.license.button.register_new", defaultValue: "새 라이선스 등록")) {
                                     (NSApp.delegate as? AppDelegate)?.showLicensingWindow(nil)
                                 }
 
-                                Button("Noctiluca Server 구매하기…") {
+                                Button(String(localized: "settings.about.license.button.purchase", defaultValue: "Noctiluca Server 구매하기…")) {
                                     openURL(URL(string: "https://noctiluca.app/pricing")!)
                                 }
                             }
@@ -114,7 +114,7 @@ struct AboutSettingsTab: View {
                 // Text(markdown: String(localized: "settings.about.footer.sirius_protocol", defaultValue: "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."))
                 Text("")
                 Text(markdown: String(localized: "settings.about.footer.copyright", defaultValue: "© 2026 team unstablers Inc. All rights reserved."))
-                Text("[Noctiluca Server 사용권 계약 (EULA)](https://noctiluca.app/docs/eula/server) • [개인정보처리방침](https://noctiluca.app/docs/privacy-policy)")
+                Text(markdown: String(localized: "settings.about.footer.legal_links", defaultValue: "[Noctiluca Server 사용권 계약 (EULA)](https://noctiluca.app/docs/eula/server) • [개인정보처리방침](https://noctiluca.app/docs/privacy-policy)"))
             }
         }
         .formStyle(.grouped)
