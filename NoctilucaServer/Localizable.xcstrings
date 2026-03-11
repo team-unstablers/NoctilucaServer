@@ -102,6 +102,35 @@
     "256kbps" : {
 
     },
+    "about.appeal_button" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appeal…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訴え…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호소문…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "呼吁书…"
+          }
+        }
+      }
+    },
     "about.appeal.body" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -185,35 +214,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "呼吁书"
-          }
-        }
-      }
-    },
-    "about.appeal_button" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appeal…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "訴え…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "호소문…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "呼吁书…"
           }
         }
       }
@@ -1035,6 +1035,9 @@
           }
         }
       }
+    },
+    "Copyright © 2026 team unstablers Inc. All rights reserved." : {
+
     },
     "core.plugin.PluginBundleRegistryError.duplicateBundle(id: %@)" : {
       "comment" : "플러그인 번들이 중복 등록되었습니다.",
@@ -3266,6 +3269,9 @@
     "MIT License" : {
 
     },
+    "Noctiluca " : {
+
+    },
     "notificaiton.plugin_bundle_rejected_by_security_policy.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4517,6 +4523,7 @@
       }
     },
     "onboarding.permissions.open_system_preferences" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4545,6 +4552,7 @@
       }
     },
     "onboarding.permissions.refresh" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4689,6 +4697,7 @@
       }
     },
     "onboarding.permissions.screen_recording.description" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4717,6 +4726,7 @@
       }
     },
     "onboarding.permissions.screen_recording.title" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4745,6 +4755,7 @@
       }
     },
     "onboarding.permissions.skip_alert.cancel" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4773,6 +4784,7 @@
       }
     },
     "onboarding.permissions.skip_alert.confirm" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4801,6 +4813,7 @@
       }
     },
     "onboarding.permissions.skip_alert.message" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4829,6 +4842,7 @@
       }
     },
     "onboarding.permissions.skip_alert.title" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5620,6 +5634,9 @@
       }
     },
     "ProjectionData" : {
+
+    },
+    "Server" : {
 
     },
     "server.error.invalid_license" : {
@@ -6986,6 +7003,7 @@
       }
     },
     "settings.general.autolaunch.scoped.description" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7072,6 +7090,7 @@
       }
     },
     "settings.general.autolaunch.scoped.title" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7361,7 +7380,7 @@
       }
     },
     "settings.general.max_concurrent_sessions.description" : {
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7390,7 +7409,7 @@
       }
     },
     "settings.general.max_concurrent_sessions.title" : {
-      "extractionState" : "stale",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
