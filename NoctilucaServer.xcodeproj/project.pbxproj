@@ -1178,7 +1178,7 @@
 			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.4;
+				minimumVersion = 1.0.5;
 			};
 		};
 		F68F23482F42AFF4000761AA /* XCRemoteSwiftPackageReference "Sparkle" */ = {

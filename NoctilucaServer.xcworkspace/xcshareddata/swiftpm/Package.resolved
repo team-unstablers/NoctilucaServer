@@ -1,5 +1,5 @@
 {
-  "originHash" : "dbc259cc593fa426bc705e6d2eec5fefee215ff28195dcf2a62d6a946532c8e0",
+  "originHash" : "bfaacb45bb3de60a4a1a94fac6fa3ed2b0cc08e7ede5ec0eb4af9d3b42da9fdf",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/team-unstablers/Xuanxue.git",
       "state" : {
-        "revision" : "bac50ea9dc652f3d1657facf92e4299df3373e76",
-        "version" : "1.0.4"
+        "revision" : "a82faa72e414ad728905322d29b8217c2d9ab175",
+        "version" : "1.0.5"
       }
     },
     {
