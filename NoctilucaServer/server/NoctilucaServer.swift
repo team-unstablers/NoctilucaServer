@@ -71,7 +71,7 @@ class NoctilucaServer: ObservableObject {
     let authPluginRegistry = AuthPluginRegistry.shared
     let pluginBundleRegistry = PluginBundleRegistry.shared
 
-    private(set) public var identity: TLSIdentity?
+    private(set) public var identity: (any QUICServerIdentity)?
 
     let authenticator: Authenticator
 
@@ -125,14 +125,16 @@ class NoctilucaServer: ObservableObject {
     }
     
     private func loadIdentityInternal() async throws {
-        guard let identity = self.settings.quicTransport.identity else {
+        let identityManager = ServerIdentityManager.shared
+        
+        guard let identitySource = self.settings.quicTransport.identity else {
             // throw error: No identity configured
             throw NoctilucaServerError.noIdentityConfigured
         }
         
-        let quicIdentity = identity.load()
+        let identity = try await identityManager.load(source: identitySource)
         
-        guard try await quicIdentity.sanityCheck(strict: self.settings.quicTransport.tlsStrictValidation) else {
+        guard try await identity.sanityCheck(strict: self.settings.quicTransport.tlsStrictValidation) else {
             self.logger.error("Identity validation failed for identity: \(identity)")
             throw NoctilucaServerError.identityValidationFailed
         }
@@ -215,7 +217,7 @@ class NoctilucaServer: ObservableObject {
             
             let result = try SiriusServerBuilder()
                 .useFeatureProvider(featureProvider)
-                .useTransportProtocol(.quic(implementation: implementation, port: settings.quicTransport.listenPort, identitySource: identity.identitySource))
+                .useTransportProtocol(.quic(implementation: implementation, port: settings.quicTransport.listenPort, identity: identity))
                 .withExtraConfiguration("someValue", forKey: "someKey")
                 .build()
             
@@ -229,6 +231,9 @@ class NoctilucaServer: ObservableObject {
             
             try await server.setup()
             try await server.startup()
+        } catch let error as QUICServerIdentityLoadError {
+            self.state = .idle
+            await self.handleError(identityLoadError: error)
         } catch {
             logger.error("Failed to start NoctilucaServer: \(error)")
             AppNotification.serverStartFailed(error: error).post()
