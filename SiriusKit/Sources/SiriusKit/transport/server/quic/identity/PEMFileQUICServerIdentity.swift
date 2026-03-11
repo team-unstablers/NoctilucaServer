@@ -103,7 +103,7 @@ public class PEMFileQUICServerIdentity: QUICServerIdentity {
         }
 
         // FIXME: 신뢰 여부를 확인할 수 있었으면 좋겠는데..
-        try SRSecurity.shared.trustCertificate(secCertificate, scope: .user).get()
+        // try SRSecurity.shared.trustCertificate(secCertificate, scope: .user).get()
 
         guard let secPrivateKey else {
             throw QUICServerIdentityCreationError.keychainLookupFailed(error?.takeRetainedValue().asOSStatus() ?? errSecInternalError)
