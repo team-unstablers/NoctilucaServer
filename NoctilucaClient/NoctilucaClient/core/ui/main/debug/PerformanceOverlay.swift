@@ -21,12 +21,13 @@ struct PerformanceOverlay: View {
 
     @State private var isExpanded = false
     @State private var position: CGSize = .zero
-    @State private var dragOffset: CGSize = .zero
+    @State private var dragTranslation: CGSize = .zero
+    @State private var isDragging = false
 
     private var currentOffset: CGSize {
         CGSize(
-            width: position.width + dragOffset.width,
-            height: position.height + dragOffset.height
+            width: position.width + dragTranslation.width,
+            height: position.height + dragTranslation.height
         )
     }
 
@@ -47,20 +48,27 @@ struct PerformanceOverlay: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-            }
-        }
         .gesture(
-            DragGesture(minimumDistance: 5)
+            DragGesture(minimumDistance: 0)
                 .onChanged { value in
-                    dragOffset = value.translation
+                    if !isDragging && hypot(value.translation.width, value.translation.height) >= 5 {
+                        isDragging = true
+                    }
+                    if isDragging {
+                        dragTranslation = value.translation
+                    }
                 }
                 .onEnded { value in
-                    position.width += value.translation.width
-                    position.height += value.translation.height
-                    dragOffset = .zero
+                    if isDragging {
+                        position.width += value.translation.width
+                        position.height += value.translation.height
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    }
+                    dragTranslation = .zero
+                    isDragging = false
                 }
         )
         .offset(currentOffset)
