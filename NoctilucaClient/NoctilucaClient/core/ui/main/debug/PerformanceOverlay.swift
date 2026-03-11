@@ -21,13 +21,12 @@ struct PerformanceOverlay: View {
 
     @State private var isExpanded = false
     @State private var position: CGSize = .zero
-    @State private var dragTranslation: CGSize = .zero
-    @State private var isDragging = false
+    @GestureState private var dragOffset: CGSize = .zero
 
     private var currentOffset: CGSize {
         CGSize(
-            width: position.width + dragTranslation.width,
-            height: position.height + dragTranslation.height
+            width: position.width + dragOffset.width,
+            height: position.height + dragOffset.height
         )
     }
 
@@ -48,30 +47,25 @@ struct PerformanceOverlay: View {
             }
         }
         .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    if !isDragging && hypot(value.translation.width, value.translation.height) >= 5 {
-                        isDragging = true
+        .offset(currentOffset)
+        .simultaneousGesture(
+            TapGesture()
+                .onEnded {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
                     }
-                    if isDragging {
-                        dragTranslation = value.translation
-                    }
-                }
-                .onEnded { value in
-                    if isDragging {
-                        position.width += value.translation.width
-                        position.height += value.translation.height
-                    } else {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isExpanded.toggle()
-                        }
-                    }
-                    dragTranslation = .zero
-                    isDragging = false
                 }
         )
-        .offset(currentOffset)
+        .gesture(
+            DragGesture(minimumDistance: 5)
+                .updating($dragOffset) { value, state, _ in
+                    state = value.translation
+                }
+                .onEnded { value in
+                    position.width += value.translation.width
+                    position.height += value.translation.height
+                }
+        )
     }
 
     private var compactView: some View {
