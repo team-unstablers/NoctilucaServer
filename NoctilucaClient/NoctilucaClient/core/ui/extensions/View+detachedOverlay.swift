@@ -54,34 +54,216 @@ private enum DetachedOverlayConstants {
 }
 
 #if os(iOS)
+import UIKit
+
 struct DetachedOverlayModifier<OverlayContent: View>: ViewModifier {
     let role: DetachedOverlayRole
     let overlayContent: () -> OverlayContent
-    
+
     @State
-    private var overlaySize: CGSize = .zero
-    
+    private var anchorState: DetachedOverlayAnchorState = .hidden
+
+    @StateObject
+    private var controller = DetachedOverlayController()
+
     func body(content: Content) -> some View {
-        content.overlay {
-            GeometryReader { proxy in
-                let attachment = role.attachment
-                let offsetX = (proxy.size.width - overlaySize.width) / 2
-                let offsetY = attachment == .down
-                    ? proxy.size.height + DetachedOverlayConstants.normalSpacing
-                    : -overlaySize.height - DetachedOverlayConstants.normalSpacing
-                
-                overlayContent()
-                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
-                    .onGeometryChange(for: CGSize.self) { proxy in
-                        proxy.size
-                    } action: { geom in
-                        overlaySize = geom
+        content
+            .background(
+                DetachedOverlayAnchorView { state in
+                    DispatchQueue.main.async {
+                        self.anchorState = state
                     }
-                    .offset(x: offsetX, y: offsetY)
+                }
+            )
+            .background(
+                DetachedOverlayUpdater(
+                    role: role,
+                    anchorState: anchorState,
+                    content: overlayAnyView(),
+                    controller: controller
+                )
+            )
+            .onDisappear {
+                controller.destroy()
             }
+    }
+
+    private func overlayAnyView() -> AnyView {
+        switch role {
+        case .normalWindow:
+            return AnyView(
+                overlayContent()
+                    .frame(width: anchorState.frameInWindow.width)
+                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
+            )
+        case .tooltip:
+            return AnyView(overlayContent())
         }
     }
 }
+
+// MARK: - Anchor State
+
+private struct DetachedOverlayAnchorState: Equatable {
+    var frameInWindow: CGRect
+    var isVisible: Bool
+
+    static let hidden = DetachedOverlayAnchorState(
+        frameInWindow: .zero,
+        isVisible: false
+    )
+
+    var shouldDisplayOverlay: Bool {
+        isVisible && frameInWindow.width > 1 && frameInWindow.height > 1
+    }
+}
+
+// MARK: - Anchor View (UIViewRepresentable)
+
+private struct DetachedOverlayAnchorView: UIViewRepresentable {
+    let onStateChange: (DetachedOverlayAnchorState) -> Void
+
+    func makeUIView(context: Context) -> AnchorUIView {
+        let view = AnchorUIView()
+        view.onStateChange = onStateChange
+        return view
+    }
+
+    func updateUIView(_ uiView: AnchorUIView, context: Context) {
+        uiView.onStateChange = onStateChange
+        uiView.reportFrame()
+    }
+
+    final class AnchorUIView: UIView {
+        var onStateChange: ((DetachedOverlayAnchorState) -> Void)?
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            reportFrame()
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            reportFrame()
+        }
+
+        func reportFrame() {
+            guard let window else {
+                onStateChange?(.hidden)
+                return
+            }
+            let frameInWindow = convert(bounds, to: window)
+            let state = DetachedOverlayAnchorState(
+                frameInWindow: frameInWindow,
+                isVisible: !isHidden
+            )
+            onStateChange?(state)
+        }
+    }
+}
+
+// MARK: - Updater (UIViewRepresentable)
+
+private struct DetachedOverlayUpdater: UIViewRepresentable {
+    let role: DetachedOverlayRole
+    let anchorState: DetachedOverlayAnchorState
+    let content: AnyView
+    let controller: DetachedOverlayController
+
+    func makeUIView(context: Context) -> UIView {
+        UIView()
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        controller.update(
+            role: role,
+            anchorState: anchorState,
+            content: content,
+            window: uiView.window
+        )
+    }
+}
+
+// MARK: - Controller
+
+private final class DetachedOverlayController: ObservableObject {
+    private var hostingController: UIHostingController<AnyView>?
+    private var contentSize: CGSize = .zero
+
+    func update(
+        role: DetachedOverlayRole,
+        anchorState: DetachedOverlayAnchorState,
+        content: AnyView,
+        window: UIWindow?
+    ) {
+        ensureHostingController(in: window)
+
+        hostingController?.rootView = content
+        updateContentSize(anchorWidth: anchorState.frameInWindow.width)
+        updateFrame(role: role, anchorState: anchorState)
+    }
+
+    func destroy() {
+        hostingController?.view.removeFromSuperview()
+        hostingController = nil
+    }
+
+    private func ensureHostingController(in window: UIWindow?) {
+        guard hostingController == nil, let window else { return }
+
+        let hc = UIHostingController(rootView: AnyView(EmptyView()))
+        hc.view.backgroundColor = .clear
+        hc.view.translatesAutoresizingMaskIntoConstraints = true
+        hc.safeAreaRegions = []
+
+        window.addSubview(hc.view)
+        self.hostingController = hc
+    }
+
+    private func updateContentSize(anchorWidth: CGFloat) {
+        guard let hc = hostingController else { return }
+
+        let fitting = hc.sizeThatFits(in: CGSize(
+            width: anchorWidth,
+            height: UIView.layoutFittingCompressedSize.height
+        ))
+        contentSize = fitting
+
+        guard fitting.width > 1, fitting.height > 1 else {
+            hc.view.isHidden = true
+            return
+        }
+    }
+
+    private func updateFrame(role: DetachedOverlayRole, anchorState: DetachedOverlayAnchorState) {
+        guard let view = hostingController?.view else { return }
+        guard contentSize.width > 1, contentSize.height > 1 else {
+            view.isHidden = true
+            return
+        }
+        guard anchorState.shouldDisplayOverlay else {
+            view.isHidden = true
+            return
+        }
+
+        let anchorFrame = anchorState.frameInWindow
+        let spacing = DetachedOverlayConstants.normalSpacing
+
+        let x = anchorFrame.midX - contentSize.width / 2
+        let y: CGFloat
+
+        switch role.attachment {
+        case .down:
+            y = anchorFrame.maxY + spacing
+        case .up:
+            y = anchorFrame.minY - spacing - contentSize.height
+        }
+
+        view.frame = CGRect(x: x, y: y, width: contentSize.width, height: contentSize.height)
+        view.isHidden = false
+    }
+}
+
 #endif
 
 #if os(macOS)
