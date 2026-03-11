@@ -105,7 +105,7 @@ class ProjectionChannel: Channel {
             do {
                 try await send(opcode: .projectionSessionEndedEvent, message: ProjectionSessionEndedEvent(
                     identifier: identifier,
-                    reason: ProjectionSessionEndReason.displayDisconnected.rawValue,
+                    reason: VideoSessionEndReason.displayDisconnected,
                     message: "Display disconnected"
                 ))
             } catch {
@@ -121,6 +121,17 @@ class ProjectionChannel: Channel {
 
         let targets = await state.terminateByDataChannelClosure(identifier: identifier)
         await cleanupTerminationTargets(targets, closeDataChannel: false)
+
+        let reason: VideoSessionEndReason = error != nil ? .dataChannelError : .unknown
+        do {
+            try await send(opcode: .projectionSessionEndedEvent, message: ProjectionSessionEndedEvent(
+                identifier: identifier,
+                reason: reason,
+                message: error?.localizedDescription
+            ))
+        } catch {
+            logger.warning("Failed to send ProjectionSessionEndedEvent for session \(identifier) after data channel termination: \(error)")
+        }
     }
 
     override func handleFrame(frame: SiriusFrame) async throws {
@@ -230,6 +241,11 @@ class ProjectionChannel: Channel {
 
             guard var negotiatedCodec = negotiator.negotiate(with: request.preferredCodecs) else {
                 logger.error("Failed to negotiate codec for projection session \(identifier)")
+                try? await send(opcode: .projectionSessionCreationFailedEvent, message: ProjectionSessionCreationFailedEvent(
+                    identifier: identifier,
+                    reason: .codecNegotiationFailed,
+                    message: "No acceptable codec found"
+                ))
                 let targets = await state.terminateByControlMessage(identifier: identifier, kind: .video)
                 await cleanupTerminationTargets(targets, closeDataChannel: true)
                 return
@@ -259,9 +275,15 @@ class ProjectionChannel: Channel {
             
             let desiredSize = request.preferredCodecs.first?.size?.cgSize
             guard let contentSize = await request.viewport.contentSize(codec: negotiatedCodec)?.cgSize else {
-                // 현 시점에서 contentSize는 nil을 반환하면 안됨
-                // TODO: 프로젝션 리퀘스트에 응답할 수 없다고 할 것
-                fatalError()
+                logger.error("Content size is nil for projection request \(identifier)")
+                try? await send(opcode: .projectionSessionCreationFailedEvent, message: ProjectionSessionCreationFailedEvent(
+                    identifier: identifier,
+                    reason: .sourceNotFound,
+                    message: "Failed to determine content size for the requested source"
+                ))
+                let targets = await state.terminateByControlMessage(identifier: identifier, kind: .video)
+                await cleanupTerminationTargets(targets, closeDataChannel: true)
+                return
             }
             
             // 클라이언트 / 서버가 원하는 해상도 제한이 적용된 '진짜 해상도'를 반환한다
@@ -321,6 +343,12 @@ class ProjectionChannel: Channel {
             ))
         } catch {
             logger.error("Failed to handle projection request \(identifier): \(error)")
+
+            try? await send(opcode: .projectionSessionCreationFailedEvent, message: ProjectionSessionCreationFailedEvent(
+                identifier: identifier,
+                reason: .serverError,
+                message: error.localizedDescription
+            ))
 
             if let transientSession {
                 transientSession.dataChannel.projectionDelegate = nil
@@ -531,7 +559,7 @@ extension ProjectionChannel: ProjectionSessionDelegate {
             do {
                 try await self.send(opcode: .projectionSessionChangedEvent, message: ProjectionSessionChangedEvent(
                     identifier: session.id,
-                    reason: ProjectionSessionChangeReason.resolutionChanged.rawValue,
+                    reason: 1 /* resolutionChanged */,
                     source: nil,
                     codec: newCodec
                 ))
@@ -553,7 +581,7 @@ extension ProjectionChannel: ProjectionSessionDelegate {
             do {
                 try await self.send(opcode: .projectionSessionEndedEvent, message: ProjectionSessionEndedEvent(
                     identifier: session.id,
-                    reason: ProjectionSessionEndReason.internalError.rawValue,
+                    reason: VideoSessionEndReason.internalError,
                     message: error.localizedDescription
                 ))
             } catch {
@@ -569,16 +597,16 @@ fileprivate extension ProjectionSource {
         switch value {
         case .entireDisplay(let source):
             let layoutManager = DisplayLayoutManager.shared
-            let displayID = switch (source.displayID) {
+            let displayID: CGDirectDisplayID? = switch (source.displayID) {
             case -1:
                 layoutManager.displayLayouts.keys.first { CGDisplayIsMain($0) != 0 }!
             case -2:
-                fatalError("entire display layout is not supported yet")
+                nil // entire display layout is not supported yet
             default:
                 CGDirectDisplayID(source.displayID)
             }
 
-            if let display = DisplayLayoutManager.shared.displayLayouts[displayID] {
+            if let displayID, let display = DisplayLayoutManager.shared.displayLayouts[displayID] {
                 switch codec.option(.displayDensity) {
                 case .kDisplayDensityBest:
                     return SRSize(width: display.displayResolution.width, height: display.displayResolution.height)

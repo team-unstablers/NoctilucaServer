@@ -13,17 +13,8 @@ import CoreMedia
 
 import SiriusKit
 
-/// 프로젝션 세션 종료 사유
-enum ProjectionSessionEndReason: Int32 {
-    case normal = 0
-    case displayDisconnected = 1
-    case internalError = 2
-    case recorderFailed = 3
-}
-
-/// 프로젝션 세션 변경 사유
-enum ProjectionSessionChangeReason: Int32 {
-    case resolutionChanged = 1
+enum ProjectionSessionError: Error {
+    case invalidSource
 }
 
 protocol ProjectionSessionDelegate: AnyObject {
@@ -271,8 +262,7 @@ class ProjectionSession: Identifiable {
 
     func prepare(_ request: ProjectionRequest, codec: Codec) async throws {
         guard let recorderSource = request.viewport.toScreenRecorderSource() else {
-            // TODO: throw .invalidSource
-            fatalError()
+            throw ProjectionSessionError.invalidSource
         }
 
         let recorderArgs = ScreenRecorderArgs(
