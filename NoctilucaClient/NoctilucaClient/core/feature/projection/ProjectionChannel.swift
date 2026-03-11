@@ -43,12 +43,12 @@ enum ProjectionChannelEvent: Sendable {
     /// 화면 프로젝션 세션이 생성되었습니다.
     case sessionCreated(ProjectionSession)
     /// 화면 프로젝션 세션이 종료되었습니다.
-    case sessionDestroyed(UUID, reason: String)
+    case sessionDestroyed(UUID, reason: VideoSessionEndReason, message: String?)
 
     /// 오디오 프로젝션 세션이 생성되었습니다.
     case audioSessionCreated(AudioProjectionSession)
     /// 오디오 프로젝션 세션이 종료되었습니다.
-    case audioSessionDestroyed(UUID, reason: String)
+    case audioSessionDestroyed(UUID, reason: AudioSessionEndReason, message: String?)
 
     /// 디스플레이 변경 이벤트가 발생했습니다.
     // case displayLayoutChanged() // TODO: 전체 레이아웃을 들고 있거나 하는게 좋을거같음
@@ -251,7 +251,7 @@ class ProjectionChannel: Channel {
                 do {
                     try await self.send(opcode: opcode, message: message)
                 } catch {
-                    _ = await self.state.dispatchPendingRequest(requestID, message: message)
+                    await self.state.removePendingRequest(requestID)
                     continuation.resume(throwing: error)
                 }
             }

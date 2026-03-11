@@ -117,17 +117,30 @@ extension ProjectionChannel {
     }
 
 
-    func createSession(for displayID: Int = -1, projectionSettings: SessionSettings.Projection?) async throws -> ProjectionSession {
+    func createSession(for displayID: Int = -1, projectionSettings: SessionSettings.Projection?, timeout: TimeInterval = 10.0) async throws -> ProjectionSession {
         guard let clientSession = self.clientSession else {
-            fatalError()
+            throw ProjectionChannelError.channelClosed
         }
 
         let identifier = UUID()
 
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
-        let response = try await requestSession(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
+        let response = try await withThrowingTaskGroup(of: ProjectionSessionCreatedEvent.self) { group in
+            group.addTask {
+                try await self.requestSession(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(max(0, timeout) * 1_000_000_000))
+                throw ProjectionChannelError.sessionCreationCancelled
+            }
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
 
-        let channel = await clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
+        guard let channel = await clientSession.channelManager.channels[identifier] as? ProjectionDataChannel else {
+            throw ProjectionChannelError.channelClosed
+        }
 
         let projectionAppSettings = SettingsStore.shared.settings.projection
         let enableJitterBuffer = projectionAppSettings.enableJitterBuffer
@@ -232,13 +245,13 @@ extension ProjectionChannel {
         }
 
         do {
-            try await session.stop()
+            try await session.stop(sendStopRequest: false)
         } catch {
             logger.error("Failed to stop projection session \(identifier): \(error)")
         }
 
         Task { @MainActor in
-            self.events.send(.sessionDestroyed(identifier, reason: event.message ?? "reason=\(event.reason)"))
+            self.events.send(.sessionDestroyed(identifier, reason: event.reason, message: event.message))
         }
     }
 

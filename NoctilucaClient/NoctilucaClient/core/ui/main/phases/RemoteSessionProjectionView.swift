@@ -304,6 +304,10 @@ struct RemoteSessionProjectionView: View {
                             case .codecConfigured(let isTiledCodec):
                                 subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
                                 useCanvasRendering = isTiledCodec
+                            case .errorOccurred(let error, let fatal):
+                                if fatal {
+                                    Self.logger.error("Fatal projection error: \(error.localizedDescription)")
+                                }
                             default:
                                 break
                             }

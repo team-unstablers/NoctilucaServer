@@ -108,8 +108,27 @@ struct MainWindowRemoteSessionView: View {
                     }
             }
         }
+        .onReceive(projection.$sessionError) { error in
+            if error != nil {
+                // 세션이 서버에 의해 종료되었으므로 기존 subscription을 정리
+                subscription?.invalidate()
+                subscription = nil
+            }
+        }
+        .onReceive(projection.$projectionSessions) { sessions in
+            // auto-restart 성공 시 새로운 세션을 subscription으로 갱신
+            guard subscription == nil,
+                  !sessions.isEmpty,
+                  case .displayID(let displayID) = sourceDescriptor,
+                  displayID != -1
+            else { return }
+
+            Task.detached {
+                try? await self.updateProjectionTarget(displayID)
+            }
+        }
     }
-    
+
     func decideTargetDisplayID() async throws {
         if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
             try await updateProjectionTarget(primaryDisplayID)

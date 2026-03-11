@@ -19,6 +19,10 @@ import Metal
 
 import SiriusKitClient
 
+enum ProjectionSessionError: Error {
+    case codecSizeUnavailable
+}
+
 enum ProjectionSessionEvent: Sendable {
     /// 프로젝션이 시작되었습니다.
     case projectionStarted
@@ -200,7 +204,7 @@ class ProjectionSession: Identifiable {
 
     func prepare(codec: Codec) async throws {
         guard let size = codec.size else {
-            fatalError("FIXME: size is nil")
+            throw ProjectionSessionError.codecSizeUnavailable
         }
         self.codec = codec
         self.size  = size.cgSize
@@ -284,7 +288,7 @@ class ProjectionSession: Identifiable {
         }
     }
     
-    func stop() async throws {
+    func stop(sendStopRequest: Bool = true) async throws {
         await MainActor.run {
             self.events.send(.projectionWillStop)
         }
@@ -293,7 +297,7 @@ class ProjectionSession: Identifiable {
         await self.performanceReporter?.stop()
         try self.decoder?.stop()
 
-        if let controlChannel = self.controlChannel {
+        if sendStopRequest, let controlChannel = self.controlChannel {
             let sessionID = self.id
             let logger = self.logger
             Task { [weak controlChannel] in
@@ -381,22 +385,30 @@ extension ProjectionSession: VideoDecoderDelegate {
             let now = mach_absolute_time()
             let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
 
-            let sampleBuffer = try! CMSampleBuffer(
-                imageBuffer: frame.pixelBuffer,
-                formatDescription: CMFormatDescription(imageBuffer: frame.pixelBuffer),
-                sampleTiming: CMSampleTimingInfo(
-                    duration: CMTime.invalid,
-                    presentationTimeStamp: presentationTime,
-                    decodeTimeStamp: CMTime.invalid
+            do {
+                let sampleBuffer = try CMSampleBuffer(
+                    imageBuffer: frame.pixelBuffer,
+                    formatDescription: CMFormatDescription(imageBuffer: frame.pixelBuffer),
+                    sampleTiming: CMSampleTimingInfo(
+                        duration: CMTime.invalid,
+                        presentationTimeStamp: presentationTime,
+                        decodeTimeStamp: CMTime.invalid
+                    )
                 )
-            )
 
-            enqueueToAllDisplayLayers(sampleBuffer)
+                enqueueToAllDisplayLayers(sampleBuffer)
+            } catch {
+                logger.error("Failed to create CMSampleBuffer: \(error.localizedDescription)")
+                performanceReporter?.recordDroppedFrame()
+            }
         }
     }
     
     func videoDecoder(_ decoder: any VideoDecoder, didFailWith error: any Error) {
         logger.error("decoder error: \(error.localizedDescription)")
+        Task { @MainActor in
+            self.events.send(.errorOccurred(error, fatal: false))
+        }
     }
     
     func videoDecoder(_ decoder: any VideoDecoder, didDropFrameWithID frameID: UInt64, reason: String) {

@@ -104,6 +104,10 @@ actor ProjectionChannelState {
         return true
     }
 
+    func removePendingRequest(_ id: UInt64) {
+        pendingRequests.removeValue(forKey: id)
+    }
+
     // MARK: - Pending Audio Session Request Operations
 
     func registerPendingAudioSessionRequest(_ id: UUID, request: PendingAudioSessionRequest) {

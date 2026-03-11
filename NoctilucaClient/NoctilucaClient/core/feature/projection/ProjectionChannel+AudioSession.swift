@@ -98,7 +98,7 @@ extension ProjectionChannel {
         }
 
         Task { @MainActor in
-            self.events.send(.audioSessionDestroyed(event.identifier, reason: "\(event.reason.rawValue)"))
+            self.events.send(.audioSessionDestroyed(event.identifier, reason: event.reason, message: event.message))
         }
     }
 }
