@@ -285,8 +285,13 @@ extension NoctilucaServer: SiriusServerDelegate {
         let session = NoctilucaClientSession(session: session, server: context)
         session.delegate = self
         session.initialize()
-        
+
         Task { @MainActor in
+            guard self.clients.count < self.settings.general.maxConcurrentSessions else {
+                logger.info("Maximum concurrent sessions exceeded (\(self.settings.general.maxConcurrentSessions)), rejecting session")
+                Task { await session.closeWithGoodbye(code: .sessionAllocationFailed) }
+                return
+            }
             self.clients[session.id] = session
         }
     }

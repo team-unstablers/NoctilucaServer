@@ -58,12 +58,10 @@ struct GeneralSettingsTab: View {
                     Text(markdown: String(localized: "settings.general.autostart.description", defaultValue: "Noctiluca Server 앱이 실행될 때 서버를 자동으로 시작합니다."))
                 }
 
-                /*
                 IntegerField(value: $settings.general.maxConcurrentSessions) {
                     Text(markdown: String(localized: "settings.general.max_concurrent_sessions.title", defaultValue: "최대 동시 접속 수"))
                     Text(markdown: String(localized: "settings.general.max_concurrent_sessions.description", defaultValue: "Noctiluca가 허용할 최대 동시 접속 수를 설정합니다."))
                 }
-                 */
                 
                 Toggle(isOn: $automaticallyChecksForUpdates) {
                     Text(markdown: String(localized: "settings.general.autoupdate.check.title", defaultValue: "자동으로 업데이트 확인하기"))
