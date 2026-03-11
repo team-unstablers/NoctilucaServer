@@ -15,8 +15,16 @@ internal import SwiftASN1
 internal import X509 // swift-certificates
 import SiriusKitCore
 
+public enum QUICServerIdentityLoadError: Error {
+    /// 지정된 아이덴티티가 존재하지 않습니다.
+    case identityNotFound
+    
+    /// 아이덴티티가 중복으로 존재합니다. (Keychain에서 동일한 라벨로 여러 아이덴티티가 존재하는 경우)
+    case conflictingIdentitiesFound
+}
+
 // TODO: LLM이 생성한 사용하지 않는 케이스 제거 검토
-enum QUICServerIdentitySanityCheckError: Error {
+public enum QUICServerIdentitySanityCheckError: Error {
     case identityCastFailed
     case certificateCopyFailed(OSStatus)
     case privateKeyCopyFailed(OSStatus)
@@ -24,7 +32,7 @@ enum QUICServerIdentitySanityCheckError: Error {
 }
 
 // TODO: LLM이 생성한 사용하지 않는 케이스 제거 검토
-enum QUICServerIdentityCreationError: Error {
+public enum QUICServerIdentityCreationError: Error {
     case notImplemented
 
     case identityAlreadyExists
