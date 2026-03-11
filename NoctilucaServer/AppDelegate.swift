@@ -23,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var settingsWindowController: AppKitSettingsWindowController?
     private var onboardingWindowController: OnboardingWindowController?
     private var licensingWindowController: LicensingWindowController?
+    private var aboutAppWindowController: AboutAppWindowController?
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
@@ -32,6 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "설정"), action: nil, keyEquivalent: ",")
     private let checkUpdatesItem = NSMenuItem(title: String(localized: "menu.check-updates", defaultValue: "업데이트 확인"), action: nil, keyEquivalent: "")
     private let licensingItem = NSMenuItem(title: String(localized: "menu.register-license", defaultValue: "라이선스 등록하기…"), action: nil, keyEquivalent: "")
+    private let aboutItem = NSMenuItem(title: String(localized: "menu.about", defaultValue: "Noctiluca Server에 대하여"), action: nil, keyEquivalent: "")
     private let quitItem = NSMenuItem(title: String(localized: "menu.quit", defaultValue: "종료"), action: nil, keyEquivalent: "q")
 
 #if DEBUG
@@ -143,6 +145,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc
+    func showAboutAppWindow(_ sender: Any?) {
+        if aboutAppWindowController == nil {
+            aboutAppWindowController = AboutAppWindowController()
+        }
+
+        DispatchQueue.main.async {
+            self.aboutAppWindowController?.showWindow(nil)
+            self.aboutAppWindowController?.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    @objc
     func showSettingsWindow(_ sender: Any?) {
         if settingsWindowController == nil {
             settingsWindowController = AppKitSettingsWindowController()
@@ -239,9 +254,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         licensingItem.target = self
         licensingItem.action = #selector(showLicensingWindow(_:))
         licensingItem.isHidden = true
+        aboutItem.target = self
+        aboutItem.action = #selector(showAboutAppWindow(_:))
         quitItem.target = self
         quitItem.action = #selector(quitApplication(_:))
-        
+
         checkUpdatesItem.target = AppUpdater.shared.updaterController
         checkUpdatesItem.action = #selector(SPUStandardUpdaterController.checkForUpdates(_:))
         
@@ -260,6 +277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 #if DEBUG
         menu.addItem(showOnboardingWindowItem)
 #endif
+        menu.addItem(aboutItem)
         menu.addItem(quitItem)
 
         statusItem.menu = menu
