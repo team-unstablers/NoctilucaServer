@@ -73,9 +73,7 @@ class Authenticator {
         let supportedPlugins = self.plugins.filter { type(of: $0).supportedMethods.contains(method) }
         
         defer {
-            _ = payload.withUnsafeMutableBytes { ptr in
-                memset_s(ptr.baseAddress!, payload.count, 0, payload.count)
-            }
+            payload.zeroize()
         }
 
         // 순차적으로 dispatch한다.

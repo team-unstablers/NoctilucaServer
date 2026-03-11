@@ -102,7 +102,8 @@ final class PAMAuthPlugin: BuiltInAuthPluginV1 {
             return .failure(.invalidPayload)
         }
 
-        let password = PAMAuthPayload.password(from: payload)
+        var password = PAMAuthPayload.password(from: payload)
+        defer { password.zeroize() }
 
         guard let passwd = Passwd.__getpwnam(username),
               self.isEntryAllowed(passwd)

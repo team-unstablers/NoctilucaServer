@@ -215,10 +215,11 @@ class RemoteSession: ObservableObject {
             await client.close()
             return
         case .confirm(let entry):
-            guard let payload = client.authenticator.payload(for: entry, nonce: authChallenge.nonce) else {
+            guard var payload = client.authenticator.payload(for: entry, nonce: authChallenge.nonce) else {
                 client.logger.error("Failed to build auth payload for method: \(entry.method.rawValue)")
                 return
             }
+            defer { payload.zeroize() }
             try? await client.sendAuthRequest(entry.method.rawValue, nonce: authChallenge.nonce, payload: payload)
         }
     }
