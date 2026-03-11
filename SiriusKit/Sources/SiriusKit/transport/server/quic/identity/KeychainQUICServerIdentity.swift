@@ -17,6 +17,7 @@ internal import X509
 import SiriusKitCore
 
 public class KeychainQUICServerIdentity: QUICServerIdentity {
+    private static let logger = SiriusLogger(category: "KeychainQUICServerIdentity")
     private let identityLabel: String
 
     /// NOTE:
@@ -24,12 +25,20 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
     public required init(_ identityLabel: String) {
         self.identityLabel = identityLabel
     }
-
-    public static func checkIdentityExistance(label: String) throws -> Bool {
+    
+    public static func checkIdentityExistence(label: String) throws -> Bool {
         let keychain = SRKeychain.shared
-        let existsResult = keychain.queryIdentityExistance(by: label)
+        let existsResult = keychain.queryIdentityExistence(by: label)
 
         return try existsResult.get()
+    }
+    
+    public static func checkIdentityUniqueness(label: String) throws -> Bool {
+        let keychain = SRKeychain.shared
+        let certsResult = keychain.queryItems(by: label, clazz: .certificate)
+
+        let certs = try certsResult.get()
+        return certs.count <= 1
     }
 
     public static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self {
@@ -38,22 +47,34 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
 
         /*
         // 1. 충돌 여부를 확인한다
-        guard !(try keychain.queryIdentityExistance(by: args.identityLabel).get()) else {
+        guard !(try keychain.queryIdentityExistence(by: args.identityLabel).get()) else {
             throw QUICServerIdentityCreationError.identityAlreadyExists
         }
          */
-
-        if try keychain.queryIdentityExistance(by: args.identityLabel).get() {
-            // swiftlint:disable:next force_cast
-            let existingCert = try keychain.queryItem(by: args.identityLabel, clazz: .certificate).get() as! SecCertificate
-            let applicationLabel = try existingCert.extractApplicationLabel()
-
-            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .certificate).get()
-            _ = try keychain.deleteItem(by: args.identityLabel, clazz: .privateKey, extras: [
-                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-                kSecAttrApplicationLabel as String: applicationLabel
-            ]).get()
+        
+        if let existingCerts = try? keychain.queryItems(by: args.identityLabel, clazz: .certificate).get() {
+            for cert in existingCerts {
+                // swiftlint:disable:next force_cast
+                let secCert = cert as! SecCertificate
+                do {
+                    let applicationLabel = try secCert.extractApplicationLabel()
+                    _ = try keychain.deleteItem(by: args.identityLabel, clazz: .privateKey, extras: [
+                        kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+                        kSecAttrApplicationLabel as String: applicationLabel
+                    ]).get()
+                } catch {
+                    // 삭제 실패해도 일단 넘어감. 어차피 cert도 삭제할 거라 private key가 남아있는다고 해서 큰 문제는 없을 것 같음
+                    Self.logger.error("Failed to delete existing private key for identity '\(args.identityLabel)'. Error: \(error)")
+                }
+            }
+            
+            do {
+                _ = try keychain.deleteItems(references: existingCerts, clazz: .certificate).get()
+            } catch {
+                Self.logger.error("Failed to delete existing certificates for identity '\(args.identityLabel)'. Error: \(error)")
+            }
         }
+    
 
         do {
             // 2. cert-key pair를 생성한다
@@ -94,18 +115,34 @@ public class KeychainQUICServerIdentity: QUICServerIdentity {
 
             return Self(args.identityLabel)
         } catch {
+            Self.logger.error("Failed to create self-signed identity for label '\(args.identityLabel)'. Error: \(error). Attempting cleanup.")
+            
             // cleanup
             _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .certificate).get()
             _ = try? keychain.deleteItem(by: args.identityLabel, clazz: .privateKey, extras: [
                 kSecAttrKeyClass as String: kSecAttrKeyClassPrivate
             ]).get()
-
+            
             throw error
+        }
+    }
+    
+    public func checkExistence() async throws {
+        guard try Self.checkIdentityUniqueness(label: self.identityLabel) else {
+            throw QUICServerIdentityLoadError.conflictingIdentitiesFound
+        }
+
+        guard try Self.checkIdentityExistence(label: self.identityLabel) else {
+            throw QUICServerIdentityLoadError.identityNotFound
         }
     }
 
     public func getServerIdentity() async throws -> SecIdentity {
         let keychain = SRKeychain.shared
+    
+        // 아이덴티티 충돌하지 않음을 보장해야 함
+        try await self.checkExistence()
+       
         let identityResult = keychain.queryIdentity(by: self.identityLabel)
 
         if case .failure(let error) = identityResult {

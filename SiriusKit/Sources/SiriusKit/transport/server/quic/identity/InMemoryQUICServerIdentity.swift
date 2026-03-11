@@ -30,7 +30,7 @@ internal class InMemoryQUICServerIdentity: QUICServerIdentity {
         let keychain = SRKeychain.shared
 
         // 1. 충돌 여부를 확인한다
-        guard !(try keychain.queryIdentityExistance(by: args.identityLabel).get()) else {
+        guard !(try keychain.queryIdentityExistence(by: args.identityLabel).get()) else {
             throw QUICServerIdentityCreationError.identityAlreadyExists
         }
 
