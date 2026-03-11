@@ -182,7 +182,11 @@ struct SecuritySettingsTab: View {
         self.passesSanityCheck = nil
         
         Task {
-            guard let identity = settings.quicTransport.identity else {
+            let identityManager = ServerIdentityManager.shared
+            
+            guard let identitySource = settings.quicTransport.identity,
+                  let identity = try? await identityManager.load(source: identitySource)
+            else {
                 self.identityInfo = nil
                 self.certificate = nil
                 self.passesSanityCheck = nil
@@ -198,6 +202,7 @@ struct SecuritySettingsTab: View {
     func showCertificatePicker() {
         // SSL 서버 용도의 인증서로만 제한한다
         let sslServerPolicy = SecPolicyCreateSSL(true, nil)
+        
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassIdentity,
@@ -221,10 +226,20 @@ struct SecuritySettingsTab: View {
             return
         }
         
+        // 3. EKU 필드가 부재한 인증서 필터링하기
+        // 대한민국 공인인증서가 EKU 필드가 없어서 서버용 인증서로 표시되어 버리는 버그가 있음
+        let filteredIdentities = identities.filter { identity in
+            guard let certificate = identity.extractCertificate() else {
+                return false
+            }
+            
+            return certificate.isServerAuthenticationCapable()
+        }
+        
         panel.setAlternateButtonTitle(String(localized: "common.cancel", defaultValue: "취소"))
-        panel.setInformativeText(   String(localized: "settings.security.certificate_picker.informative_text", defaultValue: "'서버 인증' (OID 1.3.6.1.5.5.7.3.1) 목적으로 발급된 인증서만 사용할 수 있습니다."))
+        panel.setInformativeText(String(localized: "settings.security.certificate_picker.informative_text", defaultValue: "'서버 인증' (OID 1.3.6.1.5.5.7.3.1) 목적으로 발급된 인증서만 사용할 수 있습니다."))
 
-        let response = panel.runModal(forIdentities: identities, message: String(localized: "settings.security.certificate_picker.message", defaultValue: "서버에서 사용할 인증서를 선택해 주세요."))
+        let response = panel.runModal(forIdentities: filteredIdentities, message: String(localized: "settings.security.certificate_picker.message", defaultValue: "서버에서 사용할 인증서를 선택해 주세요."))
         
         if response == NSApplication.ModalResponse.OK.rawValue {
             if let identity = panel.identity() {
@@ -233,7 +248,7 @@ struct SecuritySettingsTab: View {
                     return
                 }
                 
-                self.settings.quicTransport.identity = .keychain(identifier: keychainLabel)
+                self.settings.quicTransport.identity = .keychain(label: keychainLabel)
             }
         }
     }
