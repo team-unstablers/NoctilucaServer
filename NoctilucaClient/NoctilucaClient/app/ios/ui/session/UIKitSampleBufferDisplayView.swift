@@ -20,7 +20,7 @@ final class SampleBufferHostView: UIView {
         super.init(frame: .zero)
 
         displayLayer.removeFromSuperlayer()
-        backgroundColor = .blue
+        backgroundColor = .black
         configureDisplayLayer(displayLayer)
         layer.addSublayer(displayLayer)
     }
