@@ -4810,13 +4810,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "An error occurred while starting the audio session.\\n%@"
+            "value" : "An error occurred while starting the audio session.\n%@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "オーディオセッションの開始中にエラーが発生しました。\\n%@"
+            "value" : "オーディオセッションの開始中にエラーが発生しました。\n%@"
           }
         },
         "ko" : {
@@ -4828,7 +4828,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "启动音频会话时发生错误。\\n%@"
+            "value" : "启动音频会话时发生错误。\n%@"
           }
         }
       }
@@ -4868,13 +4868,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to initialize audio projection.\\n%@"
+            "value" : "Failed to initialize audio projection.\n%@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "オーディオプロジェクションの初期化に失敗しました。\\n%@"
+            "value" : "オーディオプロジェクションの初期化に失敗しました。\n%@"
           }
         },
         "ko" : {
@@ -4886,7 +4886,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "音频投影初始化失败。\\n%@"
+            "value" : "音频投影初始化失败。\n%@"
           }
         }
       }
@@ -4897,13 +4897,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Authentication method negotiation failed.\\nThe server presented %@ as authentication methods, but the current version of the client supports none of them."
+            "value" : "Authentication method negotiation failed.\nThe server presented %@ as authentication methods, but the current version of the client supports none of them."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "認証方法のネゴシエーションに失敗しました。\\nサーバーから認証方法として %@ が提示されましたが、現在のバージョンのクライアントではどれもサポートされていません。"
+            "value" : "認証方法のネゴシエーションに失敗しました。\nサーバーから認証方法として %@ が提示されましたが、現在のバージョンのクライアントではどれもサポートされていません。"
           }
         },
         "ko" : {
@@ -4915,7 +4915,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "认证方法协商失败。\\n服务器提供的认证方法为 %@，但当前版本的客户端不支持其中任何一种。"
+            "value" : "认证方法协商失败。\n服务器提供的认证方法为 %@，但当前版本的客户端不支持其中任何一种。"
           }
         }
       }
@@ -4926,13 +4926,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Authentication method negotiation failed.\\nThe server did not present any authentication methods."
+            "value" : "Authentication method negotiation failed.\nThe server did not present any authentication methods."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "認証方法のネゴシエーションに失敗しました。\\nサーバーから認証方法が提示されませんでした。"
+            "value" : "認証方法のネゴシエーションに失敗しました。\nサーバーから認証方法が提示されませんでした。"
           }
         },
         "ko" : {
@@ -4944,7 +4944,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "认证方法协商失败。\\n服务器未提供任何认证方法。"
+            "value" : "认证方法协商失败。\n服务器未提供任何认证方法。"
           }
         }
       }
@@ -4955,13 +4955,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Server certificate validation failed.\\nIt may not be a trusted certificate, or the certificate has expired."
+            "value" : "Server certificate validation failed.\nIt may not be a trusted certificate, or the certificate has expired."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "サーバー証明書の検証に失敗しました。\\n信頼できる証明書ではないか、証明書の有効期限が切れている可能性があります。"
+            "value" : "サーバー証明書の検証に失敗しました。\n信頼できる証明書ではないか、証明書の有効期限が切れている可能性があります。"
           }
         },
         "ko" : {
@@ -4973,7 +4973,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "服务器证书验证失败。\\n证书可能不可信或已过期。"
+            "value" : "服务器证书验证失败。\n证书可能不可信或已过期。"
           }
         }
       }
@@ -5158,13 +5158,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to connect.\\n%@"
+            "value" : "Failed to connect.\n%@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "接続に失敗しました。\\n%@"
+            "value" : "接続に失敗しました。\n%@"
           }
         },
         "ko" : {
@@ -5176,7 +5176,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "连接失败。\\n%@"
+            "value" : "连接失败。\n%@"
           }
         }
       }
@@ -5216,13 +5216,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Protocol version is incompatible.\\nClient: %1$@, Server: %2$@"
+            "value" : "Protocol version is incompatible.\nClient: %1$@, Server: %2$@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プロトコルバージョンが互換性がありません。\\nClient: %1$@, Server: %2$@"
+            "value" : "プロトコルバージョンが互換性がありません。\nClient: %1$@, Server: %2$@"
           }
         },
         "ko" : {
@@ -5234,7 +5234,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "协议版本不兼容。\\n客户端：%1$@，服务器：%2$@"
+            "value" : "协议版本不兼容。\n客户端：%1$@，服务器：%2$@"
           }
         }
       }
@@ -9586,13 +9586,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Requests the server to use lossless compression.\\nRequires a high-speed internet connection as it consumes significant network bandwidth."
+            "value" : "Requests the server to use lossless compression.\nRequires a high-speed internet connection as it consumes significant network bandwidth."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ロスレス圧縮を使用するように要求します。\\nかなりのネットワーク帯域幅を使用するため、高速なインターネット接続が必要です。"
+            "value" : "ロスレス圧縮を使用するように要求します。\nかなりのネットワーク帯域幅を使用するため、高速なインターネット接続が必要です。"
           }
         },
         "ko" : {
@@ -9604,7 +9604,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "要求使用无损压缩。\\n因为会消耗大量网络带宽，所以需要高速的互联网连接。"
+            "value" : "要求使用无损压缩。\n因为会消耗大量网络带宽，所以需要高速的互联网连接。"
           }
         }
       }
@@ -13182,7 +13182,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Exclusive mode is unavailable because Accessibility permission is not granted.\\nYou must restart Noctiluca Navigator after changing settings."
+            "value" : "Exclusive mode is unavailable because Accessibility permission is not granted.\nYou must restart Noctiluca Navigator after changing settings."
           }
         },
         "ja" : {
@@ -15125,7 +15125,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aims to reduce latency.\\nUse this when the network condition is good."
+            "value" : "Aims to reduce latency.\nUse this when the network condition is good."
           }
         },
         "ja" : {
@@ -15183,7 +15183,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provides stable playback resilient to network jitter by using a generous buffer.\\nSome delay may occur."
+            "value" : "Provides stable playback resilient to network jitter by using a generous buffer.\nSome delay may occur."
           }
         },
         "ja" : {
@@ -15241,7 +15241,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prioritizes minimizing latency.\\nFrequent stuttering or frame drops may occur if the network condition is poor."
+            "value" : "Prioritizes minimizing latency.\nFrequent stuttering or frame drops may occur if the network condition is poor."
           }
         },
         "ja" : {

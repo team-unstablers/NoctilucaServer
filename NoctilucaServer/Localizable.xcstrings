@@ -1204,7 +1204,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "\\\"%1$@\\\" （%2$@） プラグインバンドルには有効なコード署名がありません。\\n署名されていないプラグインはシステムに悪影響を及ぼす可能性があります。\\n\\nパス: %3$@\\n\\nロードを続行しますか？"
+            "value" : "\"%1$@\" （%2$@） プラグインバンドルには有効なコード署名がありません。\n署名されていないプラグインはシステムに悪影響を及ぼす可能性があります。\n\nパス: %3$@\n\nロードを続行しますか？"
           }
         },
         "ko" : {
@@ -3516,7 +3516,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ライセンスが期限切れになりました。\\n継続して使用するには新しいライセンスを登録してください。"
+            "value" : "ライセンスが期限切れになりました。\n継続して使用するには新しいライセンスを登録してください。"
           }
         },
         "ko" : {
@@ -4650,7 +4650,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "録画権限を確認するには、Noctiluca Serverを再起動する必要があります。\\n\\n再起動しますか？"
+            "value" : "録画権限を確認するには、Noctiluca Serverを再起動する必要があります。\n\n再起動しますか？"
           }
         },
         "ko" : {
@@ -5149,7 +5149,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SHA-512 + bcrypt ベースのパスワードのみの認証を提供します。\\n\\nこのプラグインは Ricardo Garcia （@rg3） 氏が作成した libbcrypt に基づいています。\\n@rg3 氏の libbcrypt は CC0-1.0 ライセンスの下で配布されており、team unstablers Inc. が Noctiluca Server 開発のためにフォークしたバージョンは https://github.com/team-unstablers/libbcrypt/ で確認できます。"
+            "value" : "SHA-512 + bcrypt ベースのパスワードのみの認証を提供します。\n\nこのプラグインは Ricardo Garcia （@rg3） 氏が作成した libbcrypt に基づいています。\n@rg3 氏の libbcrypt は CC0-1.0 ライセンスの下で配布されており、team unstablers Inc. が Noctiluca Server 開発のためにフォークしたバージョンは https://github.com/team-unstablers/libbcrypt/ で確認できます。"
           }
         },
         "ko" : {
@@ -5883,7 +5883,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keychainで '%@' という名前の証明書が複数見つかったため、サーバーを起動できません。\\nKeychain Accessアプリから重複した証明書を削除した後、サーバーを再起動してください。"
+            "value" : "Keychainで '%@' という名前の証明書が複数見つかったため、サーバーを起動できません。\nKeychain Accessアプリから重複した証明書を削除した後、サーバーを再起動してください。"
           }
         },
         "ko" : {
@@ -7333,7 +7333,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "実行スコープをシステムレベルに昇格させると、すべてのユーザーがNoctiluca Serverを通じて各自のセッションを同時に使用できるようになります。\\nしかし、これはmacOSの使用許諾契約（EULA）に違反するため、現在この機能は提供できません。"
+            "value" : "実行スコープをシステムレベルに昇格させると、すべてのユーザーがNoctiluca Serverを通じて各自のセッションを同時に使用できるようになります。\nしかし、これはmacOSの使用許諾契約（EULA）に違反するため、現在この機能は提供できません。"
           }
         },
         "ko" : {
@@ -7942,7 +7942,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ユーザー環境および使用統計を匿名で収集することを許可します。\\nプライバシー保護を優先するため、このオプションはデフォルトでオフになっています。[詳細…](http://google.com)"
+            "value" : "ユーザー環境および使用統計を匿名で収集することを許可します。\nプライバシー保護を優先するため、このオプションはデフォルトでオフになっています。[詳細…](http://google.com)"
           }
         },
         "ko" : {
@@ -12321,7 +12321,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可逆圧縮を使用します。\\nかなりのネットワーク帯域幅を使用するため、高速なインターネット接続が必要です。"
+            "value" : "可逆圧縮を使用します。\nかなりのネットワーク帯域幅を使用するため、高速なインターネット接続が必要です。"
           }
         },
         "ko" : {
