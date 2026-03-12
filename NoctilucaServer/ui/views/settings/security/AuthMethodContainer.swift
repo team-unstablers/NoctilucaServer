@@ -194,6 +194,7 @@ private struct AuthMethodSelectionSheet: View {
                     .foregroundStyle(.secondary)
                 SecureField(String(localized: "settings.security.auth_method.simple_password.placeholder", defaultValue: "비밀번호 입력"), text: $simplePasswordValue)
                     .textFieldStyle(.roundedBorder)
+                    .requiresABC()
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {

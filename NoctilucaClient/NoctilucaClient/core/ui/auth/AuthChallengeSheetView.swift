@@ -105,6 +105,7 @@ struct AuthChallengeSheetView: View {
                 Text(markdown: String(localized: "auth.challenge.password_label", defaultValue: "비밀번호"))
                 SecureField(String(localized: "auth.challenge.password_placeholder", defaultValue: "비밀번호 입력"), text: $viewModel.password)
                     .textFieldStyle(.roundedBorder)
+                    .requiresABC()
                     .onSubmit { submit() }
             }
         case .simplePassword:
@@ -112,6 +113,7 @@ struct AuthChallengeSheetView: View {
                 Text(markdown: String(localized: "auth.challenge.password_label", defaultValue: "비밀번호"))
                 SecureField(String(localized: "auth.challenge.password_placeholder", defaultValue: "비밀번호 입력"), text: $viewModel.simplePassword)
                     .textFieldStyle(.roundedBorder)
+                    .requiresABC()
                     .onSubmit { submit() }
             }
         case .sshKey:
