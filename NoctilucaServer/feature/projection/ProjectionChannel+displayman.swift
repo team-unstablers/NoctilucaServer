@@ -261,22 +261,77 @@ extension ProjectionChannel {
     }
 
     private func getColorProfile(screen: NSScreen) -> DisplayColorProfile? {
-        guard let colorSpace = screen.colorSpace,
-              let name = colorSpace.localizedName else {
+        guard let colorSpace = screen.colorSpace else {
             return nil
         }
 
-        // 알려진 색상 프로파일 매핑
-        if name.contains("sRGB") {
-            return .sRGB
-        } else if name.contains("Adobe RGB") {
-            return .adobeRGB
-        } else if name.contains("P3") || name.contains("DCI") {
-            return .dciP3
+        // Phase 1: CGColorSpace name으로 표준 프로파일 매칭
+        if let cgColorSpace = colorSpace.cgColorSpace,
+           let cgName = cgColorSpace.name {
+            if let matched = matchKnownColorSpaceName(cgName) {
+                return matched
+            }
         }
 
-        // 기타 프로파일은 이름 그대로 반환
-        return DisplayColorProfile(rawValue: name)
+        // Phase 2: localizedName 패턴 매칭 (명시적으로 이름 붙여진 프로파일용 폴백)
+        if let name = colorSpace.localizedName {
+            if name.contains("sRGB") { return .sRGB }
+            if name.contains("Adobe RGB") { return .adobeRGB }
+            if name.contains("P3") || name.contains("DCI") { return .dciP3 }
+        }
+
+        // Phase 3: ICC 프로파일의 원색 분석을 통한 gamut 분류
+        // Apple 내장 디스플레이의 커스텀 프로파일(예: "Color LCD")을 올바르게 판별
+        if let result = classifyByGamutAnalysis(colorSpace) {
+            return result
+        }
+
+        return colorSpace.localizedName.map { DisplayColorProfile(rawValue: $0) }
+    }
+
+    private func matchKnownColorSpaceName(_ name: CFString) -> DisplayColorProfile? {
+        if name == CGColorSpace.sRGB || name == CGColorSpace.linearSRGB {
+            return .sRGB
+        }
+        if name == CGColorSpace.displayP3
+            || name == CGColorSpace.displayP3_HLG
+            || name == CGColorSpace.displayP3_PQ {
+            return .dciP3
+        }
+        if name == CGColorSpace.adobeRGB1998 {
+            return .adobeRGB
+        }
+        return nil
+    }
+
+    /// 디스플레이 색공간의 원색(Red, Green)을 extended sRGB로 변환하여
+    /// sRGB 범위([0,1])를 초과하는지 검사합니다. 초과하면 wide gamut(P3)으로 분류합니다.
+    private func classifyByGamutAnalysis(_ nsColorSpace: NSColorSpace) -> DisplayColorProfile? {
+        guard let cgColorSpace = nsColorSpace.cgColorSpace,
+              cgColorSpace.model == .rgb,
+              cgColorSpace.numberOfComponents == 3,
+              let extendedSRGB = CGColorSpace(name: CGColorSpace.extendedSRGB) else {
+            return nil
+        }
+
+        let primaries: [[CGFloat]] = [
+            [1.0, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0],
+        ]
+
+        for components in primaries {
+            guard let color = CGColor(colorSpace: cgColorSpace, components: components),
+                  let converted = color.converted(to: extendedSRGB, intent: .absoluteColorimetric, options: nil),
+                  let comps = converted.components, comps.count >= 3 else {
+                continue
+            }
+
+            for i in 0..<3 where comps[i] > 1.01 || comps[i] < -0.01 {
+                return .dciP3
+            }
+        }
+
+        return .sRGB
     }
 
     /// 디스플레이의 현재 화면을 캡처하여 JPEG 섬네일로 변환합니다.
