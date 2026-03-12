@@ -129,10 +129,18 @@ private final class DetachedSheetController: ObservableObject {
             defer: true
         )
         dimming.isReleasedWhenClosed = false
-        dimming.backgroundColor = NSColor.black.withAlphaComponent(0.3)
+        dimming.backgroundColor = .clear
         dimming.isOpaque = false
         dimming.hasShadow = false
         dimming.ignoresMouseEvents = false
+
+        let dimmingView = NSView(frame: dimming.contentView!.bounds)
+        dimmingView.autoresizingMask = [.width, .height]
+        dimmingView.wantsLayer = true
+        dimmingView.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.3).cgColor
+        dimmingView.layer?.cornerRadius = 10
+        dimmingView.layer?.cornerCurve = .continuous
+        dimming.contentView?.addSubview(dimmingView)
 
         parentWindow.addChildWindow(dimming, ordered: .above)
         dimming.orderFront(nil)
