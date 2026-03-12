@@ -138,7 +138,7 @@ private final class DetachedSheetController: ObservableObject {
         dimmingView.autoresizingMask = [.width, .height]
         dimmingView.wantsLayer = true
         dimmingView.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.3).cgColor
-        dimmingView.layer?.cornerRadius = 10
+        dimmingView.layer?.cornerRadius = 26
         dimmingView.layer?.cornerCurve = .continuous
         dimming.contentView?.addSubview(dimmingView)
 
