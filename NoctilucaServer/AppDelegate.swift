@@ -59,8 +59,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         InjectConfiguration.animation = .interactiveSpring()
 
-        NSApp.setActivationPolicy(.accessory)
-        
         TCCUtil.shared.requestAccess(for: .notifications)
         
         UNUserNotificationCenter.current().delegate = self

@@ -4,6 +4,8 @@
 <dict>
 	<key>LSMultipleInstancesProhibited</key>
 	<true/>
+	<key>LSUIElement</key>
+	<true/>
 	<key>SUPublicEDKey</key>
 	<string>LPWEHphp3JtwZ+9uBJM74TcJND9uzmGwt8Fz+1i8T5o=</string>
 	<key>SURequireSignedFeed</key>
