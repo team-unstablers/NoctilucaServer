@@ -1842,25 +1842,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Noctiluca Navigator keeps a copy of the ID (certificate) of every computer it connects to. This warning is shown because the ID received this time does not match the one received previously."
+            "value" : "Noctiluca Navigator takes a fingerprint from the ID (certificate) of every computer it connects to. This warning is shown because the fingerprint taken this time does not match the one taken previously."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Noctiluca Navigatorは、接続するすべてのコンピューターの身分証（証明書）のコピーを保存します。今回受け取った身分証は、以前受け取ったものと一致しないため、警告を表示しています。"
+            "value" : "Noctiluca Navigatorは、接続するすべてのコンピューターの身分証（証明書）から指紋を採取しておきます。今回採取した指紋が、以前採取したものと一致しないため、警告を表示しています。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)의 복사본을 받아둡니다. 이번에 받은 신분증은 저번에 받은 것과 일치하지 않았기 때문에 경고를 표시합니다."
+            "value" : "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)로부터 지문을 채취해 둡니다. 이번에 채취한 지문이 이전에 채취해 둔 것과 일치하지 않았기 때문에 경고를 표시합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Noctiluca Navigator 会保存所有连接过的计算机的身份证 (证书) 副本。由于本次收到的身份证与上次不一致，因此显示警告。"
+            "value" : "Noctiluca Navigator 会采集所有连接过的计算机的身份证 (证书) 的指纹。由于本次采集的指纹与上次不一致，因此显示警告。"
           }
         }
       }
