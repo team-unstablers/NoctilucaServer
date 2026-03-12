@@ -247,7 +247,11 @@ struct RemoteSessionProjectionView: View {
                         .padding(8)
                     }
                 }
+#if os(iOS)
                 .background(.background)
+#else
+                .background(.black)
+#endif
                 .onAppear {
                     syncSourceMetadata()
                     syncMouseScope()
