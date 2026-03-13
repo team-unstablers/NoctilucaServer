@@ -19,79 +19,53 @@ struct AppKitSettingsWindow: View {
         case plugins
         case about
     }
-    
-    
-    @State
-    private var selectedTab: SettingsTab = .general
-    
+
     @EnvironmentObject
     private var settingsStore: SettingsStore
 
+    @State
+    private var selectedTab: SettingsTab = .general
+
     var body: some View {
-        NavigationStack {
-            TabView(selection: $selectedTab) {
-                GeneralSettingsTab()
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tabs.general", defaultValue: "일반"))
-                    }
+        NavigationSplitView {
+            List(selection: $selectedTab) {
+                Label(String(localized: "settings.tabs.general", defaultValue: "일반"), systemImage: "gearshape")
                     .tag(SettingsTab.general)
-                    .id(SettingsTab.general)
-                ProjectionSettingsTab()
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tabs.projection", defaultValue: "프로젝션"))
-                    }
+                Label(String(localized: "settings.tabs.projection", defaultValue: "프로젝션"), systemImage: "rectangle.on.rectangle")
                     .tag(SettingsTab.projection)
-                    .id(SettingsTab.projection)
-                InputSettingsTab()
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tabs.input", defaultValue: "입력"))
-                    }
+                Label(String(localized: "settings.tabs.input", defaultValue: "입력"), systemImage: "keyboard")
                     .tag(SettingsTab.input)
-                    .id(SettingsTab.input)
-                SecuritySettingsTab()
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tabs.security", defaultValue: "보안"))
-                    }
+                Label(String(localized: "settings.tabs.security", defaultValue: "보안"), systemImage: "lock")
                     .tag(SettingsTab.security)
-                    .id(SettingsTab.security)
-                MiscSettingsTab(settings: $settingsStore.settings)
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tabs.misc", defaultValue: "기타"))
-                    }
+                Label(String(localized: "settings.tabs.misc", defaultValue: "기타"), systemImage: "ellipsis.circle")
                     .tag(SettingsTab.misc)
-                    .id(SettingsTab.misc)
-                PluginsSettingsTab()
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tabs.plugins", defaultValue: "플러그인"))
-                    }
+                Label(String(localized: "settings.tabs.plugins", defaultValue: "플러그인"), systemImage: "puzzlepiece.extension")
                     .tag(SettingsTab.plugins)
-                    .id(SettingsTab.plugins)
-                AboutSettingsTab()
-                    .tabItem {
-                        Text(markdown: String(localized: "settings.tabs.about", defaultValue: "정보"))
-                    }
+                Label(String(localized: "settings.tabs.about", defaultValue: "정보"), systemImage: "info.circle")
                     .tag(SettingsTab.about)
-                    .id(SettingsTab.about)
             }
-            .frame(minWidth: 640)
-        }
-        .environmentObject(settingsStore)
-        .navigationTitle("test")
-        .navigationSubtitle("test")
-        .toolbar {
-            /*
-            ToolbarItem {
-                Button("설정 저장", role: .confirm) {
-                    do {
-                        try server.settings.save()
-                    } catch {
-                        // FIXME: 다이얼로그를 띄우던 뭘 하던 하십시오
-                        print(error)
-                    }
-                }
+        } detail: {
+            switch selectedTab {
+            case .general:
+                GeneralSettingsTab()
+            case .projection:
+                ProjectionSettingsTab()
+            case .input:
+                InputSettingsTab()
+            case .security:
+                SecuritySettingsTab()
+            case .misc:
+                MiscSettingsTab(settings: $settingsStore.settings)
+            case .plugins:
+                PluginsSettingsTab()
+            case .about:
+                AboutSettingsTab()
             }
-             */
         }
+        .navigationSplitViewStyle(.balanced)
+        .toolbar(removing: .sidebarToggle)
+        .frame(minWidth: 640)
+        .navigationSubtitle(String(localized: "settings.title", defaultValue: "설정"))
     }
 }
 

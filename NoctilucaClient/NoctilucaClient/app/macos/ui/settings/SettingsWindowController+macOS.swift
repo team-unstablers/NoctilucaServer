@@ -13,23 +13,25 @@ final class AppKitSettingsWindowController: NSWindowController {
     init(settingsStore: SettingsStore) {
         let contentView = SettingsWindow()
             .environmentObject(settingsStore)
-        let hostingView = NSHostingView(rootView: contentView)
-        
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.contentView = hostingView
-        window.title = "Settings"
+        let hostingView = NSHostingController(rootView: contentView)
+
+        let window = NSWindow(contentViewController: hostingView)
+        window.title = "Noctiluca Navigator"
         window.minSize = NSSize(width: 640, height: 480)
         window.collectionBehavior = [.fullScreenNone]
         window.isReleasedWhenClosed = false
         window.standardWindowButton(.zoomButton)?.isEnabled = false
+
+        let toolbar = NSToolbar(identifier: "NoctilucaClient.SettingsToolbar")
+        toolbar.displayMode = .iconOnly
+        toolbar.allowsUserCustomization = false
+        toolbar.allowsDisplayModeCustomization = false
+        window.toolbar = toolbar
+        window.toolbarStyle = .unified
+
         window.setFrameAutosaveName("NoctilucaClient.SettingsWindow")
         window.center()
-        
+
         super.init(window: window)
     }
     
