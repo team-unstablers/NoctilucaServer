@@ -83,11 +83,6 @@ struct AudioCodecSpecificationListContainer: View {
                 }
                 .fixedSize()
             },
-            editSheet: { specification, onSave in
-                AudioCodecSpecificationSheet(specification: specification) { newSpecification in
-                    onSave(newSpecification)
-                }
-            }
         )
     }
 #endif
@@ -125,11 +120,6 @@ struct AudioCodecSpecificationListContainer: View {
                     }
                     .fixedSize()
                 },
-                editSheet: { specification, onSave in
-                    AudioCodecSpecificationSheet(specification: specification) { newSpecification in
-                        onSave(newSpecification)
-                    }
-                }
             )
         }
         .frame(maxWidth: .infinity)
