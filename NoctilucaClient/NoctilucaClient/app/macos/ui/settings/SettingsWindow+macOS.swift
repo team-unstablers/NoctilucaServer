@@ -39,8 +39,10 @@ struct AppKitSettingsWindow: View {
                     .tag(SettingsTab.security)
                 Label(String(localized: "settings.tabs.misc", defaultValue: "기타"), systemImage: "ellipsis.circle")
                     .tag(SettingsTab.misc)
+                /*
                 Label(String(localized: "settings.tabs.plugins", defaultValue: "플러그인"), systemImage: "puzzlepiece.extension")
                     .tag(SettingsTab.plugins)
+                 */
                 Label(String(localized: "settings.tabs.about", defaultValue: "정보"), systemImage: "info.circle")
                     .tag(SettingsTab.about)
             }
