@@ -54,6 +54,7 @@ extension RemoteSession {
 #endif
 
                 self.setupKeyEventPipeline()
+                self.applyMouseInputSettings()
                 self.sendKeyboardSetupIfNeeded()
                 try? self.session.startSession()
                 self.installEscapeHook()
@@ -75,6 +76,15 @@ extension RemoteSession {
                     ModifierKeyRebindingConfigurator.apply(overrides, to: self.rebinder)
                 }
                 .store(in: &cancellables)
+
+            SettingsStore.shared.$settings
+                .compactMap { settings -> AppSettings.Input? in settings?.input }
+                .dropFirst()
+                .sink { [weak self] (input: AppSettings.Input) in
+                    guard let self else { return }
+                    self.controller.applyMouseInputSettings(input)
+                }
+                .store(in: &cancellables)
         }
 
     
@@ -89,6 +99,11 @@ extension RemoteSession {
 
             let hacks = enabledHacks.map { KeyboardHack(identifier: $0, args: [:]) }
             controller.sendKeyboardSetup(hacks: hacks)
+        }
+
+        private func applyMouseInputSettings() {
+            let input = SettingsStore.shared.settings.input
+            controller.applyMouseInputSettings(input)
         }
 
         private func installEscapeHook() {

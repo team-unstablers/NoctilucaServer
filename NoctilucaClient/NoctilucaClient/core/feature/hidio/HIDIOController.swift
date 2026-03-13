@@ -33,7 +33,12 @@ class HIDIOController {
     private let logger = NoctilucaLogger(category: "HIDIOController")
     
     private let settingsStore: SettingsStore = .shared
-    
+
+    private var invertMouseButtons: Bool = false
+    private var invertVerticalScroll: Bool = false
+    private var invertHorizontalScroll: Bool = false
+    private var mouseScrollMultiplier: Double = 1.0
+
     private let channel: Weak<HIDIOChannel>
     private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
 
@@ -222,30 +227,59 @@ class HIDIOController {
         self.eventStreamContinuation.yield(event)
     }
     
+    func applyMouseInputSettings(_ input: AppSettings.Input) {
+        self.invertMouseButtons = input.invertMouseButtons
+        self.invertVerticalScroll = input.invertVerticalScroll
+        self.invertHorizontalScroll = input.invertHorizontalScroll
+        self.mouseScrollMultiplier = input.mouseScrollMultiplier
+    }
+
     func mouseButtonDown(button: MouseButtonType) {
+        var actualButton = button
+        if invertMouseButtons {
+            if button == .left { actualButton = .right }
+            else if button == .right { actualButton = .left }
+        }
+
         let event = MouseButtonEvent(
             eventType: .down,
-            button: button
+            button: actualButton
         )
-        
+
         self.eventStreamContinuation.yield(event)
     }
-    
+
     func mouseButtonUp(button: MouseButtonType) {
+        var actualButton = button
+        if invertMouseButtons {
+            if button == .left { actualButton = .right }
+            else if button == .right { actualButton = .left }
+        }
+
         let event = MouseButtonEvent(
             eventType: .up,
-            button: button
+            button: actualButton
         )
-        
+
         self.eventStreamContinuation.yield(event)
     }
-    
+
     func mouseWheel(delta: CGPoint) {
+        var deltaX = Float(delta.x)
+        var deltaY = Float(delta.y)
+
+        if invertHorizontalScroll { deltaX = -deltaX }
+        if invertVerticalScroll { deltaY = -deltaY }
+
+        let scrollMul = Float(mouseScrollMultiplier)
+        deltaX *= scrollMul
+        deltaY *= scrollMul
+
         let event = MouseWheelEvent(
-            deltaX: Float(delta.x),
-            deltaY: Float(delta.y)
+            deltaX: deltaX,
+            deltaY: deltaY
         )
-        
+
         self.eventStreamContinuation.yield(event)
     }
 }
