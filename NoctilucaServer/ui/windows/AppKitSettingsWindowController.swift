@@ -27,9 +27,7 @@ final class AppKitSettingsWindowController: NSWindowController {
         window.toolbarStyle = .unified
         toolbar.allowsUserCustomization = false
         
-        if #available(macOS 15.0, *) {
-            toolbar.allowsDisplayModeCustomization = false
-        }
+        toolbar.allowsDisplayModeCustomization = false
 
         window.setFrameAutosaveName("NoctilucaServer.SettingsWindow")
         window.center()

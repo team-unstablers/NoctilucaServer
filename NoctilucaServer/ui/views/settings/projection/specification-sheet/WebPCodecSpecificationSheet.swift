@@ -201,12 +201,8 @@ struct WebPCodecSpecificationSheet: View {
 
     var body: some View {
         VStack {
-            if #available(macOS 15.0, *) {
-                tabContent
-                    .tabViewStyle(.sidebarAdaptable)
-            } else {
-                tabContent
-            }
+            tabContent
+                .tabViewStyle(.sidebarAdaptable)
 
             HStack {
                 Button(String(localized: "settings.projection.webp_sheet.cancel", defaultValue: "취소")) {
