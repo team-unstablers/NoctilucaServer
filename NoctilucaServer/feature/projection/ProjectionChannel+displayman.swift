@@ -25,7 +25,7 @@ extension ProjectionChannel {
         var displays: [DisplayInfo] = []
 
         for (displayID, screen) in layouts {
-            let displayInfo = buildDisplayInfo(from: screen, displayID: displayID, includeThumbnail: includeThumbnails)
+            let displayInfo = await buildDisplayInfo(from: screen, displayID: displayID, includeThumbnail: includeThumbnails)
             displays.append(displayInfo)
         }
 
@@ -122,7 +122,7 @@ extension ProjectionChannel {
                 return
             }
 
-            displayInfo = buildDisplayInfo(from: nocScreen, displayID: event.displayID)
+            displayInfo = await buildDisplayInfo(from: nocScreen, displayID: event.displayID)
         }
 
         try await self.send(opcode: .displayChangedEvent, message: DisplayChangedEvent(
@@ -133,7 +133,7 @@ extension ProjectionChannel {
 
     // MARK: - Build DisplayInfo
 
-    private func buildDisplayInfo(from screen: NOCScreen, displayID: CGDirectDisplayID, includeThumbnail: Bool = false) -> DisplayInfo {
+    private func buildDisplayInfo(from screen: NOCScreen, displayID: CGDirectDisplayID, includeThumbnail: Bool = false) async -> DisplayInfo {
         // 디스플레이 종류 판별
         let kind = getDisplayKind(displayID: displayID)
 
@@ -185,7 +185,7 @@ extension ProjectionChannel {
         }
 
         let thumbnailData: Data? = if includeThumbnail {
-            captureThumbnail(displayID: displayID)
+            await captureThumbnail(displayID: displayID)
         } else {
             nil
         }
@@ -335,8 +335,13 @@ extension ProjectionChannel {
     }
 
     /// 디스플레이의 현재 화면을 캡처하여 JPEG 섬네일로 변환합니다.
-    private func captureThumbnail(displayID: CGDirectDisplayID, maxDimension: Int = 320) -> Data? {
-        guard let cgImage = CGDisplayCreateImage(displayID) else {
+    private func captureThumbnail(displayID: CGDirectDisplayID, maxDimension: Int = 320) async -> Data? {
+        let cgImage: CGImage
+        do {
+            let thumbnailer = try await ScreenThumbnailer(displayID)
+            cgImage = try await thumbnailer.capture()
+        } catch {
+            NoctilucaLogger(category: "ProjectionChannel").warning("Failed to capture thumbnail for display \(displayID): \(error)")
             return nil
         }
 
