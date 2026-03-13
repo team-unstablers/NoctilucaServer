@@ -81,22 +81,13 @@
     "15 FPS" : {
 
     },
-    "16kbps" : {
-
-    },
     "20Mbps" : {
 
     },
-    "20ms" : {
-
-    },
-    "40ms" : {
+    "32kbps" : {
 
     },
     "60 FPS" : {
-
-    },
-    "80ms" : {
 
     },
     "256kbps" : {
@@ -14833,7 +14824,7 @@
       }
     },
     "settings.projection.opus_sheet.frame_size.20ms_description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14862,7 +14853,7 @@
       }
     },
     "settings.projection.opus_sheet.frame_size.40ms_description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14891,7 +14882,7 @@
       }
     },
     "settings.projection.opus_sheet.frame_size.80ms_description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14920,7 +14911,7 @@
       }
     },
     "settings.projection.opus_sheet.frame_size.description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14949,7 +14940,7 @@
       }
     },
     "settings.projection.opus_sheet.frame_size.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

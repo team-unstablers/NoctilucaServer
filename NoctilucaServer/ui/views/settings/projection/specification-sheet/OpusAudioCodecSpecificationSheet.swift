@@ -40,14 +40,14 @@ struct OpusAudioCodecSpecificationSheet: View {
                     ) {
                         Slider(
                             value: bitrateBinding,
-                            in: 16...256,
-                            step: 8,
-                            minimumValueLabel: Text("16kbps"),
+                            in: 32...256,
+                            step: 32,
+                            minimumValueLabel: Text("32kbps"),
                             maximumValueLabel: Text("256kbps")
                         ) {
                         }
                     }
-
+                    /*
                     Picker(selection: $specification.frameSizeMs) {
                         Text("20ms")
                             .tag(Int32(20))
@@ -68,6 +68,7 @@ struct OpusAudioCodecSpecificationSheet: View {
                             Text(String(localized: "settings.projection.opus_sheet.frame_size.description", defaultValue: "프레임 사이즈를 설정합니다."))
                         }
                     }
+                     */
                 } header: {
                     Text("Opus")
                 }

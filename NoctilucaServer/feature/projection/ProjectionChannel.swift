@@ -450,17 +450,16 @@ class ProjectionChannel: Channel {
         var transientSession: AudioProjectionSession?
 
         do {
-            let serverSupportedCodecs = projectionSettings.audioCodecSpecifications.map { $0.fourCC }
-
             guard let negotiatedCodec = negotiateAudioCodec(
                 clientPreferred: request.preferredCodecs,
-                serverSupported: serverSupportedCodecs
+                serverSpecifications: projectionSettings.audioCodecSpecifications
             ) else {
+                let supportedFourCCs = projectionSettings.audioCodecSpecifications.map { $0.fourCC }
                 logger.warning("No supported audio codec found for session \(identifier)")
                 try await send(opcode: .audioSessionCreationFailedEvent, message: AudioSessionCreationFailedEvent(
                     identifier: identifier,
                     reason: .codecNotSupported,
-                    message: "No supported audio codec found. Server supports: \(serverSupportedCodecs.map { $0.stringRepresentation }.joined(separator: ", "))"
+                    message: "No supported audio codec found. Server supports: \(supportedFourCCs.map { $0.stringRepresentation }.joined(separator: ", "))"
                 ))
 
                 let targets = await state.terminateByControlMessage(identifier: identifier, kind: .audio)
@@ -526,12 +525,22 @@ class ProjectionChannel: Channel {
         }
     }
 
-    /// 클라이언트 선호 코덱 목록에서 서버가 지원하는 첫 번째 코덱을 선택
-    private func negotiateAudioCodec(clientPreferred: [SiriusKit.AudioCodec], serverSupported: [CodecFourCC]) -> SiriusKit.AudioCodec? {
-        for codec in clientPreferred {
-            if serverSupported.contains(codec.fourCC) {
-                return codec
-            }
+    /// 클라이언트 선호 코덱 목록에서 서버가 지원하는 첫 번째 코덱을 선택하고,
+    /// 서버 설정의 비트레이트를 적용한 AudioCodec을 반환
+    private func negotiateAudioCodec(clientPreferred: [SiriusKit.AudioCodec], serverSpecifications: [AudioCodecSpecification]) -> SiriusKit.AudioCodec? {
+        let serverFourCCs = serverSpecifications.map { $0.fourCC }
+
+        for clientCodec in clientPreferred {
+            guard serverFourCCs.contains(clientCodec.fourCC) else { continue }
+            guard let spec = serverSpecifications.first(where: { $0.fourCC == clientCodec.fourCC }) else { continue }
+
+            return AudioCodec(
+                fourCC: clientCodec.fourCC,
+                quality: .constantBitrate(bitrateKbps: UInt32(spec.bitrateKbps)),
+                sampleRate: clientCodec.sampleRate,
+                channelCount: clientCodec.channelCount,
+                options: clientCodec.options
+            )
         }
         return nil
     }
