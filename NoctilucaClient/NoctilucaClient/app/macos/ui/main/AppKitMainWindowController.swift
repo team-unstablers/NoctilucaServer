@@ -101,8 +101,12 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
         return [.autoHideToolbar, .autoHideMenuBar, .fullScreen]
     }
 
+    func windowDidBecomeKey(_ notification: Notification) {
+        viewModel.remoteSession?.hidio?.session.activateSession()
+    }
+
     func windowDidResignKey(_ notification: Notification) {
-        viewModel.remoteSession?.hidio?.controller.resetKeyPressState()
+        viewModel.remoteSession?.hidio?.session.deactivateSession()
     }
 }
 

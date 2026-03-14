@@ -31,6 +31,20 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
     }
     
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        guard let hidioSession = rootViewController?.mainWindowViewModel?.remoteSession?.hidio?.session else {
+            return
+        }
+        hidioSession.activateSession()
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        guard let hidioSession = rootViewController?.mainWindowViewModel?.remoteSession?.hidio?.session else {
+            return
+        }
+        hidioSession.deactivateSession()
+    }
+
     func sceneDidDisconnect(_ scene: UIScene) {
         guard let rootViewController = rootViewController else {
             return
