@@ -67,14 +67,19 @@ extension HIDIOSession {
             isFullScreen = queryIsFullScreen()
 
             logger.info("startSession: pointerInputMode=\(String(describing: self.pointerInputMode)), hwMouse=\(self.isHardwareMouseConnected), fullScreen=\(self.isFullScreen), idiom=\(DeviceKind.current == .iPad)")
-            
+
             // 초기 모드 결정
             let initialMode = desiredMode()
             logger.info("startSession: initialMode=\(initialMode)")
             try switchMode(to: initialMode, reason: .userInitiated)
              */
-            
-            controller.connect(defaultKeyboard)
+
+            // scene이 active가 아니면 싱글톤 키보드 connect 스킵 (나중에 activateSession()에서 연결)
+            let isSceneActive = _session?.rootViewController?.ref.view.window?.windowScene?.activationState == .foregroundActive
+
+            if isSceneActive {
+                controller.connect(defaultKeyboard)
+            }
             controller.connect(defaultSubMouse)
 
             defer {

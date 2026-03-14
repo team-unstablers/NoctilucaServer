@@ -43,11 +43,16 @@ extension HIDIOSession {
         func startSession() throws -> HIDIOSessionMode {
             // 기본은 shared mode.
             try switchMode(to: .shared, reason: .userInitiated)
-            
+
+            // key window가 아니면 싱글톤 키보드 disconnect (나중에 activateSession()에서 재연결)
+            if _session?.window?.isKeyWindow != true {
+                controller.disconnectAll(kind: .keyboard)
+            }
+
             defer {
                 delegate?.hidioSession(session, didChangeState: .active)
             }
-            
+
             return .shared
         }
         
