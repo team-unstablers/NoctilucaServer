@@ -15,11 +15,13 @@ struct PendingAudioSessionRequest: Sendable {
 
 /// ProjectionChannel의 mutable state를 actor isolation으로 보호합니다.
 actor ProjectionChannelState {
+    typealias PendingHandler = @Sendable (Result<any DecodableSiriusMessage, Error>) -> Void
+
     var sessions: [UUID: ProjectionSession] = [:]
     var audioSessions: [UUID: AudioProjectionSession] = [:]
 
-    private var pendingSessions: [UUID: @Sendable (any DecodableSiriusMessage) -> Void] = [:]
-    private var pendingRequests: [UInt64: @Sendable (any DecodableSiriusMessage) -> Void] = [:]
+    private var pendingSessions: [UUID: PendingHandler] = [:]
+    private var pendingRequests: [UInt64: PendingHandler] = [:]
     private var pendingAudioSessionRequests: [UUID: PendingAudioSessionRequest] = [:]
 
     private(set) var displayChangesSubscriptionID: UUID? = nil
@@ -72,7 +74,7 @@ actor ProjectionChannelState {
 
     // MARK: - Pending Session Operations
 
-    func registerPendingSession(_ id: UUID, handler: @escaping @Sendable (any DecodableSiriusMessage) -> Void) {
+    func registerPendingSession(_ id: UUID, handler: @escaping PendingHandler) {
         pendingSessions[id] = handler
     }
 
@@ -81,7 +83,16 @@ actor ProjectionChannelState {
         guard let handler = pendingSessions.removeValue(forKey: id) else {
             return false
         }
-        handler(message)
+        handler(.success(message))
+        return true
+    }
+
+    @discardableResult
+    func failPendingSession(_ id: UUID, error: Error) -> Bool {
+        guard let handler = pendingSessions.removeValue(forKey: id) else {
+            return false
+        }
+        handler(.failure(error))
         return true
     }
 
@@ -89,9 +100,17 @@ actor ProjectionChannelState {
         pendingSessions.removeValue(forKey: id)
     }
 
+    func cancelAllPendingSessions(with error: Error = ProjectionChannelError.channelClosed) {
+        let pending = pendingSessions
+        pendingSessions.removeAll()
+        for (_, handler) in pending {
+            handler(.failure(error))
+        }
+    }
+
     // MARK: - Pending Request Operations
 
-    func registerPendingRequest(_ id: UInt64, handler: @escaping @Sendable (any DecodableSiriusMessage) -> Void) {
+    func registerPendingRequest(_ id: UInt64, handler: @escaping PendingHandler) {
         pendingRequests[id] = handler
     }
 
@@ -100,12 +119,29 @@ actor ProjectionChannelState {
         guard let handler = pendingRequests.removeValue(forKey: id) else {
             return false
         }
-        handler(message)
+        handler(.success(message))
+        return true
+    }
+
+    @discardableResult
+    func failPendingRequest(_ id: UInt64, error: Error) -> Bool {
+        guard let handler = pendingRequests.removeValue(forKey: id) else {
+            return false
+        }
+        handler(.failure(error))
         return true
     }
 
     func removePendingRequest(_ id: UInt64) {
         pendingRequests.removeValue(forKey: id)
+    }
+
+    func cancelAllPendingRequests(with error: Error = ProjectionChannelError.channelClosed) {
+        let pending = pendingRequests
+        pendingRequests.removeAll()
+        for (_, handler) in pending {
+            handler(.failure(error))
+        }
     }
 
     // MARK: - Pending Audio Session Request Operations

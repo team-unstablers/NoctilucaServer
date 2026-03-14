@@ -203,27 +203,38 @@ class ProjectionChannel: Channel {
         opcode: MessageOpcode,
         message: any DecodableSiriusMessage
     ) async throws -> T {
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
-            guard let self = self else {
-                continuation.resume(throwing: ProjectionChannelError.channelClosed)
-                return
-            }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { [weak self] continuation in
+                guard let self = self else {
+                    continuation.resume(throwing: ProjectionChannelError.channelClosed)
+                    return
+                }
 
-            Task {
-                await self.state.registerPendingSession(sessionID) { response in
-                    if let typedResponse = response as? T {
-                        continuation.resume(returning: typedResponse)
-                    } else {
-                        continuation.resume(throwing: ChannelError.invalidFrame)
+                Task {
+                    await self.state.registerPendingSession(sessionID) { result in
+                        switch result {
+                        case .success(let response):
+                            if let typedResponse = response as? T {
+                                continuation.resume(returning: typedResponse)
+                            } else {
+                                continuation.resume(throwing: ChannelError.invalidFrame)
+                            }
+                        case .failure(let error):
+                            continuation.resume(throwing: error)
+                        }
+                    }
+
+                    do {
+                        try await self.send(opcode: opcode, message: message)
+                    } catch {
+                        await self.state.removePendingSession(sessionID)
+                        continuation.resume(throwing: error)
                     }
                 }
-
-                do {
-                    try await self.send(opcode: opcode, message: message)
-                } catch {
-                    await self.state.removePendingSession(sessionID)
-                    continuation.resume(throwing: error)
-                }
+            }
+        } onCancel: { [weak self] in
+            Task {
+                await self?.state.failPendingSession(sessionID, error: CancellationError())
             }
         }
     }
@@ -233,27 +244,38 @@ class ProjectionChannel: Channel {
         opcode: MessageOpcode,
         message: any DecodableSiriusMessage
     ) async throws -> T {
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
-            guard let self = self else {
-                continuation.resume(throwing: ProjectionChannelError.channelClosed)
-                return
-            }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { [weak self] continuation in
+                guard let self = self else {
+                    continuation.resume(throwing: ProjectionChannelError.channelClosed)
+                    return
+                }
 
-            Task {
-                await self.state.registerPendingRequest(requestID) { response in
-                    if let typedResponse = response as? T {
-                        continuation.resume(returning: typedResponse)
-                    } else {
-                        continuation.resume(throwing: ChannelError.invalidFrame)
+                Task {
+                    await self.state.registerPendingRequest(requestID) { result in
+                        switch result {
+                        case .success(let response):
+                            if let typedResponse = response as? T {
+                                continuation.resume(returning: typedResponse)
+                            } else {
+                                continuation.resume(throwing: ChannelError.invalidFrame)
+                            }
+                        case .failure(let error):
+                            continuation.resume(throwing: error)
+                        }
+                    }
+
+                    do {
+                        try await self.send(opcode: opcode, message: message)
+                    } catch {
+                        await self.state.removePendingRequest(requestID)
+                        continuation.resume(throwing: error)
                     }
                 }
-
-                do {
-                    try await self.send(opcode: opcode, message: message)
-                } catch {
-                    await self.state.removePendingRequest(requestID)
-                    continuation.resume(throwing: error)
-                }
+            }
+        } onCancel: { [weak self] in
+            Task {
+                await self?.state.failPendingRequest(requestID, error: CancellationError())
             }
         }
     }

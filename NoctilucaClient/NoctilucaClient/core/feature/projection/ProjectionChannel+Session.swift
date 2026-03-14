@@ -207,6 +207,8 @@ extension ProjectionChannel {
     /// 모든 projection session을 중지하고 리소스를 정리합니다.
     func stopAllSessions() async {
         await state.cancelAllPendingAudioSessionRequests()
+        await state.cancelAllPendingSessions()
+        await state.cancelAllPendingRequests()
 
         // 모든 비디오 세션 중지
         let allSessions = await state.removeAllSessions()

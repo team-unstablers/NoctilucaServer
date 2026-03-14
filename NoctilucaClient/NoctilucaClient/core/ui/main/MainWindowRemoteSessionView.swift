@@ -45,9 +45,7 @@ struct MainWindowRemoteSessionView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .task {
                         // 혹시 정보가 누락되었을 경우를 대비해 재요청
-                        await Task.detached {
-                            try? await remoteSession.client.projectionChannel.updateDisplayLayout()
-                        }.value
+                        try? await remoteSession.client.projectionChannel.updateDisplayLayout()
                         try? await self.decideTargetDisplayID()
                     }
             }
@@ -58,7 +56,7 @@ struct MainWindowRemoteSessionView: View {
                 if subscription == nil,
                    case .displayID(let displayID) = sourceDescriptor,
                    displayID != -1 {
-                    Task.detached {
+                    Task {
                         try? await self.updateProjectionTarget(displayID)
                     }
                 }
@@ -77,7 +75,7 @@ struct MainWindowRemoteSessionView: View {
                     displays: displays,
                     currentActive: currentActive,
                     action: { newSourceDisplayID in
-                        Task.detached {
+                        Task {
                             do {
                                 try await self.updateProjectionTarget(newSourceDisplayID)
                             } catch {
@@ -89,14 +87,12 @@ struct MainWindowRemoteSessionView: View {
                 )
                     .task {
                         // 시트 표시 시 thumbnail 포함 디스플레이 목록 재요청
-                        let response = await Task.detached {
-                            try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails)
-                        }.value
+                        guard let response = try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails) else {
+                            return
+                        }
 
-                        if let response {
-                            for display in response.displays {
-                                await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
-                            }
+                        for display in response.displays {
+                            await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
                         }
                     }
                     .presentationDragIndicator(.visible)
@@ -123,7 +119,7 @@ struct MainWindowRemoteSessionView: View {
                   displayID != -1
             else { return }
 
-            Task.detached {
+            Task {
                 try? await self.updateProjectionTarget(displayID)
             }
         }
