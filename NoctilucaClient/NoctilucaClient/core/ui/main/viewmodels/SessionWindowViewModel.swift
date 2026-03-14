@@ -106,7 +106,7 @@ class SessionWindowViewModel: ObservableObject {
         succeedValidationDecision: SucceedValidationDecision? = nil
     ) async throws {
         if remoteSession != nil {
-            await stopSession()
+            await stopSession(force: true)
         }
 
         let endpoint = endpointKind.endpoint

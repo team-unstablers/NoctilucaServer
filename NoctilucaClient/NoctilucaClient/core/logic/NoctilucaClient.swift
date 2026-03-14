@@ -463,6 +463,10 @@ class NoctilucaClient: ObservableObject {
         // Projection 정리
         await self.projectionChannel?.stopAllSessions()
 
+        // 채널 참조 해제
+        self.hidioChannel = nil
+        self.projectionChannel = nil
+
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
         self.pingTask?.cancel()

@@ -108,9 +108,9 @@ extension RemoteSession {
 
         private func installEscapeHook() {
             let escapeSequence = SettingsStore.shared.settings.input.unlockKeySequence
-            let hook = HIDIOKeystrokeHook(condition: escapeSequence) {
+            let hook = HIDIOKeystrokeHook(condition: escapeSequence) { [weak self] in
                 Task { @MainActor in
-                    try? self.session.switchMode(to: .shared, reason: .userInitiated)
+                    try? self?.session.switchMode(to: .shared, reason: .userInitiated)
                 }
             }
 
@@ -118,6 +118,7 @@ extension RemoteSession {
         }
 
         deinit {
+            channel._ref?.controller.removeHook(for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
             self.session.stopSession()
         }
     }
