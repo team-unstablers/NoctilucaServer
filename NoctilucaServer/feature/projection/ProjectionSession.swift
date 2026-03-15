@@ -154,7 +154,15 @@ class ProjectionSession: Identifiable {
             return
         }
 
-        let newSize = newScreen.frame.size
+        // displayDensity 옵션에 따라 비교 기준을 포인트/픽셀로 결정
+        let newSize: CGSize
+        if let currentCodec = self.codec,
+           currentCodec.option(.displayDensity) == .kDisplayDensityBest {
+            newSize = newScreen.displayResolution
+        } else {
+            newSize = newScreen.frame.size
+        }
+
         guard let currentCodec = self.codec,
               let currentSize = currentCodec.size?.cgSize,
               currentSize != newSize else {
