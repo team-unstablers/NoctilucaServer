@@ -7573,6 +7573,50 @@
         }
       }
     },
+    "settings.misc.diagnostics.export.dialog.detailed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "상세하게"
+          }
+        }
+      }
+    },
+    "settings.misc.diagnostics.export.dialog.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "간단하게: GitHub 이슈 트래커나 남들이 볼 수 있는 곳에 진단 정보를 첨부하려는 경우에는 이 버튼을 클릭하십시오. 개인 식별이 가능하거나 민감한 정보는 최소한으로 노출을 줄입니다.\n\n상세하게: Noctiluca 개발자에게 직접 진단 정보를 전달하려는 경우에는 이 버튼을 클릭하십시오. 진단 내용에는 호스트네임, 네트워크 주소 등 개인 식별이 가능한 정보가 포함될 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.misc.diagnostics.export.dialog.simple" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "간단하게"
+          }
+        }
+      }
+    },
+    "settings.misc.diagnostics.export.dialog.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "어떻게 출력하시겠습니까?"
+          }
+        }
+      }
+    },
     "settings.misc.diagnostics.export.save_to_file" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -7950,7 +7994,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Noctiluca Server가 가동 중 오류가 발생하거나, 비정상적으로 종료되었을 때 오류 보고를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](http://)"
+            "value" : "Noctiluca Server가 가동 중 오류가 발생하거나, 비정상적으로 종료되었을 때 오류 보고를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](https://noctiluca.app/docs/server/about-telemetry)"
           }
         },
         "zh-Hans" : {
