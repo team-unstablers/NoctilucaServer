@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 import SiriusKit
 
@@ -137,7 +138,7 @@ struct MiscSettingsTab: View {
 
                 SettingsEntry(title: String(localized: "settings.misc.diagnostics.export.title", defaultValue: "진단 정보 내보내기")) {
                     Button(String(localized: "settings.misc.diagnostics.export.save_to_file", defaultValue: "파일로 저장…")) {
-
+                        Task { await exportDiagnostics() }
                     }
                 }
                 SettingsEntry(title: String(localized: "settings.misc.connectivity_test.title", defaultValue: "외부 접속 테스트"), subtitle: String(localized: "settings.misc.connectivity_test.description", defaultValue: "주식회사 팀언스테이블러즈에서 제공하는 테스트 노드를 통해 외부로부터 접속이 가능한지 테스트합니다.")) {
@@ -156,5 +157,54 @@ struct MiscSettingsTab: View {
             .disabled(!TelemetryService.shared.isAvailable)
         }
         .formStyle(.grouped)
+    }
+
+    @MainActor
+    private func exportDiagnostics() async {
+        var selectedLevel: DiagLevel?
+
+        let alert = NOCAlert()
+        alert.title = String(
+            localized: "settings.misc.diagnostics.export.dialog.title",
+            defaultValue: "어떻게 출력하시겠습니까?"
+        )
+        alert.message = String(
+            localized: "settings.misc.diagnostics.export.dialog.message",
+            defaultValue: """
+            간단하게: GitHub 이슈 트래커나 남들이 볼 수 있는 곳에 진단 정보를 첨부하려는 경우에는 이 버튼을 클릭하십시오. \
+            개인 식별이 가능하거나 민감한 정보는 최소한으로 노출을 줄입니다.
+
+            상세하게: Noctiluca 개발자에게 직접 진단 정보를 전달하려는 경우에는 이 버튼을 클릭하십시오. \
+            진단 내용에는 호스트네임, 네트워크 주소 등 개인 식별이 가능한 정보가 포함될 수 있습니다.
+            """
+        )
+
+        alert.addButton(title: String(
+            localized: "settings.misc.diagnostics.export.dialog.simple",
+            defaultValue: "간단하게"
+        )) {
+            selectedLevel = .simple
+        }
+        alert.addButton(title: String(
+            localized: "settings.misc.diagnostics.export.dialog.detailed",
+            defaultValue: "상세하게"
+        )) {
+            selectedLevel = .detailed
+        }
+
+        await alert.present()
+
+        guard let level = selectedLevel else { return }
+
+        let text = await DiagPrinter().generate(level: level)
+
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "noctiluca-diagnostics.txt"
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+
+        let response = panel.runModal()
+        guard response == .OK, let url = panel.url else { return }
+        try? text.write(to: url, atomically: true, encoding: .utf8)
     }
 }
