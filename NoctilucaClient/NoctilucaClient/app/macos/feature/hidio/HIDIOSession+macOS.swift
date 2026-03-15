@@ -7,6 +7,7 @@
 
 #if os(macOS)
 import Foundation
+import AppKit
 
 import SiriusKitClient
 
