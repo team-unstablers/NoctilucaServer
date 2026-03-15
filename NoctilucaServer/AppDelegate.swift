@@ -56,7 +56,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // load MsQuic
         _ = MsQuicLoader.shared
-        
+
+        // Sentry telemetry (opt-in, EEA/UK 제외)
+        server.settings.telemetry.ensureIdentifier()
+        TelemetryService.shared.startIfNeeded(settings: server.settings.telemetry)
+
         InjectConfiguration.animation = .interactiveSpring()
 
         TCCUtil.shared.requestAccess(for: .notifications)
@@ -199,6 +203,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } catch {
                 print("shutdown failed: \(error.localizedDescription)")
             }
+            TelemetryService.shared.stop()
             SiriusEventFileLogDestination.flushAll()
             SiriusFileLogDestination.flushAll()
             await MainActor.run {

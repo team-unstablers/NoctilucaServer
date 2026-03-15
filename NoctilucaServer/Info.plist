@@ -6,6 +6,8 @@
 	<true/>
 	<key>LSUIElement</key>
 	<true/>
+	<key>SENTRY_DSN</key>
+	<string>https://50c14ec98af2ceb5e495a609a2b6e315@o576637.ingest.us.sentry.io/4510986626269184</string>
 	<key>SUPublicEDKey</key>
 	<string>LPWEHphp3JtwZ+9uBJM74TcJND9uzmGwt8Fz+1i8T5o=</string>
 	<key>SURequireSignedFeed</key>

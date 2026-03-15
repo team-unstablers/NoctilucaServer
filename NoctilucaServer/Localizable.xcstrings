@@ -7921,30 +7921,41 @@
         }
       }
     },
+    "settings.misc.telemetry.eea_notice" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유럽경제지역(EEA) 또는 영국에 해당하는 지역 설정을 사용하고 있어 텔레메트리 기능을 활성화할 수 없습니다."
+          }
+        }
+      }
+    },
     "settings.misc.telemetry.enable.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Allows anonymous collection of user environment and usage statistics.\nTo prioritize privacy protection, this option is off by default. [Learn more…](http://google.com)"
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "ユーザー環境および使用統計を匿名で収集することを許可します。\nプライバシー保護を優先するため、このオプションはデフォルトでオフになっています。[詳細…](http://google.com)"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "사용자 환경 및 사용 통계를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](http://google.com)"
+            "value" : "Noctiluca Server가 가동 중 오류가 발생하거나, 비정상적으로 종료되었을 때 오류 보고를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](http://)"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "允许匿名收集用户环境和使用统计信息。\n为了优先保护隐私，此选项默认处于关闭状态。[了解更多…](http://google.com)"
           }
         }
@@ -7975,6 +7986,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匿名帮助 Noctiluca 开发"
+          }
+        }
+      }
+    },
+    "settings.misc.telemetry.identifier.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 텔레메트리 식별자는 UUIDv4 형식으로 생성된 것입니다. 사용자를 특정짓거나 추적하는 데 사용되지 않으며,\n단지 수집된 오류 보고 데이터가 서로 다른 사용자로부터 왔는지를 구분하는 데에만 사용됩니다."
           }
         }
       }

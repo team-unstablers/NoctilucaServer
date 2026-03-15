@@ -35,5 +35,15 @@ extension AppSettings {
             try container.encode(enableTelemetry, forKey: .enableTelemetry)
             try container.encodeIfPresent(telemetryIdentifier, forKey: .telemetryIdentifier)
         }
+
+        mutating func ensureIdentifier() {
+            if telemetryIdentifier == nil {
+                telemetryIdentifier = UUID()
+            }
+        }
+
+        mutating func resetIdentifier() {
+            telemetryIdentifier = UUID()
+        }
     }
 }
