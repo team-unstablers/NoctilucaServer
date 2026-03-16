@@ -86,6 +86,7 @@
 		F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"resources/Info-ExplicitEdition.plist",
 				resources/Info.plist,
 			);
 			target = F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */;
