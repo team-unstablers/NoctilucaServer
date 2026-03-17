@@ -1,0 +1,5 @@
+"app.noctiluca.server.title" = "Noctiluca Server";
+"app.noctiluca.server.description" = "Noctiluca Server";
+
+"app.noctiluca.server.pamconf.title" = "用于 PAM 认证的系统配置";
+"app.noctiluca.server.pamconf.description" = "配置系统以允许 Noctiluca Server 执行 UNIX PAM 认证。\n如果未安装此组件，UNIX PAM 认证可能无法正常工作。\n\n注意：安装此组件需要管理员权限。";
