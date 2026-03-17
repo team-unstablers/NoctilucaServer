@@ -2793,6 +2793,35 @@
         }
       }
     },
+    "menu.early-access-discord" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discord Server for Early Access Users"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アーリーアクセスユーザー向け Discord サーバー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "얼리 액세스 사용자를 위한 Discord 서버"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "早期访问用户 Discord 服务器"
+          }
+        }
+      }
+    },
     "menu.register-license" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {

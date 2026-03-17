@@ -33,6 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "설정"), action: nil, keyEquivalent: ",")
     private let checkUpdatesItem = NSMenuItem(title: String(localized: "menu.check-updates", defaultValue: "업데이트 확인"), action: nil, keyEquivalent: "")
     private let licensingItem = NSMenuItem(title: String(localized: "menu.register-license", defaultValue: "라이선스 등록하기…"), action: nil, keyEquivalent: "")
+    private let earlyAccessDiscordServerItem = NSMenuItem(title: String(localized: "menu.early-access-discord", defaultValue: "얼리 액세스 사용자를 위한 Discord 서버"), action: nil, keyEquivalent: "")
     private let aboutItem = NSMenuItem(title: String(localized: "menu.about", defaultValue: "Noctiluca Server에 대하여"), action: nil, keyEquivalent: "")
     private let quitItem = NSMenuItem(title: String(localized: "menu.quit", defaultValue: "종료"), action: nil, keyEquivalent: "q")
 
@@ -217,6 +218,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func quitApplication(_ sender: Any?) {
         NSApp.terminate(nil)
     }
+    
+    @objc
+    func joinEarlyAccessDiscordServer(_ sender: Any?) {
+        if let url = URL(string: "https://discord.gg/Nzm34Yyrys") {
+            NSWorkspace.shared.open(url)
+        }
+    }
 
     private func setupMainMenu() {
         let mainMenu = NSMenu()
@@ -259,6 +267,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         licensingItem.isHidden = true
         aboutItem.target = self
         aboutItem.action = #selector(showAboutAppWindow(_:))
+        
+        earlyAccessDiscordServerItem.target = self
+        earlyAccessDiscordServerItem.action = #selector(joinEarlyAccessDiscordServer(_:))
+        
         quitItem.target = self
         quitItem.action = #selector(quitApplication(_:))
 
@@ -280,6 +292,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 #if DEBUG
         menu.addItem(showOnboardingWindowItem)
 #endif
+        menu.addItem(earlyAccessDiscordServerItem)
         menu.addItem(aboutItem)
         menu.addItem(quitItem)
 
@@ -352,6 +365,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
     }
+    
 }
 
 
