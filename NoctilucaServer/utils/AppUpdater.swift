@@ -31,7 +31,7 @@ extension AppUpdater: SPUUpdaterDelegate {
 #if DEBUG
         return "http://localhost:9000/appcast.xml"
 #else
-        return "https://swupdate.noctiluca.app/server/appcast.xml"
+        return "https://releases.noctiluca.app/server/v1/appcast.xml"
 #endif
     }
     
