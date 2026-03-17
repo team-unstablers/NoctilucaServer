@@ -192,6 +192,7 @@
 			membershipExceptions = (
 				"/Localized: installer-templates/Resources/license.html",
 				"/Localized: installer-templates/Resources/Localizable.strings",
+				"/Localized: installer-templates/Resources/readme.html",
 				build_client.sh,
 				build.sh,
 				"installer-templates/distribution.xml",
@@ -219,6 +220,7 @@
 			membershipExceptions = (
 				"/Localized: installer-templates/Resources/license.html",
 				"/Localized: installer-templates/Resources/Localizable.strings",
+				"/Localized: installer-templates/Resources/readme.html",
 				build_client.sh,
 				build.sh,
 				"installer-templates/distribution.xml",
@@ -878,7 +880,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = NO;
@@ -906,7 +908,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.2;
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-interposable",
@@ -943,7 +945,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = "";
@@ -972,7 +974,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1005,7 +1007,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = NO;
@@ -1033,7 +1035,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.0;
+				MARKETING_VERSION = 0.9.2;
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-interposable",
@@ -1070,7 +1072,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = "";
 				ENABLE_APP_SANDBOX = NO;
@@ -1098,7 +1100,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.0;
+				MARKETING_VERSION = 0.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server.testing.host;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
