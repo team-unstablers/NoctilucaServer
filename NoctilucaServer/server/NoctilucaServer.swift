@@ -197,12 +197,14 @@ class NoctilucaServer: ObservableObject {
         }
                 
         do {
+#if !DEBUG
             // TODO: 레이스 반드시 일어남
             let licenseState = await LicenseManager.shared.validationState
             guard licenseState != .unlicensed && licenseState != .expired else {
                 // TODO: 앱 구매 다이얼로그 등 띄우기
                 throw NoctilucaServerError.invalidLicense
             }
+#endif
             
             self.state = .preparing
             
@@ -250,10 +252,6 @@ class NoctilucaServer: ObservableObject {
         logger.info("Shutting down NoctilucaServer...")
 
         try await server.shutdown()
-
-        await MainActor.run {
-            ScreenCaptureKitWorkaroundDummyWindow.windowManager.shutdown()
-        }
     }
 }
 
