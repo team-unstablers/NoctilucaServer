@@ -242,10 +242,8 @@ class ProjectionSession: Identifiable {
 #endif
 
         default:
-            if !(decoder is VTVideoDecoder) {
-                decoder = VTVideoDecoder()
-                decoder?.delegate = self
-            }
+            decoder = VTVideoDecoder()
+            decoder?.delegate = self
             tileCompositor = nil
         }
         try decoder?.prepare(with: .init(codec: codec))

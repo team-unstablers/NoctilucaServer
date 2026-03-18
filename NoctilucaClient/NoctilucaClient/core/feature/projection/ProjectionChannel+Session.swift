@@ -275,6 +275,7 @@ extension ProjectionChannel {
             logger.info("Reconfiguring decoder for session \(identifier) with new codec: \(newCodec.fourCC)")
             do {
                 try await session.reconfigure(codec: newCodec)
+                try session.decoder?.start()
             } catch {
                 logger.error("Failed to reconfigure session \(identifier): \(error)")
             }
