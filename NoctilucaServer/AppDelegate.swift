@@ -250,7 +250,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setupStatusItem() {
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.title = NoctilucaMeta.productName
+            button.image = NSImage(named: "TrayIconInactive")
         }
 
         let menu = NSMenu()
@@ -306,6 +306,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         server.$state
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.updateTrayIcon()
                 self?.updateMenuState()
             }
             .store(in: &cancellables)
@@ -313,6 +314,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         server.$clients
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.updateTrayIcon()
                 self?.updateMenuState()
             }
             .store(in: &cancellables)
@@ -337,6 +339,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Task {
                 await session.closeWithGoodbye(code: .successful, message: nil)
             }
+        }
+    }
+    
+    private func updateTrayIcon() {
+        guard let button = statusItem?.button else {
+            return
+        }
+        
+        if case .idle = self.server.state {
+            button.image = NSImage(named: "TrayIconInactive")
+            return
+        }
+        
+        if self.server.clients.isEmpty {
+            button.image = NSImage(named: "TrayIcon")
+        } else {
+            button.image = NSImage(named: "TrayIconActive")
         }
     }
 
