@@ -190,6 +190,8 @@ class ProjectionSession: Identifiable {
             try await self.prepare(request, codec: updatedCodec)
             // recorder도 새 해상도로 재구성
             await reconfigureRecorder()
+            
+            try self.encoder.start()
 
             sessionDelegate?.projectionSession(self, didChangeResolution: updatedCodec)
             logger.info("Successfully reconfigured for resolution change to \(newSize)")
