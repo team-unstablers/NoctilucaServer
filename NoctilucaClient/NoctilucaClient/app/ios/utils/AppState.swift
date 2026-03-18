@@ -31,9 +31,7 @@ class AppStateHolder: ObservableObject {
             .sink { [weak self] _ in
                 self?.state = .foreground
                 
-                if DeviceKind.current == .iPhone {
-                    AppNotification.backgroundSessionActive.dismiss()
-                }
+                AppNotification.backgroundSessionActive.dismiss()
             }
             .store(in: &cancellables)
         
@@ -43,10 +41,8 @@ class AppStateHolder: ObservableObject {
             .sink { [weak self] _ in
                 self?.state = .background
                 
-                if DeviceKind.current == .iPhone {
-                    if NOCAudioEngine.shared.activeNodes != 0 {
-                        AppNotification.backgroundSessionActive.post()
-                    }
+                if NOCAudioEngine.shared.activeNodes != 0 {
+                    AppNotification.backgroundSessionActive.post()
                 }
             }
             .store(in: &cancellables)
