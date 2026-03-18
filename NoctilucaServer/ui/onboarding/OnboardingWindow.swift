@@ -38,6 +38,8 @@ struct OnboardingWindow: View {
         case .configuration:
             OnboardingConfigurationStepView()
                 .environmentObject(SettingsStore.shared)
+        case .preferences:
+            OnboardingPreferencesStepView()
         case .completion:
             OnboardingCompletionStepView()
         }
