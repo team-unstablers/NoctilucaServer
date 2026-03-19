@@ -27,7 +27,7 @@ INTERMEDIATE_DIR="$DIST_DIR/intermediate"
 UPDATES_DIR="$SRCROOT/dist_client_updates"
 # DerivedData를 빌드 디렉토리 내에 고정 (SPM 아티팩트 경로 예측 가능)
 DERIVED_DATA_PATH="$DIST_DIR/DerivedData"
-FINAL_DMG="$UPDATES_DIR/noctiluca-navigator-explicit-edition-signed-$VERSION-$GIT_TAG-RELEASE.dmg"
+FINAL_DMG="$UPDATES_DIR/noctiluca-navigator-unleashed-signed-$VERSION-$GIT_TAG-RELEASE.dmg"
 
 # 초기화
 rm -rf "$DIST_DIR"
@@ -45,7 +45,7 @@ function build_client() {
 
     echo "🔨 Archiving NoctilucaClient..."
     xcodebuild -workspace "$NOCSERVER_SRC/NoctilucaServer.xcworkspace" \
-               -scheme "Noctiluca Navigator (Explicit Edition)" \
+               -scheme "Noctiluca Navigator UE" \
                -configuration Release \
                -destination 'generic/platform=macOS' \
                -derivedDataPath "$DERIVED_DATA_PATH" \
@@ -67,7 +67,7 @@ function build_client() {
     <key>provisioningProfiles</key>
     <dict>
         <key>app.noctiluca.client.unleashed</key>
-        <string>Noctiluca_Navigator_Unleashed</string>
+        <string>Noctiluca Navigator (Unleashed)</string>
     </dict>
 </dict>
 </plist>
@@ -89,11 +89,32 @@ EOF
 function create_dmg() {
     echo "💿 Creating DMG..."
 
-    hdiutil create \
-        -volname "$PRODUCT_NAME" \
-        -srcfolder "$APP_PATH" \
-        -ov -format UDZO \
-        "$FINAL_DMG"
+    DMG_STAGING="$INTERMEDIATE_DIR/dmg-staging"
+    DMG_TEMPLATE_DIR="$SRCROOT/distutil/navigator-dmg-templates"
+
+    mkdir -p "$DMG_STAGING"
+    cp -a "$APP_PATH" "$DMG_STAGING/"
+
+    # create-dmg는 배경 설정 실패 등 비치명적 오류 시 exit code 2를 반환함
+    set +e
+    create-dmg \
+        --volname "$PRODUCT_NAME" \
+        --background "$DMG_TEMPLATE_DIR/background2.png" \
+        --window-pos 200 120 \
+        --window-size 660 432 \
+        --icon-size 128 \
+        --icon "$PRODUCT_NAME.app" 180 200 \
+        --hide-extension "$PRODUCT_NAME.app" \
+        --app-drop-link 480 200 \
+        "$FINAL_DMG" \
+        "$DMG_STAGING"
+    CREATE_DMG_EXIT=$?
+    set -e
+
+    if [[ $CREATE_DMG_EXIT -ne 0 && $CREATE_DMG_EXIT -ne 2 ]]; then
+        echo "❌ create-dmg failed with exit code $CREATE_DMG_EXIT"
+        exit 1
+    fi
 
     codesign --force --sign "$APP_CERT_ID" \
         --timestamp \
