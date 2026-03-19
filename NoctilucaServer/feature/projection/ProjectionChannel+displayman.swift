@@ -277,7 +277,7 @@ extension ProjectionChannel {
         if let name = colorSpace.localizedName {
             if name.contains("sRGB") { return .sRGB }
             if name.contains("Adobe RGB") { return .adobeRGB }
-            if name.contains("P3") || name.contains("DCI") { return .dciP3 }
+            if name.contains("P3") && name.contains("Display") { return .displayP3 }
         }
 
         // Phase 3: ICC 프로파일의 원색 분석을 통한 gamut 분류
@@ -293,10 +293,8 @@ extension ProjectionChannel {
         if name == CGColorSpace.sRGB || name == CGColorSpace.linearSRGB {
             return .sRGB
         }
-        if name == CGColorSpace.displayP3
-            || name == CGColorSpace.displayP3_HLG
-            || name == CGColorSpace.displayP3_PQ {
-            return .dciP3
+        if name == CGColorSpace.displayP3 || name == CGColorSpace.displayP3_HLG || name == CGColorSpace.displayP3_PQ {
+            return .displayP3
         }
         if name == CGColorSpace.adobeRGB1998 {
             return .adobeRGB
@@ -327,7 +325,7 @@ extension ProjectionChannel {
             }
 
             for i in 0..<3 where comps[i] > 1.01 || comps[i] < -0.01 {
-                return .dciP3
+                return .displayP3
             }
         }
 

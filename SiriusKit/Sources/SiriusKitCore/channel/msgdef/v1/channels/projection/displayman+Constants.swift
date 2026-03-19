@@ -56,8 +56,8 @@ public struct DisplayColorProfile: RawRepresentable, Hashable, Equatable, Codabl
     public static let sRGB = DisplayColorProfile(rawValue: "sRGB")
     /// Adobe RGB 색상 프로파일
     public static let adobeRGB = DisplayColorProfile(rawValue: "AdobeRGB")
-    /// DCI-P3 색상 프로파일
-    public static let dciP3 = DisplayColorProfile(rawValue: "DCI-P3")
+    /// Display P3 색상 프로파일
+    public static let displayP3 = DisplayColorProfile(rawValue: "Display P3")
 }
 
 public struct DisplayDynamicRange: RawRepresentable, Hashable, Equatable, Codable {
