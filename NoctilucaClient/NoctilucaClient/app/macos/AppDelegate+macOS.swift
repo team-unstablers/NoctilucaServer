@@ -10,6 +10,10 @@ import AppKit
 
 import SiriusKitClient
 
+#if UNLEASHED_EDITION
+import Sparkle
+#endif
+
 @objc
 protocol EditMenuActions {
     func redo(_ sender: AnyObject)
@@ -128,9 +132,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         appMenuItem.submenu = appMenu
         
         let appName = NoctilucaMeta.productName
+        
         let aboutItem = NSMenuItem(title: String(localized: "menu.about", defaultValue: "Noctiluca Navigator에 대하여"), action: #selector(showAboutPanel(_:)), keyEquivalent: "")
         aboutItem.target = self
         appMenu.addItem(aboutItem)
+        
+#if UNLEASHED_EDITION
+        let checkUpdateItem = NSMenuItem(title: String(localized: "menu.check_for_updates", defaultValue: "업데이트 확인…"), action: nil, keyEquivalent: "")
+        
+        checkUpdateItem.target = AppUpdater.shared.updaterController
+        checkUpdateItem.action = #selector(SPUStandardUpdaterController.checkForUpdates(_:))
+
+        appMenu.addItem(checkUpdateItem)
+#endif
+        
         appMenu.addItem(.separator())
 
         let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "Noctiluca Navigator 설정…"), action: #selector(showSettingsWindow(_:)), keyEquivalent: ",")

@@ -45,8 +45,13 @@ struct AboutAppView: View {
                                 .fontWeight(.light)
                         }
                         
+#if UNLEASHED_EDITION
+                        Text(String(format: String(localized: "about.version_format", defaultValue: "버전 %@ (%@)"), NoctilucaMeta.version, "\(NoctilucaMeta.buildVersion); UE"))
+                            .foregroundStyle(.secondary)
+#else
                         Text(String(format: String(localized: "about.version_format", defaultValue: "버전 %@ (%@)"), NoctilucaMeta.version, NoctilucaMeta.buildVersion))
                             .foregroundStyle(.secondary)
+#endif
                     }
                     .padding(.bottom, 8)
                     

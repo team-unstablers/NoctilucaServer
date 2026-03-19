@@ -18,8 +18,13 @@ struct AboutSettingsTab: View {
                     Spacer()
                     VStack(alignment: .trailing) {
                         Text(String(format: String(localized: "about.version_full_format", defaultValue: "%@ (%@)"), NoctilucaMeta.version, NoctilucaMeta.buildVersion))
+#if UNLEASHED_EDITION
+                        Text("Unleashed Edition")
+                            .font(.subheadline)
+#else
                         Text("App Store")
                             .font(.subheadline)
+#endif
                     }
                     .foregroundStyle(.secondary)
                 }
@@ -57,7 +62,7 @@ struct AboutSettingsTab: View {
                 Text(markdown: String(localized: "about.oss_license_info", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](https://noctiluca.app/docs/open-sources/navigator/apple)"))
                 Text(markdown: String(localized: "about.sirius_protocol_spec", defaultValue: "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."))
                 Text("")
-                Text("© 2025 team unstablers Inc. All rights reserved.")
+                Text("© 2026 team unstablers Inc. All rights reserved.")
             }
         }
         .formStyle(.grouped)

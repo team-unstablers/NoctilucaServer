@@ -4,6 +4,9 @@
     "" : {
 
     },
+    " (Unleashed Edition)" : {
+
+    },
     "-10%" : {
 
     },
@@ -22,7 +25,7 @@
     "%ufps" : {
 
     },
-    "© 2025 team unstablers Inc. All rights reserved." : {
+    "© 2026 team unstablers Inc. All rights reserved." : {
 
     },
     "→" : {
@@ -6723,6 +6726,35 @@
         }
       }
     },
+    "menu.check_for_updates" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check for Updates…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップデートを確認…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "업데이트 확인…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查更新…"
+          }
+        }
+      }
+    },
     "menu.close_window" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -12817,6 +12849,122 @@
         }
       }
     },
+    "settings.general.autoupdate.check.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically check for updates to Noctiluca Server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動的にNoctiluca Serverのアップデートを確認します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 Noctiluca Server의 업데이트를 확인합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动检查 Noctiluca Server 更新。"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.check.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically Check for Updates"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動的にアップデートを確認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 업데이트 확인하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动检查更新"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.download.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically download updates for Noctiluca Server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動的にNoctiluca Serverのアップデートをダウンロードします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 Noctiluca Server의 업데이트를 다운로드합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动下载 Noctiluca Server 更新。"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.download.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically Download Updates"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動的にアップデートをダウンロード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 업데이트 다운로드하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动下载更新"
+          }
+        }
+      }
+    },
     "settings.general.default_connection.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -16180,6 +16328,9 @@
           }
         }
       }
+    },
+    "Unleashed Edition" : {
+
     },
     "YUV 4:2:0" : {
 

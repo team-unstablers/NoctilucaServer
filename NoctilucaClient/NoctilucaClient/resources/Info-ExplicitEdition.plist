@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUPublicEDKey</key>
+	<string>LPWEHphp3JtwZ+9uBJM74TcJND9uzmGwt8Fz+1i8T5o=</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
