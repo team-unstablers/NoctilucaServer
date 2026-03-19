@@ -11,9 +11,9 @@ if [[ -n `git status --porcelain` ]]; then
     GIT_TAG="$GIT_TAG-dirty"
 fi
 
-PRODUCT_NAME="Noctiluca Navigator (Explicit Edition)"
+PRODUCT_NAME="Noctiluca Navigator UE"
 VERSION=$(grep 'MARKETING_VERSION = ' 'NoctilucaClient/NoctilucaClient.xcodeproj/project.pbxproj' | tail -n 1 | perl -nE '/= ([\d\.]+);/;print $1')
-IDENTIFIER="app.noctiluca.client.explicit-edition"
+IDENTIFIER="app.noctiluca.client.unleashed"
 
 # [중요] Notarytool 프로필 이름 (터미널에서 'xcrun notarytool store-credentials'로 생성 필요)
 NOTARY_KEYCHAIN_PROFILE="tu-noctiluca-notarycred"
@@ -66,8 +66,8 @@ function build_client() {
     <string>Developer ID Application: team unstablers Inc. (XHA76UVA95)</string>
     <key>provisioningProfiles</key>
     <dict>
-        <key>app.noctiluca.client.explicit-edition</key>
-        <string>NoctilucaClient_ExplicitEdition</string>
+        <key>app.noctiluca.client.unleashed</key>
+        <string>Noctiluca_Navigator_Unleashed</string>
     </dict>
 </dict>
 </plist>
@@ -80,7 +80,7 @@ EOF
                -exportPath "$EXPORT_PATH" \
                -allowProvisioningUpdates
 
-    APP_PATH="${EXPORT_PATH}/Noctiluca Navigator (Explicit Edition).app"
+    APP_PATH="${EXPORT_PATH}/Noctiluca Navigator UE.app"
 }
 
 # ==============================================================================
