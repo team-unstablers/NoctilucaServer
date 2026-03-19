@@ -64,7 +64,7 @@ struct SecuritySettingsTab: View {
                 AuthMethodContainer(authMethods: $settings.security.allowedEntries)
             } header: {
                 Text(markdown: String(localized: "settings.security.auth_methods.title", defaultValue: "인증 수단"))
-                Text(markdown: String(localized: "settings.security.auth_methods.description", defaultValue: "이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. 드래그-드롭으로 우선 순위를 변경할 수 있습니다. [더 알아보기…](http://google.com)"))
+                Text(markdown: String(localized: "settings.security.auth_methods.description", defaultValue: "이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. 드래그-드롭으로 우선 순위를 변경할 수 있습니다."))
             }
 
             Section {
@@ -130,7 +130,7 @@ struct SecuritySettingsTab: View {
 
             } header: {
                 Text(markdown: String(localized: "settings.security.transport_layer.title", defaultValue: "트랜스포트 레이어"))
-                Text(markdown: String(localized: "settings.security.transport_layer.description", defaultValue: "Noctiluca에서는 QUIC 프로토콜을 사용하여 통신합니다. [더 알아보기…](http://google.com)"))
+                Text(markdown: String(localized: "settings.security.transport_layer.description", defaultValue: "Noctiluca에서는 QUIC 프로토콜을 사용하여 통신합니다."))
             }
 
             Section {
@@ -153,7 +153,7 @@ struct SecuritySettingsTab: View {
                 }
             } header: {
                 Text(markdown: String(localized: "settings.security.protocol.title", defaultValue: "프로토콜"))
-                Text(markdown: String(localized: "settings.security.protocol.description", defaultValue: "Sirius 프로토콜의 동작 방식을 설정합니다. [더 알아보기…](http://google.com)"))
+                Text(markdown: String(localized: "settings.security.protocol.description", defaultValue: "Sirius 프로토콜의 동작 방식을 설정합니다."))
             }
         }
         .enumAlert(alertCase: $alertCase)

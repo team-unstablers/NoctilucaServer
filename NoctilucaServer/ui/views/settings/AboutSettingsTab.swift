@@ -110,7 +110,7 @@ struct AboutSettingsTab: View {
                 Text(markdown: String(localized: "settings.about.header.title", defaultValue: "Noctiluca Server 정보"))
                 Text("")
             } footer: {
-                Text(markdown: String(localized: "settings.about.footer.oss_notice", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](http://google.com)"))
+                Text(markdown: String(localized: "settings.about.footer.oss_notice", defaultValue: "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](https://noctiluca.app/docs/open-sources/server)"))
                 // Text(markdown: String(localized: "settings.about.footer.sirius_protocol", defaultValue: "Sirius 프로토콜의 사양 문서는 GitHub [team-unstablers/SiriusProtocol](https://github.com/team-unstablers/SiriusProtocol) 에 공개되어 있습니다."))
                 Text("")
                 Text(markdown: String(localized: "settings.about.footer.copyright", defaultValue: "© 2026 team unstablers Inc. All rights reserved."))
