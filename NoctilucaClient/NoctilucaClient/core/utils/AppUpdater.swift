@@ -33,7 +33,7 @@ extension AppUpdater: SPUUpdaterDelegate {
 #if DEBUG
         return "http://localhost:9001/appcast.xml"
 #else
-        return "https://releases.noctiluca.app/navigator/mac/updates/appcast.xml"
+        return "https://releases.noctiluca.app/navigator/mac/appcast.xml"
 #endif
     }
     
