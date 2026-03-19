@@ -9,6 +9,12 @@
 /* Begin PBXBuildFile section */
 		F627116D2F08626200E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F627116C2F08626200E8A3D7 /* libzstd */; };
 		F64AF1642F6C5D8300C0EDD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F64AF1632F6C5D8300C0EDD8 /* Sparkle */; };
+		F64AF16D2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */; };
+		F64AF1702F6C77CE00C0EDD8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16E2F6C77CE00C0EDD8 /* LICENSE */; };
+		F64AF1712F6C77CE00C0EDD8 /* LICENSE.en in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */; };
+		F64AF1762F6C77F400C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */; };
+		F64AF1772F6C781100C0EDD8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16E2F6C77CE00C0EDD8 /* LICENSE */; };
+		F64AF1782F6C781100C0EDD8 /* LICENSE.en in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */; };
 		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */; };
@@ -73,6 +79,9 @@
 
 /* Begin PBXFileReference section */
 		F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SiriusKitClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */ = {isa = PBXFileReference; lastKnownFileType = text; name = OPEN_SOURCE_LICENSE.client; path = ../OPEN_SOURCE_LICENSE.client; sourceTree = "<group>"; };
+		F64AF16E2F6C77CE00C0EDD8 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.en; sourceTree = "<group>"; };
 		F6561F102F08B6E00090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/ios-arm64/libturbojpeg.framework"; sourceTree = "<group>"; };
 		F6561F132F08B6F10090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/macos-arm64_x86_64/libturbojpeg.framework"; sourceTree = "<group>"; };
 		F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = ../frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
@@ -160,6 +169,9 @@
 		F6BD3E8D2EDA1AF6000011DF = {
 			isa = PBXGroup;
 			children = (
+				F64AF16E2F6C77CE00C0EDD8 /* LICENSE */,
+				F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */,
+				F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */,
 				F6BD3E982EDA1AF6000011DF /* NoctilucaClient */,
 				F65FDE182EF868720014239E /* NoctilucaClientTests */,
 				F6BD3EB02EDA1B2A000011DF /* Frameworks */,
@@ -335,6 +347,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F64AF16D2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */,
+				F64AF1702F6C77CE00C0EDD8 /* LICENSE in Resources */,
+				F64AF1712F6C77CE00C0EDD8 /* LICENSE.en in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,6 +357,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F64AF1772F6C781100C0EDD8 /* LICENSE in Resources */,
+				F64AF1782F6C781100C0EDD8 /* LICENSE.en in Resources */,
+				F64AF1762F6C77F400C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
