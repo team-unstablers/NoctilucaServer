@@ -4,9 +4,6 @@
     "" : {
 
     },
-    " (Unleashed Edition)" : {
-
-    },
     "-10%" : {
 
     },
@@ -12854,26 +12851,26 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically check for updates to Noctiluca Server."
+            "state" : "needs_review",
+            "value" : "Automatically check for updates to Noctiluca Navigator."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動的にNoctiluca Serverのアップデートを確認します。"
+            "state" : "needs_review",
+            "value" : "自動的にNoctiluca Navigatorのアップデートを確認します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "자동으로 Noctiluca Server의 업데이트를 확인합니다."
+            "value" : "자동으로 Noctiluca Navigator의 업데이트를 확인합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动检查 Noctiluca Server 更新。"
+            "state" : "needs_review",
+            "value" : "自动检查 Noctiluca Navigator 更新。"
           }
         }
       }
@@ -12912,26 +12909,26 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically download updates for Noctiluca Server."
+            "state" : "needs_review",
+            "value" : "Automatically download updates for Noctiluca Navigator."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動的にNoctiluca Serverのアップデートをダウンロードします。"
+            "state" : "needs_review",
+            "value" : "自動的にNoctiluca Navigatorのアップデートをダウンロードします。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "자동으로 Noctiluca Server의 업데이트를 다운로드합니다."
+            "value" : "자동으로 Noctiluca Navigator의 업데이트를 다운로드합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动下载 Noctiluca Server 更新。"
+            "state" : "needs_review",
+            "value" : "自动下载 Noctiluca Navigator 更新。"
           }
         }
       }

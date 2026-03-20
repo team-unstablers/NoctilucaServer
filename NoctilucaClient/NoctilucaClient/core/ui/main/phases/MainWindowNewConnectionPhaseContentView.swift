@@ -55,11 +55,6 @@ struct MainWindowNewConnectionPhaseContentView: View {
 
                     HStack(spacing: 0) {
                         Text(String(format: String(localized: "main.new_connection.version_format", defaultValue: "버전 %@"), NoctilucaMeta.version))
-                        
-#if UNLEASHED_EDITION
-                        Text(" (Unleashed Edition)")
-#endif
-                        
                     }
                         .font(.caption)
                         .foregroundStyle(.secondary)
