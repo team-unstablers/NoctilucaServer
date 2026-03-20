@@ -11,7 +11,7 @@ if [[ -n `git status --porcelain` ]]; then
     GIT_TAG="$GIT_TAG-dirty"
 fi
 
-PRODUCT_NAME="Noctiluca Navigator UE"
+PRODUCT_NAME="Noctiluca Navigator"
 VERSION=$(grep 'MARKETING_VERSION = ' 'NoctilucaClient/NoctilucaClient.xcodeproj/project.pbxproj' | tail -n 1 | perl -nE '/= ([\d\.]+);/;print $1')
 IDENTIFIER="app.noctiluca.client.unleashed"
 
@@ -80,7 +80,7 @@ EOF
                -exportPath "$EXPORT_PATH" \
                -allowProvisioningUpdates
 
-    APP_PATH="${EXPORT_PATH}/Noctiluca Navigator UE.app"
+    APP_PATH="${EXPORT_PATH}/Noctiluca Navigator.app"
 }
 
 # ==============================================================================
@@ -99,7 +99,7 @@ function create_dmg() {
     set +e
     create-dmg \
         --volname "$PRODUCT_NAME" \
-        --background "$DMG_TEMPLATE_DIR/background2.png" \
+        --background "$DMG_TEMPLATE_DIR/background.png" \
         --window-pos 200 120 \
         --window-size 660 432 \
         --icon-size 128 \
