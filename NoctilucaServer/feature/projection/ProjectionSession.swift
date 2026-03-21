@@ -60,6 +60,7 @@ class ProjectionSession: Identifiable {
 
     private var screenLockCancellable: AnyCancellable!
     private var displayChangeCancellable: AnyCancellable?
+    private var windowResizeSubscriptionId: UUID?
 
     weak var sessionDelegate: ProjectionSessionDelegate?
 
@@ -170,6 +171,30 @@ class ProjectionSession: Identifiable {
         }
 
         logger.info("Display resolution changed: \(currentSize) -> \(newSize) for projection session \(self.id)")
+        await reconfigureForResolutionChange(newSize: newSize)
+    }
+
+    private func handleWindowSizeChange(_ event: WindowChangedEvent) async {
+        guard !isStopped, !isReconfiguring else { return }
+        guard let windowInfo = event.info else { return }
+
+        let newSize = CGSize(
+            width: windowInfo.bounds.width,
+            height: windowInfo.bounds.height
+        )
+
+        guard let currentCodec = self.codec,
+              let currentSize = currentCodec.size?.cgSize,
+              currentSize != newSize else {
+            return
+        }
+
+        // 최소화 등으로 너무 작아진 경우 무시
+        guard newSize.width >= 1 && newSize.height >= 1 else {
+            return
+        }
+
+        logger.info("Window size changed: \(currentSize) -> \(newSize) for projection session \(self.id)")
         await reconfigureForResolutionChange(newSize: newSize)
     }
 
@@ -304,6 +329,19 @@ class ProjectionSession: Identifiable {
                 }
         }
 
+        // 윈도우 크기 변경 구독 (singleWindow 소스, 최초 prepare 시에만 설정)
+        if windowResizeSubscriptionId == nil, let windowID = recorderSource.monitoredWindowID {
+            windowResizeSubscriptionId = await DesktopContextManager.shared.subscribeWindowEvents(
+                eventMask: .resized,
+                filter: WindowFilter(expression: WindowFilterExpression(.windowID(UInt64(windowID)))),
+                flags: []
+            ) { [weak self] event in
+                Task {
+                    await self?.handleWindowSizeChange(event)
+                }
+            }
+        }
+
         // 기존 encoder event loop task 취소 및 encoder 정리
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
@@ -414,6 +452,10 @@ class ProjectionSession: Identifiable {
         screenLockCancellable = nil
         displayChangeCancellable?.cancel()
         displayChangeCancellable = nil
+        if let subId = windowResizeSubscriptionId {
+            windowResizeSubscriptionId = nil
+            _ = await DesktopContextManager.shared.unsubscribeWindowEvents(id: subId)
+        }
 
         // 3. Frame queue 정리
         await frameQueue.clear()
@@ -447,6 +489,12 @@ class ProjectionSession: Identifiable {
         senderEventLoopTask?.cancel()
         screenLockCancellable?.cancel()
         displayChangeCancellable?.cancel()
+        if let subId = windowResizeSubscriptionId {
+            let id = subId
+            Task { @MainActor in
+                _ = DesktopContextManager.shared.unsubscribeWindowEvents(id: id)
+            }
+        }
 
         // VTVideoEncoder의 Unmanaged refCon retain cycle을 끊는다 (동기 메서드)
         try? encoder.stop()

@@ -443,8 +443,6 @@ final class AppSession {
         }
         
         for element in windows {
-            print(element)
-            
             var number: CGWindowID = 0
             
             guard let error = ApplicationServicesPrivate._AXUIElementGetWindow?(element, &number),
