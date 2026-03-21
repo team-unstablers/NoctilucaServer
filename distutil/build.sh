@@ -114,7 +114,7 @@ function package_nocserver() {
     <key>provisioningProfiles</key>
     <dict>
         <key>app.noctiluca.server</key>
-        <string>Noctiluca Server</string>
+        <string>Noctiluca Server (v1-release)</string>
     </dict>
 </dict>
 </plist>

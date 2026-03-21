@@ -28,7 +28,7 @@ struct OnboardingConfigurationStepView: View {
                     Text(markdown: String(localized: "settings.security.auth_methods.title", defaultValue: "인증 수단"))
                         .font(.headline)
                         .padding(.bottom, 4)
-                    Text(markdown: String(localized: "settings.security.auth_methods.description", defaultValue: "이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. 드래그-드롭으로 우선 순위를 변경할 수 있습니다. [더 알아보기…](http://google.com)"))
+                    Text(markdown: String(localized: "settings.security.auth_methods.description", defaultValue: "이 컴퓨터에 접속할 때 사용할 인증 수단을 설정합니다. 드래그-드롭으로 우선 순위를 변경할 수 있습니다."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 8)

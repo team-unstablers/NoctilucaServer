@@ -13,17 +13,8 @@ import CoreMedia
 
 import SiriusKit
 
-/// 프로젝션 세션 종료 사유
-enum ProjectionSessionEndReason: Int32 {
-    case normal = 0
-    case displayDisconnected = 1
-    case internalError = 2
-    case recorderFailed = 3
-}
-
-/// 프로젝션 세션 변경 사유
-enum ProjectionSessionChangeReason: Int32 {
-    case resolutionChanged = 1
+enum ProjectionSessionError: Error {
+    case invalidSource
 }
 
 protocol ProjectionSessionDelegate: AnyObject {
@@ -163,7 +154,15 @@ class ProjectionSession: Identifiable {
             return
         }
 
-        let newSize = newScreen.frame.size
+        // displayDensity 옵션에 따라 비교 기준을 포인트/픽셀로 결정
+        let newSize: CGSize
+        if let currentCodec = self.codec,
+           currentCodec.option(.displayDensity) == .kDisplayDensityBest {
+            newSize = newScreen.displayResolution
+        } else {
+            newSize = newScreen.frame.size
+        }
+
         guard let currentCodec = self.codec,
               let currentSize = currentCodec.size?.cgSize,
               currentSize != newSize else {
@@ -191,6 +190,8 @@ class ProjectionSession: Identifiable {
             try await self.prepare(request, codec: updatedCodec)
             // recorder도 새 해상도로 재구성
             await reconfigureRecorder()
+            
+            try self.encoder.start()
 
             sessionDelegate?.projectionSession(self, didChangeResolution: updatedCodec)
             logger.info("Successfully reconfigured for resolution change to \(newSize)")
@@ -275,8 +276,7 @@ class ProjectionSession: Identifiable {
 
     func prepare(_ request: ProjectionRequest, codec: Codec) async throws {
         guard let recorderSource = request.viewport.toScreenRecorderSource() else {
-            // TODO: throw .invalidSource
-            fatalError()
+            throw ProjectionSessionError.invalidSource
         }
 
         let recorderArgs = ScreenRecorderArgs(

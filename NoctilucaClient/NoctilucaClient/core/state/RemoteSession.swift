@@ -215,10 +215,11 @@ class RemoteSession: ObservableObject {
             await client.close()
             return
         case .confirm(let entry):
-            guard let payload = client.authenticator.payload(for: entry, nonce: authChallenge.nonce) else {
+            guard var payload = client.authenticator.payload(for: entry, nonce: authChallenge.nonce) else {
                 client.logger.error("Failed to build auth payload for method: \(entry.method.rawValue)")
                 return
             }
+            defer { payload.zeroize() }
             try? await client.sendAuthRequest(entry.method.rawValue, nonce: authChallenge.nonce, payload: payload)
         }
     }
@@ -280,13 +281,13 @@ class RemoteSession: ObservableObject {
             let reasonDescription: String
             switch reason {
             case .codecNotSupported:
-                reasonDescription = "서버와 공통으로 사용할 수 있는 오디오 코덱이 없습니다."
+                reasonDescription = String(localized: "error.audio.codec_not_supported", defaultValue: "서버와 공통으로 사용할 수 있는 오디오 코덱이 없습니다.")
             case .permissionDenied:
-                reasonDescription = "서버가 오디오 캡처 권한을 거부했습니다."
+                reasonDescription = String(localized: "error.audio.permission_denied", defaultValue: "서버가 오디오 캡처 권한을 거부했습니다.")
             case .sourceNotFound:
-                reasonDescription = "요청한 오디오 소스를 찾을 수 없습니다."
+                reasonDescription = String(localized: "error.audio.source_not_found", defaultValue: "요청한 오디오 소스를 찾을 수 없습니다.")
             default:
-                reasonDescription = "서버가 오디오 세션 생성을 거부했습니다."
+                reasonDescription = String(localized: "error.audio.session_creation_rejected", defaultValue: "서버가 오디오 세션 생성을 거부했습니다.")
             }
 
             if let message, !message.isEmpty {
@@ -295,13 +296,13 @@ class RemoteSession: ObservableObject {
             return reasonDescription
 
         case .audioSessionCreationTimedOut(_, let timeout):
-            return "오디오 세션 생성 응답이 \(Int(timeout))초 안에 도착하지 않았습니다."
+            return String(format: String(localized: "error.audio.session_creation_timed_out", defaultValue: "오디오 세션 생성 응답이 %d초 안에 도착하지 않았습니다."), Int(timeout))
         case .audioSessionStartFailed(_, let underlying):
-            return "오디오 세션 시작 중 오류가 발생했습니다.\n\(underlying.localizedDescription)"
+            return String(format: String(localized: "error.audio.session_start_failed", defaultValue: "오디오 세션 시작 중 오류가 발생했습니다.\n%@"), underlying.localizedDescription)
         case .channelClosed:
-            return "프로젝션 채널이 닫혀 오디오를 시작할 수 없습니다."
+            return String(localized: "error.audio.channel_closed", defaultValue: "프로젝션 채널이 닫혀 오디오를 시작할 수 없습니다.")
         case .sessionCreationCancelled:
-            return "오디오 세션 생성이 취소되었습니다."
+            return String(localized: "error.audio.session_creation_cancelled", defaultValue: "오디오 세션 생성이 취소되었습니다.")
         }
     }
 }

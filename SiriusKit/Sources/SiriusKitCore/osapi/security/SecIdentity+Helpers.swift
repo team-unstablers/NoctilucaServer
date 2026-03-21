@@ -37,4 +37,15 @@ public extension SecIdentity {
 
         return nil
     }
+    
+    func extractCertificate() -> SecCertificate? {
+        var cert: SecCertificate?
+        let status = SecIdentityCopyCertificate(self, &cert)
+        
+        if status == errSecSuccess {
+            return cert
+        } else {
+            return nil
+        }
+    }
 }

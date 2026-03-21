@@ -23,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var settingsWindowController: AppKitSettingsWindowController?
     private var onboardingWindowController: OnboardingWindowController?
     private var licensingWindowController: LicensingWindowController?
+    private var aboutAppWindowController: AboutAppWindowController?
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
@@ -32,6 +33,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let settingsItem = NSMenuItem(title: String(localized: "menu.settings", defaultValue: "설정"), action: nil, keyEquivalent: ",")
     private let checkUpdatesItem = NSMenuItem(title: String(localized: "menu.check-updates", defaultValue: "업데이트 확인"), action: nil, keyEquivalent: "")
     private let licensingItem = NSMenuItem(title: String(localized: "menu.register-license", defaultValue: "라이선스 등록하기…"), action: nil, keyEquivalent: "")
+    private let earlyAccessDiscordServerItem = NSMenuItem(title: String(localized: "menu.early-access-discord", defaultValue: "얼리 액세스 사용자를 위한 Discord 서버"), action: nil, keyEquivalent: "")
+    private let aboutItem = NSMenuItem(title: String(localized: "menu.about", defaultValue: "Noctiluca Server에 대하여"), action: nil, keyEquivalent: "")
     private let quitItem = NSMenuItem(title: String(localized: "menu.quit", defaultValue: "종료"), action: nil, keyEquivalent: "q")
 
 #if DEBUG
@@ -54,11 +57,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // load MsQuic
         _ = MsQuicLoader.shared
-        
+
+        // Sentry telemetry (opt-in, EEA/UK 제외)
+        server.settings.telemetry.ensureIdentifier()
+        TelemetryService.shared.startIfNeeded(settings: server.settings.telemetry)
+
         InjectConfiguration.animation = .interactiveSpring()
 
-        NSApp.setActivationPolicy(.accessory)
-        
         TCCUtil.shared.requestAccess(for: .notifications)
         
         try? ApplicationServicesPrivate.open()
@@ -79,13 +84,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             await LicenseManager.shared.loadLicense()
             await MainActor.run { updateLicensingMenuState() }
 
-            if await LicenseManager.shared.validationState == .unlicensed,
+            let licenseState = await LicenseManager.shared.validationState
+            if (licenseState == .unlicensed || licenseState == .expired),
                UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
                 await MainActor.run { showLicensingWindow(nil) }
             }
 
+            await LicenseManager.shared.startPeriodicExpirationCheck()
+
             if server.settings.general.autoStart {
                 self.startServer(nil)
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: .licenseValidationStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task {
+                let state = await LicenseManager.shared.validationState
+                if state == .expired {
+                    await MainActor.run {
+                        self?.showLicensingWindow(nil)
+                    }
+                }
             }
         }
     }
@@ -122,6 +145,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         DispatchQueue.main.async {
             self.licensingWindowController?.showWindow(nil)
             self.licensingWindowController?.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    @objc
+    func showAboutAppWindow(_ sender: Any?) {
+        if aboutAppWindowController == nil {
+            aboutAppWindowController = AboutAppWindowController()
+        }
+
+        DispatchQueue.main.async {
+            self.aboutAppWindowController?.showWindow(nil)
+            self.aboutAppWindowController?.window?.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
         }
     }
@@ -170,6 +206,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             } catch {
                 print("shutdown failed: \(error.localizedDescription)")
             }
+            TelemetryService.shared.stop()
             SiriusEventFileLogDestination.flushAll()
             SiriusFileLogDestination.flushAll()
             await MainActor.run {
@@ -182,6 +219,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc
     func quitApplication(_ sender: Any?) {
         NSApp.terminate(nil)
+    }
+    
+    @objc
+    func joinEarlyAccessDiscordServer(_ sender: Any?) {
+        if let url = URL(string: "https://discord.gg/Nzm34Yyrys") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     private func setupMainMenu() {
@@ -208,7 +252,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setupStatusItem() {
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.title = NoctilucaMeta.productName
+            button.image = NSImage(named: "TrayIconInactive")
         }
 
         let menu = NSMenu()
@@ -223,9 +267,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         licensingItem.target = self
         licensingItem.action = #selector(showLicensingWindow(_:))
         licensingItem.isHidden = true
+        aboutItem.target = self
+        aboutItem.action = #selector(showAboutAppWindow(_:))
+        
+        earlyAccessDiscordServerItem.target = self
+        earlyAccessDiscordServerItem.action = #selector(joinEarlyAccessDiscordServer(_:))
+        
         quitItem.target = self
         quitItem.action = #selector(quitApplication(_:))
-        
+
         checkUpdatesItem.target = AppUpdater.shared.updaterController
         checkUpdatesItem.action = #selector(SPUStandardUpdaterController.checkForUpdates(_:))
         
@@ -244,6 +294,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 #if DEBUG
         menu.addItem(showOnboardingWindowItem)
 #endif
+        menu.addItem(earlyAccessDiscordServerItem)
+        menu.addItem(aboutItem)
         menu.addItem(quitItem)
 
         statusItem.menu = menu
@@ -256,6 +308,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         server.$state
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.updateTrayIcon()
                 self?.updateMenuState()
             }
             .store(in: &cancellables)
@@ -263,6 +316,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         server.$clients
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.updateTrayIcon()
                 self?.updateMenuState()
             }
             .store(in: &cancellables)
@@ -287,6 +341,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Task {
                 await session.closeWithGoodbye(code: .successful, message: nil)
             }
+        }
+    }
+    
+    private func updateTrayIcon() {
+        guard let button = statusItem?.button else {
+            return
+        }
+        
+        if case .idle = self.server.state {
+            button.image = NSImage(named: "TrayIconInactive")
+            return
+        }
+        
+        if self.server.clients.isEmpty {
+            button.image = NSImage(named: "TrayIcon")
+        } else {
+            button.image = NSImage(named: "TrayIconActive")
         }
     }
 
@@ -315,6 +386,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
     }
+    
 }
 
 

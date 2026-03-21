@@ -182,18 +182,22 @@ final class VideoJitterBuffer: NSObject {
     /// CADisplayLink를 시작하여 프레임 릴리즈 루프를 가동한다.
     /// 반드시 메인 스레드에서 호출되거나, 내부적으로 메인 스레드로 디스패치된다.
     func start() {
-        let link = createDisplayLink()
+        guard let link = createDisplayLink() else {
+            logger.error("Failed to create display link; jitter buffer cannot start")
+            return
+        }
         link.add(to: .main, forMode: .common)
         displayLink = link
 
         logger.info("VideoJitterBuffer started (thread=\(Thread.current.description))")
     }
 
-    private func createDisplayLink() -> CADisplayLink {
+    private func createDisplayLink() -> CADisplayLink? {
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
         // macOS: CADisplayLink.init(target:selector:)가 불가하므로 NSScreen 팩토리 사용
-        guard let screen = NSScreen.main else {
-            fatalError("VideoJitterBuffer: NSScreen.main is unavailable")
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            logger.error("No available NSScreen for display link; jitter buffer will not function")
+            return nil
         }
         return screen.displayLink(target: self, selector: #selector(displayLinkFired(_:)))
 #else

@@ -141,6 +141,7 @@ class EventInjector {
         switch keyCode {
         case kVK_LeftArrow, kVK_RightArrow, kVK_DownArrow, kVK_UpArrow:
             // HACK: 이 플래그를 넣지 않으면 Xcode vim mode에서 방향키 네비게이션이 불가능해짐
+            cgEvent.flags.insert(.maskSecondaryFn)
             cgEvent.flags.insert(.maskNumericPad)
             
         case kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6,

@@ -159,7 +159,7 @@ struct ServerIdentityValidationSheetView: View {
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(markdown: String(localized: "auth.identity.help.simple_explanation.mismatch.body_1", defaultValue: "다른 컴퓨터가 **신분을 위조**해서 사기를 치려고 하는 것 같습니다."))
-                            Text(markdown: String(localized: "auth.identity.help.simple_explanation.mismatch.body_2", defaultValue: "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)의 복사본을 받아둡니다. 이번에 받은 신분증은 저번에 받은 것과 일치하지 않았기 때문에 경고를 표시합니다."))
+                            Text(markdown: String(localized: "auth.identity.help.simple_explanation.mismatch.body_2", defaultValue: "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)로부터 지문을 채취해 둡니다. 이번에 채취한 지문은 저번에 채취해 두었던 것과 일치하지 않았기 때문에 경고를 표시합니다."))
                         }
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)

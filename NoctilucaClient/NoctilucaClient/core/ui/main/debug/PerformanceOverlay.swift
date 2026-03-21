@@ -21,7 +21,7 @@ struct PerformanceOverlay: View {
 
     @State private var isExpanded = false
     @State private var position: CGSize = .zero
-    @State private var dragOffset: CGSize = .zero
+    @GestureState private var dragOffset: CGSize = .zero
 
     private var currentOffset: CGSize {
         CGSize(
@@ -47,23 +47,25 @@ struct PerformanceOverlay: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.toggle()
-            }
-        }
+        .offset(currentOffset)
+        .simultaneousGesture(
+            TapGesture()
+                .onEnded {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                }
+        )
         .gesture(
             DragGesture(minimumDistance: 5)
-                .onChanged { value in
-                    dragOffset = value.translation
+                .updating($dragOffset) { value, state, _ in
+                    state = value.translation
                 }
                 .onEnded { value in
                     position.width += value.translation.width
                     position.height += value.translation.height
-                    dragOffset = .zero
                 }
         )
-        .offset(currentOffset)
     }
 
     private var compactView: some View {

@@ -33,8 +33,8 @@ enum AppNotification: Identifiable {
     case tlsAutoconfRenewed
     // TODO: 부정한 라이선스
     case invalidLicense
-    // TODO: 라이선스 만료 임박
-    // TODO: 라이선스 만료
+    case licenseExpiringSoon(remainingDays: Int)
+    case licenseExpired
     // TODO: 새 업데이트 사용 가능
     case updateAvailable(version: String)
     // TODO: 긴급 업데이트 요청
@@ -57,6 +57,10 @@ enum AppNotification: Identifiable {
             return "tls_autoconf_renewed"
         case .invalidLicense:
             return "invalid_license"
+        case .licenseExpiringSoon:
+            return "license_expiring_soon"
+        case .licenseExpired:
+            return "license_expired"
         case .updateAvailable:
             return "update_available"
         case .criticalUpdateRequired:
@@ -72,7 +76,7 @@ enum AppNotification: Identifiable {
             return .clientEvents
         case .serverStarted, .serverStartFailed, .serverStopped, .tlsAutoconfRenewed:
             return .serverEvents
-        case .invalidLicense:
+        case .invalidLicense, .licenseExpiringSoon, .licenseExpired:
             return .licenseEvents
         case .updateAvailable, .criticalUpdateRequired:
             return .updateEvents
@@ -98,6 +102,10 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.tls_autoconf_renewed.title", defaultValue: "인증서 자동 갱신 성공")
         case .invalidLicense:
             return String(localized: "notification.invalid_license.title", defaultValue: "부정한 라이선스")
+        case .licenseExpiringSoon:
+            return String(localized: "notification.license_expiring_soon.title", defaultValue: "라이선스 만료 임박")
+        case .licenseExpired:
+            return String(localized: "notification.license_expired.title", defaultValue: "라이선스 만료")
         case .updateAvailable:
             return String(localized: "notification.update_available.title", defaultValue: "새 업데이트 사용 가능")
         case .criticalUpdateRequired:
@@ -136,6 +144,10 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.tls_autoconf_renewed.message", defaultValue: "TLS 인증서가 자동으로 갱신되었습니다.")
         case .invalidLicense:
             return String(localized: "notification.invalid_license.message", defaultValue: "부정한 라이선스가 감지되었습니다.\n정식 버전 구매를 고려해 주세요.")
+        case .licenseExpiringSoon(let remainingDays):
+            return String(format: String(localized: "notification.license_expiring_soon.message", defaultValue: "라이선스가 %d일 후 만료됩니다."), remainingDays)
+        case .licenseExpired:
+            return String(localized: "notification.license_expired.message", defaultValue: "라이선스가 만료되었습니다.\n계속 사용하시려면 새 라이선스를 등록해 주세요.")
         case .updateAvailable(let version):
             return String(format: String(localized: "notification.update_available.message", defaultValue: "새 버전 %@이(가) 사용 가능합니다."), version)
         case .criticalUpdateRequired(let version, let isInvalidLicense):

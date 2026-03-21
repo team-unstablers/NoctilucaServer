@@ -145,13 +145,13 @@ public struct ProjectionSessionCreatedEvent: SiriusMessage {
 
 public struct ProjectionSessionCreationFailedEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEvent
-    
+
     public let identifier: UUID
-    public let reason: Int32
+    public let reason: VideoSessionFailureReason
     public let message: String
 
 
-    public init(identifier: UUID, reason: Int32, message: String) {
+    public init(identifier: UUID, reason: VideoSessionFailureReason, message: String) {
         self.identifier = identifier
         self.reason = reason
         self.message = message
@@ -159,7 +159,7 @@ public struct ProjectionSessionCreationFailedEvent: SiriusMessage {
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionCreationFailedEvent) throws {
         self.identifier = UUID(msgdef: protobufMessage.identifier)
-        self.reason = protobufMessage.reason
+        self.reason = VideoSessionFailureReason(rawValue: protobufMessage.reason)
         self.message = protobufMessage.message
     }
 
@@ -167,7 +167,7 @@ public struct ProjectionSessionCreationFailedEvent: SiriusMessage {
         var message = ProtobufMessage()
 
         message.identifier = self.identifier.asMsgDef()
-        message.reason = self.reason
+        message.reason = self.reason.rawValue
         message.message = self.message
 
         return message
@@ -217,13 +217,13 @@ public struct ProjectionSessionChangedEvent: SiriusMessage {
 
 public struct ProjectionSessionEndedEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionEndedEvent
-    
+
     public let identifier: UUID?
-    public let reason: Int32
+    public let reason: VideoSessionEndReason
     public let message: String?
 
 
-    public init(identifier: UUID?, reason: Int32, message: String?) {
+    public init(identifier: UUID?, reason: VideoSessionEndReason, message: String?) {
         self.identifier = identifier
         self.reason = reason
         self.message = message
@@ -231,7 +231,7 @@ public struct ProjectionSessionEndedEvent: SiriusMessage {
 
     init(from protobufMessage: Sirius_Msgdef_V1_Channels_Projection_ProjectionSessionEndedEvent) throws {
         self.identifier = protobufMessage.hasIdentifier ? UUID(msgdef: protobufMessage.identifier) : nil
-        self.reason = protobufMessage.reason
+        self.reason = VideoSessionEndReason(rawValue: protobufMessage.reason)
         self.message = protobufMessage.hasMessage ? protobufMessage.message : nil
     }
 
@@ -241,7 +241,7 @@ public struct ProjectionSessionEndedEvent: SiriusMessage {
         if let val = self.identifier {
             message.identifier = val.asMsgDef()
         }
-        message.reason = self.reason
+        message.reason = self.reason.rawValue
         if let val = self.message {
             message.message = val
         }

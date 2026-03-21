@@ -30,7 +30,8 @@ internal struct PAMAuthPayload {
     }
     
     static func payload(username: consuming String, password: consuming String) -> Data {
-        // TODO: 이거 메모리에 안 남아야 함
+        // NOTE: String의 내부 UTF-8 버퍼는 Swift 표준 라이브러리 한계로 zeroize 불가.
+        // 반환되는 Data는 sendAuthRequest에서 zeroize됨.
         let size = (4 + 4) + username.utf8.count + password.utf8.count
         
         var payload = Data(count: size)

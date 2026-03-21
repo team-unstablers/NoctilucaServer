@@ -43,28 +43,20 @@ struct CodecSpecificationListContainer: View {
                 Group {
                     switch specification.fourCC {
                     case .zrle:
-                        RLECodecSpecificationSheet(specification: specification) { action in
-                            if case .save(let newSpecification) = action {
-                                onComplete(newSpecification)
-                            }
+                        RLECodecSpecificationSheet(specification: specification) { newSpecification in
+                            onComplete(newSpecification)
                         }
                     case .mjpg:
-                        MJPGCodecSpecificationSheet(specification: specification) { action in
-                            if case .save(let newSpecification) = action {
-                                onComplete(newSpecification)
-                            }
+                        MJPGCodecSpecificationSheet(specification: specification) { newSpecification in
+                            onComplete(newSpecification)
                         }
                     case .webp:
-                        WebPCodecSpecificationSheet(specification: specification) { action in
-                            if case .save(let newSpecification) = action {
-                                onComplete(newSpecification)
-                            }
+                        WebPCodecSpecificationSheet(specification: specification) { newSpecification in
+                            onComplete(newSpecification)
                         }
                     default:
-                        CodecSpecificationSheet(specification: specification) { action in
-                            if case .save(let newSpecification) = action {
-                                onComplete(newSpecification)
-                            }
+                        CodecSpecificationSheet(specification: specification) { newSpecification in
+                            onComplete(newSpecification)
                         }
                     }
                 }

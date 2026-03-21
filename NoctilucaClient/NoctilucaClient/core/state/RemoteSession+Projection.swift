@@ -14,6 +14,34 @@ import CoreGraphics
 
 import SiriusKitClient
 
+// MARK: - Retryable reason extensions
+
+extension VideoSessionEndReason {
+    var isRetryable: Bool {
+        switch self {
+        case .internalError, .recorderFailed, .dataChannelError, .unknown:
+            return true
+        case .clientRequested, .displayDisconnected:
+            return false
+        default:
+            return true
+        }
+    }
+}
+
+extension AudioSessionEndReason {
+    var isRetryable: Bool {
+        switch self {
+        case .error, .unknown:
+            return true
+        case .clientRequested, .sourceUnavailable:
+            return false
+        default:
+            return true
+        }
+    }
+}
+
 extension RemoteSession {
     typealias CursorHash = UInt64
     
@@ -45,6 +73,37 @@ extension RemoteSession {
         var position: CGPoint = .zero
     }
     
+    /// 프로젝션 세션 종료 정보 (auto-restart 실패 시 UI에 전달)
+    struct ProjectionSessionFailureInfo {
+        let reason: VideoSessionEndReason
+        let message: String?
+    }
+
+    /// 오디오 세션 종료 정보
+    struct AudioSessionFailureInfo {
+        let reason: AudioSessionEndReason
+        let message: String?
+    }
+
+    /// auto-restart를 위한 재시도 상태
+    private struct RetryState {
+        var attemptCount: Int = 0
+        let maxRetries: Int = 3
+        var isRetrying: Bool = false
+
+        mutating func reset() {
+            attemptCount = 0
+            isRetrying = false
+        }
+
+        mutating func nextBackoff() -> TimeInterval? {
+            guard attemptCount < maxRetries else { return nil }
+            let backoff = pow(2.0, Double(attemptCount)) // 1s, 2s, 4s
+            attemptCount += 1
+            return backoff
+        }
+    }
+
     /// 이 티켓은 다른 곳으로 복사할 수 없습니다
     class SessionReferenceTicket {
         let id: UUID
@@ -91,6 +150,20 @@ extension RemoteSession {
         @Published
         private(set) var degradationNotice: DegradationNotice? = nil
 
+        /// 프로젝션 세션 오류 정보. auto-restart 실패 시 설정됨.
+        @Published
+        private(set) var sessionError: ProjectionSessionFailureInfo? = nil
+
+        /// 오디오 세션 오류 정보.
+        @Published
+        private(set) var audioSessionError: AudioSessionFailureInfo? = nil
+
+        private var retryState = RetryState()
+        private var audioRetryState = RetryState()
+        private var lastActiveDisplayID: Int?
+        private var retryTask: Task<Void, Never>?
+        private var audioRetryTask: Task<Void, Never>?
+
         private var sessionEventSubscriptions: [UUID: AnyCancellable] = [:]
 
         private let cursorImageCacheManager = CursorImageCacheManager()
@@ -110,6 +183,8 @@ extension RemoteSession {
         }
 
         deinit {
+            retryTask?.cancel()
+            audioRetryTask?.cancel()
             unsubscribeEvents()
             sessionEventSubscriptions.values.forEach { $0.cancel() }
             sessionEventSubscriptions.removeAll()
@@ -134,11 +209,19 @@ extension RemoteSession {
             case .sessionCreated(let session):
                 self.projectionSessions.updateValue(session, forKey: session.dataChannel.identifier)
                 self.subscribeSessionEvents(session)
-            case .sessionDestroyed(let sessionID, let reason):
+                self.retryState.reset()
+                self.sessionError = nil
+            case .sessionDestroyed(let sessionID, let reason, let message):
                 self.projectionSessions.removeValue(forKey: sessionID)
+                self.projectionSessionReferences.removeValue(forKey: sessionID)
                 self.unsubscribeSessionEvents(sessionID)
                 if projectionSessions.isEmpty {
                     self.degradationNotice = nil
+                }
+                if reason.isRetryable {
+                    self.attemptAutoRestart(reason: reason, message: message)
+                } else {
+                    self.notifySessionFailure(reason: reason, message: message)
                 }
 
             case .audioSessionCreated(let audioSession):
@@ -146,8 +229,13 @@ extension RemoteSession {
                     return
                 }
                 self.audioSessions.updateValue(audioSession, forKey: dataChannel.identifier)
-            case .audioSessionDestroyed(let sessionID, let reason):
+                self.audioRetryState.reset()
+                self.audioSessionError = nil
+            case .audioSessionDestroyed(let sessionID, let reason, let message):
                 self.audioSessions.removeValue(forKey: sessionID)
+                if reason.isRetryable {
+                    self.attemptAudioAutoRestart(reason: reason, message: message)
+                }
 
             case .cursorMoved(let moveEvent):
                 self.enqueueCursorMoveEvent(moveEvent)
@@ -215,6 +303,12 @@ extension RemoteSession {
                     self.degradationNotice = nil
                 } else {
                     self.degradationNotice = notice
+                }
+            case .errorOccurred(let error, let fatal):
+                if fatal {
+                    logger.error("Fatal projection session error: \(error.localizedDescription)")
+                } else {
+                    logger.warning("Non-fatal projection session error: \(error.localizedDescription)")
                 }
             default:
                 break
@@ -341,9 +435,10 @@ extension RemoteSession {
                 for: source,
                 projectionSettings: parent?.client.sessionSettings?.projection
             ) else {
-                // TODO: throw error
-                fatalError("Failed to create projection session for \(source.debugDescription).")
+                throw ProjectionChannelError.channelClosed
             }
+
+            self.lastActiveDisplayID = displayID
 
             let sessionID = session.id
 
@@ -362,6 +457,100 @@ extension RemoteSession {
             return ProjectionSessionSubscription(session: session, ticket: ticket)
         }
         
+        // MARK: - Auto-restart
+
+        private func attemptAutoRestart(reason: VideoSessionEndReason, message: String?) {
+            guard !retryState.isRetrying else { return }
+
+            guard let backoff = retryState.nextBackoff() else {
+                notifySessionFailure(reason: reason, message: message)
+                return
+            }
+
+            retryState.isRetrying = true
+            logger.info("Auto-restarting projection session after \(backoff)s (attempt \(self.retryState.attemptCount)/\(self.retryState.maxRetries))")
+
+            retryTask = Task { [weak self] in
+                guard let self else { return }
+
+                try? await Task.sleep(for: .seconds(backoff))
+                guard !Task.isCancelled else { return }
+
+                do {
+                    let targetDisplayID = self.lastActiveDisplayID ?? -1
+                    _ = try await self.subscribeProjectionSession(for: targetDisplayID)
+                    self.retryState.reset()
+                    self.sessionError = nil
+                    logger.info("Auto-restart succeeded")
+                } catch {
+                    self.retryState.isRetrying = false
+                    logger.error("Auto-restart failed: \(error)")
+                    if self.retryState.attemptCount >= self.retryState.maxRetries {
+                        self.notifySessionFailure(
+                            reason: reason,
+                            message: "Auto-restart failed after \(self.retryState.maxRetries) attempts: \(error.localizedDescription)"
+                        )
+                    } else {
+                        // 다음 재시도
+                        self.attemptAutoRestart(reason: reason, message: message)
+                    }
+                }
+            }
+        }
+
+        private func attemptAudioAutoRestart(reason: AudioSessionEndReason, message: String?) {
+            guard !audioRetryState.isRetrying else { return }
+
+            guard let backoff = audioRetryState.nextBackoff() else {
+                self.audioSessionError = AudioSessionFailureInfo(reason: reason, message: message)
+                return
+            }
+
+            audioRetryState.isRetrying = true
+            logger.info("Auto-restarting audio session after \(backoff)s (attempt \(self.audioRetryState.attemptCount)/\(self.audioRetryState.maxRetries))")
+
+            audioRetryTask = Task { [weak self] in
+                guard let self else { return }
+
+                try? await Task.sleep(for: .seconds(backoff))
+                guard !Task.isCancelled else { return }
+
+                do {
+                    try await self.startAudioProjection()
+                    self.audioRetryState.reset()
+                    self.audioSessionError = nil
+                    logger.info("Audio auto-restart succeeded")
+                } catch {
+                    self.audioRetryState.isRetrying = false
+                    logger.error("Audio auto-restart failed: \(error)")
+                    if self.audioRetryState.attemptCount >= self.audioRetryState.maxRetries {
+                        self.audioSessionError = AudioSessionFailureInfo(
+                            reason: reason,
+                            message: "Audio auto-restart failed after \(self.audioRetryState.maxRetries) attempts: \(error.localizedDescription)"
+                        )
+                    } else {
+                        self.attemptAudioAutoRestart(reason: reason, message: message)
+                    }
+                }
+            }
+        }
+
+        private func notifySessionFailure(reason: VideoSessionEndReason, message: String?) {
+            self.sessionError = ProjectionSessionFailureInfo(reason: reason, message: message)
+            logger.error("Projection session failure: reason=\(reason.rawValue), message=\(message ?? "(nil)")")
+        }
+
+        /// auto-restart 재시도 상태를 초기화하고 진행 중인 재시도를 취소합니다.
+        func cancelAutoRestart() {
+            retryTask?.cancel()
+            retryTask = nil
+            retryState.reset()
+
+            audioRetryTask?.cancel()
+            audioRetryTask = nil
+            audioRetryState.reset()
+        }
+
         func startAudioProjection() async throws {
             // TODO: 마이크 세션같은게 있을 수도 있기 때문에
             guard audioSessions.values.isEmpty else {

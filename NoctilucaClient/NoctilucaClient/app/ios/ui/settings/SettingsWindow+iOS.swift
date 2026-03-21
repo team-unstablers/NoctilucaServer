@@ -31,7 +31,7 @@ struct UIKitSettingsWindow: View {
                     Button(String(localized: "settings.tabs.input", defaultValue: "입력")) { onSelectTab(.input) }
                     Button(String(localized: "settings.tabs.security", defaultValue: "보안")) { onSelectTab(.security) }
                     Button(String(localized: "settings.tabs.misc", defaultValue: "기타")) { onSelectTab(.misc) }
-                    Button(String(localized: "settings.tabs.plugins", defaultValue: "플러그인")) { onSelectTab(.plugins) }
+                    // Button(String(localized: "settings.tabs.plugins", defaultValue: "플러그인")) { onSelectTab(.plugins) }
                     Button(String(localized: "settings.tabs.about", defaultValue: "정보")) { onSelectTab(.about) }
                 }
                 .foregroundStyle(.primary)

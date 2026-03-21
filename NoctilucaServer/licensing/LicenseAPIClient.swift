@@ -79,11 +79,19 @@ private struct APIErrorResponse: Decodable {
     let detail: String?
 }
 
+// MARK: - LicenseAPIClientProtocol
+
+protocol LicenseAPIClientProtocol: Sendable {
+    func activate(licenseInfo: LicenseInfo, hwid: String, label: String) async throws -> ActivateLicenseResponse
+    func validateSeat(seatProof: String) async throws -> ValidateSeatResponse
+    func revokeSeat(licenseInfo: LicenseInfo, seatId: String) async throws
+}
+
 // MARK: - LicenseAPIClient
 
-actor LicenseAPIClient {
+actor LicenseAPIClient: LicenseAPIClientProtocol {
 #if DEBUG
-    private static let baseURL = "http://localhost:8000/api/v1"
+    private static let baseURL = "http://localhost:8901/api/v1"
 #else
     private static let baseURL = "https://luvotomy.noctiluca.app/api/v1"
 #endif
@@ -101,6 +109,7 @@ actor LicenseAPIClient {
             "Authorization": "LicenseKey \(licenseInfo.licenseKey)",
             "X-License-Name": licenseInfo.name,
             "X-License-Email": licenseInfo.email,
+            "X-Software-Identifier": "app.noctiluca.server.v1",
             "User-Agent": userAgent,
         ]
     }

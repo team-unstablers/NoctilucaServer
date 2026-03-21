@@ -53,7 +53,9 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             .fontWeight(.light)
                     }
 
-                    Text(String(format: String(localized: "main.new_connection.version_format", defaultValue: "버전 %@"), NoctilucaMeta.version))
+                    HStack(spacing: 0) {
+                        Text(String(format: String(localized: "main.new_connection.version_format", defaultValue: "버전 %@"), NoctilucaMeta.version))
+                    }
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

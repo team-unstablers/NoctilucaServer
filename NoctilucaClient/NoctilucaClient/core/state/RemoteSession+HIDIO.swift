@@ -54,6 +54,7 @@ extension RemoteSession {
 #endif
 
                 self.setupKeyEventPipeline()
+                self.applyMouseInputSettings()
                 self.sendKeyboardSetupIfNeeded()
                 try? self.session.startSession()
                 self.installEscapeHook()
@@ -75,6 +76,15 @@ extension RemoteSession {
                     ModifierKeyRebindingConfigurator.apply(overrides, to: self.rebinder)
                 }
                 .store(in: &cancellables)
+
+            SettingsStore.shared.$settings
+                .compactMap { settings -> AppSettings.Input? in settings?.input }
+                .dropFirst()
+                .sink { [weak self] (input: AppSettings.Input) in
+                    guard let self else { return }
+                    self.controller.applyMouseInputSettings(input)
+                }
+                .store(in: &cancellables)
         }
 
     
@@ -91,11 +101,16 @@ extension RemoteSession {
             controller.sendKeyboardSetup(hacks: hacks)
         }
 
+        private func applyMouseInputSettings() {
+            let input = SettingsStore.shared.settings.input
+            controller.applyMouseInputSettings(input)
+        }
+
         private func installEscapeHook() {
             let escapeSequence = SettingsStore.shared.settings.input.unlockKeySequence
-            let hook = HIDIOKeystrokeHook(condition: escapeSequence) {
+            let hook = HIDIOKeystrokeHook(condition: escapeSequence) { [weak self] in
                 Task { @MainActor in
-                    try? self.session.switchMode(to: .shared, reason: .userInitiated)
+                    try? self?.session.switchMode(to: .shared, reason: .userInitiated)
                 }
             }
 
@@ -103,6 +118,7 @@ extension RemoteSession {
         }
 
         deinit {
+            channel._ref?.controller.removeHook(for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
             self.session.stopSession()
         }
     }

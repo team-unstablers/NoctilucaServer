@@ -25,7 +25,7 @@ enum NoctilucaServerError: LocalizedError {
             return "The configured identity failed validation."
             
         case .invalidLicense:
-            return "시스템에 올바른 라이선스가 설치되어 있지 않습니다."
+            return String(localized: "server.error.invalid_license", defaultValue: "시스템에 올바른 라이선스가 설치되어 있지 않습니다.")
         }
     }
 }
@@ -71,7 +71,7 @@ class NoctilucaServer: ObservableObject {
     let authPluginRegistry = AuthPluginRegistry.shared
     let pluginBundleRegistry = PluginBundleRegistry.shared
 
-    private(set) public var identity: TLSIdentity?
+    private(set) public var identity: (any QUICServerIdentity)?
 
     let authenticator: Authenticator
 
@@ -125,14 +125,16 @@ class NoctilucaServer: ObservableObject {
     }
     
     private func loadIdentityInternal() async throws {
-        guard let identity = self.settings.quicTransport.identity else {
+        let identityManager = ServerIdentityManager.shared
+        
+        guard let identitySource = self.settings.quicTransport.identity else {
             // throw error: No identity configured
             throw NoctilucaServerError.noIdentityConfigured
         }
         
-        let quicIdentity = identity.load()
+        let identity = try await identityManager.load(source: identitySource)
         
-        guard try await quicIdentity.sanityCheck(strict: self.settings.quicTransport.tlsStrictValidation) else {
+        guard try await identity.sanityCheck(strict: self.settings.quicTransport.tlsStrictValidation) else {
             self.logger.error("Identity validation failed for identity: \(identity)")
             throw NoctilucaServerError.identityValidationFailed
         }
@@ -195,11 +197,14 @@ class NoctilucaServer: ObservableObject {
         }
                 
         do {
+#if !DEBUG
             // TODO: 레이스 반드시 일어남
-            guard await LicenseManager.shared.validationState != .unlicensed else {
+            let licenseState = await LicenseManager.shared.validationState
+            guard licenseState != .unlicensed && licenseState != .expired else {
                 // TODO: 앱 구매 다이얼로그 등 띄우기
                 throw NoctilucaServerError.invalidLicense
             }
+#endif
             
             self.state = .preparing
             
@@ -214,7 +219,7 @@ class NoctilucaServer: ObservableObject {
             
             let result = try SiriusServerBuilder()
                 .useFeatureProvider(featureProvider)
-                .useTransportProtocol(.quic(implementation: implementation, port: settings.quicTransport.listenPort, identitySource: identity.identitySource))
+                .useTransportProtocol(.quic(implementation: implementation, port: settings.quicTransport.listenPort, identity: identity))
                 .withExtraConfiguration("someValue", forKey: "someKey")
                 .build()
             
@@ -228,6 +233,9 @@ class NoctilucaServer: ObservableObject {
             
             try await server.setup()
             try await server.startup()
+        } catch let error as QUICServerIdentityLoadError {
+            self.state = .idle
+            await self.handleError(identityLoadError: error)
         } catch {
             logger.error("Failed to start NoctilucaServer: \(error)")
             AppNotification.serverStartFailed(error: error).post()
@@ -244,10 +252,6 @@ class NoctilucaServer: ObservableObject {
         logger.info("Shutting down NoctilucaServer...")
 
         try await server.shutdown()
-
-        await MainActor.run {
-            ScreenCaptureKitWorkaroundDummyWindow.windowManager.shutdown()
-        }
     }
 }
 
@@ -279,8 +283,13 @@ extension NoctilucaServer: SiriusServerDelegate {
         let session = NoctilucaClientSession(session: session, server: context)
         session.delegate = self
         session.initialize()
-        
+
         Task { @MainActor in
+            guard self.clients.count < self.settings.general.maxConcurrentSessions else {
+                logger.info("Maximum concurrent sessions exceeded (\(self.settings.general.maxConcurrentSessions)), rejecting session")
+                Task { await session.closeWithGoodbye(code: .sessionAllocationFailed) }
+                return
+            }
             self.clients[session.id] = session
         }
     }

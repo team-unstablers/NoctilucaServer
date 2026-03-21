@@ -214,7 +214,10 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         self.controller = controller
         self.setupMouseInputHandler()
 #if os(macOS)
-        self.startRecenterLoopIfNeeded()
+        Task { @MainActor in
+            self.hideCursor()
+            self.startRecenterLoopIfNeeded()
+        }
 #endif
     }
     
@@ -222,8 +225,10 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         self.controller = nil
         self.destroyMouseInputHandler()
 #if os(macOS)
-        self.window = nil
-        self.stopRecenterLoop()
+        Task { @MainActor in
+            self.showCursor()
+            self.startRecenterLoopIfNeeded()
+        }
 #endif
     }
 
@@ -281,7 +286,7 @@ fileprivate extension HIDIOGCMouse {
             return displayID
         }
 
-        return nil
+        return CGMainDisplayID()
     }
     
     @MainActor

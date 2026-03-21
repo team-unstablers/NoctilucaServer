@@ -66,7 +66,7 @@ class JWTDecoder {
         self.publicKey = publicKey
     }
 
-    func decode<T>(_ jwt: String, as type: T.Type) -> Result<T, JWTDecoderError> where T: Decodable {
+    func decode<T>(_ jwt: String, as type: T.Type, skipExpirationCheck: Bool = false) -> Result<T, JWTDecoderError> where T: Decodable {
         let segments = jwt.split(separator: ".", maxSplits: 3).map(String.init)
         guard segments.count == 3 else {
             return .failure(.invalidToken)
@@ -90,8 +90,9 @@ class JWTDecoder {
             return .failure(.unsupportedAlgorithm)
         }
 
-        // exp 만료 체크 (필드가 있는 경우에만)
-        if let expClaim = try? JSON.parse(jsonPayload, to: JWTExpClaim.self),
+        // exp 만료 체크 (skipExpirationCheck가 false이고 필드가 있는 경우에만)
+        if !skipExpirationCheck,
+           let expClaim = try? JSON.parse(jsonPayload, to: JWTExpClaim.self),
            let exp = expClaim.exp {
             let expirationDate = Date(timeIntervalSince1970: TimeInterval(exp))
             if expirationDate < Date.now {

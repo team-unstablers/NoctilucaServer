@@ -125,7 +125,7 @@ extension AppSettings {
         var enableGCMouse: Bool = true
 #endif
         var pointerInputMode: PointerInputMode = .automatic
-        var touchInputMode: TouchInputMode = .touch
+        var touchInputMode: TouchInputMode = .trackpad
         var trackpadMoveMultiplier: Double = 1.0
         var cursorScale: Double = 1.0
         var invertMouseButtons: Bool = false

@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 import SiriusKit
 
@@ -110,28 +111,100 @@ struct MiscSettingsTab: View {
                 }
             }
             
-            Section(String(localized: "settings.misc.telemetry.title", defaultValue: "텔레메트리 및 진단 정보")) {
+            Section {
                 Toggle(isOn: $settings.telemetry.enableTelemetry) {
                     Text(markdown: String(localized: "settings.misc.telemetry.enable.title", defaultValue: "Noctiluca의 개발을 익명으로 돕기"))
-                    Text(markdown: String(localized: "settings.misc.telemetry.enable.description", defaultValue: "사용자 환경 및 사용 통계를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](http://google.com)"))
+                    Text(markdown: String(localized: "settings.misc.telemetry.enable.description", defaultValue: "Noctiluca Server가 가동 중 오류가 발생하거나, 비정상적으로 종료되었을 때 오류 보고를 익명으로 수집하는 것을 허용합니다.\n프라이버시 보호를 우선하기 위해, 이 옵션은 기본적으로 꺼져 있습니다. [더 알아보기…](https://noctiluca.app/docs/server/about-telemetry)"))
                 }
-                SettingsEntry(title: String(localized: "settings.misc.telemetry.identifier.title", defaultValue: "텔레메트리 식별자")) {
-                    Button(String(localized: "settings.misc.telemetry.identifier.reset", defaultValue: "식별자 재설정")) {
-
+                .onChange(of: settings.telemetry.enableTelemetry) { _, newValue in
+                    if newValue {
+                        settings.telemetry.ensureIdentifier()
+                        TelemetryService.shared.startIfNeeded(settings: settings.telemetry)
+                    } else {
+                        TelemetryService.shared.stop()
                     }
                 }
 
+                SettingsEntry(
+                    title: String(localized: "settings.misc.telemetry.identifier.title", defaultValue: "텔레메트리 식별자"),
+                    subtitle: ((settings.telemetry.telemetryIdentifier?.uuidString ?? "(None)") + "\n\n" + String(localized: "settings.misc.telemetry.identifier.description", defaultValue: "이 텔레메트리 식별자는 UUIDv4 형식으로 생성된 것입니다. 사용자를 특정짓거나 추적하는 데 사용되지 않으며,\n단지 수집된 오류 보고 데이터가 서로 다른 사용자로부터 왔는지를 구분하는 데에만 사용됩니다."))
+                ) {
+                    Button(String(localized: "settings.misc.telemetry.identifier.reset", defaultValue: "식별자 재설정")) {
+                        settings.telemetry.resetIdentifier()
+                        TelemetryService.shared.restart(settings: settings.telemetry)
+                    }
+                }
+                .disabled(!settings.telemetry.enableTelemetry)
+
                 SettingsEntry(title: String(localized: "settings.misc.diagnostics.export.title", defaultValue: "진단 정보 내보내기")) {
                     Button(String(localized: "settings.misc.diagnostics.export.save_to_file", defaultValue: "파일로 저장…")) {
-
+                        Task { await exportDiagnostics() }
                     }
                 }
                 SettingsEntry(title: String(localized: "settings.misc.connectivity_test.title", defaultValue: "외부 접속 테스트"), subtitle: String(localized: "settings.misc.connectivity_test.description", defaultValue: "주식회사 팀언스테이블러즈에서 제공하는 테스트 노드를 통해 외부로부터 접속이 가능한지 테스트합니다.")) {
                     Button(String(localized: "settings.misc.connectivity_test.request", defaultValue: "접속 테스트 요청하기")) {}
                 }
+            } header: {
+                Text(String(localized: "settings.misc.telemetry.title", defaultValue: "텔레메트리 및 진단 정보"))
+            } footer: {
+                if !TelemetryService.shared.isAvailable {
+                    Text(markdown: String(
+                        localized: "settings.misc.telemetry.eea_notice",
+                        defaultValue: "유럽경제지역(EEA) 또는 영국에 해당하는 지역 설정을 사용하고 있어 텔레메트리 기능을 활성화할 수 없습니다."
+                    ))
+                }
             }
-            .disabled(true)
+            .disabled(!TelemetryService.shared.isAvailable)
         }
         .formStyle(.grouped)
+    }
+
+    @MainActor
+    private func exportDiagnostics() async {
+        var selectedLevel: DiagLevel?
+
+        let alert = NOCAlert()
+        alert.title = String(
+            localized: "settings.misc.diagnostics.export.dialog.title",
+            defaultValue: "어떻게 출력하시겠습니까?"
+        )
+        alert.message = String(
+            localized: "settings.misc.diagnostics.export.dialog.message",
+            defaultValue: """
+            간단하게: GitHub 이슈 트래커나 남들이 볼 수 있는 곳에 진단 정보를 첨부하려는 경우에는 이 버튼을 클릭하십시오. \
+            개인 식별이 가능하거나 민감한 정보는 최소한으로 노출을 줄입니다.
+
+            상세하게: Noctiluca 개발자에게 직접 진단 정보를 전달하려는 경우에는 이 버튼을 클릭하십시오. \
+            진단 내용에는 호스트네임, 네트워크 주소 등 개인 식별이 가능한 정보가 포함될 수 있습니다.
+            """
+        )
+
+        alert.addButton(title: String(
+            localized: "settings.misc.diagnostics.export.dialog.simple",
+            defaultValue: "간단하게"
+        )) {
+            selectedLevel = .simple
+        }
+        alert.addButton(title: String(
+            localized: "settings.misc.diagnostics.export.dialog.detailed",
+            defaultValue: "상세하게"
+        )) {
+            selectedLevel = .detailed
+        }
+
+        await alert.present()
+
+        guard let level = selectedLevel else { return }
+
+        let text = await DiagPrinter().generate(level: level)
+
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "noctiluca-diagnostics.txt"
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+
+        let response = panel.runModal()
+        guard response == .OK, let url = panel.url else { return }
+        try? text.write(to: url, atomically: true, encoding: .utf8)
     }
 }

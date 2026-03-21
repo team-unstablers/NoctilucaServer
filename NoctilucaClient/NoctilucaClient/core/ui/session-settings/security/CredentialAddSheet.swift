@@ -108,6 +108,7 @@ struct CredentialAddSheet: View {
                     .textFieldStyle(.roundedBorder)
                 SecureField(String(localized: "session-settings.security.credential_add.password.password", defaultValue: "비밀번호"), text: $password)
                     .textFieldStyle(.roundedBorder)
+                    .requiresABC()
             }
         case .simplePassword:
             VStack(alignment: .leading, spacing: 8) {
@@ -115,6 +116,7 @@ struct CredentialAddSheet: View {
                     .font(.headline)
                 SecureField(String(localized: "session-settings.security.credential_add.simple_password.password", defaultValue: "비밀번호"), text: $simplePassword)
                     .textFieldStyle(.roundedBorder)
+                    .requiresABC()
             }
         case .sshKey:
             VStack(alignment: .leading, spacing: 8) {

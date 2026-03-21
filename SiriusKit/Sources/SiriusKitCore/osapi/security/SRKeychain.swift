@@ -81,7 +81,38 @@ public class SRKeychain {
         return .success(foundItem)
     }
 
-    public func queryItemExistance(by label: String, clazz: SRKeychainItemClass, extras: [String: Any] = [:]) -> Result<Bool, SRKeychainError> {
+    /// 특정 라벨과 클래스에 해당하는 모든 Keychain 아이템을 조회합니다.
+    public func queryItems(by label: String, clazz: SRKeychainItemClass, extras: [String: Any] = [:]) -> Result<[CFTypeRef], SRKeychainError> {
+        assert(clazz != .identity, "Use separate method for identity existence check.")
+
+        let query: [String: Any] = extras.merging([
+            kSecClass as String: clazz.secClass,
+            kSecAttrLabel as String: label,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+            kSecReturnRef as String: true
+        ], uniquingKeysWith: { (_, new) in new })
+
+        var items: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &items)
+
+        guard status == errSecSuccess, let foundItems = items as? [CFTypeRef] else {
+            if status == errSecItemNotFound {
+                return .success([]) // 없으면 빈 배열 반환
+            } else {
+                return .failure(.unexpectedStatus(status))
+            }
+        }
+
+        for foundItem in foundItems {
+            guard CFGetTypeID(foundItem) == clazz.typeId else {
+                return .failure(.assertionFailed(reason: "query items success but type mismatch (expected: \(clazz.typeId), found: \(CFGetTypeID(foundItem)))"))
+            }
+        }
+
+        return .success(foundItems)
+    }
+
+    public func queryItemExistence(by label: String, clazz: SRKeychainItemClass, extras: [String: Any] = [:]) -> Result<Bool, SRKeychainError> {
         let queryResult = self.queryItem(by: label, clazz: clazz, extras: extras)
 
         switch queryResult {
@@ -121,7 +152,7 @@ public class SRKeychain {
         }
     }
 
-    public func queryIdentityExistance(by label: String) -> Result<Bool, SRKeychainError> {
+    public func queryIdentityExistence(by label: String) -> Result<Bool, SRKeychainError> {
         let identityResult = self.queryIdentity(by: label)
 
         switch identityResult {
@@ -141,6 +172,22 @@ public class SRKeychain {
         let query: [String: Any] = extras.merging([
             kSecClass as String: clazz.secClass,
             kSecAttrLabel as String: label
+        ], uniquingKeysWith: { (_, new) in new })
+
+        let status = SecItemDelete(query as CFDictionary)
+
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            return .failure(.unexpectedStatus(status))
+        }
+
+        return .success(())
+    }
+    
+    public func deleteItems(references: [CFTypeRef], clazz: SRKeychainItemClass, extras: [String: Any] = [:]) -> Result<Void, SRKeychainError> {
+        let query: [String: Any] = extras.merging([
+            kSecClass as String: clazz.secClass,
+            kSecMatchItemList as String: references,
+            kSecMatchLimit as String: kSecMatchLimitAll
         ], uniquingKeysWith: { (_, new) in new })
 
         let status = SecItemDelete(query as CFDictionary)

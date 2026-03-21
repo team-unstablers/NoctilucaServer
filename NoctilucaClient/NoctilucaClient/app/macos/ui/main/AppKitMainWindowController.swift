@@ -38,7 +38,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
             .environmentObject(viewModel.contactSheetCoordinator)
         
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.sizingOptions = []
+        hostingView.sizingOptions = [.minSize]
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
@@ -50,6 +50,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
         window.contentView = hostingView
         window.title = NoctilucaMeta.productName
         window.minSize = NSSize(width: 640, height: 480)
+        window.contentMinSize = NSSize(width: 640, height: 480)
         window.isReleasedWhenClosed = false
         window.setFrameAutosaveName("NoctilucaClient.MainWindow")
         window.center()
@@ -111,8 +112,12 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
         return [.autoHideToolbar, .autoHideMenuBar, .fullScreen]
     }
 
+    func windowDidBecomeKey(_ notification: Notification) {
+        viewModel.remoteSession?.hidio?.session.activateSession()
+    }
+
     func windowDidResignKey(_ notification: Notification) {
-        viewModel.remoteSession?.hidio?.controller.resetKeyPressState()
+        viewModel.remoteSession?.hidio?.session.deactivateSession()
     }
 }
 

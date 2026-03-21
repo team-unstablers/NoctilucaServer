@@ -41,7 +41,7 @@ extension SystemCapability {
         
         // SHA-256으로 해싱하여 복구 및 역추적이 불가능한 안전한 문자열로 변환
         guard let data = combinedString.data(using: .utf8) else { return nil }
-        let hashed = SHA256.hash(data: data)
+        let hashed = SHA512.hash(data: data)
         
         // 해시값을 64자리의 String(Hex)으로 변환
         return hashed.compactMap { String(format: "%02x", $0) }.joined()

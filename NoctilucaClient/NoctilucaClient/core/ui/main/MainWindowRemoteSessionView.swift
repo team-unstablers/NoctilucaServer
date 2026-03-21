@@ -84,7 +84,7 @@ struct MainWindowRemoteSessionView: View {
                     displays: displays,
                     currentActive: currentActive,
                     action: { newSourceDisplayID in
-                        Task.detached {
+                        Task {
                             do {
                                 try await self.updateProjectionTarget(.displayID(newSourceDisplayID))
                             } catch {
@@ -96,14 +96,12 @@ struct MainWindowRemoteSessionView: View {
                 )
                     .task {
                         // 시트 표시 시 thumbnail 포함 디스플레이 목록 재요청
-                        let response = await Task.detached {
-                            try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails)
-                        }.value
+                        guard let response = try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails) else {
+                            return
+                        }
 
-                        if let response {
-                            for display in response.displays {
-                                await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
-                            }
+                        for display in response.displays {
+                            await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
                         }
                     }
                     .presentationDragIndicator(.visible)
@@ -120,8 +118,27 @@ struct MainWindowRemoteSessionView: View {
             
         }
 #endif
+        .onReceive(projection.$sessionError) { error in
+            if error != nil {
+                // 세션이 서버에 의해 종료되었으므로 기존 subscription을 정리
+                subscription?.invalidate()
+                subscription = nil
+            }
+        }
+        .onReceive(projection.$projectionSessions) { sessions in
+            // auto-restart 성공 시 새로운 세션을 subscription으로 갱신
+            guard subscription == nil,
+                  !sessions.isEmpty,
+                  case .displayID(let displayID) = sourceDescriptor,
+                  displayID != -1
+            else { return }
+
+            Task {
+                try? await self.updateProjectionTarget(displayID)
+            }
+        }
     }
-    
+
     func decideTargetDisplayID() async throws {
         if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
             try await updateProjectionTarget(.displayID(primaryDisplayID))

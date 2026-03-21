@@ -10,7 +10,14 @@ import AVFoundation
 import CoreMedia
 import Accelerate
 
+import Combine
+
 import SiriusKitClient
+
+enum AudioProjectionSessionEvent: Sendable {
+    /// 오류가 발생했습니다.
+    case errorOccurred(Error, fatal: Bool)
+}
 
 /// Audio projection session that handles audio decoding and playback.
 ///
@@ -49,6 +56,8 @@ class AudioProjectionSession: Identifiable {
     private var isStarted: Bool = false
 
     private let audioJitterBufferPreset: AudioJitterBuffer.Preset
+
+    let events = PassthroughSubject<AudioProjectionSessionEvent, Never>()
 
     // MARK: - Lifecycle
 
@@ -326,6 +335,9 @@ extension AudioProjectionSession: AudioDecoderDelegate {
 
     func audioDecoder(_ decoder: AudioDecoder, didFailWith error: Error) {
         logger.error("Audio decoder error: \(error.localizedDescription)")
+        Task { @MainActor in
+            self.events.send(.errorOccurred(error, fatal: false))
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 {
-  "originHash" : "dbc259cc593fa426bc705e6d2eec5fefee215ff28195dcf2a62d6a946532c8e0",
+  "originHash" : "b5483c6b14b962327d20c8ebcb6aa1f9f3705e933c62f9aea3d654c935dabfc7",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -20,12 +20,21 @@
       }
     },
     {
+      "identity" : "sentry-cocoa",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/getsentry/sentry-cocoa",
+      "state" : {
+        "revision" : "c63a66f1b5107eec3792249bb03e65015eeba905",
+        "version" : "9.7.0"
+      }
+    },
+    {
       "identity" : "sparkle",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle",
       "state" : {
-        "revision" : "5581748cef2bae787496fe6d61139aebe0a451f6",
-        "version" : "2.8.1"
+        "revision" : "21d8df80440b1ca3b65fa82e40782f1e5a9e6ba2",
+        "version" : "2.9.0"
       }
     },
     {
@@ -123,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/team-unstablers/Xuanxue.git",
       "state" : {
-        "revision" : "bac50ea9dc652f3d1657facf92e4299df3373e76",
-        "version" : "1.0.4"
+        "revision" : "a82faa72e414ad728905322d29b8217c2d9ab175",
+        "version" : "1.0.5"
       }
     },
     {

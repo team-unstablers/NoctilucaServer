@@ -250,18 +250,18 @@ class PluginBundleRegistry {
     @MainActor
     private func confirmUnsignedBundleLoad(bundleURL: URL, metadata: PluginBundlePlistMetadata) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "서명되지 않은 플러그인 번들"
-        alert.informativeText = """
+        alert.messageText = String(localized: "core.plugin.unsigned_bundle_alert.title", defaultValue: "서명되지 않은 플러그인 번들")
+        alert.informativeText = String(localized: "core.plugin.unsigned_bundle_alert.informative_text", defaultValue: """
             "\(metadata.displayName)" (\(metadata.id)) 플러그인 번들은 유효한 코드 서명이 없습니다.
             서명되지 않은 플러그인은 시스템에 악영향을 줄 수 있습니다.
 
             경로: \(bundleURL.path)
 
             계속 로드하시겠습니까?
-            """
+            """)
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "로드")
-        alert.addButton(withTitle: "취소")
+        alert.addButton(withTitle: String(localized: "core.plugin.unsigned_bundle_alert.button.load", defaultValue: "로드"))
+        alert.addButton(withTitle: String(localized: "core.plugin.unsigned_bundle_alert.button.cancel", defaultValue: "취소"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 

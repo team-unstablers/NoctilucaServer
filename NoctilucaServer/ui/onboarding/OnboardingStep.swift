@@ -9,7 +9,8 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     case welcome        // Phase 1: 환영
     case permissions    // Phase 2: 권한 설정
     case configuration  // Phase 3: 기본 설정
-    case completion     // Phase 4: 완료
+    case preferences    // Phase 4: 환경 설정 (자동 시작/업데이트)
+    case completion     // Phase 5: 완료
 
     var id: Int { rawValue }
 
@@ -72,6 +73,7 @@ final class OnboardingNavigationModel {
               currentIndex > OnboardingStep.allCases.startIndex
         else { return }
 
+        forwardMask = false
         direction = .backward
         currentStep = OnboardingStep.allCases[OnboardingStep.allCases.index(before: currentIndex)]
     }

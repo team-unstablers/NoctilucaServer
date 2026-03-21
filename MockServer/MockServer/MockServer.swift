@@ -37,9 +37,9 @@ class MockServer {
             .useTransportProtocol(.quic(
                 implementation: TransportLayerImplementation.msQuic.identifier,
                 port: port,
-                identitySource: .certFile(
-                    pemPath: "/Users/cheesekun/works/noctiluca/swift-msquic/server.crt",
-                    keyPath: "/Users/cheesekun/works/noctiluca/swift-msquic/server.key"
+                identity: PEMFileQUICServerIdentity(
+                    using: "/Users/cheesekun/works/noctiluca/swift-msquic/server.crt",
+                    key: "/Users/cheesekun/works/noctiluca/swift-msquic/server.key"
                 )
             ))
             .build()

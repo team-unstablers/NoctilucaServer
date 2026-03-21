@@ -19,30 +19,30 @@ struct AddressBarQualityIndicator: View {
     var tooltipTitle: String {
         switch state {
         case .unknown:
-            return "연결 품질 알 수 없음"
+            return String(localized: "quality.title.unknown", defaultValue: "연결 품질 알 수 없음")
         case .poor:
-            return "매우 낮은 연결 품질"
+            return String(localized: "quality.title.poor", defaultValue: "매우 낮은 연결 품질")
         case .bad:
-            return "낮은 연결 품질"
+            return String(localized: "quality.title.bad", defaultValue: "낮은 연결 품질")
         case .good:
-            return "양호한 연결 품질"
+            return String(localized: "quality.title.good", defaultValue: "양호한 연결 품질")
         case .excellent:
-            return "우수한 연결 품질"
+            return String(localized: "quality.title.excellent", defaultValue: "우수한 연결 품질")
         }
     }
 
     var tooltipText: String {
         switch state {
         case .unknown:
-            return "서버와의 연결 품질을 알 수 없습니다."
+            return String(localized: "quality.desc.unknown", defaultValue: "서버와의 연결 품질을 알 수 없습니다.")
         case .poor:
-            return "서버와의 연결 품질이 매우 낮습니다. 원격 제어 세션이 원활하지 않을 수 있습니다."
+            return String(localized: "quality.desc.poor", defaultValue: "서버와의 연결 품질이 매우 낮습니다. 원격 제어 세션이 원활하지 않을 수 있습니다.")
         case .bad:
-            return "서버와의 연결 품질이 낮습니다. 원격 제어 세션이 다소 원활하지 않을 수 있습니다."
+            return String(localized: "quality.desc.bad", defaultValue: "서버와의 연결 품질이 낮습니다. 원격 제어 세션이 다소 원활하지 않을 수 있습니다.")
         case .good:
-            return "서버와의 연결 품질이 양호합니다."
+            return String(localized: "quality.desc.good", defaultValue: "서버와의 연결 품질이 양호합니다.")
         case .excellent:
-            return "서버와의 연결 품질이 우수합니다."
+            return String(localized: "quality.desc.excellent", defaultValue: "서버와의 연결 품질이 우수합니다.")
         }
     }
 

@@ -22,7 +22,7 @@
     "%ufps" : {
 
     },
-    "© 2025 team unstablers Inc. All rights reserved." : {
+    "© 2026 team unstablers Inc. All rights reserved." : {
 
     },
     "→" : {
@@ -294,25 +294,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This software includes open source software. [License Info…](http://google.com)"
+            "value" : "This software includes open source software. [License Info…](https://noctiluca.app/docs/open-sources/navigator/apple)"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このソフトウェアにはオープンソースソフトウェアが含まれています。[ライセンス情報…](http://google.com)"
+            "value" : "このソフトウェアにはオープンソースソフトウェアが含まれています。[ライセンス情報…](https://noctiluca.app/docs/open-sources/navigator/apple)"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](http://google.com)"
+            "value" : "이 소프트웨어는 오픈 소스 소프트웨어가 포함되어 있습니다. [라이선스 정보…](https://noctiluca.app/docs/open-sources/navigator/apple)"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本软件包含开源软件。[许可证信息…](http://google.com)"
+            "value" : "本软件包含开源软件。[许可证信息…](https://noctiluca.app/docs/open-sources/navigator/apple)"
           }
         }
       }
@@ -503,19 +503,19 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "利用規約"
+            "value" : "使用許諾契約"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "사용 약관"
+            "value" : "사용권 계약"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用条款"
+            "value" : "许可协议"
           }
         }
       }
@@ -603,6 +603,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "address_bar.action.connecting" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결 중"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接中"
+          }
+        }
+      }
+    },
+    "address_bar.action.file_transfer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferring File"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル転送中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 전송 중"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件传输中"
           }
         }
       }
@@ -1341,6 +1399,122 @@
         }
       }
     },
+    "auth.detail.no_details" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No details available."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳細情報がありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세부 정보가 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有详细信息。"
+          }
+        }
+      }
+    },
+    "auth.detail.password_based" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password-based Authentication"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パスワードベースの認証"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호 기반 인증"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基于密码的认证"
+          }
+        }
+      }
+    },
+    "auth.detail.public_key_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Public Key: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公開鍵: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "공개키: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公钥：%@"
+          }
+        }
+      }
+    },
+    "auth.detail.username_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ユーザー名: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用户名：%@"
+          }
+        }
+      }
+    },
     "auth.identity.actual_fingerprint" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1353,7 +1527,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "サーバーが提示した証明書フィンガープリント"
+            "value" : "サーバーが提示した証明書のフィンガープリント"
           }
         },
         "ko" : {
@@ -1411,7 +1585,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このクライアントが記憶している証明書フィンガープリント"
+            "value" : "このクライアントが記憶している証明書のフィンガープリント"
           }
         },
         "ko" : {
@@ -1440,7 +1614,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "`%@`で証明書を提示しましたが、証明書フィンガープリントが前回接続時と異なります。"
+            "value" : "`%@`で証明書を提示しましたが、証明書のフィンガープリントが前回接続時と異なります。"
           }
         },
         "ko" : {
@@ -1469,7 +1643,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "サーバー証明書フィンガープリントが一致しません！"
+            "value" : "サーバー証明書のフィンガープリントが一致しません！"
           }
         },
         "ko" : {
@@ -1578,26 +1752,26 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noctiluca Navigator keeps a copy of the ID (certificate) of every computer it connects to. This warning is shown because the ID received this time does not match the one received previously."
+            "state" : "needs_review",
+            "value" : "Noctiluca Navigator takes a fingerprint from the ID (certificate) of every computer it connects to. This warning is shown because the fingerprint taken this time does not match the one taken previously."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noctiluca Navigatorは、接続するすべてのコンピューターの身分証（証明書）のコピーを保存します。今回受け取った身分証は、以前受け取ったものと一致しないため、警告を表示しています。"
+            "state" : "needs_review",
+            "value" : "Noctiluca Navigatorは、接続するすべてのコンピューターの身分証（証明書）から指紋を採取しておきます。今回採取した指紋が、以前採取したものと一致しないため、警告を表示しています。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)의 복사본을 받아둡니다. 이번에 받은 신분증은 저번에 받은 것과 일치하지 않았기 때문에 경고를 표시합니다."
+            "value" : "Noctiluca Navigator는 접속하는 모든 컴퓨터의 신분증 (인증서)로부터 지문을 채취해 둡니다. 이번에 채취한 지문은 저번에 채취해 두었던 것과 일치하지 않았기 때문에 경고를 표시합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noctiluca Navigator 会保存所有连接过的计算机的身份证 (证书) 副本。由于本次收到的身份证与上次不一致，因此显示警告。"
+            "state" : "needs_review",
+            "value" : "Noctiluca Navigator 会采集所有连接过的计算机的身份证 (证书) 的指纹。由于本次采集的指纹与上次不一致，因此显示警告。"
           }
         }
       }
@@ -2385,6 +2559,122 @@
         }
       }
     },
+    "auth.method.external" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "External Authentication Method (%@)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外部認証方法 (%@)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "외부 인증 방법 (%@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外部认证方法 (%@)"
+          }
+        }
+      }
+    },
+    "auth.method.password" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username-Password Authentication"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ユーザー名とパスワード認証"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자명-비밀번호 인증"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用户名和密码认证"
+          }
+        }
+      }
+    },
+    "auth.method.simple_password" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simple Password Authentication"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "簡易パスワード認証"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "간단 비밀번호 인증"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "简易密码认证"
+          }
+        }
+      }
+    },
+    "auth.method.ssh_key" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH Key Authentication"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSHキー認証"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SSH 키 인증"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH 密钥认证"
+          }
+        }
+      }
+    },
     "Cocoa Event Tap" : {
 
     },
@@ -2509,13 +2799,13 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Use Hardware Acceleration If Available"
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "可能な場合ハードウェアアクセラレーションを使用"
           }
         },
@@ -2527,8 +2817,8 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "尽可能使用硬件加速"
+            "state" : "translated",
+            "value" : "服务器自动决定是否使用硬件加速"
           }
         }
       }
@@ -2615,7 +2905,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自动 Profile"
+            "value" : "自动配置文件"
           }
         }
       }
@@ -2644,7 +2934,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Baseline Profile"
+            "value" : "Baseline 配置文件"
           }
         }
       }
@@ -2673,7 +2963,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "High Profile"
+            "value" : "High 配置文件"
           }
         }
       }
@@ -2702,7 +2992,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Main Profile"
+            "value" : "Main 配置文件"
           }
         }
       }
@@ -2731,7 +3021,210 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Main10 Profile"
+            "value" : "Main10 配置文件"
+          }
+        }
+      }
+    },
+    "codec.resolution.hd2k" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1440p (2K)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1440p (2K級)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1440p (2K급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1440p (2K 级)"
+          }
+        }
+      }
+    },
+    "codec.resolution.hd4k" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2160p (4K)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2160p (4K級)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "2160p (4K급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2160p (4K 级)"
+          }
+        }
+      }
+    },
+    "codec.resolution.hd720p" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "720p (HD)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "720p (HD級)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "720p (HD급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "720p (HD 级)"
+          }
+        }
+      }
+    },
+    "codec.resolution.hd1080p" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD級)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1080p (Full HD급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD 级)"
+          }
+        }
+      }
+    },
+    "codec.resolution.sd480p" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "480p (SD)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "480p (SD級)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "480p (SD급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "480p (SD 级)"
+          }
+        }
+      }
+    },
+    "codec.resolution.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不明"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "알 수 없음"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        }
+      }
+    },
+    "codec.resolution.unlimited" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlimited"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無制限"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "제한 없음"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无限制"
           }
         }
       }
@@ -3055,6 +3548,35 @@
         }
       }
     },
+    "common.none" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(None)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(なし)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(없음)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(无)"
+          }
+        }
+      }
+    },
     "common.open_settings" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -3203,10 +3725,28 @@
     "components.editable_list.add" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "추가"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加"
           }
         }
       }
@@ -3214,10 +3754,28 @@
     "components.editable_list.delete" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "削除"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "삭제"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
           }
         }
       }
@@ -3225,10 +3783,28 @@
     "components.editable_list.edit" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編集"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "편집"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑"
           }
         }
       }
@@ -3236,10 +3812,28 @@
     "components.editable_list.empty" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The list is empty."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リストが空です。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "목록이 비어있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列表为空。"
           }
         }
       }
@@ -3247,10 +3841,492 @@
     "components.editable_list.item_not_found" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item not found."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目が見つかりません。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "항목을 찾을 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到项目。"
+          }
+        }
+      }
+    },
+    "contact_icon.color.blue" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blue"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "青"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파랑"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "蓝色"
+          }
+        }
+      }
+    },
+    "contact_icon.color.gray" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gray"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グレー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "회색"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "灰色"
+          }
+        }
+      }
+    },
+    "contact_icon.color.green" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Green"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "緑"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "초록"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "绿色"
+          }
+        }
+      }
+    },
+    "contact_icon.color.orange" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orange"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オレンジ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "주황"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橙色"
+          }
+        }
+      }
+    },
+    "contact_icon.color.purple" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purple"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "紫"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "보라"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "紫色"
+          }
+        }
+      }
+    },
+    "contact_icon.color.red" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "赤"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "빨강"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "红色"
+          }
+        }
+      }
+    },
+    "contact_icon.color.teal" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teal"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ティール"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "청록"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "青色"
+          }
+        }
+      }
+    },
+    "contact_icon.color.yellow" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yellow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "黄"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "노랑"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "黄色"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.gamepad" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gamepad"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ゲームコントローラー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "게임 컨트롤러"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "游戏手柄"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.gear" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.globe" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Globe"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地球"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지구"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地球"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.laptop" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laptop"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ノートパソコン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "노트북"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "笔记本电脑"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.monitor" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monitor"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モニター"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모니터"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示器"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.server" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.sparkles" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparkles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "きらめき"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "반짝임"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "火花"
+          }
+        }
+      }
+    },
+    "contact_icon.symbol.terminal" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminal"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ターミナル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "터미널"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "终端"
           }
         }
       }
@@ -3297,10 +4373,952 @@
 
     },
     "description" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Description"
+          }
+        }
+      }
+    },
+    "endpoint.connect_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接：%@"
+          }
+        }
+      }
+    },
+    "endpoint.quick_connect_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Connect: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クイック接続: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "빠른 연결: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速连接：%@"
+          }
+        }
+      }
+    },
+    "error.alert_title.audio_connection_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio Connection Failed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオ接続失敗"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 연결 실패"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音频连接失败"
+          }
+        }
+      }
+    },
+    "error.alert_title.connection_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection Failed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続失敗"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결 실패"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接失败"
+          }
+        }
+      }
+    },
+    "error.alert_title.error_occurred" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error Occurred"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エラー発生"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오류 발생"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发生错误"
+          }
+        }
+      }
+    },
+    "error.alert_title.session_closed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session Closed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セッション終了"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세션 종료"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话已结束"
+          }
+        }
+      }
+    },
+    "error.audio_projection_init_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to initialize audio projection.\n%@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオプロジェクションの初期化に失敗しました。\n%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션 초기화에 실패했습니다.\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音频投影初始化失败。\n%@"
+          }
+        }
+      }
+    },
+    "error.audio.channel_closed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot start audio because the projection channel is closed."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロジェクションチャネルが閉じているため、オーディオを開始できません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로젝션 채널이 닫혀 오디오를 시작할 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投影通道已关闭，无法启动音频。"
+          }
+        }
+      }
+    },
+    "error.audio.codec_not_supported" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No common audio codec available with the server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーと共通で使用できるオーディオコーデックがありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와 공통으로 사용할 수 있는 오디오 코덱이 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可与服务器共同使用的音频编解码器。"
+          }
+        }
+      }
+    },
+    "error.audio.permission_denied" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server denied audio capture permission."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーがオーディオキャプチャ権限を拒否しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 오디오 캡처 권한을 거부했습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器拒绝了音频捕获权限。"
+          }
+        }
+      }
+    },
+    "error.audio.session_creation_cancelled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio session creation was cancelled."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオセッションの作成がキャンセルされました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 세션 생성이 취소되었습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音频会话创建已取消。"
+          }
+        }
+      }
+    },
+    "error.audio.session_creation_rejected" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server rejected the audio session creation."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーがオーディオセッションの作成を拒否しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 오디오 세션 생성을 거부했습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器拒绝了创建音频会话。"
+          }
+        }
+      }
+    },
+    "error.audio.session_creation_timed_out" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio session creation response did not arrive within %d seconds."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオセッション作成の応答が%d秒以内に到着しませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 세션 생성 응답이 %d초 안에 도착하지 않았습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 %d 秒内未收到音频会话创建响应。"
+          }
+        }
+      }
+    },
+    "error.audio.session_start_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An error occurred while starting the audio session.\n%@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオセッションの開始中にエラーが発生しました。\n%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 세션 시작 중 오류가 발생했습니다.\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启动音频会话时发生错误。\n%@"
+          }
+        }
+      }
+    },
+    "error.audio.source_not_found" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The requested audio source could not be found."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求されたオーディオソースが見つかりません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "요청한 오디오 소스를 찾을 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到请求的音频源。"
+          }
+        }
+      }
+    },
+    "error.auth_negotiation_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authentication method negotiation failed.\nThe server presented %@ as authentication methods, but the current version of the client supports none of them."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "認証方法のネゴシエーションに失敗しました。\nサーバーから認証方法として %@ が提示されましたが、現在のバージョンのクライアントではどれもサポートされていません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 방법 협상에 실패했습니다.\n서버에서 인증 방법으로 %@를 제시했지만, 현재 버전의 클라이언트에서는 이 중 아무것도 지원하지 않습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "认证方法协商失败。\n服务器提供的认证方法为 %@，但当前版本的客户端不支持其中任何一种。"
+          }
+        }
+      }
+    },
+    "error.auth_negotiation_failed_empty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authentication method negotiation failed.\nThe server did not present any authentication methods."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "認証方法のネゴシエーションに失敗しました。\nサーバーから認証方法が提示されませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 방법 협상에 실패했습니다.\n서버에서 아무런 인증 방법도 제시하지 않았습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "认证方法协商失败。\n服务器未提供任何认证方法。"
+          }
+        }
+      }
+    },
+    "error.certificate_validation_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server certificate validation failed.\nIt may not be a trusted certificate, or the certificate has expired."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバー証明書の検証に失敗しました。\n信頼できる証明書ではないか、証明書の有効期限が切れている可能性があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 인증서 검증에 실패했습니다.\n신뢰할 수 있는 인증서가 아니거나, 인증서가 만료되었을 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器证书验证失败。\n证书可能不可信或已过期。"
+          }
+        }
+      }
+    },
+    "error.closure.authentication_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection closed due to authentication failure."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "認証に失敗したため、接続が終了しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 실패로 인해 연결이 종료되었습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于认证失败，连接已结束。"
+          }
+        }
+      }
+    },
+    "error.closure.internal_server_error" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection closed due to a host internal error."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホストの内部エラーにより、接続が終了しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트 내부 오류로 인해 연결이 종료되었습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于主机内部错误，连接已结束。"
+          }
+        }
+      }
+    },
+    "error.closure.protocol_error" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The host closed the connection due to a protocol error."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロトコルエラーのため、ホストが接続を終了しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로토콜 오류로 인해 호스트가 연결을 종료했습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于协议错误，主机结束了连接。"
+          }
+        }
+      }
+    },
+    "error.closure.session_allocation_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection closed due to the server's failure to allocate a session."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーのセッション割り当てに失敗したため、接続が終了しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 세션 할당 실패로 인해 연결이 종료되었습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于服务器会话分配失败，连接已结束。"
+          }
+        }
+      }
+    },
+    "error.closure.successful" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The host closed the session."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホストがセッションを終了しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트가 세션을 종료했습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主机已结束会话。"
+          }
+        }
+      }
+    },
+    "error.closure.unknown_code" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The host closed the connection. (Code: %@)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホストが接続を終了しました。(コード: %@)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트가 연결을 종료했습니다. (코드: %@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主机已结束连接。(代码：%@)"
+          }
+        }
+      }
+    },
+    "error.connection_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to connect.\n%@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続に失敗しました。\n%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결에 실패했습니다.\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接失败。\n%@"
+          }
+        }
+      }
+    },
+    "error.invalid_phase" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An invalid phase transition was attempted."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無効なフェーズ切り替えが試みられました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "잘못된 페이즈 전환이 시도되었습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尝试了无效的阶段转换。"
+          }
+        }
+      }
+    },
+    "error.protocol_version_mismatch" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protocol version is incompatible.\nClient: %1$@, Server: %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロトコルバージョンが互換性がありません。\nClient: %1$@, Server: %2$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로토콜 버전이 호환되지 않습니다.\nClient: %1$@, Server: %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "协议版本不兼容。\n客户端：%1$@，服务器：%2$@"
+          }
+        }
+      }
+    },
+    "error.remote_closed_connection" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The connection was unexpectedly closed."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続が予期せず切断されました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결이 예기치 않게 끊어졌습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接意外断开。"
+          }
+        }
+      }
+    },
+    "error.unsupported_protocol_version" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported protocol version."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サポートされていないプロトコルバージョンです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지원하지 않는 프로토콜 버전입니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不支持的协议版本。"
+          }
+        }
+      }
+    },
+    "floating_palette.software_keyboard_toggle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle Software Keyboard"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソフトウェアキーボード切り替え"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "소프트웨어 키보드 토글"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换软件键盘"
+          }
+        }
+      }
+    },
+    "floating_palette.zoom_mode.cursor_tracking" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cursor Tracking Zoom"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カーソル追従ズーム"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "커서 추적 줌"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光标跟随缩放"
+          }
+        }
+      }
+    },
+    "floating_palette.zoom_mode.free" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free Zoom"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フリーズーム"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프리 줌"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自由缩放"
+          }
+        }
+      }
     },
     "fourCC: %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fourCC: %@"
+          }
+        }
+      }
     },
     "FPS: %u (dropped: %u)" : {
       "localizations" : {
@@ -4708,6 +6726,35 @@
         }
       }
     },
+    "menu.check_for_updates" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check for Updates…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップデートを確認…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "업데이트 확인…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查更新…"
+          }
+        }
+      }
+    },
     "menu.close_window" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -5417,7 +7464,14 @@
 
     },
     "ping: %@ms" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ping: %@ms"
+          }
+        }
+      }
     },
     "Progress: %lld%%" : {
 
@@ -5427,6 +7481,296 @@
     },
     "ProjectionData" : {
 
+    },
+    "quality.desc.bad" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server connection quality is low. The remote control session may be somewhat unstable."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーとの接続品質が低いです。遠隔制御セッションがややスムーズでない可能性があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와의 연결 품질이 낮습니다. 원격 제어 세션이 다소 원활하지 않을 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与服务器的连接质量较低。远程控制会话可能有些不流畅。"
+          }
+        }
+      }
+    },
+    "quality.desc.excellent" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server connection quality is excellent."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーとの接続品質が優れています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와의 연결 품질이 우수합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与服务器的连接质量优秀。"
+          }
+        }
+      }
+    },
+    "quality.desc.good" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server connection quality is good."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーとの接続品質が良好です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와의 연결 품질이 양호합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与服务器的连接质量良好。"
+          }
+        }
+      }
+    },
+    "quality.desc.poor" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server connection quality is very low. The remote control session may be unstable."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーとの接続品質が非常に低いです。遠隔制御セッションがスムーズでない可能性があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와의 연결 품질이 매우 낮습니다. 원격 제어 세션이 원활하지 않을 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与服务器的连接质量非常低。远程控制会话可能不流畅。"
+          }
+        }
+      }
+    },
+    "quality.desc.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server connection quality is unknown."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーとの接続品質が不明です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와의 연결 품질을 알 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与服务器的连接质量未知。"
+          }
+        }
+      }
+    },
+    "quality.title.bad" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low Connection Quality"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "低い接続品質"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "낮은 연결 품질"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接质量较低"
+          }
+        }
+      }
+    },
+    "quality.title.excellent" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellent Connection Quality"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "優れた接続品質"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "우수한 연결 품질"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "优秀的连接质量"
+          }
+        }
+      }
+    },
+    "quality.title.good" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good Connection Quality"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "良好な接続品質"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양호한 연결 품질"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "良好的连接质量"
+          }
+        }
+      }
+    },
+    "quality.title.poor" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very Low Connection Quality"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "非常に低い接続品質"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "매우 낮은 연결 품질"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "极低的连接质量"
+          }
+        }
+      }
+    },
+    "quality.title.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown Connection Quality"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続品質不明"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "연결 품질 알 수 없음"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接质量未知"
+          }
+        }
+      }
     },
     "Resolution: %lld x %lld" : {
       "localizations" : {
@@ -6941,10 +9285,28 @@
     "session-settings.projection.codec.auto.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server automatically determines screen quality based on the network environment and client-side computing speed."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーがネットワーク環境とクライアント側のコンピューティング速度に合わせて自動的に画質を決定します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "서버가 네트워크 환경과 클라이언트 측의 컴퓨팅 속도에 맞춰 자동으로 화면 품질을 결정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器会根据网络环境和客户端的计算速度自动决定画面质量。"
           }
         }
       }
@@ -7271,10 +9633,28 @@
     "session-settings.projection.codec.constantBitrate.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requests the server to use a user-specified bitrate."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ユーザーが指定したビットレート値を使用するようにサーバーに要求します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "사용자가 지정한 비트레이트 값을 사용하도록 서버에게 요구합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求服务器使用用户指定的码率。"
           }
         }
       }
@@ -7282,9 +9662,27 @@
     "session-settings.projection.codec.constantBitrateSlider.subtitle" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d Mbps"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%dMbps"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "%dMbps"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%dMbps"
           }
         }
@@ -7293,10 +9691,28 @@
     "session-settings.projection.codec.constantBitrateSlider.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitrate"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ビットレート"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "비트레이트"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码率"
           }
         }
       }
@@ -7654,13 +10070,13 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Determine frame rate based on client negotiation."
+            "state" : "translated",
+            "value" : "Leave the determination of the maximum frame rate to the server."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "クライアントのネゴシエーション内容に基づいてフレームレートを決定します。"
           }
         },
@@ -7672,8 +10088,8 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "根据客户端的协商内容决定帧率。"
+            "state" : "translated",
+            "value" : "将最大帧率的决定权交给服务器。"
           }
         }
       }
@@ -7683,13 +10099,13 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Set max frame rate to %d FPS."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "フレームレートを最大 %d FPSに設定します。"
           }
         },
@@ -7701,7 +10117,7 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "将帧率限制为最大 %d FPS。"
           }
         }
@@ -7855,10 +10271,28 @@
     "session-settings.projection.codec.lossless.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requests the server to use lossless compression.\nRequires a high-speed internet connection as it consumes significant network bandwidth."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ロスレス圧縮を使用するように要求します。\nかなりのネットワーク帯域幅を使用するため、高速なインターネット接続が必要です。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "무손실 압축을 사용하도록 요구합니다.\n상당한 네트워크 대역폭을 사용하기 때문에 빠른 속도의 인터넷 연결을 필요로 합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求使用无损压缩。\n因为会消耗大量网络带宽，所以需要高速的互联网连接。"
           }
         }
       }
@@ -7866,10 +10300,28 @@
     "session-settings.projection.codec.lossless.mode.balanced" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balanced"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "자동"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动"
           }
         }
       }
@@ -7877,10 +10329,28 @@
     "session-settings.projection.codec.lossless.mode.balanced_desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balances performance and compression ratio."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パフォーマンスと圧縮率のバランスを取ります。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "성능과 압축률 간의 균형을 맞춥니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在性能和压缩率之间取得平衡。"
           }
         }
       }
@@ -7888,10 +10358,28 @@
     "session-settings.projection.codec.lossless.mode.compression" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize Compression"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圧縮率優先"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "압축률 우선"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "压缩率优先"
           }
         }
       }
@@ -7899,10 +10387,28 @@
     "session-settings.projection.codec.lossless.mode.compression_desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritizes compression ratio. This may increase latency."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圧縮率を優先します。遅延が増加する可能性があります。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "압축률을 우선시 합니다. 딜레이가 늘어날 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "优先考虑压缩率。可能会增加延迟。"
           }
         }
       }
@@ -7910,10 +10416,28 @@
     "session-settings.projection.codec.lossless.mode.default_desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a lossless compression mode."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ロスレス圧縮モードを選択します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "무손실 압축 모드를 선택합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择无损压缩模式。"
           }
         }
       }
@@ -7921,10 +10445,28 @@
     "session-settings.projection.codec.lossless.mode.speed" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize Speed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圧縮速度優先"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "압축 속도 우선"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "压缩速度优先"
           }
         }
       }
@@ -7932,10 +10474,28 @@
     "session-settings.projection.codec.lossless.mode.speed_desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritizes compression speed. This may increase bandwidth usage."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圧縮速度を優先します。帯域幅の使用量が増加する可能性があります。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "압축 속도를 우선시 합니다. 대역폭 사용량이 늘어날 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "优先考虑压缩速度。可能会增加带宽使用量。"
           }
         }
       }
@@ -7943,10 +10503,28 @@
     "session-settings.projection.codec.lossless.mode.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lossless Compression Mode"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ロスレス圧縮モード"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "무손실 압축 모드"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无损压缩模式"
           }
         }
       }
@@ -7985,13 +10563,13 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Determine maximum resolution based on client negotiation."
+            "state" : "translated",
+            "value" : "Leave the determination of the maximum resolution to the server."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "クライアントのネゴシエーション内容に基づいて最大解像度を決定します。"
           }
         },
@@ -8003,7 +10581,7 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "根据客户端的协商内容决定最大分辨率。"
           }
         }
@@ -8014,13 +10592,13 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Set max resolution to %@."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "最大解像度を %@ に設定します。"
           }
         },
@@ -8032,7 +10610,7 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "将最大分辨率设置为 %@。"
           }
         }
@@ -8360,10 +10938,28 @@
     "session-settings.projection.codec.quality.auto" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto (Recommended)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動調整 (推奨)"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "자동 조정 (권장)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动调整 (推荐)"
           }
         }
       }
@@ -8371,10 +10967,28 @@
     "session-settings.projection.codec.quality.constantBitrate" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Constant Bitrate (CBR)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "固定ビットレート"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "고정 비트레이트"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "固定码率"
           }
         }
       }
@@ -8382,10 +10996,28 @@
     "session-settings.projection.codec.quality.default_desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets the quality policy."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "品質ポリシーを設定します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "품질 정책을 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置质量策略。"
           }
         }
       }
@@ -8393,10 +11025,28 @@
     "session-settings.projection.codec.quality.lossless" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lossless (Not Recommended)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ロスレス (推奨しません)"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "무손실 (권장하지 않음)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无损 (不推荐)"
           }
         }
       }
@@ -8404,10 +11054,28 @@
     "session-settings.projection.codec.quality.manual_warning" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note: Using this policy disables quality degradation based on network conditions."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "参考: このポリシーを使用すると、ネットワークの状態による画質の低下が機能しなくなります。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "참고: 이 정책을 사용하면 네트워크 상태에 따른 퀄리티 디그레이드가 동작하지 않게 됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意：使用此策略时，不会根据网络状态降低画质。"
           }
         }
       }
@@ -8415,10 +11083,28 @@
     "session-settings.projection.codec.quality.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quality Policy"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "品質ポリシー"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "품질 정책"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "质量策略"
           }
         }
       }
@@ -8426,10 +11112,28 @@
     "session-settings.projection.codec.quality.variableBitrate" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Variable Bitrate (VBR)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可変ビットレート"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "가변 비트레이트"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可变码率"
           }
         }
       }
@@ -8437,10 +11141,28 @@
     "session-settings.projection.codec.tab.advanced" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳細設定"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "고급 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高级设置"
           }
         }
       }
@@ -8448,10 +11170,28 @@
     "session-settings.projection.codec.tab.basic" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本設定"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "기본 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本设置"
           }
         }
       }
@@ -8488,10 +11228,28 @@
     "session-settings.projection.codec.variableBitrate.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requests the server to use variable bitrate."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可変ビットレートを使用するようにサーバーに要求します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "가변 비트레이트를 사용하도록 서버에게 요구합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求服务器使用可变码率。"
           }
         }
       }
@@ -8499,10 +11257,28 @@
     "session-settings.projection.codec.variableBitrate.maxBitrateSlider.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximum Bitrate"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大ビットレート"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "최대 비트레이트"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大码率"
           }
         }
       }
@@ -8510,10 +11286,28 @@
     "session-settings.projection.codec.variableBitrate.targetBitrateSlider.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Target Bitrate"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ターゲットビットレート"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "타겟 비트레이트"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标码率"
           }
         }
       }
@@ -8987,7 +11781,7 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Private Key (Supports OpenSSH / PEM format)"
           }
         },
@@ -9507,9 +12301,27 @@
     "session-settings.security.protocol.urara.desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "May your dreams be clear and bright"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "君の 夢は うららかに"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "君の 夢は うららかに"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "君の 夢は うららかに"
           }
         }
@@ -9518,10 +12330,28 @@
     "session-settings.security.protocol.urara.h3" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use 'h3' for ALPN announcement"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ALPNアナウンス時に「h3」を代わりに使用する"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "ALPN 어나운스 시 'h3'을 대신 사용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "宣布 ALPN 时使用 'h3' 替代"
           }
         }
       }
@@ -9529,10 +12359,28 @@
     "session-settings.security.protocol.urara.h3.desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I want to believe this might improve compatibility in some network environments."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一部のネットワーク環境での互換性を改善できると信じたいです。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "일부 네트워크 환경에서의 호환성을 개선시킬 수 있을거라 믿고 싶습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "希望能够改善在某些网络环境下的兼容性。"
           }
         }
       }
@@ -9540,10 +12388,28 @@
     "session-settings.security.protocol.urara.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Settings: Urara Mode"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開発用設定: 麗 (うらら) モード"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "개발용 설정: 麗 (우라라) 모드"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开发用设置：丽 (Urara) 模式"
           }
         }
       }
@@ -9983,6 +12849,122 @@
         }
       }
     },
+    "settings.general.autoupdate.check.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Automatically check for updates to Noctiluca Navigator."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "自動的にNoctiluca Navigatorのアップデートを確認します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 Noctiluca Navigator의 업데이트를 확인합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "自动检查 Noctiluca Navigator 更新。"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.check.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically Check for Updates"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動的にアップデートを確認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 업데이트 확인하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动检查更新"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.download.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Automatically download updates for Noctiluca Navigator."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "自動的にNoctiluca Navigatorのアップデートをダウンロードします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 Noctiluca Navigator의 업데이트를 다운로드합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "自动下载 Noctiluca Navigator 更新。"
+          }
+        }
+      }
+    },
+    "settings.general.autoupdate.download.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically Download Updates"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動的にアップデートをダウンロード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자동으로 업데이트 다운로드하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动下载更新"
+          }
+        }
+      }
+    },
     "settings.general.default_connection.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -10073,10 +13055,28 @@
     "settings.input.advanced.cursor_scale.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjusts the display size of the remote cursor."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リモートカーソルの表示サイズを調整します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "원격 커서의 표시 크기를 조절합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调整远程光标的显示大小。"
           }
         }
       }
@@ -10084,10 +13084,28 @@
     "settings.input.advanced.cursor_scale.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cursor Size"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カーソルサイズ"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "커서 크기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光标大小"
           }
         }
       }
@@ -10329,13 +13347,13 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Exclusive mode is unavailable because Input Monitoring permission is not granted.\nYou must restart Noctiluca Navigator after changing settings."
+            "state" : "translated",
+            "value" : "Exclusive mode is unavailable because Accessibility permission is not granted.\nYou must restart Noctiluca Navigator after changing settings."
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "入力監視の権限がないため、排他モードを使用できません。\n設定を変更した後、Noctiluca Navigatorを再起動する必要があります。"
           }
         },
@@ -10347,7 +13365,7 @@
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "由于未授予输入监控权限，无法使用独占模式。\n更改设置后，您需要重新启动 Noctiluca Navigator。"
           }
         }
@@ -12299,6 +15317,12 @@
     "settings.projection.jitter_buffer.low_latency" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low Latency (Recommended)"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
@@ -12322,6 +15346,12 @@
     "settings.projection.jitter_buffer.low_latency.desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aims to reduce latency.\nUse this when the network condition is good."
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
@@ -12345,6 +15375,12 @@
     "settings.projection.jitter_buffer.prioritize_stability" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritize Stability"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
@@ -12368,6 +15404,12 @@
     "settings.projection.jitter_buffer.prioritize_stability.desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provides stable playback resilient to network jitter by using a generous buffer.\nSome delay may occur."
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
@@ -12391,6 +15433,12 @@
     "settings.projection.jitter_buffer.ultra_low_latency" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultra Low Latency"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
@@ -12414,6 +15462,12 @@
     "settings.projection.jitter_buffer.ultra_low_latency.desc" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioritizes minimizing latency.\nFrequent stuttering or frame drops may occur if the network condition is poor."
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
@@ -13160,7 +16214,7 @@
       }
     },
     "settings.tabs.plugins" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13275,7 +16329,7 @@
         }
       }
     },
-    "test" : {
+    "Unleashed Edition" : {
 
     },
     "YUV 4:2:0" : {
@@ -13285,7 +16339,27 @@
 
     },
     "소프트웨어 키보드 토글" : {
-
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle Software Keyboard"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "소프트웨어 키보드 토글"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换软件键盘"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

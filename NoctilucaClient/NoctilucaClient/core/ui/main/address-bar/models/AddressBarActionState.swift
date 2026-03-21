@@ -12,9 +12,9 @@ enum AddressBarActionState {
     var label: String {
         switch self {
         case .connecting:
-            return "연결 중"
+            return String(localized: "address_bar.action.connecting", defaultValue: "연결 중")
         case .fileTransfer:
-            return "파일 전송 중"
+            return String(localized: "address_bar.action.file_transfer", defaultValue: "파일 전송 중")
         }
     }
 

@@ -24,6 +24,11 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
     
     private(set) var windows: [CGDirectDisplayID: Window] = [:]
     
+    @MainActor
+    deinit {
+        self.shutdown()
+    }
+    
     func startup() {
         guard self.subscription == nil else {
             return

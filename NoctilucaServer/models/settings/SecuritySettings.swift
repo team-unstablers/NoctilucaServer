@@ -146,7 +146,7 @@ extension AppSettings {
         
         /// 서버 TLS 인증서 및 개인 키 설정
         /// - TODO: assert(tlsUseAutoconf && identity.type != .pemFile)
-        var identity: TLSIdentity? = nil
+        var identity: ServerIdentitySource? = nil
 
         init() {}
 
@@ -167,7 +167,7 @@ extension AppSettings {
             listenPort = container.decodeSafe(UInt16.self, forKey: .listenPort, default: listenPort)
             tlsUseAutoconf = container.decodeSafe(Bool.self, forKey: .tlsUseAutoconf, default: tlsUseAutoconf)
             tlsStrictValidation = container.decodeSafe(Bool.self, forKey: .tlsStrictValidation, default: tlsStrictValidation)
-            identity = (try? container.decodeIfPresent(TLSIdentity.self, forKey: .identity)) ?? identity
+            identity = (try? container.decodeIfPresent(ServerIdentitySource.self, forKey: .identity)) ?? identity
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -191,10 +191,10 @@ extension AppSettings.QUICTransport {
         
         let hostname = hostname()
         let commonName = "Noctiluca Server: self-signed server identity (\(hostname))"
-        self.identity = .keychain(identifier: commonName)
+        self.identity = .keychain(label: commonName)
         
         // 아이덴티티를 매번 새로 생성하게 함 -- 하기 try-catch에서 재생성 시도할 때 이 부분을 타야 함
-        // if (!(try KeychainQUICServerIdentity.checkIdentityExistance(label: commonName))) {
+        // if (!(try KeychainQUICServerIdentity.checkIdentityExistence(label: commonName))) {
         AppSettings.logger.info("Creating self-signed identity with label: \(commonName)...")
         
         let args = QUICServerIdentityCreationArgs(

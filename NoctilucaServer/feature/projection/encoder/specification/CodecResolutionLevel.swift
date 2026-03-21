@@ -35,19 +35,19 @@ struct CodecResolutionLevel: RawRepresentable, Codable, Hashable, Equatable {
     var displayText: String {
         switch self {
         case .unlimited:
-            return "제한 없음"
+            return String(localized: "projection.codec.resolution_level.unlimited", defaultValue: "제한 없음")
         case .sd480p:
-            return "480p (SD급)"
+            return String(localized: "projection.codec.resolution_level.sd480p", defaultValue: "480p (SD급)")
         case .hd720p:
-            return "720p (HD급)"
+            return String(localized: "projection.codec.resolution_level.hd720p", defaultValue: "720p (HD급)")
         case .hd1080p:
-            return "1080p (Full HD급)"
+            return String(localized: "projection.codec.resolution_level.hd1080p", defaultValue: "1080p (Full HD급)")
         case .hd2k:
-            return "1440p (2K급)"
+            return String(localized: "projection.codec.resolution_level.hd2k", defaultValue: "1440p (2K급)")
         case .hd4k:
-            return "2160p (4K급)"
+            return String(localized: "projection.codec.resolution_level.hd4k", defaultValue: "2160p (4K급)")
         default:
-            return "알 수 없음"
+            return String(localized: "projection.codec.resolution_level.unknown", defaultValue: "알 수 없음")
         }
     }
     

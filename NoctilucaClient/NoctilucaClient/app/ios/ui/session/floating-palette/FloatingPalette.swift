@@ -25,7 +25,7 @@ enum FloatingPaletteAction: Equatable, Hashable {
                     .font(.system(size: 18, weight: .medium))
             }
                 .frame(width: 18, height: 18)
-            Text("소프트웨어 키보드 토글")
+            Text(String(localized: "floating_palette.software_keyboard_toggle", defaultValue: "소프트웨어 키보드 토글"))
         case .toggleZoomMode(let zoomMode):
             VStack {
                 Image(systemName: Self.zoomModeIcon(for: zoomMode))
@@ -48,9 +48,9 @@ enum FloatingPaletteAction: Equatable, Hashable {
     private static func zoomModeLabel(for mode: ProjectionZoomMode) -> String {
         switch mode {
         case .cursorTracking:
-            return "커서 추적 줌"
+            return String(localized: "floating_palette.zoom_mode.cursor_tracking", defaultValue: "커서 추적 줌")
         case .free:
-            return "프리 줌"
+            return String(localized: "floating_palette.zoom_mode.free", defaultValue: "프리 줌")
         }
     }
 }

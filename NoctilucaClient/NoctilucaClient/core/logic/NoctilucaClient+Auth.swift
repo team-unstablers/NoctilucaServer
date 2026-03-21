@@ -25,13 +25,16 @@ extension NoctilucaClient {
         try await mainChannel.sendClientHello(consume clientHello)
     }
     
-    func sendAuthRequest(_ method: String, nonce: Data, payload: Data) async throws {
+    func sendAuthRequest(_ method: String, nonce: Data, payload: consuming Data) async throws {
+        var payload = payload
+        defer { payload.zeroize() }
+
         let authRequest = AuthRequest(
             method: method,
             nonce: nonce,
             payload: payload
         )
-        
+
         try await mainChannel.sendAuthRequest(consume authRequest)
     }
     

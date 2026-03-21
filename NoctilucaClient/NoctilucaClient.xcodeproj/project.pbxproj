@@ -8,6 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		F627116D2F08626200E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F627116C2F08626200E8A3D7 /* libzstd */; };
+		F64AF1642F6C5D8300C0EDD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F64AF1632F6C5D8300C0EDD8 /* Sparkle */; };
+		F64AF16D2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */; };
+		F64AF1702F6C77CE00C0EDD8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16E2F6C77CE00C0EDD8 /* LICENSE */; };
+		F64AF1712F6C77CE00C0EDD8 /* LICENSE.en in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */; };
+		F64AF1762F6C77F400C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */; };
+		F64AF1772F6C781100C0EDD8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16E2F6C77CE00C0EDD8 /* LICENSE */; };
+		F64AF1782F6C781100C0EDD8 /* LICENSE.en in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */; };
 		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
 		F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */; };
@@ -72,11 +79,14 @@
 
 /* Begin PBXFileReference section */
 		F61DD5B12EF0271300AC9B35 /* SiriusKitClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SiriusKitClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */ = {isa = PBXFileReference; lastKnownFileType = text; name = OPEN_SOURCE_LICENSE.client; path = ../OPEN_SOURCE_LICENSE.client; sourceTree = "<group>"; };
+		F64AF16E2F6C77CE00C0EDD8 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.en; sourceTree = "<group>"; };
 		F6561F102F08B6E00090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/ios-arm64/libturbojpeg.framework"; sourceTree = "<group>"; };
 		F6561F132F08B6F10090BCB3 /* libturbojpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libturbojpeg.framework; path = "../frameworks/libturbojpeg.xcframework/macos-arm64_x86_64/libturbojpeg.framework"; sourceTree = "<group>"; };
 		F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = ../frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
 		F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaClientTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F6682AD72F43F8930042F213 /* Noctiluca Navigator (Explicit Edition).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator (Explicit Edition).app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6682AD72F43F8930042F213 /* Noctiluca Navigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6B2AB7B2F2A71AE00B7CF41 /* WebPDecoder.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = WebPDecoder.xcframework; path = ../frameworks/WebPDecoder.xcframework; sourceTree = "<group>"; };
 		F6B2AB812F2A736F00B7CF41 /* SharpYuv.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SharpYuv.xcframework; path = ../frameworks/SharpYuv.xcframework; sourceTree = "<group>"; };
 		F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Noctiluca Navigator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -86,16 +96,18 @@
 		F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"resources/Info-ExplicitEdition.plist",
 				resources/Info.plist,
 			);
 			target = F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */;
 		};
-		F6682AD82F43F8930042F213 /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator (Explicit Edition)" target */ = {
+		F6682AD82F43F8930042F213 /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator UE" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"resources/Info-ExplicitEdition.plist",
 				resources/Info.plist,
 			);
-			target = F6682ABD2F43F8930042F213 /* Noctiluca Navigator (Explicit Edition) */;
+			target = F6682ABD2F43F8930042F213 /* Noctiluca Navigator UE */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -109,7 +121,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F60AE1072F2F699D00377D3C /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator" target */,
-				F6682AD82F43F8930042F213 /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator (Explicit Edition)" target */,
+				F6682AD82F43F8930042F213 /* Exceptions for "NoctilucaClient" folder in "Noctiluca Navigator UE" target */,
 			);
 			path = NoctilucaClient;
 			sourceTree = "<group>";
@@ -128,6 +140,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F64AF1642F6C5D8300C0EDD8 /* Sparkle in Frameworks */,
 				F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */,
 				F6682AC92F43F8930042F213 /* libturbojpeg.xcframework in Frameworks */,
 				F6682ACA2F43F8930042F213 /* libzstd in Frameworks */,
@@ -156,6 +169,9 @@
 		F6BD3E8D2EDA1AF6000011DF = {
 			isa = PBXGroup;
 			children = (
+				F64AF16E2F6C77CE00C0EDD8 /* LICENSE */,
+				F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */,
+				F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */,
 				F6BD3E982EDA1AF6000011DF /* NoctilucaClient */,
 				F65FDE182EF868720014239E /* NoctilucaClientTests */,
 				F6BD3EB02EDA1B2A000011DF /* Frameworks */,
@@ -168,7 +184,7 @@
 			children = (
 				F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */,
 				F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */,
-				F6682AD72F43F8930042F213 /* Noctiluca Navigator (Explicit Edition).app */,
+				F6682AD72F43F8930042F213 /* Noctiluca Navigator.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -212,9 +228,9 @@
 			productReference = F65FDE172EF868720014239E /* NoctilucaClientTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		F6682ABD2F43F8930042F213 /* Noctiluca Navigator (Explicit Edition) */ = {
+		F6682ABD2F43F8930042F213 /* Noctiluca Navigator UE */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F6682AD42F43F8930042F213 /* Build configuration list for PBXNativeTarget "Noctiluca Navigator (Explicit Edition)" */;
+			buildConfigurationList = F6682AD42F43F8930042F213 /* Build configuration list for PBXNativeTarget "Noctiluca Navigator UE" */;
 			buildPhases = (
 				F6682AC62F43F8930042F213 /* Sources */,
 				F6682AC72F43F8930042F213 /* Frameworks */,
@@ -228,16 +244,17 @@
 			fileSystemSynchronizedGroups = (
 				F6BD3E982EDA1AF6000011DF /* NoctilucaClient */,
 			);
-			name = "Noctiluca Navigator (Explicit Edition)";
+			name = "Noctiluca Navigator UE";
 			packageProductDependencies = (
 				F6682ABE2F43F8930042F213 /* AsyncAlgorithms */,
 				F6682AC02F43F8930042F213 /* libzstd */,
 				F6682AC22F43F8930042F213 /* SiriusKitClient */,
 				F6682AC32F43F8930042F213 /* Xuanxue */,
 				F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */,
+				F64AF1632F6C5D8300C0EDD8 /* Sparkle */,
 			);
 			productName = NoctilucaClient;
-			productReference = F6682AD72F43F8930042F213 /* Noctiluca Navigator (Explicit Edition).app */;
+			productReference = F6682AD72F43F8930042F213 /* Noctiluca Navigator.app */;
 			productType = "com.apple.product-type.application";
 		};
 		F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */ = {
@@ -304,6 +321,7 @@
 				F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */,
 				F63971282F1CCCFD00F01622 /* XCRemoteSwiftPackageReference "Xuanxue" */,
 				F62FAECB2F326AB400801A5B /* XCLocalSwiftPackageReference "../../swift-msquic" */,
+				F64AF1622F6C5D8300C0EDD8 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F6BD3E972EDA1AF6000011DF /* Products */;
@@ -312,7 +330,7 @@
 			targets = (
 				F6BD3E952EDA1AF6000011DF /* Noctiluca Navigator */,
 				F65FDE162EF868720014239E /* NoctilucaClientTests */,
-				F6682ABD2F43F8930042F213 /* Noctiluca Navigator (Explicit Edition) */,
+				F6682ABD2F43F8930042F213 /* Noctiluca Navigator UE */,
 			);
 		};
 /* End PBXProject section */
@@ -329,6 +347,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F64AF16D2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */,
+				F64AF1702F6C77CE00C0EDD8 /* LICENSE in Resources */,
+				F64AF1712F6C77CE00C0EDD8 /* LICENSE.en in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,6 +357,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F64AF1772F6C781100C0EDD8 /* LICENSE in Resources */,
+				F64AF1782F6C781100C0EDD8 /* LICENSE.en in Resources */,
+				F64AF1762F6C77F400C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -425,7 +449,7 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -453,9 +477,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "app.noctiluca.client.explicit-edition";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 0.9.5;
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client.unleashed;
+				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -466,6 +490,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG UNLEASHED_EDITION";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -485,7 +510,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = XHA76UVA95;
 				ENABLE_APP_SANDBOX = NO;
@@ -514,12 +539,12 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.5;
 				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = "app.noctiluca.client.explicit-edition";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client.unleashed;
+				PRODUCT_NAME = "Noctiluca Navigator";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = NoctilucaClient_ExplicitEdition;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Noctiluca Navigator (Unleashed)";
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -530,6 +555,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = UNLEASHED_EDITION;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -669,7 +695,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -702,7 +728,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client;
 				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
@@ -727,7 +753,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -760,7 +786,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.5;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client;
 				PRODUCT_NAME = "Noctiluca Navigator";
@@ -790,7 +816,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F6682AD42F43F8930042F213 /* Build configuration list for PBXNativeTarget "Noctiluca Navigator (Explicit Edition)" */ = {
+		F6682AD42F43F8930042F213 /* Build configuration list for PBXNativeTarget "Noctiluca Navigator UE" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F6682AD52F43F8930042F213 /* Debug */,
@@ -840,7 +866,15 @@
 			repositoryURL = "https://github.com/team-unstablers/Xuanxue.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.4;
+				minimumVersion = 1.0.5;
+			};
+		};
+		F64AF1622F6C5D8300C0EDD8 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.0;
 			};
 		};
 		F6682ABF2F43F8930042F213 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
@@ -882,6 +916,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
+		};
+		F64AF1632F6C5D8300C0EDD8 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F64AF1622F6C5D8300C0EDD8 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 		F6682ABE2F43F8930042F213 /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;

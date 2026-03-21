@@ -128,7 +128,7 @@ struct TrialRequestPage: View {
                 Text(String(localized: "licensing.trial.verification_header", defaultValue: "인증 코드 입력"))
                 Text("")
             } footer: {
-                Text("\(email)(으)로 전송된 인증 코드를 입력해 주세요. 인증 코드는 10분 이내에 입력해야 합니다.")
+                Text(String(localized: "licensing.trial.verification_footer", defaultValue: "\(email)(으)로 전송된 인증 코드를 입력해 주세요. 인증 코드는 10분 이내에 입력해야 합니다."))
             }
         }
         .formStyle(.grouped)

@@ -20,13 +20,16 @@ enum CodecNegotiationPolicy: String, Hashable, Equatable, Codable {
 struct CodecSpecification: Codable {
     enum CodingKeys: String, CodingKey {
         case fourCC = "fourcc"
+        case quality = "quality"
         case options = "options"
         case extras = "extras"
         case frameRate = "frame_rate"
         case maximumResolutionLevel = "maximum_resolution_level"
     }
-    
+
     let fourCC: CodecFourCC
+
+    var quality: Codec.Quality
     var options: [CodecOptionKey: CodecOptionValue]
     var extras: String = ""
     
@@ -39,12 +42,14 @@ struct CodecSpecification: Codable {
     
     init(fourCC: CodecFourCC) {
         self.fourCC = fourCC
+        self.quality = .auto(mode: .balancedPriority)
         self.options = [:]
     }
     
     init(from decoder: any Decoder) throws {
         guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
             fourCC = .avc1
+            quality = .auto(mode: .balancedPriority)
             options = [:]
             extras = ""
             frameRate = 0.0
@@ -58,6 +63,12 @@ struct CodecSpecification: Codable {
             fourCC = CodecFourCC(rawValue: rawValue)
         } else {
             fourCC = .avc1
+        }
+
+        if let decodedQuality = try? container.decode(Codec.Quality.self, forKey: .quality) {
+            quality = decodedQuality
+        } else {
+            quality = .auto(mode: .balancedPriority)
         }
 
         if let decodedOptions = try? container.decode([CodecOptionKey: CodecOptionValue].self, forKey: .options) {
@@ -77,12 +88,19 @@ struct CodecSpecification: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(fourCC, forKey: .fourCC)
+        try container.encode(quality, forKey: .quality)
         try container.encode(options, forKey: .options)
         try container.encode(extras, forKey: .extras)
         try container.encode(frameRate, forKey: .frameRate)
         try container.encode(maximumResolutionLevel, forKey: .maximumResolutionLevel)
     }
     
+    func quality(_ quality: Codec.Quality) -> Self {
+        var spec = self
+        spec.quality = quality
+        return spec
+    }
+
     func option(_ key: CodecOptionKey) -> CodecOptionValue? {
         return options[key]
     }
@@ -106,6 +124,7 @@ struct CodecSpecification: Codable {
 extension CodecSpecification: Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(fourCC.rawValue)
+        hasher.combine(quality)
         hasher.combine(frameRate)
         hasher.combine(options)
         hasher.combine(extras)

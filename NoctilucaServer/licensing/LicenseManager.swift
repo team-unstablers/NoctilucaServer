@@ -24,6 +24,9 @@ enum LicenseValidationState {
     /// 라이선스가 이 컴퓨터에 등록되어 있지만, 올바르지 않은 것으로 보입니다.
     case invalid
 
+    /// 라이선스가 만료되었습니다.
+    case expired
+
     /// 라이선스가 이 컴퓨터에 등록되어 있고, 올바른 라이선스로 확인되었습니다.
     case valid
 }
@@ -47,6 +50,43 @@ struct LicenseInfo: Codable {
     let licenseKey: String
 }
 
+struct LicenseJWTClaim: Decodable {
+    let iss: String
+    let sub: String
+    let aud: String
+    let iat: Int
+    let nbf: Int?
+    /// personal인 경우 신경쓰지 않는다 (2099-12-31 쯤으로 되어있음)
+    let exp: Int?
+    /// personal, enterprise, evaluation
+    let licenseType: String
+    let licensedTo: String
+    let metadataJson: String?
+    let options: String
+
+    var remainingDays: Int? {
+        guard let exp else { return nil }
+        let expDate = Date(timeIntervalSince1970: TimeInterval(exp))
+        return Calendar.current.dateComponents([.day], from: .now, to: expDate).day
+    }
+
+    var isEvaluation: Bool { licenseType == "evaluation" }
+
+    var isExpired: Bool {
+        guard let exp else { return false }
+        let expDate = Date(timeIntervalSince1970: TimeInterval(exp))
+        return expDate < Date.now
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case iss, sub, aud, iat, nbf, exp
+        case licenseType = "x-noc-license-type"
+        case licensedTo = "x-noc-licensed-to"
+        case metadataJson = "x-noc-metadata"
+        case options = "x-noc-options"
+    }
+}
+
 /// 라이선스의 시트 할당 증명.
 struct LicenseSeatProof: Decodable {
     let iss: String
@@ -67,6 +107,10 @@ struct LicenseSeatProof: Decodable {
     }
 }
 
+extension Notification.Name {
+    static let licenseValidationStateDidChange = Notification.Name("app.noctiluca.server.licenseValidationStateDidChange")
+}
+
 enum LicenseManagerError: Error {
     /// 현재 상태에서 이 동작은 허용되지 않습니다
     case invalidState
@@ -78,24 +122,65 @@ enum LicenseManagerError: Error {
     case installationFailed(Error?)
 }
 
+// MARK: - Dependency Protocols
+
+/// 라이선스 관련 Keychain I/O를 추상화합니다.
+protocol LicenseKeychainStore: Sendable {
+    func getSeatProof() -> Result<Data?, SRKeychainError>
+    func setSeatProof(_ data: Data) -> Result<Void, SRKeychainError>
+    func removeSeatProof() -> Result<Void, SRKeychainError>
+
+    func getLicenseInfo() -> Result<Data?, SRKeychainError>
+    func setLicenseInfo(_ data: Data) -> Result<Void, SRKeychainError>
+    func removeLicenseInfo() -> Result<Void, SRKeychainError>
+}
+
+/// 하드웨어 식별자를 제공합니다.
+protocol HardwareIdentifierProvider: Sendable {
+    func hardwareIdentifier() -> String?
+}
+
+/// 호스트 이름을 제공합니다.
+protocol HostNameProvider: Sendable {
+    func localizedName() -> String?
+}
+
 /// Noctiluca Server의 라이선스 상황을 관리합니다.
 actor LicenseManager {
     static let shared = LicenseManager()
 
-    private static let keychainSeatProofKey = "app.noctiluca.server.installed_license"
-    private static let keychainLicenseInfoKey = "app.noctiluca.server.license_info"
-
     private let logger = NoctilucaLogger(category: "LicenseManager")
-    private let apiClient = LicenseAPIClient()
+
+    private let keychainStore: LicenseKeychainStore
+    private let apiClient: any LicenseAPIClientProtocol
+    private let hwidProvider: HardwareIdentifierProvider
+    private let hostNameProvider: HostNameProvider
+    private let publicKeyData: Data?
 
     private var seatProof: LicenseSeatProof?
     private var seatProofJwt: String?
 
+    private(set) var licenseClaim: LicenseJWTClaim?
+
     private(set) var validationState: LicenseValidationState? {
         didSet {
-            if validationState == .invalid {
-                Task {
-                    await AppNotification.invalidLicense.post()
+            guard validationState != oldValue else { return }
+
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .licenseValidationStateDidChange, object: nil)
+
+                if self.validationState == .invalid {
+                    Task {
+                        try? await Task.sleep(for: .seconds(5))
+                        await AppNotification.invalidLicense.post()
+                    }
+                }
+
+                if self.validationState == .expired {
+                    Task {
+                        try? await Task.sleep(for: .seconds(5))
+                        await AppNotification.licenseExpired.post()
+                    }
                 }
             }
         }
@@ -103,12 +188,36 @@ actor LicenseManager {
 
     var isLicensed: Bool { validationState == .valid }
 
+    // MARK: - Initializers
+
+    private init() {
+        self.keychainStore = DefaultLicenseKeychainStore()
+        self.apiClient = LicenseAPIClient()
+        self.hwidProvider = DefaultHardwareIdentifierProvider()
+        self.hostNameProvider = DefaultHostNameProvider()
+        self.publicKeyData = LuvotomyKey.publicKey
+    }
+
+    init(
+        keychainStore: LicenseKeychainStore,
+        apiClient: any LicenseAPIClientProtocol,
+        hwidProvider: HardwareIdentifierProvider,
+        hostNameProvider: HostNameProvider = DefaultHostNameProvider(),
+        publicKeyData: Data?
+    ) {
+        self.keychainStore = keychainStore
+        self.apiClient = apiClient
+        self.hwidProvider = hwidProvider
+        self.hostNameProvider = hostNameProvider
+        self.publicKeyData = publicKeyData
+    }
+
     // MARK: - Load
 
     func loadLicense() async {
-        let seatProofJwtResult = SRKeychain.shared.getSecureData(key: Self.keychainSeatProofKey)
+        let seatProofJwtResult = keychainStore.getSeatProof()
 
-        guard let publicKey = LuvotomyKey.publicKey,
+        guard let publicKey = publicKeyData,
               let jwtDecoder = try? JWTDecoder(publicKey),
               let seatProofJwt = try? seatProofJwtResult.get(),
               let seatProofJwtString = String(data: seatProofJwt, encoding: .utf8)
@@ -125,10 +234,23 @@ actor LicenseManager {
         self.seatProof = seatProof
         self.seatProofJwt = seatProofJwtString
 
-        guard let hardwareIdentifier = SystemCapability.hardwareIdentifier(),
+        if let licenseInfo = loadLicenseInfo() {
+            self.licenseClaim = try? jwtDecoder.decode(
+                licenseInfo.licenseKey,
+                as: LicenseJWTClaim.self,
+                skipExpirationCheck: true
+            ).get()
+        }
+
+        guard let hardwareIdentifier = hwidProvider.hardwareIdentifier(),
               seatProof.hwid == hardwareIdentifier
         else {
             validationState = .invalid
+            return
+        }
+
+        if let claim = licenseClaim, claim.isExpired {
+            validationState = .expired
             return
         }
 
@@ -140,14 +262,21 @@ actor LicenseManager {
 
     /// Noctiluca의 라이선스 서버를 통해 라이선스를 추가로 검증받는다
     func validateLicenseOnline() async {
-        guard let seatProofJwt = self.seatProofJwt else { return }
+        guard self.seatProofJwt != nil else { return }
 
         // 운을 시험한다
         let randomValue = Int.random(in: 1..<10)
-        guard randomValue % 3 != 0 else {
+        guard randomValue % 2 != 0 else {
             // 운이 좋군! 이번엔 봐주도록 하지.
             return
         }
+
+        await performOnlineValidation()
+    }
+
+    /// 온라인 검증 핵심 로직 (랜덤 게이트 없이 직접 실행)
+    func performOnlineValidation() async {
+        guard let seatProofJwt = self.seatProofJwt else { return }
 
         do {
             let result = try await apiClient.validateSeat(seatProof: seatProofJwt)
@@ -155,8 +284,16 @@ actor LicenseManager {
             if result.valid {
                 logger.info("Online license validation succeeded")
             } else {
-                logger.warning("Online license validation failed: \(result.reason ?? "unknown")")
-                validationState = .invalid
+                if result.reason == "seat_not_found" {
+                    logger.warning("Online license validation failed: seat not found (possibly revoked or invalidated)")
+
+                    // uninstall license
+                    _ = try? await removeLicense()
+                    validationState = .unlicensed
+                } else {
+                    logger.warning("Online license validation failed: \(result.reason ?? "unknown")")
+                    validationState = .invalid
+                }
             }
         } catch let error as LicenseAPIClientError {
             switch error {
@@ -180,11 +317,11 @@ actor LicenseManager {
 
     /// 라이선스를 설치합니다.
     func installLicense(_ licenseInfo: LicenseInfo) async throws {
-        guard validationState == .unlicensed || validationState == .invalid else {
+        guard validationState == .unlicensed || validationState == .invalid || validationState == .expired else {
             throw LicenseManagerError.invalidState
         }
 
-        guard let hardwareIdentifier = SystemCapability.hardwareIdentifier() else {
+        guard let hardwareIdentifier = hwidProvider.hardwareIdentifier() else {
             throw LicenseManagerError.noHardwareIdentifier
         }
 
@@ -192,7 +329,7 @@ actor LicenseManager {
             let response = try await apiClient.activate(
                 licenseInfo: licenseInfo,
                 hwid: hardwareIdentifier,
-                label: Host.current().localizedName ?? "Mac"
+                label: hostNameProvider.localizedName() ?? "Mac"
             )
 
             // Seat proof JWT를 Keychain에 저장
@@ -200,17 +337,17 @@ actor LicenseManager {
                 throw LicenseManagerError.installationFailed(nil)
             }
 
-            let keychainResult = SRKeychain.shared.setSecureData(seatProofData, key: Self.keychainSeatProofKey)
+            let keychainResult = keychainStore.setSeatProof(seatProofData)
             if case .failure(let error) = keychainResult {
                 throw LicenseManagerError.installationFailed(error)
             }
 
             // 라이선스 정보(name/email/key)도 저장 (revoke 시 인증 헤더에 필요)
             let infoData = try JSONEncoder().encode(licenseInfo)
-            _ = SRKeychain.shared.setSecureData(infoData, key: Self.keychainLicenseInfoKey)
+            _ = keychainStore.setLicenseInfo(infoData)
 
             // 로컬 상태 갱신
-            guard let publicKey = LuvotomyKey.publicKey,
+            guard let publicKey = publicKeyData,
                   let jwtDecoder = try? JWTDecoder(publicKey),
                   let proof = try? jwtDecoder.decode(response.seatProof, as: LicenseSeatProof.self).get()
             else {
@@ -221,9 +358,11 @@ actor LicenseManager {
 
             self.seatProof = proof
             self.seatProofJwt = response.seatProof
+            self.licenseClaim = try? jwtDecoder.decode(licenseInfo.licenseKey, as: LicenseJWTClaim.self).get()
             validationState = .valid
 
             logger.info("License installed successfully (seat: \(response.seatId))")
+            startPeriodicExpirationCheck()
         } catch let error as LicenseAPIClientError {
             logger.error("License activation failed: \(error)")
             throw LicenseManagerError.installationFailed(error)
@@ -234,7 +373,7 @@ actor LicenseManager {
 
     /// 체험판 발급 결과를 로컬에 설치합니다.
     func installTrialLicense(name: String, email: String, licenseKey: String, seatProof seatProofJwt: String) async throws {
-        guard validationState == .unlicensed || validationState == .invalid else {
+        guard validationState == .unlicensed || validationState == .invalid || validationState == .expired else {
             throw LicenseManagerError.invalidState
         }
 
@@ -243,7 +382,7 @@ actor LicenseManager {
             throw LicenseManagerError.installationFailed(nil)
         }
 
-        let keychainResult = SRKeychain.shared.setSecureData(seatProofData, key: Self.keychainSeatProofKey)
+        let keychainResult = keychainStore.setSeatProof(seatProofData)
         if case .failure(let error) = keychainResult {
             throw LicenseManagerError.installationFailed(error)
         }
@@ -251,19 +390,21 @@ actor LicenseManager {
         // 라이선스 정보 저장
         let licenseInfo = LicenseInfo(name: name, email: email, licenseKey: licenseKey)
         let infoData = try JSONEncoder().encode(licenseInfo)
-        _ = SRKeychain.shared.setSecureData(infoData, key: Self.keychainLicenseInfoKey)
+        _ = keychainStore.setLicenseInfo(infoData)
 
         // 로컬 상태 갱신
-        if let publicKey = LuvotomyKey.publicKey,
+        if let publicKey = publicKeyData,
            let jwtDecoder = try? JWTDecoder(publicKey),
            let proof = try? jwtDecoder.decode(seatProofJwt, as: LicenseSeatProof.self).get()
         {
             self.seatProof = proof
             self.seatProofJwt = seatProofJwt
+            self.licenseClaim = try? jwtDecoder.decode(licenseKey, as: LicenseJWTClaim.self).get()
         }
 
         validationState = .valid
         logger.info("Trial license installed successfully")
+        startPeriodicExpirationCheck()
     }
 
     // MARK: - Remove
@@ -284,26 +425,110 @@ actor LicenseManager {
             }
         }
 
+        stopPeriodicExpirationCheck()
+
         // Keychain에서 제거
-        _ = SRKeychain.shared.removeSecureData(key: Self.keychainSeatProofKey)
-        _ = SRKeychain.shared.removeSecureData(key: Self.keychainLicenseInfoKey)
+        _ = keychainStore.removeSeatProof()
+        _ = keychainStore.removeLicenseInfo()
 
         // 로컬 상태 초기화
         self.seatProof = nil
         self.seatProofJwt = nil
+        self.licenseClaim = nil
         validationState = .unlicensed
 
         logger.info("License removed locally")
     }
 
+    // MARK: - Periodic Expiration Check
+
+    private var expirationCheckTask: Task<Void, Never>?
+
+    /// 체험판 라이선스의 주기적 만료 확인을 시작합니다.
+    func startPeriodicExpirationCheck() {
+        expirationCheckTask?.cancel()
+
+        guard let claim = licenseClaim, claim.isEvaluation else {
+            return
+        }
+
+        expirationCheckTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(6 * 60 * 60))
+                guard !Task.isCancelled else { break }
+
+                guard let claim = self.licenseClaim else { break }
+
+                if claim.isExpired {
+                    if self.validationState == .valid {
+                        self.validationState = .expired
+                    }
+                    break
+                }
+
+                if let remaining = claim.remainingDays, remaining <= 3, remaining > 0 {
+                    await AppNotification.licenseExpiringSoon(remainingDays: remaining).post()
+                }
+            }
+        }
+    }
+
+    func stopPeriodicExpirationCheck() {
+        expirationCheckTask?.cancel()
+        expirationCheckTask = nil
+    }
+
     // MARK: - Private
 
     private func loadLicenseInfo() -> LicenseInfo? {
-        guard let data = try? SRKeychain.shared.getSecureData(key: Self.keychainLicenseInfoKey).get(),
+        guard let data = try? keychainStore.getLicenseInfo().get(),
               let info = try? JSONDecoder().decode(LicenseInfo.self, from: data)
         else {
             return nil
         }
         return info
+    }
+}
+
+// MARK: - Default Implementations
+
+struct DefaultLicenseKeychainStore: LicenseKeychainStore {
+    private static let seatProofKey = "app.noctiluca.server.installed_license"
+    private static let licenseInfoKey = "app.noctiluca.server.license_info"
+
+    func getSeatProof() -> Result<Data?, SRKeychainError> {
+        SRKeychain.shared.getSecureData(key: Self.seatProofKey)
+    }
+
+    func setSeatProof(_ data: Data) -> Result<Void, SRKeychainError> {
+        SRKeychain.shared.setSecureData(data, key: Self.seatProofKey)
+    }
+
+    func removeSeatProof() -> Result<Void, SRKeychainError> {
+        SRKeychain.shared.removeSecureData(key: Self.seatProofKey)
+    }
+
+    func getLicenseInfo() -> Result<Data?, SRKeychainError> {
+        SRKeychain.shared.getSecureData(key: Self.licenseInfoKey)
+    }
+
+    func setLicenseInfo(_ data: Data) -> Result<Void, SRKeychainError> {
+        SRKeychain.shared.setSecureData(data, key: Self.licenseInfoKey)
+    }
+
+    func removeLicenseInfo() -> Result<Void, SRKeychainError> {
+        SRKeychain.shared.removeSecureData(key: Self.licenseInfoKey)
+    }
+}
+
+struct DefaultHardwareIdentifierProvider: HardwareIdentifierProvider {
+    func hardwareIdentifier() -> String? {
+        SystemCapability.hardwareIdentifier()
+    }
+}
+
+struct DefaultHostNameProvider: HostNameProvider {
+    func localizedName() -> String? {
+        Host.current().localizedName
     }
 }

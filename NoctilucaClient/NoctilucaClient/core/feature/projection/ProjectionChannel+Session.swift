@@ -114,17 +114,30 @@ extension ProjectionChannel {
     }
 
 
-    func createSession(for source: ProjectionSourceDescriptor, projectionSettings: SessionSettings.Projection?) async throws -> ProjectionSession {
+    func createSession(for source: ProjectionSourceDescriptor, projectionSettings: SessionSettings.Projection?, timeout: TimeInterval = 10.0) async throws -> ProjectionSession {
         guard let clientSession = self.clientSession else {
-            fatalError()
+            throw ProjectionChannelError.channelClosed
         }
 
         let identifier = UUID()
 
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
-        let response = try await requestSession(identifier: identifier, source: source, preferredCodecs: preferredCodecs)
+        let response = try await withThrowingTaskGroup(of: ProjectionSessionCreatedEvent.self) { group in
+            group.addTask {
+                try await self.requestSession(identifier: identifier, source: source, preferredCodecs: preferredCodecs)
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(max(0, timeout) * 1_000_000_000))
+                throw ProjectionChannelError.sessionCreationCancelled
+            }
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
 
-        let channel = await clientSession.channelManager.channels[identifier] as! ProjectionDataChannel
+        guard let channel = await clientSession.channelManager.channels[identifier] as? ProjectionDataChannel else {
+            throw ProjectionChannelError.channelClosed
+        }
 
         let projectionAppSettings = SettingsStore.shared.settings.projection
         let enableJitterBuffer = projectionAppSettings.enableJitterBuffer
@@ -191,6 +204,8 @@ extension ProjectionChannel {
     /// 모든 projection session을 중지하고 리소스를 정리합니다.
     func stopAllSessions() async {
         await state.cancelAllPendingAudioSessionRequests()
+        await state.cancelAllPendingSessions()
+        await state.cancelAllPendingRequests()
 
         // 모든 비디오 세션 중지
         let allSessions = await state.removeAllSessions()
@@ -229,13 +244,13 @@ extension ProjectionChannel {
         }
 
         do {
-            try await session.stop()
+            try await session.stop(sendStopRequest: false)
         } catch {
             logger.error("Failed to stop projection session \(identifier): \(error)")
         }
 
         Task { @MainActor in
-            self.events.send(.sessionDestroyed(identifier, reason: event.message ?? "reason=\(event.reason)"))
+            self.events.send(.sessionDestroyed(identifier, reason: event.reason, message: event.message))
         }
     }
 
@@ -257,6 +272,7 @@ extension ProjectionChannel {
             logger.info("Reconfiguring decoder for session \(identifier) with new codec: \(newCodec.fourCC)")
             do {
                 try await session.reconfigure(codec: newCodec)
+                try session.decoder?.start()
             } catch {
                 logger.error("Failed to reconfigure session \(identifier): \(error)")
             }

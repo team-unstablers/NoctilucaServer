@@ -100,11 +100,17 @@ final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
         }
 
         do {
-            let payloadCopy = copy payload
-            let digest = try await Bcrypt.sha512Async(value: payloadCopy)
+            var payloadCopy = copy payload
+            defer { payloadCopy.zeroize() }
+            var digest = try await Bcrypt.sha512Async(value: payloadCopy)
+            defer { digest.zeroize() }
             for hash in allowedHashes {
-                if try await Bcrypt.verifyAsync(password: digest, hash: hash) {
-                    return .success(getuid())
+                do {
+                    if try await Bcrypt.verifyAsync(password: digest, hash: hash) {
+                        return .success(getuid())
+                    }
+                } catch {
+                    continue
                 }
             }
         } catch {

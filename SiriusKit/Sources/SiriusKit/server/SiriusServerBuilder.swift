@@ -17,13 +17,12 @@ public struct SiriusServerBuilder {
     public enum TransportProtocol {
         case quic(implementation: String,
                   port: UInt16,
-                  identitySource: QUICServerIdentitySource)
+                  identity: (any QUICServerIdentity))
 
         func buildServerTransport() -> ServerRoleRootTransport {
             switch self {
-            case .quic(let implementation, let port, let identitySource):
+            case .quic(let implementation, let port, let identity):
                 let port = NWEndpoint.Port(rawValue: port)!
-                let identity = identitySource.build()
                 
                 switch implementation {
                 case TransportLayerImplementation.appleQuic.identifier:
