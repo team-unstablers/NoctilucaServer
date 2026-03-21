@@ -89,15 +89,21 @@ class SessionWindowViewModel: ObservableObject {
     @Published
     var appStreamState: AppStreamUIState = .inactive {
         didSet {
-            if appStreamState == .presentAppSelector {
+            switch appStreamState {
+            case .presentAppSelector:
                 isAppStreamAppSelectorPresented = true
-            } else {
+            case .active(let bundleIdentifier):
                 Task {
                     do {
-                        try await appStreamWindowManager?.start()
+                        try await appStreamWindowManager?.start(bundleId: bundleIdentifier)
                     } catch {
-                        print(error)
+                        print("AppStream start failed: \(error)")
+                        appStreamState = .inactive
                     }
+                }
+            case .inactive:
+                Task {
+                    await appStreamWindowManager?.stop()
                 }
             }
         }

@@ -255,7 +255,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         case .nocEnableExclusiveInputMode:
             try? viewModel.remoteSession?.hidio?.session.switchMode(to: .exclusive, reason: .userInitiated)
         case .nocAppStream:
-            viewModel.appStreamState = .active(bundleIdentifier: "com.apple.dt.Xcode")
+            viewModel.appStreamState = .active(bundleIdentifier: "com.apple.Safari")
         default:
             break
         }
