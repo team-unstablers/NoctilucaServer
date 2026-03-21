@@ -31,6 +31,8 @@ protocol HIDIOVirtualDevice {
     /// USB 디바이스의 VID/PID와 유사한 개념.
     static var identifier: HIDIOVirtualDeviceIdentifier { get }
     
+    var localIdentifier: String? { get }
+    
     func connect(to controller: HIDIOController)
     func disconnect()
 }
@@ -40,3 +42,14 @@ protocol HIDIOVirtualDeviceBus {
     func disconnect()
 }
 
+extension HIDIOVirtualDevice {
+    var identifierString: String {
+        let classIdentifier = type(of: self).identifier.rawValue.uuidString
+        
+        if let localIdentifier = localIdentifier {
+            return "\(classIdentifier)::\(localIdentifier)"
+        } else {
+            return classIdentifier
+        }
+    }
+}

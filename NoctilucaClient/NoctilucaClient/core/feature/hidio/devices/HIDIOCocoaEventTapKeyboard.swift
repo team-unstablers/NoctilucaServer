@@ -61,6 +61,8 @@ final class HIDIOCocoaEventTapKeyboard: HIDIOVirtualDevice, CInteropHandle {
 
     private var eventTapThread: Thread?
     private var eventTapRunLoop: CFRunLoop?
+    
+    var localIdentifier: String? { nil }
 
 
     private init() throws {

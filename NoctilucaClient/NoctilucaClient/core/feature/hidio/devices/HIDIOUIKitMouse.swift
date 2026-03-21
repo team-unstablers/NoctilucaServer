@@ -28,6 +28,8 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
     private var geometry: CGSize = .zero
 
     var scope: CursorPositionScope = .displayId(-1)
+    
+    var localIdentifier: String? { nil }
 
     func connect(to controller: HIDIOController) {
         self.controller = controller
