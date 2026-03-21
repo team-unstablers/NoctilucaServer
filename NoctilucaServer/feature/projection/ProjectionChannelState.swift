@@ -8,6 +8,8 @@
 import Foundation
 import CoreGraphics
 
+import SiriusKit
+
 actor ProjectionChannelState {
     enum SessionKind {
         case video
@@ -20,12 +22,23 @@ actor ProjectionChannelState {
         case destroyed
     }
 
+    struct AppStreamSessionInfo {
+        let streamId: UUID
+        let bundleId: String
+        let pid: pid_t
+        let flags: AppStreamFlags
+        let windowSubscriptionId: UUID
+        let appTerminationSubscriptionId: UUID
+    }
+
     struct DestroySnapshot {
         let videoSessions: [ProjectionSession]
         let audioSessions: [AudioProjectionSession]
         let dataChannels: [ProjectionDataChannel]
         let cursorSubscription: CursorEventSubscription?
         let displaySubscription: DisplayEventSubscription?
+        let appEventSubscriptionId: UUID?
+        let appStreamSession: AppStreamSessionInfo?
     }
 
     struct TerminationTargets {
@@ -55,6 +68,9 @@ actor ProjectionChannelState {
 
     private var cursorSubscription: CursorEventSubscription?
     private var displaySubscription: DisplayEventSubscription?
+
+    private var appEventSubscriptionId: UUID?
+    private var appStreamSession: AppStreamSessionInfo?
 
     func reserveSession(identifier: UUID, kind: SessionKind) -> Bool {
         guard lifecycleState == .active else {
@@ -211,6 +227,49 @@ actor ProjectionChannelState {
         return .unsubscribed(subscription)
     }
 
+    // MARK: - App Event Subscription
+
+    func setAppEventSubscription(id: UUID) -> Bool {
+        guard lifecycleState == .active else { return false }
+        appEventSubscriptionId = id
+        return true
+    }
+
+    func removeAppEventSubscription() -> UUID? {
+        let id = appEventSubscriptionId
+        appEventSubscriptionId = nil
+        return id
+    }
+
+    // MARK: - AppStream Session
+
+    func activateAppStreamSession(_ session: AppStreamSessionInfo) -> Bool {
+        guard lifecycleState == .active else { return false }
+        guard appStreamSession == nil else { return false }
+        appStreamSession = session
+        return true
+    }
+
+    func currentAppStreamSession() -> AppStreamSessionInfo? {
+        appStreamSession
+    }
+
+    func removeAppStreamSession(streamId: UUID) -> AppStreamSessionInfo? {
+        guard appStreamSession?.streamId == streamId else { return nil }
+        let session = appStreamSession
+        appStreamSession = nil
+        return session
+    }
+
+    func removeAppStreamSessionForTerminatedApp(bundleId: String) -> AppStreamSessionInfo? {
+        guard appStreamSession?.bundleId == bundleId else { return nil }
+        let session = appStreamSession
+        appStreamSession = nil
+        return session
+    }
+
+    // MARK: - Destroy
+
     func beginDestroy() -> DestroySnapshot? {
         guard lifecycleState == .active else {
             return nil
@@ -223,7 +282,9 @@ actor ProjectionChannelState {
             audioSessions: Array(audioSessions.values),
             dataChannels: Array(projectionDataChannels.values),
             cursorSubscription: cursorSubscription,
-            displaySubscription: displaySubscription
+            displaySubscription: displaySubscription,
+            appEventSubscriptionId: appEventSubscriptionId,
+            appStreamSession: appStreamSession
         )
 
         sessions.removeAll()
@@ -234,6 +295,8 @@ actor ProjectionChannelState {
 
         cursorSubscription = nil
         displaySubscription = nil
+        appEventSubscriptionId = nil
+        appStreamSession = nil
 
         return snapshot
     }

@@ -9,6 +9,7 @@ import Foundation
 import SiriusKit
 
 import AppKit
+import CoreGraphics
 
 
 extension ProjectionChannel {
@@ -16,68 +17,123 @@ extension ProjectionChannel {
     // MARK: - Window Query Handlers
 
     func handleWindowListRequest(_ request: WindowListRequest) async throws {
-        let windowList = await desktopContextManager.globalWindowList()
-        
-        
+        var windowList = await desktopContextManager.globalWindowList()
+
+        if let filter = request.filter {
+            windowList = windowList.filter { filter.matches($0) }
+        }
+
         // TODO: support paginated response
         let response = WindowListResponse(
             requestID: request.requestID,
             windows: windowList,
             isLastPage: true
         )
-        
+
         try await self.send(opcode: .windowListResponse, message: response)
     }
 
     func handleGetWindowInfoRequest(_ request: GetWindowInfoRequest) async throws {
-        // TODO: implement
+        let windowList = await desktopContextManager.globalWindowList()
+        let info = windowList.first(where: { $0.windowID == request.windowID })
+
+        let response = GetWindowInfoResponse(
+            requestID: request.requestID,
+            info: info
+        )
+        try await self.send(opcode: .getWindowInfoResponse, message: response)
     }
 
     func handleGetWindowIconRequest(_ request: GetWindowIconRequest) async throws {
-        // TODO: implement
+        let app = await desktopContextManager.findRunningApplication(forWindowID: WindowID(request.windowID))
+        let iconData: Data? = app?.icon?.tiffRepresentation.flatMap {
+            NSBitmapImageRep(data: $0)?.representation(using: .png, properties: [:])
+        }
+
+        let response = GetWindowIconResponse(
+            requestID: request.requestID,
+            windowID: request.windowID,
+            icon: iconData
+        )
+        try await self.send(opcode: .getWindowIconResponse, message: response)
     }
 
     func handleGetWindowThumbnailRequest(_ request: GetWindowThumbnailRequest) async throws {
-        // TODO: implement
+        // TODO: ScreenCaptureKit 기반 윈도우 썸네일 캡처 구현
+        let response = GetWindowThumbnailResponse(
+            requestID: request.requestID,
+            windowID: request.windowID,
+            thumbnail: nil
+        )
+        try await self.send(opcode: .getWindowThumbnailResponse, message: response)
     }
 
     // MARK: - Window Event Subscription Handlers
 
     func handleSubscribeWindowEventsRequest(_ request: SubscribeWindowEventsRequest) async throws {
-        // TODO: implement
+        let subscriptionID = await desktopContextManager.subscribeWindowEvents(
+            eventMask: request.eventMask,
+            filter: request.filter,
+            flags: request.flags
+        ) { [weak self] event in
+            Task { [weak self] in
+                try? await self?.send(opcode: .windowChangedEvent, message: event)
+            }
+        }
+
+        let response = SubscribeWindowEventsResponse(
+            requestID: request.requestID,
+            subscriptionID: subscriptionID
+        )
+        try await self.send(opcode: .subscribeWindowEventsResponse, message: response)
     }
 
     func handleUnsubscribeWindowEventsRequest(_ request: UnsubscribeWindowEventsRequest) async throws {
-        // TODO: implement
+        let success = await desktopContextManager.unsubscribeWindowEvents(id: request.subscriptionID)
+
+        let response = UnsubscribeWindowEventsResponse(
+            requestID: request.requestID,
+            subscriptionID: request.subscriptionID,
+            isSuccess: success
+        )
+        try await self.send(opcode: .unsubscribeWindowEventsResponse, message: response)
     }
 
     // MARK: - Window Manipulation Handlers
 
     func handleWindowManipulationRequest(_ request: WindowManipulationRequest) async throws {
-        guard let xcode = await desktopContextManager.runningApplications().first(where: { $0.bundleIdentifier == "com.apple.dt.Xcode" }) else {
-            return
-        }
-        
-        
-        let session = try await desktopContextManager.startMonitoring(app: xcode)
-        
-        switch request.operation {
-        case .stateCommand(let command):
-            break
-        case .focus(let focused):
-            if focused {
-                try await session.focusWindow(id: WindowID(request.windowID))
+        let windowID = WindowID(request.windowID)
+
+        do {
+            switch request.operation {
+            case .stateCommand(let command):
+                try await desktopContextManager.sendStateCommand(id: windowID, command: command)
+            case .focus(let focused):
+                if focused {
+                    try await desktopContextManager.focusWindow(id: windowID)
+                }
+            case .setGeometry(let rect):
+                try await desktopContextManager.setWindowFrame(
+                    id: windowID,
+                    frame: rect.cgRect
+                )
+            case .setFlags(_), .clearFlags(_):
+                break // macOS에서는 flags 직접 조작 미지원
             }
-        case .setGeometry(_):
-            break
-        case .setFlags(_):
-            break
-        case .clearFlags(_):
-            break
+
+            let response = WindowManipulationResponse(
+                isSuccess: true,
+                code: 0,
+                message: nil
+            )
+            try await self.send(opcode: .windowManipulationResponse, message: response)
+        } catch {
+            let response = WindowManipulationResponse(
+                isSuccess: false,
+                code: 1,
+                message: error.localizedDescription
+            )
+            try await self.send(opcode: .windowManipulationResponse, message: response)
         }
-        
-        await desktopContextManager.stopMonitoring(pid: session.pid)
-        
-        // TODO: implement
     }
 }

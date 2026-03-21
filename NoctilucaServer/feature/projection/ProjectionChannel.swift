@@ -65,6 +65,14 @@ class ProjectionChannel: Channel {
         snapshot.cursorSubscription?.destroy()
         snapshot.displaySubscription?.destroy()
 
+        if let appEventSubId = snapshot.appEventSubscriptionId {
+            await desktopContextManager.unsubscribeAppEvents(id: appEventSubId)
+        }
+
+        if let appStreamSession = snapshot.appStreamSession {
+            await cleanupAppStreamSession(appStreamSession)
+        }
+
         await state.completeDestroy()
     }
 
@@ -219,6 +227,35 @@ class ProjectionChannel: Channel {
         case .windowManipulationRequest:
             let request = try WindowManipulationRequest.fromProtobufBytes(frame.data)
             try await handleWindowManipulationRequest(request)
+
+        // MARK: Application Management (AppMan)
+        case .applicationListRequest:
+            let request = try ApplicationListRequest.fromProtobufBytes(frame.data)
+            try await handleApplicationListRequest(request)
+
+        case .applicationLaunchRequest:
+            let request = try ApplicationLaunchRequest.fromProtobufBytes(frame.data)
+            try await handleApplicationLaunchRequest(request)
+
+        case .applicationTerminateRequest:
+            let request = try ApplicationTerminateRequest.fromProtobufBytes(frame.data)
+            try await handleApplicationTerminateRequest(request)
+
+        case .subscribeApplicationEventsRequest:
+            let request = try SubscribeApplicationEventsRequest.fromProtobufBytes(frame.data)
+            try await handleSubscribeApplicationEventsRequest(request)
+
+        case .unsubscribeApplicationEventsRequest:
+            let request = try UnsubscribeApplicationEventsRequest.fromProtobufBytes(frame.data)
+            try await handleUnsubscribeApplicationEventsRequest(request)
+
+        case .startAppStreamRequest:
+            let request = try StartAppStreamRequest.fromProtobufBytes(frame.data)
+            try await handleStartAppStreamRequest(request)
+
+        case .stopAppStreamRequest:
+            let request = try StopAppStreamRequest.fromProtobufBytes(frame.data)
+            try await handleStopAppStreamRequest(request)
 
         default:
             print("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
