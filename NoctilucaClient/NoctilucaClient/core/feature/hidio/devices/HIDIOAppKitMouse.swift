@@ -25,6 +25,8 @@ final class HIDIOAppKitPointer: HIDIOVirtualDevice {
 
     private weak var controller: HIDIOController?
     
+    var localIdentifier: String? = nil
+
     var scope: CursorPositionScope = .displayId(-1)
     
     func connect(to controller: HIDIOController) {

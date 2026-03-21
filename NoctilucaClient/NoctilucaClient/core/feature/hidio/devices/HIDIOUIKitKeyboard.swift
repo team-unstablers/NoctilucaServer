@@ -20,6 +20,8 @@ extension HIDIOVirtualDeviceIdentifier {
 final class HIDIOUIKitKeyboard: ObservableObject, HIDIOVirtualDevice {
     static let kind: HIDIOVirtualDeviceKind = .keyboard
     static let identifier: HIDIOVirtualDeviceIdentifier = .uiKitKeyboard
+    
+    var localIdentifier: String? { nil }
 
     @Published
     private(set) var activeModifiers: Set<LinuxKeycode> = []

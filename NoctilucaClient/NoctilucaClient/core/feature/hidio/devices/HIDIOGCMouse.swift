@@ -58,6 +58,8 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
     
     private let logger = NoctilucaLogger(category: "HIDIOGCMouse")
     
+    var localIdentifier: String? { nil }
+
     private var cancellables: Set<AnyCancellable> = []
     
     private var controller: HIDIOController?

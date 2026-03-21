@@ -40,7 +40,7 @@ class HIDIOController {
     private var mouseScrollMultiplier: Double = 1.0
 
     private let channel: Weak<HIDIOChannel>
-    private var devices: [HIDIOVirtualDeviceIdentifier: HIDIOVirtualDevice] = [:]
+    private var devices: [String: HIDIOVirtualDevice] = [:]
 
     private let eventStream: AsyncStream<HIDEvent>
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation
@@ -96,7 +96,7 @@ class HIDIOController {
     }
     
     func connect(_ device: HIDIOVirtualDevice) {
-        let identifier = type(of: device).identifier
+        let identifier = device.identifierString
         
         self.disconnect(identifier)
         device.connect(to: self)
@@ -104,7 +104,7 @@ class HIDIOController {
         self.devices[identifier] = device
     }
     
-    func device(for identifier: HIDIOVirtualDeviceIdentifier) -> HIDIOVirtualDevice? {
+    func device(for identifier: String) -> HIDIOVirtualDevice? {
         return self.devices[identifier]
     }
 
@@ -114,12 +114,21 @@ class HIDIOController {
     }
     
     func disconnect(_ identifier: HIDIOVirtualDeviceIdentifier) {
-        guard let device = self.devices[identifier] else {
+        guard let device = self.devices[identifier.rawValue.uuidString] else {
             return
         }
 
         device.disconnect()
-        self.devices.removeValue(forKey: identifier)
+        self.devices.removeValue(forKey: identifier.rawValue.uuidString)
+    }
+    
+    func disconnect(_ identifierString: String) {
+        guard let device = self.devices[identifierString] else {
+            return
+        }
+
+        device.disconnect()
+        self.devices.removeValue(forKey: identifierString)
     }
     
     func disconnectAll(kind: HIDIOVirtualDeviceKind) {

@@ -34,6 +34,8 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
     static let kind: HIDIOVirtualDeviceKind = .keyboard
     static let identifier: HIDIOVirtualDeviceIdentifier = .gcKeyboard
     
+    var localIdentifier: String? { nil }
+
     private var cancellables: Set<AnyCancellable> = []
 
     private var keyboard: GCKeyboard? {
