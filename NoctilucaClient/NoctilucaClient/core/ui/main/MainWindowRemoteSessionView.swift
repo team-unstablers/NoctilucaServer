@@ -128,13 +128,11 @@ struct MainWindowRemoteSessionView: View {
         .onReceive(projection.$projectionSessions) { sessions in
             // auto-restart 성공 시 새로운 세션을 subscription으로 갱신
             guard subscription == nil,
-                  !sessions.isEmpty,
-                  case .displayID(let displayID) = sourceDescriptor,
-                  displayID != -1
+                  !sessions.isEmpty
             else { return }
 
             Task {
-                try? await self.updateProjectionTarget(displayID)
+                try? await self.updateProjectionTarget(sourceDescriptor)
             }
         }
     }
