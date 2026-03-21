@@ -40,6 +40,10 @@ struct RemoteSessionProjectionView: View {
 
     var source: ProjectionSession? { subscription?.session }
     
+#if os(macOS)
+    let mouse: HIDIOAppKitPointer?
+#endif
+
     @State
     var sourceSize: CGSize = .zero
 
@@ -85,7 +89,41 @@ struct RemoteSessionProjectionView: View {
         }
         return sourceSize
     }
-
+    
+#if os(iOS)
+    init(
+        remoteSession: RemoteSession,
+        projection: RemoteSession.Projection,
+        hidio: RemoteSession.HIDIO,
+        sourceDescriptor: Binding<ProjectionSourceDescriptor>,
+        subscription: ProjectionSessionSubscription? = nil,
+    ) {
+        self.remoteSession = remoteSession
+        self.projection = projection
+        self.hidio = hidio
+        self._sourceDescriptor = sourceDescriptor
+        self.subscription = subscription
+    }
+#endif
+#if os(macOS)
+    init(
+        remoteSession: RemoteSession,
+        projection: RemoteSession.Projection,
+        hidio: RemoteSession.HIDIO,
+        sourceDescriptor: Binding<ProjectionSourceDescriptor>,
+        subscription: ProjectionSessionSubscription? = nil,
+        mouse: HIDIOAppKitPointer? = nil
+    ) {
+        self.remoteSession = remoteSession
+        self.projection = projection
+        self.hidio = hidio
+        self._sourceDescriptor = sourceDescriptor
+        self.subscription = subscription
+        
+        self.mouse = nil
+    }
+#endif
+    
     private func syncSourceMetadata() {
         guard let source else { return }
         self.sourceSize = source.size
@@ -98,7 +136,7 @@ struct RemoteSessionProjectionView: View {
         let scope = sourceDescriptor.toCursorPositionScope()
 
 #if os(macOS)
-        if let mouse = hidio.session.currentMouse as? HIDIOAppKitPointer {
+        if let mouse = mouse ?? hidio.session.currentMouse as? HIDIOAppKitPointer {
             mouse.scope = scope
         }
 #endif
@@ -155,7 +193,7 @@ struct RemoteSessionProjectionView: View {
                     
 #if os(macOS)
                     if hidio.sessionMode == .shared,
-                       let mouse = hidio.session.currentMouse as? HIDIOAppKitPointer
+                       let mouse = mouse ?? hidio.session.currentMouse as? HIDIOAppKitPointer
                     {
                         HIDIOAppKitMouseView(pointer: mouse)
                             .offset(currentOffset)

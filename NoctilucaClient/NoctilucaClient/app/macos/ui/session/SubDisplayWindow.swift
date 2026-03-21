@@ -15,9 +15,12 @@ import SiriusKitClient
 
 class SubDisplayWindow: NSWindow {
     let targetDisplayID: Int
+    let mouse: HIDIOAppKitPointer
 
     init(displayID: Int, remoteSession: RemoteSession, subscription: ProjectionSessionSubscription) {
         self.targetDisplayID = displayID
+        self.mouse = HIDIOAppKitPointer()
+        self.mouse.scope = .displayId(Int32(targetDisplayID))
 
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
@@ -39,7 +42,8 @@ class SubDisplayWindow: NSWindow {
             projection: projection,
             hidio: hidio,
             sourceDescriptor: .constant(.displayID(displayID)),
-            subscription: subscription
+            subscription: subscription,
+            mouse: mouse
         )
             .environmentObject(SettingsStore.shared)
 
