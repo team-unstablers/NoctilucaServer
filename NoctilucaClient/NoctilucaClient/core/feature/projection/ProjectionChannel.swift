@@ -58,6 +58,9 @@ enum ProjectionChannelEvent: Sendable {
 
     /// 커서 위치가 변경되었습니다.
     case cursorMoved(CursorMoveEvent)
+
+    /// AppStream 윈도우 이벤트 (appeared/disappeared/updated)
+    case appStreamWindowEvent(AppStreamWindowEvent)
 }
 
 class ProjectionChannel: Channel {
@@ -157,6 +160,20 @@ class ProjectionChannel: Channel {
         case .windowChangedEvent:
             let event = try WindowChangedEvent.fromProtobufBytes(frame.data)
             await self.handleWindowChangedEvent(event)
+
+        // MARK: - AppStream opcodes
+
+        case .startAppStreamResponse:
+            let response = try StartAppStreamResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .stopAppStreamResponse:
+            let response = try StopAppStreamResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .appStreamWindowEvent:
+            let event = try AppStreamWindowEvent.fromProtobufBytes(frame.data)
+            await self.handleAppStreamWindowEvent(event)
 
         // MARK: - Audio projection opcodes
 

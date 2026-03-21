@@ -254,6 +254,9 @@ extension RemoteSession {
                         self.cursorState.image = cursorImage
                     }
                 }
+
+            case .appStreamWindowEvent:
+                break // AppStreamWindowManager가 직접 events를 구독하여 처리
             }
         }
 
