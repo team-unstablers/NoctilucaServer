@@ -3,6 +3,8 @@
 //  NoctilucaServer
 //
 
+import os
+
 import Foundation
 import CoreGraphics
 import ApplicationServices // For AXUIElement
@@ -687,7 +689,27 @@ final class DesktopContextManager {
     /// windowID로 윈도우 bounds(CGRect) 조회 (thread-safe, CGWindowList 기반)
     ///
     /// `CGWindowListCopyWindowInfo`는 thread-safe이므로 MainActor 외부에서도 호출 가능하다.
+    /// TTL 캐시를 사용하여 마우스 이벤트마다 발생하는 CGWindowList IPC를 최소화한다.
+    private static let boundsCacheTTL: CFAbsoluteTime = 0.5
+
+    private static let boundsCache = OSAllocatedUnfairLock(initialState: (
+        windowID: WindowID(0),
+        bounds: CGRect.zero,
+        timestamp: CFAbsoluteTime(0)
+    ))
+
     nonisolated static func queryWindowBounds(for windowID: WindowID) -> CGRect? {
+        let now = CFAbsoluteTimeGetCurrent()
+
+        let cached: CGRect? = boundsCache.withLock { state in
+            guard state.windowID == windowID,
+                  (now - state.timestamp) < boundsCacheTTL else {
+                return nil
+            }
+            return state.bounds
+        }
+        if let cached { return cached }
+
         guard let infoList = CGWindowListCopyWindowInfo(.optionIncludingWindow, windowID) as? [[String: Any]],
               let info = infoList.first,
               info.keys.contains(kCGWindowBounds as String)
@@ -695,7 +717,14 @@ final class DesktopContextManager {
             return nil
         }
         let boundsCF = info[kCGWindowBounds as String] as! CFDictionary
-        return CGRect(dictionaryRepresentation: boundsCF)
+        guard let bounds = CGRect(dictionaryRepresentation: boundsCF) else {
+            return nil
+        }
+
+        boundsCache.withLock { state in
+            state = (windowID, bounds, now)
+        }
+        return bounds
     }
 
     // MARK: - Window ID Lookup
