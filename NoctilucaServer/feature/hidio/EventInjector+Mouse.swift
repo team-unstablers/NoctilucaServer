@@ -64,7 +64,7 @@ extension EventInjector {
 
         switch scope {
         case .windowId(let windowId):
-            guard let bounds = Self.queryWindowBounds(CGWindowID(windowId)) else {
+            guard let bounds = DesktopContextManager.queryWindowBounds(for: CGWindowID(windowId)) else {
                 return
             }
             targetPosition = CGPoint(
@@ -121,17 +121,6 @@ extension EventInjector {
 
     }
 
-    private static func queryWindowBounds(_ windowID: CGWindowID) -> CGRect? {
-        guard let infoList = CGWindowListCopyWindowInfo(.optionIncludingWindow, windowID) as? [[String: Any]],
-              let info = infoList.first,
-              info.keys.contains(kCGWindowBounds as String)
-        else {
-            return nil
-        }
-        let boundsCF = info[kCGWindowBounds as String] as! CFDictionary
-        return CGRect(dictionaryRepresentation: boundsCF)
-    }
-    
     func performMouseMoveRelative(pixel position: CursorPositionPixel) {
         enqueue { [weak self] in
             self?.performMouseMoveRelativeOnQueue(pixel: position)
