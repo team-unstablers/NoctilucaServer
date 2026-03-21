@@ -21,6 +21,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+//// 단일 윈도우 필터 조건
 struct Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -34,7 +35,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: Sendable {
   var field: Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression.OneOf_Field? = nil
 
   //// 윈도우 핸들 ID로 매칭합니다.
-  //// @note OS / DM에 따라 윈도우 핸들 ID의 크기가 다를 수 있으므로 fixed64 타입을 사용합니다.
+  //// OS / DM에 따라 윈도우 핸들 ID의 크기가 다를 수 있으므로 uint64 타입을 사용합니다.
   var windowID: UInt64 {
     get {
       if case .windowID(let v)? = field {return v}
@@ -62,13 +63,10 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: Sendable {
   }
 
   //// 애플리케이션 이름(실행 파일 이름)으로 매칭합니다.
-  //// ## NOTE: Platform Differences
-  //// - Windows의 경우 실행 파일 이름 (예: "chrome.exe")을 의미합니다.
-  //// - macOS / Linux의 경우 프로세스 이름 (ARGV[0])을 의미합니다. 이는 전체 경로일 수도 있고, 단순 실행 파일 이름일 수도 있습니다.
-  ////   - eg: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-  ////   - eg: `/usr/bin/google-chrome-stable`
-  ////   - eg: `nginx: worker process` (자기 자신의 ARGV[0]을 수정하는 케이스)
-  ////   - eg: `python3 script.py` (전체 경로가 아닌 실행 파일만 나타나는 케이스)
+  //// 플랫폼별 차이:
+  //// - Windows: 실행 파일 이름 (예: "chrome.exe")
+  //// - macOS / Linux: 프로세스 이름 (ARGV[0]). 전체 경로일 수도 있고,
+  ////   단순 실행 파일 이름일 수도 있습니다.
   var applicationName: String {
     get {
       if case .applicationName(let v)? = field {return v}
@@ -78,9 +76,8 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: Sendable {
   }
 
   //// 번들 ID로 매칭합니다.
-  //// - 의미는 서버 구현체에 따라 다를 수 있습니다.
-  ////   Noctiluca의 경우 macOS의 번들 ID (예: "com.apple.Safari")를 의미합니다.
-  //// - eg) Android의 경우 패키지 이름 (예: "com.google.android.youtube")을 의미할 수 있습니다.
+  //// 의미는 서버 구현체에 따라 다를 수 있습니다.
+  //// (예: macOS "com.apple.Safari", Android "com.google.android.youtube")
   var applicationBundleID: String {
     get {
       if case .applicationBundleID(let v)? = field {return v}
@@ -90,7 +87,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: Sendable {
   }
 
   //// 윈도우 클래스 이름으로 매칭합니다.
-  //// - macOS는 클래스 이름을 지원하지 않으므로 이 필드는 무시될 수 있습니다.
+  //// macOS는 클래스 이름을 지원하지 않으므로 이 필드는 무시될 수 있습니다.
   var windowClass: String {
     get {
       if case .windowClass(let v)? = field {return v}
@@ -103,28 +100,24 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: Sendable {
 
   enum OneOf_Field: Equatable, Sendable {
     //// 윈도우 핸들 ID로 매칭합니다.
-    //// @note OS / DM에 따라 윈도우 핸들 ID의 크기가 다를 수 있으므로 fixed64 타입을 사용합니다.
+    //// OS / DM에 따라 윈도우 핸들 ID의 크기가 다를 수 있으므로 uint64 타입을 사용합니다.
     case windowID(UInt64)
     //// 프로세스 ID로 매칭합니다.
     case pid(UInt64)
     //// 윈도우 타이틀로 매칭합니다.
     case windowTitle(String)
     //// 애플리케이션 이름(실행 파일 이름)으로 매칭합니다.
-    //// ## NOTE: Platform Differences
-    //// - Windows의 경우 실행 파일 이름 (예: "chrome.exe")을 의미합니다.
-    //// - macOS / Linux의 경우 프로세스 이름 (ARGV[0])을 의미합니다. 이는 전체 경로일 수도 있고, 단순 실행 파일 이름일 수도 있습니다.
-    ////   - eg: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-    ////   - eg: `/usr/bin/google-chrome-stable`
-    ////   - eg: `nginx: worker process` (자기 자신의 ARGV[0]을 수정하는 케이스)
-    ////   - eg: `python3 script.py` (전체 경로가 아닌 실행 파일만 나타나는 케이스)
+    //// 플랫폼별 차이:
+    //// - Windows: 실행 파일 이름 (예: "chrome.exe")
+    //// - macOS / Linux: 프로세스 이름 (ARGV[0]). 전체 경로일 수도 있고,
+    ////   단순 실행 파일 이름일 수도 있습니다.
     case applicationName(String)
     //// 번들 ID로 매칭합니다.
-    //// - 의미는 서버 구현체에 따라 다를 수 있습니다.
-    ////   Noctiluca의 경우 macOS의 번들 ID (예: "com.apple.Safari")를 의미합니다.
-    //// - eg) Android의 경우 패키지 이름 (예: "com.google.android.youtube")을 의미할 수 있습니다.
+    //// 의미는 서버 구현체에 따라 다를 수 있습니다.
+    //// (예: macOS "com.apple.Safari", Android "com.google.android.youtube")
     case applicationBundleID(String)
     //// 윈도우 클래스 이름으로 매칭합니다.
-    //// - macOS는 클래스 이름을 지원하지 않으므로 이 필드는 무시될 수 있습니다.
+    //// macOS는 클래스 이름을 지원하지 않으므로 이 필드는 무시될 수 있습니다.
     case windowClass(String)
 
   }
@@ -132,6 +125,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: Sendable {
   init() {}
 }
 
+//// 윈도우 필터 (재귀적 트리 구조)
 struct Sirius_Msgdef_V1_Channels_Projection_WindowFilter: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -140,11 +134,11 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilter: Sendable {
   /// @constset: WindowFilterOperator
   var `operator`: UInt32 = 0
 
-  /// 조건들의 목록 (Recursive)
-  /// 예: (A OR B) AND C 를 표현 가능
+  //// 조건들의 목록 (재귀적 구조로 복합 조건을 표현할 수 있음)
+  //// 예: (A OR B) AND C
   var expressions: [Sirius_Msgdef_V1_Channels_Projection_WindowFilter] = []
 
-  /// 혹은 단일 조건 (Leaf Node)
+  //// 단일 조건 (리프 노드)
   var expression: Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression {
     get {return _expression ?? Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression()}
     set {_expression = newValue}
@@ -161,35 +155,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilter: Sendable {
   fileprivate var _expression: Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression? = nil
 }
 
-/// @opcode: 0x8061
-struct Sirius_Msgdef_V1_Channels_Projection_WindowListRequest: Sendable {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  var requestID: UInt64 = 0
-
-  //// 필터 조건
-  var filter: Sirius_Msgdef_V1_Channels_Projection_WindowFilter {
-    get {return _filter ?? Sirius_Msgdef_V1_Channels_Projection_WindowFilter()}
-    set {_filter = newValue}
-  }
-  /// Returns true if `filter` has been explicitly set.
-  var hasFilter: Bool {return self._filter != nil}
-  /// Clears the value of `filter`. Subsequent reads from it will return its default value.
-  mutating func clearFilter() {self._filter = nil}
-
-  //// 윈도우 목록 요청 플래그
-  /// @optionset: WindowListRequestFlags
-  var flags: UInt32 = 0
-
-  var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  init() {}
-
-  fileprivate var _filter: Sirius_Msgdef_V1_Channels_Projection_WindowFilter? = nil
-}
-
+//// 윈도우의 상세 정보
 struct Sirius_Msgdef_V1_Channels_Projection_WindowInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -240,10 +206,10 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowInfo: Sendable {
   mutating func clearThumbnail() {self._thumbnail = nil}
 
   //// 추가 메타데이터
-  //// @note **모든 메타데이터 키는 optional입니다**. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고, 모든 키가 항상 제공되는 것도 아닙니다.
-  //// @note 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오. (예: "com.contoso.superremote.virtual-display-purpose" 등)
-  //// @key "related-display-id": 이 디스플레이가 다른 디스플레이의 미러링을 수행하고 있는 경우, 그 원본 디스플레이 ID를 나타냅니다.
-  //// @key "connection-type": 디스플레이 연결 유형 (예: "HDMI", "DisplayPort", "USB-C", "Wireless" 등)
+  //// 모든 메타데이터 키는 optional입니다. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고,
+  //// 모든 키가 항상 제공되는 것도 아닙니다.
+  //// 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오.
+  //// (예: "com.contoso.superremote.virtual-display-purpose" 등)
   var metadata: Dictionary<String,String> = [:]
 
   //// 윈도우 힌트
@@ -263,6 +229,37 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowInfo: Sendable {
   fileprivate var _thumbnail: Data? = nil
 }
 
+//// 윈도우 목록을 요청합니다.
+/// @opcode: 0x8061
+struct Sirius_Msgdef_V1_Channels_Projection_WindowListRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  //// 필터 조건
+  var filter: Sirius_Msgdef_V1_Channels_Projection_WindowFilter {
+    get {return _filter ?? Sirius_Msgdef_V1_Channels_Projection_WindowFilter()}
+    set {_filter = newValue}
+  }
+  /// Returns true if `filter` has been explicitly set.
+  var hasFilter: Bool {return self._filter != nil}
+  /// Clears the value of `filter`. Subsequent reads from it will return its default value.
+  mutating func clearFilter() {self._filter = nil}
+
+  //// 윈도우 목록 요청 플래그
+  /// @optionset: WindowListRequestFlags
+  var flags: UInt32 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _filter: Sirius_Msgdef_V1_Channels_Projection_WindowFilter? = nil
+}
+
+//// 윈도우 목록 요청에 대한 응답입니다.
 /// @opcode: 0x8062
 struct Sirius_Msgdef_V1_Channels_Projection_WindowListResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -281,6 +278,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowListResponse: Sendable {
   init() {}
 }
 
+//// 특정 윈도우의 상세 정보를 요청합니다.
 /// @opcode: 0x8063
 struct Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -296,6 +294,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoRequest: Sendable {
   init() {}
 }
 
+//// 특정 윈도우 정보 요청에 대한 응답입니다.
 /// @opcode: 0x8064
 struct Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoResponse: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -323,6 +322,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoResponse: @unchecked Se
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
+//// 특정 윈도우의 아이콘을 요청합니다.
 /// @opcode: 0x8065
 struct Sirius_Msgdef_V1_Channels_Projection_GetWindowIconRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -338,6 +338,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowIconRequest: Sendable {
   init() {}
 }
 
+//// 윈도우 아이콘 요청에 대한 응답입니다.
 /// @opcode: 0x8066
 struct Sirius_Msgdef_V1_Channels_Projection_GetWindowIconResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -348,7 +349,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowIconResponse: Sendable {
 
   var windowID: UInt64 = 0
 
-  //// 이 윈도우의 아이콘 이미지 (PNG8 (with alpha channel) 형식, requires square aspect ratio, 최대 256x256)
+  //// 이 윈도우의 아이콘 이미지 (PNG8 (with alpha channel) 형식, 정사각형, 최대 256x256)
   var icon: Data {
     get {return _icon ?? Data()}
     set {_icon = newValue}
@@ -365,6 +366,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowIconResponse: Sendable {
   fileprivate var _icon: Data? = nil
 }
 
+//// 특정 윈도우의 섬네일을 요청합니다.
 /// @opcode: 0x8067
 struct Sirius_Msgdef_V1_Channels_Projection_GetWindowThumbnailRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -380,6 +382,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowThumbnailRequest: Sendable 
   init() {}
 }
 
+//// 윈도우 섬네일 요청에 대한 응답입니다.
 /// @opcode: 0x8068
 struct Sirius_Msgdef_V1_Channels_Projection_GetWindowThumbnailResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -407,6 +410,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowThumbnailResponse: Sendable
   fileprivate var _thumbnail: Data? = nil
 }
 
+//// 윈도우 변경 이벤트를 구독합니다.
 /// @opcode: 0x8069
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeWindowEventsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -429,7 +433,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeWindowEventsRequest: Sendab
   /// Clears the value of `filter`. Subsequent reads from it will return its default value.
   mutating func clearFilter() {self._filter = nil}
 
-  /// reserved
+  /// @optionset: WindowEventSubscriptionFlags
   var flags: UInt32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -439,6 +443,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeWindowEventsRequest: Sendab
   fileprivate var _filter: Sirius_Msgdef_V1_Channels_Projection_WindowFilter? = nil
 }
 
+//// 윈도우 이벤트 구독 요청에 대한 응답입니다.
 /// @opcode: 0x806A
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeWindowEventsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -464,6 +469,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeWindowEventsResponse: Senda
   fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
+//// 윈도우 변경 이벤트 구독을 해제합니다.
 /// @opcode: 0x806B
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeWindowEventsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -489,6 +495,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeWindowEventsRequest: Send
   fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
+//// 윈도우 이벤트 구독 해제 요청에 대한 응답입니다.
 /// @opcode: 0x806C
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeWindowEventsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -517,6 +524,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeWindowEventsResponse: Sen
   fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
+//// 윈도우 변경 이벤트입니다.
 /// @opcode: 0x806D
 struct Sirius_Msgdef_V1_Channels_Projection_WindowChangedEvent: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -558,7 +566,7 @@ fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
 extension Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".WindowFilterExpression"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}operator\0\u{1}invert\0\u{1}windowId\0\u{1}pid\0\u{1}windowTitle\0\u{1}applicationName\0\u{1}applicationBundleID\0\u{1}windowClass\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}operator\0\u{1}invert\0\u{1}windowId\0\u{1}pid\0\u{1}windowTitle\0\u{1}applicationName\0\u{1}applicationBundleId\0\u{1}windowClass\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -715,53 +723,9 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowFilter: SwiftProtobuf.Messa
   }
 }
 
-extension Sirius_Msgdef_V1_Channels_Projection_WindowListRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".WindowListRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}filter\0\u{2}\u{e}flags\0")
-
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
-      case 2: try { try decoder.decodeSingularMessageField(value: &self._filter) }()
-      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
-      default: break
-      }
-    }
-  }
-
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if self.requestID != 0 {
-      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
-    }
-    try { if let v = self._filter {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    } }()
-    if self.flags != 0 {
-      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_WindowListRequest, rhs: Sirius_Msgdef_V1_Channels_Projection_WindowListRequest) -> Bool {
-    if lhs.requestID != rhs.requestID {return false}
-    if lhs._filter != rhs._filter {return false}
-    if lhs.flags != rhs.flags {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
 extension Sirius_Msgdef_V1_Channels_Projection_WindowInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".WindowInfo"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}windowId\0\u{1}pid\0\u{1}windowTitle\0\u{1}applicationName\0\u{1}applicationBundleID\0\u{1}windowClass\0\u{1}role\0\u{1}bounds\0\u{1}iconHash\0\u{2}\u{3}thumbnail\0\u{1}metadata\0\u{1}hints\0\u{1}flags\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}windowId\0\u{1}pid\0\u{1}windowTitle\0\u{1}applicationName\0\u{1}applicationBundleId\0\u{1}windowClass\0\u{1}role\0\u{1}bounds\0\u{1}iconHash\0\u{2}\u{3}thumbnail\0\u{1}metadata\0\u{1}hints\0\u{1}flags\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -847,6 +811,50 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowInfo: SwiftProtobuf.Message
     if lhs._thumbnail != rhs._thumbnail {return false}
     if lhs.metadata != rhs.metadata {return false}
     if lhs.hints != rhs.hints {return false}
+    if lhs.flags != rhs.flags {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_WindowListRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".WindowListRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}filter\0\u{2}\u{d}flags\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._filter) }()
+      case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    try { if let v = self._filter {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    if self.flags != 0 {
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_WindowListRequest, rhs: Sirius_Msgdef_V1_Channels_Projection_WindowListRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs._filter != rhs._filter {return false}
     if lhs.flags != rhs.flags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
