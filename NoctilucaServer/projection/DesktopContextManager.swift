@@ -59,16 +59,45 @@ struct AppMenuNode {
 
 // MARK: - Errors
 
-enum DesktopContextError: Error {
+enum DesktopContextError: Error, LocalizedError {
     case accessibilityPermissionMissing
     case cannotCreateAXObserver(AXError)
     case windowNotFound(WindowID)
+    case windowOwnerNotFound(WindowID)
     case appNotRunning
     case invalidWindowFrame
     case failedToSetFocusedWindow(AXError)
     case failedToPerformAction(String, AXError)
     case failedToUpdateWindowFrame(AXError)
     case failedToReadAttribute(String, AXError)
+    case unsupportedOperation(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .accessibilityPermissionMissing:
+            return "Accessibility permission is not granted"
+        case .cannotCreateAXObserver(let error):
+            return "Cannot create AXObserver: \(error)"
+        case .windowNotFound(let id):
+            return "Window not found: \(id)"
+        case .windowOwnerNotFound(let id):
+            return "Owner process not found for window: \(id)"
+        case .appNotRunning:
+            return "Application is not running"
+        case .invalidWindowFrame:
+            return "Invalid window frame"
+        case .failedToSetFocusedWindow(let error):
+            return "Failed to set focused window: \(error)"
+        case .failedToPerformAction(let action, let error):
+            return "Failed to perform action '\(action)': \(error)"
+        case .failedToUpdateWindowFrame(let error):
+            return "Failed to update window frame: \(error)"
+        case .failedToReadAttribute(let attr, let error):
+            return "Failed to read attribute '\(attr)': \(error)"
+        case .unsupportedOperation(let op):
+            return "Unsupported operation: \(op)"
+        }
+    }
 }
 
 // MARK: - Protocols
@@ -517,60 +546,87 @@ final class AppSession {
     }
 }
 
+// MARK: - Window Event Subscription
+
+struct WindowEventSubscription {
+    let id: UUID
+    let eventMask: WindowChangeEventType
+    let filter: WindowFilter?
+    let flags: WindowEventSubscriptionFlagSet
+    let callback: @MainActor @Sendable (WindowChangedEvent) -> Void
+}
+
+// MARK: - App Event Subscription
+
+struct AppEventSubscription {
+    let id: UUID
+    let eventMask: ApplicationEventType
+    let bundleIdFilter: String?
+    let callback: @MainActor @Sendable (ApplicationChangedEvent) -> Void
+}
+
 /// 시스템 전체의 앱 실행 상태와 포커스를 관장하는 매니저
 /// (기존 WindowManagerOrSpy)
 @MainActor
 final class DesktopContextManager {
     public static let shared = DesktopContextManager()
-    
+
+    private let logger = NoctilucaLogger(category: "DesktopContextManager")
+
     weak var delegate: DesktopContextManagerDelegate?
-    
+
     /// 현재 감시 중인 앱 세션들 (PID: Session)
     private(set) var activeSessions: [pid_t: AppSession] = [:]
-    
+
+    /// 활성 윈도우 이벤트 구독 (SubscriptionID: Subscription)
+    private var subscriptions: [UUID: WindowEventSubscription] = [:]
+
+    /// 활성 앱 이벤트 구독 (SubscriptionID: Subscription)
+    private var appEventSubscriptions: [UUID: AppEventSubscription] = [:]
+
     private let workspace: NSWorkspace
     private var workspaceObservers: [Any] = []
-    
+
     nonisolated init(workspace: NSWorkspace = .shared) {
         self.workspace = workspace
-        
+
         Task { [weak self] in
             await self?.registerWorkspaceNotifications()
         }
     }
-    
+
     @MainActor
     deinit {
         workspaceObservers.forEach { observer in
             workspace.notificationCenter.removeObserver(observer)
         }
     }
-    
+
     // MARK: - Public Methods
-    
+
     /// 권한 확인 (Screen Recording, Accessibility)
     func checkPermissions() -> Bool {
         let accessibilityOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         let accessibilityGranted = AXIsProcessTrustedWithOptions(accessibilityOptions)
-        
+
         let screenRecordingGranted: Bool
         if #available(macOS 10.15, *) {
             screenRecordingGranted = CGPreflightScreenCaptureAccess()
         } else {
             screenRecordingGranted = true
         }
-        
+
         return accessibilityGranted && screenRecordingGranted
     }
-    
+
     func runningApplications() -> [NSRunningApplication] {
         return workspace.runningApplications.filter(shouldMonitor)
     }
-    
+
     func frontmostApplication() -> NSRunningApplication? {
         return workspace.frontmostApplication
     }
-   
+
     /// 현재 실행 중인 모든 앱 스캔 (초기화 용)
     func scanRunningApplications() {
         workspace.runningApplications
@@ -578,22 +634,23 @@ final class DesktopContextManager {
             .forEach { app in
                 delegate?.desktopManager(self, didDetectAppLaunch: app)
             }
-        
+
         delegate?.desktopManager(self, didChangeFrontmostApp: workspace.frontmostApplication)
     }
-    
+
     /// 특정 앱을 감시 시작
     /// - Returns: 생성된 AppSession 객체
     func startMonitoring(app: NSRunningApplication) throws -> AppSession {
         if let existing = activeSessions[app.processIdentifier] {
             return existing
         }
-        
+
         let session = try AppSession(runningApp: app)
+        session.delegate = self
         activeSessions[app.processIdentifier] = session
         return session
     }
-    
+
     /// 감시 중단
     func stopMonitoring(pid: pid_t) {
         if let session = activeSessions.removeValue(forKey: pid) {
@@ -603,6 +660,8 @@ final class DesktopContextManager {
 
     /// 모든 세션을 정리하고 workspace observer를 해제한다.
     func shutdown() {
+        subscriptions.removeAll()
+        appEventSubscriptions.removeAll()
         for session in activeSessions.values {
             session.stop()
         }
@@ -612,9 +671,221 @@ final class DesktopContextManager {
         }
         workspaceObservers.removeAll()
     }
-    
+
+    // MARK: - Window Info Query
+
+    /// windowID로 캐시된 세션에서 WindowInfo 조회
+    func windowInfo(for windowID: WindowID) -> WindowInfo? {
+        for session in activeSessions.values {
+            if let info = session.monitoredWindows[windowID] {
+                return info
+            }
+        }
+        return nil
+    }
+
+    /// windowID로 윈도우 bounds(CGRect) 조회 (thread-safe, CGWindowList 기반)
+    ///
+    /// `CGWindowListCopyWindowInfo`는 thread-safe이므로 MainActor 외부에서도 호출 가능하다.
+    nonisolated static func queryWindowBounds(for windowID: WindowID) -> CGRect? {
+        guard let infoList = CGWindowListCopyWindowInfo(.optionIncludingWindow, windowID) as? [[String: Any]],
+              let info = infoList.first,
+              info.keys.contains(kCGWindowBounds as String)
+        else {
+            return nil
+        }
+        let boundsCF = info[kCGWindowBounds as String] as! CFDictionary
+        return CGRect(dictionaryRepresentation: boundsCF)
+    }
+
+    // MARK: - Window ID Lookup
+
+    /// CGWindowList에서 windowID의 소유 pid를 조회 (on-demand)
+    func findOwnerPID(windowID: WindowID) -> pid_t? {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+            return nil
+        }
+
+        for info in infoList {
+            guard let wid = info[kCGWindowNumber as String] as? CGWindowID,
+                  wid == windowID,
+                  let pid = info[kCGWindowOwnerPID as String] as? pid_t else {
+                continue
+            }
+            return pid
+        }
+        return nil
+    }
+
+    /// windowID로 NSRunningApplication 조회
+    func findRunningApplication(forWindowID windowID: WindowID) -> NSRunningApplication? {
+        guard let pid = findOwnerPID(windowID: windowID) else { return nil }
+        return NSRunningApplication(processIdentifier: pid)
+    }
+
+    // MARK: - Lazy Session Management
+
+    /// windowID 기반으로 AppSession을 자동 생성/반환
+    func ensureSession(forWindowID windowID: WindowID) throws -> AppSession {
+        guard let pid = findOwnerPID(windowID: windowID) else {
+            throw DesktopContextError.windowOwnerNotFound(windowID)
+        }
+        return try ensureSession(forPID: pid)
+    }
+
+    /// pid 기반으로 AppSession을 자동 생성/반환
+    private func ensureSession(forPID pid: pid_t) throws -> AppSession {
+        if let existing = activeSessions[pid] {
+            return existing
+        }
+        guard let app = NSRunningApplication(processIdentifier: pid) else {
+            throw DesktopContextError.appNotRunning
+        }
+        return try startMonitoring(app: app)
+    }
+
+    // MARK: - Window Manipulation (Convenience)
+
+    /// 특정 윈도우로 포커스 이동
+    func focusWindow(id: WindowID) throws {
+        let session = try ensureSession(forWindowID: id)
+        try session.activate()
+        try session.focusWindow(id: id)
+    }
+
+    /// 윈도우 닫기
+    func closeWindow(id: WindowID) throws {
+        let session = try ensureSession(forWindowID: id)
+        try session.closeWindow(id: id)
+    }
+
+    /// 윈도우 이동/크기 조절
+    func setWindowFrame(id: WindowID, frame: CGRect) throws {
+        let session = try ensureSession(forWindowID: id)
+        try session.setWindowFrame(id: id, frame: frame)
+    }
+
+    /// WindowStateCommand 기반 조작
+    func sendStateCommand(id: WindowID, command: WindowStateCommand) throws {
+        switch command {
+        case .close:
+            try closeWindow(id: id)
+        case .minimize, .maximize, .restore:
+            throw DesktopContextError.unsupportedOperation("WindowStateCommand.\(command) is not yet supported")
+        default:
+            throw DesktopContextError.unsupportedOperation("Unknown WindowStateCommand")
+        }
+    }
+
+    // MARK: - Window Event Subscription
+
+    /// 윈도우 이벤트 구독 등록
+    func subscribeWindowEvents(
+        eventMask: WindowChangeEventType,
+        filter: WindowFilter?,
+        flags: WindowEventSubscriptionFlagSet,
+        callback: @escaping @MainActor @Sendable (WindowChangedEvent) -> Void
+    ) -> UUID {
+        let subscriptionID = UUID()
+        let subscription = WindowEventSubscription(
+            id: subscriptionID,
+            eventMask: eventMask,
+            filter: filter,
+            flags: flags,
+            callback: callback
+        )
+        subscriptions[subscriptionID] = subscription
+
+        // 구독 대상 앱들의 AppSession 자동 생성
+        ensureSessionsForSubscription(subscription)
+
+        // sendInitialSnapshot 플래그 처리
+        if flags.contains(.sendInitialSnapshot) {
+            let windowList = globalWindowList()
+            for window in windowList {
+                if let filter, !filter.matches(window) { continue }
+                let event = WindowChangedEvent(
+                    eventType: .metadataChanged,
+                    windowID: window.windowID,
+                    info: window
+                )
+                callback(event)
+            }
+        }
+
+        return subscriptionID
+    }
+
+    /// 윈도우 이벤트 구독 해제
+    func unsubscribeWindowEvents(id: UUID) -> Bool {
+        return subscriptions.removeValue(forKey: id) != nil
+    }
+
+    // MARK: - App Event Subscription
+
+    /// 앱 이벤트 구독 등록
+    func subscribeAppEvents(
+        eventMask: ApplicationEventType,
+        bundleIdFilter: String?,
+        callback: @escaping @MainActor @Sendable (ApplicationChangedEvent) -> Void
+    ) -> UUID {
+        let id = UUID()
+        let subscription = AppEventSubscription(
+            id: id,
+            eventMask: eventMask,
+            bundleIdFilter: bundleIdFilter,
+            callback: callback
+        )
+        appEventSubscriptions[id] = subscription
+        return id
+    }
+
+    /// 앱 이벤트 구독 해제
+    func unsubscribeAppEvents(id: UUID) -> Bool {
+        return appEventSubscriptions.removeValue(forKey: id) != nil
+    }
+
+    // MARK: - App Management Helpers
+
+    /// 번들 ID로 실행 중인 앱 조회
+    func findRunningApplication(bundleId: String) -> NSRunningApplication? {
+        return workspace.runningApplications.first {
+            $0.bundleIdentifier == bundleId && !$0.isTerminated
+        }
+    }
+
+    /// 번들 ID로 앱 실행
+    func launchApplication(bundleId: String, arguments: [String] = []) async throws -> NSRunningApplication {
+        guard let appURL = workspace.urlForApplication(withBundleIdentifier: bundleId) else {
+            throw DesktopContextError.appNotRunning
+        }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.arguments = arguments
+        configuration.activates = true
+
+        return try await workspace.openApplication(at: appURL, configuration: configuration)
+    }
+
+    /// 번들 ID로 실행 중인 앱 종료
+    func terminateApplication(bundleId: String, force: Bool) throws -> Bool {
+        guard let app = findRunningApplication(bundleId: bundleId) else {
+            throw DesktopContextError.appNotRunning
+        }
+        return force ? app.forceTerminate() : app.terminate()
+    }
+
+    /// 특정 PID의 앱이 소유한 윈도우 목록 반환
+    func getWindowsForApp(pid: pid_t, ignoreInvisible: Bool = false) -> [WindowInfo] {
+        var windows = globalWindowList().filter { $0.pid == UInt64(pid) }
+        if ignoreInvisible {
+            windows = windows.filter { !$0.flags.contains(.isHidden) }
+        }
+        return windows
+    }
+
     // MARK: - Global Window Queries
-    // winman.proto의 WindowListRequest 처리를 위해 필요할 수 있음
     
     /// 현재 화면에 있는 모든 윈도우 리스트 조회 (CGWindowList 활용)
     func globalWindowList() -> [WindowInfo] {
@@ -702,6 +973,21 @@ final class DesktopContextManager {
                     return
                 }
                 self.delegate?.desktopManager(self, didDetectAppLaunch: app)
+
+                let appInfo = ApplicationInfo(
+                    bundleId: app.bundleIdentifier ?? "",
+                    displayName: app.localizedName ?? "",
+                    state: .foreground,
+                    windows: [],
+                    icon: nil,
+                    metadata: [:],
+                    hints: 0,
+                    flags: 0
+                )
+                self.dispatchAppEvent(
+                    ApplicationChangedEvent(eventType: .launched, info: appInfo),
+                    bundleId: app.bundleIdentifier
+                )
             }
         }
 
@@ -719,6 +1005,21 @@ final class DesktopContextManager {
                 }
                 self.stopMonitoring(pid: app.processIdentifier)
                 self.delegate?.desktopManager(self, didDetectAppTermination: app.processIdentifier)
+
+                let appInfo = ApplicationInfo(
+                    bundleId: app.bundleIdentifier ?? "",
+                    displayName: app.localizedName ?? "",
+                    state: .notRunning,
+                    windows: [],
+                    icon: nil,
+                    metadata: [:],
+                    hints: 0,
+                    flags: 0
+                )
+                self.dispatchAppEvent(
+                    ApplicationChangedEvent(eventType: .terminated, info: appInfo),
+                    bundleId: app.bundleIdentifier
+                )
             }
         }
 
@@ -731,6 +1032,23 @@ final class DesktopContextManager {
                 guard let self else { return }
                 let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
                 self.delegate?.desktopManager(self, didChangeFrontmostApp: app ?? self.workspace.frontmostApplication)
+
+                if let activatedApp = app ?? self.workspace.frontmostApplication {
+                    let appInfo = ApplicationInfo(
+                        bundleId: activatedApp.bundleIdentifier ?? "",
+                        displayName: activatedApp.localizedName ?? "",
+                        state: .foreground,
+                        windows: [],
+                        icon: nil,
+                        metadata: [:],
+                        hints: 0,
+                        flags: 0
+                    )
+                    self.dispatchAppEvent(
+                        ApplicationChangedEvent(eventType: .focused, info: appInfo),
+                        bundleId: activatedApp.bundleIdentifier
+                    )
+                }
             }
         }
         
@@ -740,5 +1058,220 @@ final class DesktopContextManager {
     private func shouldMonitor(_ app: NSRunningApplication) -> Bool {
         guard app.isTerminated == false else { return false }
         return app.activationPolicy != .prohibited
+    }
+
+    // MARK: - App Event Dispatch
+
+    /// 앱 이벤트를 모든 매칭되는 구독에 전달
+    private func dispatchAppEvent(_ event: ApplicationChangedEvent, bundleId: String?) {
+        for subscription in appEventSubscriptions.values {
+            guard subscription.eventMask.rawValue & event.eventType.rawValue != 0 else { continue }
+            if let filter = subscription.bundleIdFilter, let bundleId, filter != bundleId {
+                continue
+            }
+            subscription.callback(event)
+        }
+    }
+
+    // MARK: - Subscription Helpers
+
+    /// 구독 필터에서 pid를 추출하여 해당 앱의 AppSession을 자동 생성
+    private func ensureSessionsForSubscription(_ subscription: WindowEventSubscription) {
+        // 필터에서 pid를 추출할 수 있으면 해당 앱만
+        if let filter = subscription.filter, let pids = filter.extractPIDs() {
+            for pid in pids {
+                do {
+                    _ = try ensureSession(forPID: pid)
+                } catch {
+                    logger.warning("Failed to create session for PID \(pid): \(error)")
+                }
+            }
+        } else {
+            // 필터가 없거나 pid를 특정할 수 없으면 모든 모니터링 대상 앱의 세션 생성
+            for app in runningApplications() {
+                do {
+                    _ = try startMonitoring(app: app)
+                } catch {
+                    logger.warning("Failed to create session for \(app.localizedName ?? "unknown"): \(error)")
+                }
+            }
+        }
+    }
+
+    /// 이벤트를 모든 매칭되는 구독에 전달
+    private func dispatchWindowEvent(_ event: WindowChangedEvent) {
+        for subscription in subscriptions.values {
+            // 이벤트 마스크 체크
+            guard subscription.eventMask.rawValue & event.eventType.rawValue != 0 else { continue }
+
+            // 필터 체크
+            if let filter = subscription.filter, let info = event.info {
+                guard filter.matches(info) else { continue }
+            }
+
+            subscription.callback(event)
+        }
+    }
+}
+
+// MARK: - AppSessionDelegate
+
+extension DesktopContextManager: AppSessionDelegate {
+    func appSessionDidTerminate(_ session: AppSession) {
+        // 해당 앱의 모든 윈도우에 closed 이벤트
+        for (windowID, _) in session.monitoredWindows {
+            let event = WindowChangedEvent(
+                eventType: .closed,
+                windowID: UInt64(windowID),
+                info: nil
+            )
+            dispatchWindowEvent(event)
+        }
+    }
+
+    func appSession(_ session: AppSession, didEncounterError error: Error) {
+        logger.warning("AppSession \(session.appIdentifier) error: \(error)")
+    }
+
+    func appSessionDidBecomeActive(_ session: AppSession) {
+        // 현재 미사용
+    }
+
+    func appSessionDidResignActive(_ session: AppSession) {
+        // 현재 미사용
+    }
+
+    func appSessionDidUpdateMenu(_ session: AppSession, menu: AppMenuNode) {
+        // 현재 미사용
+    }
+
+    func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo) {
+        let event = WindowChangedEvent(
+            eventType: .metadataChanged,
+            windowID: window.windowID,
+            info: window
+        )
+        dispatchWindowEvent(event)
+    }
+
+    func appSession(_ session: AppSession, didUpdateWindow window: WindowInfo) {
+        // 통합 이벤트: 이동, 리사이즈, 메타 변경을 하나로 전달
+        let event = WindowChangedEvent(
+            eventType: [.moved, .resized, .metadataChanged],
+            windowID: window.windowID,
+            info: window
+        )
+        dispatchWindowEvent(event)
+    }
+
+    func appSession(_ session: AppSession, didCloseWindow windowID: WindowID) {
+        let event = WindowChangedEvent(
+            eventType: .closed,
+            windowID: UInt64(windowID),
+            info: nil
+        )
+        dispatchWindowEvent(event)
+    }
+
+    func appSession(_ session: AppSession, didChangeWindowFocusTo windowID: WindowID?) {
+        if let windowID {
+            let window = session.monitoredWindows[windowID]
+            let event = WindowChangedEvent(
+                eventType: .focused,
+                windowID: UInt64(windowID),
+                info: window
+            )
+            dispatchWindowEvent(event)
+        }
+    }
+}
+
+// MARK: - WindowFilter Matching
+
+extension WindowFilter {
+    /// 윈도우 정보가 이 필터에 매칭되는지 평가
+    func matches(_ window: WindowInfo) -> Bool {
+        if let expression {
+            return expression.matches(window)
+        }
+
+        if expressions.isEmpty {
+            return true
+        }
+
+        switch `operator` {
+        case .and:
+            return expressions.allSatisfy { $0.matches(window) }
+        case .or:
+            return expressions.contains { $0.matches(window) }
+        default:
+            return true
+        }
+    }
+
+    /// 필터에서 pid 값을 추출 (pid 기반 필터인 경우에만)
+    func extractPIDs() -> Set<pid_t>? {
+        if let expression {
+            if case .pid(let pid) = expression.field {
+                return [pid_t(pid)]
+            }
+            return nil
+        }
+
+        var pids = Set<pid_t>()
+        for child in expressions {
+            if let childPIDs = child.extractPIDs() {
+                pids.formUnion(childPIDs)
+            }
+        }
+        return pids.isEmpty ? nil : pids
+    }
+}
+
+extension WindowFilterExpression {
+    /// 윈도우 정보가 이 표현식에 매칭되는지 평가
+    func matches(_ window: WindowInfo) -> Bool {
+        let windowValue: String
+        let filterValue: String
+
+        switch field {
+        case .windowID(let id):
+            filterValue = "\(id)"
+            windowValue = "\(window.windowID)"
+        case .pid(let pid):
+            filterValue = "\(pid)"
+            windowValue = "\(window.pid)"
+        case .windowTitle(let title):
+            filterValue = title
+            windowValue = window.windowTitle
+        case .applicationName(let name):
+            filterValue = name
+            windowValue = window.applicationName
+        case .applicationBundleID(let bundleID):
+            filterValue = bundleID
+            windowValue = window.applicationBundleID
+        case .windowClass(let cls):
+            filterValue = cls
+            windowValue = window.windowClass
+        }
+
+        let result: Bool
+        switch `operator` {
+        case .matchExact:
+            result = windowValue == filterValue
+        case .matchContains:
+            result = windowValue.contains(filterValue)
+        case .matchIContains:
+            result = windowValue.localizedCaseInsensitiveContains(filterValue)
+        case .matchRegex:
+            result = (try? NSRegularExpression(pattern: filterValue))
+                .map { regex in
+                    regex.firstMatch(in: windowValue, range: NSRange(windowValue.startIndex..., in: windowValue)) != nil
+                } ?? false
+        default:
+            result = windowValue == filterValue
+        }
+
+        return invert ? !result : result
     }
 }
