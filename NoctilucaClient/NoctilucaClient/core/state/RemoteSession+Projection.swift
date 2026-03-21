@@ -16,19 +16,6 @@ import SiriusKitClient
 
 // MARK: - Retryable reason extensions
 
-extension VideoSessionEndReason {
-    var isRetryable: Bool {
-        switch self {
-        case .internalError, .recorderFailed, .dataChannelError, .unknown:
-            return true
-        case .clientRequested, .displayDisconnected:
-            return false
-        default:
-            return true
-        }
-    }
-}
-
 extension AudioSessionEndReason {
     var isRetryable: Bool {
         switch self {
@@ -158,10 +145,7 @@ extension RemoteSession {
         @Published
         private(set) var audioSessionError: AudioSessionFailureInfo? = nil
 
-        private var retryState = RetryState()
         private var audioRetryState = RetryState()
-        private var lastActiveDisplayID: Int?
-        private var retryTask: Task<Void, Never>?
         private var audioRetryTask: Task<Void, Never>?
 
         private var sessionEventSubscriptions: [UUID: AnyCancellable] = [:]
@@ -183,7 +167,6 @@ extension RemoteSession {
         }
 
         deinit {
-            retryTask?.cancel()
             audioRetryTask?.cancel()
             unsubscribeEvents()
             sessionEventSubscriptions.values.forEach { $0.cancel() }
@@ -209,7 +192,6 @@ extension RemoteSession {
             case .sessionCreated(let session):
                 self.projectionSessions.updateValue(session, forKey: session.dataChannel.identifier)
                 self.subscribeSessionEvents(session)
-                self.retryState.reset()
                 self.sessionError = nil
             case .sessionDestroyed(let sessionID, let reason, let message):
                 self.projectionSessions.removeValue(forKey: sessionID)
@@ -218,11 +200,7 @@ extension RemoteSession {
                 if projectionSessions.isEmpty {
                     self.degradationNotice = nil
                 }
-                if reason.isRetryable {
-                    self.attemptAutoRestart(reason: reason, message: message)
-                } else {
-                    self.notifySessionFailure(reason: reason, message: message)
-                }
+                self.notifySessionFailure(reason: reason, message: message)
 
             case .audioSessionCreated(let audioSession):
                 guard let dataChannel = audioSession.dataChannel else {
@@ -438,8 +416,6 @@ extension RemoteSession {
                 throw ProjectionChannelError.channelClosed
             }
 
-            self.lastActiveDisplayID = displayID
-
             let sessionID = session.id
 
             // 레퍼런스 카운터 초기화
@@ -457,46 +433,7 @@ extension RemoteSession {
             return ProjectionSessionSubscription(session: session, ticket: ticket)
         }
         
-        // MARK: - Auto-restart
-
-        private func attemptAutoRestart(reason: VideoSessionEndReason, message: String?) {
-            guard !retryState.isRetrying else { return }
-
-            guard let backoff = retryState.nextBackoff() else {
-                notifySessionFailure(reason: reason, message: message)
-                return
-            }
-
-            retryState.isRetrying = true
-            logger.info("Auto-restarting projection session after \(backoff)s (attempt \(self.retryState.attemptCount)/\(self.retryState.maxRetries))")
-
-            retryTask = Task { [weak self] in
-                guard let self else { return }
-
-                try? await Task.sleep(for: .seconds(backoff))
-                guard !Task.isCancelled else { return }
-
-                do {
-                    let targetDisplayID = self.lastActiveDisplayID ?? -1
-                    _ = try await self.subscribeProjectionSession(for: targetDisplayID)
-                    self.retryState.reset()
-                    self.sessionError = nil
-                    logger.info("Auto-restart succeeded")
-                } catch {
-                    self.retryState.isRetrying = false
-                    logger.error("Auto-restart failed: \(error)")
-                    if self.retryState.attemptCount >= self.retryState.maxRetries {
-                        self.notifySessionFailure(
-                            reason: reason,
-                            message: "Auto-restart failed after \(self.retryState.maxRetries) attempts: \(error.localizedDescription)"
-                        )
-                    } else {
-                        // 다음 재시도
-                        self.attemptAutoRestart(reason: reason, message: message)
-                    }
-                }
-            }
-        }
+        // MARK: - Auto-restart (Audio)
 
         private func attemptAudioAutoRestart(reason: AudioSessionEndReason, message: String?) {
             guard !audioRetryState.isRetrying else { return }
@@ -542,10 +479,6 @@ extension RemoteSession {
 
         /// auto-restart 재시도 상태를 초기화하고 진행 중인 재시도를 취소합니다.
         func cancelAutoRestart() {
-            retryTask?.cancel()
-            retryTask = nil
-            retryState.reset()
-
             audioRetryTask?.cancel()
             audioRetryTask = nil
             audioRetryState.reset()
