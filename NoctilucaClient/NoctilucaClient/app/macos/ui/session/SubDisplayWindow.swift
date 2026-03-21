@@ -16,10 +16,13 @@ import SiriusKitClient
 class SubDisplayWindow: NSWindow {
     let targetDisplayID: Int
     let mouse: HIDIOAppKitPointer
+    
+    weak var hidioController: HIDIOController?
 
     init(displayID: Int, remoteSession: RemoteSession, subscription: ProjectionSessionSubscription) {
         self.targetDisplayID = displayID
         self.mouse = HIDIOAppKitPointer()
+        self.mouse.localIdentifier = "display-\(displayID)"
         self.mouse.scope = .displayId(Int32(targetDisplayID))
 
         super.init(
@@ -36,6 +39,9 @@ class SubDisplayWindow: NSWindow {
 
         guard let projection = remoteSession.projection,
               let hidio = remoteSession.hidio else { return }
+        
+        self.hidioController = hidio.controller
+        hidio.controller.connect(mouse)
 
         let rootView = RemoteSessionProjectionView(
             remoteSession: remoteSession,
@@ -48,6 +54,10 @@ class SubDisplayWindow: NSWindow {
             .environmentObject(SettingsStore.shared)
 
         self.contentView = NSHostingView(rootView: rootView)
+    }
+    
+    deinit {
+        hidioController?.disconnect(mouse.identifierString)
     }
 
     private static func displayTitle(for displayID: Int, remoteSession: RemoteSession) -> String {

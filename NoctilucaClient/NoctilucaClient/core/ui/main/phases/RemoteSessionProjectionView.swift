@@ -120,7 +120,7 @@ struct RemoteSessionProjectionView: View {
         self._sourceDescriptor = sourceDescriptor
         self.subscription = subscription
         
-        self.mouse = nil
+        self.mouse = mouse
     }
 #endif
     
