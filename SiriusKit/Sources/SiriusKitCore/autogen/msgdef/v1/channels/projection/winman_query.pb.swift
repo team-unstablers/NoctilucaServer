@@ -156,77 +156,114 @@ struct Sirius_Msgdef_V1_Channels_Projection_WindowFilter: Sendable {
 }
 
 //// 윈도우의 상세 정보
-struct Sirius_Msgdef_V1_Channels_Projection_WindowInfo: Sendable {
+struct Sirius_Msgdef_V1_Channels_Projection_WindowInfo: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var windowID: UInt64 = 0
+  var windowID: UInt64 {
+    get {return _storage._windowID}
+    set {_uniqueStorage()._windowID = newValue}
+  }
 
-  var pid: UInt64 = 0
+  var pid: UInt64 {
+    get {return _storage._pid}
+    set {_uniqueStorage()._pid = newValue}
+  }
 
-  var windowTitle: String = String()
+  var windowTitle: String {
+    get {return _storage._windowTitle}
+    set {_uniqueStorage()._windowTitle = newValue}
+  }
 
-  var applicationName: String = String()
+  var applicationName: String {
+    get {return _storage._applicationName}
+    set {_uniqueStorage()._applicationName = newValue}
+  }
 
-  var applicationBundleID: String = String()
+  var applicationBundleID: String {
+    get {return _storage._applicationBundleID}
+    set {_uniqueStorage()._applicationBundleID = newValue}
+  }
 
-  var windowClass: String = String()
+  var windowClass: String {
+    get {return _storage._windowClass}
+    set {_uniqueStorage()._windowClass = newValue}
+  }
 
   /// @constset: WindowRole
-  var role: UInt32 = 0
+  var role: UInt32 {
+    get {return _storage._role}
+    set {_uniqueStorage()._role = newValue}
+  }
 
   var bounds: Sirius_Msgdef_V1_Channels_Projection_SRRect {
-    get {return _bounds ?? Sirius_Msgdef_V1_Channels_Projection_SRRect()}
-    set {_bounds = newValue}
+    get {return _storage._bounds ?? Sirius_Msgdef_V1_Channels_Projection_SRRect()}
+    set {_uniqueStorage()._bounds = newValue}
   }
   /// Returns true if `bounds` has been explicitly set.
-  var hasBounds: Bool {return self._bounds != nil}
+  var hasBounds: Bool {return _storage._bounds != nil}
   /// Clears the value of `bounds`. Subsequent reads from it will return its default value.
-  mutating func clearBounds() {self._bounds = nil}
+  mutating func clearBounds() {_uniqueStorage()._bounds = nil}
 
   //// 이 윈도우의 아이콘 해시값.
   var iconHash: UInt64 {
-    get {return _iconHash ?? 0}
-    set {_iconHash = newValue}
+    get {return _storage._iconHash ?? 0}
+    set {_uniqueStorage()._iconHash = newValue}
   }
   /// Returns true if `iconHash` has been explicitly set.
-  var hasIconHash: Bool {return self._iconHash != nil}
+  var hasIconHash: Bool {return _storage._iconHash != nil}
   /// Clears the value of `iconHash`. Subsequent reads from it will return its default value.
-  mutating func clearIconHash() {self._iconHash = nil}
+  mutating func clearIconHash() {_uniqueStorage()._iconHash = nil}
+
+  var parentWindowID: UInt64 {
+    get {return _storage._parentWindowID ?? 0}
+    set {_uniqueStorage()._parentWindowID = newValue}
+  }
+  /// Returns true if `parentWindowID` has been explicitly set.
+  var hasParentWindowID: Bool {return _storage._parentWindowID != nil}
+  /// Clears the value of `parentWindowID`. Subsequent reads from it will return its default value.
+  mutating func clearParentWindowID() {_uniqueStorage()._parentWindowID = nil}
 
   //// 이 윈도우의 섬네일 이미지 (PNG8 (with alpha channel) 형식, aspect ratio 유지, 최대 512x512)
   var thumbnail: Data {
-    get {return _thumbnail ?? Data()}
-    set {_thumbnail = newValue}
+    get {return _storage._thumbnail ?? Data()}
+    set {_uniqueStorage()._thumbnail = newValue}
   }
   /// Returns true if `thumbnail` has been explicitly set.
-  var hasThumbnail: Bool {return self._thumbnail != nil}
+  var hasThumbnail: Bool {return _storage._thumbnail != nil}
   /// Clears the value of `thumbnail`. Subsequent reads from it will return its default value.
-  mutating func clearThumbnail() {self._thumbnail = nil}
+  mutating func clearThumbnail() {_uniqueStorage()._thumbnail = nil}
 
   //// 추가 메타데이터
   //// 모든 메타데이터 키는 optional입니다. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고,
   //// 모든 키가 항상 제공되는 것도 아닙니다.
   //// 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오.
   //// (예: "com.contoso.superremote.virtual-display-purpose" 등)
-  var metadata: Dictionary<String,String> = [:]
+  var metadata: Dictionary<String,String> {
+    get {return _storage._metadata}
+    set {_uniqueStorage()._metadata = newValue}
+  }
 
   //// 윈도우 힌트
   /// @optionset: WindowHint
-  var hints: UInt32 = 0
+  var hints: UInt32 {
+    get {return _storage._hints}
+    set {_uniqueStorage()._hints = newValue}
+  }
 
   //// 윈도우 상태 플래그
   /// @optionset: WindowInfoFlags
-  var flags: UInt32 = 0
+  var flags: UInt32 {
+    get {return _storage._flags}
+    set {_uniqueStorage()._flags = newValue}
+  }
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 
-  fileprivate var _bounds: Sirius_Msgdef_V1_Channels_Projection_SRRect? = nil
-  fileprivate var _iconHash: UInt64? = nil
-  fileprivate var _thumbnail: Data? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 //// 윈도우 목록을 요청합니다.
@@ -296,30 +333,27 @@ struct Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoRequest: Sendable {
 
 //// 특정 윈도우 정보 요청에 대한 응답입니다.
 /// @opcode: 0x8064
-struct Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoResponse: @unchecked Sendable {
+struct Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var requestID: UInt64 {
-    get {return _storage._requestID}
-    set {_uniqueStorage()._requestID = newValue}
-  }
+  var requestID: UInt64 = 0
 
   var info: Sirius_Msgdef_V1_Channels_Projection_WindowInfo {
-    get {return _storage._info ?? Sirius_Msgdef_V1_Channels_Projection_WindowInfo()}
-    set {_uniqueStorage()._info = newValue}
+    get {return _info ?? Sirius_Msgdef_V1_Channels_Projection_WindowInfo()}
+    set {_info = newValue}
   }
   /// Returns true if `info` has been explicitly set.
-  var hasInfo: Bool {return _storage._info != nil}
+  var hasInfo: Bool {return self._info != nil}
   /// Clears the value of `info`. Subsequent reads from it will return its default value.
-  mutating func clearInfo() {_uniqueStorage()._info = nil}
+  mutating func clearInfo() {self._info = nil}
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 
-  fileprivate var _storage = _StorageClass.defaultInstance
+  fileprivate var _info: Sirius_Msgdef_V1_Channels_Projection_WindowInfo? = nil
 }
 
 //// 특정 윈도우의 아이콘을 요청합니다.
@@ -526,38 +560,32 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeWindowEventsResponse: Sen
 
 //// 윈도우 변경 이벤트입니다.
 /// @opcode: 0x806D
-struct Sirius_Msgdef_V1_Channels_Projection_WindowChangedEvent: @unchecked Sendable {
+struct Sirius_Msgdef_V1_Channels_Projection_WindowChangedEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   //// 이벤트 유형 코드
   /// @optionset: WindowChangeEventType
-  var eventType: UInt32 {
-    get {return _storage._eventType}
-    set {_uniqueStorage()._eventType = newValue}
-  }
+  var eventType: UInt32 = 0
 
-  var windowID: UInt64 {
-    get {return _storage._windowID}
-    set {_uniqueStorage()._windowID = newValue}
-  }
+  var windowID: UInt64 = 0
 
   //// 변경된 윈도우 정보
   var info: Sirius_Msgdef_V1_Channels_Projection_WindowInfo {
-    get {return _storage._info ?? Sirius_Msgdef_V1_Channels_Projection_WindowInfo()}
-    set {_uniqueStorage()._info = newValue}
+    get {return _info ?? Sirius_Msgdef_V1_Channels_Projection_WindowInfo()}
+    set {_info = newValue}
   }
   /// Returns true if `info` has been explicitly set.
-  var hasInfo: Bool {return _storage._info != nil}
+  var hasInfo: Bool {return self._info != nil}
   /// Clears the value of `info`. Subsequent reads from it will return its default value.
-  mutating func clearInfo() {_uniqueStorage()._info = nil}
+  mutating func clearInfo() {self._info = nil}
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 
-  fileprivate var _storage = _StorageClass.defaultInstance
+  fileprivate var _info: Sirius_Msgdef_V1_Channels_Projection_WindowInfo? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -725,93 +753,160 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowFilter: SwiftProtobuf.Messa
 
 extension Sirius_Msgdef_V1_Channels_Projection_WindowInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".WindowInfo"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}windowId\0\u{1}pid\0\u{1}windowTitle\0\u{1}applicationName\0\u{1}applicationBundleId\0\u{1}windowClass\0\u{1}role\0\u{1}bounds\0\u{1}iconHash\0\u{2}\u{3}thumbnail\0\u{1}metadata\0\u{1}hints\0\u{1}flags\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}windowId\0\u{1}pid\0\u{1}windowTitle\0\u{1}applicationName\0\u{1}applicationBundleId\0\u{1}windowClass\0\u{1}role\0\u{1}bounds\0\u{1}iconHash\0\u{1}parentWindowId\0\u{2}\u{2}thumbnail\0\u{1}metadata\0\u{1}hints\0\u{1}flags\0")
+
+  fileprivate class _StorageClass {
+    var _windowID: UInt64 = 0
+    var _pid: UInt64 = 0
+    var _windowTitle: String = String()
+    var _applicationName: String = String()
+    var _applicationBundleID: String = String()
+    var _windowClass: String = String()
+    var _role: UInt32 = 0
+    var _bounds: Sirius_Msgdef_V1_Channels_Projection_SRRect? = nil
+    var _iconHash: UInt64? = nil
+    var _parentWindowID: UInt64? = nil
+    var _thumbnail: Data? = nil
+    var _metadata: Dictionary<String,String> = [:]
+    var _hints: UInt32 = 0
+    var _flags: UInt32 = 0
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _windowID = source._windowID
+      _pid = source._pid
+      _windowTitle = source._windowTitle
+      _applicationName = source._applicationName
+      _applicationBundleID = source._applicationBundleID
+      _windowClass = source._windowClass
+      _role = source._role
+      _bounds = source._bounds
+      _iconHash = source._iconHash
+      _parentWindowID = source._parentWindowID
+      _thumbnail = source._thumbnail
+      _metadata = source._metadata
+      _hints = source._hints
+      _flags = source._flags
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.windowID) }()
-      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.pid) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self.windowTitle) }()
-      case 4: try { try decoder.decodeSingularStringField(value: &self.applicationName) }()
-      case 5: try { try decoder.decodeSingularStringField(value: &self.applicationBundleID) }()
-      case 6: try { try decoder.decodeSingularStringField(value: &self.windowClass) }()
-      case 7: try { try decoder.decodeSingularUInt32Field(value: &self.role) }()
-      case 8: try { try decoder.decodeSingularMessageField(value: &self._bounds) }()
-      case 9: try { try decoder.decodeSingularFixed64Field(value: &self._iconHash) }()
-      case 12: try { try decoder.decodeSingularBytesField(value: &self._thumbnail) }()
-      case 13: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.metadata) }()
-      case 14: try { try decoder.decodeSingularUInt32Field(value: &self.hints) }()
-      case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularUInt64Field(value: &_storage._windowID) }()
+        case 2: try { try decoder.decodeSingularUInt64Field(value: &_storage._pid) }()
+        case 3: try { try decoder.decodeSingularStringField(value: &_storage._windowTitle) }()
+        case 4: try { try decoder.decodeSingularStringField(value: &_storage._applicationName) }()
+        case 5: try { try decoder.decodeSingularStringField(value: &_storage._applicationBundleID) }()
+        case 6: try { try decoder.decodeSingularStringField(value: &_storage._windowClass) }()
+        case 7: try { try decoder.decodeSingularUInt32Field(value: &_storage._role) }()
+        case 8: try { try decoder.decodeSingularMessageField(value: &_storage._bounds) }()
+        case 9: try { try decoder.decodeSingularFixed64Field(value: &_storage._iconHash) }()
+        case 10: try { try decoder.decodeSingularUInt64Field(value: &_storage._parentWindowID) }()
+        case 12: try { try decoder.decodeSingularBytesField(value: &_storage._thumbnail) }()
+        case 13: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &_storage._metadata) }()
+        case 14: try { try decoder.decodeSingularUInt32Field(value: &_storage._hints) }()
+        case 15: try { try decoder.decodeSingularUInt32Field(value: &_storage._flags) }()
+        default: break
+        }
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if self.windowID != 0 {
-      try visitor.visitSingularUInt64Field(value: self.windowID, fieldNumber: 1)
-    }
-    if self.pid != 0 {
-      try visitor.visitSingularUInt64Field(value: self.pid, fieldNumber: 2)
-    }
-    if !self.windowTitle.isEmpty {
-      try visitor.visitSingularStringField(value: self.windowTitle, fieldNumber: 3)
-    }
-    if !self.applicationName.isEmpty {
-      try visitor.visitSingularStringField(value: self.applicationName, fieldNumber: 4)
-    }
-    if !self.applicationBundleID.isEmpty {
-      try visitor.visitSingularStringField(value: self.applicationBundleID, fieldNumber: 5)
-    }
-    if !self.windowClass.isEmpty {
-      try visitor.visitSingularStringField(value: self.windowClass, fieldNumber: 6)
-    }
-    if self.role != 0 {
-      try visitor.visitSingularUInt32Field(value: self.role, fieldNumber: 7)
-    }
-    try { if let v = self._bounds {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
-    } }()
-    try { if let v = self._iconHash {
-      try visitor.visitSingularFixed64Field(value: v, fieldNumber: 9)
-    } }()
-    try { if let v = self._thumbnail {
-      try visitor.visitSingularBytesField(value: v, fieldNumber: 12)
-    } }()
-    if !self.metadata.isEmpty {
-      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.metadata, fieldNumber: 13)
-    }
-    if self.hints != 0 {
-      try visitor.visitSingularUInt32Field(value: self.hints, fieldNumber: 14)
-    }
-    if self.flags != 0 {
-      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      if _storage._windowID != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._windowID, fieldNumber: 1)
+      }
+      if _storage._pid != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._pid, fieldNumber: 2)
+      }
+      if !_storage._windowTitle.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._windowTitle, fieldNumber: 3)
+      }
+      if !_storage._applicationName.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._applicationName, fieldNumber: 4)
+      }
+      if !_storage._applicationBundleID.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._applicationBundleID, fieldNumber: 5)
+      }
+      if !_storage._windowClass.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._windowClass, fieldNumber: 6)
+      }
+      if _storage._role != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._role, fieldNumber: 7)
+      }
+      try { if let v = _storage._bounds {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+      } }()
+      try { if let v = _storage._iconHash {
+        try visitor.visitSingularFixed64Field(value: v, fieldNumber: 9)
+      } }()
+      try { if let v = _storage._parentWindowID {
+        try visitor.visitSingularUInt64Field(value: v, fieldNumber: 10)
+      } }()
+      try { if let v = _storage._thumbnail {
+        try visitor.visitSingularBytesField(value: v, fieldNumber: 12)
+      } }()
+      if !_storage._metadata.isEmpty {
+        try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: _storage._metadata, fieldNumber: 13)
+      }
+      if _storage._hints != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._hints, fieldNumber: 14)
+      }
+      if _storage._flags != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._flags, fieldNumber: 15)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_WindowInfo, rhs: Sirius_Msgdef_V1_Channels_Projection_WindowInfo) -> Bool {
-    if lhs.windowID != rhs.windowID {return false}
-    if lhs.pid != rhs.pid {return false}
-    if lhs.windowTitle != rhs.windowTitle {return false}
-    if lhs.applicationName != rhs.applicationName {return false}
-    if lhs.applicationBundleID != rhs.applicationBundleID {return false}
-    if lhs.windowClass != rhs.windowClass {return false}
-    if lhs.role != rhs.role {return false}
-    if lhs._bounds != rhs._bounds {return false}
-    if lhs._iconHash != rhs._iconHash {return false}
-    if lhs._thumbnail != rhs._thumbnail {return false}
-    if lhs.metadata != rhs.metadata {return false}
-    if lhs.hints != rhs.hints {return false}
-    if lhs.flags != rhs.flags {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._windowID != rhs_storage._windowID {return false}
+        if _storage._pid != rhs_storage._pid {return false}
+        if _storage._windowTitle != rhs_storage._windowTitle {return false}
+        if _storage._applicationName != rhs_storage._applicationName {return false}
+        if _storage._applicationBundleID != rhs_storage._applicationBundleID {return false}
+        if _storage._windowClass != rhs_storage._windowClass {return false}
+        if _storage._role != rhs_storage._role {return false}
+        if _storage._bounds != rhs_storage._bounds {return false}
+        if _storage._iconHash != rhs_storage._iconHash {return false}
+        if _storage._parentWindowID != rhs_storage._parentWindowID {return false}
+        if _storage._thumbnail != rhs_storage._thumbnail {return false}
+        if _storage._metadata != rhs_storage._metadata {return false}
+        if _storage._hints != rhs_storage._hints {return false}
+        if _storage._flags != rhs_storage._flags {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -940,74 +1035,36 @@ extension Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoResponse: SwiftProto
   static let protoMessageName: String = _protobuf_package + ".GetWindowInfoResponse"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}info\0")
 
-  fileprivate class _StorageClass {
-    var _requestID: UInt64 = 0
-    var _info: Sirius_Msgdef_V1_Channels_Projection_WindowInfo? = nil
-
-      // This property is used as the initial default value for new instances of the type.
-      // The type itself is protecting the reference to its storage via CoW semantics.
-      // This will force a copy to be made of this reference when the first mutation occurs;
-      // hence, it is safe to mark this as `nonisolated(unsafe)`.
-      static nonisolated(unsafe) let defaultInstance = _StorageClass()
-
-    private init() {}
-
-    init(copying source: _StorageClass) {
-      _requestID = source._requestID
-      _info = source._info
-    }
-  }
-
-  fileprivate mutating func _uniqueStorage() -> _StorageClass {
-    if !isKnownUniquelyReferenced(&_storage) {
-      _storage = _StorageClass(copying: _storage)
-    }
-    return _storage
-  }
-
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    _ = _uniqueStorage()
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      while let fieldNumber = try decoder.nextFieldNumber() {
-        // The use of inline closures is to circumvent an issue where the compiler
-        // allocates stack space for every case branch when no optimizations are
-        // enabled. https://github.com/apple/swift-protobuf/issues/1034
-        switch fieldNumber {
-        case 1: try { try decoder.decodeSingularUInt64Field(value: &_storage._requestID) }()
-        case 2: try { try decoder.decodeSingularMessageField(value: &_storage._info) }()
-        default: break
-        }
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._info) }()
+      default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every if/case branch local when no optimizations
-      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-      // https://github.com/apple/swift-protobuf/issues/1182
-      if _storage._requestID != 0 {
-        try visitor.visitSingularUInt64Field(value: _storage._requestID, fieldNumber: 1)
-      }
-      try { if let v = _storage._info {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-      } }()
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
+    try { if let v = self._info {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoResponse, rhs: Sirius_Msgdef_V1_Channels_Projection_GetWindowInfoResponse) -> Bool {
-    if lhs._storage !== rhs._storage {
-      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
-        let _storage = _args.0
-        let rhs_storage = _args.1
-        if _storage._requestID != rhs_storage._requestID {return false}
-        if _storage._info != rhs_storage._info {return false}
-        return true
-      }
-      if !storagesAreEqual {return false}
-    }
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs._info != rhs._info {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1346,81 +1403,41 @@ extension Sirius_Msgdef_V1_Channels_Projection_WindowChangedEvent: SwiftProtobuf
   static let protoMessageName: String = _protobuf_package + ".WindowChangedEvent"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}eventType\0\u{1}windowId\0\u{1}info\0")
 
-  fileprivate class _StorageClass {
-    var _eventType: UInt32 = 0
-    var _windowID: UInt64 = 0
-    var _info: Sirius_Msgdef_V1_Channels_Projection_WindowInfo? = nil
-
-      // This property is used as the initial default value for new instances of the type.
-      // The type itself is protecting the reference to its storage via CoW semantics.
-      // This will force a copy to be made of this reference when the first mutation occurs;
-      // hence, it is safe to mark this as `nonisolated(unsafe)`.
-      static nonisolated(unsafe) let defaultInstance = _StorageClass()
-
-    private init() {}
-
-    init(copying source: _StorageClass) {
-      _eventType = source._eventType
-      _windowID = source._windowID
-      _info = source._info
-    }
-  }
-
-  fileprivate mutating func _uniqueStorage() -> _StorageClass {
-    if !isKnownUniquelyReferenced(&_storage) {
-      _storage = _StorageClass(copying: _storage)
-    }
-    return _storage
-  }
-
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    _ = _uniqueStorage()
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      while let fieldNumber = try decoder.nextFieldNumber() {
-        // The use of inline closures is to circumvent an issue where the compiler
-        // allocates stack space for every case branch when no optimizations are
-        // enabled. https://github.com/apple/swift-protobuf/issues/1034
-        switch fieldNumber {
-        case 1: try { try decoder.decodeSingularUInt32Field(value: &_storage._eventType) }()
-        case 2: try { try decoder.decodeSingularUInt64Field(value: &_storage._windowID) }()
-        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._info) }()
-        default: break
-        }
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.eventType) }()
+      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.windowID) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._info) }()
+      default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every if/case branch local when no optimizations
-      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-      // https://github.com/apple/swift-protobuf/issues/1182
-      if _storage._eventType != 0 {
-        try visitor.visitSingularUInt32Field(value: _storage._eventType, fieldNumber: 1)
-      }
-      if _storage._windowID != 0 {
-        try visitor.visitSingularUInt64Field(value: _storage._windowID, fieldNumber: 2)
-      }
-      try { if let v = _storage._info {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-      } }()
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.eventType != 0 {
+      try visitor.visitSingularUInt32Field(value: self.eventType, fieldNumber: 1)
     }
+    if self.windowID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.windowID, fieldNumber: 2)
+    }
+    try { if let v = self._info {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_WindowChangedEvent, rhs: Sirius_Msgdef_V1_Channels_Projection_WindowChangedEvent) -> Bool {
-    if lhs._storage !== rhs._storage {
-      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
-        let _storage = _args.0
-        let rhs_storage = _args.1
-        if _storage._eventType != rhs_storage._eventType {return false}
-        if _storage._windowID != rhs_storage._windowID {return false}
-        if _storage._info != rhs_storage._info {return false}
-        return true
-      }
-      if !storagesAreEqual {return false}
-    }
+    if lhs.eventType != rhs.eventType {return false}
+    if lhs.windowID != rhs.windowID {return false}
+    if lhs._info != rhs._info {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

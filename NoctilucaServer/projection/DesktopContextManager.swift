@@ -19,6 +19,92 @@ let kAXWindowNumberAttribute = "AXWindowNumber"
 
 typealias WindowID = CGWindowID
 
+// MARK: - AX Helpers
+
+/// AXUIElement에서 문자열 속성을 안전하게 읽는다. 실패 시 nil.
+private func axStringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {
+    var value: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else {
+        return nil
+    }
+    return value as? String
+}
+
+/// AXUIElement에서 AXUIElement 타입 속성을 안전하게 읽는다. 실패 시 nil.
+private func axElementAttribute(_ element: AXUIElement, _ attribute: String) -> AXUIElement? {
+    var value: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else {
+        return nil
+    }
+    let ref = value!
+    guard CFGetTypeID(ref) == AXUIElementGetTypeID() else {
+        return nil
+    }
+    return (ref as! AXUIElement)
+}
+
+/// AXRole/AXSubrole 조합을 WindowRole로 매핑
+private func mapAXRoleToWindowRole(axRole: String?, axSubrole: String?) -> WindowRole {
+    guard let axRole else { return .normal }
+
+    switch axRole {
+    case "AXWindow":
+        switch axSubrole {
+        case "AXDialog", "AXSheet", "AXSystemDialog":
+            return .dialog
+        case "AXStandardWindow", "AXFloatingWindow", nil:
+            return .normal
+        default:
+            return .normal
+        }
+    case "AXMenu", "AXMenuBar":
+        return .menu
+    case "AXPopover":
+        return .tooltip
+    default:
+        return .normal
+    }
+}
+
+/// WindowInfo 보강용 AX 속성 묶음
+private struct AXWindowAttributes {
+    let axClassName: String?
+    let axRole: String?
+    let axSubrole: String?
+    let parentWindowID: UInt64?
+
+    var windowRole: WindowRole {
+        mapAXRoleToWindowRole(axRole: axRole, axSubrole: axSubrole)
+    }
+
+    static let empty = AXWindowAttributes(
+        axClassName: nil, axRole: nil, axSubrole: nil, parentWindowID: nil
+    )
+}
+
+/// AXUIElement로부터 WindowInfo 보강용 속성들을 일괄 읽는다.
+private func readAXWindowAttributes(from element: AXUIElement) -> AXWindowAttributes {
+    let axClassName = axStringAttribute(element, "AXClassName")
+    let axRole = axStringAttribute(element, kAXRoleAttribute as String)
+    let axSubrole = axStringAttribute(element, kAXSubroleAttribute as String)
+
+    var parentWindowID: UInt64? = nil
+    if let parentElement = axElementAttribute(element, kAXParentAttribute as String) {
+        var parentWinID: CGWindowID = 0
+        if let error = ApplicationServicesPrivate._AXUIElementGetWindow?(parentElement, &parentWinID),
+           error == .success, parentWinID != 0 {
+            parentWindowID = UInt64(parentWinID)
+        }
+    }
+
+    return AXWindowAttributes(
+        axClassName: axClassName,
+        axRole: axRole,
+        axSubrole: axSubrole,
+        parentWindowID: parentWindowID
+    )
+}
+
 /*
 /// winman.proto의 WindowInfo와 매핑되기 쉽도록 구조화
 struct WindowInfo: Identifiable, Equatable, Hashable {
@@ -459,6 +545,26 @@ final class AppSession {
         throw DesktopContextError.windowNotFound(id)
     }
     
+    /// appElement의 AX 윈도우 목록을 한 번 순회하여 CGWindowID -> AXUIElement 맵 생성
+    private func buildAXWindowMap() -> [CGWindowID: AXUIElement] {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
+        guard result == .success, let windows = value as? [AXUIElement] else {
+            return [:]
+        }
+
+        var map: [CGWindowID: AXUIElement] = [:]
+        for element in windows {
+            var number: CGWindowID = 0
+            guard let error = ApplicationServicesPrivate._AXUIElementGetWindow?(element, &number),
+                  error == .success else {
+                continue
+            }
+            map[number] = element
+        }
+        return map
+    }
+
     private func axFocusedWindowID() -> WindowID? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &value)
@@ -489,18 +595,19 @@ final class AppSession {
         }
         
         let focusedID = self.axFocusedWindowID() ?? appWindows.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
-        
+        let axWindowMap = self.buildAXWindowMap()
+
         return Dictionary(uniqueKeysWithValues: appWindows.compactMap { info in
             guard info.keys.contains(kCGWindowBounds as String) else {
                 return nil
             }
-            
+
             let boundsDictionary = info[kCGWindowBounds as String] as! CFDictionary
-            
+
             guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
                 return nil
             }
-            
+
             let windowID = info[kCGWindowNumber as String] as? CGWindowID ?? 0
             let layer = Int32(info[kCGWindowLayer as String] as? Int ?? 0)
             let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t ?? 0
@@ -509,38 +616,56 @@ final class AppSession {
             let alpha = info[kCGWindowAlpha as String] as? Double ?? 0.0
             let isVisible = isOnscreen && alpha > 0.01
             let isActive = focusedID == windowID
-            
+
+            let axAttrs: AXWindowAttributes
+            if let axElement = axWindowMap[windowID] {
+                axAttrs = readAXWindowAttributes(from: axElement)
+            } else {
+                axAttrs = .empty
+            }
+
             var hints: WindowHint = [
                 .hasShadow,
                 .hasTransparency,
             ]
             var flags: WindowInfoFlags = []
-            
+
             if isActive {
                 flags.insert(.isFocused)
             }
-            
+
             if !isVisible || !isOnscreen {
                 flags.insert(.isHidden)
             }
-            
+
+            var metadata: [String: String] = [
+                "app.noctiluca.server.x-window-layer": "\(layer)",
+                "app.noctiluca.server.x-window-alpha": "\(alpha)",
+            ]
+            if let axRole = axAttrs.axRole {
+                metadata["app.noctiluca.server.x-axrole"] = axRole
+            }
+            if let axSubrole = axAttrs.axSubrole {
+                metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
+            }
+
+            let bundleID = runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
+
             return (windowID, WindowInfo(
                 windowID: UInt64(windowID),
                 pid: UInt64(ownerPID),
                 windowTitle: title,
                 applicationName: runningApplication.localizedName ?? "(unknown)",
-                applicationBundleID: runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
-                windowClass: runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
-                role: .normal, // FIXME
+                applicationBundleID: bundleID,
+                windowClass: axAttrs.axClassName ?? bundleID,
+                role: axAttrs.windowRole,
+                parentWindowID: axAttrs.parentWindowID,
                 bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
-                iconHash: nil, // TODO
-                thumbnail: nil, // TODO
-                metadata: [
-                    "app.noctiluca.server.x-window-layer": "\(layer)",
-                    "app.noctiluca.server.x-window-alpha": "\(alpha)"
-                ],
-                hints: hints, // TODO
-                flags: flags // TODO
+                iconHash: nil,
+                thumbnail: nil,
+                metadata: metadata,
+                hints: hints,
+                flags: flags
             ))
         })
     }
@@ -909,6 +1034,8 @@ final class DesktopContextManager {
         if ignoreInvisible {
             windows = windows.filter { !$0.flags.contains(.isHidden) }
         }
+        
+        print(windows)
         return windows
     }
 
@@ -923,6 +1050,7 @@ final class DesktopContextManager {
 
         let runningApps = self.runningApplications()
         let frontmostWindowID = infoList.compactMap { $0[kCGWindowNumber as String] as? CGWindowID }.first
+        let axWindowMaps = self.buildGlobalAXWindowMaps(from: infoList)
 
         return infoList.compactMap { info in
             guard info.keys.contains(kCGWindowBounds as String) else {
@@ -933,11 +1061,6 @@ final class DesktopContextManager {
             guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary) else {
                 return nil
             }
-            
-            let relatedApp = runningApps.first { app in
-                guard let pid = info[kCGWindowOwnerPID as String] as? pid_t else { return false }
-                return app.processIdentifier == pid
-            }
 
             let windowID = info[kCGWindowNumber as String] as? CGWindowID ?? 0
             let layer = Int32(info[kCGWindowLayer as String] as? Int ?? 0)
@@ -947,44 +1070,95 @@ final class DesktopContextManager {
             let alpha = info[kCGWindowAlpha as String] as? Double ?? 0.0
             let isVisible = isOnscreen && alpha > 0.01
             let isActive = frontmostWindowID == windowID
-            
+
+            let relatedApp = runningApps.first { app in
+                app.processIdentifier == ownerPID
+            }
+
+            let axAttrs: AXWindowAttributes
+            if let axElement = axWindowMaps[ownerPID]?[windowID] {
+                axAttrs = readAXWindowAttributes(from: axElement)
+            } else {
+                axAttrs = .empty
+            }
+
             var hints: WindowHint = [
                 .hasShadow,
                 .hasTransparency,
             ]
             var flags: WindowInfoFlags = []
-            
+
             if isActive {
                 flags.insert(.isFocused)
             }
-            
+
             if !isVisible || !isOnscreen {
                 flags.insert(.isHidden)
             }
-            
+
+            var metadata: [String: String] = [
+                "app.noctiluca.server.x-window-layer": "\(layer)",
+                "app.noctiluca.server.x-window-alpha": "\(alpha)",
+            ]
+            if let axRole = axAttrs.axRole {
+                metadata["app.noctiluca.server.x-axrole"] = axRole
+            }
+            if let axSubrole = axAttrs.axSubrole {
+                metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
+            }
+
+            let bundleID = relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
+
             return WindowInfo(
                 windowID: UInt64(windowID),
                 pid: UInt64(ownerPID),
                 windowTitle: title,
                 applicationName: relatedApp?.localizedName ?? "(unknown)",
-                applicationBundleID: relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
-                windowClass: relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID",
-                role: .normal, // FIXME
+                applicationBundleID: bundleID,
+                windowClass: axAttrs.axClassName ?? bundleID,
+                role: axAttrs.windowRole,
+                parentWindowID: axAttrs.parentWindowID,
                 bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
-                iconHash: nil, // TODO
-                thumbnail: nil, // TODO
-                metadata: [
-                    "app.noctiluca.server.x-window-layer": "\(layer)",
-                    "app.noctiluca.server.x-window-alpha": "\(alpha)"
-                ],
-                hints: hints, // TODO
-                flags: flags // TODO
+                iconHash: nil,
+                thumbnail: nil,
+                metadata: metadata,
+                hints: hints,
+                flags: flags
             )
         }
     }
     
     // MARK: - Private
-    
+
+    /// CGWindowList의 고유 PID들에 대해 AXUIElement 윈도우 맵을 일괄 구성한다.
+    private func buildGlobalAXWindowMaps(from infoList: [[String: Any]]) -> [pid_t: [CGWindowID: AXUIElement]] {
+        let pids = Set(infoList.compactMap { $0[kCGWindowOwnerPID as String] as? pid_t })
+        var result: [pid_t: [CGWindowID: AXUIElement]] = [:]
+
+        for pid in pids {
+            let appElement = AXUIElementCreateApplication(pid)
+
+            var value: CFTypeRef?
+            let axResult = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
+            guard axResult == .success, let windows = value as? [AXUIElement] else {
+                continue
+            }
+
+            var map: [CGWindowID: AXUIElement] = [:]
+            for element in windows {
+                var number: CGWindowID = 0
+                guard let error = ApplicationServicesPrivate._AXUIElementGetWindow?(element, &number),
+                      error == .success else {
+                    continue
+                }
+                map[number] = element
+            }
+            result[pid] = map
+        }
+
+        return result
+    }
+
     private func registerWorkspaceNotifications() {
         let center = workspace.notificationCenter
         let queue = OperationQueue.main

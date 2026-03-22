@@ -98,6 +98,7 @@ public struct WindowInfo: SiriusMessage, Equatable {
     public let role: WindowRole
     public let bounds: SRRect
     public let iconHash: UInt64?
+    public let parentWindowID: UInt64?
     public let thumbnail: Data?
     public let metadata: [String: String]
     public let hints: WindowHint
@@ -112,6 +113,7 @@ public struct WindowInfo: SiriusMessage, Equatable {
         applicationBundleID: String,
         windowClass: String,
         role: WindowRole,
+        parentWindowID: UInt64?,
         bounds: SRRect,
         iconHash: UInt64?,
         thumbnail: Data?,
@@ -126,6 +128,7 @@ public struct WindowInfo: SiriusMessage, Equatable {
         self.applicationBundleID = applicationBundleID
         self.windowClass = windowClass
         self.role = role
+        self.parentWindowID = parentWindowID
         self.bounds = bounds
         self.iconHash = iconHash
         self.thumbnail = thumbnail
@@ -144,6 +147,7 @@ public struct WindowInfo: SiriusMessage, Equatable {
         self.role = WindowRole(rawValue: protobufMessage.role)
         self.bounds = SRRect(from: protobufMessage.bounds)
         self.iconHash = protobufMessage.hasIconHash ? protobufMessage.iconHash : nil
+        self.parentWindowID = protobufMessage.hasParentWindowID ? protobufMessage.parentWindowID : nil
         self.thumbnail = protobufMessage.hasThumbnail ? protobufMessage.thumbnail : nil
         self.metadata = protobufMessage.metadata
         self.hints = WindowHint(rawValue: protobufMessage.hints)
@@ -163,6 +167,9 @@ public struct WindowInfo: SiriusMessage, Equatable {
         message.bounds = self.bounds.toProtobufMessage()
         if let iconHash = self.iconHash {
             message.iconHash = iconHash
+        }
+        if let parentWindowID = self.parentWindowID {
+            message.parentWindowID = parentWindowID
         }
         if let thumbnail = self.thumbnail {
             message.thumbnail = thumbnail

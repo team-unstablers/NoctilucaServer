@@ -22,7 +22,7 @@ extension ProjectionChannel {
         if let filter = request.filter {
             windowList = windowList.filter { filter.matches($0) }
         }
-
+        
         // TODO: support paginated response
         let response = WindowListResponse(
             requestID: request.requestID,
