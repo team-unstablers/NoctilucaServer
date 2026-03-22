@@ -145,6 +145,12 @@ struct RemoteSessionProjectionView: View {
         }
     }
 
+    private func syncCASSettings() {
+        guard let renderer = subscription?.metalVideoRenderer else { return }
+        renderer.casEnabled = settingsStore.settings.projection.casEnabled
+        renderer.casSharpness = Float(settingsStore.settings.projection.casSharpness)
+    }
+
     private func syncMouseScope() {
         guard case .displayID(let displayID) = sourceDescriptor else {
             return
@@ -185,8 +191,16 @@ struct RemoteSessionProjectionView: View {
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
                             .scaleEffect(currentScale)
+                    } else if let renderer = subscription?.metalVideoRenderer {
+                        // Metal 비디오 렌더러 경로 (VT 코덱)
+                        MetalVideoView(renderer: renderer)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .offset(currentOffset)
+                            .frame(width: rect.width, height: rect.height)
+                            .position(x: rect.midX, y: rect.midY)
+                            .scaleEffect(currentScale)
                     } else if let displayLayer = subscription?.displayLayer {
-                        // AVSampleBufferDisplayLayer 경로 (VT 코덱)
+                        // AVSampleBufferDisplayLayer fallback (Metal 불가 시)
                         SampleBufferDisplayView(displayLayer: displayLayer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .offset(currentOffset)
@@ -292,6 +306,7 @@ struct RemoteSessionProjectionView: View {
                 .onAppear {
                     syncSourceMetadata()
                     syncMouseScope()
+                    syncCASSettings()
 #if os(iOS)
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     zoomController.mode = .defaultFor(settingsStore.settings.input.touchInputMode)
@@ -300,6 +315,12 @@ struct RemoteSessionProjectionView: View {
                 }
                 .onChange(of: source?.id) { _, _ in
                     syncSourceMetadata()
+                }
+                .onChange(of: settingsStore.settings.projection.casEnabled) { _, _ in
+                    syncCASSettings()
+                }
+                .onChange(of: settingsStore.settings.projection.casSharpness) { _, _ in
+                    syncCASSettings()
                 }
 #if os(iOS)
                 .onChange(of: geometry.size) { _, newSize in
