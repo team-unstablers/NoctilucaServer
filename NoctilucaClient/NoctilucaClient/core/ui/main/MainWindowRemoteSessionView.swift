@@ -104,6 +104,8 @@ struct MainWindowRemoteSessionView: View {
                     }
             }
         }
+        /*
+         // TODO: 어떤 세션에 대한 에러인지 구분이 안되니까, 다른 디스플레이로 전환했을 때 그냥 꺼짐
         .onReceive(projection.$sessionError) { error in
             if error != nil {
                 // 세션이 서버에 의해 종료되었으므로 기존 subscription을 정리
@@ -111,18 +113,7 @@ struct MainWindowRemoteSessionView: View {
                 subscription = nil
             }
         }
-        .onReceive(projection.$projectionSessions) { sessions in
-            // auto-restart 성공 시 새로운 세션을 subscription으로 갱신
-            guard subscription == nil,
-                  !sessions.isEmpty,
-                  case .displayID(let displayID) = sourceDescriptor,
-                  displayID != -1
-            else { return }
-
-            Task {
-                try? await self.updateProjectionTarget(displayID)
-            }
-        }
+         */
     }
 
     func decideTargetDisplayID() async throws {
