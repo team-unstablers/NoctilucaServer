@@ -49,10 +49,16 @@
     "⎋ (Escape)" : {
 
     },
+    "0" : {
+
+    },
     "0.5x" : {
 
     },
     "0%" : {
+
+    },
+    "1" : {
 
     },
     "1.5x" : {
@@ -15253,6 +15259,39 @@
         }
       }
     },
+    "settings.projection.cas.sharpness.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "필터 세기"
+          }
+        }
+      }
+    },
+    "settings.projection.cas.toggle.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Contrast Adaptive Sharpening 필터를 적용합니다.\n원격 화면의 텍스트나 경계를 더 선명하게 표시합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.cas.toggle.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "선명도 필터 (CAS)"
+          }
+        }
+      }
+    },
     "settings.projection.jitter_buffer_preset.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -15510,6 +15549,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "投影设置"
+          }
+        }
+      }
+    },
+    "settings.projection.renderer_implementation.avsamplebufferdisplaylayer.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일반적인 비디오 재생에 사용되는 AVSampleBufferDisplayLayer를 사용합니다. 동작이 안정적입니다."
+          }
+        }
+      }
+    },
+    "settings.projection.renderer_implementation.avsamplebufferdisplaylayer.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AVSampleBufferDisplayLayer (AVFoundation)"
+          }
+        }
+      }
+    },
+    "settings.projection.renderer_implementation.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 렌더러 구현체를 선택합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.renderer_implementation.nocmetalvideorenderer.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "자체 구현된 Metal 기반의 비디오 렌더러를 사용합니다. **실험 단계**이지만, CAS 필터를 사용할 수 있게 됩니다.\n- 실험 단계이기 때문에 HDR 표시가 불안정할 수 있습니다."
+          }
+        }
+      }
+    },
+    "settings.projection.renderer_implementation.nocmetalvideorenderer.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Metal 비디오 렌더러 (Noctiluca)"
+          }
+        }
+      }
+    },
+    "settings.projection.renderer_implementation.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 렌더러 구현체"
+          }
+        }
+      }
+    },
+    "settings.projection.rendering.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "화면 렌더링"
           }
         }
       }
@@ -16325,6 +16441,9 @@
           }
         }
       }
+    },
+    "Sharpness" : {
+
     },
     "Unleashed Edition" : {
 

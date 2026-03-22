@@ -52,6 +52,29 @@ extension AppSettings {
             }
         }
     }
+    
+    enum RendererImplementation: String, Codable, CaseIterable {
+        case avSampleBufferDisplayLayer
+        case nocMetalVideoRenderer
+        
+        var displayName: String {
+            switch self {
+            case .avSampleBufferDisplayLayer:
+                return String(localized: "settings.projection.renderer_implementation.avsamplebufferdisplaylayer.title", defaultValue: "AVSampleBufferDisplayLayer (AVFoundation)")
+            case .nocMetalVideoRenderer:
+                return String(localized: "settings.projection.renderer_implementation.nocmetalvideorenderer.title", defaultValue: "Metal 비디오 렌더러 (Noctiluca)")
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .avSampleBufferDisplayLayer:
+                return String(localized: "settings.projection.renderer_implementation.avsamplebufferdisplaylayer.description", defaultValue: "일반적인 비디오 재생에 사용되는 AVSampleBufferDisplayLayer를 사용합니다. 동작이 안정적입니다.")
+            case .nocMetalVideoRenderer:
+                return String(localized: "settings.projection.renderer_implementation.nocmetalvideorenderer.description", defaultValue: "자체 구현된 Metal 기반의 비디오 렌더러를 사용합니다. **실험 단계**이지만, CAS 필터를 사용할 수 있게 됩니다.\n- 실험 단계이기 때문에 HDR 표시가 불안정할 수 있습니다.")
+            }
+        }
+    }
 
     /// 오디오 프로젝션 정책.
     enum AudioProjectionPolicy: String, Codable, CaseIterable {
@@ -70,6 +93,13 @@ extension AppSettings {
         var enableJitterBuffer: Bool = true
         var jitterBufferPreset: JitterBufferPreset = .lowLatency
         var audioProjectionPolicy: AudioProjectionPolicy = .latencyFirst
+        
+        var rendererImplementation: RendererImplementation = .avSampleBufferDisplayLayer
+
+        /// CAS(Contrast Adaptive Sharpening) 활성화 여부
+        var casEnabled: Bool = false
+        /// CAS 선명도 (0.0 ~ 1.0)
+        var casSharpness: Double = 0.5
 
         init() {}
 
@@ -77,6 +107,9 @@ extension AppSettings {
             case enableJitterBuffer
             case jitterBufferPreset
             case audioProjectionPolicy
+            case rendererImplementation
+            case casEnabled
+            case casSharpness
         }
 
         init(from decoder: any Decoder) throws {
@@ -89,6 +122,9 @@ extension AppSettings {
             enableJitterBuffer = container.decodeSafe(Bool.self, forKey: .enableJitterBuffer, default: true)
             jitterBufferPreset = container.decodeSafe(JitterBufferPreset.self, forKey: .jitterBufferPreset, default: .lowLatency)
             audioProjectionPolicy = container.decodeSafe(AudioProjectionPolicy.self, forKey: .audioProjectionPolicy, default: .latencyFirst)
+            rendererImplementation = container.decodeSafe(RendererImplementation.self, forKey: .rendererImplementation, default: .avSampleBufferDisplayLayer)
+            casEnabled = container.decodeSafe(Bool.self, forKey: .casEnabled, default: false)
+            casSharpness = container.decodeSafe(Double.self, forKey: .casSharpness, default: 0.5)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -96,6 +132,9 @@ extension AppSettings {
             try container.encode(enableJitterBuffer, forKey: .enableJitterBuffer)
             try container.encode(jitterBufferPreset, forKey: .jitterBufferPreset)
             try container.encode(audioProjectionPolicy, forKey: .audioProjectionPolicy)
+            try container.encode(rendererImplementation, forKey: .rendererImplementation)
+            try container.encode(casEnabled, forKey: .casEnabled)
+            try container.encode(casSharpness, forKey: .casSharpness)
         }
     }
 }

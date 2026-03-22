@@ -405,7 +405,7 @@ extension RemoteSession {
                     }
                 }
 
-                return ProjectionSessionSubscription(session: session, ticket: ticket)
+                return ProjectionSessionSubscription(session: session, ticket: ticket, rendererImplementation: SettingsStore.shared.settings.projection.rendererImplementation)
             }
 
             guard let session = try await parent?.client.projectionChannel.createSession(
@@ -429,9 +429,9 @@ extension RemoteSession {
                 }
             }
 
-            return ProjectionSessionSubscription(session: session, ticket: ticket)
+            return ProjectionSessionSubscription(session: session, ticket: ticket, rendererImplementation: SettingsStore.shared.settings.projection.rendererImplementation)
         }
-        
+
         // MARK: - Auto-restart (Audio)
 
         private func attemptAudioAutoRestart(reason: AudioSessionEndReason, message: String?) {

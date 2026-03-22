@@ -47,18 +47,28 @@ class ProjectionSessionSubscription {
         metalVideoRenderer != nil
     }
 
+    private let rendererImplementation: AppSettings.RendererImplementation
     private var isInvalidated = false
 
-    init(session: ProjectionSession, ticket: RemoteSession.SessionReferenceTicket) {
+    init(session: ProjectionSession, ticket: RemoteSession.SessionReferenceTicket, rendererImplementation: AppSettings.RendererImplementation = .avSampleBufferDisplayLayer) {
         self.session = session
         self.ticket = ticket
+        self.rendererImplementation = rendererImplementation
 
-        // Metal 비디오 렌더러를 먼저 시도, 실패 시 AVSampleBufferDisplayLayer fallback
-        if tryCreateMetalVideoRenderer() {
+        setupVTCodecRenderer()
+    }
+
+    /// 설정에 따라 VT 코덱용 렌더러를 초기화한다.
+    private func setupVTCodecRenderer() {
+        if rendererImplementation == .nocMetalVideoRenderer, tryCreateMetalVideoRenderer() {
             Self.logger.info("Using MetalVideoRenderer for VT codec rendering")
         } else {
             session.registerDisplayLayer(displayLayer)
-            Self.logger.info("Using AVSampleBufferDisplayLayer fallback")
+            if rendererImplementation == .nocMetalVideoRenderer {
+                Self.logger.warning("MetalVideoRenderer creation failed, falling back to AVSampleBufferDisplayLayer")
+            } else {
+                Self.logger.info("Using AVSampleBufferDisplayLayer for VT codec rendering")
+            }
         }
     }
 
@@ -98,17 +108,20 @@ class ProjectionSessionSubscription {
         if isTiledCodec {
             // 타일 코덱: Metal 비디오 렌더러 제거, 캔버스 렌더러 생성
             removeMetalVideoRenderer()
+            session.unregisterDisplayLayer(displayLayer)
             if canvasRenderer == nil {
                 tryCreateCanvasRenderer()
             }
         } else {
-            // VT 코덱: 캔버스 렌더러 제거, Metal 비디오 렌더러 생성
+            // VT 코덱: 캔버스 렌더러 제거, 설정에 따라 렌더러 선택
             removeCanvasRenderer()
-            if metalVideoRenderer == nil {
+            if rendererImplementation == .nocMetalVideoRenderer && metalVideoRenderer == nil {
                 if !tryCreateMetalVideoRenderer() {
-                    // Metal 불가 시 AVSampleBufferDisplayLayer fallback 등록
                     session.registerDisplayLayer(displayLayer)
                 }
+            } else if rendererImplementation == .avSampleBufferDisplayLayer {
+                removeMetalVideoRenderer()
+                session.registerDisplayLayer(displayLayer)
             }
         }
     }

@@ -50,6 +50,52 @@ struct ProjectionSettingsTab: View {
             }
             
             Section {
+                SettingsPicker(selection: $settingsStore.settings.projection.rendererImplementation) {
+                    ForEach(AppSettings.RendererImplementation.allCases, id: \.self) { impl in
+                        SettingsPickerItem(value: impl) {
+                            Text(markdown: impl.displayName)
+                            Text(markdown: impl.description)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } label: {
+                    Text(markdown: String(localized: "settings.projection.renderer_implementation.title", defaultValue: "화면 렌더러 구현체"))
+                    Text(markdown: String(localized: "settings.projection.renderer_implementation.description", defaultValue: "화면 렌더러 구현체를 선택합니다."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Toggle(isOn: $settingsStore.settings.projection.casEnabled) {
+                    Text(String(localized: "settings.projection.cas.toggle.title", defaultValue: "선명도 필터 (CAS)"))
+                    Text(String(localized: "settings.projection.cas.toggle.description", defaultValue: "Contrast Adaptive Sharpening 필터를 적용합니다.\n원격 화면의 텍스트나 경계를 더 선명하게 표시합니다."))
+                }
+                .disabled(settingsStore.settings.projection.rendererImplementation != .nocMetalVideoRenderer)
+
+                if settingsStore.settings.projection.casEnabled {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(String(localized: "settings.projection.cas.sharpness.title", defaultValue: "필터 세기"))
+                        Slider(value: $settingsStore.settings.projection.casSharpness, in: 0.0...1.0, step: 0.1) {
+                            Text("Sharpness")
+                        } minimumValueLabel: {
+                            Text("0")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } maximumValueLabel: {
+                            Text("1")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(String(format: "%.2f", settingsStore.settings.projection.casSharpness))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text(String(localized: "settings.projection.rendering.header", defaultValue: "화면 렌더링"))
+            }
+
+            Section {
                 SettingsPicker(selection: $settingsStore.settings.projection.audioProjectionPolicy) {
                     SettingsPickerItem(value: AppSettings.AudioProjectionPolicy.latencyFirst) {
                         Text(markdown: String(localized: "settings.projection.audio_policy.latency_first.title", defaultValue: "낮은 지연 시간을 우선하기"))
