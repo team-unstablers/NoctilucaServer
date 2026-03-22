@@ -650,8 +650,8 @@ final class AppSession {
             }
 
             let bundleID = runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
-
-            return (windowID, WindowInfo(
+            
+            let windowInfo = WindowInfo(
                 windowID: UInt64(windowID),
                 pid: UInt64(ownerPID),
                 windowTitle: title,
@@ -666,7 +666,13 @@ final class AppSession {
                 metadata: metadata,
                 hints: hints,
                 flags: flags
-            ))
+            )
+            
+            if windowInfo.isNSLocalWindowSharingWindow {
+                return nil
+            }
+            
+            return (windowID, windowInfo)
         })
     }
 }
@@ -1109,7 +1115,7 @@ final class DesktopContextManager {
 
             let bundleID = relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
 
-            return WindowInfo(
+            let windowInfo = WindowInfo(
                 windowID: UInt64(windowID),
                 pid: UInt64(ownerPID),
                 windowTitle: title,
@@ -1125,6 +1131,12 @@ final class DesktopContextManager {
                 hints: hints,
                 flags: flags
             )
+            
+            if windowInfo.isNSLocalWindowSharingWindow {
+                return nil
+            }
+            
+            return windowInfo
         }
     }
     
@@ -1474,5 +1486,13 @@ extension WindowFilterExpression {
         }
 
         return invert ? !result : result
+    }
+}
+
+
+extension WindowInfo {
+    var isNSLocalWindowSharingWindow: Bool {
+        self.role == .dialog &&
+        ((self.bounds.width == 66 || self.bounds.width == 60) && self.bounds.height == 20)
     }
 }
