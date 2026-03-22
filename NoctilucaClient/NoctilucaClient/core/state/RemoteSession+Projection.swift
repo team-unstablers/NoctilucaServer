@@ -41,9 +41,8 @@ extension RemoteSession {
     
     /// 커서 이미지를 캐싱합니다.
     fileprivate class CursorImageCacheManager {
-        private(set) var cache: [CursorHash: CursorImage] = [:]
-        
-        @MainActor
+        let cache = ConcurrentDictionary<CursorHash, CursorImage>()
+
         func updateCache(_ image: CursorImage) {
             self.cache[image.id] = image
         }
