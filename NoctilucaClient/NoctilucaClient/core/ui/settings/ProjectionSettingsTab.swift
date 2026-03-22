@@ -73,10 +73,12 @@ struct ProjectionSettingsTab: View {
                 .disabled(settingsStore.settings.projection.rendererImplementation != .nocMetalVideoRenderer)
 
                 if settingsStore.settings.projection.casEnabled {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(String(localized: "settings.projection.cas.sharpness.title", defaultValue: "필터 세기"))
+                    SettingsEntry(
+                        title: String(localized: "settings.projection.cas.sharpness.title", defaultValue: "필터 세기"),
+                        subtitle: String(format: "%.2f", settingsStore.settings.projection.casSharpness)
+                    ) {
                         Slider(value: $settingsStore.settings.projection.casSharpness, in: 0.0...1.0, step: 0.1) {
-                            Text("Sharpness")
+                            EmptyView()
                         } minimumValueLabel: {
                             Text("0")
                                 .font(.caption)
@@ -86,9 +88,6 @@ struct ProjectionSettingsTab: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        Text(String(format: "%.2f", settingsStore.settings.projection.casSharpness))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
                     }
                 }
             } header: {

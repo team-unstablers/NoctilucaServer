@@ -15262,10 +15262,28 @@
     "settings.projection.cas.sharpness.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter Strength"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルター強度"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "필터 세기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滤镜强度"
           }
         }
       }
@@ -15273,10 +15291,28 @@
     "settings.projection.cas.toggle.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies the Contrast Adaptive Sharpening filter.\nMakes text and edges on the remote screen appear sharper."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contrast Adaptive Sharpeningフィルターを適用します。\nリモート画面のテキストや境界をより鮮明に表示します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Contrast Adaptive Sharpening 필터를 적용합니다.\n원격 화면의 텍스트나 경계를 더 선명하게 표시합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用对比度自适应锐化滤镜。\n使远程画面的文字和边缘显示更加清晰。"
           }
         }
       }
@@ -15284,10 +15320,28 @@
     "settings.projection.cas.toggle.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharpness Filter (CAS)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シャープネスフィルター (CAS)"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "선명도 필터 (CAS)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "锐化滤镜 (CAS)"
           }
         }
       }
@@ -15556,10 +15610,28 @@
     "settings.projection.renderer_implementation.avsamplebufferdisplaylayer.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses AVSampleBufferDisplayLayer, commonly used for standard video playback. Stable and reliable."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般的なビデオ再生に使用されるAVSampleBufferDisplayLayerを使用します。動作が安定しています。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "일반적인 비디오 재생에 사용되는 AVSampleBufferDisplayLayer를 사용합니다. 동작이 안정적입니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用常用于标准视频播放的AVSampleBufferDisplayLayer。运行稳定可靠。"
           }
         }
       }
@@ -15567,9 +15639,27 @@
     "settings.projection.renderer_implementation.avsamplebufferdisplaylayer.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AVSampleBufferDisplayLayer (AVFoundation)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AVSampleBufferDisplayLayer (AVFoundation)"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "AVSampleBufferDisplayLayer (AVFoundation)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "AVSampleBufferDisplayLayer (AVFoundation)"
           }
         }
@@ -15578,10 +15668,28 @@
     "settings.projection.renderer_implementation.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the display renderer implementation."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面レンダラーの実装を選択します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "화면 렌더러 구현체를 선택합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择画面渲染器实现。"
           }
         }
       }
@@ -15589,10 +15697,28 @@
     "settings.projection.renderer_implementation.nocmetalvideorenderer.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses a custom Metal-based video renderer. **Experimental**, but enables the CAS filter.\n- HDR display may be unstable due to experimental status."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "独自実装のMetalベースビデオレンダラーを使用します。**実験段階**ですが、CASフィルターが使用可能になります。\n- 実験段階のため、HDR表示が不安定になる場合があります。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "자체 구현된 Metal 기반의 비디오 렌더러를 사용합니다. **실험 단계**이지만, CAS 필터를 사용할 수 있게 됩니다.\n- 실험 단계이기 때문에 HDR 표시가 불안정할 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用自研的基于Metal的视频渲染器。处于**实验阶段**，但可以启用CAS滤镜。\n- 由于处于实验阶段，HDR显示可能不稳定。"
           }
         }
       }
@@ -15600,10 +15726,28 @@
     "settings.projection.renderer_implementation.nocmetalvideorenderer.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metal Video Renderer (Noctiluca)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metalビデオレンダラー (Noctiluca)"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Metal 비디오 렌더러 (Noctiluca)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metal视频渲染器 (Noctiluca)"
           }
         }
       }
@@ -15611,10 +15755,28 @@
     "settings.projection.renderer_implementation.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display Renderer Implementation"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面レンダラー実装"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "화면 렌더러 구현체"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面渲染器实现"
           }
         }
       }
@@ -15622,10 +15784,28 @@
     "settings.projection.rendering.header" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display Rendering"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面レンダリング"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "화면 렌더링"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面渲染"
           }
         }
       }
