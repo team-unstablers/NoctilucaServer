@@ -49,6 +49,8 @@ class EventInjector {
 
     var mouseDownState: UInt16 = 0
     var lastMousePosition: CGPoint? = nil
+    
+    var hack_tabletEvent: Bool = false
 
     init() {
         serialQueue.setSpecific(key: serialQueueKey, value: ())

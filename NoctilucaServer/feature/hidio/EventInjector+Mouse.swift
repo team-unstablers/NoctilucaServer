@@ -25,7 +25,7 @@ extension EventInjector {
         case .absolute:
             switch event.position {
             case .percent(let position):
-                self.performMouseMoveAbsoluteOnQueue(percentage: position, scope: event.scope)
+                self.performMouseMoveAbsoluteOnQueue(percentage: position, scope: event.scope, pressure: event.pressure)
             case .pixel:
                 // TODO: Implement absolute pixel movement if needed (usually weird in multi-monitor)
                 break
@@ -56,7 +56,7 @@ extension EventInjector {
         }
     }
     
-    private func performMouseMoveAbsoluteOnQueue(percentage position: CursorPositionPercent, scope: CursorPositionScope) {
+    private func performMouseMoveAbsoluteOnQueue(percentage position: CursorPositionPercent, scope: CursorPositionScope, pressure: Int32? = nil) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
         
@@ -94,19 +94,113 @@ extension EventInjector {
         } else if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_RIGHT > 0) {
             mouseType = .rightMouseDragged
         }
+        
+        if !hack_tabletEvent {
+            guard let event = CGEvent(mouseEventSource: nil,
+                                              mouseType: .mouseMoved,
+                                              mouseCursorPosition: position,
+                                              mouseButton: .left) else { return }
+                    
+            event.type = .tabletProximity
+            
+            // 타블렛 장치 및 펜 정보 세팅
+            event.setIntegerValueField(.tabletProximityEventVendorID, value: 1) // 가상 벤더 ID
+            event.setIntegerValueField(.tabletProximityEventTabletID, value: 0x8181)
+            event.setIntegerValueField(.tabletProximityEventPointerID, value: 0x8383)
+            event.setIntegerValueField(.tabletProximityEventDeviceID, value: 0x8282)
+            event.setIntegerValueField(.tabletProximityEventSystemTabletID, value: 0x8181)
+            
+            // 포인터 타입 (1: 일반 펜 촉, 2: 펜 뒤쪽 지우개, 3: 마우스)
+            event.setIntegerValueField(.tabletProximityEventPointerType, value: 1)
+            
+            // 인식 범위 진입 여부 (1: 들어옴, 0: 나감)
+            event.setIntegerValueField(.tabletProximityEventEnterProximity, value: 1)
+            
+            
+            event.setDoubleValueField(.mouseEventPressure, value: 0)
+            event.setDoubleValueField(.tabletEventPointPressure, value: 0)
 
+            event.post(tap: .cgSessionEventTap)
+            
+            hack_tabletEvent = true
+        }
+        
         guard let cgEvent = CGEvent(
                 mouseEventSource: eventSource,
-                mouseType: mouseType,
+                mouseType: .mouseMoved,
                 mouseCursorPosition: position,
                 mouseButton: mouseButton
         )
         else {
             return
         }
+        
+        cgEvent.type = .tabletPointer
 
         cgEvent.sanitizeModifierFlags(with: keyDownState)
+        
+        if let pressure32 = pressure {
+            let fpPressure = Double.minimum((Double(pressure32) / 8192.0), 1.0)
+            // print(fpPressure)
+            cgEvent.setIntegerValueField(.tabletEventDeviceID, value: 0x8282)
+            cgEvent.setIntegerValueField(.tabletEventPointButtons, value: 1)
+            cgEvent.setDoubleValueField(.mouseEventPressure, value: fpPressure)
+            cgEvent.setDoubleValueField(.tabletEventPointPressure, value: fpPressure)
+        }
+        
         cgEvent.post(tap: .cgSessionEventTap)
+        
+        if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
+            guard let cgEvent = CGEvent(
+                mouseEventSource: eventSource,
+                mouseType: .leftMouseDown,
+                mouseCursorPosition: position,
+                mouseButton: mouseButton
+            )
+            else {
+                return
+            }
+            
+            // cgEvent.type = .tabletPointer
+            
+            cgEvent.sanitizeModifierFlags(with: keyDownState)
+            
+            if let pressure32 = pressure {
+                let fpPressure = Double.minimum((Double(pressure32) / 8192.0), 1.0)
+                // print(fpPressure)
+                cgEvent.setIntegerValueField(.tabletEventDeviceID, value: 0x8282)
+                cgEvent.setIntegerValueField(.tabletEventPointButtons, value: 1)
+                cgEvent.setDoubleValueField(.mouseEventPressure, value: fpPressure)
+                cgEvent.setDoubleValueField(.tabletEventPointPressure, value: fpPressure)
+            }
+            
+            cgEvent.post(tap: .cgSessionEventTap)
+        } else {
+            guard let cgEvent = CGEvent(
+                mouseEventSource: eventSource,
+                mouseType: .leftMouseUp,
+                mouseCursorPosition: position,
+                mouseButton: mouseButton
+            )
+            else {
+                return
+            }
+            
+            // cgEvent.type = .tabletPointer
+            
+            cgEvent.sanitizeModifierFlags(with: keyDownState)
+            
+            if let pressure32 = pressure {
+                let fpPressure = Double.minimum((Double(pressure32) / 8192.0), 1.0)
+                // print(fpPressure)
+                cgEvent.setIntegerValueField(.tabletEventDeviceID, value: 0x8282)
+                cgEvent.setIntegerValueField(.tabletEventPointButtons, value: 1)
+                cgEvent.setDoubleValueField(.mouseEventPressure, value: fpPressure)
+                cgEvent.setDoubleValueField(.tabletEventPointPressure, value: fpPressure)
+            }
+            
+            cgEvent.post(tap: .cgSessionEventTap)
+        }
 
         lastMousePosition = position
         
@@ -287,10 +381,15 @@ extension EventInjector {
             lastClickButton = event.button.rawValue
             lastClickTime = now
         }
+        
+        
+        cgEvent.setIntegerValueField(.tabletEventDeviceID, value: 0x8282)
+        cgEvent.setDoubleValueField(.mouseEventPressure, value: 0.0)
+        cgEvent.setDoubleValueField(.tabletEventPointPressure, value: 0.0)
 
         cgEvent.setIntegerValueField(.mouseEventClickState, value: clickCount)
         cgEvent.sanitizeModifierFlags(with: keyDownState)
-        cgEvent.post(tap: .cgSessionEventTap)
+        // cgEvent.post(tap: .cgSessionEventTap)
     }
 
     func post(mouseWheelEvent event: MouseWheelEvent) {
