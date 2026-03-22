@@ -57,6 +57,16 @@ class SubDisplayWindowManager: NSObject, NSWindowDelegate {
 
     // MARK: - NSWindowDelegate
 
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard notification.object is SubDisplayWindow else { return }
+        remoteSession.hidio?.session.activateSession()
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        guard notification.object is SubDisplayWindow else { return }
+        remoteSession.hidio?.session.deactivateSession()
+    }
+
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? SubDisplayWindow else { return }
         destroy(for: window.targetDisplayID)
