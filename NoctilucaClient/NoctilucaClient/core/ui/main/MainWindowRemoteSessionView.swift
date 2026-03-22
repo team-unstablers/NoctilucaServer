@@ -111,16 +111,6 @@ struct MainWindowRemoteSessionView: View {
                 subscription = nil
             }
         }
-        .onReceive(projection.$projectionSessions) { sessions in
-            // auto-restart 성공 시 새로운 세션을 subscription으로 갱신
-            guard subscription == nil,
-                  !sessions.isEmpty
-            else { return }
-
-            Task {
-                try? await self.updateProjectionTarget(sourceDescriptor)
-            }
-        }
     }
 
     func decideTargetDisplayID() async throws {
