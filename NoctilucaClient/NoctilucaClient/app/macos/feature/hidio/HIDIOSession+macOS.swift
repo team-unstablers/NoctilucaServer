@@ -45,9 +45,11 @@ extension HIDIOSession {
             // 기본은 shared mode.
             try switchMode(to: .shared, reason: .userInitiated)
 
-            // key window가 아니면 싱글톤 키보드 disconnect (나중에 activateSession()에서 재연결)
+            // key window가 아니면 세션의 키보드 disconnect (나중에 activateSession()에서 재연결)
             if _session?.window?.isKeyWindow != true {
-                controller.disconnectAll(kind: .keyboard)
+                if let keyboard = currentKeyboard {
+                    controller.disconnect(keyboard.identifierString)
+                }
             }
 
             defer {
@@ -63,15 +65,18 @@ extension HIDIOSession {
                 delegate?.hidioSession(session, didChangeState: .inactive)
             }
 
-            controller.disconnectAll(kind: .keyboard)
-            controller.disconnectAll(kind: .mouse)
-            controller.disconnectAll(kind: .pointer)
+            if let keyboard = currentKeyboard {
+                controller.disconnect(keyboard.identifierString)
+            }
+            if let mouse = currentMouse {
+                controller.disconnect(mouse.identifierString)
+            }
             controller.resetKeyPressState()
-            
+
             self.currentKeyboard = nil
             self.currentMouse = nil
         }
-        
+
         func activateSession() {
             // 원격 세션 창이 다시 활성화 되었습니다, 키보드를 다시 연결합니다.
             if let keyboard = currentKeyboard {
@@ -89,13 +94,13 @@ extension HIDIOSession {
         func deactivateSession() {
             // 원격 세션 창이 비활성화 되었습니다, 키보드를 해제합니다.
             if let keyboard = currentKeyboard {
-                controller.disconnectAll(kind: .keyboard)
+                controller.disconnect(keyboard.identifierString)
             }
-            
+
             if mode != .shared {
                 // exclusive 모드인 경우 마우스도 해제합니다.
                 if let mouse = currentMouse {
-                    controller.disconnectAll(kind: .mouse)
+                    controller.disconnect(mouse.identifierString)
                 }
             }
 
@@ -104,11 +109,14 @@ extension HIDIOSession {
         
         @MainActor
         func switchMode(to mode: HIDIOSessionMode, reason: HIDIOSessionModeSwitchReason) throws {
-            controller.disconnectAll(kind: .keyboard)
-            controller.disconnectAll(kind: .mouse)
-            controller.disconnectAll(kind: .pointer)
+            if let keyboard = currentKeyboard {
+                controller.disconnect(keyboard.identifierString)
+            }
+            if let mouse = currentMouse {
+                controller.disconnect(mouse.identifierString)
+            }
             controller.resetKeyPressState()
-            
+
             self.currentKeyboard = nil
             self.currentMouse = nil
 
