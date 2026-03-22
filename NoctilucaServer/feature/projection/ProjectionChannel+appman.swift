@@ -280,10 +280,11 @@ extension ProjectionChannel {
 
         // PID 기반 윈도우 이벤트 구독
         let windowSubscriptionId = await desktopContextManager.subscribeWindowEvents(
-            eventMask: [.closed, .moved, .resized, .metadataChanged],
+            eventMask: [.closed, .moved, .resized, .metadataChanged, .focused],
             filter: WindowFilter(expression: WindowFilterExpression(.pid(UInt64(pid)))),
             flags: []
         ) { [weak self, streamId, ignoreInvisible, windowTracker] windowEvent in
+            print(windowEvent)
             Task { [weak self] in
                 await self?.handleAppStreamWindowEvent(
                     streamId: streamId,
@@ -327,6 +328,8 @@ extension ProjectionChannel {
             pid: pid,
             ignoreInvisible: ignoreInvisible
         )
+        print(initialWindows)
+        
         windowTracker.addInitialWindows(initialWindows)
 
         try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(

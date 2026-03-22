@@ -27,6 +27,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     private var streamId: UUID?
     private var eventSubscription: AnyCancellable?
     private var resizeDebounceTask: [UInt64: Task<Void, Never>] = [:]
+    private var isHandlingRemoteFocusChange = false
 
     init(remoteSession: RemoteSession) {
         self.remoteSession = remoteSession
@@ -177,9 +178,11 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             }
         }
 
-        // 포커스 처리: isFocused이면 맨 앞으로
-        if info.flags.contains(.isFocused) {
-            windows[windowID]?.window.orderFront(nil)
+        // 포커스 처리: isFocused이면 key window로 전환
+        if info.flags.contains(.isFocused), !(windows[windowID]?.window.isKeyWindow ?? false) {
+            isHandlingRemoteFocusChange = true
+            windows[windowID]?.window.makeKeyAndOrderFront(nil)
+            isHandlingRemoteFocusChange = false
         }
     }
 
@@ -232,6 +235,9 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         guard let window = notification.object as? AppStreamWindow else { return }
 
         remoteSession.hidio?.session.activateSession()
+
+        // 서버에서 온 포커스 변경이면 서버로 재전송하지 않음 (무한 루프 방지)
+        guard !isHandlingRemoteFocusChange else { return }
 
         guard let projectionChannel = remoteSession.projection?.channel else { return }
         Task {
