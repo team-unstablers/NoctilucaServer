@@ -20,15 +20,16 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+//// 픽셀 단위 커서 좌표
 struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  //// 왼쪽 위 모서리를 기준으로 한 X 픽셀 좌표
   var x: Int32 = 0
 
-  //// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  //// 왼쪽 위 모서리를 기준으로 한 Y 픽셀 좌표
   var y: Int32 = 0
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -36,6 +37,7 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPixel: Sendable {
   init() {}
 }
 
+//// 비율 기반 커서 좌표
 struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPercent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -52,6 +54,7 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionPercent: Sendable {
   init() {}
 }
 
+//// 커서 좌표의 기준 범위를 지정하는 타입
 struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -59,9 +62,9 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
 
   var scope: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope.OneOf_Scope? = nil
 
-  //// 한 디스플레이의 전체 영역을 기준으로 합니다.
-  //// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-  //// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
+  //// 특정 디스플레이의 전체 영역을 기준으로 합니다.
+  //// - -1: 기본(메인) 디스플레이
+  //// - -2: 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)
   var displayID: Int32 {
     get {
       if case .displayID(let v)? = scope {return v}
@@ -82,9 +85,9 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   enum OneOf_Scope: Equatable, Sendable {
-    //// 한 디스플레이의 전체 영역을 기준으로 합니다.
-    //// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-    //// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
+    //// 특정 디스플레이의 전체 영역을 기준으로 합니다.
+    //// - -1: 기본(메인) 디스플레이
+    //// - -2: 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)
     case displayID(Int32)
     //// 특정 윈도우 ID(핸들)을 기준으로 합니다.
     case windowID(Int64)
@@ -94,7 +97,7 @@ struct Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: Sendable {
   init() {}
 }
 
-//// 마우스 이동 이벤트를 나타내는 메시지
+//// 마우스 이동 이벤트
 struct Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -130,6 +133,17 @@ struct Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: Sendable {
     set {position = .percent(newValue)}
   }
 
+  //// 펜 압력. 0 ~ 8192 범위의 값.
+  //// 일반 마우스인 경우 항상 0으로 설정됩니다.
+  var pressure: Int32 {
+    get {return _pressure ?? 0}
+    set {_pressure = newValue}
+  }
+  /// Returns true if `pressure` has been explicitly set.
+  var hasPressure: Bool {return self._pressure != nil}
+  /// Clears the value of `pressure`. Subsequent reads from it will return its default value.
+  mutating func clearPressure() {self._pressure = nil}
+
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   enum OneOf_Position: Equatable, Sendable {
@@ -141,9 +155,10 @@ struct Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: Sendable {
   init() {}
 
   fileprivate var _scope: Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope? = nil
+  fileprivate var _pressure: Int32? = nil
 }
 
-//// 마우스 버튼 입력 이벤트를 나타내는 메시지
+//// 마우스 버튼 입력 이벤트
 struct Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -160,7 +175,7 @@ struct Sirius_Msgdef_V1_Channels_Hidio_MouseButtonEvent: Sendable {
   init() {}
 }
 
-//// 마우스 휠 이벤트를 나타내는 메시지
+//// 마우스 휠 이벤트
 struct Sirius_Msgdef_V1_Channels_Hidio_MouseWheelEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -310,7 +325,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_CursorPositionScope: SwiftProtobuf.Mes
 
 extension Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".MouseMoveEvent"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}moveType\0\u{1}scope\0\u{1}pixel\0\u{1}percent\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}moveType\0\u{1}scope\0\u{1}pixel\0\u{1}percent\0\u{2}\u{6}pressure\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -346,6 +361,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: SwiftProtobuf.Message,
           self.position = .percent(v)
         }
       }()
+      case 10: try { try decoder.decodeSingularInt32Field(value: &self._pressure) }()
       default: break
       }
     }
@@ -373,6 +389,9 @@ extension Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: SwiftProtobuf.Message,
     }()
     case nil: break
     }
+    try { if let v = self._pressure {
+      try visitor.visitSingularInt32Field(value: v, fieldNumber: 10)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -380,6 +399,7 @@ extension Sirius_Msgdef_V1_Channels_Hidio_MouseMoveEvent: SwiftProtobuf.Message,
     if lhs.moveType != rhs.moveType {return false}
     if lhs._scope != rhs._scope {return false}
     if lhs.position != rhs.position {return false}
+    if lhs._pressure != rhs._pressure {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

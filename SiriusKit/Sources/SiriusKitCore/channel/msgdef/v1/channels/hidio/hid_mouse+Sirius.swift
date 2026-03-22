@@ -105,10 +105,13 @@ public struct MouseMoveEvent: HIDEvent, HIDEventConvertable {
     
     public let position: OneOf_CursorPosition
     
-    public init(moveType: MouseMoveEventType, scope: CursorPositionScope, position: OneOf_CursorPosition) {
+    public let pressure: Int32?
+    
+    public init(moveType: MouseMoveEventType, scope: CursorPositionScope, position: OneOf_CursorPosition, pressure: Int32? = nil) {
         self.moveType = moveType
         self.scope = scope
         self.position = position
+        self.pressure = pressure
     }
     
     static func from(_ container: Sirius_Msgdef_V1_Channels_Hidio_HIDEvent) throws -> Self {
@@ -128,7 +131,8 @@ public struct MouseMoveEvent: HIDEvent, HIDEventConvertable {
                 case .none:
                     throw SiriusMessageError.invalidProtobufMessage
                 }
-            }()
+            }(),
+            pressure: message.hasPressure ? message.pressure : nil
         )
         
         return consume event
@@ -150,6 +154,12 @@ public struct MouseMoveEvent: HIDEvent, HIDEventConvertable {
             mouseMoveEventMessage.position = .percent(val.toProtobufMessage())
             break
         }
+        
+        if let pressure = self.pressure {
+            mouseMoveEventMessage.pressure = pressure
+        }
+        
+        
         message.event = .mouseMoveEvent(mouseMoveEventMessage)
         
         return message
