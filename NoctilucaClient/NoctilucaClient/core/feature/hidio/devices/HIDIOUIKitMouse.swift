@@ -43,13 +43,13 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
         geometry = size
     }
 
-    func moveAbsolute(to point: CGPoint) {
+    func moveAbsolute(to point: CGPoint, pressure: Int32? = nil) {
         guard let normalized = normalizedPoint(point) else {
             logger.debug("Invalid geometry, skipping absolute move")
             return
         }
 
-        controller?.moveMouseAbsolutePercentage(to: normalized, on: scope)
+        controller?.moveMouseAbsolutePercentage(to: normalized, on: scope, pressure: pressure)
     }
 
     func moveRelative(by delta: CGPoint) {
