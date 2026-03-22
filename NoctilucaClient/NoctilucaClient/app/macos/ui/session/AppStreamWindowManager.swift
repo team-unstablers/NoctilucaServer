@@ -20,6 +20,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     struct WindowState {
         let window: AppStreamWindow
         let subscription: ProjectionSessionSubscription
+        let windowInfoStore: ObservableWindowInfo
         var windowInfo: WindowInfo
     }
 
@@ -115,10 +116,13 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
                 for: .windowID(Int(windowID))
             )
 
+            let windowInfoStore = ObservableWindowInfo(windowInfo)
+
             let window = AppStreamWindow(
                 windowID: Int(windowID),
                 remoteSession: remoteSession,
-                subscription: subscription
+                subscription: subscription,
+                windowInfoStore: windowInfoStore
             )
 
             // 서버 bounds에서 크기만 반영 (위치는 클라이언트 자유)
@@ -133,6 +137,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             windows[windowID] = WindowState(
                 window: window,
                 subscription: subscription,
+                windowInfoStore: windowInfoStore,
                 windowInfo: windowInfo
             )
             window.makeKeyAndOrderFront(nil)
@@ -165,6 +170,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         guard windows[windowID] != nil else { return }
 
         windows[windowID]?.windowInfo = info
+        windows[windowID]?.windowInfoStore.windowInfo = info
         windows[windowID]?.window.title = info.windowTitle
 
         // 서버에서 크기가 변경되었으면 클라이언트 윈도우 크기도 반영
