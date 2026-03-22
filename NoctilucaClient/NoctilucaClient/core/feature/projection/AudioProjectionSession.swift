@@ -55,6 +55,12 @@ class AudioProjectionSession: Identifiable {
 
     private var isStarted: Bool = false
 
+    /// stop() 호출 시 true — render callback에서 fade-out을 수행하도록 신호
+    private var isStopping: Bool = false
+
+    /// render callback이 fade-out을 완료했음을 알리는 플래그
+    private var fadeOutComplete: Bool = false
+
     private let audioJitterBufferPreset: AudioJitterBuffer.Preset
 
     let events = PassthroughSubject<AudioProjectionSessionEvent, Never>()
@@ -123,6 +129,8 @@ class AudioProjectionSession: Identifiable {
         // Reset jitter buffer and fade state
         jitterBuffer.reset()
         fadeGain = 1.0
+        isStopping = false
+        fadeOutComplete = false
 
         try decoder.start()
 
@@ -141,7 +149,27 @@ class AudioProjectionSession: Identifiable {
 
     /// Stops audio decoding and playback.
     func stop() throws {
+        guard isStarted || isStopping else { return }
         isStarted = false
+
+        if sourceNode != nil {
+            // render callback에서 fade-out을 수행하도록 신호
+            // jitter buffer는 아직 reset하지 않음 — render callback이 남은 데이터를 fade-out에 사용
+            isStopping = true
+            fadeOutComplete = false
+
+            // render callback이 fade-out을 완료할 때까지 대기 (최대 ~30ms)
+            // fade-out은 ~10ms (480 samples @ 48kHz)
+            let maxWaitUs: useconds_t = 30_000
+            let stepUs: useconds_t = 1_000
+            var waited: useconds_t = 0
+            while !fadeOutComplete && waited < maxWaitUs {
+                usleep(stepUs)
+                waited += stepUs
+            }
+
+            isStopping = false
+        }
 
         if let sourceNode = sourceNode {
             NOCAudioEngine.shared.detach(sourceNode)
@@ -205,6 +233,20 @@ class AudioProjectionSession: Identifiable {
               let leftBuffer = bufferList[0].mData?.assumingMemoryBound(to: Float.self),
               let rightBuffer = bufferList[1].mData?.assumingMemoryBound(to: Float.self) else {
             silence.pointee = true
+            return noErr
+        }
+
+        // stop() 호출 시: 남은 데이터를 fade-out하며 재생
+        if isStopping {
+            if fadeGain > 0 {
+                let _ = jitterBuffer.dequeue(intoLeft: leftBuffer, intoRight: rightBuffer, frameCount: requestedFrames)
+                applyFadeOutNonInterleaved(left: leftBuffer, right: rightBuffer, frameCount: requestedFrames)
+                silence.pointee = false
+            } else {
+                fillSilenceNonInterleaved(left: leftBuffer, right: rightBuffer, frameCount: requestedFrames)
+                silence.pointee = true
+                fadeOutComplete = true
+            }
             return noErr
         }
 
