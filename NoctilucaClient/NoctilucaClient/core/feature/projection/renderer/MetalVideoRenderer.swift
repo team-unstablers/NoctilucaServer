@@ -68,9 +68,17 @@ final class MetalVideoRenderer: NSObject, MTKViewDelegate {
     // MARK: - Configuration
 
     /// CAS 활성화 여부
-    var casEnabled: Bool = false
+    var casEnabled: Bool = false {
+        didSet {
+            guard casEnabled != oldValue else { return }
+            invalidateIntermediateTextures()
+            requestRedraw()
+        }
+    }
     /// CAS 선명도 (0.0~1.0)
-    var casSharpness: Float = 0.5
+    var casSharpness: Float = 0.5 {
+        didSet { requestRedraw() }
+    }
     /// HDR 스트림에 대한 셰이더 톤매핑 fallback 활성화 여부.
     /// macOS 26+/iOS 26+에서는 OS 위임이 우선이며, 이전 OS에서만 활성화된다.
     private(set) var useShaderTonemap: Bool = false
@@ -258,10 +266,27 @@ final class MetalVideoRenderer: NSObject, MTKViewDelegate {
 
     // MARK: - Intermediate Texture Management
 
+    /// 설정 변경 시 중간 텍스처를 강제 재생성하기 위한 플래그
+    private var intermediateTexturesDirty: Bool = true
+
+    private func invalidateIntermediateTextures() {
+        intermediateTexturesDirty = true
+    }
+
+    private func requestRedraw() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let view = self.boundView else { return }
+            view.setNeedsDisplay(view.bounds)
+        }
+    }
+
     private func ensureIntermediateTextures(width: Int, height: Int) {
-        guard width != lastFrameWidth || height != lastFrameHeight else { return }
+        let sizeChanged = width != lastFrameWidth || height != lastFrameHeight
+        guard sizeChanged || intermediateTexturesDirty else { return }
+
         lastFrameWidth = width
         lastFrameHeight = height
+        intermediateTexturesDirty = false
 
         // HDR intermediate (RGBA16Float)
         if useShaderTonemap {
@@ -319,12 +344,11 @@ final class MetalVideoRenderer: NSObject, MTKViewDelegate {
 
     private func encodeCASPass(
         encoder: MTLRenderCommandEncoder,
-        sourceTexture: MTLTexture,
-        outputWidth: Int,
-        outputHeight: Int
+        sourceTexture: MTLTexture
     ) {
+        // texelSize는 샘플링 대상(source) 텍스처 기준이어야 한다
         var casUniforms = CASUniforms(
-            texelSize: SIMD2(1.0 / Float(outputWidth), 1.0 / Float(outputHeight)),
+            texelSize: SIMD2(1.0 / Float(sourceTexture.width), 1.0 / Float(sourceTexture.height)),
             sharpness: casSharpness,
             _pad: 0
         )
@@ -449,7 +473,7 @@ final class MetalVideoRenderer: NSObject, MTKViewDelegate {
 
         // Pass 2: CAS → drawable
         guard let encoder2 = commandBuffer.makeRenderCommandEncoder(descriptor: drawableDescriptor) else { return }
-        encodeCASPass(encoder: encoder2, sourceTexture: sharpenTex, outputWidth: outputWidth, outputHeight: outputHeight)
+        encodeCASPass(encoder: encoder2, sourceTexture: sharpenTex)
     }
 
     /// HDR 톤매핑 경로 (2~3 pass)
@@ -479,7 +503,7 @@ final class MetalVideoRenderer: NSObject, MTKViewDelegate {
 
             // Pass 3: CAS → drawable
             guard let encoder3 = commandBuffer.makeRenderCommandEncoder(descriptor: drawableDescriptor) else { return }
-            encodeCASPass(encoder: encoder3, sourceTexture: sharpenTex, outputWidth: outputWidth, outputHeight: outputHeight)
+            encodeCASPass(encoder: encoder3, sourceTexture: sharpenTex)
         } else {
             // Pass 2: tonemap → drawable
             guard let encoder2 = commandBuffer.makeRenderCommandEncoder(descriptor: drawableDescriptor) else { return }
