@@ -94,6 +94,43 @@ class ProjectionSession: Identifiable {
         }
     }
 
+    // MARK: - Metal Video Renderer Management (VT 코덱 직접 렌더링)
+
+    private var metalVideoRenderersLock = NSLock()
+    private var metalVideoRenderers: [ObjectIdentifier: MetalVideoRenderer] = [:]
+
+    nonisolated func registerMetalVideoRenderer(_ renderer: MetalVideoRenderer) {
+        metalVideoRenderersLock.withLock {
+            metalVideoRenderers[ObjectIdentifier(renderer)] = renderer
+        }
+        // 이미 코덱이 설정되어 있으면 즉시 메타데이터 전달
+        if let codec {
+            renderer.updateCodecMetadata(codec: codec)
+        }
+    }
+
+    nonisolated func unregisterMetalVideoRenderer(_ renderer: MetalVideoRenderer) {
+        metalVideoRenderersLock.withLock {
+            metalVideoRenderers.removeValue(forKey: ObjectIdentifier(renderer))
+        }
+    }
+
+    /// Metal 비디오 렌더러가 등록되어 있는지 여부
+    private var hasMetalVideoRenderers: Bool {
+        metalVideoRenderersLock.withLock {
+            !metalVideoRenderers.isEmpty
+        }
+    }
+
+    /// 모든 Metal 비디오 렌더러에 CVPixelBuffer를 제출한다.
+    nonisolated private func presentToAllMetalVideoRenderers(_ pixelBuffer: CVPixelBuffer) {
+        metalVideoRenderersLock.withLock {
+            for renderer in metalVideoRenderers.values {
+                renderer.present(pixelBuffer)
+            }
+        }
+    }
+
     // MARK: - Canvas Renderer Management (Metal 직접 렌더링)
 
     private var canvasRenderersLock = NSLock()
@@ -249,6 +286,16 @@ class ProjectionSession: Identifiable {
         try decoder?.prepare(with: .init(codec: codec))
 
         let isTiled = tileCompositor != nil
+
+        // VT 코덱인 경우 Metal 비디오 렌더러에 코덱 메타데이터 전달
+        if !isTiled {
+            metalVideoRenderersLock.withLock {
+                for renderer in metalVideoRenderers.values {
+                    renderer.updateCodecMetadata(codec: codec)
+                }
+            }
+        }
+
         Task { @MainActor in
             events.send(.codecConfigured(isTiledCodec: isTiled))
         }
@@ -377,6 +424,13 @@ extension ProjectionSession: VideoDecoderDelegate {
     func videoDecoder(_ decoder: any VideoDecoder, didDecode frame: DecodedFrame) {
         self.performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
 
+        // Metal 비디오 렌더러가 등록되어 있으면 CVPixelBuffer를 직접 전달
+        if hasMetalVideoRenderers {
+            presentToAllMetalVideoRenderers(frame.pixelBuffer)
+            return
+        }
+
+        // Fallback: AVSampleBufferDisplayLayer 경로
         if let jitterBuffer {
             jitterBuffer.enqueue(pixelBuffer: frame.pixelBuffer, remotePTS: frame.pts.seconds)
         } else {

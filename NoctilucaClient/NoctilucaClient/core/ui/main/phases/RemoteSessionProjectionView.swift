@@ -185,8 +185,16 @@ struct RemoteSessionProjectionView: View {
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
                             .scaleEffect(currentScale)
+                    } else if let renderer = subscription?.metalVideoRenderer {
+                        // Metal 비디오 렌더러 경로 (VT 코덱)
+                        MetalVideoView(renderer: renderer)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .offset(currentOffset)
+                            .frame(width: rect.width, height: rect.height)
+                            .position(x: rect.midX, y: rect.midY)
+                            .scaleEffect(currentScale)
                     } else if let displayLayer = subscription?.displayLayer {
-                        // AVSampleBufferDisplayLayer 경로 (VT 코덱)
+                        // AVSampleBufferDisplayLayer fallback (Metal 불가 시)
                         SampleBufferDisplayView(displayLayer: displayLayer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .offset(currentOffset)

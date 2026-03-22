@@ -12,17 +12,24 @@ import SiriusKitClient
 
 /// 프로젝션 세션에 대한 구독 객체.
 ///
-/// 각 구독자는 자신만의 `AVSampleBufferDisplayLayer`를 소유하며,
-/// `ProjectionSession`은 디코딩된 프레임을 등록된 모든 레이어에 브로드캐스트한다.
-///
+/// VT 코덱(H.264/H.265) 사용 시에는 `metalVideoRenderer`를 통해
+/// CVPixelBuffer를 Metal 셰이더로 직접 렌더링한다.
 /// 타일 코덱(WebP/ZRLE/MJPG) 사용 시에는 `canvasRenderer`를 통해
 /// Metal 캔버스 텍스처를 직접 렌더링한다.
+///
+/// Metal이 불가능한 환경(시뮬레이터 등)에서는 `displayLayer`를 통한
+/// AVSampleBufferDisplayLayer fallback 경로를 사용한다.
 class ProjectionSessionSubscription {
     private static let logger = NoctilucaLogger(category: "ProjectionSessionSubscription")
 
+    /// AVSampleBufferDisplayLayer fallback (Metal 불가 시)
     let displayLayer = AVSampleBufferDisplayLayer()
     let session: ProjectionSession
     private let ticket: RemoteSession.SessionReferenceTicket
+
+    /// VT 코덱용 Metal 비디오 렌더러.
+    /// Metal이 가용하고 VT 코덱(H.264/H.265)일 때 자동으로 생성된다.
+    private(set) var metalVideoRenderer: MetalVideoRenderer?
 
     /// 타일 코덱용 Metal 캔버스 렌더러.
     /// 세션의 코덱이 타일 기반이면 자동으로 생성된다.
@@ -35,12 +42,24 @@ class ProjectionSessionSubscription {
         canvasRenderer != nil
     }
 
+    /// 현재 세션이 Metal 비디오 렌더러를 사용하는지 여부
+    var useMetalVideoRendering: Bool {
+        metalVideoRenderer != nil
+    }
+
     private var isInvalidated = false
 
     init(session: ProjectionSession, ticket: RemoteSession.SessionReferenceTicket) {
         self.session = session
         self.ticket = ticket
-        session.registerDisplayLayer(displayLayer)
+
+        // Metal 비디오 렌더러를 먼저 시도, 실패 시 AVSampleBufferDisplayLayer fallback
+        if tryCreateMetalVideoRenderer() {
+            Self.logger.info("Using MetalVideoRenderer for VT codec rendering")
+        } else {
+            session.registerDisplayLayer(displayLayer)
+            Self.logger.info("Using AVSampleBufferDisplayLayer fallback")
+        }
     }
 
     /// 명시적 리소스 해제. 호출 즉시 display layer/renderer를 해제하고 ticket을 반환한다.
@@ -49,6 +68,10 @@ class ProjectionSessionSubscription {
         isInvalidated = true
 
         session.unregisterDisplayLayer(displayLayer)
+        if let renderer = metalVideoRenderer {
+            session.unregisterMetalVideoRenderer(renderer)
+            metalVideoRenderer = nil
+        }
         if let renderer = canvasRenderer {
             session.unregisterCanvasRenderer(renderer)
             canvasRenderer = nil
@@ -60,6 +83,9 @@ class ProjectionSessionSubscription {
         // safety-net: invalidate() 미호출 시에도 리소스 누수 방지
         if !isInvalidated {
             session.unregisterDisplayLayer(displayLayer)
+            if let renderer = metalVideoRenderer {
+                session.unregisterMetalVideoRenderer(renderer)
+            }
             if let renderer = canvasRenderer {
                 session.unregisterCanvasRenderer(renderer)
             }
@@ -70,17 +96,50 @@ class ProjectionSessionSubscription {
     /// 코덱 재설정 시 호출: 렌더링 경로를 업데이트한다.
     func updateRenderingPath(isTiledCodec: Bool) {
         if isTiledCodec {
+            // 타일 코덱: Metal 비디오 렌더러 제거, 캔버스 렌더러 생성
+            removeMetalVideoRenderer()
             if canvasRenderer == nil {
                 tryCreateCanvasRenderer()
             }
         } else {
-            // VT 코덱으로 전환: 렌더러 제거
-            if let renderer = canvasRenderer {
-                session.unregisterCanvasRenderer(renderer)
-                canvasRenderer = nil
+            // VT 코덱: 캔버스 렌더러 제거, Metal 비디오 렌더러 생성
+            removeCanvasRenderer()
+            if metalVideoRenderer == nil {
+                if !tryCreateMetalVideoRenderer() {
+                    // Metal 불가 시 AVSampleBufferDisplayLayer fallback 등록
+                    session.registerDisplayLayer(displayLayer)
+                }
             }
         }
     }
+
+    // MARK: - Metal Video Renderer
+
+    @discardableResult
+    private func tryCreateMetalVideoRenderer() -> Bool {
+        guard let device = MTLCreateSystemDefaultDevice() else {
+            Self.logger.warning("Metal not available, cannot create video renderer")
+            return false
+        }
+        do {
+            let renderer = try MetalVideoRenderer(device: device)
+            metalVideoRenderer = renderer
+            session.registerMetalVideoRenderer(renderer)
+            return true
+        } catch {
+            Self.logger.error("Failed to create MetalVideoRenderer: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func removeMetalVideoRenderer() {
+        if let renderer = metalVideoRenderer {
+            session.unregisterMetalVideoRenderer(renderer)
+            metalVideoRenderer = nil
+        }
+    }
+
+    // MARK: - Canvas Renderer
 
     private func tryCreateCanvasRenderer() {
         guard let device = MTLCreateSystemDefaultDevice() else {
@@ -93,6 +152,13 @@ class ProjectionSessionSubscription {
             session.registerCanvasRenderer(renderer)
         } catch {
             Self.logger.error("Failed to create canvas renderer: \(error.localizedDescription)")
+        }
+    }
+
+    private func removeCanvasRenderer() {
+        if let renderer = canvasRenderer {
+            session.unregisterCanvasRenderer(renderer)
+            canvasRenderer = nil
         }
     }
 }
