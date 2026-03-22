@@ -290,6 +290,15 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        // Apple Pencil: always absolute coordinates with pressure, regardless of input mode
+        if touch.type == .pencil {
+            let location = locationInContentRect(touch.location(in: self))
+            let pressure = siriusPressure(from: touch)
+            pointer.moveAbsolute(to: location, pressure: pressure)
+            pointer.buttonDown(.left)
+            return
+        }
+
         /*
         // Free zoom + trackpad: block direct touch mouse input
         // Free zoom + touch: allow direct touch (커서 이동 + 클릭)
@@ -321,6 +330,14 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         if touch.type == .indirectPointer {
             let location = locationInContentRect(touch.location(in: self))
             pointer.moveAbsolute(to: location)
+            return
+        }
+
+        // Apple Pencil: always absolute coordinates with pressure
+        if touch.type == .pencil {
+            let location = locationInContentRect(touch.location(in: self))
+            let pressure = siriusPressure(from: touch)
+            pointer.moveAbsolute(to: location, pressure: pressure)
             return
         }
 
@@ -366,6 +383,14 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        // Apple Pencil: release with zero pressure
+        if touch.type == .pencil {
+            let location = locationInContentRect(touch.location(in: self))
+            pointer.moveAbsolute(to: location, pressure: 0)
+            pointer.buttonUp(.left)
+            return
+        }
+
         /*
         guard zoomMode != .free else {
             super.touchesEnded(touches, with: event)
@@ -403,6 +428,14 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             return
         }
 
+        // Apple Pencil: release with zero pressure
+        if touch.type == .pencil {
+            let location = locationInContentRect(touch.location(in: self))
+            pointer.moveAbsolute(to: location, pressure: 0)
+            pointer.buttonUp(.left)
+            return
+        }
+
         guard zoomMode != .free else {
             super.touchesCancelled(touches, with: event)
             return
@@ -421,8 +454,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     // MARK: - UIGestureRecognizerDelegate
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        if touch.type == .indirectPointer {
-            // Hardware mouse touches are handled directly in touches* methods,
+        if touch.type == .indirectPointer || touch.type == .pencil {
+            // Hardware mouse / Apple Pencil touches are handled directly in touches* methods,
             // so block touch-mode and zoom gesture recognizers from receiving them.
             if gestureRecognizer == tapRecognizer ||
                gestureRecognizer == twoFingerTapRecognizer ||
@@ -854,6 +887,13 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         let sensitivity: CGFloat = 3.5
         
         return CGPoint(x: delta.x * scale * sensitivity, y: delta.y * scale * sensitivity)
+    }
+
+    /// UITouch의 force 값을 Sirius 프로토콜 pressure (0~8192)로 변환
+    private func siriusPressure(from touch: UITouch) -> Int32 {
+        guard touch.maximumPossibleForce > 0 else { return 0 }
+        let normalized = touch.force / touch.maximumPossibleForce
+        return Int32(normalized * 8192.0)
     }
 
     private func scaledDelta(_ delta: CGPoint) -> CGPoint {
