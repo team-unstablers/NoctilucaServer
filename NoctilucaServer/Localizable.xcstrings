@@ -104,25 +104,25 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto \"We make your dreams come true,\" we have primarily focused on addressing technical challenges that many clients have been unable to resolve. In candor, we continued to undertake such work because we were uncertain of our long-term direction, and the area in which we were most competent was computing.\n\nHowever, due to the ongoing economic downturn and the resulting changes to our revenue structure, the long-term sustainability of our company has become uncertain. We have accrued delays in salary payments and tax obligations, and our corporate bank account has also been subject to seizure.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you."
+            "value": "Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto \"We make your dreams come true,\" we have primarily focused on addressing technical challenges that many clients have been unable to resolve. Computing was what we did best, so we kept helping people through technology.\n\nHowever, sustaining our company has become difficult amid the prolonged economic downturn.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "こんにちは、私たちは大韓民国京畿道安山市に位置する零細ソフトウェア開発会社 **株式会社チーム・アンステイブラーズ** (team unstablers Inc.) です。\n\n私たちは「皆様の夢を叶えます」というモットーの下、多くのクライアントが達成できなかった技術的難題を主に解決してきました。実は私たちは「自分たちが何をしたいのかわからなくて」、「せめてできるのがコンピュータくらいで」このようなモットーを掲げて人を助ける仕事を続けてきました。\n\nしかし、不況により収益構造にも様々な変動が生じ、会社の持続可能性も不透明になりました。給与や税金も滞り、会社の口座には差し押さえも入るようになりました。\n\nNoctiluca / Siriusはそんな中、愚かな私が一から構想し実現できた数少ないプロジェクトの一つでした。数年近く考えを具体化しながら、初めて皆様にお披露目できるようになったことを誇りに思っています。\n\n私たちはお金持ちになりたいわけではありません。ただ毎日、生存に対する心配なくコンピュータプログラミングをしたいだけなのです。\n\nありがとうございます。"
+            "value": "こんにちは、私たちは大韓民国京畿道安山市に位置する零細ソフトウェア開発会社 **株式会社チーム・アンステイブラーズ** (team unstablers Inc.) です。\n\n私たちは「皆様の夢を叶えます」というモットーの下、多くのクライアントが達成できなかった技術的難題を主に解決してきました。私たちが最も得意とするのがコンピュータだったからこそ、技術で人々を助ける仕事を続けてきました。\n\nしかし、長引く不況の中で会社の存続が難しくなりました。\n\nNoctiluca / Siriusはそんな中、私が一から構想し実現できた数少ないプロジェクトの一つでした。数年近く考えを具体化しながら、初めて皆様にお披露目できるようになったことを誇りに思っています。\n\n私たちはお金持ちになりたいわけではありません。ただ毎日、生存に対する心配なくコンピュータプログラミングをしたいだけなのです。\n\nありがとうございます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "new",
-            "value": "안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \"여러분들의 꿈을 이루어 드립니다\" 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 사실은 저희는 \"우리가 하고 싶은 것이 무엇인지 몰라서\", \"그나마 할 줄 아는 것이 컴퓨터 뿐이어서\" 이런 모토를 내걸고 남을 돕는 일을 계속 해왔습니다.\n\n하지만, 불경기로 인해 수익 구조에도 여러 변동이 생기면서, 저희 회사의 지속 가능 여부도 불투명해졌습니다. 급여와 세금도 밀리고, 회사 통장에는 압류도 들어오게 되었습니다.\n\nNoctiluca / Sirius는 그런 와중에 멍청한 제가 바닥부터 구상해내고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다."
+            "value": "안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \"여러분들의 꿈을 이루어 드립니다\" 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 저희가 가장 잘 하는 것이 컴퓨터였기에, 기술로 사람들을 돕는 일을 계속 해왔습니다.\n\n하지만, 오랜 불경기 속에서 회사의 지속이 어려워졌습니다.\n\nNoctiluca / Sirius는 그런 와중에 제가 바닥부터 구상하고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在\"为您实现梦想\"的座右铭下，主要解决许多客户未能解决的技术难题。事实上，我们之所以以此为座右铭并坚持助人，是因为\"不知道自己想做什么\"，以及\"除了电脑大概什么都不会\"。\n\n但是，由于经济不景气导致收益结构发生变化，公司的可持续性也变得不透明。工资和税金被拖欠，公司账户也遭到了扣押。\n\nNoctiluca / Sirius 是在这种情况下，愚蠢的我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。"
+            "value": "您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在\"为您实现梦想\"的座右铭下，主要解决许多客户未能解决的技术难题。计算机是我们最擅长的领域，因此我们一直坚持用技术帮助他人。\n\n然而，在长期的经济低迷中，公司的维持变得愈发困难。\n\nNoctiluca / Sirius 是在这种情况下，我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。"
           }
         }
       }
