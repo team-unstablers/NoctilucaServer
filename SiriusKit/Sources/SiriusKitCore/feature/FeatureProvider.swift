@@ -7,6 +7,11 @@
 
 import Foundation
 
+public enum ChannelCreationResult {
+    case accepted(Channel)
+    case rejected(code: Int, reason: String)
+}
+
 public protocol FeatureProvider: AnyObject {
     // Returns true if the feature is supported
     func supports(_ feature: SiriusFeature) -> Bool
@@ -17,5 +22,5 @@ public protocol FeatureProvider: AnyObject {
         identifier: ChannelIdentifier,
         direction: ChannelDirection,
         args: [String]
-    ) -> Channel
+    ) async throws -> ChannelCreationResult
 }
