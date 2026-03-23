@@ -75,7 +75,7 @@ struct AuthChallengeSheetView: View {
                                 .tag(method)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                 } else if let method = viewModel.availableMethods.first {
                     Text(method.displayName)
                         .font(.subheadline.weight(.semibold))
