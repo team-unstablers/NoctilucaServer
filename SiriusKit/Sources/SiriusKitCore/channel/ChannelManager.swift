@@ -65,6 +65,11 @@ public actor ChannelManager {
     }
 
     func unregisterChannel(identifier: UUID) {
+        if self.mainChannel?.identifier == identifier {
+            self.mainChannel = nil
+            return
+        }
+
         if let channel = self.channels[identifier] {
             delegate?.channelManager(self, willUnregisterChannel: channel)
         }
@@ -88,6 +93,7 @@ public actor ChannelManager {
         case .success(let stream):
             let mainChannel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
             mainChannel.session = self.session
+            mainChannel.lifecycleDelegate = self
             self.mainChannel = mainChannel
 
             return
@@ -153,6 +159,7 @@ public actor ChannelManager {
             // 프로토콜 상 약속이므로 ChannelOpenTask를 사용할 필요가 없다
             let channel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
             channel.session = self.session
+            channel.lifecycleDelegate = self
 
             self.mainChannel = channel
             return
@@ -196,6 +203,38 @@ public actor ChannelManager {
             success = true
 
             return true
+        }
+    }
+
+    package func teardownAllChannels() async {
+        let mainChannel = self.mainChannel
+        let channels = Array(self.channels.values)
+
+        self.mainChannel = nil
+        self.channels.removeAll()
+
+        for channel in channels {
+            delegate?.channelManager(self, willUnregisterChannel: channel)
+            channel.lifecycleDelegate = nil
+        }
+        mainChannel?.lifecycleDelegate = nil
+
+        for channel in channels {
+            do {
+                try await channel.close()
+            } catch {
+                logger.warning("Failed to close channel \(channel.identifier) during teardown: \(error)")
+            }
+        }
+
+        guard let mainChannel else {
+            return
+        }
+
+        do {
+            try await mainChannel.close()
+        } catch {
+            logger.warning("Failed to close main channel \(mainChannel.identifier) during teardown: \(error)")
         }
     }
 

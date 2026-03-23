@@ -66,6 +66,8 @@ public class SiriusClient: SiriusSession {
     }
 
     public func shutdown() async {
+        shouldAcceptChannelCreation = false
+        await channelManager.teardownAllChannels()
         await clientTransport.disconnect()
     }
 }

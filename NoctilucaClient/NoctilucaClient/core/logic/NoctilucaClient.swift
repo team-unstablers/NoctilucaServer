@@ -275,7 +275,7 @@ class NoctilucaClient: ObservableObject {
     }
     
     private func mainChannelEventLoop() async {
-        guard mainChannel != nil else {
+        guard let mainChannel else {
             logger.error("mainChannel is not initialized.")
             return
         }
@@ -367,15 +367,19 @@ class NoctilucaClient: ObservableObject {
             }
 
             Task {
-                try? await self.mainChannel.sendPing()
+                guard let mainChannel = self.mainChannel else {
+                    continuation.finish()
+                    return
+                }
+
+                try? await mainChannel.sendPing()
             }
         }
 
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask {
                 var iterator = stream.makeAsyncIterator()
-                _ = await iterator.next()
-                return true
+                return await iterator.next() != nil
             }
 
             group.addTask {
@@ -400,6 +404,15 @@ class NoctilucaClient: ObservableObject {
             logger.error("assertPhase(): Expected phase \(expected), but current phase is \(self.phase)")
             throw NoctilucaClientError.invalidPhase
         }
+    }
+
+    func requireMainChannel() throws -> MainChannel {
+        guard let mainChannel else {
+            logger.error("mainChannel is not initialized.")
+            throw NoctilucaClientError.invalidPhase
+        }
+
+        return mainChannel
     }
     
     /// Phase 전환을 시도한다.
@@ -470,6 +483,8 @@ class NoctilucaClient: ObservableObject {
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
         self.pingTask?.cancel()
+
+        self.mainChannel = nil
 
         await self.session.shutdown()
 
