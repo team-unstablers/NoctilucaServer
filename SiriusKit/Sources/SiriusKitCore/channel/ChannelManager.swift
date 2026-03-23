@@ -28,7 +28,7 @@ public actor ChannelManager {
     private let logger = SiriusLogger(category: "ChannelManager")
     private var eventLogger: SiriusEventLogger?
 
-    internal let session: (any SiriusSession)
+    internal unowned let session: (any SiriusSession)
     private let channelOpenTimeout: TimeInterval
 
     private(set) public var mainChannel: MainChannel?

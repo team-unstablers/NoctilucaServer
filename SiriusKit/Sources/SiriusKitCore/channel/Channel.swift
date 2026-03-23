@@ -51,6 +51,7 @@ open class Channel {
     private var _activationLock = NSLock()
     private var _activationContinuation: CheckedContinuation<Void, Never>?
     private var _isActivated = false
+    private var _isClosing = false
 
     /// 이 채널이 프레임 처리를 시작하기 전 명시적인 `activate()` 호출을 필요로 하는지 여부.
     /// 서브클래스에서 `true`를 반환하면, `activate()`가 호출될 때까지 이벤트 루프가 대기합니다.
@@ -103,7 +104,17 @@ open class Channel {
     }
 
     public func close() async throws {
+        releaseActivationWaitIfNeeded()
         try await self.stream.close()
+    }
+
+    /// close() 시 activation 대기 중인 이벤트 루프를 강제로 풀어줍니다.
+    private func releaseActivationWaitIfNeeded() {
+        _activationLock.withLock {
+            _isClosing = true
+            _activationContinuation?.resume()
+            _activationContinuation = nil
+        }
     }
 
     public func send(frame: consuming SiriusFrame) async throws {
@@ -138,6 +149,11 @@ open class Channel {
         if requiresExplicitActivation {
             logger.debug("[\(self.identifier)] streamEventLoop(): waiting for explicit activation")
             await waitForActivation()
+
+            if _isClosing {
+                logger.debug("[\(self.identifier)] streamEventLoop(): channel is closing, aborting event loop")
+                return
+            }
         }
 
         for await event in self.stream.events {

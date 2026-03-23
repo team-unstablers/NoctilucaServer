@@ -98,7 +98,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
 
         // 연결 종료
         do {
-            try await connection.shutdown()
+            await connection.shutdown()
         } catch {
             Self.logger.warning("MsQuic connection shutdown timed out; forcing close. error=\(error)")
         }

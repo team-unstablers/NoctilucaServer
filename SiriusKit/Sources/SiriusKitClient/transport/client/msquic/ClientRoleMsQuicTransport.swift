@@ -8,6 +8,8 @@
 import Foundation
 import Combine
 
+import Atomics
+
 import Network
 import Security
 
@@ -42,7 +44,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     private var connection: QuicConnection?
 
     private var streams: [StreamIdentifier: ClientRoleMsQuicStream] = [:]
-    private var isFinalized: Bool = false
+    private var isFinalized = ManagedAtomic<Bool>(false)
     
     private var addressMonitorCancellation: AnyCancellable?
 
@@ -168,11 +170,9 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     }
 
     func disconnect() async {
-        guard !isFinalized else {
+        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .relaxed).original == false else {
             return
         }
-
-        self.isFinalized = true
 
         // 모든 스트림 종료
         let snapshot = Array(self.streams.values)
