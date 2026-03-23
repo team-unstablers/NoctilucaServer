@@ -9,6 +9,8 @@ import Foundation
 import Combine
 import Security
 
+import Atomics
+
 import SiriusKitClient
 
 enum NoctilucaClientError: LocalizedError {
@@ -190,13 +192,19 @@ class NoctilucaClient: ObservableObject {
     // 디시전 UI를 띄우기 전에 접속 종료 처리되는 것을 막기 위한 hacky한 플래그
     private(set) var isValidatingServerIdentity: Bool = false
     
+    private var isFinalized = ManagedAtomic<Bool>(false)
+    
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {
         didSet {
-            Task {
-                await MainActor.run() {
-                    self.uiEvents.send(.phaseChanged(phase))
-                }
+            guard phase != oldValue else {
+                return
+            }
+            
+            let uiEvents = self.uiEvents
+            let phase = self.phase
+            Task { @MainActor in
+                uiEvents.send(.phaseChanged(phase))
             }
         }
     }
@@ -396,6 +404,7 @@ class NoctilucaClient: ObservableObject {
 
             return result
         }
+        return true
     }
 
     @inline(__always) // 이게 효과가 있을지?
@@ -463,7 +472,7 @@ class NoctilucaClient: ObservableObject {
     }
 
     func close() async {
-        guard self.phase != .closed else {
+        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiring).original == false else {
             return
         }
 
@@ -495,8 +504,8 @@ class NoctilucaClient: ObservableObject {
 
 extension NoctilucaClient: SiriusClientDelegate {
     func siriusClientDidCloseTransport(_ client: SiriusKitClient.SiriusClient) {
-        Task {
-            await self.close()
+        Task { [weak self] in
+            await self?.close()
         }
     }
 
@@ -509,19 +518,19 @@ extension NoctilucaClient: SiriusClientDelegate {
             await self.pingLoop()
         }
 
-        Task.detached {
-            try await self.sendClientHello()
+        Task.detached { [weak self] in
+            try await self?.sendClientHello()
         }
     }
     
     func siriusClient(_ client: SiriusClient, didEncounterError error: any Error) {
-        Task.detached {
+        Task.detached { [weak self] in
             if let error = error as? ClientTransportError {
-                self.handleTransportError(error)
+                self?.handleTransportError(error)
                 return
             }
             
-            self.handleError(error)
+            self?.handleError(error)
         }
     }
     
@@ -534,8 +543,8 @@ extension NoctilucaClient: SiriusClientDelegate {
         }
         
         
-        Task { @MainActor in
-            self.uiEvents.send(.errorOccurred(error))
+        Task { @MainActor [weak self] in
+            self?.uiEvents.send(.errorOccurred(error))
         }
     }
     
@@ -547,14 +556,14 @@ extension NoctilucaClient: SiriusClientDelegate {
 
 extension NoctilucaClient: ChannelManagerDelegate {
     func channelManager(_ manager: ChannelManager, didRegisterChannel channel: Channel, for feature: SiriusFeature) {
-        Task { @MainActor in
-            self.uiEvents.send(.channelCreated(feature, channel))
+        Task { @MainActor [weak self] in
+            self?.uiEvents.send(.channelCreated(feature, channel))
         }
     }
     
     func channelManager(_ manager: ChannelManager, willUnregisterChannel channel: Channel) {
-        Task { @MainActor in
-            self.uiEvents.send(.channelClosed(channel.identifier))
+        Task { @MainActor [weak self] in
+            self?.uiEvents.send(.channelClosed(channel.identifier))
         }
     }
 }
