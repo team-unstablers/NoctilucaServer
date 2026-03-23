@@ -51,7 +51,7 @@ class HIDIOGCKeyboard: HIDIOVirtualDevice {
         }
     }
     
-    private var controller: HIDIOController?
+    private weak var controller: HIDIOController?
 
     init() {
 

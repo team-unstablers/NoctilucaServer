@@ -492,6 +492,7 @@ class NoctilucaClient: ObservableObject {
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
         self.pingTask?.cancel()
+        self.pongHandler = nil
 
         self.mainChannel = nil
 
@@ -511,11 +512,11 @@ extension NoctilucaClient: SiriusClientDelegate {
 
     func siriusClient(_ client: SiriusClient, didCreateMainChannel mainChannel: MainChannel) {
         self.mainChannel = mainChannel
-        self.eventLoopTask = Task.detached(priority: .userInitiated) {
-            await self.mainChannelEventLoop()
+        self.eventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.mainChannelEventLoop()
         }
-        self.pingTask = Task.detached(priority: .userInitiated) {
-            await self.pingLoop()
+        self.pingTask = Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.pingLoop()
         }
 
         Task.detached { [weak self] in

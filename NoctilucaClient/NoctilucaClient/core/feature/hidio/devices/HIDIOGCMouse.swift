@@ -62,7 +62,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
 
     private var cancellables: Set<AnyCancellable> = []
     
-    private var controller: HIDIOController?
+    private weak var controller: HIDIOController?
 
 #if os(macOS)
     weak var window: NSWindow?

@@ -79,6 +79,23 @@ private struct HIDIOUIKitMouseCaptureView: UIViewRepresentable {
         uiView.onFreeDragChanged = onFreeDragChanged
         uiView.onFreeDragEnded = onFreeDragEnded
     }
+
+    static func dismantleUIView(_ uiView: MouseInputCaptureView, coordinator: ()) {
+        uiView.teardown()
+    }
+}
+
+/// CADisplayLink의 target strong retain으로 인한 retain cycle을 방지하기 위한 프록시.
+private final class DisplayLinkProxy {
+    var handler: ((CADisplayLink) -> Void)?
+
+    init(handler: @escaping (CADisplayLink) -> Void) {
+        self.handler = handler
+    }
+
+    @objc func tick(_ link: CADisplayLink) {
+        handler?(link)
+    }
 }
 
 private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
@@ -119,6 +136,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     // Unified Inertia Engine
     private var inertiaDisplayLink: CADisplayLink?
+    private var inertiaDisplayLinkProxy: DisplayLinkProxy?
     private var inertiaLastTimestamp: CFTimeInterval?
 
     private var moveInertiaVelocity: CGPoint = .zero
@@ -138,7 +156,15 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
 
     deinit {
-        stopInertiaLoop()
+        teardown()
+    }
+
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+
+        if newWindow == nil {
+            teardown()
+        }
     }
 
     override func layoutSubviews() {
@@ -171,6 +197,15 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         self.zoomScale = zoomScale
         self.zoomOffset = zoomOffset
         pointer.updateGeometry(rect.size)
+    }
+
+    func teardown() {
+        stopInertiaLoop()
+
+        onPinchChanged = nil
+        onPinchEnded = nil
+        onFreeDragChanged = nil
+        onFreeDragEnded = nil
     }
 
     /// 화면 터치 좌표 → 콘텐츠 로컬 좌표 변환 (줌 역변환 + 클램핑)
@@ -771,7 +806,11 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private func ensureInertiaLoop() {
         if inertiaDisplayLink == nil {
             inertiaLastTimestamp = nil
-            let link = CADisplayLink(target: self, selector: #selector(handleInertiaTick(_:)))
+            let proxy = DisplayLinkProxy { [weak self] link in
+                self?.handleInertiaTick(link)
+            }
+            inertiaDisplayLinkProxy = proxy
+            let link = CADisplayLink(target: proxy, selector: #selector(DisplayLinkProxy.tick(_:)))
             link.add(to: .main, forMode: .common)
             inertiaDisplayLink = link
         }
@@ -781,6 +820,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private func stopInertiaLoop() {
         inertiaDisplayLink?.invalidate()
         inertiaDisplayLink = nil
+        inertiaDisplayLinkProxy = nil
         inertiaLastTimestamp = nil
         moveInertiaVelocity = .zero
         scrollInertiaVelocity = .zero
@@ -793,7 +833,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
     }
 
-    @objc private func handleInertiaTick(_ link: CADisplayLink) {
+    private func handleInertiaTick(_ link: CADisplayLink) {
         let now = link.timestamp
         let last = inertiaLastTimestamp ?? now
         let dt = max(0.0, now - last)
