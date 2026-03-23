@@ -25,7 +25,11 @@ class HIDIOChannel: Channel {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
-        
+
         // 클라이언트는 HIDIO 프레임을 수신하지 않는다
+    }
+
+    override func handleStreamClose() {
+        controller.shutdown()
     }
 }

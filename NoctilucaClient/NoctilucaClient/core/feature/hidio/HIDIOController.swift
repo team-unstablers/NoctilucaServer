@@ -55,21 +55,27 @@ class HIDIOController {
     
     init(channel: HIDIOChannel) {
         self.channel = Weak(channel)
-        
+
         var continuation: AsyncStream<HIDEvent>.Continuation!
         self.eventStream = AsyncStream<HIDEvent> { cont in
             continuation = cont
         }
-        
+
         self.eventStreamContinuation = continuation
-        
-        self.publisherTask = Task {
-            await self.publisherTaskMain()
+
+        self.publisherTask = Task { [weak self] in
+            await self?.publisherTaskMain()
         }
     }
-    
+
     deinit {
-        self.publisherTask?.cancel()
+        shutdown()
+    }
+
+    func shutdown() {
+        eventStreamContinuation.finish()
+        publisherTask?.cancel()
+        publisherTask = nil
     }
     
     /// 다음 request ID를 생성합니다.
