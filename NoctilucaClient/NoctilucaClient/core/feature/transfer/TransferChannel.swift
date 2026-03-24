@@ -75,6 +75,10 @@ extension TransferChannelArgumentsSet {
 
         return TransferChannelArgumentsSet(purpose: purpose, direction: direction, args: additionalArgs)
     }
+
+    func serialize() -> [String] {
+        return [purpose.rawValue, direction.rawValue] + args
+    }
 }
 
 // MARK: - TransferChannel
