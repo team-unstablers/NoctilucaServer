@@ -15,7 +15,7 @@ class RemoteSession: ObservableObject {
     private let logger = NoctilucaLogger(category: "RemoteSession")
     private var eventSubscription: AnyCancellable? = nil
     
-    var parent: Weak<SessionWindowViewModel>?
+    weak var parent: SessionWindowViewModel?
 
     private(set) var client: NoctilucaClient
 
@@ -158,14 +158,14 @@ class RemoteSession: ObservableObject {
                 } catch {
                     logger.error("Failed to handle identity validation request: \(error.localizedDescription)")
                     self.errorEvents.send(.connectionFailed(error))
-                    await self.parent?._ref?.stopSession(force: true)
+                    await self.parent?.stopSession(force: true)
                 }
             }
         }
     }
 
     func handleIdentityValidationRequest(identity: ServerIdentity) async throws {
-        guard let parent = self.parent?.ref else {
+        guard let parent = self.parent else {
             return
         }
         

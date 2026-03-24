@@ -75,7 +75,7 @@ extension HIDIOSession {
              */
 
             // scene이 active가 아니면 싱글톤 키보드 connect 스킵 (나중에 activateSession()에서 연결)
-            let isSceneActive = _session?.rootViewController?.ref.view.window?.windowScene?.activationState == .foregroundActive
+            let isSceneActive = _session?.rootViewController?.view.window?.windowScene?.activationState == .foregroundActive
 
             if isSceneActive {
                 controller.connect(defaultKeyboard)
@@ -138,7 +138,7 @@ extension HIDIOSession {
             controller.connect(defaultKeyboard)
             controller.connect(defaultSubMouse)
             
-            self._session?.rootViewController?.ref.isPointerLocked = false
+            self._session?.rootViewController?.isPointerLocked = false
 
             if (mode == .shared) {
                 /*
@@ -155,7 +155,7 @@ extension HIDIOSession {
 
                 self.currentMouse = mouse
                 
-                self._session?.rootViewController?.ref.isPointerLocked = true
+                self._session?.rootViewController?.isPointerLocked = true
             }
                */
 

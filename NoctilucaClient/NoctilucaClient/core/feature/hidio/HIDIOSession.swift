@@ -118,7 +118,7 @@ class HIDIOSession: ObservableObject {
         (driver as! IOSDriver).defaultSubMouse
     }
 
-    var rootViewController: Weak<RootViewController>? = nil
+    weak var rootViewController: RootViewController? = nil
 #endif
 #if os(macOS)
     weak var window: NSWindow? = nil

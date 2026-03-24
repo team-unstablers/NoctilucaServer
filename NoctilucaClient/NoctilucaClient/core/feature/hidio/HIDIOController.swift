@@ -39,7 +39,7 @@ class HIDIOController {
     private var invertHorizontalScroll: Bool = false
     private var mouseScrollMultiplier: Double = 1.0
 
-    private let channel: Weak<HIDIOChannel>
+    private unowned let channel: HIDIOChannel
     private var devices: [String: HIDIOVirtualDevice] = [:]
 
     private let eventStream: AsyncStream<HIDEvent>
@@ -54,7 +54,7 @@ class HIDIOController {
     private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
     
     init(channel: HIDIOChannel) {
-        self.channel = Weak(channel)
+        self.channel = channel
 
         var continuation: AsyncStream<HIDEvent>.Continuation!
         self.eventStream = AsyncStream<HIDEvent> { cont in
@@ -94,7 +94,7 @@ class HIDIOController {
             )
             
             do {
-                try await channel.ref.send(opcode: .hidioPacket, message: consume packet)
+                try await channel.send(opcode: .hidioPacket, message: consume packet)
             } catch {
                 logger.error("Failed to send HID event batch: \(error)")
             }

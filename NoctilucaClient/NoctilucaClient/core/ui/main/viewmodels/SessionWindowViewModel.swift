@@ -17,10 +17,10 @@ import SiriusKitClient
 @MainActor
 class SessionWindowViewModel: ObservableObject {
 #if os(iOS)
-    var rootViewController: Weak<RootViewController>? = nil
+    weak var rootViewController: RootViewController? = nil
 #endif
 #if os(macOS)
-    var mainWindowController: Weak<AppKitMainWindowController>? = nil
+    weak var mainWindowController: AppKitMainWindowController? = nil
 #endif
     
     @Published
@@ -116,7 +116,7 @@ class SessionWindowViewModel: ObservableObject {
         }
 
 #if os(macOS)
-        if let window = mainWindowController?.ref.window {
+        if let window = mainWindowController?.window {
             if endpoint.address.isLoopbackAddress {
                 var shouldContinue = false
                 let alert = NOCAlert()
@@ -413,7 +413,7 @@ class SessionWindowViewModel: ObservableObject {
 
     private func attachRemoteSession(_ session: RemoteSession) {
         remoteSession = session
-        session.parent = Weak(self)
+        session.parent = self
 
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
