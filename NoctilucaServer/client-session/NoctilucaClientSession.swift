@@ -105,6 +105,8 @@ class NoctilucaClientSession: Identifiable {
     private var phaseShiftAssertionTask: Task<Void, Never>?
     private var didNotifyClose: Bool = false
     
+    private var userActivityAssertion: UserActivityAssertion?
+    
     init(session: ClientSession, server: ServerContext) {
         self.session = session
         self.server = server
@@ -120,6 +122,8 @@ class NoctilucaClientSession: Identifiable {
             return
         }
         
+        UserActivityAssertion.wakeup()
+        self.userActivityAssertion = UserActivityAssertion.acquire()
         self.remoteAddress = session.remoteEndpoint?.description ?? "(unknown)"
         
         // 우선 5초 이내에 client hello를 받아야 한다
@@ -280,6 +284,7 @@ class NoctilucaClientSession: Identifiable {
         self.eventLoopTask?.cancel()
 
         await self.session.close()
+        self.userActivityAssertion = nil
     }
 
     private func notifyCloseIfNeeded() {
