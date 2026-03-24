@@ -5,12 +5,20 @@
 //  Created by Gyuhwan Park on 3/23/26.
 //
 
+import Foundation
+
 import SiriusKitClient
 
 class ClipboardChannel: Channel {
     let logger = NoctilucaLogger(category: "ClipboardChannel")
 
     private var remoteSubscription: ClipboardSubscription? = nil
+
+    /// 마지막으로 보낸 ClipboardEvent의 omitted 데이터 스냅샷 (transfer 요청 응답용)
+    private var lastSentSnapshot: ClipboardDataSnapshot? = nil
+
+    /// 현재 진행 중인 resolve 작업 (취소 가능)
+    private var resolveTask: Task<Void, Never>? = nil
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
@@ -49,6 +57,39 @@ class ClipboardChannel: Channel {
 
         default:
             logger.warning("Received unknown opcode: \(frame.opcode)")
+        }
+    }
+
+    // MARK: - Snapshot Management
+
+    /// ClipboardSubscription에서 이벤트 발송 시 omitted 데이터 스냅샷을 저장합니다.
+    func storeSnapshot(_ snapshot: ClipboardDataSnapshot) {
+        self.lastSentSnapshot = snapshot
+    }
+
+    // MARK: - Transfer Serving
+
+    /// FeatureProvider로부터 호출됨: 상대방이 clipboard-data TransferChannel을 열었을 때
+    func serveTransferData(_ transferChannel: TransferChannel, itemIndex: Int, representationIndex: Int) {
+        Task {
+            guard let data = lastSentSnapshot?.get(itemIndex: itemIndex, reprIndex: representationIndex) else {
+                logger.warning("No snapshot data for item=\(itemIndex), repr=\(representationIndex)")
+                try? await transferChannel.close()
+                return
+            }
+
+            do {
+                try await transferChannel.sendStartNotification(TransferStartNotification(
+                    name: "clipboard-data",
+                    totalSize: UInt64(data.count),
+                    contentType: "application/octet-stream",
+                    description: "Omitted clipboard data (item=\(itemIndex), repr=\(representationIndex))",
+                    sha256sum: Data()
+                ))
+                try await transferChannel.write(data)
+            } catch {
+                logger.error("Failed to serve clipboard transfer: \(error)")
+            }
         }
     }
 
@@ -148,81 +189,78 @@ class ClipboardChannel: Channel {
             return
         }
          */
-        
-        // omitted 된 항목은 resolve한다
-        var resolvedItems: [ClipboardItem] = []
-        
-        for (itemIndex, item) in event.items.enumerated() {
-            var resolvedRepresentations: [ClipboardData] = []
-            
-            // TODO: 병렬 처리
-            // TODO: handleClipboardEvent 처리 중에 또 다른 handleClipboardEvent가 오면 resolve를 취소해야 함
-            for (reprIndex, representation) in item.representations.enumerated() {
-                if representation.flags.contains(.omitted) {
-                    guard let client = clientSession else {
-                        return
+
+        // 진행 중인 resolve 취소
+        resolveTask?.cancel()
+
+        resolveTask = Task { [weak self] in
+            guard let self = self else { return }
+
+            var resolvedItems: [ClipboardItem] = []
+
+            for (itemIndex, item) in event.items.enumerated() {
+                var resolvedRepresentations: [ClipboardData] = []
+
+                for (reprIndex, representation) in item.representations.enumerated() {
+                    guard !Task.isCancelled else { return }
+
+                    if representation.flags.contains(.omitted) {
+                        if let data = try? await self.resolveOmittedData(
+                            itemIndex: itemIndex, reprIndex: reprIndex
+                        ) {
+                            resolvedRepresentations.append(ClipboardData(
+                                contentType: representation.contentType,
+                                size: UInt64(data.count),
+                                data: data,
+                                flags: []
+                            ))
+                        } else {
+                            self.logger.warning("Failed to resolve omitted data (item=\(itemIndex), repr=\(reprIndex))")
+                        }
+                    } else if representation.data != nil {
+                        resolvedRepresentations.append(representation)
                     }
-                    
-                    let argsSet = TransferChannelArgumentsSet(
-                        purpose: .clipboardData,
-                        direction: .download,
-                        args: [
-                            String(itemIndex),
-                            String(reprIndex)
-                        ]
-                    )
-                    guard let channel = client.channelManager.openChannel(
-                        for: .transfer, identifier: ChannelIdentifier(), args: argsSet.serialize()
-                    ) as? TransferChannel else {
-                        continue
-                    }
-                    
-                    // XXX: 생각해보니 이 알림을 받는 방법이 없네
-                    let metadata: TransferStartNotification = ...
-                    
-                    var data = Data()
-                    // TODO: reserve capacity
-                    
-                    // TODO: channel이 중간에 닫히면 어떻게 해?
-                    for await dataBlock in channel.dataStream {
-                        data += dataBlock
-                    }
-                    
-                    // omitted 처리된 항목은 별도 요청으로 데이터를 받아온다
-                    if let data = try await requestFullData(for: representation) {
-                        resolvedRepresentations.append(ClipboardData(
-                            contentType: representation.contentType,
-                            size: UInt64(data.count),
-                            data: data,
-                            flags: []
-                        ))
-                    } else {
-                        logger.warning("Failed to resolve omitted clipboard data for contentType=\(representation.contentType), skipping this representation")
-                    }
-                } else if let data = representation.data {
-                    // 이미 데이터가 포함된 항목은 그대로 사용
-                    resolvedRepresentations.append(representation)
+                }
+
+                if !resolvedRepresentations.isEmpty {
+                    resolvedItems.append(ClipboardItem(representations: resolvedRepresentations))
                 }
             }
-            
-            if !resolvedRepresentations.isEmpty {
-                resolvedItems.append(ClipboardItem(representations: resolvedRepresentations))
-            }
+
+            guard !Task.isCancelled, !resolvedItems.isEmpty else { return }
+
+            self.logger.info("Applying remote clipboard event (\(resolvedItems.count) items)")
+            await ClipboardManager.shared.set(items: resolvedItems)
+        }
+    }
+
+    // MARK: - Omitted Data Resolve
+
+    private func resolveOmittedData(itemIndex: Int, reprIndex: Int) async throws -> Data? {
+        guard let session = self.clientSession else { return nil }
+
+        let argsSet = TransferChannelArgumentsSet(
+            purpose: .clipboardData,
+            direction: .download,
+            args: [String(itemIndex), String(reprIndex)]
+        )
+
+        guard let channel = try await session.channelManager.openChannel(
+            for: .transfer,
+            identifier: ChannelIdentifier(),
+            args: argsSet.serialize()
+        ) as? TransferChannel else {
+            return nil
         }
 
-        /*
-        // omitted가 아닌 항목만 필터링하여 적용
-        let filteredItems = event.items.map { item in
-            ClipboardItem(representations: item.representations.filter {
-                !$0.flags.contains(.omitted) && $0.data != nil
-            })
-        }.filter { !$0.representations.isEmpty }
-         */
+        guard let dataStream = channel.dataStream else { return nil }
 
-        guard !resolvedItems.isEmpty else { return }
+        var data = Data()
+        for await chunk in dataStream {
+            data += chunk
+        }
 
-        logger.info("Applying remote clipboard event (\(filteredItems.count) items)")
-        await ClipboardManager.shared.set(items: filteredItems)
+        return data.isEmpty ? nil : data
     }
 
     // MARK: - Response Handlers (클라이언트 → 서버 요청의 응답, 현재 미사용)
@@ -242,24 +280,27 @@ class ClipboardChannel: Channel {
     // MARK: - Stream Lifecycle
 
     override func handleStreamClose() {
+        resolveTask?.cancel()
         if let subscription = remoteSubscription {
             Task { @MainActor in
                 subscription.destroy()
             }
             remoteSubscription = nil
         }
+        lastSentSnapshot = nil
         super.handleStreamClose()
     }
 
     override func handleStreamError(error: any Error) {
         logger.error("ClipboardChannel stream error: \(error)")
+        resolveTask?.cancel()
         if let subscription = remoteSubscription {
             Task { @MainActor in
                 subscription.destroy()
             }
             remoteSubscription = nil
         }
+        lastSentSnapshot = nil
         super.handleStreamError(error: error)
     }
 }
-

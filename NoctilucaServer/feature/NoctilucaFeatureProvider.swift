@@ -8,6 +8,8 @@
 import SiriusKit
 
 class NoctilucaFeatureProvider: FeatureProvider {
+    private weak var clipboardChannel: ClipboardChannel?
+
     func supportedFeatures() -> [SiriusFeature] {
         return [
             .hidio,
@@ -52,15 +54,25 @@ class NoctilucaFeatureProvider: FeatureProvider {
             return .accepted(ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction))
             
         case .transfer:
-            return try await TransferChannel.createIfAccepts(
+            let result = try await TransferChannel.createIfAccepts(
                 streamHolder,
                 identifier: identifier,
                 direction: direction,
                 args: args
             )
 
+            if case .accepted(let channel as TransferChannel) = result,
+               channel.shouldSend(),
+               case .clipboardData(let itemIdx, let reprIdx) = channel.task {
+                clipboardChannel?.serveTransferData(channel, itemIndex: itemIdx, representationIndex: reprIdx)
+            }
+
+            return result
+
         case .clipboard:
-            return .accepted(ClipboardChannel(using: streamHolder, identifier: identifier, direction: direction))
+            let channel = ClipboardChannel(using: streamHolder, identifier: identifier, direction: direction)
+            self.clipboardChannel = channel
+            return .accepted(channel)
 
         default:
             fatalError("Unsupported feature: \(feature)")
