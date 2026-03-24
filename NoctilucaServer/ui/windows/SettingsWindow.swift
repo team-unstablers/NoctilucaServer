@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Inject
 
 struct SettingsWindow: View {
     enum SettingsTab: Hashable {
@@ -13,11 +14,15 @@ struct SettingsWindow: View {
         case projection
         case appProjection
         case security
+        case transfer
         case misc
         case plugins
         case about
     }
     
+    @ObserveInjection
+    var inject
+
     @EnvironmentObject
     private var settingsStore: SettingsStore
 
@@ -29,14 +34,16 @@ struct SettingsWindow: View {
             List(selection: $selectedTab) {
                 Label(String(localized: "settings.tab.general", defaultValue: "일반"), systemImage: "gearshape")
                     .tag(SettingsTab.general)
+                Label(String(localized: "settings.tab.security", defaultValue: "보안"), systemImage: "lock")
+                    .tag(SettingsTab.security)
                 Label(String(localized: "settings.tab.projection", defaultValue: "프로젝션"), systemImage: "rectangle.on.rectangle")
                     .tag(SettingsTab.projection)
                 /*
                 Label(String(localized: "settings.tab.app_projection", defaultValue: "앱 프로젝션"), systemImage: "app")
                     .tag(SettingsTab.appProjection)
                  */
-                Label(String(localized: "settings.tab.security", defaultValue: "보안"), systemImage: "lock")
-                    .tag(SettingsTab.security)
+                Label(String(localized: "settings.tab.transfer", defaultValue: "데이터 전송"), systemImage: "arrow.up.arrow.down")
+                    .tag(SettingsTab.transfer)
                 Label(String(localized: "settings.tab.misc", defaultValue: "기타"), systemImage: "ellipsis.circle")
                     .tag(SettingsTab.misc)
                 Label(String(localized: "settings.tab.plugins", defaultValue: "플러그인"), systemImage: "puzzlepiece.extension")
@@ -54,6 +61,8 @@ struct SettingsWindow: View {
                 EmptyView()
             case .security:
                 SecuritySettingsTab(settings: $settingsStore.settings)
+            case .transfer:
+                TransferSettingsTab(settings: $settingsStore.settings)
             case .misc:
                 MiscSettingsTab(settings: $settingsStore.settings)
             case .plugins:
@@ -66,6 +75,7 @@ struct SettingsWindow: View {
         .toolbar(removing: .sidebarToggle)
         .frame(minWidth: 640)
         .navigationSubtitle(String(localized: "settings.title", defaultValue: "설정"))
+        .enableInjection()
     }
 }
 

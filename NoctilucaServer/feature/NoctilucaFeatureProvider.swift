@@ -12,6 +12,8 @@ class NoctilucaFeatureProvider: FeatureProvider {
         return [
             .hidio,
             .projection,
+            .transfer,
+            .clipboard,
         ]
     }
     
@@ -24,6 +26,12 @@ class NoctilucaFeatureProvider: FeatureProvider {
         case .projectionData:
             return true
             
+        case .transfer:
+            return true
+
+        case .clipboard:
+            return true
+
         default:
             return false
         }
@@ -33,16 +41,27 @@ class NoctilucaFeatureProvider: FeatureProvider {
                        using streamHolder: SiriusKit.StreamHolder,
                        identifier: SiriusKit.ChannelIdentifier,
                        direction: SiriusKit.ChannelDirection,
-                       args: [String]) -> SiriusKit.Channel {
+                       args: [String]) async throws -> ChannelCreationResult {
         
         switch feature {
         case .hidio:
-            return HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction))
         case .projection:
-            return ProjectionChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(ProjectionChannel(using: streamHolder, identifier: identifier, direction: direction))
         case .projectionData:
-            return ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction))
             
+        case .transfer:
+            return try await TransferChannel.createIfAccepts(
+                streamHolder,
+                identifier: identifier,
+                direction: direction,
+                args: args
+            )
+
+        case .clipboard:
+            return .accepted(ClipboardChannel(using: streamHolder, identifier: identifier, direction: direction))
+
         default:
             fatalError("Unsupported feature: \(feature)")
         }
