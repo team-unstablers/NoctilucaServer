@@ -10,6 +10,7 @@ import Foundation
 import Cocoa
 
 import SiriusKit
+import UniformTypeIdentifiers
 
 // MARK: - MIME <-> PasteboardType Mapping
 
@@ -81,6 +82,7 @@ struct ClipboardDataSnapshot {
 struct ClipboardSnapshot {
     let items: [ClipboardItem]
     let omittedData: ClipboardDataSnapshot
+    let fileTransferData: FileTransferSnapshot
 }
 
 // MARK: - ClipboardManager
@@ -116,7 +118,9 @@ class ClipboardManager {
                 }
 
                 let mime = ClipboardMIMEMapping.mimeType(for: type)
+#if DEBUG
                 logger.info("[DUMP] type: \(type.rawValue) => mime: \(mime), size: \(data.count) bytes")
+#endif
 
                 guard shouldInclude(contentType: mime, settings: settings) else {
                     continue
@@ -153,16 +157,39 @@ class ClipboardManager {
     func currentWithSnapshot() -> ClipboardSnapshot {
         let pasteboard = NSPasteboard.general
         guard let pasteboardItems = pasteboard.pasteboardItems else {
-            return ClipboardSnapshot(items: [], omittedData: ClipboardDataSnapshot())
+            return ClipboardSnapshot(items: [], omittedData: ClipboardDataSnapshot(), fileTransferData: FileTransferSnapshot())
         }
 
         let settings = SettingsStore.shared.settings.clipboard
 
         var items: [ClipboardItem] = []
         var omittedData = ClipboardDataSnapshot()
+        var fileTransferData = FileTransferSnapshot()
         var itemIndex = 0
 
         for pasteboardItem in pasteboardItems {
+            // fileURL 타입을 포함하는 아이템은 파일 전송으로 처리
+            if pasteboardItem.types.contains(.fileURL),
+               let urlData = pasteboardItem.data(forType: .fileURL),
+               let urlString = String(data: urlData, encoding: .utf8),
+               let url = URL(string: urlString),
+               url.isFileURL,
+               let metadata = FileTransferMetadata.from(fileURL: url) {
+
+                let jsonData = try! JSONEncoder().encode(metadata)
+                let representation = ClipboardData(
+                    contentType: FileTransferContentType.fileTransfer,
+                    size: metadata.size,
+                    data: jsonData,
+                    flags: []
+                )
+                items.append(ClipboardItem(representations: [representation]))
+                fileTransferData.store(itemIndex: itemIndex, metadata: metadata)
+                itemIndex += 1
+                continue
+            }
+
+            // 일반 아이템 처리
             var representations: [ClipboardData] = []
             var reprIndex = 0
 
@@ -172,6 +199,9 @@ class ClipboardManager {
                 }
 
                 let mime = ClipboardMIMEMapping.mimeType(for: type)
+#if DEBUG
+                logger.info("[DUMP] type: \(type.rawValue) => mime: \(mime), size: \(data.count) bytes")
+#endif
 
                 guard shouldInclude(contentType: mime, settings: settings) else {
                     continue
@@ -206,7 +236,7 @@ class ClipboardManager {
             itemIndex += 1
         }
 
-        return ClipboardSnapshot(items: items, omittedData: omittedData)
+        return ClipboardSnapshot(items: items, omittedData: omittedData, fileTransferData: fileTransferData)
     }
 
     /// 수신된 ClipboardItem 배열을 NSPasteboard.general에 씁니다.
@@ -236,6 +266,52 @@ class ClipboardManager {
         pasteboard.writeObjects(pasteboardItems)
 
         // Self-change 억제: 쓰기 후 현재 changeCount를 watcher에 기록
+        ClipboardWatcher.shared.suppressedChangeCount = pasteboard.changeCount
+    }
+
+    /// 수신된 ClipboardItem과 파일 전송 promise를 함께 NSPasteboard.general에 씁니다.
+    func setWithFileTransfer(
+        items: [ClipboardItem],
+        fileTransferItems: [(Int, FileTransferMetadata)],
+        coordinator: FileTransferCoordinator
+    ) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+
+        var pasteboardObjects: [NSPasteboardWriting] = []
+
+        // 일반 아이템
+        for item in items {
+            let pasteboardItem = NSPasteboardItem()
+
+            for representation in item.representations {
+                guard !representation.flags.contains(.omitted),
+                      let data = representation.data else {
+                    continue
+                }
+
+                let type = ClipboardMIMEMapping.pasteboardType(for: representation.contentType)
+                pasteboardItem.setData(data, forType: type)
+            }
+
+            pasteboardObjects.append(pasteboardItem)
+        }
+
+        // 파일 전송 promise
+        for (_, metadata) in fileTransferItems {
+            let utType: String
+            if metadata.isDirectory {
+                utType = UTType.folder.identifier
+            } else {
+                utType = (UTType(mimeType: metadata.contentType) ?? .data).identifier
+            }
+
+            let provider = NSFilePromiseProvider(fileType: utType, delegate: coordinator)
+            provider.userInfo = metadata
+            pasteboardObjects.append(provider)
+        }
+
+        pasteboard.writeObjects(pasteboardObjects)
         ClipboardWatcher.shared.suppressedChangeCount = pasteboard.changeCount
     }
 

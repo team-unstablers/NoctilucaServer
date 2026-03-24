@@ -95,6 +95,7 @@ struct ClipboardDataSnapshot {
 struct ClipboardSnapshot {
     let items: [ClipboardItem]
     let omittedData: ClipboardDataSnapshot
+    let fileTransferData: FileTransferSnapshot
 }
 
 // MARK: - ClipboardManager
@@ -127,6 +128,10 @@ class ClipboardManager {
 
                 let mime = ClipboardMIMEMapping.mimeType(forUTI: utiString)
                 let size = UInt64(data.count)
+                
+#if DEBUG
+                logger.info("[DUMP] type: \(utiString) => mime: \(mime), size: \(data.count) bytes")
+#endif
 
                 if size > Self.omitThreshold {
                     representations.append(ClipboardData(
@@ -160,6 +165,7 @@ class ClipboardManager {
 
         var items: [ClipboardItem] = []
         var omittedData = ClipboardDataSnapshot()
+        var fileTransferData = FileTransferSnapshot()
         var itemIndex = 0
 
         for pasteboardItem in pasteboardItems {
@@ -172,6 +178,10 @@ class ClipboardManager {
                 }
 
                 let mime = ClipboardMIMEMapping.mimeType(forUTI: utiString)
+#if DEBUG
+                logger.info("[DUMP] type: \(utiString) => mime: \(mime), size: \(data.count) bytes")
+#endif
+
                 let size = UInt64(data.count)
 
                 if size > Self.omitThreshold {
@@ -201,7 +211,7 @@ class ClipboardManager {
             itemIndex += 1
         }
 
-        return ClipboardSnapshot(items: items, omittedData: omittedData)
+        return ClipboardSnapshot(items: items, omittedData: omittedData, fileTransferData: fileTransferData)
     }
 
     /// 수신된 ClipboardItem 배열을 UIPasteboard.general에 씁니다.
@@ -232,6 +242,57 @@ class ClipboardManager {
         pasteboard.items = pasteboardItems
 
         // Self-change 억제: 쓰기 후 현재 changeCount를 watcher에 기록
+        ClipboardWatcher.shared.suppressedChangeCount = pasteboard.changeCount
+    }
+
+    /// 수신된 ClipboardItem과 파일 전송 ItemProvider를 함께 UIPasteboard.general에 씁니다.
+    func setWithFileTransfer(
+        items: [ClipboardItem],
+        fileTransferItems: [(Int, FileTransferMetadata)],
+        coordinator: FileTransferCoordinator
+    ) {
+        let pasteboard = UIPasteboard.general
+
+        // 일반 아이템
+        var pasteboardItems: [[String: Any]] = []
+
+        for item in items {
+            var pasteboardItem: [String: Any] = [:]
+
+            for representation in item.representations {
+                guard !representation.flags.contains(.omitted),
+                      let data = representation.data else {
+                    continue
+                }
+
+                let utType = ClipboardMIMEMapping.pasteboardType(for: representation.contentType)
+                pasteboardItem[utType.identifier] = data
+            }
+
+            if !pasteboardItem.isEmpty {
+                pasteboardItems.append(pasteboardItem)
+            }
+        }
+
+        // 파일 전송 ItemProvider
+        var itemProviders: [NSItemProvider] = []
+        for (_, metadata) in fileTransferItems {
+            let itemProvider = coordinator.createItemProvider(for: metadata)
+            itemProviders.append(itemProvider)
+        }
+
+        if !itemProviders.isEmpty {
+            // ItemProvider가 있으면 setItemProviders 사용
+            pasteboard.items = pasteboardItems
+            pasteboard.setItemProviders(
+                pasteboard.itemProviders + itemProviders,
+                localOnly: false,
+                expirationDate: nil
+            )
+        } else {
+            pasteboard.items = pasteboardItems
+        }
+
         ClipboardWatcher.shared.suppressedChangeCount = pasteboard.changeCount
     }
 

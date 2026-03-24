@@ -8,6 +8,7 @@
 import Foundation
 
 import SiriusKitClient
+import UniformTypeIdentifiers
 
 class ClipboardChannel: Channel {
     let logger = NoctilucaLogger(category: "ClipboardChannel")
@@ -16,6 +17,12 @@ class ClipboardChannel: Channel {
 
     /// 마지막으로 보낸 ClipboardEvent의 omitted 데이터 스냅샷 (transfer 요청 응답용)
     private var lastSentSnapshot: ClipboardDataSnapshot? = nil
+
+    /// 마지막으로 보낸 ClipboardEvent의 파일 전송 스냅샷 (file-transfer 요청 응답용)
+    private var lastFileTransferSnapshot: FileTransferSnapshot? = nil
+
+    /// 수신 측 FileTransferCoordinator (NSFilePromiseProvider delegate이므로 strong ref 필요)
+    private(set) var fileTransferCoordinator: FileTransferCoordinator? = nil
 
     /// 현재 진행 중인 resolve 작업 (취소 가능)
     private var resolveTask: Task<Void, Never>? = nil
@@ -67,6 +74,11 @@ class ClipboardChannel: Channel {
         self.lastSentSnapshot = snapshot
     }
 
+    /// 파일 전송 스냅샷을 저장합니다.
+    func storeFileTransferSnapshot(_ snapshot: FileTransferSnapshot) {
+        self.lastFileTransferSnapshot = snapshot
+    }
+
     // MARK: - Transfer Serving
 
     /// FeatureProvider로부터 호출됨: 상대방이 clipboard-data TransferChannel을 열었을 때
@@ -89,6 +101,77 @@ class ClipboardChannel: Channel {
                 try await transferChannel.write(data)
             } catch {
                 logger.error("Failed to serve clipboard transfer: \(error)")
+            }
+        }
+    }
+
+    /// FeatureProvider로부터 호출됨: 상대방이 file-transfer TransferChannel을 열었을 때
+    func serveFileTransferData(_ transferChannel: TransferChannel, name: String, path: URL, offset: Int64, length: Int64) {
+        Task {
+            // 보안 검증: 요청된 경로가 마지막 clipboard copy의 파일인지 확인
+            guard let snapshot = lastFileTransferSnapshot,
+                  snapshot.validatePath(path.path) else {
+                logger.warning("File transfer path validation failed: \(path.path)")
+                try? await transferChannel.close()
+                return
+            }
+
+            let fm = FileManager.default
+            var isDirectory: ObjCBool = false
+
+            guard fm.fileExists(atPath: path.path, isDirectory: &isDirectory) else {
+                logger.warning("File not found for transfer: \(path.path)")
+                try? await transferChannel.close()
+                return
+            }
+
+            do {
+                if isDirectory.boolValue {
+                    let contents = try fm.contentsOfDirectory(
+                        at: path,
+                        includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey]
+                    )
+
+                    let entries: [DirectoryEntry] = contents.compactMap { url in
+                        let resourceValues = try? url.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
+                        let isDir = resourceValues?.isDirectory ?? false
+                        let size = UInt64(resourceValues?.fileSize ?? 0)
+                        let contentType = isDir
+                            ? FileTransferContentType.directory
+                            : (UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+
+                        return DirectoryEntry(name: url.lastPathComponent, contentType: contentType, size: size)
+                    }
+
+                    let jsonData = try JSONEncoder().encode(entries)
+
+                    try await transferChannel.sendStartNotification(TransferStartNotification(
+                        name: name,
+                        totalSize: UInt64(jsonData.count),
+                        contentType: "application/json",
+                        description: "Directory listing for \(name)",
+                        sha256sum: Data()
+                    ))
+                    try await transferChannel.write(jsonData)
+
+                } else {
+                    let attrs = try fm.attributesOfItem(atPath: path.path)
+                    let fileSize = (attrs[.size] as? UInt64) ?? 0
+                    let actualLength = length > 0 ? length : Int64(fileSize) - offset
+                    let mimeType = UTType(filenameExtension: path.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
+
+                    try await transferChannel.sendStartNotification(TransferStartNotification(
+                        name: name,
+                        totalSize: UInt64(actualLength),
+                        contentType: mimeType,
+                        description: "File transfer: \(name)",
+                        sha256sum: Data()
+                    ))
+                    try await transferChannel.writeFromFile(at: path, offset: offset, length: actualLength)
+                }
+            } catch {
+                logger.error("Failed to serve file transfer: \(error)")
+                try? await transferChannel.close()
             }
         }
     }
@@ -197,8 +280,20 @@ class ClipboardChannel: Channel {
             guard let self = self else { return }
 
             var resolvedItems: [ClipboardItem] = []
+            var fileTransferItems: [(Int, FileTransferMetadata)] = []
 
             for (itemIndex, item) in event.items.enumerated() {
+                // 파일 전송 아이템인지 체크
+                if let fileRepr = item.representations.first(where: {
+                    $0.contentType == FileTransferContentType.fileTransfer
+                }),
+                   let data = fileRepr.data,
+                   let metadata = try? JSONDecoder().decode(FileTransferMetadata.self, from: data) {
+                    fileTransferItems.append((itemIndex, metadata))
+                    continue
+                }
+
+                // 일반 아이템: 기존 omitted resolve 로직
                 var resolvedRepresentations: [ClipboardData] = []
 
                 for (reprIndex, representation) in item.representations.enumerated() {
@@ -227,10 +322,21 @@ class ClipboardChannel: Channel {
                 }
             }
 
-            guard !Task.isCancelled, !resolvedItems.isEmpty else { return }
+            guard !Task.isCancelled else { return }
 
-            self.logger.info("Applying remote clipboard event (\(resolvedItems.count) items)")
-            await ClipboardManager.shared.set(items: resolvedItems)
+            if !fileTransferItems.isEmpty {
+                let coordinator = FileTransferCoordinator(clipboardChannel: self)
+                self.fileTransferCoordinator = coordinator
+                self.logger.info("Applying remote clipboard event with file transfers (\(fileTransferItems.count) files, \(resolvedItems.count) items)")
+                await ClipboardManager.shared.setWithFileTransfer(
+                    items: resolvedItems,
+                    fileTransferItems: fileTransferItems,
+                    coordinator: coordinator
+                )
+            } else if !resolvedItems.isEmpty {
+                self.logger.info("Applying remote clipboard event (\(resolvedItems.count) items)")
+                await ClipboardManager.shared.set(items: resolvedItems)
+            }
         }
     }
 
@@ -288,6 +394,8 @@ class ClipboardChannel: Channel {
             remoteSubscription = nil
         }
         lastSentSnapshot = nil
+        lastFileTransferSnapshot = nil
+        fileTransferCoordinator = nil
         super.handleStreamClose()
     }
 
@@ -301,6 +409,8 @@ class ClipboardChannel: Channel {
             remoteSubscription = nil
         }
         lastSentSnapshot = nil
+        lastFileTransferSnapshot = nil
+        fileTransferCoordinator = nil
         super.handleStreamError(error: error)
     }
 }

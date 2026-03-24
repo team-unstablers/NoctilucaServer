@@ -58,6 +58,7 @@ class ClipboardSubscription: Identifiable {
         Task {
             do {
                 channel.storeSnapshot(snapshot.omittedData)
+                channel.storeFileTransferSnapshot(snapshot.fileTransferData)
                 try await channel.send(opcode: .clipboardEvent, message: event)
             } catch {
                 logger.error("Failed to send ClipboardEvent: \(error)")

@@ -292,7 +292,7 @@ class TransferChannel: Channel {
 
         if isEof {
             isCompleted = true
-            try await close()
+            try await self.close()
         }
     }
 
@@ -318,6 +318,40 @@ class TransferChannel: Channel {
         // 빈 데이터의 경우 즉시 EOF 전송
         if data.isEmpty {
             try await writeChunk(Data(), isEof: true)
+        }
+    }
+
+    /// 디스크의 파일을 청크 단위로 읽어 전송합니다.
+    func writeFromFile(at url: URL, offset: Int64 = 0, length: Int64 = -1) async throws {
+        guard shouldSend() else {
+            logger.error("Cannot write on a receive-only channel")
+            return
+        }
+
+        let fileHandle = try FileHandle(forReadingFrom: url)
+        defer { try? fileHandle.close() }
+
+        if offset > 0 {
+            try fileHandle.seek(toOffset: UInt64(offset))
+        }
+
+        let chunkSize = Self.defaultChunkSize
+        var remaining = length < 0 ? Int64.max : length
+
+        while remaining > 0 {
+            let readSize = min(Int(remaining), chunkSize)
+            guard let chunkData = try fileHandle.read(upToCount: readSize),
+                  !chunkData.isEmpty else {
+                // EOF
+                try await writeChunk(Data(), isEof: true)
+                return
+            }
+
+            remaining -= Int64(chunkData.count)
+            let isEof = (remaining <= 0) || chunkData.count < readSize
+            try await writeChunk(chunkData, isEof: isEof)
+
+            if isEof { return }
         }
     }
 
