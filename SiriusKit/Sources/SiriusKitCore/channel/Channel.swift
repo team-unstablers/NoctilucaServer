@@ -24,6 +24,7 @@ internal protocol ChannelLifecycleDelegate: AnyObject {
 
 public enum ChannelError: Error {
     case invalidFrame
+    case invalidArguments(String)
 }
 
 open class Channel {

@@ -126,7 +126,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            “value” : “Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto “We make your dreams come true,” we have primarily focused on addressing technical challenges that many clients have been unable to resolve. Computing was what we did best, so we kept helping people through technology.\n\nHowever, sustaining our company has become difficult amid the prolonged economic downturn.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you.”
+            "value" : "Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto \"We make your dreams come true,\" we have primarily focused on addressing technical challenges that many clients have been unable to resolve. Computing was what we did best, so we kept helping people through technology.\n\nHowever, sustaining our company has become difficult amid the prolonged economic downturn.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you."
           }
         },
         "ja" : {
@@ -138,13 +138,13 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            “value” : “안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \”여러분들의 꿈을 이루어 드립니다\” 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 저희가 가장 잘 하는 것이 컴퓨터였기에, 기술로 사람들을 돕는 일을 계속 해왔습니다.\n\n하지만, 오랜 불경기 속에서 회사의 지속이 어려워졌습니다.\n\nNoctiluca / Sirius는 그런 와중에 제가 바닥부터 구상하고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다.”
+            "value" : "안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \"여러분들의 꿈을 이루어 드립니다\" 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 저희가 가장 잘 하는 것이 컴퓨터였기에, 기술로 사람들을 돕는 일을 계속 해왔습니다.\n\n하지만, 오랜 불경기 속에서 회사의 지속이 어려워졌습니다.\n\nNoctiluca / Sirius는 그런 와중에 제가 바닥부터 구상하고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다."
           }
         },
-        “zh-Hans” : {
-          “stringUnit” : {
-            “state” : “translated”,
-            “value” : “您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在”为您实现梦想”的座右铭下，主要解决许多客户未能解决的技术难题。计算机是我们最擅长的领域，因此我们一直坚持用技术帮助他人。\n\n然而，在长期的经济低迷中，公司的维持变得愈发困难。\n\nNoctiluca / Sirius 是在这种情况下，我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。”
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在\"为您实现梦想\"的座右铭下，主要解决许多客户未能解决的技术难题。计算机是我们最擅长的领域，因此我们一直坚持用技术帮助他人。\n\n然而，在长期的经济低迷中，公司的维持变得愈发困难。\n\nNoctiluca / Sirius 是在这种情况下，我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。"
           }
         }
       }
@@ -289,7 +289,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本软件包含开源软件。详情请点击下方的“开源许可证”按钮查看。"
+            "value" : "本软件包含开源软件。详情请点击下方的\"开源许可证\"按钮查看。"
           }
         }
       }

@@ -41,11 +41,25 @@ extension NoctilucaClient {
         self.logger.info("initializeProjection(): created sample session")
     }
     
+    func initializeClipboard() async throws {
+        guard let channel = try await session.channelManager.openChannel(for: .clipboard, identifier: ChannelIdentifier()) as? ClipboardChannel else {
+            // FIXME
+            return
+        }
+        
+        self.clipboardChannel = channel
+        self.logger.info("initializeClipboard(): created ClipboardChannel")
+        
+        let request = SubscribeClipboardRequest(requestId: 1, flags: 0)
+        try await clipboardChannel?.send(opcode: .subscribeClipboardRequest, message: request)
+    }
+    
     
     func startSession() async throws {
         try assertPhase(expected: .ready)
         
         try await initializeHIDIO()
         try await initializeProjection()
+        try await initializeClipboard()
     }
 }

@@ -181,6 +181,7 @@ class NoctilucaClient: ObservableObject {
     
     var hidioChannel: HIDIOChannel!
     var projectionChannel: ProjectionChannel!
+    weak var clipboardChannel: ClipboardChannel?
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
