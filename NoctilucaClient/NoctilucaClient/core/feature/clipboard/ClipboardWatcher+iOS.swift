@@ -74,6 +74,29 @@ private enum ClipboardMIMEMapping {
     }
 }
 
+// MARK: - ClipboardDataSnapshot
+
+/// omitted 처리된 representation의 실제 데이터를 보관하는 스냅샷
+struct ClipboardDataSnapshot {
+    private var storage: [String: Data] = [:]
+
+    mutating func store(itemIndex: Int, reprIndex: Int, data: Data) {
+        storage["\(itemIndex):\(reprIndex)"] = data
+    }
+
+    func get(itemIndex: Int, reprIndex: Int) -> Data? {
+        return storage["\(itemIndex):\(reprIndex)"]
+    }
+
+    var isEmpty: Bool { storage.isEmpty }
+}
+
+/// ClipboardManager.currentWithSnapshot()의 반환 타입
+struct ClipboardSnapshot {
+    let items: [ClipboardItem]
+    let omittedData: ClipboardDataSnapshot
+}
+
 // MARK: - ClipboardManager
 
 @MainActor
@@ -128,6 +151,57 @@ class ClipboardManager {
         }
 
         return items
+    }
+
+    /// UIPasteboard.general의 현재 내용을 [ClipboardItem]과 omitted 데이터 스냅샷으로 변환합니다.
+    func currentWithSnapshot() -> ClipboardSnapshot {
+        let pasteboard = UIPasteboard.general
+        let pasteboardItems = pasteboard.items
+
+        var items: [ClipboardItem] = []
+        var omittedData = ClipboardDataSnapshot()
+        var itemIndex = 0
+
+        for pasteboardItem in pasteboardItems {
+            var representations: [ClipboardData] = []
+            var reprIndex = 0
+
+            for (utiString, object) in pasteboardItem {
+                guard let data = Self.coerceToData(object) else {
+                    continue
+                }
+
+                let mime = ClipboardMIMEMapping.mimeType(forUTI: utiString)
+                let size = UInt64(data.count)
+
+                if size > Self.omitThreshold {
+                    representations.append(ClipboardData(
+                        contentType: mime,
+                        size: size,
+                        data: nil,
+                        flags: .omitted
+                    ))
+                    omittedData.store(itemIndex: itemIndex, reprIndex: reprIndex, data: data)
+                } else {
+                    representations.append(ClipboardData(
+                        contentType: mime,
+                        size: size,
+                        data: data,
+                        flags: []
+                    ))
+                }
+
+                reprIndex += 1
+            }
+
+            if !representations.isEmpty {
+                items.append(ClipboardItem(representations: representations))
+            }
+
+            itemIndex += 1
+        }
+
+        return ClipboardSnapshot(items: items, omittedData: omittedData)
     }
 
     /// 수신된 ClipboardItem 배열을 UIPasteboard.general에 씁니다.
@@ -260,18 +334,18 @@ class ClipboardWatcher {
             return
         }
 
-        let items = manager.current()
-        guard !items.isEmpty else { return }
+        let snapshot = manager.currentWithSnapshot()
+        guard !snapshot.items.isEmpty else { return }
 
-        notifySubscribers(items: items)
+        notifySubscribers(snapshot: snapshot)
     }
 
-    private func notifySubscribers(items: [ClipboardItem]) {
+    private func notifySubscribers(snapshot: ClipboardSnapshot) {
         // 죽은 weak ref 정리
         subscribers = subscribers.filter { $0.value.value != nil }
 
         for (_, ref) in subscribers {
-            ref.value?.notifyChange(items: items)
+            ref.value?.notifyChange(snapshot: snapshot)
         }
     }
 }

@@ -37,7 +37,7 @@ class ClipboardSubscription: Identifiable {
     }
 
     /// ClipboardWatcher로부터 변경 알림을 받았을 때 호출됩니다.
-    func notifyChange(items: [ClipboardItem]) {
+    func notifyChange(snapshot: ClipboardSnapshot) {
         guard let channel = channel else { return }
 
         let settings = SettingsStore.shared.settings.clipboard
@@ -50,11 +50,12 @@ class ClipboardSubscription: Identifiable {
 
         let event = ClipboardEvent(
             timestamp: UInt64(Date().timeIntervalSince1970 * 1000),
-            items: items
+            items: snapshot.items
         )
 
         Task {
             do {
+                channel.storeSnapshot(snapshot.omittedData)
                 try await channel.send(opcode: .clipboardEvent, message: event)
             } catch {
                 logger.error("Failed to send ClipboardEvent: \(error)")
