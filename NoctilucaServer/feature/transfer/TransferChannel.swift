@@ -292,7 +292,6 @@ class TransferChannel: Channel {
 
         if isEof {
             isCompleted = true
-            try await self.close()
         }
     }
 
