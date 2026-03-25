@@ -20,15 +20,12 @@ public struct TransferStartNotification: SiriusMessage {
     public let totalSize: UInt64
     public let contentType: String
     public let description: String
-    // NOTE: 삭제될 예정!! 그냥 빈 값으로 넣으세요!!
-    public let sha256sum: Data
 
-    public init(name: String, totalSize: UInt64, contentType: String, description: String, sha256sum: Data) {
+    public init(name: String, totalSize: UInt64, contentType: String, description: String) {
         self.name = name
         self.totalSize = totalSize
         self.contentType = contentType
         self.description = description
-        self.sha256sum = sha256sum
     }
 
     init(from protobuf: ProtobufMessage) throws {
@@ -36,7 +33,6 @@ public struct TransferStartNotification: SiriusMessage {
         self.totalSize = protobuf.totalSize
         self.contentType = protobuf.contentType
         self.description = protobuf.description_p
-        self.sha256sum = protobuf.sha256Sum
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -46,7 +42,6 @@ public struct TransferStartNotification: SiriusMessage {
         message.totalSize = totalSize
         message.contentType = contentType
         message.description_p = description
-        message.sha256Sum = sha256sum
 
         return message
     }

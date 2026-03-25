@@ -18,7 +18,6 @@ extension AppSettings {
         init() {}
 
         enum CodingKeys: String, CodingKey {
-            case integrityCheckMethod
             case enableCompression
             case maxUploadSpeedKBps
         }

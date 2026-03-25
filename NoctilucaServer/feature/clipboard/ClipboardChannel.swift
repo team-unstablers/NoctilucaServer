@@ -124,7 +124,6 @@ class ClipboardChannel: Channel {
                     totalSize: UInt64(data.count),
                     contentType: "application/octet-stream",
                     description: "Omitted clipboard data (item=\(itemIndex), repr=\(representationIndex))",
-                    sha256sum: Data()
                 ))
                 try await transferChannel.write(data)
                 ensureEventLogger()?.log(.Transfer.clipboardDataServed, args: [
@@ -198,8 +197,7 @@ class ClipboardChannel: Channel {
                         name: name,
                         totalSize: UInt64(jsonData.count),
                         contentType: "application/json",
-                        description: "Directory listing for \(name)",
-                        sha256sum: Data()
+                        description: "Directory listing for \(name)"
                     ))
                     try await transferChannel.write(jsonData)
 
@@ -220,8 +218,7 @@ class ClipboardChannel: Channel {
                         name: name,
                         totalSize: UInt64(actualLength),
                         contentType: mimeType,
-                        description: "File transfer: \(name)",
-                        sha256sum: Data()
+                        description: "File transfer: \(name)"
                     ))
                     try await transferChannel.writeFromFile(at: path, offset: offset, length: actualLength)
 

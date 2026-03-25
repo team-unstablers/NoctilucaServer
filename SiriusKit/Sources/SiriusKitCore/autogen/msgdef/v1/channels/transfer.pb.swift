@@ -40,9 +40,6 @@ struct Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: Sendable {
   //// 전송할 데이터의 설명 (예: 클립보드 데이터 설명 등)
   var description_p: String = String()
 
-  //// 선택적 무결성 검증에 사용
-  var sha256Sum: Data = Data()
-
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
@@ -77,7 +74,7 @@ fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.transfer"
 
 extension Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".TransferStartNotification"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{1}totalSize\0\u{1}contentType\0\u{1}description\0\u{1}sha256sum\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{1}totalSize\0\u{1}contentType\0\u{1}description\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -89,7 +86,6 @@ extension Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: SwiftPro
       case 2: try { try decoder.decodeSingularUInt64Field(value: &self.totalSize) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.contentType) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
-      case 5: try { try decoder.decodeSingularBytesField(value: &self.sha256Sum) }()
       default: break
       }
     }
@@ -108,9 +104,6 @@ extension Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: SwiftPro
     if !self.description_p.isEmpty {
       try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 4)
     }
-    if !self.sha256Sum.isEmpty {
-      try visitor.visitSingularBytesField(value: self.sha256Sum, fieldNumber: 5)
-    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -119,7 +112,6 @@ extension Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: SwiftPro
     if lhs.totalSize != rhs.totalSize {return false}
     if lhs.contentType != rhs.contentType {return false}
     if lhs.description_p != rhs.description_p {return false}
-    if lhs.sha256Sum != rhs.sha256Sum {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
