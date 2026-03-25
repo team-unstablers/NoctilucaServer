@@ -65,14 +65,14 @@ class NoctilucaFeatureProvider: FeatureProvider {
             if case .accepted(let channel as TransferChannel) = result {
                 // 진행률 콜백 배선
                 if let tracker = progressTracker {
-                    channel.onTransferStarted = { channelID, totalSize in
-                        Task { @MainActor in tracker.register(channelID: channelID, totalSize: totalSize) }
+                    channel.onTransferStarted = { [weak tracker] channelID, totalSize in
+                        Task { @MainActor in tracker?.register(channelID: channelID, totalSize: totalSize) }
                     }
-                    channel.onProgressUpdate = { channelID, additionalBytes in
-                        Task { @MainActor in tracker.update(channelID: channelID, additionalBytes: additionalBytes) }
+                    channel.onProgressUpdate = { [weak tracker] channelID, additionalBytes in
+                        Task { @MainActor in tracker?.update(channelID: channelID, additionalBytes: additionalBytes) }
                     }
-                    channel.onTransferCompleted = { channelID in
-                        Task { @MainActor in tracker.unregister(channelID: channelID) }
+                    channel.onTransferCompleted = { [weak tracker] channelID in
+                        Task { @MainActor in tracker?.unregister(channelID: channelID) }
                     }
                 }
 
