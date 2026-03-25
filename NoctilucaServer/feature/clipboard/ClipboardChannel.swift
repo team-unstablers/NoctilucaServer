@@ -399,7 +399,7 @@ class ClipboardChannel: Channel {
 
             guard !Task.isCancelled else { return }
 
-            if !fileTransferItems.isEmpty {
+            if !fileTransferItems.isEmpty, settings.allowFile {
                 let coordinator = FileTransferCoordinator(clipboardChannel: self)
                 self.fileTransferCoordinator = coordinator
                 self.logger.info("Applying remote clipboard event with file transfers (\(fileTransferItems.count) files, \(resolvedItems.count) items)")

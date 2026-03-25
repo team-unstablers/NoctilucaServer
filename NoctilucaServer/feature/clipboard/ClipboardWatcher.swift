@@ -174,7 +174,8 @@ class ClipboardManager {
 
         for pasteboardItem in pasteboardItems {
             // fileURL 타입을 포함하는 아이템은 파일 전송으로 처리
-            if pasteboardItem.types.contains(.fileURL),
+            if settings.allowFile,
+               pasteboardItem.types.contains(.fileURL),
                let urlData = pasteboardItem.data(forType: .fileURL),
                let urlString = String(data: urlData, encoding: .utf8),
                let url = URL(string: urlString),
