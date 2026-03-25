@@ -269,7 +269,13 @@ class ClipboardChannel: Channel {
             return
         }
 
-        // 진행 중인 resolve 취소
+        resolveAndApplyRemoteItems(event.items, allowFile: clipboardSettings.allowFile)
+    }
+
+    // MARK: - Remote Items Resolve & Apply
+
+    /// 원격에서 수신한 클립보드 아이템을 resolve(omitted data 다운로드)하고 로컬 클립보드에 적용합니다.
+    private func resolveAndApplyRemoteItems(_ items: [ClipboardItem], allowFile: Bool) {
         resolveTask?.cancel()
 
         resolveTask = Task { [weak self] in
@@ -278,7 +284,7 @@ class ClipboardChannel: Channel {
             var resolvedItems: [ClipboardItem] = []
             var fileTransferItems: [(Int, FileTransferMetadata)] = []
 
-            for (itemIndex, item) in event.items.enumerated() {
+            for (itemIndex, item) in items.enumerated() {
                 // 파일 전송 아이템인지 체크
                 if let fileRepr = item.representations.first(where: {
                     $0.contentType == FileTransferContentType.fileTransfer
@@ -289,7 +295,7 @@ class ClipboardChannel: Channel {
                     continue
                 }
 
-                // 일반 아이템: 기존 omitted resolve 로직
+                // 일반 아이템: omitted resolve 로직
                 var resolvedRepresentations: [ClipboardData] = []
 
                 for (reprIndex, representation) in item.representations.enumerated() {
@@ -320,17 +326,17 @@ class ClipboardChannel: Channel {
 
             guard !Task.isCancelled else { return }
 
-            if !fileTransferItems.isEmpty, clipboardSettings.allowFile {
+            if !fileTransferItems.isEmpty, allowFile {
                 let coordinator = FileTransferCoordinator(clipboardChannel: self)
                 self.fileTransferCoordinator = coordinator
-                self.logger.info("Applying remote clipboard event with file transfers (\(fileTransferItems.count) files, \(resolvedItems.count) items)")
+                self.logger.info("Applying remote clipboard with file transfers (\(fileTransferItems.count) files, \(resolvedItems.count) items)")
                 await ClipboardManager.shared.setWithFileTransfer(
                     items: resolvedItems,
                     fileTransferItems: fileTransferItems,
                     coordinator: coordinator
                 )
             } else if !resolvedItems.isEmpty {
-                self.logger.info("Applying remote clipboard event (\(resolvedItems.count) items)")
+                self.logger.info("Applying remote clipboard (\(resolvedItems.count) items)")
                 await ClipboardManager.shared.set(items: resolvedItems)
             }
         }
@@ -368,7 +374,20 @@ class ClipboardChannel: Channel {
     // MARK: - Response Handlers (클라이언트가 서버에게 보낸 요청의 응답)
 
     private func handleGetClipboardResponse(_ response: GetClipboardResponse) async throws {
-        logger.debug("Received GetClipboardResponse (requestId=\(response.requestId), success=\(response.success)) - not implemented")
+        guard clipboardSettings.enabled else { return }
+
+        guard response.success else {
+            logger.warning("GetClipboardResponse failed (requestId=\(response.requestId))")
+            return
+        }
+
+        guard !response.items.isEmpty else {
+            logger.debug("GetClipboardResponse has no items (requestId=\(response.requestId))")
+            return
+        }
+
+        logger.info("Applying GetClipboardResponse (requestId=\(response.requestId), items=\(response.items.count))")
+        resolveAndApplyRemoteItems(response.items, allowFile: clipboardSettings.allowFile)
     }
 
     private func handleSubscribeClipboardResponse(_ response: SubscribeClipboardResponse) async throws {
