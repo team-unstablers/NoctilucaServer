@@ -206,13 +206,19 @@ public actor ChannelManager {
         }
         
         try await openTask.perform { request in
-            let feature = SiriusFeature(rawValue: request.featureID!)
-            
+            guard let featureID = request.featureID,
+                  let channelID = request.channelID else {
+                self.logger.warning("Received channel open request with missing featureID or channelID")
+                return false
+            }
+
+            let feature = SiriusFeature(rawValue: featureID)
+
             defer {
                 self.eventLogger?.log(.channelOpen, args: [
                     "direction": "REMOTE",
-                    "channel_id": request.channelID?.uuidString ?? "(none)",
-                    "feature_id": request.featureID?.uuidString ?? "(none)",
+                    "channel_id": channelID.uuidString,
+                    "feature_id": featureID.uuidString,
                     "success": success.description,
                 ])
             }
@@ -220,11 +226,11 @@ public actor ChannelManager {
             guard session.featureProvider.supports(feature) else {
                 return false
             }
-            
+
             let result = try await session.featureProvider.createChannel(
                 for: feature,
                 using: StreamHolder(stream: stream),
-                identifier: request.channelID!,
+                identifier: channelID,
                 direction: .remote,
                 args: request.args
             )
