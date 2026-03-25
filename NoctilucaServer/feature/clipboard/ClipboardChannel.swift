@@ -29,6 +29,7 @@ class ClipboardChannel: Channel {
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
+        
     }
 
     override func handleFrame(frame: SiriusFrame) async throws {
@@ -210,6 +211,10 @@ class ClipboardChannel: Channel {
             requestId: request.requestId,
             subscriptionId: subscription.id
         ))
+        
+        if settings.syncDirection == .bidirectional || settings.syncDirection == .remoteToLocal {
+            try? await self.send(opcode: .subscribeClipboardRequest, message: SubscribeClipboardRequest(requestId: 1, flags: 0))
+        }
     }
 
     private func handleUnsubscribeClipboardRequest(_ request: UnsubscribeClipboardRequest) async throws {

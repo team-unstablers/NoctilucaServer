@@ -113,7 +113,7 @@ class ClipboardManager {
 
 
     /// UIPasteboard.general의 현재 내용을 [ClipboardItem]으로 변환합니다.
-    func current() -> [ClipboardItem] {
+    func current(settings: SessionSettings.Clipboard) -> [ClipboardItem] {
         let pasteboard = UIPasteboard.general
         let pasteboardItems = pasteboard.items
 
@@ -128,11 +128,16 @@ class ClipboardManager {
                 }
 
                 let mime = ClipboardMIMEMapping.mimeType(forUTI: utiString)
-                let size = UInt64(data.count)
-                
+
 #if DEBUG
                 logger.info("[DUMP] type: \(utiString) => mime: \(mime), size: \(data.count) bytes")
 #endif
+
+                guard shouldInclude(contentType: mime, settings: settings) else {
+                    continue
+                }
+
+                let size = UInt64(data.count)
 
                 if size > Self.omitThreshold {
                     representations.append(ClipboardData(
@@ -160,7 +165,7 @@ class ClipboardManager {
     }
 
     /// UIPasteboard.general의 현재 내용을 [ClipboardItem]과 omitted 데이터 스냅샷으로 변환합니다.
-    func currentWithSnapshot() -> ClipboardSnapshot {
+    func currentWithSnapshot(settings: SessionSettings.Clipboard) -> ClipboardSnapshot {
         let pasteboard = UIPasteboard.general
         let pasteboardItems = pasteboard.items
 
@@ -182,6 +187,10 @@ class ClipboardManager {
 #if DEBUG
                 logger.info("[DUMP] type: \(utiString) => mime: \(mime), size: \(data.count) bytes")
 #endif
+
+                guard shouldInclude(contentType: mime, settings: settings) else {
+                    continue
+                }
 
                 let size = UInt64(data.count)
 
@@ -299,6 +308,19 @@ class ClipboardManager {
 
     // MARK: - Private Helpers
 
+    /// 설정에 따라 해당 contentType을 포함할지 결정합니다.
+    private func shouldInclude(contentType: String, settings: SessionSettings.Clipboard) -> Bool {
+        if settings.textOnly {
+            return contentType.hasPrefix("text/")
+        }
+
+        if !settings.allowFile && (contentType == "application/x-file-url" || contentType == FileTransferContentType.fileTransfer) {
+            return false
+        }
+
+        return true
+    }
+
     /// UIPasteboard의 Any 값을 Data로 변환합니다.
     private static func coerceToData(_ object: Any) -> Data? {
         if let data = object as? Data {
@@ -396,18 +418,15 @@ class ClipboardWatcher {
             return
         }
 
-        let snapshot = manager.currentWithSnapshot()
-        guard !snapshot.items.isEmpty else { return }
-
-        notifySubscribers(snapshot: snapshot)
+        notifySubscribers()
     }
 
-    private func notifySubscribers(snapshot: ClipboardSnapshot) {
+    private func notifySubscribers() {
         // 죽은 weak ref 정리
         subscribers = subscribers.filter { $0.value.value != nil }
 
         for (_, ref) in subscribers {
-            ref.value?.notifyChange(snapshot: snapshot)
+            ref.value?.notifyChange()
         }
     }
 }

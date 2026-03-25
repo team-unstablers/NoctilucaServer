@@ -13,6 +13,9 @@ import UniformTypeIdentifiers
 class ClipboardChannel: Channel {
     let logger = NoctilucaLogger(category: "ClipboardChannel")
 
+    /// 세션 설정에서 주입된 클립보드 설정
+    var clipboardSettings: SessionSettings.Clipboard = .init()
+
     private var remoteSubscription: ClipboardSubscription? = nil
 
     /// 마지막으로 보낸 ClipboardEvent의 omitted 데이터 스냅샷 (transfer 요청 응답용)
@@ -179,10 +182,7 @@ class ClipboardChannel: Channel {
     // MARK: - Request Handlers (서버 → 클라이언트)
 
     private func handleSubscribeClipboardRequest(_ request: SubscribeClipboardRequest) async throws {
-        /*
-        let settings = SettingsStore.shared.settings.clipboard
-
-        guard settings.enabled else {
+        guard clipboardSettings.enabled else {
             logger.info("Clipboard disabled, rejecting subscribe request (requestId=\(request.requestId))")
             try await send(opcode: .subscribeClipboardResponse, message: SubscribeClipboardResponse(
                 requestId: request.requestId,
@@ -190,7 +190,6 @@ class ClipboardChannel: Channel {
             ))
             return
         }
-         */
 
         // 기존 구독이 있으면 제거
         if let existing = remoteSubscription {
@@ -200,6 +199,7 @@ class ClipboardChannel: Channel {
 
         let subscription = ClipboardSubscription()
         subscription.channel = self
+        subscription.clipboardSettings = self.clipboardSettings
         await subscription.setup()
 
         remoteSubscription = subscription
@@ -237,10 +237,7 @@ class ClipboardChannel: Channel {
     }
 
     private func handleGetClipboardRequest(_ request: GetClipboardRequest) async throws {
-        /*
-        let settings = SettingsStore.shared.settings.clipboard
-
-        guard settings.enabled else {
+        guard clipboardSettings.enabled else {
             logger.info("Clipboard disabled, rejecting get request (requestId=\(request.requestId))")
             try await send(opcode: .getClipboardResponse, message: GetClipboardResponse(
                 requestId: request.requestId,
@@ -249,9 +246,8 @@ class ClipboardChannel: Channel {
             ))
             return
         }
-         */
 
-        let items = await ClipboardManager.shared.current()
+        let items = await ClipboardManager.shared.current(settings: clipboardSettings)
 
         try await send(opcode: .getClipboardResponse, message: GetClipboardResponse(
             requestId: request.requestId,
@@ -261,17 +257,7 @@ class ClipboardChannel: Channel {
     }
 
     private func handleClipboardEvent(_ event: ClipboardEvent) async throws {
-        /*
-        let settings = SettingsStore.shared.settings.clipboard
-
-        guard settings.enabled else { return }
-
-        // syncDirection 체크: remoteToLocal 또는 bidirectional일 때만 적용
-        guard settings.syncDirection == .remoteToLocal ||
-              settings.syncDirection == .bidirectional else {
-            return
-        }
-         */
+        guard clipboardSettings.enabled else { return }
 
         // 진행 중인 resolve 취소
         resolveTask?.cancel()

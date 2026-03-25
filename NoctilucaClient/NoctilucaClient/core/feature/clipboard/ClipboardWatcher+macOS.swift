@@ -100,13 +100,11 @@ class ClipboardManager {
     private init() {}
 
     /// NSPasteboard.general의 현재 내용을 [ClipboardItem]으로 변환합니다.
-    func current() -> [ClipboardItem] {
+    func current(settings: SessionSettings.Clipboard) -> [ClipboardItem] {
         let pasteboard = NSPasteboard.general
         guard let pasteboardItems = pasteboard.pasteboardItems else {
             return []
         }
-
-        // let settings = SettingsStore.shared.settings.clipboard
 
         var items: [ClipboardItem] = []
 
@@ -119,16 +117,14 @@ class ClipboardManager {
                 }
 
                 let mime = ClipboardMIMEMapping.mimeType(for: type)
-                
+
 #if DEBUG
                 logger.info("[DUMP] type: \(type.rawValue) => mime: \(mime), size: \(data.count) bytes")
 #endif
 
-                /*
                 guard shouldInclude(contentType: mime, settings: settings) else {
                     continue
                 }
-                 */
 
                 let size = UInt64(data.count)
 
@@ -158,13 +154,11 @@ class ClipboardManager {
     }
 
     /// NSPasteboard.general의 현재 내용을 [ClipboardItem]과 omitted 데이터 스냅샷으로 변환합니다.
-    func currentWithSnapshot() -> ClipboardSnapshot {
+    func currentWithSnapshot(settings: SessionSettings.Clipboard) -> ClipboardSnapshot {
         let pasteboard = NSPasteboard.general
         guard let pasteboardItems = pasteboard.pasteboardItems else {
             return ClipboardSnapshot(items: [], omittedData: ClipboardDataSnapshot(), fileTransferData: FileTransferSnapshot())
         }
-
-        // let settings = SettingsStore.shared.settings.clipboard
 
         var items: [ClipboardItem] = []
         var omittedData = ClipboardDataSnapshot()
@@ -173,7 +167,8 @@ class ClipboardManager {
 
         for pasteboardItem in pasteboardItems {
             // fileURL 타입을 포함하는 아이템은 파일 전송으로 처리
-            if pasteboardItem.types.contains(.fileURL),
+            if settings.allowFile,
+               pasteboardItem.types.contains(.fileURL),
                let urlData = pasteboardItem.data(forType: .fileURL),
                let urlString = String(data: urlData, encoding: .utf8),
                let url = URL(string: urlString),
@@ -208,11 +203,9 @@ class ClipboardManager {
                 logger.info("[DUMP] type: \(type.rawValue) => mime: \(mime), size: \(data.count) bytes")
 #endif
 
-                /*
                 guard shouldInclude(contentType: mime, settings: settings) else {
                     continue
                 }
-                 */
 
                 let size = UInt64(data.count)
 
@@ -323,31 +316,17 @@ class ClipboardManager {
     }
 
     /// 설정에 따라 해당 contentType을 포함할지 결정합니다.
-    /*
-    private func shouldInclude(contentType: String, settings: AppSettings.Clipboard) -> Bool {
+    private func shouldInclude(contentType: String, settings: SessionSettings.Clipboard) -> Bool {
         if settings.textOnly {
             return contentType.hasPrefix("text/")
         }
 
-        if !settings.allowImage && contentType.hasPrefix("image/") {
-            return false
-        }
-
-        if !settings.allowRichText && (contentType == "text/html" || contentType == "text/rtf") {
-            return false
-        }
-
-        if !settings.allowFile && contentType == "application/x-file-url" {
-            return false
-        }
-
-        if !settings.allowUnknownFormat && !ClipboardMIMEMapping.isKnownFormat(contentType) {
+        if !settings.allowFile && (contentType == "application/x-file-url" || contentType == FileTransferContentType.fileTransfer) {
             return false
         }
 
         return true
     }
-     */
 }
 
 // MARK: - ClipboardWatcher
@@ -429,18 +408,15 @@ class ClipboardWatcher {
             return
         }
 
-        let snapshot = manager.currentWithSnapshot()
-        guard !snapshot.items.isEmpty else { return }
-
-        notifySubscribers(snapshot: snapshot)
+        notifySubscribers()
     }
 
-    private func notifySubscribers(snapshot: ClipboardSnapshot) {
+    private func notifySubscribers() {
         // 죽은 weak ref 정리
         subscribers = subscribers.filter { $0.value.value != nil }
 
         for (_, ref) in subscribers {
-            ref.value?.notifyChange(snapshot: snapshot)
+            ref.value?.notifyChange()
         }
     }
 }

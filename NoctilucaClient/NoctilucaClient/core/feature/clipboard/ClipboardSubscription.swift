@@ -15,6 +15,9 @@ class ClipboardSubscription: Identifiable {
 
     weak var channel: ClipboardChannel?
 
+    /// 세션 설정에서 주입된 클립보드 설정
+    var clipboardSettings: SessionSettings.Clipboard = .init()
+
     init() {
         self.id = UUID()
     }
@@ -37,18 +40,17 @@ class ClipboardSubscription: Identifiable {
     }
 
     /// ClipboardWatcher로부터 변경 알림을 받았을 때 호출됩니다.
-    func notifyChange(snapshot: ClipboardSnapshot) {
+    @MainActor
+    func notifyChange() {
         guard let channel = channel else { return }
 
-        // let settings = SettingsStore.shared.settings.clipboard
-
-        // syncDirection 체크: localToRemote 또는 bidirectional일 때만 전송
-        /*
-        guard settings.syncDirection == .localToRemote ||
-              settings.syncDirection == .bidirectional else {
+        // useBidirectionalSync가 false면 클라이언트→서버 발신 차단 (서버→클라이언트 수신만 허용)
+        guard clipboardSettings.useBidirectionalSync else {
             return
         }
-         */
+
+        let snapshot = ClipboardManager.shared.currentWithSnapshot(settings: clipboardSettings)
+        guard !snapshot.items.isEmpty else { return }
 
         let event = ClipboardEvent(
             timestamp: UInt64(Date().timeIntervalSince1970 * 1000),

@@ -21,6 +21,8 @@ struct SessionSettings: Codable, Sendable {
     var general: General? = nil
     var projection: Projection = .init()
     var input: Input = .init()
+    var clipboard: Clipboard = .init()
+    var transfer: Transfer = .init()
     var security: Security = .init()
     var credentials: CredentialsRef = .init()
 
@@ -29,6 +31,8 @@ struct SessionSettings: Codable, Sendable {
         general: General? = nil,
         projection: Projection = .init(),
         input: Input = .init(),
+        clipboard: Clipboard = .init(),
+        transfer: Transfer = .init(),
         security: Security = .init(),
         credentials: CredentialsRef = .init()
     ) {
@@ -36,6 +40,8 @@ struct SessionSettings: Codable, Sendable {
         self.general = general
         self.projection = projection
         self.input = input
+        self.clipboard = clipboard
+        self.transfer = transfer
         self.security = security
         self.credentials = credentials
 
@@ -50,6 +56,8 @@ struct SessionSettings: Codable, Sendable {
         case general
         case projection
         case input
+        case clipboard
+        case transfer
         case security
         case credentials
     }
@@ -66,6 +74,8 @@ struct SessionSettings: Codable, Sendable {
         general = container.decodeSafeIfPresent(General.self, forKey: .general)
         projection = container.decodeSafe(Projection.self, forKey: .projection, default: projection)
         input = container.decodeSafe(Input.self, forKey: .input, default: input)
+        clipboard = container.decodeSafe(Clipboard.self, forKey: .clipboard, default: clipboard)
+        transfer = container.decodeSafe(Transfer.self, forKey: .transfer, default: transfer)
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         credentials = container.decodeSafe(CredentialsRef.self, forKey: .credentials, default: credentials)
 
@@ -216,6 +226,68 @@ extension SessionSettings {
     struct CredentialsRef: Codable, Sendable {
         var keychainKey: String? = nil
         var lastUpdatedAt: Date? = nil
+    }
+}
+
+extension SessionSettings {
+    struct Clipboard: Codable, Sendable {
+        /// 클립보드 공유 기능 활성화 여부
+        var enabled: Bool = true
+
+        /// 텍스트 데이터만 허용할지 여부
+        var textOnly: Bool = false
+
+        /// 파일 복사 허용 여부
+        var allowFile: Bool = false
+
+        /// iOS: 양방향 클립보드 동기화 사용 여부
+        /// false인 경우 서버→클라이언트 방향만 동기화됩니다.
+        var useBidirectionalSync: Bool = false
+
+        init() {}
+
+        enum CodingKeys: String, CodingKey {
+            case enabled
+            case textOnly
+            case allowFile
+            case useBidirectionalSync
+        }
+
+        init(from decoder: any Decoder) throws {
+            self.init()
+
+            guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+                return
+            }
+
+            enabled = container.decodeSafe(Bool.self, forKey: .enabled, default: enabled)
+            textOnly = container.decodeSafe(Bool.self, forKey: .textOnly, default: textOnly)
+            allowFile = container.decodeSafe(Bool.self, forKey: .allowFile, default: allowFile)
+            useBidirectionalSync = container.decodeSafe(Bool.self, forKey: .useBidirectionalSync, default: useBidirectionalSync)
+        }
+    }
+}
+
+extension SessionSettings {
+    struct Transfer: Codable, Sendable {
+        /// Zstd 압축 사용 여부
+        var enableCompression: Bool = false
+
+        init() {}
+
+        enum CodingKeys: String, CodingKey {
+            case enableCompression
+        }
+
+        init(from decoder: any Decoder) throws {
+            self.init()
+
+            guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+                return
+            }
+
+            enableCompression = container.decodeSafe(Bool.self, forKey: .enableCompression, default: enableCompression)
+        }
     }
 }
 

@@ -48,8 +48,15 @@ extension NoctilucaClient {
         }
         
         self.clipboardChannel = channel
+        channel.clipboardSettings = self.sessionSettings?.clipboard
+            ?? SettingsStore.shared.settings.sessionDefaults.clipboard
         self.logger.info("initializeClipboard(): created ClipboardChannel")
-        
+
+        guard channel.clipboardSettings.enabled else {
+            self.logger.info("initializeClipboard(): clipboard disabled by settings, skipping subscription")
+            return
+        }
+
         let request = SubscribeClipboardRequest(requestId: 1, flags: 0)
         try await clipboardChannel?.send(opcode: .subscribeClipboardRequest, message: request)
     }
