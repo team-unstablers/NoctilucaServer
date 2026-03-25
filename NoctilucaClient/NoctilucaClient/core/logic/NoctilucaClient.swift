@@ -552,7 +552,7 @@ extension NoctilucaClient: SiriusClientDelegate {
     }
     
     private func handleError(_ error: (any Error)) {
-        // TODO
+        logger.error("Unhandled error: \(error)")
     }
 }
 
