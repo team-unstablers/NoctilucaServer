@@ -18,6 +18,7 @@ import UniformTypeIdentifiers
 private enum ClipboardMIMEMapping {
     static let mappings: [(mime: String, type: NSPasteboard.PasteboardType)] = [
         ("text/plain",    .string),
+        ("text/plain;charset=utf-8", .string),
         ("text/html",     .html),
         ("text/rtf",      .rtf),
         ("image/png",     .png),
