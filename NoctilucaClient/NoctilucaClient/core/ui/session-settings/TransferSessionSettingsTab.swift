@@ -26,12 +26,10 @@ struct TransferSessionSettingsTab: View {
                     }
                 }
 
-#if os(iOS)
                 Toggle(isOn: $sessionSettings.clipboard.useBidirectionalSync) {
-                    Text(markdown: String(localized: "session-settings.transfer.clipboard.bidirectional_sync.title", defaultValue: "iOS: 양방향 클립보드 동기화 사용하기"))
-                    Text(markdown: String(localized: "session-settings.transfer.clipboard.bidirectional_sync.description", defaultValue: "iOS 기기→원격 호스트로의 클립보드 동기화도 허용합니다. 다른 앱에서 데이터를 복사해올 시 클립보드 읽기 허용 다이얼로그가 매번 나타날 수 있습니다."))
+                    Text(markdown: String(localized: "session-settings.transfer.clipboard.bidirectional_sync.title", defaultValue: "양방향 클립보드 동기화 사용하기"))
+                    Text(markdown: String(localized: "session-settings.transfer.clipboard.bidirectional_sync.description", defaultValue: "로컬→원격 호스트로의 클립보드 동기화도 허용합니다."))
                 }
-#endif
             } header: {
                 Text(markdown: String(localized: "session-settings.transfer.clipboard.section_title", defaultValue: "클립보드 채널"))
                 Text(markdown: String(localized: "session-settings.transfer.clipboard.section_description", defaultValue: "클립보드 공유 관련 정책을 설정합니다."))

@@ -13072,25 +13072,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allows clipboard synchronization from this iOS device to the remote host. A clipboard read permission dialog may appear each time you copy data from another app."
+            "value" : "Also allows clipboard synchronization from local to the remote host."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iOS端末→リモートホストへのクリップボード同期も許可します。他のアプリからデータをコピーする際、クリップボード読み取り許可ダイアログが毎回表示される場合があります。"
+            "value" : "ローカル→リモートホストへのクリップボード同期も許可します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "iOS 기기→원격 호스트로의 클립보드 동기화도 허용합니다. 다른 앱에서 데이터를 복사해올 시 클립보드 읽기 허용 다이얼로그가 매번 나타날 수 있습니다."
+            "value" : "로컬→원격 호스트로의 클립보드 동기화도 허용합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "允许从iOS设备到远程主机的剪贴板同步。从其他应用复制数据时，可能每次都会出现剪贴板读取权限对话框。"
+            "value" : "也允许从本地到远程主机的剪贴板同步。"
           }
         }
       }
@@ -13100,26 +13100,26 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "iOS: Enable Bidirectional Clipboard Sync"
+            "state" : "needs_review",
+            "value" : "Enable Bidirectional Clipboard Sync"
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "iOS: 双方向クリップボード同期を使用する"
+            "state" : "needs_review",
+            "value" : "双方向クリップボード同期を使用する"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "iOS: 양방향 클립보드 동기화 사용하기"
+            "value" : "양방향 클립보드 동기화 사용하기"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "iOS：启用双向剪贴板同步"
+            "state" : "needs_review",
+            "value" : "启用双向剪贴板同步"
           }
         }
       }
