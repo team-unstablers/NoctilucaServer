@@ -54,7 +54,7 @@ enum AppNotification: Identifiable {
         switch self {
         case .backgroundSessionActive:
             return String(
-                localized: "notification.background_session_active.title",
+                localized: "notification.background_session_active.message",
                 defaultValue: "원격 세션의 오디오를 백그라운드에서 재생하고 있습니다."
             )
         default:

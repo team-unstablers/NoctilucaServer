@@ -13,6 +13,7 @@ struct SessionSettingsSheet: View {
         case general
         case projection
         case input
+        case transfer
         case security
     }
     
@@ -80,6 +81,14 @@ struct SessionSettingsSheet: View {
                 }
                 .tag(SettingsTab.input)
                 .id(SettingsTab.input)
+            
+            TransferSessionSettingsTab(sessionSettings: $sessionSettings, scope: scope)
+                .tabItem {
+                    Image(systemName: "arrow.up.arrow.down")
+                    Text(markdown: String(localized: "session-settings.tabs.transfer", defaultValue: "전송"))
+                }
+                .tag(SettingsTab.transfer)
+                .id(SettingsTab.transfer)
             
             SecuritySessionSettingsTab(
                 sessionSettings: $sessionSettings,
