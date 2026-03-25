@@ -65,8 +65,15 @@ extension NoctilucaClient {
     func startSession() async throws {
         try assertPhase(expected: .ready)
         
-        try await initializeHIDIO()
-        try await initializeProjection()
-        try await initializeClipboard()
+        async let hidio: Void = await initializeHIDIO()
+        async let projection: Void = try await initializeProjection()
+        
+        _ = try await (hidio, projection)
+        
+        do {
+            try await initializeClipboard()
+        } catch {
+            logger.warning("Failed to initialize clipboard channel: \(error)")
+        }
     }
 }
