@@ -52,6 +52,7 @@ struct TransferSessionSettingsTab: View {
                 Text(markdown: String(localized: "session-settings.transfer.channel.section_description", defaultValue: "데이터 전송을 위한 Transfer 채널 관련 정책을 설정합니다."))
             }
         }
+        .formStyle(.grouped)
     }
 }
 
