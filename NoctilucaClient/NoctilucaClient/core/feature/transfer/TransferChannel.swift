@@ -102,6 +102,11 @@ class TransferChannel: Channel {
 
     let logger = NoctilucaLogger(category: "TransferChannel")
 
+    // MARK: 진행률 콜백
+    var onTransferStarted: (@Sendable (_ channelID: UUID, _ totalSize: UInt64) -> Void)?
+    var onProgressUpdate: (@Sendable (_ channelID: UUID, _ additionalBytes: UInt64) -> Void)?
+    var onTransferCompleted: (@Sendable (_ channelID: UUID) -> Void)?
+
     private(set) var transferDirection: TransferChannelDirection? = nil
     private(set) var task: TransferChannelTask? = nil
 
@@ -204,6 +209,7 @@ class TransferChannel: Channel {
         }
 
         self.startNotification = notification
+        onTransferStarted?(identifier, notification.totalSize)
         logger.info("Transfer started: name=\(notification.name), totalSize=\(notification.totalSize), contentType=\(notification.contentType)")
     }
 
@@ -238,6 +244,7 @@ class TransferChannel: Channel {
 
         // 데이터를 AsyncStream으로 전달
         receivedTotalBytes += UInt64(chunk.data.count)
+        onProgressUpdate?(identifier, UInt64(chunk.data.count))
         dataContinuation?.yield(chunk.data)
         expectedSequenceNumber += 1
 
@@ -258,6 +265,7 @@ class TransferChannel: Channel {
 
         dataContinuation?.finish()
         isCompleted = true
+        onTransferCompleted?(identifier)
         logger.info("Transfer completed: received \(self.receivedTotalBytes) bytes")
     }
 
@@ -269,6 +277,7 @@ class TransferChannel: Channel {
             logger.error("Cannot send on a receive-only channel")
             return
         }
+        onTransferStarted?(identifier, notification.totalSize)
         try await send(opcode: .transferStartNotification, message: notification)
     }
 
@@ -289,10 +298,12 @@ class TransferChannel: Channel {
         )
 
         try await send(opcode: .transferDataChunk, message: chunk)
+        onProgressUpdate?(identifier, UInt64(chunkData.count))
         sendSequenceNumber += 1
 
         if isEof {
             isCompleted = true
+            onTransferCompleted?(identifier)
         }
     }
 
@@ -360,6 +371,7 @@ class TransferChannel: Channel {
     override func handleStreamClose() {
         if !isCompleted {
             logger.warning("Stream closed before transfer completed")
+            onTransferCompleted?(identifier)
         }
         dataContinuation?.finish()
         super.handleStreamClose()
@@ -367,6 +379,9 @@ class TransferChannel: Channel {
 
     override func handleStreamError(error: any Error) {
         logger.error("Stream error: \(error)")
+        if !isCompleted {
+            onTransferCompleted?(identifier)
+        }
         dataContinuation?.finish()
         super.handleStreamError(error: error)
     }

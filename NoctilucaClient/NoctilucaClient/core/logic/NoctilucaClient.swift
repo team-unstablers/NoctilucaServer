@@ -185,8 +185,9 @@ class NoctilucaClient: ObservableObject {
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
+    var noctilucaFeatureProvider: NoctilucaFeatureProvider? = nil
     var sessionSettings: SessionSettings? = nil
-    
+
     // 기존 접속으로부터 승계된 서버 아이덴티티 검증 정보
     var succeedValidationDecision: SucceedValidationDecision? = nil
     

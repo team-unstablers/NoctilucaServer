@@ -42,6 +42,9 @@ struct MainToolbarAddressBar: View {
         case .newConnection:
             return nil
         case .connected:
+            if let progress = viewModel.fileTransferProgress {
+                return .fileTransfer(progress: progress)
+            }
             return nil
         case .connecting:
             return .connecting(progress: 0.1)

@@ -74,6 +74,9 @@ class SessionWindowViewModel: ObservableObject {
     private(set) var degradationNotice: DegradationNotice? = nil
 
     @Published
+    private(set) var fileTransferProgress: Double? = nil
+
+    @Published
     private(set) var pingRTT: TimeInterval? = nil
 
     @Published
@@ -438,6 +441,13 @@ class SessionWindowViewModel: ObservableObject {
             }
             .store(in: &sessionCancellables)
 
+        session.$fileTransferProgress
+            .receive(on: RunLoop.main)
+            .sink { [weak self] progress in
+                self?.fileTransferProgress = progress
+            }
+            .store(in: &sessionCancellables)
+
         session.$projection
             .compactMap { $0 }
             .flatMap { $0.$degradationNotice }
@@ -454,6 +464,7 @@ class SessionWindowViewModel: ObservableObject {
         remoteSession?.prepareForDetach()
         remoteSession = nil
         pingRTT = nil
+        fileTransferProgress = nil
         degradationNotice = nil
     }
 
