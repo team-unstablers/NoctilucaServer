@@ -20787,10 +20787,28 @@
     "settings.transfer.channel.max_upload_speed.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets the maximum speed for sending data from the server to the client. Set to 0 for unlimited."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーからクライアントへデータを送信する際の最大速度を設定します。0に設定すると無制限で送信します。"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "서버에서 클라이언트로 데이터를 전송할 때의 최대 속도를 설정합니다. 0으로 설정하면 제한 없이 전송합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置从服务器向客户端传输数据时的最大速度。设为0则不限制传输速度。"
           }
         }
       }
@@ -20798,10 +20816,28 @@
     "settings.transfer.channel.max_upload_speed.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max Upload Speed (KB/s)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大アップロード速度 (KB/s)"
+          }
+        },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "최대 업로드 속도 (KB/s)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大上传速度 (KB/s)"
           }
         }
       }
