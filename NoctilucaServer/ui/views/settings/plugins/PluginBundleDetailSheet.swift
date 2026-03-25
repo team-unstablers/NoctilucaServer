@@ -16,11 +16,20 @@ import NoctilucaPluginKit
 
 
 struct PluginBundleDetailSheet: View {
+    enum DetailTab: Hashable {
+        case general
+        case exportCategory(NoctilucaPluginType)
+        case codeSigning
+    }
+
     let metadata: any PluginBundleMetadata
     let signingResult: CodeSigningVerificationResult?
 
     @Environment(\.dismiss)
     private var dismiss
+
+    @State
+    private var selectedTab: DetailTab = .general
 
     // MARK: - Computed Properties
 
@@ -28,138 +37,133 @@ struct PluginBundleDetailSheet: View {
         Dictionary(grouping: metadata.exports, by: { $0.type })
     }
 
-    // MARK: - Tab Views
+    private var sortedExportCategories: [NoctilucaPluginType] {
+        exportsByCategory.keys.sorted(by: { $0.rawValue < $1.rawValue })
+    }
+
+    // MARK: - Detail Views
 
     @ViewBuilder
-    private var generalTab: some View {
-        VStack {
-            Form {
-                Section {
-                    HStack(spacing: 12) {
-                        Image(nsImage: NSWorkspace.shared.icon(for: .applicationExtension))
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 48, height: 48)
+    private var generalDetail: some View {
+        Form {
+            Section {
+                HStack(spacing: 12) {
+                    Image(nsImage: NSWorkspace.shared.icon(for: .applicationExtension))
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 48, height: 48)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(metadata.displayName)
-                                .font(.title2.bold())
-                            Text(metadata.id)
-                                .font(.subheadline.monospaced())
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                        }
-                    }
-                }
-
-                Section {
-                    Text(metadata.description)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                Section {
-                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.developer", defaultValue: "개발자")) {
-                        VStack(alignment: .trailing) {
-                            ForEach(metadata.authors, id: \.self) { author in
-                                Text(verbatim: author)
-                            }
-                        }
-                    }
-
-                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.license", defaultValue: "라이선스")) {
-                        SoftwareLicenseText(license: metadata.license)
-                    }
-
-                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.version", defaultValue: "버전")) {
-                        Text("\(metadata.displayVersion) (\(metadata.version))")
-                    }
-
-                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.pluginkit_version", defaultValue: "PluginKit 버전")) {
-                        Text(String(format: "0x%08X", metadata.pluginKitVersion.rawValue))
-                            .font(.body.monospaced())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(metadata.displayName)
+                            .font(.title2.bold())
+                        Text(metadata.id)
+                            .font(.subheadline.monospaced())
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
                     }
                 }
             }
-            .formStyle(.grouped)
+
+            Section {
+                Text(metadata.description)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Section {
+                SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.developer", defaultValue: "개발자")) {
+                    VStack(alignment: .trailing) {
+                        ForEach(metadata.authors, id: \.self) { author in
+                            Text(verbatim: author)
+                        }
+                    }
+                }
+
+                SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.license", defaultValue: "라이선스")) {
+                    SoftwareLicenseText(license: metadata.license)
+                }
+
+                SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.version", defaultValue: "버전")) {
+                    Text("\(metadata.displayVersion) (\(metadata.version))")
+                }
+
+                SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.pluginkit_version", defaultValue: "PluginKit 버전")) {
+                    Text(String(format: "0x%08X", metadata.pluginKitVersion.rawValue))
+                        .font(.body.monospaced())
+                }
+            }
         }
+        .formStyle(.grouped)
     }
 
     @ViewBuilder
-    private func exportCategoryTab(type: NoctilucaPluginType, exports: [any PluginBundleExportMetadata]) -> some View {
-        VStack {
-            Form {
-                ForEach(exports, id: \.id) { export in
-                    Section {
-                        SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.name", defaultValue: "이름")) {
-                            Text(export.displayName)
-                        }
-
-                        SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.id", defaultValue: "ID")) {
-                            Text(export.id)
-                                .font(.body.monospaced())
-                                .textSelection(.enabled)
-                        }
-
-                        if !export.description.isEmpty {
-                            Text(export.description)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundStyle(.secondary)
-                        }
-                    } header: {
+    private func exportCategoryDetail(type: NoctilucaPluginType, exports: [any PluginBundleExportMetadata]) -> some View {
+        Form {
+            ForEach(exports, id: \.id) { export in
+                Section {
+                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.name", defaultValue: "이름")) {
                         Text(export.displayName)
                     }
+
+                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.id", defaultValue: "ID")) {
+                        Text(export.id)
+                            .font(.body.monospaced())
+                            .textSelection(.enabled)
+                    }
+
+                    if !export.description.isEmpty {
+                        Text(export.description)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text(export.displayName)
                 }
             }
-            .formStyle(.grouped)
         }
+        .formStyle(.grouped)
     }
 
     @ViewBuilder
-    private var codeSigningTab: some View {
-        VStack {
-            Form {
-                Section {
-                    codeSigningContent
-                }
+    private var codeSigningDetail: some View {
+        Form {
+            Section {
+                codeSigningContent
             }
-            .formStyle(.grouped)
         }
-    }
-
-    // MARK: - Tab Content
-
-    @ViewBuilder
-    private var tabContent: some View {
-        TabView {
-            generalTab
-                .tabItem {
-                    Image(systemName: "info.circle.fill")
-                    Text(String(localized: "settings.plugins.detail_sheet.tab.general", defaultValue: "기본"))
-                }
-
-            ForEach(Array(exportsByCategory.keys.sorted(by: { $0.rawValue < $1.rawValue })), id: \.self) { type in
-                if let exports = exportsByCategory[type] {
-                    exportCategoryTab(type: type, exports: exports)
-                        .tabItem {
-                            Image(systemName: exportCategoryIcon(for: type))
-                            Text(exportCategoryDisplayName(for: type))
-                        }
-                }
-            }
-
-            codeSigningTab
-                .tabItem {
-                    Image(systemName: "signature")
-                    Text(String(localized: "settings.plugins.detail_sheet.tab.signature", defaultValue: "서명"))
-                }
-        }
+        .formStyle(.grouped)
     }
 
     // MARK: - Body
 
     var body: some View {
         VStack {
-            tabContent
+            NavigationSplitView {
+                List(selection: $selectedTab) {
+                    Label(String(localized: "settings.plugins.detail_sheet.tab.general", defaultValue: "기본"), systemImage: "info.circle.fill")
+                        .tag(DetailTab.general)
+
+                    ForEach(sortedExportCategories, id: \.self) { type in
+                        Label(exportCategoryDisplayName(for: type), systemImage: exportCategoryIcon(for: type))
+                            .tag(DetailTab.exportCategory(type))
+                    }
+
+                    Label(String(localized: "settings.plugins.detail_sheet.tab.signature", defaultValue: "서명"), systemImage: "signature")
+                        .tag(DetailTab.codeSigning)
+                }
+            } detail: {
+                switch selectedTab {
+                case .general:
+                    generalDetail
+                case .exportCategory(let type):
+                    if let exports = exportsByCategory[type] {
+                        exportCategoryDetail(type: type, exports: exports)
+                    }
+                case .codeSigning:
+                    codeSigningDetail
+                }
+            }
+            .navigationSplitViewStyle(.balanced)
+            .toolbar(removing: .sidebarToggle)
 
             HStack {
                 Spacer()
@@ -170,7 +174,7 @@ struct PluginBundleDetailSheet: View {
             .padding(.horizontal)
             .padding(.bottom)
         }
-        .frame(minWidth: 480, minHeight: 360)
+        .frame(minWidth: 560, minHeight: 360)
     }
 }
 
