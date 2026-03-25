@@ -10,10 +10,22 @@ import Foundation
 import SiriusKit
 import UniformTypeIdentifiers
 
+// MARK: - Transfer EventType
+
+extension SiriusEventLogger.EventType {
+    struct Transfer {
+        static let fileTransferStarted   = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_STARTED")
+        static let fileTransferCompleted  = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_COMPLETED")
+        static let fileTransferFailed     = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_FAILED")
+        static let clipboardDataServed    = SiriusEventLogger.EventType(rawValue: "CLIPBOARD_DATA_SERVED")
+    }
+}
+
 class ClipboardChannel: Channel {
     override var serviceClass: ServiceClass { .background }
 
     let logger = NoctilucaLogger(category: "ClipboardChannel")
+    private var eventLogger: SiriusEventLogger?
 
     private var remoteSubscription: ClipboardSubscription? = nil
 
@@ -85,6 +97,16 @@ class ClipboardChannel: Channel {
         self.lastFileTransferSnapshot = snapshot
     }
 
+    // MARK: - Event Logger
+
+    private func ensureEventLogger() -> SiriusEventLogger? {
+        if let eventLogger { return eventLogger }
+        guard let context = self.clientSession?.eventLoggerContext else { return nil }
+        let logger = SiriusEventLogger("NoctilucaServer::Transfer", context: context)
+        self.eventLogger = logger
+        return logger
+    }
+
     // MARK: - Transfer Serving
 
     /// FeatureProvider로부터 호출됨: 상대방이 clipboard-data TransferChannel을 열었을 때
@@ -105,6 +127,11 @@ class ClipboardChannel: Channel {
                     sha256sum: Data()
                 ))
                 try await transferChannel.write(data)
+                ensureEventLogger()?.log(.Transfer.clipboardDataServed, args: [
+                    "item_index": String(itemIndex),
+                    "repr_index": String(representationIndex),
+                    "size": String(data.count),
+                ])
             } catch {
                 logger.error("Failed to serve clipboard transfer: \(error)")
             }
@@ -114,10 +141,16 @@ class ClipboardChannel: Channel {
     /// FeatureProvider로부터 호출됨: 상대방이 file-transfer TransferChannel을 열었을 때
     func serveFileTransferData(_ transferChannel: TransferChannel, name: String, path: URL, offset: Int64, length: Int64) {
         Task {
+            let evLogger = ensureEventLogger()
+
             // 보안 검증: 요청된 경로가 마지막 clipboard copy의 파일인지 확인
             guard let snapshot = lastFileTransferSnapshot,
                   snapshot.validatePath(path.path) else {
                 logger.warning("File transfer path validation failed: \(path.path)")
+                evLogger?.log(.Transfer.fileTransferFailed, args: [
+                    "name": name,
+                    "reason": "path_validation_failed",
+                ])
                 try? await transferChannel.close()
                 return
             }
@@ -127,9 +160,18 @@ class ClipboardChannel: Channel {
 
             guard fm.fileExists(atPath: path.path, isDirectory: &isDirectory) else {
                 logger.warning("File not found for transfer: \(path.path)")
+                evLogger?.log(.Transfer.fileTransferFailed, args: [
+                    "name": name,
+                    "reason": "file_not_found",
+                ])
                 try? await transferChannel.close()
                 return
             }
+
+            evLogger?.log(.Transfer.fileTransferStarted, args: [
+                "name": name,
+                "is_directory": isDirectory.boolValue.description,
+            ])
 
             do {
                 if isDirectory.boolValue {
@@ -161,6 +203,12 @@ class ClipboardChannel: Channel {
                     ))
                     try await transferChannel.write(jsonData)
 
+                    evLogger?.log(.Transfer.fileTransferCompleted, args: [
+                        "name": name,
+                        "type": "directory_listing",
+                        "size": String(jsonData.count),
+                    ])
+
                 } else {
                     // 파일: 디스크에서 스트리밍 전송
                     let attrs = try fm.attributesOfItem(atPath: path.path)
@@ -176,9 +224,22 @@ class ClipboardChannel: Channel {
                         sha256sum: Data()
                     ))
                     try await transferChannel.writeFromFile(at: path, offset: offset, length: actualLength)
+
+                    evLogger?.log(.Transfer.fileTransferCompleted, args: [
+                        "name": name,
+                        "type": "file",
+                        "size": String(actualLength),
+                        "content_type": mimeType,
+                    ])
+                    await AppNotification.fileTransferSent(fileName: name).post()
                 }
             } catch {
                 logger.error("Failed to serve file transfer: \(error)")
+                evLogger?.log(.Transfer.fileTransferFailed, args: [
+                    "name": name,
+                    "reason": "exception",
+                    "error": String(describing: error),
+                ])
                 try? await transferChannel.close()
             }
         }
