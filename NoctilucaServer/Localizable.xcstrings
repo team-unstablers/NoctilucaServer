@@ -20784,6 +20784,28 @@
         }
       }
     },
+    "settings.transfer.channel.max_upload_speed.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에서 클라이언트로 데이터를 전송할 때의 최대 속도를 설정합니다. 0으로 설정하면 제한 없이 전송합니다."
+          }
+        }
+      }
+    },
+    "settings.transfer.channel.max_upload_speed.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 업로드 속도 (KB/s)"
+          }
+        }
+      }
+    },
     "settings.transfer.channel.section_description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
