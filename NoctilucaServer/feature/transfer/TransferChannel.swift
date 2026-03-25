@@ -199,7 +199,7 @@ class TransferChannel: Channel {
         guard startNotification == nil else {
             logger.error("Received duplicate TransferStartNotification - closing channel")
             dataContinuation?.finish()
-            try await close()
+            Task { [weak self] in try await self?.close() }
             return
         }
 
@@ -211,7 +211,7 @@ class TransferChannel: Channel {
         guard startNotification != nil else {
             logger.error("Received TransferDataChunk before TransferStartNotification - closing channel")
             dataContinuation?.finish()
-            try await close()
+            Task { [weak self] in try await self?.close() }
             return
         }
 
@@ -221,7 +221,7 @@ class TransferChannel: Channel {
         guard chunk.sequenceNumber == expectedSequenceNumber else {
             logger.error("Sequence number mismatch: expected \(self.expectedSequenceNumber), got \(chunk.sequenceNumber)")
             dataContinuation?.finish()
-            try await close()
+            Task { [weak self] in try await self?.close() }
             return
         }
 
@@ -231,7 +231,7 @@ class TransferChannel: Channel {
             if computedCRC != chunk.crc32 {
                 logger.error("CRC32 mismatch at sequence \(chunk.sequenceNumber): expected \(chunk.crc32), computed \(computedCRC)")
                 dataContinuation?.finish()
-                try await close()
+                Task { [weak self] in try await self?.close() }
                 return
             }
         }
@@ -242,9 +242,11 @@ class TransferChannel: Channel {
         expectedSequenceNumber += 1
 
         // EOF 처리
+        // close()는 streamEventLoopTask.result를 await하므로,
+        // streamEventLoop 내부에서 직접 호출하면 self-deadlock이 발생한다.
         if chunk.isEof {
             handleTransferComplete()
-            try await close()
+            Task { [weak self] in try await self?.close() }
         }
     }
 
