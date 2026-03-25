@@ -418,34 +418,51 @@ extension FileTransferCoordinator: NSFilePromiseProviderDelegate {
 }
 #endif
 
-// MARK: - iOS: NSItemProvider 생성
+// MARK: - iOS: 사전 다운로드 + NSItemProvider 생성
 
 #if os(iOS)
 extension FileTransferCoordinator {
-    /// 미리 준비된 PendingFileTransfer의 placeholder URL을 제공하는 NSItemProvider를 반환한다.
-    /// 실제 다운로드는 수신 앱이 NSFileCoordinator를 통해 파일에 접근할 때 수행된다.
-    func createItemProvider(for metadata: FileTransferMetadata, pending: PendingFileTransfer) -> (NSItemProvider, PendingFileTransfer) {
+
+    /// 파일을 임시 디렉토리에 미리 다운로드하여 URL을 반환한다.
+    /// iOS에서는 낮은 우선순위로 실행되며, 동시 다운로드 수가 제한된다.
+    func predownloadFile(metadata: FileTransferMetadata) async throws -> URL {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        let tempURL = tempDir.appendingPathComponent(metadata.name)
+
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        if metadata.isDirectory {
+            try await downloadDirectory(metadata: metadata, to: tempURL)
+        } else {
+            try await downloadFile(metadata: metadata, to: tempURL)
+        }
+
+        return tempURL
+    }
+
+    /// 이미 다운로드된 파일 URL을 감싸는 NSItemProvider를 생성한다.
+    func createItemProvider(for metadata: FileTransferMetadata, fileURL: URL) -> NSItemProvider {
         let itemProvider = NSItemProvider()
         itemProvider.suggestedName = metadata.name
 
         let utType: UTType
         if metadata.isDirectory {
-            utType = .folder
+            utType = .directory
         } else {
             utType = UTType(mimeType: metadata.contentType) ?? .data
         }
 
-        let pendingURL = pending.presentedItemURL
         itemProvider.registerFileRepresentation(
             for: utType,
             visibility: .all,
             openInPlace: false
         ) { completion in
-            completion(pendingURL, false, nil)
+            completion(fileURL, false, nil)
             return Progress()
         }
 
-        return (itemProvider, pending)
+        return itemProvider
     }
 }
 #endif
