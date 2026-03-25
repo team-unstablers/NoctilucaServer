@@ -95,7 +95,7 @@ class ClipboardManager {
     private let logger = NoctilucaLogger(category: "ClipboardManager")
 
     /// 128KB 임계값 - 이 크기를 초과하는 representation은 omitted 처리
-    static let omitThreshold: UInt64 = 2048 * 1024
+    static let omitThreshold: UInt64 = 128 * 1024
 
     /// 현재 클립보드에 등록된 PendingFileTransfer 인스턴스들.
     /// 클립보드가 갱신되기 전까지 retain하여 NSFilePresenter 등록을 유지한다.
