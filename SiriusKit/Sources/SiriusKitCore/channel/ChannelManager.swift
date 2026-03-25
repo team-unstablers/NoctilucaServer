@@ -155,6 +155,7 @@ public actor ChannelManager {
             guard case .accepted = result else {
                 // 왜 `assert(case .accepted = result)` 이런거 안됨 ㅡㅡ
                 assert(false, "Feature provider's createChannel must return .accepted if openTask.perform() succeeds")
+                throw ChannelManagerError.channelOpenFailed
             }
             
             switch result {
