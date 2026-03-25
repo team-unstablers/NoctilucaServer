@@ -11,12 +11,17 @@ import SiriusKitClient
 import UniformTypeIdentifiers
 
 class ClipboardChannel: Channel {
+    override var serviceClass: ServiceClass { .background }
+
     let logger = NoctilucaLogger(category: "ClipboardChannel")
 
     /// 세션 설정에서 주입된 클립보드 설정
     var clipboardSettings: SessionSettings.Clipboard = .init()
 
     private var remoteSubscription: ClipboardSubscription? = nil
+
+    /// 클라이언트가 서버에게 보낸 subscribe 요청으로 받은 subscriptionId
+    private var localSubscriptionId: UUID? = nil
 
     /// 마지막으로 보낸 ClipboardEvent의 omitted 데이터 스냅샷 (transfer 요청 응답용)
     private var lastSentSnapshot: ClipboardDataSnapshot? = nil
@@ -186,6 +191,7 @@ class ClipboardChannel: Channel {
             logger.info("Clipboard disabled, rejecting subscribe request (requestId=\(request.requestId))")
             try await send(opcode: .subscribeClipboardResponse, message: SubscribeClipboardResponse(
                 requestId: request.requestId,
+                isSuccess: false,
                 subscriptionId: nil
             ))
             return
@@ -208,6 +214,7 @@ class ClipboardChannel: Channel {
 
         try await send(opcode: .subscribeClipboardResponse, message: SubscribeClipboardResponse(
             requestId: request.requestId,
+            isSuccess: true,
             subscriptionId: subscription.id
         ))
     }
@@ -258,6 +265,12 @@ class ClipboardChannel: Channel {
 
     private func handleClipboardEvent(_ event: ClipboardEvent) async throws {
         guard clipboardSettings.enabled else { return }
+
+        // subscriptionId 검증
+        guard let localSubId = localSubscriptionId, event.subscriptionId == localSubId else {
+            logger.warning("Received ClipboardEvent with unknown subscriptionId=\(event.subscriptionId), expected=\(String(describing: self.localSubscriptionId))")
+            return
+        }
 
         // 진행 중인 resolve 취소
         resolveTask?.cancel()
@@ -355,48 +368,68 @@ class ClipboardChannel: Channel {
         return data.isEmpty ? nil : data
     }
 
-    // MARK: - Response Handlers (클라이언트 → 서버 요청의 응답, 현재 미사용)
+    // MARK: - Response Handlers (클라이언트가 서버에게 보낸 요청의 응답)
 
     private func handleGetClipboardResponse(_ response: GetClipboardResponse) async throws {
         logger.debug("Received GetClipboardResponse (requestId=\(response.requestId), success=\(response.success)) - not implemented")
     }
 
     private func handleSubscribeClipboardResponse(_ response: SubscribeClipboardResponse) async throws {
-        logger.debug("Received SubscribeClipboardResponse (requestId=\(response.requestId)) - not implemented")
+        if response.isSuccess, let subscriptionId = response.subscriptionId {
+            localSubscriptionId = subscriptionId
+            logger.info("Subscribe to server clipboard succeeded (subscriptionId=\(subscriptionId), requestId=\(response.requestId))")
+        } else {
+            localSubscriptionId = nil
+            logger.warning("Subscribe to server clipboard rejected (requestId=\(response.requestId))")
+        }
     }
 
     private func handleUnsubscribeClipboardResponse(_ response: UnsubscribeClipboardResponse) async throws {
-        logger.debug("Received UnsubscribeClipboardResponse (requestId=\(response.requestId)) - not implemented")
+        if response.isSuccess {
+            logger.info("Unsubscribe from server clipboard succeeded (subscriptionId=\(String(describing: response.subscriptionId)), requestId=\(response.requestId))")
+        } else {
+            logger.warning("Unsubscribe from server clipboard failed (requestId=\(response.requestId))")
+        }
+        localSubscriptionId = nil
     }
 
     // MARK: - Stream Lifecycle
 
-    override func handleStreamClose() {
+    private func cleanupSubscriptions() {
         resolveTask?.cancel()
+
+        // 로컬 구독 해제 (best-effort unsubscribe 전송)
+        if let localSubId = localSubscriptionId {
+            Task {
+                try? await self.send(opcode: .unsubscribeClipboardRequest, message: UnsubscribeClipboardRequest(
+                    requestId: 0,
+                    subscriptionId: localSubId
+                ))
+            }
+            localSubscriptionId = nil
+        }
+
+        // 리모트 구독 해제
         if let subscription = remoteSubscription {
             Task { @MainActor in
                 subscription.destroy()
             }
             remoteSubscription = nil
         }
+
         lastSentSnapshot = nil
         lastFileTransferSnapshot = nil
         fileTransferCoordinator = nil
+    }
+
+    override func handleStreamClose() {
+        cleanupSubscriptions()
         super.handleStreamClose()
     }
 
     override func handleStreamError(error: any Error) {
         logger.error("ClipboardChannel stream error: \(error)")
-        resolveTask?.cancel()
-        if let subscription = remoteSubscription {
-            Task { @MainActor in
-                subscription.destroy()
-            }
-            remoteSubscription = nil
-        }
-        lastSentSnapshot = nil
-        lastFileTransferSnapshot = nil
-        fileTransferCoordinator = nil
+        cleanupSubscriptions()
         super.handleStreamError(error: error)
     }
 }

@@ -106,15 +106,18 @@ public struct SubscribeClipboardResponse: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardResponse
 
     public let requestId: UInt64
+    public let isSuccess: Bool
     public let subscriptionId: UUID?
 
-    public init(requestId: UInt64, subscriptionId: UUID?) {
+    public init(requestId: UInt64, isSuccess: Bool, subscriptionId: UUID?) {
         self.requestId = requestId
+        self.isSuccess = isSuccess
         self.subscriptionId = subscriptionId
     }
 
     init(from protobuf: ProtobufMessage) throws {
         self.requestId = protobuf.requestID
+        self.isSuccess = protobuf.isSuccess
         self.subscriptionId = protobuf.hasSubscriptionID ? UUID(msgdef: protobuf.subscriptionID) : nil
     }
 
@@ -122,6 +125,7 @@ public struct SubscribeClipboardResponse: SiriusMessage {
         var message = ProtobufMessage()
 
         message.requestID = requestId
+        message.isSuccess = isSuccess
         if let val = self.subscriptionId {
             message.subscriptionID = val.asMsgDef()
         }
@@ -193,15 +197,18 @@ public struct UnsubscribeClipboardResponse: SiriusMessage {
 public struct ClipboardEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent
 
+    public let subscriptionId: UUID
     public let timestamp: UInt64
     public let items: [ClipboardItem]
 
-    public init(timestamp: UInt64, items: [ClipboardItem]) {
+    public init(subscriptionId: UUID, timestamp: UInt64, items: [ClipboardItem]) {
+        self.subscriptionId = subscriptionId
         self.timestamp = timestamp
         self.items = items
     }
 
     init(from protobuf: ProtobufMessage) throws {
+        self.subscriptionId = UUID(msgdef: protobuf.subscriptionID)
         self.timestamp = protobuf.timestamp
         self.items = try protobuf.items.map { try ClipboardItem(from: $0) }
     }
@@ -209,6 +216,7 @@ public struct ClipboardEvent: SiriusMessage {
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
+        message.subscriptionID = subscriptionId.asMsgDef()
         message.timestamp = timestamp
         message.items = items.map { $0.toProtobufMessage() }
 

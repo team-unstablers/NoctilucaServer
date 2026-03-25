@@ -53,6 +53,7 @@ class ClipboardSubscription: Identifiable {
         guard !snapshot.items.isEmpty else { return }
 
         let event = ClipboardEvent(
+            subscriptionId: self.id,
             timestamp: UInt64(Date().timeIntervalSince1970 * 1000),
             items: snapshot.items
         )
