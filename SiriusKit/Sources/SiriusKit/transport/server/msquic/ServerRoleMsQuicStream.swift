@@ -42,7 +42,7 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
         }
 
         // Graceful shutdown
-        await quicStream.shutdown(flags: .graceful, errorCode: 0)
+        await quicStream.shutdown(flags: .abort, errorCode: 0)
 
         receiveTask?.cancel()
         self.continuation.yield(with: .success(.closed))
