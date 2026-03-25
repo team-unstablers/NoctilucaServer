@@ -97,6 +97,10 @@ class ClipboardManager {
     /// 128KB 임계값 - 이 크기를 초과하는 representation은 omitted 처리
     static let omitThreshold: UInt64 = 2048 * 1024
 
+    /// 현재 클립보드에 등록된 PendingFileTransfer 인스턴스들.
+    /// 클립보드가 갱신되기 전까지 retain하여 NSFilePresenter 등록을 유지한다.
+    private var pendingTransfers: [PendingFileTransfer] = []
+
     private init() {}
 
     /// NSPasteboard.general의 현재 내용을 [ClipboardItem]으로 변환합니다.
@@ -242,6 +246,12 @@ class ClipboardManager {
 
     /// 수신된 ClipboardItem 배열을 NSPasteboard.general에 씁니다.
     func set(items: [ClipboardItem]) {
+        // 이전 PendingFileTransfer 정리
+        for pending in pendingTransfers {
+            pending.invalidate()
+        }
+        pendingTransfers.removeAll()
+
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
 
@@ -273,12 +283,21 @@ class ClipboardManager {
         ClipboardWatcher.shared.suppressedChangeCount = pasteboard.changeCount
     }
 
-    /// 수신된 ClipboardItem과 파일 전송 promise를 함께 NSPasteboard.general에 씁니다.
+    /// 수신된 ClipboardItem과 파일 전송 URL을 함께 NSPasteboard.general에 씁니다.
+    /// 각 파일에 대해 PendingFileTransfer를 생성하여 NSFilePresenter로 등록하고,
+    /// placeholder URL을 pasteboard에 기록한다.
+    /// 디렉토리는 원격에 listing을 요청하여 하위 항목을 재귀적으로 미리 생성한다.
     func setWithFileTransfer(
         items: [ClipboardItem],
         fileTransferItems: [(Int, FileTransferMetadata)],
         coordinator: FileTransferCoordinator
-    ) {
+    ) async {
+        // 이전 PendingFileTransfer 정리
+        for pending in pendingTransfers {
+            pending.invalidate()
+        }
+        pendingTransfers.removeAll()
+
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
 
@@ -301,18 +320,15 @@ class ClipboardManager {
             pasteboardObjects.append(pasteboardItem)
         }
 
-        // 파일 전송 promise
+        // 파일 전송: PendingFileTransfer 생성 및 URL 등록
         for (_, metadata) in fileTransferItems {
-            let utType: String
-            if metadata.isDirectory {
-                utType = UTType.folder.identifier
-            } else {
-                utType = (UTType(mimeType: metadata.contentType) ?? .data).identifier
+            do {
+                let pending = try await coordinator.preparePendingTransfer(for: metadata)
+                pendingTransfers.append(pending)
+                pasteboardObjects.append(pending.presentedItemURL! as NSURL)
+            } catch {
+                logger.error("Failed to prepare pending transfer for \(metadata.name): \(error)")
             }
-
-            let provider = NSFilePromiseProvider(fileType: utType, delegate: coordinator)
-            provider.userInfo = metadata
-            pasteboardObjects.append(provider)
         }
 
         pasteboard.writeObjects(pasteboardObjects)
