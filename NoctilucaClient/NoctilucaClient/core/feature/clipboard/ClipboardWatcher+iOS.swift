@@ -110,6 +110,10 @@ class ClipboardManager {
     /// 128KB 임계값 - 이 크기를 초과하는 representation은 omitted 처리
     static let omitThreshold: UInt64 = 128 * 1024
 
+    /// 현재 클립보드에 등록된 PendingFileTransfer 인스턴스들.
+    /// 클립보드가 갱신되기 전까지 retain하여 NSFilePresenter 등록을 유지한다.
+    private var pendingTransfers: [PendingFileTransfer] = []
+
     private init() {}
 
 
@@ -227,6 +231,12 @@ class ClipboardManager {
 
     /// 수신된 ClipboardItem 배열을 UIPasteboard.general에 씁니다.
     func set(items: [ClipboardItem]) {
+        // 이전 PendingFileTransfer 정리
+        for pending in pendingTransfers {
+            pending.invalidate()
+        }
+        pendingTransfers.removeAll()
+
         let pasteboard = UIPasteboard.general
 
         var pasteboardItems: [[String: Any]] = []
@@ -257,11 +267,19 @@ class ClipboardManager {
     }
 
     /// 수신된 ClipboardItem과 파일 전송 ItemProvider를 함께 UIPasteboard.general에 씁니다.
+    /// 각 파일에 대해 PendingFileTransfer를 생성하여 NSFilePresenter로 등록하고,
+    /// placeholder URL을 제공하는 NSItemProvider를 pasteboard에 등록한다.
     func setWithFileTransfer(
         items: [ClipboardItem],
         fileTransferItems: [(Int, FileTransferMetadata)],
         coordinator: FileTransferCoordinator
     ) {
+        // 이전 PendingFileTransfer 정리
+        for pending in pendingTransfers {
+            pending.invalidate()
+        }
+        pendingTransfers.removeAll()
+
         let pasteboard = UIPasteboard.general
 
         // 일반 아이템
@@ -288,12 +306,12 @@ class ClipboardManager {
         // 파일 전송 ItemProvider
         var itemProviders: [NSItemProvider] = []
         for (_, metadata) in fileTransferItems {
-            let itemProvider = coordinator.createItemProvider(for: metadata)
+            let (itemProvider, pending) = coordinator.createItemProvider(for: metadata)
+            pendingTransfers.append(pending)
             itemProviders.append(itemProvider)
         }
 
         if !itemProviders.isEmpty {
-            // ItemProvider가 있으면 setItemProviders 사용
             pasteboard.items = pasteboardItems
             pasteboard.setItemProviders(
                 itemProviders,
