@@ -114,6 +114,11 @@ class TransferChannel: Channel {
 
     // MARK: 송신 상태
     private var sendSequenceNumber: UInt64 = 0
+    private var sendStartTime: ContinuousClock.Instant? = nil
+    private var sentTotalBytes: UInt64 = 0
+
+    // MARK: 속도 제한 (bytes/s, 0 = 무제한)
+    private var maxSendBytesPerSecond: Int = 0
 
     private(set) var isCompleted: Bool = false
 
@@ -150,6 +155,12 @@ class TransferChannel: Channel {
             self.task = .clipboardData(itemIndex: itemIndex, representationIndex: representationIndex)
         default:
             break
+        }
+
+        // 속도 제한 설정 캐시
+        if shouldSend() {
+            let limitKBps = SettingsStore.shared.settings.transfer.maxUploadSpeedKBps
+            maxSendBytesPerSecond = limitKBps > 0 ? limitKBps * 1024 : 0
         }
 
         if shouldRecv() {
@@ -295,6 +306,24 @@ class TransferChannel: Channel {
 
         if isEof {
             isCompleted = true
+        } else {
+            try await throttleSendIfNeeded(bytesSent: chunkData.count)
+        }
+    }
+
+    private func throttleSendIfNeeded(bytesSent: Int) async throws {
+        guard maxSendBytesPerSecond > 0 else { return }
+
+        let now = ContinuousClock.now
+        if sendStartTime == nil { sendStartTime = now }
+
+        sentTotalBytes += UInt64(bytesSent)
+
+        let expectedDuration = Duration.seconds(Double(sentTotalBytes) / Double(maxSendBytesPerSecond))
+        let elapsed = now - sendStartTime!
+
+        if expectedDuration > elapsed {
+            try await Task.sleep(for: expectedDuration - elapsed)
         }
     }
 

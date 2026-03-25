@@ -69,6 +69,12 @@ struct TransferSettingsTab: View {
                     Text(markdown: String(localized: "settings.transfer.channel.compression.title", defaultValue: "가능한 경우 압축 사용하기"))
                     Text(markdown: String(localized: "settings.transfer.channel.compression.description", defaultValue: "Zstd 압축을 사용할지 여부를 설정합니다.\n데이터 전송량이 줄어들 수 있지만, 컴퓨팅 자원 사용량이 늘어날 수 있습니다."))
                 }
+
+                IntegerField(value: $settings.transfer.maxUploadSpeedKBps) {
+                    Text(markdown: String(localized: "settings.transfer.channel.max_upload_speed.title", defaultValue: "최대 업로드 속도 (KB/s)"))
+                    Text(markdown: String(localized: "settings.transfer.channel.max_upload_speed.description", defaultValue: "서버에서 클라이언트로 데이터를 전송할 때의 최대 속도를 설정합니다. 0으로 설정하면 제한 없이 전송합니다."))
+                }
+
             } header: {
                 Text(markdown: String(localized: "settings.transfer.channel.section_title", defaultValue: "Transfer 채널"))
                 Text(markdown: String(localized: "settings.transfer.channel.section_description", defaultValue: "데이터 전송을 위한 Transfer 채널 관련 정책을 설정합니다."))
