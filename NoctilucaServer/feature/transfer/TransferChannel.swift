@@ -84,6 +84,7 @@ extension TransferChannelArgumentsSet {
 // MARK: - TransferChannel
 
 class TransferChannel: Channel {
+    override var serviceClass: ServiceClass { .background }
 
     static let defaultChunkSize: Int = 64 * 1024
 
