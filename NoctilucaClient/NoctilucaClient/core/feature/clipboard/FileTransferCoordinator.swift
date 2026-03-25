@@ -40,7 +40,7 @@ class FileTransferCoordinator: NSObject {
     // MARK: - Download
 
     /// 단일 파일을 다운로드하여 destinationURL에 저장합니다.
-    func downloadFile(metadata: FileTransferMetadata, to destinationURL: URL) async throws {
+    func downloadFile(metadata: FileTransferMetadata, to destinationURL: URL, progress: Progress? = nil) async throws {
         guard let session = clipboardChannel?.clientSession else {
             throw FileTransferError.sessionUnavailable
         }
@@ -71,6 +71,7 @@ class FileTransferCoordinator: NSObject {
         do {
             for await chunk in dataStream {
                 fileHandle.write(chunk)
+                progress?.completedUnitCount += Int64(chunk.count)
             }
             try fileHandle.close()
 
@@ -216,21 +217,26 @@ extension FileTransferCoordinator {
 
             let progress = Progress(totalUnitCount: max(Int64(metadata.size), 1))
 
-            Task {
+            Task.detached { [weak self] in
                 do {
+                    guard let self else {
+                        completion(nil, false, FileTransferError.sessionUnavailable)
+                        return
+                    }
+
                     let tempDir = FileManager.default.temporaryDirectory
                     let tempURL = tempDir.appendingPathComponent(metadata.name)
 
                     if metadata.isDirectory {
                         try await self.downloadDirectory(metadata: metadata, to: tempURL)
                     } else {
-                        try await self.downloadFile(metadata: metadata, to: tempURL)
+                        try await self.downloadFile(metadata: metadata, to: tempURL, progress: progress)
                     }
 
                     progress.completedUnitCount = progress.totalUnitCount
                     completion(tempURL, false, nil)
                 } catch {
-                    self.logger.error("iOS file transfer failed: \(error)")
+                    self?.logger.error("iOS file transfer failed: \(error)")
                     completion(nil, false, error)
                 }
             }

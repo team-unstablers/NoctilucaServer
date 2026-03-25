@@ -111,6 +111,7 @@ class ClipboardManager {
 
     private init() {}
 
+
     /// UIPasteboard.general의 현재 내용을 [ClipboardItem]으로 변환합니다.
     func current() -> [ClipboardItem] {
         let pasteboard = UIPasteboard.general
@@ -285,8 +286,8 @@ class ClipboardManager {
             // ItemProvider가 있으면 setItemProviders 사용
             pasteboard.items = pasteboardItems
             pasteboard.setItemProviders(
-                pasteboard.itemProviders + itemProviders,
-                localOnly: false,
+                itemProviders,
+                localOnly: true,
                 expirationDate: nil
             )
         } else {
