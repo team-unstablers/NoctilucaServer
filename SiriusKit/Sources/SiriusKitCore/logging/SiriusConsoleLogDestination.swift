@@ -24,8 +24,13 @@ public struct SiriusConsoleLogDestination: SiriusLogDestination {
         guard level != .off else { return }
 
         if includeMetadata {
+#if DEBUG
+            let sourceLocation = "[\(file):\(line)][\(function)] "
+#else
+            let sourceLocation = ""
+#endif
             fputs(
-                "[\(SiriusLogTimestamp.now())][\(subsystem)][\(category):\(level.label)][\(file):\(line)][\(function)] \(message)\n",
+                "[\(SiriusLogTimestamp.now())][\(subsystem)][\(category):\(level.label)]\(sourceLocation)\(message)\n",
                 stderr
             )
         } else {
