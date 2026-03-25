@@ -18,6 +18,7 @@ import SiriusKitClient
 private enum ClipboardMIMEMapping {
     static let mappings: [(mime: String, type: UTType)] = [
         ("text/plain",    .plainText),
+        ("text/plain;charset=utf-8", .plainText),
         ("text/html",     .html),
         ("text/rtf",      .rtf),
         ("image/png",     .png),
@@ -358,7 +359,25 @@ class ClipboardWatcher {
 
     private var subscribers: [UUID: WeakSubscriberRef] = [:]
 
-    private init() {}
+    private init() {
+        // 앱 라이프사이클 노티피케이션 등록
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleAppDidEnterBackground()
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleAppDidBecomeActive()
+            }
+        }
+    }
 
     func addSubscriber(_ subscription: ClipboardSubscription) {
         subscribers[subscription.id] = WeakSubscriberRef(subscription)
@@ -384,26 +403,49 @@ class ClipboardWatcher {
         logger.info("Subscriber removed (id=\(id)), total=\(self.subscribers.count)")
     }
 
+    // MARK: - App Lifecycle
+
+    private func handleAppDidEnterBackground() {
+        guard !subscribers.isEmpty else { return }
+        pauseTimer()
+        logger.info("Clipboard watching paused (app entered background)")
+    }
+
+    private func handleAppDidBecomeActive() {
+        guard !subscribers.isEmpty else { return }
+        // 포그라운드 복귀 시 즉시 클립보드 변경 확인
+        checkClipboard()
+        resumeTimer()
+        logger.info("Clipboard watching resumed (app became active)")
+    }
+
     // MARK: - Polling
 
     private func startWatching() {
-        guard timer == nil else { return }
-
         lastChangeCount = UIPasteboard.general.changeCount
-        timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.checkClipboard()
-            }
-        }
+        resumeTimer()
 
         logger.info("Clipboard watching started (interval=\(self.pollInterval)s)")
     }
 
     private func stopWatching() {
-        timer?.invalidate()
-        timer = nil
+        pauseTimer()
 
         logger.info("Clipboard watching stopped")
+    }
+
+    private func resumeTimer() {
+        guard timer == nil else { return }
+        timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkClipboard()
+            }
+        }
+    }
+
+    private func pauseTimer() {
+        timer?.invalidate()
+        timer = nil
     }
 
     private func checkClipboard() {
