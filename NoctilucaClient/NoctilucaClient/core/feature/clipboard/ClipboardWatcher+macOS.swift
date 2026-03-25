@@ -283,11 +283,12 @@ class ClipboardManager {
     /// 수신된 ClipboardItem과 파일 전송 URL을 함께 NSPasteboard.general에 씁니다.
     /// 각 파일에 대해 PendingFileTransfer를 생성하여 NSFilePresenter로 등록하고,
     /// placeholder URL을 pasteboard에 기록한다.
+    /// 디렉토리는 서버에 listing을 요청하여 하위 항목을 재귀적으로 미리 생성한다.
     func setWithFileTransfer(
         items: [ClipboardItem],
         fileTransferItems: [(Int, FileTransferMetadata)],
         coordinator: FileTransferCoordinator
-    ) {
+    ) async {
         // 이전 PendingFileTransfer 정리
         for pending in pendingTransfers {
             pending.invalidate()
@@ -318,9 +319,13 @@ class ClipboardManager {
 
         // 파일 전송: PendingFileTransfer 생성 및 URL 등록
         for (_, metadata) in fileTransferItems {
-            let pending = PendingFileTransfer(coordinator: coordinator, metadata: metadata)
-            pendingTransfers.append(pending)
-            pasteboardObjects.append(pending.presentedItemURL as NSURL)
+            do {
+                let pending = try await coordinator.preparePendingTransfer(for: metadata)
+                pendingTransfers.append(pending)
+                pasteboardObjects.append(pending.presentedItemURL! as NSURL)
+            } catch {
+                logger.error("Failed to prepare pending transfer for \(metadata.name): \(error)")
+            }
         }
 
         pasteboard.writeObjects(pasteboardObjects)

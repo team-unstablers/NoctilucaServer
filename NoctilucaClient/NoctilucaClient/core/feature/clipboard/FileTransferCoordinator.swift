@@ -37,6 +37,42 @@ class FileTransferCoordinator: NSObject {
         super.init()
     }
 
+    // MARK: - PendingFileTransfer 생성
+
+    /// 메타데이터로부터 PendingFileTransfer를 생성한다.
+    /// 디렉토리인 경우 서버에 listing을 요청하여 재귀적으로 하위 항목을 미리 생성한다.
+    func preparePendingTransfer(for metadata: FileTransferMetadata) async throws -> PendingFileTransfer {
+        let root = PendingFileTransfer(coordinator: self, metadata: metadata)
+        if metadata.isDirectory {
+            try await populateChildren(of: root, metadata: metadata)
+        }
+        return root
+    }
+
+    private func populateChildren(of parent: PendingFileTransfer, metadata: FileTransferMetadata) async throws {
+        let listing = try await requestDirectoryListing(metadata: metadata)
+
+        for entry in listing {
+            let childMetadata = FileTransferMetadata(
+                name: entry.name,
+                path: metadata.path + "/" + entry.name,
+                size: entry.size,
+                contentType: entry.contentType
+            )
+
+            let child = PendingFileTransfer(
+                coordinator: self,
+                metadata: childMetadata,
+                parentURL: parent.presentedItemURL!
+            )
+            parent.addChild(child)
+
+            if entry.isDirectory {
+                try await populateChildren(of: child, metadata: childMetadata)
+            }
+        }
+    }
+
     // MARK: - Download
 
     /// 단일 파일을 다운로드하여 destinationURL에 저장합니다.
@@ -154,6 +190,9 @@ class FileTransferCoordinator: NSObject {
 ///
 /// 같은 파일을 여러 곳에 붙여넣기하는 경우를 지원하기 위해,
 /// 다운로드 Task를 캐싱하고 다운로드 완료 후에도 파일을 일정 시간 유지한다.
+///
+/// 디렉토리의 경우 `FileTransferCoordinator.preparePendingTransfer(for:)`를 통해
+/// 재귀적으로 하위 항목의 PendingFileTransfer를 미리 생성한다.
 class PendingFileTransfer: NSObject, NSFilePresenter {
     private let logger = NoctilucaLogger(category: "PendingFileTransfer")
 
@@ -166,6 +205,12 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
     let coordinator: FileTransferCoordinator
     let metadata: FileTransferMetadata
 
+    /// 디렉토리인 경우 하위 항목의 PendingFileTransfer들
+    private(set) var children: [PendingFileTransfer] = []
+
+    /// 최상위(root) 항목인지 여부. root만 컨테이너 디렉토리를 삭제한다.
+    private let isRoot: Bool
+
     /// 진행 중이거나 완료된 다운로드 Task.
     /// 여러 reader가 동시에 접근해도 같은 Task를 await한다.
     private var downloadTask: Task<Void, Error>?
@@ -173,56 +218,104 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
     /// cleanup 예약 Task
     private var cleanupTask: Task<Void, Never>?
 
+    /// 최상위 항목용 init. `{tmpDir}/{UUID}/{name}` 경로를 생성한다.
     init(coordinator: FileTransferCoordinator, metadata: FileTransferMetadata) {
         let tempDir = FileManager.default.temporaryDirectory
         let tempURL = tempDir.appendingPathComponent(UUID().uuidString)
             .appendingPathComponent(metadata.name)
 
+        self.coordinator = coordinator
+        self.metadata = metadata
+        self.presentedItemURL = tempURL
+        self.presentedItemOperationQueue = coordinator.operationQueue
+        self.isRoot = true
+
+        super.init()
+
+        createPlaceholder(at: tempURL)
+
+        if !metadata.isDirectory {
+            NSFileCoordinator.addFilePresenter(self)
+        }
+    }
+
+    /// 하위 항목용 init. 부모 디렉토리 아래에 생성된다.
+    init(coordinator: FileTransferCoordinator, metadata: FileTransferMetadata, parentURL: URL) {
+        let tempURL = parentURL.appendingPathComponent(metadata.name)
+
+        self.coordinator = coordinator
+        self.metadata = metadata
+        self.presentedItemURL = tempURL
+        self.presentedItemOperationQueue = coordinator.operationQueue
+        self.isRoot = false
+
+        super.init()
+
+        createPlaceholder(at: tempURL)
+
+        if !metadata.isDirectory {
+            NSFileCoordinator.addFilePresenter(self)
+        }
+    }
+
+    private func createPlaceholder(at url: URL) {
         let fm = FileManager.default
-        try? fm.createDirectory(at: tempURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         if metadata.isDirectory {
-            try? fm.createDirectory(at: tempURL, withIntermediateDirectories: true)
+            try? fm.createDirectory(at: url, withIntermediateDirectories: true)
         } else {
-            fm.createFile(atPath: tempURL.path, contents: nil)
+            fm.createFile(atPath: url.path, contents: nil)
             // sparse file: 디스크 블록을 할당하지 않고 파일 크기만 설정
             if metadata.size > 0 {
-                let fd = open(tempURL.path, O_WRONLY)
+                let fd = open(url.path, O_WRONLY)
                 if fd >= 0 {
                     ftruncate(fd, off_t(metadata.size))
                     close(fd)
                 }
             }
         }
-
-        self.coordinator = coordinator
-        self.metadata = metadata
-        self.presentedItemURL = tempURL
-        self.presentedItemOperationQueue = coordinator.operationQueue
-
-        super.init()
-
-        NSFileCoordinator.addFilePresenter(self)
     }
 
     deinit {
         downloadTask?.cancel()
         cleanupTask?.cancel()
-        NSFileCoordinator.removeFilePresenter(self)
-        removeFiles()
+        if !metadata.isDirectory {
+            NSFileCoordinator.removeFilePresenter(self)
+        }
+        if isRoot {
+            removeFiles()
+        }
     }
 
     /// NSFileCoordinator 등록을 해제하고 즉시 정리한다.
     func invalidate() {
         downloadTask?.cancel()
         cleanupTask?.cancel()
-        NSFileCoordinator.removeFilePresenter(self)
-        removeFiles()
+
+        for child in children {
+            child.invalidate()
+        }
+        children.removeAll()
+
+        if !metadata.isDirectory {
+            NSFileCoordinator.removeFilePresenter(self)
+        }
+        if isRoot {
+            removeFiles()
+        }
     }
 
     private func removeFiles() {
-        let containerURL = presentedItemURL!.deletingLastPathComponent()
+        guard let url = presentedItemURL else { return }
+        // root의 UUID 컨테이너 디렉토리째로 삭제
+        let containerURL = url.deletingLastPathComponent()
         try? FileManager.default.removeItem(at: containerURL)
+    }
+
+    /// 하위 PendingFileTransfer를 추가한다.
+    func addChild(_ child: PendingFileTransfer) {
+        children.append(child)
     }
 
     /// 다운로드를 시작하거나, 이미 진행 중인 다운로드를 반환한다.
@@ -232,14 +325,11 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
         }
 
         let task = Task { [weak self] in
-            guard let self else { throw FileTransferError.sessionUnavailable }
-
-            if self.metadata.isDirectory {
-                try await self.coordinator.downloadDirectory(metadata: self.metadata, to: self.presentedItemURL!)
-            } else {
-                try await self.coordinator.downloadFile(metadata: self.metadata, to: self.presentedItemURL!)
+            guard let self, let url = self.presentedItemURL else {
+                throw FileTransferError.sessionUnavailable
             }
 
+            try await self.coordinator.downloadFile(metadata: self.metadata, to: url)
             self.logger.info("File downloaded: \(self.metadata.name)")
         }
 
@@ -262,9 +352,12 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
     // MARK: - NSFilePresenter
 
     func relinquishPresentedItem(toReader reader: @escaping ((() -> Void)?) -> Void) {
+        guard !metadata.isDirectory else {
+            reader(nil)
+            return
+        }
+
         let task = ensureDownload()
-        
-        print("reqlinquishPresentedItem")
 
         Task {
             do {
@@ -274,7 +367,6 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
             }
 
             reader { [weak self] in
-                // reader 완료 시 cleanup 타이머를 (재)시작
                 self?.scheduleCleanup()
             }
         }
@@ -330,11 +422,9 @@ extension FileTransferCoordinator: NSFilePromiseProviderDelegate {
 
 #if os(iOS)
 extension FileTransferCoordinator {
-    /// PendingFileTransfer를 생성하고 그 placeholder URL을 제공하는 NSItemProvider를 반환한다.
+    /// 미리 준비된 PendingFileTransfer의 placeholder URL을 제공하는 NSItemProvider를 반환한다.
     /// 실제 다운로드는 수신 앱이 NSFileCoordinator를 통해 파일에 접근할 때 수행된다.
-    func createItemProvider(for metadata: FileTransferMetadata) -> (NSItemProvider, PendingFileTransfer) {
-        let pending = PendingFileTransfer(coordinator: self, metadata: metadata)
-
+    func createItemProvider(for metadata: FileTransferMetadata, pending: PendingFileTransfer) -> (NSItemProvider, PendingFileTransfer) {
         let itemProvider = NSItemProvider()
         itemProvider.suggestedName = metadata.name
 
