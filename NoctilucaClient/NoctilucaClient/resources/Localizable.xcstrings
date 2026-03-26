@@ -126,7 +126,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            “value” : “Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto “We make your dreams come true,” we have primarily focused on addressing technical challenges that many clients have been unable to resolve. Computing was what we did best, so we kept helping people through technology.\n\nHowever, sustaining our company has become difficult amid the prolonged economic downturn.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you.”
+            "value" : "Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto \"We make your dreams come true,\" we have primarily focused on addressing technical challenges that many clients have been unable to resolve. Computing was what we did best, so we kept helping people through technology.\n\nHowever, sustaining our company has become difficult amid the prolonged economic downturn.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you."
           }
         },
         "ja" : {
@@ -138,13 +138,13 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            “value” : “안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \”여러분들의 꿈을 이루어 드립니다\” 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 저희가 가장 잘 하는 것이 컴퓨터였기에, 기술로 사람들을 돕는 일을 계속 해왔습니다.\n\n하지만, 오랜 불경기 속에서 회사의 지속이 어려워졌습니다.\n\nNoctiluca / Sirius는 그런 와중에 제가 바닥부터 구상하고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다.”
+            "value" : "안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \"여러분들의 꿈을 이루어 드립니다\" 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 저희가 가장 잘 하는 것이 컴퓨터였기에, 기술로 사람들을 돕는 일을 계속 해왔습니다.\n\n하지만, 오랜 불경기 속에서 회사의 지속이 어려워졌습니다.\n\nNoctiluca / Sirius는 그런 와중에 제가 바닥부터 구상하고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다."
           }
         },
-        “zh-Hans” : {
-          “stringUnit” : {
-            “state” : “translated”,
-            “value” : “您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在”为您实现梦想”的座右铭下，主要解决许多客户未能解决的技术难题。计算机是我们最擅长的领域，因此我们一直坚持用技术帮助他人。\n\n然而，在长期的经济低迷中，公司的维持变得愈发困难。\n\nNoctiluca / Sirius 是在这种情况下，我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。”
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在\"为您实现梦想\"的座右铭下，主要解决许多客户未能解决的技术难题。计算机是我们最擅长的领域，因此我们一直坚持用技术帮助他人。\n\n然而，在长期的经济低迷中，公司的维持变得愈发困难。\n\nNoctiluca / Sirius 是在这种情况下，我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。"
           }
         }
       }
@@ -289,7 +289,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本软件包含开源软件。详情请点击下方的“开源许可证”按钮查看。"
+            "value" : "本软件包含开源软件。详情请点击下方的\"开源许可证\"按钮查看。"
           }
         }
       }
@@ -7431,6 +7431,17 @@
     "Noctiluca " : {
 
     },
+    "notification.background_session_active.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 세션의 오디오를 백그라운드에서 재생하고 있습니다."
+          }
+        }
+      }
+    },
     "notification.background_session_active.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -12823,6 +12834,35 @@
         }
       }
     },
+    "session-settings.tabs.transfer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "転送"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전송"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传输"
+          }
+        }
+      }
+    },
     "session-settings.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -12848,6 +12888,441 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "会话设置"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.channel.compression.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to use Zstd compression.\nThis may reduce data transfer volume, but may increase computing resource usage."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zstd圧縮を使用するかどうかを設定します。\nデータ転送量が減少する可能性がありますが、コンピューティングリソースの使用量が増加する可能性があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Zstd 압축을 사용할지 여부를 설정합니다.\n데이터 전송량이 줄어들 수 있지만, 컴퓨팅 자원 사용량이 늘어날 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否使用Zstd压缩。\n可能减少数据传输量，但可能增加计算资源使用量。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.channel.compression.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Compression When Possible"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可能な場合は圧縮を使用する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가능한 경우 압축 사용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尽可能使用压缩"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.channel.section_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure policies for the Transfer channel used for data transmission."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "データ転送のためのTransferチャンネルに関するポリシーを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "데이터 전송을 위한 Transfer 채널 관련 정책을 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置用于数据传输的Transfer通道相关策略。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.channel.section_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer Channel"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferチャンネル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Transfer 채널"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer通道"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.allow_file.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to allow copying files through clipboard copy/paste operations such as ⌘C / ⌘V."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘C / ⌘Vなどのクリップボードのコピー/ペースト操作を通じてファイルをコピーすることを許可するかどうかを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "⌘C / ⌘V와 같은 클립보드 복사/붙여넣기 동작을 통해 파일을 복사하는 것을 허용할지 여부를 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否允许通过 ⌘C / ⌘V 等剪贴板复制/粘贴操作来复制文件。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.allow_file.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow File Copying (Experimental)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイルのコピーを許可する（実験的）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 복사 허용하기 (실험적)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许复制文件（实验性）"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.bidirectional_sync.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also allows clipboard synchronization from local to the remote host."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカル→リモートホストへのクリップボード同期も許可します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로컬→원격 호스트로의 클립보드 동기화도 허용합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "也允许从本地到远程主机的剪贴板同步。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.bidirectional_sync.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enable Bidirectional Clipboard Sync"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "双方向クリップボード同期を使用する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양방향 클립보드 동기화 사용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "启用双向剪贴板同步"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.enabled.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to use the clipboard sharing feature. When enabled, clipboard data can be exchanged between the client and server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード共有機能を使用するかどうかを設定します。この機能が有効な場合、クライアントとサーバー間でクリップボードデータをやり取りできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 공유 기능을 사용할지 여부를 설정합니다. 이 기능이 활성화된 경우, 클라이언트와 서버 간에 클립보드 데이터를 주고받을 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否使用剪贴板共享功能。启用后，客户端与服务器之间可以交换剪贴板数据。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.enabled.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Clipboard Sharing"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード共有を使用する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 공유 사용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用剪贴板共享"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.ios_file_warning" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Warning**: [Since iOS does not have APIs like `NSFilePromiseProvider` for file sharing, `NSItemProvider` is used instead.](https://www.google.com/search?q=What+is+the+difference+between+NSFilePromiseProvider+and+NSItemProvider%3F+Why+does+copying+a+file+via+NSItemProvider+start+downloading+immediately%3F+Please+explain+in+a+way+that+is+easy+to+understand&udm=50) **In the current implementation, copying files from the remote host will immediately start downloading**, and we are looking for a solution. Please be aware that large amounts of data may be downloaded unexpectedly."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**警告**: [iOSには`NSFilePromiseProvider`のようなファイル共有用APIが存在しないため、代わりに`NSItemProvider`を使用しています。](https://www.google.com/search?q=NSFilePromiseProviderとNSItemProviderの違いは何ですか%3F+なぜNSItemProviderでファイルをコピーするとすぐにダウンロードが始まるのですか%3F+できるだけ分かりやすく教えてください&udm=50) **現在の実装ではリモートホストからファイルをコピーするとすぐにダウンロードが開始される問題があり**、解決策を模索中です。大量のデータが予期せずダウンロードされる可能性があるためご注意ください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**경고**: [iOS에서는 `NSFilePromiseProvider`같은 파일 공유를 위한 API가 존재하지 않아, 대신 `NSItemProvider`를 사용하고 있습니다.](https://www.google.com/search?q=NSFilePromiseProvider과+NSItemProvider의+차이는+무엇인가요%1$3F+왜+NSItemProvider를+통해+파일을+복사하면+곧바로+다운로드+되나요%2$3F+비전공자도+이해할+수+있도록+쉽게+알려주세요&udm=50) **현 구현에서는 원격 호스트에서 파일을 복사하면 곧바로 다운로드가 시작되는 문제가 있으며**, 해결 방안을 찾는 중입니다. 이로 인해 대량의 데이터가 예상치 못하게 다운로드될 수 있으므로 주의 바랍니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**警告**：[由于iOS没有像`NSFilePromiseProvider`这样的文件共享API，因此使用了`NSItemProvider`替代。](https://www.google.com/search?q=NSFilePromiseProvider和NSItemProvider有什么区别%3F+为什么通过NSItemProvider复制文件会立即开始下载%3F+请尽量用简单易懂的方式解释&udm=50) **在当前实现中，从远程主机复制文件会立即开始下载**，我们正在寻找解决方案。请注意，可能会意外下载大量数据。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.section_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure clipboard sharing policies."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード共有に関するポリシーを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 공유 관련 정책을 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置剪贴板共享相关策略。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.section_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard Channel"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボードチャンネル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 채널"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板通道"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.text_only.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to send and receive clipboard data other than text. When enabled, the clipboard sharing feature will only work for text data."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テキスト以外のクリップボードデータを送受信するかどうかを設定します。このオプションが有効な場合、クリップボード共有機能はテキストデータに対してのみ動作します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "텍스트 데이터를 제외한 클립보드 데이터를 송수신할지 여부를 설정합니다. 이 옵션이 활성화된 경우, 클립보드 공유 기능은 텍스트 데이터에 대해서만 동작하게 됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否发送和接收文本以外的剪贴板数据。启用后，剪贴板共享功能仅对文本数据生效。"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.clipboard.text_only.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Text Only"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テキストのみ許可する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "텍스트만 허용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅允许文本"
           }
         }
       }

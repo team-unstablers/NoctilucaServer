@@ -14,7 +14,10 @@ fileprivate extension SiriusEventLogger.EventType {
 }
 
 enum ChannelManagerError: Error {
+    /// 채널 생성에 실패하였습니다.
     case channelOpenFailed
+    /// 채널 생성을 거절하였습니다.
+    case channelOpenRejected(code: Int, reason: String)
     case channelOpenTimedOut
     case channelAlreadyRegistered
 }
@@ -123,6 +126,15 @@ public actor ChannelManager {
         case .failure(let error):
             throw error
         case .success(let stream):
+            defer {
+                if !success {
+                    // 채널 열기에 실패했으니 스트림을 닫는다
+                    Task.detached { [stream] in
+                        try? await stream.close()
+                    }
+                }
+            }
+            
             let openTask = LocalChannelOpenTask(
                 for: feature,
                 using: stream,
@@ -132,24 +144,34 @@ public actor ChannelManager {
             )
             try await openTask.perform()
             
-            let channel = session.featureProvider.createChannel(
+            let result = try await session.featureProvider.createChannel(
                 for: feature,
                 using: StreamHolder(stream: stream),
                 identifier: identifier,
                 direction: .local,
                 args: args
             )
-            channel.session = self.session
             
-            success = true
-
-            logger.info("Opened channel \(channel.identifier) for feature \(feature)")
-
-            try self.registerChannel(channel, for: feature)
-
-            logger.info("Registered channel \(channel.identifier)")
-
-            return channel
+            guard case .accepted = result else {
+                // 왜 `assert(case .accepted = result)` 이런거 안됨 ㅡㅡ
+                assert(false, "Feature provider's createChannel must return .accepted if openTask.perform() succeeds")
+                throw ChannelManagerError.channelOpenFailed
+            }
+            
+            switch result {
+            case .accepted(let channel):
+                channel.session = self.session
+                success = true
+                
+                logger.info("Opened channel \(channel.identifier) for feature \(feature)")
+                try self.registerChannel(channel, for: feature)
+                logger.info("Registered channel \(channel.identifier)")
+                
+                return channel
+            case .rejected(let code, let reason):
+                logger.warning("channel creation rejected (direction = local, feature = \(feature.rawValue))")
+                throw ChannelManagerError.channelOpenRejected(code: code, reason: reason)
+            }
         }
     }
 
@@ -173,15 +195,31 @@ public actor ChannelManager {
 
         // 그럼 나머지는?
         let openTask = RemoteChannelOpenTask(stream: stream, timeout: channelOpenTimeout)
+        var success = false
+        
+        defer {
+            if !success {
+                // 채널 열기에 실패했으니 스트림을 닫는다
+                Task.detached { [stream] in
+                    try? await stream.close()
+                }
+            }
+        }
+        
         try await openTask.perform { request in
-            let feature = SiriusFeature(rawValue: request.featureID!)
-            
-            var success = false
+            guard let featureID = request.featureID,
+                  let channelID = request.channelID else {
+                self.logger.warning("Received channel open request with missing featureID or channelID")
+                return false
+            }
+
+            let feature = SiriusFeature(rawValue: featureID)
+
             defer {
                 self.eventLogger?.log(.channelOpen, args: [
                     "direction": "REMOTE",
-                    "channel_id": request.channelID?.uuidString ?? "(none)",
-                    "feature_id": request.featureID?.uuidString ?? "(none)",
+                    "channel_id": channelID.uuidString,
+                    "feature_id": featureID.uuidString,
                     "success": success.description,
                 ])
             }
@@ -189,20 +227,28 @@ public actor ChannelManager {
             guard session.featureProvider.supports(feature) else {
                 return false
             }
-            
-            let channel: Channel = session.featureProvider.createChannel(
+
+            let result = try await session.featureProvider.createChannel(
                 for: feature,
                 using: StreamHolder(stream: stream),
-                identifier: request.channelID!,
+                identifier: channelID,
                 direction: .remote,
                 args: request.args
             )
-            channel.session = self.session
-
-            try self.registerChannel(channel, for: feature)
-            success = true
-
-            return true
+            
+            switch result {
+            case .accepted(let channel):
+                channel.session = self.session
+                
+                try self.registerChannel(channel, for: feature)
+                success = true
+                
+                return true
+                
+            case .rejected(let code, let reason):
+                logger.warning("channel creation rejected (direction = remote, feature = \(feature.rawValue))")
+                throw ChannelManagerError.channelOpenRejected(code: code, reason: reason)
+            }
         }
     }
 

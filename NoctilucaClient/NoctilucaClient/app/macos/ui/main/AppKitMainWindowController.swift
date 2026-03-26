@@ -55,7 +55,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
         
         super.init(window: window)
         
-        viewModel.mainWindowController = Weak(self)
+        viewModel.mainWindowController = self
         window.delegate = self
         
         self.window = window

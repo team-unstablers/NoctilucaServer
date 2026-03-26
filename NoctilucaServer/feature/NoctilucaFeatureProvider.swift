@@ -8,10 +8,14 @@
 import SiriusKit
 
 class NoctilucaFeatureProvider: FeatureProvider {
+    private weak var clipboardChannel: ClipboardChannel?
+
     func supportedFeatures() -> [SiriusFeature] {
         return [
             .hidio,
             .projection,
+            .transfer,
+            .clipboard,
         ]
     }
     
@@ -24,6 +28,12 @@ class NoctilucaFeatureProvider: FeatureProvider {
         case .projectionData:
             return true
             
+        case .transfer:
+            return true
+
+        case .clipboard:
+            return true
+
         default:
             return false
         }
@@ -33,16 +43,45 @@ class NoctilucaFeatureProvider: FeatureProvider {
                        using streamHolder: SiriusKit.StreamHolder,
                        identifier: SiriusKit.ChannelIdentifier,
                        direction: SiriusKit.ChannelDirection,
-                       args: [String]) -> SiriusKit.Channel {
+                       args: [String]) async throws -> ChannelCreationResult {
         
         switch feature {
         case .hidio:
-            return HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction))
         case .projection:
-            return ProjectionChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(ProjectionChannel(using: streamHolder, identifier: identifier, direction: direction))
         case .projectionData:
-            return ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction))
             
+        case .transfer:
+            let result = try await TransferChannel.createIfAccepts(
+                streamHolder,
+                identifier: identifier,
+                direction: direction,
+                args: args
+            )
+
+            if case .accepted(let channel as TransferChannel) = result,
+               channel.shouldSend() {
+                switch channel.task {
+                case .clipboardData(let itemIdx, let reprIdx):
+                    clipboardChannel?.serveTransferData(channel, itemIndex: itemIdx, representationIndex: reprIdx)
+                case .fileTransfer(let name, let path, let offset, let length):
+                    if let path = path {
+                        clipboardChannel?.serveFileTransferData(channel, name: name, path: path, offset: offset, length: length)
+                    }
+                default:
+                    break
+                }
+            }
+
+            return result
+
+        case .clipboard:
+            let channel = ClipboardChannel(using: streamHolder, identifier: identifier, direction: direction)
+            self.clipboardChannel = channel
+            return .accepted(channel)
+
         default:
             fatalError("Unsupported feature: \(feature)")
         }

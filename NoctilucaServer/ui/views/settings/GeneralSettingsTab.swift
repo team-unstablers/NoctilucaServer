@@ -85,12 +85,20 @@ struct GeneralSettingsTab: View {
                     Text(markdown: String(localized: "settings.notification.enabled.title", defaultValue: "알림 표시하기"))
                     Text(markdown: String(localized: "settings.notification.enabled.description", defaultValue: "이벤트 발생 시 알림을 표시합니다."))
                 }
-                
+            }
+            
+            Section {
                 if settings.notifications.enabled {
                     Toggle(String(localized: "settings.notification.on_connect", defaultValue: "사용자가 접속했을 때"), isOn: .constant(true))
                     Toggle(String(localized: "settings.notification.on_disconnect", defaultValue: "사용자가 접속을 종료했을 때"), isOn: .constant(true))
                     Toggle(String(localized: "settings.notification.on_error", defaultValue: "오류가 발생했을 때"), isOn: .constant(true))
                 }
+            }
+            
+            Section {
+                Toggle(String(localized: "settings.notification.on_clipboard_access", defaultValue: "클립보드 내용에 접근했을 때"), isOn: .constant(false))
+                
+                Toggle(String(localized: "settings.notification.on_file_transfer", defaultValue: "파일 전송이 시작되었을 때"), isOn: .constant(true))
             }
         }
         .formStyle(.grouped)

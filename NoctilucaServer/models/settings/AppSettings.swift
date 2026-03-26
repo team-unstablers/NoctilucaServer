@@ -24,6 +24,11 @@ struct AppSettings: Codable, Sendable {
     var transport: Transport = .init()
     var quicTransport: QUICTransport = .init()
     
+    // MARK: - Clipboard / Transfer Settings
+
+    var clipboard: Clipboard = .init()
+    var transfer: Transfer = .init()
+
     // MARK: - Misc Settings
 
     var logging: Logging = .init()
@@ -38,6 +43,8 @@ struct AppSettings: Codable, Sendable {
         case security
         case transport
         case quicTransport
+        case clipboard
+        case transfer
         case logging
         case telemetry
     }
@@ -55,6 +62,8 @@ struct AppSettings: Codable, Sendable {
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         transport = container.decodeSafe(Transport.self, forKey: .transport, default: transport)
         quicTransport = container.decodeSafe(QUICTransport.self, forKey: .quicTransport, default: quicTransport)
+        clipboard = container.decodeSafe(Clipboard.self, forKey: .clipboard, default: clipboard)
+        transfer = container.decodeSafe(Transfer.self, forKey: .transfer, default: transfer)
         logging = container.decodeSafe(Logging.self, forKey: .logging, default: logging)
         telemetry = container.decodeSafe(Telemetry.self, forKey: .telemetry, default: telemetry)
     }
@@ -68,6 +77,8 @@ struct AppSettings: Codable, Sendable {
         try container.encode(security, forKey: .security)
         try container.encode(transport, forKey: .transport)
         try container.encode(quicTransport, forKey: .quicTransport)
+        try container.encode(clipboard, forKey: .clipboard)
+        try container.encode(transfer, forKey: .transfer)
         try container.encode(logging, forKey: .logging)
         try container.encode(telemetry, forKey: .telemetry)
     }

@@ -126,7 +126,12 @@ public final class SiriusFileLogDestination: SiriusLogDestination {
 
         let formatted: String
         if includeMetadata {
-            formatted = "[\(SiriusLogTimestamp.now())][\(subsystem)][\(category):\(level.label)][\(file):\(line)][\(function)] \(message)\n"
+#if DEBUG
+            let sourceLocation = "[\(file):\(line)][\(function)] "
+#else
+            let sourceLocation = ""
+#endif
+            formatted = "[\(SiriusLogTimestamp.now())][\(subsystem)][\(category):\(level.label)]\(sourceLocation)\(message)\n"
         } else {
             formatted = "\(message)\n"
         }

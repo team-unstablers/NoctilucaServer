@@ -24,6 +24,7 @@ internal protocol ChannelLifecycleDelegate: AnyObject {
 
 public enum ChannelError: Error {
     case invalidFrame
+    case invalidArguments(String)
 }
 
 open class Channel {
@@ -106,6 +107,9 @@ open class Channel {
     public func close() async throws {
         releaseActivationWaitIfNeeded()
         try await self.stream.close()
+
+        // 스트림에 이미 버퍼링된 메시지들이 모두 소비될 때까지 대기
+        _ = await streamEventLoopTask?.result
     }
 
     /// close() 시 activation 대기 중인 이벤트 루프를 강제로 풀어줍니다.

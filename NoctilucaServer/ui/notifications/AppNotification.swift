@@ -40,7 +40,9 @@ enum AppNotification: Identifiable {
     // TODO: 긴급 업데이트 요청
     case criticalUpdateRequired(version: String, isInvalidLicense: Bool)
     case pluginBundleRejectedBySecurityPolicy(metadata: any PluginBundleMetadata, currentPolicy: PluginBundleSecurityPolicy)
-    
+    // TODO: 파일 전송 완료
+    case fileTransferSent(fileName: String)
+
     var id: String {
         switch self {
         case .newConnection:
@@ -67,12 +69,14 @@ enum AppNotification: Identifiable {
             return "critical_update_required"
         case .pluginBundleRejectedBySecurityPolicy:
             return "plugin_bundle_rejected_by_security_policy"
+        case .fileTransferSent:
+            return "file_transfer_sent"
         }
     }
     
     var category: AppNotificationCategory {
         switch self {
-        case .newConnection, .connectionClosed:
+        case .newConnection, .connectionClosed, .fileTransferSent:
             return .clientEvents
         case .serverStarted, .serverStartFailed, .serverStopped, .tlsAutoconfRenewed:
             return .serverEvents
@@ -112,6 +116,8 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.critical_update_required.title", defaultValue: "긴급 업데이트 필요")
         case .pluginBundleRejectedBySecurityPolicy:
             return String(localized: "notificaiton.plugin_bundle_rejected_by_security_policy.title", defaultValue: "플러그인 번들 로드 거부됨")
+        case .fileTransferSent:
+            return String(localized: "notification.file_transfer_sent.title", defaultValue: "파일 전송 완료")
         }
     }
     
@@ -165,8 +171,16 @@ enum AppNotification: Identifiable {
                 ),
                 metadata.id
             )
+        case .fileTransferSent(let fileName):
+            return String(
+                format: String(
+                    localized: "notification.file_transfer_sent.message",
+                    defaultValue: "클라이언트로 '%@' 파일이 전송되었습니다."
+                ),
+                fileName
+            )
         }
-        
+
     }
     
     @MainActor

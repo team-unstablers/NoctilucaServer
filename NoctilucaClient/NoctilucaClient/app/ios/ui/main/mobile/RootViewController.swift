@@ -59,7 +59,7 @@ final class RootViewController: UINavigationController {
         self.settingsStore = settingsStore
         self.mainContentHostingController = mainContentVC
 
-        mainWindowViewModel.rootViewController = Weak(self)
+        mainWindowViewModel.rootViewController = self
 
         navigationBar.prefersLargeTitles = false
     }

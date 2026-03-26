@@ -16,8 +16,10 @@ import SiriusKitCore
 
 extension RemoteSession {
     class HIDIO: ObservableObject {
-        private let parent: Weak<RemoteSession>
-        private let channel: Weak<HIDIOChannel>
+        private unowned let parent: RemoteSession
+
+        let channelID: UUID
+        let controller: HIDIOController
 
         private let rebinder = KeyEventRebinder()
         private var cancellables: Set<AnyCancellable> = []
@@ -30,27 +32,20 @@ extension RemoteSession {
         @Published
         private(set) var sessionMode: HIDIOSessionMode = .shared
 
-        var channelID: UUID {
-            channel.ref.identifier
-        }
-
-        var controller: HIDIOController {
-            channel.ref.controller
-        }
-
         init(_ parent: RemoteSession, channel: HIDIOChannel) {
-            self.parent  = Weak(parent)
-            self.channel = Weak(channel)
+            self.parent = parent
+            self.channelID = channel.identifier
+            self.controller = channel.controller
 
             self.session = HIDIOSession(controller)
             session.delegate = self
             
             Task { @MainActor in
 #if os(iOS)
-                session.rootViewController = self.parent.ref.parent?.ref.rootViewController
+                session.rootViewController = self.parent.parent?.rootViewController
 #endif
 #if os(macOS)
-                session.window = self.parent.ref.parent?.ref.mainWindowController?.ref.window
+                session.window = self.parent.parent?.mainWindowController?.window
 #endif
 
                 self.setupKeyEventPipeline()
@@ -90,7 +85,7 @@ extension RemoteSession {
     
         @MainActor
         private func sendKeyboardSetupIfNeeded() {
-            let sessionSettings = parent.ref.client.sessionSettings
+            let sessionSettings = parent.client.sessionSettings
             let appSettings = SettingsStore.shared.settings!
             let enabledHacks = sessionSettings?.input.enabledKeyboardHacks
                 ?? appSettings.sessionDefaults.input.enabledKeyboardHacks
@@ -118,7 +113,7 @@ extension RemoteSession {
         }
 
         deinit {
-            channel._ref?.controller.removeHook(for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
+            controller.removeHook(for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
             self.session.stopSession()
         }
     }

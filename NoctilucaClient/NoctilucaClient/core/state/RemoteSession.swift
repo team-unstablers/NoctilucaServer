@@ -15,7 +15,7 @@ class RemoteSession: ObservableObject {
     private let logger = NoctilucaLogger(category: "RemoteSession")
     private var eventSubscription: AnyCancellable? = nil
     
-    var parent: Weak<SessionWindowViewModel>?
+    weak var parent: SessionWindowViewModel?
 
     private(set) var client: NoctilucaClient
 
@@ -41,11 +41,17 @@ class RemoteSession: ObservableObject {
     private(set) var pingRTT: TimeInterval? = nil
     
     @Published
+    private(set) var fileTransferProgress: Double? = nil
+
+    @Published
     private(set) var projection: Projection? = nil
-    
+
     @Published
     private(set) var hidio: HIDIO? = nil
     
+    private let progressTracker = FileTransferProgressTracker()
+    private var progressCancellable: AnyCancellable? = nil
+
     private let errorEvents = PassthroughSubject<NoctilucaClientError, Never>()
 
     var errorPublisher: AnyPublisher<NoctilucaClientError, Never> {
@@ -62,7 +68,14 @@ class RemoteSession: ObservableObject {
 
     init(_ client: NoctilucaClient) {
         self.client = client
-        
+
+        // FeatureProvider에 진행률 트래커 주입
+        client.noctilucaFeatureProvider?.progressTracker = progressTracker
+
+        // 트래커 → fileTransferProgress 바인딩
+        progressCancellable = progressTracker.$aggregatedProgress
+            .assign(to: \.fileTransferProgress, on: self)
+
         self.subscribeClientEvents()
     }
     
@@ -114,6 +127,9 @@ class RemoteSession: ObservableObject {
     /// ViewModel에서 세션을 분리할 때 호출. 이벤트 구독과 parent 참조를 정리한다.
     func prepareForDetach() {
         unsubscribeClientEvents()
+        progressCancellable?.cancel()
+        progressCancellable = nil
+        progressTracker.reset()
         parent = nil
     }
 
@@ -158,14 +174,14 @@ class RemoteSession: ObservableObject {
                 } catch {
                     logger.error("Failed to handle identity validation request: \(error.localizedDescription)")
                     self.errorEvents.send(.connectionFailed(error))
-                    await self.parent?._ref?.stopSession(force: true)
+                    await self.parent?.stopSession(force: true)
                 }
             }
         }
     }
 
     func handleIdentityValidationRequest(identity: ServerIdentity) async throws {
-        guard let parent = self.parent?.ref else {
+        guard let parent = self.parent else {
             return
         }
         
