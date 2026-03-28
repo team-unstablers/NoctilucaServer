@@ -132,6 +132,15 @@ class ClipboardChannel: Channel {
                 return
             }
 
+            // 보안 검증: 심볼릭 링크 해석 후 특수 파일(디바이스, 소켓 등) 거부
+            let resolvedPath = path.resolvingSymlinksInPath()
+            if let fileType = (try? fm.attributesOfItem(atPath: resolvedPath.path))?[.type] as? FileAttributeType,
+               fileType != .typeRegular && fileType != .typeDirectory {
+                logger.warning("Rejected file transfer for special file: \(path.path) (resolved: \(resolvedPath.path), type: \(fileType))")
+                try? await transferChannel.close()
+                return
+            }
+
             do {
                 if isDirectory.boolValue {
                     let contents = try fm.contentsOfDirectory(
