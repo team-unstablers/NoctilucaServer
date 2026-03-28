@@ -369,6 +369,13 @@ class TransferChannel: Channel {
             return
         }
 
+        // 보안: 특수 파일(디바이스, 소켓 등) 전송 거부
+        let resolvedURL = url.resolvingSymlinksInPath()
+        if let fileType = (try? FileManager.default.attributesOfItem(atPath: resolvedURL.path))?[.type] as? FileAttributeType,
+           fileType != .typeRegular {
+            throw ChannelError.invalidArguments("Refused to transfer special file: \(url.path) (type: \(fileType))")
+        }
+
         let fileHandle = try FileHandle(forReadingFrom: url)
         defer { try? fileHandle.close() }
 
