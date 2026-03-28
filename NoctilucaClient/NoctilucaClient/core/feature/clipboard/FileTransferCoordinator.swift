@@ -111,7 +111,11 @@ class FileTransferCoordinator: NSObject {
             }
             try fileHandle.close()
 
-            // destination으로 이동
+            // destination 부모 디렉토리 확보 후 이동
+            let parentDir = destinationURL.deletingLastPathComponent()
+            if !fm.fileExists(atPath: parentDir.path) {
+                try fm.createDirectory(at: parentDir, withIntermediateDirectories: true)
+            }
             if fm.fileExists(atPath: destinationURL.path) {
                 try fm.removeItem(at: destinationURL)
             }
@@ -280,7 +284,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
     deinit {
         downloadTask?.cancel()
         cleanupTask?.cancel()
-        if !metadata.isDirectory {
+        if !metadata.isDirectory, let url = presentedItemURL, FileManager.default.fileExists(atPath: url.path) {
             NSFileCoordinator.removeFilePresenter(self)
         }
         if isRoot {
@@ -298,7 +302,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
         }
         children.removeAll()
 
-        if !metadata.isDirectory {
+        if !metadata.isDirectory, let url = presentedItemURL, FileManager.default.fileExists(atPath: url.path) {
             NSFileCoordinator.removeFilePresenter(self)
         }
         if isRoot {

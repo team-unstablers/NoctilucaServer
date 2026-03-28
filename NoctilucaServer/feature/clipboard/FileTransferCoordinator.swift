@@ -104,8 +104,19 @@ class FileTransferCoordinator: NSObject {
                 fileHandle.write(chunk)
             }
             try fileHandle.close()
+            
+            let attr = try FileManager.default.attributesOfItem(atPath: tempURL.path())
+            
+            if let size = attr[.size] as? UInt64,
+               size != metadata.size {
+                logger.error("file size mismatch: expected \(metadata.size) but got \(size)")
+            }
 
-            // destination으로 이동
+            // destination 부모 디렉토리 확보 후 이동
+            let parentDir = destinationURL.deletingLastPathComponent()
+            if !fm.fileExists(atPath: parentDir.path) {
+                try fm.createDirectory(at: parentDir, withIntermediateDirectories: true)
+            }
             if fm.fileExists(atPath: destinationURL.path) {
                 try fm.removeItem(at: destinationURL)
             }
@@ -317,7 +328,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
     deinit {
         downloadTask?.cancel()
         cleanupTask?.cancel()
-        if !metadata.isDirectory {
+        if !metadata.isDirectory, let url = presentedItemURL, FileManager.default.fileExists(atPath: url.path) {
             NSFileCoordinator.removeFilePresenter(self)
         }
         if isRoot {
@@ -335,7 +346,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
         }
         children.removeAll()
 
-        if !metadata.isDirectory {
+        if !metadata.isDirectory, let url = presentedItemURL, FileManager.default.fileExists(atPath: url.path) {
             NSFileCoordinator.removeFilePresenter(self)
         }
         if isRoot {
