@@ -120,10 +120,18 @@ class TransferChannel: Channel {
     // MARK: 속도 제한 (bytes/s, 0 = 무제한)
     private var maxSendBytesPerSecond: Int = 0
 
+    // MARK: Post-open 콜백
+    var onReady: (() -> Void)?
+
     private(set) var isCompleted: Bool = false
 
     required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
         super.init(using: streamHolder, identifier: identifier, direction: direction)
+    }
+
+    override func channelDidBecomeReady() {
+        onReady?()
+        onReady = nil
     }
 
     func prepare(_ argsSet: TransferChannelArgumentsSet) async throws {

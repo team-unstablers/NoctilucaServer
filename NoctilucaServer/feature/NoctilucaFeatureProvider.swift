@@ -65,10 +65,14 @@ class NoctilucaFeatureProvider: FeatureProvider {
                channel.shouldSend() {
                 switch channel.task {
                 case .clipboardData(let itemIdx, let reprIdx):
-                    clipboardChannel?.serveTransferData(channel, itemIndex: itemIdx, representationIndex: reprIdx)
+                    channel.onReady = { [weak self] in
+                        self?.clipboardChannel?.serveTransferData(channel, itemIndex: itemIdx, representationIndex: reprIdx)
+                    }
                 case .fileTransfer(let name, let path, let offset, let length):
                     if let path = path {
-                        clipboardChannel?.serveFileTransferData(channel, name: name, path: path, offset: offset, length: length)
+                        channel.onReady = { [weak self] in
+                            self?.clipboardChannel?.serveFileTransferData(channel, name: name, path: path, offset: offset, length: length)
+                        }
                     }
                 default:
                     break

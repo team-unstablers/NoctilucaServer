@@ -199,6 +199,12 @@ open class Channel {
         // to be overridden by subclasses
         logger.error("[\(self.identifier)] stream encountered error: \(error)")
     }
+
+    /// 채널이 ChannelStartResponse 교환 완료 후 완전히 준비되었을 때 호출됩니다.
+    /// 서브클래스에서 오버라이드하여 post-open 로직을 실행할 수 있습니다.
+    open func channelDidBecomeReady() {
+        // default: no-op
+    }
 }
 
 extension Channel {

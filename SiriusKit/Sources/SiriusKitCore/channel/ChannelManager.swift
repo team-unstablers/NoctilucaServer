@@ -162,11 +162,13 @@ public actor ChannelManager {
             case .accepted(let channel):
                 channel.session = self.session
                 success = true
-                
+
                 logger.info("Opened channel \(channel.identifier) for feature \(feature)")
                 try self.registerChannel(channel, for: feature)
                 logger.info("Registered channel \(channel.identifier)")
-                
+
+                channel.channelDidBecomeReady()
+
                 return channel
             case .rejected(let code, let reason):
                 logger.warning("channel creation rejected (direction = local, feature = \(feature.rawValue))")
@@ -196,7 +198,8 @@ public actor ChannelManager {
         // 그럼 나머지는?
         let openTask = RemoteChannelOpenTask(stream: stream, timeout: channelOpenTimeout)
         var success = false
-        
+        var createdChannel: Channel?
+
         defer {
             if !success {
                 // 채널 열기에 실패했으니 스트림을 닫는다
@@ -205,7 +208,7 @@ public actor ChannelManager {
                 }
             }
         }
-        
+
         try await openTask.perform { request in
             guard let featureID = request.featureID,
                   let channelID = request.channelID else {
@@ -235,21 +238,25 @@ public actor ChannelManager {
                 direction: .remote,
                 args: request.args
             )
-            
+
             switch result {
             case .accepted(let channel):
                 channel.session = self.session
-                
+
                 try self.registerChannel(channel, for: feature)
                 success = true
-                
+                createdChannel = channel
+
                 return true
-                
+
             case .rejected(let code, let reason):
                 logger.warning("channel creation rejected (direction = remote, feature = \(feature.rawValue))")
                 throw ChannelManagerError.channelOpenRejected(code: code, reason: reason)
             }
         }
+
+        // ChannelStartResponse 전송 완료 후 채널에 ready 알림
+        createdChannel?.channelDidBecomeReady()
     }
 
     package func teardownAllChannels() async {
