@@ -85,6 +85,7 @@ extension TransferChannelArgumentsSet {
 
 class TransferChannel: Channel {
     override var serviceClass: ServiceClass { .background }
+    override var requiresExplicitActivation: Bool { true }
 
     static let defaultChunkSize: Int = 64 * 1024
 
@@ -130,6 +131,7 @@ class TransferChannel: Channel {
     }
 
     override func channelDidBecomeReady() {
+        activate()
         onReady?()
         onReady = nil
     }
