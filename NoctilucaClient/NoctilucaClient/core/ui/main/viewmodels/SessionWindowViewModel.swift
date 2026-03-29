@@ -311,14 +311,19 @@ class SessionWindowViewModel: ObservableObject {
             securityState = nil
             return
         }
+        
+        if containsDeniedCertificate(in: [leaf] + chain) {
+            securityState = .dangerous
+            return
+        }
 
         if let trust = try? SecTrust.create(leaf: leaf, chain: chain, isServer: true),
            (try? trust.evaluate()) == true {
             securityState = .trustable
             return
         }
-
-        securityState = leaf.isSelfSignedCertificate() ? .neutral : .dangerous
+        
+        securityState = .neutral
     }
 
     func presentConnectionError(_ error: Error) {

@@ -184,10 +184,19 @@ class RemoteSession: ObservableObject {
         guard let parent = self.parent else {
             return
         }
-        
+
         let endpointURL = parent.endpointURL
         var extraInfo: ServerIdentityValidationSheetViewExtraInfo = .none
-        
+
+        // 시스템 트러스트 스토어에서 명시적으로 거부된 인증서인지 확인
+        if case .sslCertificate(let leaf, let chain) = identity,
+           containsDeniedCertificate(in: [leaf] + chain) {
+            self.pendingServerIdentity = identity
+            self.identityValidationExtraInfo = .denied
+            self.shouldPresentIdentityValidationSheet = true
+            return
+        }
+
         if let knownHost = try await KeychainBackedKnownHostStore.shared.getKnownHost(endpoint: endpointURL) {
             let fingerprint = try identity.fingerprint()
 

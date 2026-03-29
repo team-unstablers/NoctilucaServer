@@ -1576,6 +1576,28 @@
         }
       }
     },
+    "auth.identity.denied.description_format" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "`%@`에서 제시한 인증서는 시스템 트러스트 스토어에 의해 신뢰할 수 없다고 판단되었습니다."
+          }
+        }
+      }
+    },
+    "auth.identity.denied.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "차단된 인증서"
+          }
+        }
+      }
+    },
     "auth.identity.expected_fingerprint" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1663,6 +1685,28 @@
         }
       }
     },
+    "auth.identity.help.consequences.denied.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "계속 진행하면 정보 유출 등 보안상 위험이 발생할 수 있습니다.\n"
+          }
+        }
+      }
+    },
+    "auth.identity.help.consequences.denied.body_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "특히 조직의 관리자가 차단한 경우라면, 계속 진행하기 전에 관리자에게 문의하는 것을 권장합니다."
+          }
+        }
+      }
+    },
     "auth.identity.help.consequences.mismatch.body_1" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1717,6 +1761,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "如果继续进行会怎样？"
+          }
+        }
+      }
+    },
+    "auth.identity.help.simple_explanation.denied.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "접속하려는 컴퓨터가 제시한 인증서는 이 Mac에서 **차단**되어 있습니다."
           }
         }
       }
@@ -2036,6 +2091,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "那我该怎么办呢？"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.denied.body_1" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 경고는 다음과 같은 상황에서 발생할 수 있습니다:"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.denied.body_2" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 사용자가 '키체인 접근'에서 이 인증서를 직접 '신뢰하지 않음'으로 설정한 경우"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.denied.body_3" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 조직의 시스템 관리자가 보안 정책에 따라 이 인증서를 차단한 경우"
+          }
+        }
+      }
+    },
+    "auth.identity.help.why_warning.denied.body_4" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• 인증서가 유출되었거나 폐기(revoke)되어 수동으로 차단 조치된 경우"
           }
         }
       }
