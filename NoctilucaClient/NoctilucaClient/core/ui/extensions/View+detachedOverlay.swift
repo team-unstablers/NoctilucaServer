@@ -639,10 +639,10 @@ private final class DetachedOverlayController: ObservableObject {
         
         switch role {
         case .tooltip:
-            let location = mouseLocation
+            let anchorFrame = anchorState.frame
             origin = CGPoint(
-                x: location.x + DetachedOverlayConstants.tooltipOffset.x,
-                y: location.y - DetachedOverlayConstants.tooltipOffset.y - contentSize.height
+                x: anchorFrame.midX - contentSize.width / 2,
+                y: anchorFrame.minY - DetachedOverlayConstants.normalSpacing - contentSize.height
             )
         case .normalWindow(let attachTo):
             let anchorFrame = anchorState.frame
