@@ -80,6 +80,9 @@ class SessionWindowViewModel: ObservableObject {
     private(set) var pingRTT: TimeInterval? = nil
 
     @Published
+    private(set) var securityState: AddressBarSecurityIndicatorState? = nil
+
+    @Published
     private(set) var remoteSession: RemoteSession? = nil
 
     private var client: NoctilucaClient? {
@@ -291,6 +294,7 @@ class SessionWindowViewModel: ObservableObject {
             break
         case .ready:
             self.phase = .connected
+            evaluateSecurityState()
             recordRecentConnection()
         case .panic:
             break
@@ -299,6 +303,22 @@ class SessionWindowViewModel: ObservableObject {
                 await self.stopSession()
             }
         }
+    }
+
+    private func evaluateSecurityState() {
+        guard let identity = remoteSession?.client.identity,
+              case .sslCertificate(let leaf, let chain) = identity else {
+            securityState = nil
+            return
+        }
+
+        if let trust = try? SecTrust.create(leaf: leaf, chain: chain, isServer: true),
+           (try? trust.evaluate()) == true {
+            securityState = .trustable
+            return
+        }
+
+        securityState = leaf.isSelfSignedCertificate() ? .neutral : .dangerous
     }
 
     func presentConnectionError(_ error: Error) {
@@ -466,6 +486,7 @@ class SessionWindowViewModel: ObservableObject {
         pingRTT = nil
         fileTransferProgress = nil
         degradationNotice = nil
+        securityState = nil
     }
 
     // MARK: - Fullscreen (iOS)

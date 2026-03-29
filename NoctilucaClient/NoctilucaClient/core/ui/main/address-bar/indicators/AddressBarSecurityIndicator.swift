@@ -4,11 +4,13 @@
 //
 
 import SwiftUI
+import SiriusKitClient
 
 struct AddressBarSecurityIndicator: View {
     @Environment(\.colorScheme)
     var colorScheme
-    
+
+    let identity: ServerIdentity?
     let state: AddressBarSecurityIndicatorState
 
     @State
@@ -16,7 +18,12 @@ struct AddressBarSecurityIndicator: View {
 
     @State
     var tooltipSize: CGSize = .zero
-    
+
+#if os(macOS)
+    @State
+    var showCertificatePopover = false
+#endif
+
     var primaryColor: Color {
         colorScheme == .dark ? .white : .black
     }
@@ -62,33 +69,79 @@ struct AddressBarSecurityIndicator: View {
         AddressBarIndicatorView {
             iconView
         } tooltip: {
-            Text(tooltipTitle)
-                .font(.system(size: 12))
-                .bold()
-                .padding(.bottom, 4)
+#if os(macOS)
+            if !showCertificatePopover {
+                tooltipContent
+            }
+#else
+            tooltipContent
+#endif
+        }
+#if os(macOS)
+        .onTapGesture {
+            if identity != nil {
+                showCertificatePopover.toggle()
+            }
+        }
+        .popover(isPresented: $showCertificatePopover) {
+            certificatePopoverContent
+        }
+#endif
+    }
 
-            Text(tooltipText)
-                .font(.system(size: 11))
-                .multilineTextAlignment(.leading)
-                .padding(.bottom, 4)
+    @ViewBuilder
+    private var tooltipContent: some View {
+        Text(tooltipTitle)
+            .font(.system(size: 12))
+            .bold()
+            .padding(.bottom, 4)
 
-            Text(markdown: String(localized: "main.address_bar.security.icon_hint", defaultValue: "이 아이콘을 누르면 서버의 인증서 정보를 확인할 수 있습니다."))
-                .font(.system(size: 11))
+        Text(tooltipText)
+            .font(.system(size: 11))
+            .multilineTextAlignment(.leading)
+            .padding(.bottom, 4)
+
+        Text(markdown: String(localized: "main.address_bar.security.icon_hint", defaultValue: "이 아이콘을 누르면 서버의 인증서 정보를 확인할 수 있습니다."))
+            .font(.system(size: 11))
+    }
+
+#if os(macOS)
+    @ViewBuilder
+    private var certificatePopoverContent: some View {
+        if case .sslCertificate(let leaf, let chain) = identity {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    iconView
+                    Text(tooltipTitle)
+                        .font(.headline)
+                }
+
+                Text(tooltipText)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
+                NOCCertificateView(leaf: leaf, chain: chain)
+            }
+            .padding()
+            .frame(width: 420, height: 500)
         }
     }
+#endif
 }
 
 #Preview("Security Indicator - Neutral") {
-    AddressBarSecurityIndicator(state: .neutral)
+    AddressBarSecurityIndicator(identity: nil, state: .neutral)
         .padding()
 }
 
 #Preview("Security Indicator - Dangerous") {
-    AddressBarSecurityIndicator(state: .dangerous)
+    AddressBarSecurityIndicator(identity: nil, state: .dangerous)
         .padding()
 }
 
 #Preview("Security Indicator - Trustable") {
-    AddressBarSecurityIndicator(state: .trustable)
+    AddressBarSecurityIndicator(identity: nil, state: .trustable)
         .padding()
 }

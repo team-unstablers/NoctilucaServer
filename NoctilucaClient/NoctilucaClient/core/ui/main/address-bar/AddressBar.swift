@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import SiriusKitClient
 
 struct AddressBar: View {
     // MARK: - External Properties
 
     let endpointURL: String
+    let identity: ServerIdentity?
     let securityIndicator: AddressBarSecurityIndicatorState?
     let qualityIndicator: AddressBarQualityIndicatorState?
     let degradationIndicator: AddressBarDegradationIndicatorState?
@@ -40,6 +42,7 @@ struct AddressBar: View {
     // MARK: - Initialization
 
     init(endpointURL: String,
+         identity: ServerIdentity? = nil,
          securityIndicator: AddressBarSecurityIndicatorState? = nil,
          qualityIndicator: AddressBarQualityIndicatorState? = nil,
          degradationIndicator: AddressBarDegradationIndicatorState? = nil,
@@ -48,6 +51,7 @@ struct AddressBar: View {
          isFocused: FocusState<Bool>.Binding,
          actionHandler: @escaping (AddressBarAction) -> Void) {
         self.endpointURL = endpointURL
+        self.identity = identity
         self.securityIndicator = securityIndicator
         self.qualityIndicator = qualityIndicator
         self.degradationIndicator = degradationIndicator
@@ -113,7 +117,7 @@ struct AddressBar: View {
         HStack(spacing: 0) {
             if let action = self.action {
                 HStack(spacing: 0) {
-                    Text("\(action.label) - ")
+                    Text("\(action.label) — ")
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                     Text(endpointURL)
@@ -192,7 +196,7 @@ struct AddressBar: View {
     private var indicatorOverlay: some View {
         HStack {
             if let securityIndicator = self.securityIndicator {
-                AddressBarSecurityIndicator(state: securityIndicator)
+                AddressBarSecurityIndicator(identity: identity, state: securityIndicator)
             }
             Spacer()
             if let degradationIndicator = self.degradationIndicator, degradationIndicator.isDegraded {

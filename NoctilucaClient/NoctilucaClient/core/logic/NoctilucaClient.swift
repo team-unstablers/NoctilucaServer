@@ -175,8 +175,11 @@ class NoctilucaClient: ObservableObject {
         return total / Double(pingRTTSamples.count)
     }
     
-    
     var sessionID: UUID?
+    var identity: ServerIdentity? {
+        session.identity
+    }
+    
     var mainChannel: MainChannel!
     
     var hidioChannel: HIDIOChannel!

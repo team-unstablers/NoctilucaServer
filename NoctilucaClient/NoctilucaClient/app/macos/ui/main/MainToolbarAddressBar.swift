@@ -55,10 +55,14 @@ struct MainToolbarAddressBar: View {
         if case .newConnection = viewModel.phase {
             return nil
         }
-        
-        return .neutral
+
+        return viewModel.securityState ?? .neutral
     }
-    
+
+    var serverIdentity: ServerIdentity? {
+        viewModel.remoteSession?.client.identity
+    }
+
     var degradationIndicator: AddressBarDegradationIndicatorState? {
         if case .newConnection = viewModel.phase {
             return nil
@@ -110,6 +114,7 @@ struct MainToolbarAddressBar: View {
             
             AddressBar(
                 endpointURL: viewModel.endpointURL,
+                identity: serverIdentity,
                 securityIndicator: securityIndicator,
                 qualityIndicator: qualityIndicator,
                 degradationIndicator: degradationIndicator,
