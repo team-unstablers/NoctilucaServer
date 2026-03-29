@@ -484,6 +484,11 @@ extension RemoteSession {
         }
 
         func startAudioProjection() async throws {
+            guard parent?.client.sessionSettings?.projection.isAudioProjectionEnabled ?? false else {
+                logger.info("Audio projection is disabled by settings, skipping.")
+                return
+            }
+
             // TODO: 마이크 세션같은게 있을 수도 있기 때문에
             guard audioSessions.values.isEmpty else {
                 // 이미 오디오 프로젝션 세션이 존재함
