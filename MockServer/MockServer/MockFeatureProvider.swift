@@ -23,26 +23,26 @@ class MockFeatureProvider: FeatureProvider {
             return false
         }
     }
-
+    
     func createChannel(
-        for feature: SiriusFeature,
-        using streamHolder: StreamHolder,
-        identifier: ChannelIdentifier,
-        direction: ChannelDirection,
+        for feature: SiriusKitCore.SiriusFeature,
+        using streamHolder: SiriusKitCore.StreamHolder,
+        identifier: SiriusKitCore.ChannelIdentifier,
+        direction: SiriusKitCore.ChannelDirection,
         args: [String]
-    ) -> Channel {
+    ) async throws -> SiriusKitCore.ChannelCreationResult {
         switch feature {
         case .hidio:
-            return MockHIDIOChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(MockHIDIOChannel(using: streamHolder, identifier: identifier, direction: direction))
         case .projection:
-            return MockProjectionChannel(
+            return .accepted(MockProjectionChannel(
                 using: streamHolder,
                 identifier: identifier,
                 direction: direction,
                 projectionSource: projectionSource
-            )
+            ))
         case .projectionData:
-            return ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction)
+            return .accepted(ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction))
         default:
             fatalError("Unsupported feature: \(feature)")
         }
