@@ -484,7 +484,7 @@ extension RemoteSession {
         }
 
         func startAudioProjection() async throws {
-            guard parent?.client.sessionSettings?.projection.isAudioProjectionEnabled ?? false else {
+            guard await parent?.client.sessionSettings?.projection.isAudioProjectionEnabled ?? false else {
                 logger.info("Audio projection is disabled by settings, skipping.")
                 return
             }
