@@ -401,11 +401,44 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
     func projectionDataChannel(_ channel: ProjectionDataChannel, didReceiveFrame frame: consuming EncodedFrameInput) {
         self.performanceReporter?.recordReceivedFrame(byteCount: frame.data.count)
         do {
-            // FIXME
+            var header = frame.header
+            var frameData = frame.data
+            var formatDesc = self.formatDescription
+
+            // Annex-B 형식 프레임: SPS/PPS/VPS를 추출하고 AVCC로 변환
+            if let codec = self.codec?.fourCC,
+               frame.header.flags.contains(.H264_HEVC_isAnnexBFormatted) {
+                let parsed = AnnexBParser.parse(frame.data, codec: codec)
+
+                if !parsed.parameterSets.isEmpty {
+                    do {
+                        switch codec {
+                        case .hvc1:
+                            formatDesc = try CMFormatDescription(hevcParameterSets: parsed.parameterSets)
+                        case .avc1:
+                            formatDesc = try CMFormatDescription(h264ParameterSets: parsed.parameterSets)
+                        default:
+                            break
+                        }
+                        self.formatDescription = formatDesc
+                    } catch {
+                        logger.error("Failed to create format description from Annex-B parameter sets: \(error.localizedDescription)")
+                    }
+                }
+
+                frameData = parsed.videoData
+                header = FrameDataHeader(
+                    frameID: frame.header.frameID,
+                    frameLength: UInt32(parsed.videoData.count),
+                    presentationTimestamp: frame.header.presentationTimestamp,
+                    flags: frame.header.flags
+                )
+            }
+
             try self.decoder?.decode(EncodedFrameInput(
-                header: frame.header,
-                data: frame.data,
-                formatDescription: self.formatDescription
+                header: header,
+                data: frameData,
+                formatDescription: formatDesc
             ))
         } catch {
             logger.error("decoder decode error: \(error.localizedDescription)")
@@ -413,7 +446,7 @@ extension ProjectionSession: ProjectionDataChannelDelegate {
                 // 대부분의 경우 다음 키프레임을 받으면 되므로 fatal까진 아님
                 self.events.send(.errorOccurred(error, fatal: false))
             }
-            
+
             self.performanceReporter?.recordDroppedFrame()
         }
     }
