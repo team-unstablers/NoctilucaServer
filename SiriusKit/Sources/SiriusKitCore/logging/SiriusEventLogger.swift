@@ -145,6 +145,6 @@ public extension SiriusEventLogger {
 
 package extension SiriusEventLogger {
     protocol ContextHolder {
-        func eventLoggerContext() async -> SharedState<Context>
+        func eventLoggerContext() -> SharedState<Context>
     }
 }

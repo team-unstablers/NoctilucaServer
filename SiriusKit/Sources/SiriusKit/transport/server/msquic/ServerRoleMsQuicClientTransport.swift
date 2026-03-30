@@ -34,18 +34,22 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
 
     private static let logger = SiriusLogger(category: "ServerRoleMsQuicClientTransport")
 
-    let connection: QuicConnection
+    private var connection: QuicConnection?
     private weak var serverTransport: ServerRoleMsQuicRootTransport?
 
     private var streams: [StreamIdentifier: ServerRoleMsQuicStream] = [:]
     private let isFinalized = ManagedAtomic(false)
     private let remoteEndpointLock: OSAllocatedUnfairLock<SREndpoint?>
     
-    private var eventLoggerContext: SharedState<SiriusEventLogger.Context>
+    private let loggerContext: SharedState<SiriusEventLogger.Context>
     private var eventLogger: SiriusEventLogger
 
     nonisolated var remoteEndpoint: SREndpoint? {
         remoteEndpointLock.withLock { $0 }
+    }
+
+    nonisolated var isClosed: Bool {
+        isFinalized.load(ordering: .acquiring)
     }
     
 
@@ -58,12 +62,12 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         self.id = id
         self.connection = connection
         self.serverTransport = serverTransport
-        self.eventLoggerContext = SharedState(SiriusEventLogger.Context())
+        self.loggerContext = SharedState(SiriusEventLogger.Context())
         self.remoteEndpointLock = OSAllocatedUnfairLock(initialState: remoteEndpoint)
         
-        self.eventLogger = SiriusEventLogger("SiriusKit::ServerRoleMsQuicClientTransport", context: eventLoggerContext)
+        self.eventLogger = SiriusEventLogger("SiriusKit::ServerRoleMsQuicClientTransport", context: loggerContext)
         
-        self.eventLoggerContext.mutate { prevValue in
+        self.loggerContext.mutate { prevValue in
             var context = prevValue
             context.remoteAddr = remoteEndpoint
             
@@ -97,11 +101,10 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         }
 
         // 연결 종료
-        do {
-            await connection.shutdown()
-        } catch {
-            Self.logger.warning("MsQuic connection shutdown timed out; forcing close. error=\(error)")
-        }
+        let connection = self.connection
+        self.connection = nil
+
+        await connection?.shutdown()
 
         await delegate?.clientTransportDidClose(self)
         if let serverTransport = serverTransport {
@@ -112,7 +115,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     }
 
     func openStream() async -> Result<SiriusKitCore.Stream, TransportLayerError> {
-        guard connection.state == .connected else {
+        guard let connection, connection.state == .connected else {
             return .failure(.openStreamFailed(error: ServerRoleMsQuicClientTransportError.connectionNotReady))
         }
 
@@ -134,6 +137,10 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     }
     
     func issueResumeTicket() async throws {
+        guard let connection else {
+            throw ServerRoleMsQuicClientTransportError.connectionNotReady
+        }
+
         // 랜덤 데이터를 생성한다. (512바이트)
         let resumptionData = try SRSecurity.shared.createSecureRandomBytes(count: 512)
         
@@ -141,8 +148,8 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
         try connection.sendResumptionTicket(resumptionData: resumptionData)
     }
     
-    func eventLoggerContext() async -> SharedState<SiriusEventLogger.Context> {
-        return eventLoggerContext
+    nonisolated func eventLoggerContext() -> SharedState<SiriusEventLogger.Context> {
+        return loggerContext
     }
 
     // MARK: - Internal Setup
