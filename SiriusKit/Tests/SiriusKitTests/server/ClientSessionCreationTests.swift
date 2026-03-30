@@ -39,7 +39,7 @@ struct ClientSessionCreationTests {
 
         let sessionHarness = harness.simulateClientConnection()
 
-        #expect(sessionHarness.session.remoteAddress == "127.0.0.1")
+        #expect(sessionHarness.session.remoteEndpoint?.address.description == "127.0.0.1")
     }
 
     @Test("close()가 transport.disconnect()를 호출한다")
@@ -54,5 +54,20 @@ struct ClientSessionCreationTests {
         await sessionHarness.session.close()
 
         #expect(sessionHarness.clientTransport.disconnectCalled)
+        #expect(harness.server.sessions.isEmpty)
+    }
+
+    @Test("close()는 메인 채널을 teardown한다")
+    func closeTearsDownMainChannel() async throws {
+        let harness = ServerTestHarness()
+        try await harness.startup()
+
+        let sessionHarness = harness.simulateClientConnection()
+        let (_, stream) = try await sessionHarness.openMainChannel()
+
+        await sessionHarness.session.close()
+
+        #expect(stream.isClosed)
+        #expect(await sessionHarness.session.channelManager.mainChannel == nil)
     }
 }

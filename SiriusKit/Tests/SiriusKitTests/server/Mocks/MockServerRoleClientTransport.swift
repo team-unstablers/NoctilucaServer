@@ -9,10 +9,12 @@ import Foundation
 
 final class MockServerRoleClientTransport: ServerRoleClientTransport {
     let id: TransportLayerIdentifier = UUID()
+    private let loggerContext = SharedState(SiriusEventLogger.Context())
 
     weak var delegate: ServerRoleClientTransportDelegate?
 
     var remoteEndpoint: SREndpoint? = SREndpoint(address: .IPv4(0x7F000001))
+    var isClosed: Bool = false
 
     // MARK: - Tracking
 
@@ -23,6 +25,7 @@ final class MockServerRoleClientTransport: ServerRoleClientTransport {
     // MARK: - Configuration
 
     private var streamQueue: [MockStream] = []
+    private var openStreams: [StreamIdentifier: SiriusKitCore.Stream] = [:]
 
     func enqueueMockStream(_ stream: MockStream) {
         streamQueue.append(stream)
@@ -32,6 +35,7 @@ final class MockServerRoleClientTransport: ServerRoleClientTransport {
 
     func disconnect() async {
         disconnectCalled = true
+        isClosed = true
     }
 
     func openStream() async -> Result<SiriusKitCore.Stream, TransportLayerError> {
@@ -47,13 +51,23 @@ final class MockServerRoleClientTransport: ServerRoleClientTransport {
         issueResumeTicketCalled = true
     }
 
+    func getStreams() async -> [StreamIdentifier: SiriusKitCore.Stream] {
+        openStreams
+    }
+
+    func eventLoggerContext() -> SharedState<SiriusEventLogger.Context> {
+        loggerContext
+    }
+
     // MARK: - Simulation (async)
 
     func simulateRemoteStreamOpen(_ stream: MockStream) async throws {
+        openStreams[stream.id] = stream
         try await delegate?.clientTransportDidOpenRemoteStream(self, stream: stream)
     }
 
     func simulateClose() async {
+        isClosed = true
         await delegate?.clientTransportDidClose(self)
     }
 

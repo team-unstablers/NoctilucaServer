@@ -21,8 +21,8 @@ final class MockFeatureProvider: FeatureProvider {
         identifier: ChannelIdentifier,
         direction: ChannelDirection,
         args: [String]
-    ) -> Channel {
+    ) async throws -> ChannelCreationResult {
         createdChannels.append((feature: feature, identifier: identifier))
-        return Channel(using: streamHolder, identifier: identifier, direction: direction)
+        return .accepted(Channel(using: streamHolder, identifier: identifier, direction: direction))
     }
 }

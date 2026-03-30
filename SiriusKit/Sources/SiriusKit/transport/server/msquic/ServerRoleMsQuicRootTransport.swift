@@ -49,6 +49,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     private var identityAdapter: MsQuicServerIdentityAdapter?
 
     private(set) var clients: [ServerRoleMsQuicClientTransport] = []
+    private var isShuttingDown = false
 
     nonisolated(unsafe) weak var delegate: ServerRoleRootTransportDelegate?
 
@@ -62,6 +63,8 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     // MARK: - ServerRoleRootTransport Protocol
 
     func startup() async throws {
+        self.isShuttingDown = false
+
         // 1. MsQuic Registration 생성
         let regConfig = QuicRegistrationConfig(
             appName: "SiriusKit-MsQuic",
@@ -179,8 +182,19 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     }
 
     func shutdown() async throws {
-        // 1. 모든 클라이언트 연결 종료
-        // 순환 참조를 먼저 끊고, 이후 종료 작업을 진행합니다.
+        guard !self.isShuttingDown else {
+            return
+        }
+
+        self.isShuttingDown = true
+
+        // 1. Listener 중지
+        if let listener = self.listener {
+            await listener.stop()
+            self.listener = nil
+        }
+
+        // 2. 모든 클라이언트 연결 종료
         let clientSnapshot = self.clients
         self.clients.removeAll()
 
@@ -190,12 +204,6 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
                     await client.disconnect()
                 }
             }
-        }
-
-        // 2. Listener 중지 (역순 해제)
-        if let listener = self.listener {
-            await listener.stop()
-            self.listener = nil
         }
 
         // 3. Configuration 해제 (deinit에서 자동 처리)
@@ -244,12 +252,26 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     }
 
     internal func registerClientTransport(_ transport: ServerRoleMsQuicClientTransport) async {
+        guard !self.isShuttingDown else {
+            await transport.disconnect()
+            return
+        }
+
+        guard !transport.isClosed else {
+            return
+        }
+
+        self.clients.append(transport)
+
         // 델리게이트 콜백 (QUICClientTransportDelegate 설정할 타이밍 제공)
         delegate?.serverTransportDidAcceptConnection(self, clientTransport: transport)
 
-        await transport.start()
+        guard !transport.isClosed else {
+            self.clients.removeAll { $0.id == transport.id }
+            return
+        }
 
-        self.clients.append(transport)
+        await transport.start()
     }
 
     internal func unregisterClientTransport(_ transport: ServerRoleMsQuicClientTransport) async {
