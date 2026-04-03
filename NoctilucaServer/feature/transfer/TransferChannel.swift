@@ -196,7 +196,9 @@ class TransferChannel: Channel {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
-
+        
+        logger.warning("received \(frame.length)")
+        
         guard shouldRecv() else {
             logger.warning("Received frame on a channel that should not receive data - ignoring")
             return
@@ -235,6 +237,8 @@ class TransferChannel: Channel {
             Task { [weak self] in try await self?.close() }
             return
         }
+        
+        logger.info("handleTransferDataChunk() called - frame.length = \(frame.length)")
 
         let chunk = try TransferDataChunk.fromProtobufBytes(frame.data)
 
