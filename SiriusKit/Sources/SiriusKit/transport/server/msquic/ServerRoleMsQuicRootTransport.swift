@@ -92,9 +92,9 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
         // 3. Configuration 생성 (ALPN 설정)
         var settings = QuicSettings()
-        settings.idleTimeoutMs = 10000
+        settings.idleTimeoutMs = 15000
         settings.keepAliveIntervalMs = 5000
-        settings.disconnectTimeoutMs = 2000
+        settings.disconnectTimeoutMs = 15000
 
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
@@ -102,13 +102,6 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         settings.serverResumptionLevel = UInt8(Int(exactly: QUIC_SERVER_RESUME_AND_ZERORTT.rawValue)!)
         
         settings.pacingEnabled = false
-        
-        settings.streamRecvBufferDefault = 4 * 1024 * 1024
-        settings.streamRecvWindowDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowBidiRemoteDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowUnidiDefault = 512 * 1024
-        settings.connFlowControlWindow = 16 * 1024 * 1024
         
         settings.ecnEnabled = true
 
