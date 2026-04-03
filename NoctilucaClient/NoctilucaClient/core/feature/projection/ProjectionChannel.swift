@@ -280,3 +280,9 @@ class ProjectionChannel: Channel {
         }
     }
 }
+
+extension ProjectionChannel: Channel.HasFeature {
+    var feature: SiriusFeature {
+        return .projection
+    }
+}

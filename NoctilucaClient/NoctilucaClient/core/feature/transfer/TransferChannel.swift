@@ -429,3 +429,9 @@ extension TransferChannel {
         return .accepted(transferChannel)
     }
 }
+
+extension TransferChannel: Channel.HasFeature {
+    var feature: SiriusFeature {
+        return .transfer
+    }
+}

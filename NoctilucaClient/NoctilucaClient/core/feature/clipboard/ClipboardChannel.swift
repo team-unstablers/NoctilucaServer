@@ -458,3 +458,9 @@ class ClipboardChannel: Channel {
         super.handleStreamError(error: error)
     }
 }
+
+extension ClipboardChannel: Channel.HasFeature {
+    var feature: SiriusFeature {
+        return .clipboard
+    }
+}

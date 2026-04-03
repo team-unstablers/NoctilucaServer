@@ -107,3 +107,9 @@ class ProjectionDataChannel: Channel {
         delegate?.projectionDataChannel(self, didReceiveAudioFrame: consume audioFrameInput)
     }
 }
+
+extension ProjectionDataChannel: Channel.HasFeature {
+    var feature: SiriusFeature {
+        return .projectionData
+    }
+}

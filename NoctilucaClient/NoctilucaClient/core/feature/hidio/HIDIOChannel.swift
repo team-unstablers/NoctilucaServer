@@ -33,3 +33,9 @@ class HIDIOChannel: Channel {
         controller.shutdown()
     }
 }
+
+extension HIDIOChannel: Channel.HasFeature {
+    var feature: SiriusFeature {
+        return .hidio
+    }
+}
