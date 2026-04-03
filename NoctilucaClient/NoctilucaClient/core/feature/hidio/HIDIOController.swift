@@ -7,6 +7,7 @@
 
 import Foundation
 import Atomics
+import Combine
 
 import AsyncAlgorithms
 
@@ -52,6 +53,9 @@ class HIDIOController {
 
     private(set) var keyPressState = KeyPressState()
     private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
+
+    /// 키 상태 변경 시 현재 눌린 키 집합을 방출합니다. (디버그 뷰 용도)
+    let keyStateDidChange = PassthroughSubject<Set<LinuxKeycode>, Never>()
     
     init(channel: HIDIOChannel) {
         self.channel = channel
@@ -166,6 +170,7 @@ class HIDIOController {
     func keyDown(keyCode: LinuxKeycode) {
         self.keyPressState.keyDown(keyCode)
         self.evaluateHooks()
+        self.keyStateDidChange.send(keyPressState.pressedKeys)
 
         let event = KeyboardEvent(
             eventType: .keyDown,
@@ -182,6 +187,7 @@ class HIDIOController {
 
     func keyUp(keyCode: LinuxKeycode) {
         self.keyPressState.keyUp(keyCode)
+        self.keyStateDidChange.send(keyPressState.pressedKeys)
 
         let event = KeyboardEvent(
             eventType: .keyUp,

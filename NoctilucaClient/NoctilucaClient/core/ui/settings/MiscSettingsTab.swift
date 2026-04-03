@@ -24,6 +24,11 @@ struct MiscSettingsTab: View {
                     Text(markdown: String(localized: "settings.misc.performance_overlay.title", defaultValue: "디버그용 통계 정보 표시하기"))
                     Text(markdown: String(localized: "settings.misc.performance_overlay.description", defaultValue: "디버그용 통계 정보를 표시합니다."))
                 }
+
+                Toggle(isOn: $settings.misc.showDebugWindow) {
+                    Text(markdown: String(localized: "settings.misc.debug_window.title", defaultValue: "세션 디버그 윈도우 표시하기"))
+                    Text(markdown: String(localized: "settings.misc.debug_window.description", defaultValue: "각 세션의 채널, 프로젝션, 입력 상태를 실시간으로 확인할 수 있는 디버그 윈도우를 표시합니다."))
+                }
             } header: {
                 Text(markdown: String(localized: "settings.misc.experimental.header", defaultValue: "실험 기능"))
             }

@@ -75,6 +75,8 @@ struct RemoteSessionProjectionView: View {
     @StateObject private var zoomController = ProjectionZoomController()
     @StateObject private var keyboardObserver = KeyboardHeightObserver()
     @EnvironmentObject private var windowViewModel: SessionWindowViewModel
+
+    @State private var debugViewModel: RemoteSessionDebugViewModel?
 #endif
 
     private var currentScale: CGFloat {
@@ -297,6 +299,16 @@ struct RemoteSessionProjectionView: View {
                         )
                         .padding(8)
                     }
+
+#if os(iOS)
+                    if settingsStore.settings.misc.showDebugWindow,
+                       let debugViewModel {
+                        DebugOverlayContainer(
+                            viewModel: debugViewModel
+                        )
+                        .padding(8)
+                    }
+#endif
                 }
 #if os(iOS)
                 .background(.background)
@@ -311,6 +323,9 @@ struct RemoteSessionProjectionView: View {
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     zoomController.mode = .defaultFor(settingsStore.settings.input.touchInputMode)
                     zoomController.updateGeometry(contentRect: rect, containerSize: geometry.size)
+                    if debugViewModel == nil {
+                        debugViewModel = RemoteSessionDebugViewModel(remoteSession: remoteSession)
+                    }
 #endif
                 }
                 .onChange(of: source?.id) { _, _ in
