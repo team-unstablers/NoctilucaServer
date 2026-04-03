@@ -12,10 +12,16 @@ import SwiftUI
 struct DebugOverlayContainer: View {
     @ObservedObject var viewModel: RemoteSessionDebugViewModel
 
-    @State private var isExpanded = false
+    @State private var isVisible = true
+    @State private var isExpanded = true
     @State private var position: CGSize = .zero
+    @State private var contentSize = CGSize(width: 380, height: 420)
     @GestureState private var dragOffset: CGSize = .zero
+    @GestureState private var resizeOffset: CGSize = .zero
 
+    private let minWidth: CGFloat = 360
+    private let minHeight: CGFloat = 300
+    
     private var currentOffset: CGSize {
         CGSize(
             width: position.width + dragOffset.width,
@@ -23,59 +29,56 @@ struct DebugOverlayContainer: View {
         )
     }
 
+    private var currentSize: CGSize {
+        CGSize(
+            width: max(minWidth, contentSize.width + resizeOffset.width),
+            height: max(minHeight, contentSize.height + resizeOffset.height)
+        )
+    }
+
     var body: some View {
-        Group {
-            if isExpanded {
-                expandedView
-            } else {
-                compactView
+        if isVisible {
+            RingoOSDialog(
+                title: "Debug",
+                isExpanded: isExpanded,
+                onClose: { withAnimation(.easeOut(duration: 0.15)) { isVisible = false } },
+                onMaximize: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }
+            ) {
+                ZStack(alignment: .bottomTrailing) {
+                    RemoteSessionDebugView(viewModel: viewModel)
+
+                    RingoOSResizeHandle()
+                        .gesture(
+                            DragGesture(minimumDistance: 2)
+                                .updating($resizeOffset) { value, state, _ in
+                                    state = value.translation
+                                }
+                                .onEnded { value in
+                                    contentSize.width = max(minWidth, contentSize.width + value.translation.width)
+                                    contentSize.height = max(minHeight, contentSize.height + value.translation.height)
+                                }
+                        )
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.ultraThinMaterial)
+                )
             }
-        }
-        .contentShape(Rectangle())
-        .offset(currentOffset)
-        .simultaneousGesture(
-            TapGesture()
-                .onEnded {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isExpanded.toggle()
-                    }
-                }
-        )
-        .gesture(
-            DragGesture(minimumDistance: 5)
-                .updating($dragOffset) { value, state, _ in
-                    state = value.translation
-                }
-                .onEnded { value in
-                    position.width += value.translation.width
-                    position.height += value.translation.height
-                }
-        )
-    }
-
-    private var compactView: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "ant.fill")
-                .font(.caption)
-            Text("Debug")
-                .font(.caption.bold())
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
-    }
-
-    private var expandedView: some View {
-        RemoteSessionDebugView(viewModel: viewModel)
-            .frame(width: 350, height: 480)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
-            )
+            .frame(width: currentSize.width, height: isExpanded ? currentSize.height : nil)
             .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+            .offset(currentOffset)
+            .gesture(
+                DragGesture(minimumDistance: 5)
+                    .updating($dragOffset) { value, state, _ in
+                        state = value.translation
+                    }
+                    .onEnded { value in
+                        position.width += value.translation.width
+                        position.height += value.translation.height
+                    }
+            )
+            .transition(.opacity)
+        }
     }
 }
 #endif

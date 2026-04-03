@@ -21,6 +21,11 @@ struct RemoteSessionDebugView: View {
             HIDIODebugTab(viewModel: viewModel)
                 .tabItem { Label("HIDIO", systemImage: "keyboard") }
         }
+#if os(iOS)
+        .tabViewStyle(.tabBarOnly)
+        .environment(\.horizontalSizeClass, .compact)
+#else
         .frame(minWidth: 360, minHeight: 400)
+#endif
     }
 }
