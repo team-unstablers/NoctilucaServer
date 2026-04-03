@@ -47,6 +47,16 @@ open class Channel {
 
     internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
 
+    // MARK: - Data Rate Monitoring
+    private let _uplinkCounter = DataRateCounter()
+    private let _downlinkCounter = DataRateCounter()
+
+    /// 현재 uplink (송신) 데이터 전송률 (bytes/sec)
+    public var uplinkDataRate: Double { _uplinkCounter.bytesPerSecond }
+
+    /// 현재 downlink (수신) 데이터 전송률 (bytes/sec)
+    public var downlinkDataRate: Double { _downlinkCounter.bytesPerSecond }
+
     // MARK: - Explicit Activation
 
     private var _activationLock = NSLock()
@@ -126,11 +136,14 @@ open class Channel {
         // self.logger.trace("[\(self.identifier)] frame SEND - opcode \(frame.opcode.hexString), length \(frame.data.count)")
 #endif
 
+        let frameByteCount = SiriusFrame.headerSize + frame.data.count
         let result = await self.stream.write(frame: frame.data, opcode: frame.opcode, length: frame.length)
 
         if case .failure(let error) = result {
             throw error
         }
+
+        _uplinkCounter.record(frameByteCount)
     }
 
     public func send(opcode: MessageOpcode, message: (any DecodableSiriusMessage)) async throws {
@@ -147,6 +160,8 @@ open class Channel {
         if case .failure(let error) = result {
             throw error
         }
+
+        _uplinkCounter.record(SiriusFrame.headerSize + messageData.count)
     }
 
     private func streamEventLoop() async throws {
@@ -167,6 +182,7 @@ open class Channel {
 #if DEBUG
                 // self.logger.trace("[\(self.identifier)] frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
 #endif
+                _downlinkCounter.record(SiriusFrame.headerSize + Int(frame.length))
 
                 do {
                     try await self.handleFrame(frame: frame)

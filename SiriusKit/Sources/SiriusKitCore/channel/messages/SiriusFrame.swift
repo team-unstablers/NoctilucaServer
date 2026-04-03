@@ -9,6 +9,9 @@ import Foundation
 internal import SwiftProtobuf
 
 public struct SiriusFrame {
+    /// 프레임 헤더 크기 (opcode 2바이트 + length 4바이트)
+    public static let headerSize: Int = 6
+
     public let opcode: MessageOpcode
     public let length: UInt32
 
