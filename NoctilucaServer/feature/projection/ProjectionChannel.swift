@@ -397,7 +397,7 @@ class ProjectionChannel: Channel {
     }
 
     func sendCursorPositionEvent(_ state: CursorState) async throws {
-        try await send(opcode: .cursorEvent, message: CursorEvent(
+        sendNonBlocking(opcode: .cursorEvent, message: CursorEvent(
             event: .moveEvent(CursorMoveEvent(
                 displayID: state.belongsTo,
                 position: SRPoint(x: state.relativePosition.x, y: state.relativePosition.y)
@@ -413,9 +413,9 @@ class ProjectionChannel: Channel {
             return
         }
 
-        try await send(opcode: .cursorEvent, message: CursorEvent(
+        sendNonBlocking(opcode: .cursorEvent, message: CursorEvent(
             event: .imageEvent(CursorImageEvent(
-                cursorType: UInt64(cursorStateHolder.cursorHash),
+                cursorType: UInt64(await cursorStateHolder.cursorHash),
                 mimeType: "image/png",
                 size: SRSize(width: cursorImage.size.width, height: cursorImage.size.height),
                 hotspot: SRPoint(x: cursorHotspot.x, y: cursorHotspot.y),

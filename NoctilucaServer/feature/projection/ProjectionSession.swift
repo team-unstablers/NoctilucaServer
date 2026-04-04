@@ -247,7 +247,8 @@ class ProjectionSession: Identifiable {
                 return
             }
             
-            try await self.dataChannel.send(videoFrame: frame)
+            // send-and-forget: unbuffer 모드에서는 이렇게 하지 않으면 괴로움
+            dataChannel.send(videoFrame: frame)
         }
     }
 

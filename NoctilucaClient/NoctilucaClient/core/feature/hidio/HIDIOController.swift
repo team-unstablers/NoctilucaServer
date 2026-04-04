@@ -96,12 +96,8 @@ class HIDIOController {
                 timestamp: UInt64(Date().timeIntervalSince1970 * 1000),
                 events: [event]
             )
-            
-            do {
-                try await channel.send(opcode: .hidioPacket, message: consume packet)
-            } catch {
-                logger.error("Failed to send HID event batch: \(error)")
-            }
+
+            channel.sendNonBlocking(opcode: .hidioPacket, message: consume packet)
         }
     }
     

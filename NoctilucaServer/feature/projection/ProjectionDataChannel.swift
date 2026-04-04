@@ -38,14 +38,14 @@ class ProjectionDataChannel: Channel {
     }
     
     func send(parameterSetMessage: CodecParameterSetMessage) async throws {
-        try await self.send(opcode: .codecParameterSets, message: parameterSetMessage)
+        self.sendNonBlocking(opcode: .codecParameterSets, message: parameterSetMessage)
     }
 
     func send(degradationNotice: DegradationNotice) async throws {
-        try await self.send(opcode: .degradationNotice, message: degradationNotice)
+        self.sendNonBlocking(opcode: .degradationNotice, message: degradationNotice)
     }
     
-    func send(videoFrame frame: EncodedFrame) async throws {
+    func send(videoFrame frame: EncodedFrame) {
         let serializedHeader = frame.header.serialize()
         let frameData = frame.data
         
@@ -82,10 +82,10 @@ class ProjectionDataChannel: Channel {
             data: consume siriusFrameData
         )
         
-        try await self.send(frame: consume siriusFrame)
+        self.sendNonBlocking(frame: consume siriusFrame)
     }
 
-    func send(audioFrame frame: EncodedAudioFrame) async throws {
+    func send(audioFrame frame: EncodedAudioFrame) {
         let serializedHeader = frame.header.serialize()
         let frameData = frame.data
 
@@ -120,6 +120,6 @@ class ProjectionDataChannel: Channel {
             data: consume siriusFrameData
         )
 
-        try await self.send(frame: consume siriusFrame)
+        self.sendNonBlocking(frame: consume siriusFrame)
     }
 }
