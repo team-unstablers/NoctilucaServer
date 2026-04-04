@@ -98,7 +98,138 @@ private final class DisplayLinkProxy {
     }
 }
 
+/// 두 손가락 스크롤 중의 미세한 finger span 변화로 핀치가 너무 쉽게 시작되는 것을 막는다.
+private final class ThresholdPinchGestureRecognizer: UIGestureRecognizer {
+    var activationScaleThreshold: CGFloat = 0.03
+    var minimumSpanDelta: CGFloat = 0
+
+    private var firstTouch: UITouch?
+    private var secondTouch: UITouch?
+    private var baselineDistance: CGFloat = 0
+    private var activationDistance: CGFloat = 0
+
+    private(set) var scale: CGFloat = 1.0
+
+    override func reset() {
+        super.reset()
+        firstTouch = nil
+        secondTouch = nil
+        baselineDistance = 0
+        activationDistance = 0
+        scale = 1.0
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard let view else {
+            state = .failed
+            return
+        }
+
+        for touch in touches {
+            if firstTouch == nil {
+                firstTouch = touch
+            } else if secondTouch == nil, touch != firstTouch {
+                secondTouch = touch
+            } else if touch != firstTouch, touch != secondTouch {
+                state = state == .possible ? .failed : .cancelled
+                return
+            }
+        }
+
+        guard let firstTouch, let secondTouch else {
+            return
+        }
+
+        let distance = distance(between: firstTouch, and: secondTouch, in: view)
+        baselineDistance = distance
+        activationDistance = distance
+        scale = 1.0
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard let view,
+              let firstTouch,
+              let secondTouch
+        else {
+            state = .failed
+            return
+        }
+
+        guard touches.contains(firstTouch) || touches.contains(secondTouch) else {
+            return
+        }
+
+        let currentDistance = distance(between: firstTouch, and: secondTouch, in: view)
+        guard currentDistance > 0 else {
+            return
+        }
+
+        if state == .possible {
+            guard baselineDistance > 0 else {
+                baselineDistance = currentDistance
+                activationDistance = currentDistance
+                return
+            }
+
+            let totalScaleDelta = abs((currentDistance / baselineDistance) - 1.0)
+            let spanDelta = abs(currentDistance - baselineDistance)
+            guard totalScaleDelta >= activationScaleThreshold,
+                  spanDelta >= minimumSpanDelta
+            else {
+                return
+            }
+
+            activationDistance = currentDistance
+            scale = 1.0
+            state = .began
+            return
+        }
+
+        guard activationDistance > 0 else {
+            activationDistance = currentDistance
+            scale = 1.0
+            state = .changed
+            return
+        }
+
+        scale = currentDistance / activationDistance
+        state = .changed
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard let firstTouch, let secondTouch else {
+            state = .failed
+            return
+        }
+
+        guard touches.contains(firstTouch) || touches.contains(secondTouch) else {
+            return
+        }
+
+        if state == .began || state == .changed {
+            state = .ended
+        } else {
+            state = .failed
+        }
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        state = .cancelled
+    }
+
+    private func distance(between firstTouch: UITouch, and secondTouch: UITouch, in view: UIView) -> CGFloat {
+        let firstLocation = firstTouch.location(in: view)
+        let secondLocation = secondTouch.location(in: view)
+        return hypot(secondLocation.x - firstLocation.x, secondLocation.y - firstLocation.y)
+    }
+}
+
 private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
+    private static let trackpadPinchActivationScaleThreshold: CGFloat = 0.14
+    private static let trackpadPinchMinimumSpanDelta: CGFloat = 18.0
+    private static let touchPinchActivationScaleThreshold: CGFloat = 0.03
+    private static let touchPinchMinimumSpanDelta: CGFloat = 0
+
     private let pointer: HIDIOUIKitMouse
     private var inputMode: AppSettings.TouchInputMode = .touch
     private var trackpadMoveMultiplier: CGFloat = 1.0
@@ -117,7 +248,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     private let mouseScrollRecognizer      = UIPanGestureRecognizer()
 
     // Zoom gesture recognizers
-    private let pinchRecognizer = UIPinchGestureRecognizer()
+    private let pinchRecognizer = ThresholdPinchGestureRecognizer()
 
     private var isChordedDragging: Bool = false
     private var isScrolling: Bool = false
@@ -180,6 +311,14 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     func updateInputMode(_ mode: AppSettings.TouchInputMode, trackpadMoveMultiplier: Double) {
         inputMode = mode
         self.trackpadMoveMultiplier = max(0.1, CGFloat(trackpadMoveMultiplier))
+        switch mode {
+        case .touch:
+            pinchRecognizer.activationScaleThreshold = Self.touchPinchActivationScaleThreshold
+            pinchRecognizer.minimumSpanDelta = Self.touchPinchMinimumSpanDelta
+        case .trackpad:
+            pinchRecognizer.activationScaleThreshold = Self.trackpadPinchActivationScaleThreshold
+            pinchRecognizer.minimumSpanDelta = Self.trackpadPinchMinimumSpanDelta
+        }
         if mode != .trackpad {
             moveInertiaVelocity = .zero
         }
@@ -744,13 +883,16 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     // MARK: - Zoom Gesture Handlers
 
-    @objc private func handlePinch(_ recognizer: UIPinchGestureRecognizer) {
+    @objc private func handlePinch(_ recognizer: UIGestureRecognizer) {
+        guard let recognizer = recognizer as? ThresholdPinchGestureRecognizer else {
+            return
+        }
+
         switch recognizer.state {
         case .began, .changed:
             onPinchChanged?(recognizer.scale)
         case .ended, .cancelled, .failed:
             onPinchEnded?()
-            recognizer.scale = 1.0
         default:
             break
         }
