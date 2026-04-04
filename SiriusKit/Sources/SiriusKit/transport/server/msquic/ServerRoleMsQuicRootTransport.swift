@@ -98,12 +98,13 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
-        settings.sendBufferingEnabled = true
+        settings.sendBufferingEnabled = false
         settings.serverResumptionLevel = UInt8(Int(exactly: QUIC_SERVER_RESUME_AND_ZERORTT.rawValue)!)
         
-        settings.pacingEnabled = false
+        settings.pacingEnabled = true
         
         settings.ecnEnabled = true
+        
 
 
         do {
@@ -219,6 +220,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     ) throws -> QuicConnection? {
         // 새 QuicConnection 래퍼 생성
         let quicConnection: QuicConnection
+        
         do {
             quicConnection = try QuicConnection(
                 handle: connectionInfo.connection,

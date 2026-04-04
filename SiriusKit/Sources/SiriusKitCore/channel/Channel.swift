@@ -145,6 +145,17 @@ open class Channel {
 
         _uplinkCounter.record(frameByteCount)
     }
+    
+    public func sendNonBlocking(frame: consuming SiriusFrame) {
+        let frameByteCount = SiriusFrame.headerSize + frame.data.count
+        let result = self.stream.writeNonBlocking(frame: frame.data, opcode: frame.opcode, length: frame.length)
+
+        if case .failure(_) = result {
+            return
+        }
+
+        _uplinkCounter.record(frameByteCount)
+    }
 
     public func send(opcode: MessageOpcode, message: (any DecodableSiriusMessage)) async throws {
         // swiftlint:disable:next force_cast
@@ -159,6 +170,22 @@ open class Channel {
 
         if case .failure(let error) = result {
             throw error
+        }
+
+        _uplinkCounter.record(SiriusFrame.headerSize + messageData.count)
+    }
+    
+    public func sendNonBlocking(opcode: MessageOpcode, message: (any DecodableSiriusMessage)) {
+        // swiftlint:disable:next force_cast
+        let protobufMessage = (message as! any SiriusMessage).toProtobufMessage()
+        guard let messageData = try? protobufMessage.serializedData() else {
+            return
+        }
+
+        let result = self.stream.writeNonBlocking(frame: messageData, opcode: opcode)
+
+        if case .failure(_) = result {
+            return
         }
 
         _uplinkCounter.record(SiriusFrame.headerSize + messageData.count)

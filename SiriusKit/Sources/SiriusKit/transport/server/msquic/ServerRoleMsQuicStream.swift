@@ -62,6 +62,18 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
         }
     }
 
+    override func writeNonBlocking(_ data: Data) -> Result<UInt32, StreamError> {
+        do {
+            try quicStream.send(data)
+            return .success(UInt32(data.count))
+        } catch {
+            Task { [weak self] in
+                try? await self?.close()
+            }
+            return .failure(mapQuicError(error))
+        }
+    }
+
     private func mapQuicError(_ error: Error) -> StreamError {
         guard let quicError = error as? QuicError else {
             return .writeFailed(error)
