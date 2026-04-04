@@ -117,7 +117,7 @@ class MockAudioProjectionSession: Identifiable {
                     }
                 }
 
-                try await self.dataChannel.send(audioFrame: frame)
+                self.dataChannel.send(audioFrame: frame)
 
                 // 다음 전송 시간 갱신 (프레임 PTS 기반)
                 if let previousPTSUs = lastFramePTSUs,
