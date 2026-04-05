@@ -131,7 +131,6 @@ class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
     }
 
     func onKeyDown(_ keyCode: NoctilucaPluginKit.LinuxKeycode) async -> NoctilucaPluginKit.KeyboardHackResult {
-        print(keyCode.rawValue)
         if keyCode == .KEY_RIGHTALT || keyCode == .KEY_RIGHTMETA || keyCode == .KEY_HANGEUL {
             await Task { @MainActor in
                 let current = TISCopyCurrentKeyboardInputSource()?.takeUnretainedValue()
