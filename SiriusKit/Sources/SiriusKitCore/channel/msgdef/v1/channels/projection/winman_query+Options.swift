@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct WindowInfoFlags: OptionSet {
+public struct WindowInfoFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -44,7 +44,7 @@ public struct WindowInfoFlags: OptionSet {
     public static let skipCompositor = WindowInfoFlags(rawValue: 0x00010000)
 }
 
-public struct WindowHint: OptionSet {
+public struct WindowHint: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -80,7 +80,7 @@ public struct WindowHint: OptionSet {
     public static let hasTransparency = WindowHint(rawValue: 0x2000)
 }
 
-public struct WindowListRequestFlags: OptionSet {
+public struct WindowListRequestFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -95,7 +95,7 @@ public struct WindowListRequestFlags: OptionSet {
     public static let includeHiddenWindows = WindowListRequestFlags(rawValue: 0x0002)
 }
 
-public struct WindowChangeEventType: OptionSet {
+public struct WindowChangeEventType: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -116,7 +116,7 @@ public struct WindowChangeEventType: OptionSet {
     public static let metadataChanged = WindowChangeEventType(rawValue: 0x0020)
 }
 
-public struct WindowEventSubscriptionFlags: OptionSet {
+public struct WindowEventSubscriptionFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

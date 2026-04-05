@@ -8,7 +8,7 @@
 import Foundation
 
 /// 서비스에서 전송될 컨텐츠의 유형 / 우선순위
-public enum ServiceClass {
+public enum ServiceClass: Sendable {
     ///  사용자 입력 (가장 높음)
     case userInput
     

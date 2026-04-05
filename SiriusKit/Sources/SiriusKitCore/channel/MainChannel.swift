@@ -23,7 +23,7 @@ public enum MainChannelEvent {
     case receivedPong
 }
 
-public class MainChannel: Channel {
+public final class MainChannel: Channel {
     public let events: AsyncStream<MainChannelEvent>
     let continuation: AsyncStream<MainChannelEvent>.Continuation
 

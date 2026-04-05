@@ -67,7 +67,7 @@ public extension ServerIdentity {
 }
 
 /// 서버 아이덴티티 검증 정책
-public enum ServerIdentityValidationPolicy: Equatable {
+public enum ServerIdentityValidationPolicy: Equatable, Sendable {
     /// 시스템의 트러스트 스토어를 기준으로만 검사합니다.
     case systemOnly
     

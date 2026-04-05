@@ -19,13 +19,13 @@ public enum StreamError: Error {
     case writeFailed(Error)
 }
 
-public enum StreamEvent {
+public enum StreamEvent: Sendable {
     case frame(SiriusFrame)
     case closed
     case error(Error)
 }
 
-open class Stream {
+open class Stream: @unchecked Sendable {
     public let events: AsyncStream<StreamEvent>
     public let continuation: AsyncStream<StreamEvent>.Continuation
 
@@ -39,7 +39,9 @@ open class Stream {
         self.continuation = continuationLocal
     }
 
-    public var id: StreamIdentifier = .zero
+    open func id() -> StreamIdentifier {
+        return .zero
+    }
 
     open func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
         let opcodeRaw = opcode.rawValue.bigEndian
@@ -104,6 +106,6 @@ open class Stream {
     }
 }
 
-public struct StreamHolder {
+public struct StreamHolder: Sendable {
     package let stream: Stream
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct MouseMoveEventType: RawRepresentable, Hashable, Equatable, Codable {
+public struct MouseMoveEventType: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -20,7 +20,7 @@ public struct MouseMoveEventType: RawRepresentable, Hashable, Equatable, Codable
     public static let relative = MouseMoveEventType(rawValue: 1)
 }
 
-public struct MouseButtonEventType: RawRepresentable, Hashable, Equatable, Codable {
+public struct MouseButtonEventType: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -33,7 +33,7 @@ public struct MouseButtonEventType: RawRepresentable, Hashable, Equatable, Codab
     public static let up = MouseButtonEventType(rawValue: 1)
 }
 
-public struct MouseButtonType: RawRepresentable, Hashable, Equatable, Codable {
+public struct MouseButtonType: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

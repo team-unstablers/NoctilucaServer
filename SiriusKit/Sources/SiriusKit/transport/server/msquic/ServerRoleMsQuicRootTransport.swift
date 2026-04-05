@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import MsQuic
-import SwiftMsQuicHelper
+@preconcurrency import MsQuic
+@preconcurrency import SwiftMsQuicHelper
 import SiriusKitCore
 
 enum ServerRoleMsQuicRootTransportError: Error, ServerRoleRootTransportError {

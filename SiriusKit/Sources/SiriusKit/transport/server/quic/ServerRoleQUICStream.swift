@@ -18,6 +18,8 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
 
     private var receiveTask: Task<Void, Error>?
     private let isClosed = ManagedAtomic(false)
+    
+    private var _id: StreamIdentifier = .zero
 
     init(_ connection: NWConnection, transport: ServerRoleQUICClientTransport, queue: DispatchQueue, identifier: StreamIdentifier = StreamIdentifier()) {
         self.connection = connection
@@ -25,7 +27,11 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
         self.queue = queue
 
         super.init()
-        self.id = identifier
+        self._id = identifier
+    }
+    
+    override func id() -> StreamIdentifier {
+        return _id
     }
 
     override func close() async throws {
@@ -63,7 +69,7 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
         }
     }
 
-    internal func setup(_ readyHandler: (() -> Void)?) {
+    internal func setup(_ readyHandler: (@Sendable () -> Void)?) {
         self.connection.stateUpdateHandler = { [weak self] state in
             guard let self else { return }
 
@@ -153,10 +159,10 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
 
 extension ServerRoleQUICStream: Hashable, Equatable {
     static func == (lhs: ServerRoleQUICStream, rhs: ServerRoleQUICStream) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.id() == rhs.id()
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(id())
     }
 }

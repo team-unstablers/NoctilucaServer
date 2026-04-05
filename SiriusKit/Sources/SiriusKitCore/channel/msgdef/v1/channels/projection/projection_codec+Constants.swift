@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct AutoQualityMode: RawRepresentable, Hashable, Equatable, Codable {
+public struct AutoQualityMode: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -22,7 +22,7 @@ public struct AutoQualityMode: RawRepresentable, Hashable, Equatable, Codable {
     public static let performancePriority = AutoQualityMode(rawValue: 2)
 }
 
-public struct LosslessQualityMode: RawRepresentable, Hashable, Equatable, Codable {
+public struct LosslessQualityMode: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

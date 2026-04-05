@@ -16,7 +16,7 @@ import Foundation
    |-- 0x02: 프로토콜 마이너 버전
    |-- 0x03: 리비전 넘버
  */
-public struct SiriusProtocolVersion: RawRepresentable, Equatable, Hashable {
+public struct SiriusProtocolVersion: RawRepresentable, Equatable, Hashable, Sendable {
     public typealias RawValue = UInt32
     public let rawValue: RawValue
 
@@ -58,7 +58,7 @@ public struct SiriusProtocolVersion: RawRepresentable, Equatable, Hashable {
     public static let v1_0: SiriusProtocolVersion = SiriusProtocolVersion(rawValue: 0x0001_0000)
 }
 
-public struct SiriusFeature: RawRepresentable, Equatable, Hashable {
+public struct SiriusFeature: RawRepresentable, Equatable, Hashable, Sendable {
     public typealias RawValue = UUID
     public let rawValue: UUID
 

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ServerNoticeCode: RawRepresentable, Equatable, Hashable {
+public struct ServerNoticeCode: RawRepresentable, Equatable, Hashable, Sendable {
     public typealias RawValue = UInt32
 
     public let rawValue: UInt32

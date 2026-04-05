@@ -30,7 +30,7 @@ public struct NoticeSeverity: SiriusEnum {
     public static let fatal = Self.fromProtobufEnum(.fatal)
 }
 
-public struct ClosureCode: RawRepresentable, Equatable {
+public struct ClosureCode: RawRepresentable, Equatable, Sendable {
     public let rawValue: UInt32
     
     public init(rawValue: UInt32) {

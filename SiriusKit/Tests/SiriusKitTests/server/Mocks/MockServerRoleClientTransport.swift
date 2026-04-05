@@ -62,7 +62,7 @@ final class MockServerRoleClientTransport: ServerRoleClientTransport {
     // MARK: - Simulation (async)
 
     func simulateRemoteStreamOpen(_ stream: MockStream) async throws {
-        openStreams[stream.id] = stream
+        openStreams[stream.id()] = stream
         try await delegate?.clientTransportDidOpenRemoteStream(self, stream: stream)
     }
 

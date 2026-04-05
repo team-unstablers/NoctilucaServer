@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum TransportLayerProtocol: Hashable, CustomStringConvertible {
+public enum TransportLayerProtocol: Hashable, CustomStringConvertible, Sendable {
     case quic
     case custom(name: String)
     
@@ -21,7 +21,7 @@ public enum TransportLayerProtocol: Hashable, CustomStringConvertible {
     }
 }
 
-public struct TransportLayerImplementation: Hashable {
+public struct TransportLayerImplementation: Hashable, Sendable {
     public let `protocol`: TransportLayerProtocol
     public let identifier: String
     public let displayName: String

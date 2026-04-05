@@ -27,7 +27,7 @@ public enum ChannelError: Error {
     case invalidArguments(String)
 }
 
-open class Channel {
+open class Channel: @unchecked Sendable {
     public protocol HasFeature {
         var feature: SiriusFeature { get }
     }
@@ -95,12 +95,12 @@ open class Channel {
         self.identifier = identifier
         self.direction = direction
         
-        Task.detached { [self] in
+        Task.detached { [logger, stream, serviceClass, identifier] in
             do {
-                self.logger.debug("[\(self.identifier)] setting service class to \(self.serviceClass)")
-                try await stream.setServiceClass(self.serviceClass)
+                logger.debug("[\(identifier)] setting service class to \(serviceClass)")
+                try await stream.setServiceClass(serviceClass)
             } catch {
-                self.logger.error("[\(self.identifier)] failed to set service class \(self.serviceClass): \(error)")
+                logger.error("[\(identifier)] failed to set service class \(serviceClass): \(error)")
             }
         }
 

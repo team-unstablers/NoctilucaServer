@@ -18,7 +18,7 @@ protocol ClientSessionLifecycleDelegate: AnyObject {
     func clientSessionDidClose(_ session: ClientSession)
 }
 
-public class ClientSession: SiriusSession {
+public class ClientSession: SiriusSession, @unchecked Sendable {
     private let logger = SiriusLogger(category: "ClientSession")
 
     public let id: UUID

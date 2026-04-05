@@ -6,7 +6,7 @@
 import Foundation
 
 struct AddressBarDegradationIndicatorState: Equatable {
-    struct Reasons: OptionSet, Equatable, Sendable {
+    struct Reasons: OptionSet, Sendable, Equatable, Sendable {
         let rawValue: UInt32
 
         static let poorNetworkThroughput         = Reasons(rawValue: 0x1)
@@ -14,7 +14,7 @@ struct AddressBarDegradationIndicatorState: Equatable {
         static let poorServerEncodingPerformance = Reasons(rawValue: 0x4)
     }
 
-    struct Types: OptionSet, Equatable, Sendable {
+    struct Types: OptionSet, Sendable, Equatable, Sendable {
         let rawValue: UInt32
 
         static let resolution         = Types(rawValue: 0x1)
@@ -23,7 +23,7 @@ struct AddressBarDegradationIndicatorState: Equatable {
         static let encodingEfficiency = Types(rawValue: 0x8)
     }
 
-    struct AdditionalInfo: OptionSet, Equatable, Sendable {
+    struct AdditionalInfo: OptionSet, Sendable, Equatable, Sendable {
         let rawValue: UInt32
 
         static let hardwareEncoderUnavailable = AdditionalInfo(rawValue: 0x1)

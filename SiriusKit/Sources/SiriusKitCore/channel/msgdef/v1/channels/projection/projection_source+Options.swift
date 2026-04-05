@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct SingleWindowProjectionSourceFlags: OptionSet {
+public struct SingleWindowProjectionSourceFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -18,7 +18,7 @@ public struct SingleWindowProjectionSourceFlags: OptionSet {
     public static let followSource = SingleWindowProjectionSourceFlags(rawValue: 1)
 }
 
-public struct ProjectionSourceFlags: OptionSet {
+public struct ProjectionSourceFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

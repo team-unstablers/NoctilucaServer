@@ -16,7 +16,7 @@ internal import X509
 
 import SiriusKitCore
 
-public class KeychainQUICServerIdentity: QUICServerIdentity {
+public final class KeychainQUICServerIdentity: QUICServerIdentity {
     private static let logger = SiriusLogger(category: "KeychainQUICServerIdentity")
     private let identityLabel: String
 

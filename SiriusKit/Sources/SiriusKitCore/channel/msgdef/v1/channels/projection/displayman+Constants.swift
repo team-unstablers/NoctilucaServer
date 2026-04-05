@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct DisplayKind: RawRepresentable, Hashable, Equatable, Codable {
+public struct DisplayKind: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -24,7 +24,7 @@ public struct DisplayKind: RawRepresentable, Hashable, Equatable, Codable {
     public static let virtual = DisplayKind(rawValue: 3)
 }
 
-public struct DisplayColorDepth: RawRepresentable, Hashable, Equatable, Codable {
+public struct DisplayColorDepth: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -45,7 +45,7 @@ public struct DisplayColorDepth: RawRepresentable, Hashable, Equatable, Codable 
     public static let bit10 = DisplayColorDepth(rawValue: 5)
 }
 
-public struct DisplayColorProfile: RawRepresentable, Hashable, Equatable, Codable {
+public struct DisplayColorProfile: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: String
 
     public init(rawValue: String) {
@@ -60,7 +60,7 @@ public struct DisplayColorProfile: RawRepresentable, Hashable, Equatable, Codabl
     public static let displayP3 = DisplayColorProfile(rawValue: "Display P3")
 }
 
-public struct DisplayDynamicRange: RawRepresentable, Hashable, Equatable, Codable {
+public struct DisplayDynamicRange: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

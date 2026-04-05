@@ -16,7 +16,7 @@ public protocol SiriusClientDelegate: AnyObject {
     func siriusClientDidCloseTransport(_ client: SiriusClient)
 }
 
-public class SiriusClient: SiriusSession {
+public class SiriusClient: SiriusSession, @unchecked Sendable {
     private let logger = SiriusLogger(category: "SiriusClient")
 
     public let id: UUID

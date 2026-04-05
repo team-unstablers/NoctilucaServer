@@ -8,7 +8,7 @@
 import Foundation
 internal import SwiftProtobuf
 
-public enum HIDIOEventKind {
+public enum HIDIOEventKind: Sendable {
     case raw
     
     case keyboardSetup
@@ -19,7 +19,7 @@ public enum HIDIOEventKind {
     case mouseWheel
 }
 
-public protocol HIDEvent {
+public protocol HIDEvent: Sendable {
     static var kind: HIDIOEventKind { get }
 }
 

@@ -13,7 +13,7 @@ import CryptoKit
 internal import SwiftASN1
 internal import X509
 
-public enum SRKeychainItemClass {
+public enum SRKeychainItemClass: Sendable {
     case certificate
     case privateKey
     case identity
@@ -49,7 +49,7 @@ public enum SRKeychainError: Error {
 }
 
 /// 'S'i'R'ius Keychain - macOS Security.framework의 Keychain 관련 기능을 wrap합니다.
-public class SRKeychain {
+public final class SRKeychain: Sendable {
     public static let shared = SRKeychain()
 
     /// 특정 라벨과 클래스에 해당하는 Keychain 아이템을 조회합니다.
