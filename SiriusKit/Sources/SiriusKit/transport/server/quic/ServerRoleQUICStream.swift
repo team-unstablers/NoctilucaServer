@@ -143,7 +143,7 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
     }
 
     private func finalize(event: StreamEvent) async {
-        if self.isClosed.exchange(true, ordering: .acquiring) {
+        if self.isClosed.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 

@@ -162,7 +162,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     }
 
     func disconnect() async {
-        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiring).original == false else {
+        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
 

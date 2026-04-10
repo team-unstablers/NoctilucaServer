@@ -53,7 +53,7 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
 
     func disconnect() async {
-        if isFinalized.exchange(true, ordering: .acquiring) {
+        if isFinalized.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 

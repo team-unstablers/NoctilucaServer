@@ -88,7 +88,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     // MARK: - TransportLayer Protocol
 
     func disconnect() async {
-        if isFinalized.exchange(true, ordering: .acquiring) {
+        if isFinalized.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 

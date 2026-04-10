@@ -56,7 +56,7 @@ public class ClientSession: SiriusSession, @unchecked Sendable {
     }
 
     func activate() {
-        guard isActivated.compareExchange(expected: false, desired: true, ordering: .acquiring).original == false else {
+        guard isActivated.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
 
@@ -118,7 +118,7 @@ public class ClientSession: SiriusSession, @unchecked Sendable {
     }
 
     private func notifyTransportClosedIfNeeded() {
-        guard didNotifyTransportClosure.compareExchange(expected: false, desired: true, ordering: .acquiring).original == false else {
+        guard didNotifyTransportClosure.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
 
