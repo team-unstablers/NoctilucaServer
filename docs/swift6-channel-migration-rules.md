@@ -56,7 +56,7 @@ SiriusKit의 `Channel` 레이어가 "base class 상속" 구조에서 "프로토�
 - `Recorder` / `Encoder` 프로토콜 본체의 실질적 Sendable 적합화 (이벤트 구조 교체, delegate → AsyncStream 전환 등) — 별도 후속 작업.
 - `FrameDropController`, `FrameQueue` 등의 동시성 정식화 — actor 내부로 '격납'만 하고 정식 감사는 후속.
 - `ChannelEventCompatBridge`를 걷어내고 `for await event in handle.events` 직접 구독으로 전환 — 향후 별도 단계.
-- **클라이언트 앱의 HIDIO 이외 채널 마이그레이션** (Projection / ProjectionData / Clipboard / Transfer). HIDIO 먼저 옮기는 이유는 "서버 FeatureProvider 가 v2 시그니처로 바뀌는 순간 함께 이동해야 컴파일되는 단위" 이기 때문이다. 나머지 채널은 후속 PR 에서 같은 룰을 적용해 이식한다.
+- **클라이언트 앱의 남은 채널 마이그레이션** (Projection / ProjectionData). HIDIO, Clipboard, Transfer 등은 선행 작업으로 마이그레이션이 완료되었다. 나머지 채널은 후속 PR에서 같은 룰을 적용해 이식한다.
 
 ---
 
@@ -330,6 +330,7 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
 
 **규칙**
 - 채널 클래스 본체의 가변 상태는 가능한 한 **state actor로 이동**한다.
+- **예외 (고빈도 전송 채널)**: `TransferChannel`처럼 64KB 단위 청크 전송 등으로 `handleFrame`이 매우 빈번하게 호출되는 경우, Actor Hop 오버헤드를 방지하기 위해 가변 상태를 캡슐화한 **`@unchecked Sendable` 클래스 내부에 `NSLock` (또는 `OSAllocatedUnfairLock`)을 사용하는 패턴**을 허용한다.
 - `ProjectionChannel` 의 기존 `ProjectionChannelState` 가 레퍼런스 모델.
 - 채널 본체에는 다음 범주만 남긴다:
   - `let handle: ChannelHandle`
@@ -368,15 +369,18 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
 ### Rule I — Sendable 적합 기본 형태
 
 **규칙**
-- `@unchecked Sendable`: **금지**.
-- `nonisolated(unsafe)` **let**/**var**: 다음 두 가지 패턴에 한해 허용.
+- `@unchecked Sendable`: **금지**. (단, Rule G의 고빈도 채널 Lock 패턴 예외 허용)
+- `nonisolated(unsafe)` **let**/**var**: 다음 세 가지 패턴에 한해 허용.
   1. **"init 에서 한 번 대입, 이후 불변" 패턴**
      - `AsyncStream.Continuation` 과 쌍을 이루는 `let events` / `let continuation` 필드 (예: `MainChannel.events`).
      - 이유: `AsyncStream.init` 의 클로저가 `@escaping` 이라 var 임시 → `self.let` 대입 단계가 필요. 대입 이후 수정되지 않는다.
   2. **"`~Copyable` struct 를 init 마지막에 한 번만 대입" 패턴**
      - `channelEventCompatBridge: ChannelEventCompatBridge<Self>!` 필드.
      - 이유: Self 를 consumer 로 넘겨야 하므로 stored property 초기화 순서상 init 마지막에 대입. `~Copyable` 때문에 var 선언 불가피.
-- 위 두 가지 외 `nonisolated(unsafe)` 사용은 리뷰에서 **차단**한다.
+  3. **"초기화 직후 1회 설정되는 콜백" 패턴**
+     - `onReady`, `onTransferStarted` 같은 클로저 프로퍼티.
+     - 이유: 채널 생성과 준비 단계에서 정확히 한 번만 주입되고, 이후 수명 주기 동안 결코 변경되지 않음을 논리적으로 보장할 때.
+- 위 세 가지 외 `nonisolated(unsafe)` 사용은 리뷰에서 **차단**한다.
 
 **선언 시 주석 필수**
 ```swift
@@ -625,7 +629,7 @@ final class NoctilucaFeatureProvider: FeatureProvider {
 
 ### 5.5. 부분 마이그레이션 룰 (`fatalError` 임시 처리)
 
-**상황**: SiriusKit 의 `Channel` / `FeatureProvider` 가 v2 로 옮겨졌지만, NoctilucaServer / NoctilucaClient 의 채널 구현체들은 한 번에 모두 옮겨지지 않는다. HIDIO 만 먼저 마이그레이션하고 나머지(Projection / ProjectionData / Transfer / Clipboard)는 후속 PR 로 미루는 식이 일반적이다.
+**상황**: SiriusKit 의 `Channel` / `FeatureProvider` 가 v2 로 옮겨졌지만, NoctilucaServer / NoctilucaClient 의 채널 구현체들은 한 번에 모두 옮겨지지 않는다. HIDIO, Clipboard, Transfer 등은 먼저 마이그레이션하고 나머지(Projection / ProjectionData)는 후속 작업으로 미루는 식이 일반적이다.
 
 이 단계에서 `NoctilucaFeatureProvider` 는 다음과 같은 형태가 된다:
 
@@ -1299,9 +1303,9 @@ actor HIDIOKeyboardHackRegistry {
 - **`ChannelEventCompatBridge` 의 `handleFrame` throw swallow 로깅 보강**
   - 현재 TODO 주석. SiriusKit 측에 로깅 훅 추가 필요.
 - **문서 승격**
-  - projection 외 채널(HIDIO/Clipboard/Transfer) 마이그레이션이 끝나면 `MIGRATION_RULES.md` 를 `NoctilucaServer/docs/channel-v2-migration.md` 로 승격(rename + git history 보존).
-- **HIDIO 외 feature 분기 fatalError 제거**
-  - 서버/클라이언트 양쪽 `NoctilucaFeatureProvider` 의 `case .projection / .projectionData / .transfer / .clipboard` 분기가 현재 fatalError 로 비어 있다. 각 채널을 v2 로 이식하면서 `createChannelLegacy(...)` private helper 의 원본 로직을 옮기고 helper 자체는 제거한다.
+  - projection 채널 마이그레이션이 끝나면 `MIGRATION_RULES.md` 를 `NoctilucaServer/docs/channel-v2-migration.md` 로 승격(rename + git history 보존).
+- **Projection 외 feature 분기 fatalError 제거 완료**
+  - 서버/클라이언트 양쪽 `NoctilucaFeatureProvider` 의 `.transfer`, `.clipboard`, `.hidio` 분기는 마이그레이션이 완료되었다. 현재 `.projection`, `.projectionData` 에 남아 있는 fatalError 는 후속 작업에서 해결한다.
 - **HIDIO 전용 테스트 추가 (서버/클라이언트)**
   - 서버: `HIDIOChannel.handleFrame` → `EventInjector` 로 이어지는 경로의 통합 테스트. `MockStream` 패턴 차용 가능.
   - 클라이언트: `HIDIOController` 의 송신 파이프라인(`yield` → `publisherTaskMain` → `handle.send(nonblocking:)`) 검증.
