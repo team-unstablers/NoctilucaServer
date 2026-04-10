@@ -23,11 +23,17 @@ public enum MainChannelEvent {
     case receivedPong
 }
 
-public final class MainChannel: Channel {
-    public let events: AsyncStream<MainChannelEvent>
-    let continuation: AsyncStream<MainChannelEvent>.Continuation
-
-    required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
+public final class MainChannel: Channel, ChannelEventConsumer {
+    public let handle: ChannelHandle
+    
+    nonisolated(unsafe) public let events: AsyncStream<MainChannelEvent>
+    private let continuation: AsyncStream<MainChannelEvent>.Continuation
+    
+    nonisolated(unsafe) private var channelEventCompatBridge: ChannelEventCompatBridge<MainChannel>!
+    
+    public init(handle: ChannelHandle) {
+        self.handle = handle
+        
         var continuationLocal: AsyncStream<MainChannelEvent>.Continuation!
 
         self.events = AsyncStream<MainChannelEvent>(MainChannelEvent.self, bufferingPolicy: .unbounded) { continuation in
@@ -35,11 +41,14 @@ public final class MainChannel: Channel {
         }
 
         self.continuation = continuationLocal
-
-        super.init(using: streamHolder, identifier: identifier, direction: direction)
+        self.channelEventCompatBridge = ChannelEventCompatBridge(consumer: self, handle: handle)
+    }
+    
+    public func handleChannelReady() async {
+        
     }
 
-    public override func handleFrame(frame: SiriusFrame) async throws {
+    public func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
@@ -80,14 +89,18 @@ public final class MainChannel: Channel {
             // 프로토콜 오류이므로 스트림을 닫는다
             Task {
                 // FIXME: 메인 채널의 문제이므로 연결 자체를 끊어야 함
-                try await self.close()
+                try await self.handle.close()
             }
         } catch {
             // ?
         }
     }
+    
+    public func handleError(error: any Error) async {
+        
+    }
 
-    override public func handleStreamClose() {
+    public func handleStreamClose() async {
         self.continuation.finish()
     }
 
@@ -95,30 +108,30 @@ public final class MainChannel: Channel {
 
 public extension MainChannel {
     func sendServerNotice(_ payload: ServerNotice) async throws {
-        try await self.send(opcode: .serverNotice, message: payload)
+        try await self.handle.send(opcode: .serverNotice, message: payload)
     }
 
     func sendServerHello(_ payload: ServerHello) async throws {
-        try await self.send(opcode: .serverHello, message: payload)
+        try await self.handle.send(opcode: .serverHello, message: payload)
     }
 
     func sendClientHello(_ payload: ClientHello) async throws {
-        try await self.send(opcode: .clientHello, message: payload)
+        try await self.handle.send(opcode: .clientHello, message: payload)
     }
 
     func sendAuthChallenge(_ payload: AuthChallenge) async throws {
-        try await self.send(opcode: .authChallenge, message: payload)
+        try await self.handle.send(opcode: .authChallenge, message: payload)
     }
 
     func sendAuthRequest(_ payload: AuthRequest) async throws {
-        try await self.send(opcode: .authRequest, message: payload)
+        try await self.handle.send(opcode: .authRequest, message: payload)
     }
 
     func sendAuthResponse(_ payload: AuthResponse) async throws {
-        try await self.send(opcode: .authResponse, message: payload)
+        try await self.handle.send(opcode: .authResponse, message: payload)
     }
 
     func sendGoodbye(_ payload: Goodbye) async throws {
-        try await self.send(opcode: .goodbye, message: payload)
+        try await self.handle.send(opcode: .goodbye, message: payload)
     }
 }

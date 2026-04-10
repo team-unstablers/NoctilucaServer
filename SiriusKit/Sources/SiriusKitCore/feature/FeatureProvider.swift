@@ -18,9 +18,7 @@ public protocol FeatureProvider: AnyObject, Sendable {
 
     func createChannel(
         for feature: SiriusFeature,
-        using streamHolder: StreamHolder,
-        identifier: ChannelIdentifier,
-        direction: ChannelDirection,
+        handle: ChannelHandle,
         args: [String]
     ) async throws -> ChannelCreationResult
 }

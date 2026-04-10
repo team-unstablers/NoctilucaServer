@@ -8,7 +8,7 @@
 import SiriusKitCore
 public extension Channel {
     var clientSession: ClientSession? {
-        guard let session = self.session as? ClientSession else {
+        guard let session = self.handle.asImpl.session as? ClientSession else {
             return nil
         }
 
