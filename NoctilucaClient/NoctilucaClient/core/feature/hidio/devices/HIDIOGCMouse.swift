@@ -236,7 +236,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
 
     private func requestCursorRecenter() {
 #if os(macOS)
-        shouldRecenterCursor.store(true, ordering: .relaxed)
+        shouldRecenterCursor.store(true, ordering: .releasing)
 #endif
     }
 
@@ -254,7 +254,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
                     return
                 }
 
-                let shouldRecenter = self.shouldRecenterCursor.exchange(false, ordering: .relaxed)
+                let shouldRecenter = self.shouldRecenterCursor.exchange(false, ordering: .acquiring)
                 guard shouldRecenter else {
                     continue
                 }

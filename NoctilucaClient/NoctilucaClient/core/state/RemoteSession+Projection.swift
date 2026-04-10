@@ -398,7 +398,7 @@ extension RemoteSession {
                 referenceCounter.wrappingIncrement(ordering: .relaxed)
 
                 let ticket = SessionReferenceTicket(id: UUID()) {
-                    referenceCounter.wrappingDecrement(ordering: .relaxed)
+                    referenceCounter.wrappingDecrement(ordering: .releasing)
 
                     Task {
                         await self.handleSessionReferenceDecrement(for: sessionKey)
@@ -422,7 +422,7 @@ extension RemoteSession {
             projectionSessionReferences[sessionID] = referenceCounter
 
             let ticket = SessionReferenceTicket(id: UUID()) {
-                referenceCounter.wrappingDecrement(ordering: .relaxed)
+                referenceCounter.wrappingDecrement(ordering: .releasing)
 
                 Task {
                     await self.handleSessionReferenceDecrement(for: sessionID)
@@ -509,7 +509,7 @@ fileprivate extension RemoteSession.Projection {
             return
         }
         
-        let count = referenceCounter.load(ordering: .relaxed)
+        let count = referenceCounter.load(ordering: .acquiring)
         
         if count == 0 {
             // 레퍼런스 카운터가 0이 되었으므로 세션 종료
