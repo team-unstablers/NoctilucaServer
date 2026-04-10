@@ -25,12 +25,32 @@ enum EventInjectorError: LocalizedError {
     }
 }
 
-class EventInjector {
+/// macOS 호스트 시스템에 키보드/마우스 이벤트를 주입한다.
+///
+/// # 동시성 모델
+///
+/// `EventInjector` 는 `actor` 로 격리되어 있지만, `unownedExecutor` 를 `serialQueue`
+/// (`DispatchSerialQueue`) 에 바인딩하여 **모든 actor-isolated 호출이 해당 serial queue
+/// 위에서 직접 실행**되도록 구성되어 있다. 이렇게 하면 기존의 `serialQueue.async { ... }`
+/// 직렬화 semantic 을 그대로 유지하면서, 호출자는 `await`/actor hop 의 안전성 보장을
+/// 받을 수 있다.
+///
+/// `DispatchSourceTimer.setEventHandler` 클로저 역시 같은 serial queue 위에서 실행
+/// 되므로, 타이머 콜백 안에서는 `assumeIsolated { ... }` 로 actor hop 없이 isolated
+/// 메서드를 호출한다 (Swift 5.9+ 표준 API).
+actor EventInjector {
     public static let MOUSE_DOWN_STATE_LEFT: UInt16 = 0b1
     public static let MOUSE_DOWN_STATE_RIGHT: UInt16 = 0b10
 
-    public let serialQueue = DispatchQueue(label: "EventInjector", qos: .userInteractive)
-    private let serialQueueKey = DispatchSpecificKey<Void>()
+    /// actor 의 유일한 실행 executor. 기존 serialQueue 직렬화 semantic 을 재현한다.
+    nonisolated let serialQueue: DispatchSerialQueue = DispatchSerialQueue(
+        label: "EventInjector",
+        qos: .userInteractive
+    )
+
+    nonisolated var unownedExecutor: UnownedSerialExecutor {
+        serialQueue.asUnownedSerialExecutor()
+    }
 
     var eventSource: CGEventSource!
 
@@ -51,7 +71,7 @@ class EventInjector {
     var lastMousePosition: CGPoint? = nil
 
     init() {
-        serialQueue.setSpecific(key: serialQueueKey, value: ())
+        // actor + custom executor 조합이므로 별도 setup 불필요.
     }
 
     func prepare() throws {
@@ -64,8 +84,15 @@ class EventInjector {
     }
 
     func resetKeyboardState() {
-        enqueue { [weak self] in
-            self?.resetKeyboardStateOnQueue()
+        stopRepeatTimer()
+        repeatKey = nil
+        repeatableKeysInOrder.removeAll()
+
+        if !keyDownState.isEmpty {
+            for keyCode in keyDownState {
+                postKeyEvent(keyCode: keyCode, isDown: false, isRepeat: false)
+            }
+            keyDownState.removeAll()
         }
     }
 
@@ -83,30 +110,9 @@ class EventInjector {
         return .nanoseconds(nanoseconds)
     }
 
-    func enqueue(_ block: @escaping () -> Void) {
-        if DispatchQueue.getSpecific(key: serialQueueKey) != nil {
-            block()
-        } else {
-            serialQueue.async(execute: block)
-        }
-    }
-
     func stopRepeatTimer() {
         repeatTimer?.cancel()
         repeatTimer = nil
-    }
-
-    func resetKeyboardStateOnQueue() {
-        stopRepeatTimer()
-        repeatKey = nil
-        repeatableKeysInOrder.removeAll()
-
-        if !keyDownState.isEmpty {
-            for keyCode in keyDownState {
-                postKeyEvent(keyCode: keyCode, isDown: false, isRepeat: false)
-            }
-            keyDownState.removeAll()
-        }
     }
 
     func postKeyEvent(keyCode: Int, isDown: Bool, isRepeat: Bool) {
@@ -118,7 +124,7 @@ class EventInjector {
         else {
             return
         }
-            
+
         var charCode: UniChar = switch keyCode {
             case kVK_Tab: 0x09 // Tab
             case kVK_LeftArrow: 0xF702 // Left
@@ -127,7 +133,7 @@ class EventInjector {
             case kVK_UpArrow: 0xF700 // Up
             default: 0
         }
-        
+
         if charCode != 0 {
             cgEvent.keyboardSetUnicodeString(stringLength: 1, unicodeString: &charCode)
         }
@@ -135,22 +141,22 @@ class EventInjector {
         if isRepeat {
             cgEvent.setIntegerValueField(.keyboardEventAutorepeat, value: 1)
         }
-        
+
         cgEvent.sanitizeModifierFlags(with: keyDownState)
-        
+
         switch keyCode {
         case kVK_LeftArrow, kVK_RightArrow, kVK_DownArrow, kVK_UpArrow:
             // HACK: 이 플래그를 넣지 않으면 Xcode vim mode에서 방향키 네비게이션이 불가능해짐
             cgEvent.flags.insert(.maskSecondaryFn)
             cgEvent.flags.insert(.maskNumericPad)
-            
+
         case kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6,
             kVK_F7, kVK_F8, kVK_F9, kVK_F10, kVK_F11, kVK_F12:
             cgEvent.flags.insert(.maskSecondaryFn)
         default:
             break
         }
-        
+
         cgEvent.post(tap: .cgSessionEventTap)
     }
 }
@@ -158,7 +164,7 @@ class EventInjector {
 extension CGEvent {
     func sanitizeModifierFlags(with keyDownState: Set<Int>) {
         // HACK: 이유는 모르겠으나 fn 키가 계속 눌림
-        
+
         flags = []
         /*
         flags.remove(.maskSecondaryFn)

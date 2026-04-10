@@ -221,7 +221,7 @@ class PluginBundleRegistry {
                 // TODO: ExtensionPluginRegistry 연동 (향후 구현)
                 logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(metadata.id)")
             case .keyboardHack(let keyboardHack):
-                HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
+                await HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
                 logger.info("Registered keyboard hack: \(type(of: keyboardHack).id) from bundle: \(metadata.id)")
             }
         }

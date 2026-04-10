@@ -8,7 +8,7 @@
 import Foundation
 
 // 확정된 후 @frozen 하고, 바꾸지 마십시오
-public indirect enum SoftwareLicense {
+public indirect enum SoftwareLicense: Sendable {
     /// Custom License
     case custom(name: String, url: URL?, isOpenSource: Bool)
     

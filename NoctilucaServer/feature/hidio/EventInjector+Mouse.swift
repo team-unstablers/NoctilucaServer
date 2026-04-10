@@ -1,5 +1,5 @@
 //
-//  EventInjector.swift
+//  EventInjector+Mouse.swift
 //  NoctilucaServer
 //
 //  Created by Gyuhwan Park on 12/11/25.
@@ -15,17 +15,11 @@ import SiriusKit
 
 extension EventInjector {
     func post(mouseMoveEvent event: MouseMoveEvent, scaleX: Double = 1.0, scaleY: Double = 1.0) {
-        enqueue { [weak self] in
-            self?.postMouseMoveEventOnQueue(event, scaleX: scaleX, scaleY: scaleY)
-        }
-    }
-    
-    private func postMouseMoveEventOnQueue(_ event: MouseMoveEvent, scaleX: Double, scaleY: Double) {
         switch event.moveType {
         case .absolute:
             switch event.position {
             case .percent(let position):
-                self.performMouseMoveAbsoluteOnQueue(percentage: position, scope: event.scope)
+                self.performMouseMoveAbsolute(percentage: position, scope: event.scope)
             case .pixel:
                 // TODO: Implement absolute pixel movement if needed (usually weird in multi-monitor)
                 break
@@ -33,33 +27,32 @@ extension EventInjector {
         case .relative:
             switch event.position {
             case .pixel(let position):
-                self.performMouseMoveRelativeOnQueue(pixel: position)
+                self.performMouseMoveRelative(pixel: position)
             case .percent(let position):
-                self.performMouseMoveRelativeOnQueue(percentage: position)
+                self.performMouseMoveRelative(percentage: position)
             }
         default:
             return
         }
-        
-        DispatchQueue.main.async {
+
+        // CursorStateHolder 는 @MainActor 로 격리되어 있다.
+        Task { @MainActor in
             CursorStateHolder.shared.updateCursorPosition()
         }
     }
-    
+
     func performMouseMoveAbsolute(percentage position: CursorPositionPercent) {
-        enqueue { [weak self] in
-            // Defaulting to Main Display for backward compatibility
-            self?.performMouseMoveAbsoluteOnQueue(
-                percentage: position,
-                scope: .displayId(Int32(CGMainDisplayID()))
-            )
-        }
+        // Defaulting to Main Display for backward compatibility
+        performMouseMoveAbsolute(
+            percentage: position,
+            scope: .displayId(Int32(CGMainDisplayID()))
+        )
     }
-    
-    private func performMouseMoveAbsoluteOnQueue(percentage position: CursorPositionPercent, scope: CursorPositionScope) {
+
+    func performMouseMoveAbsolute(percentage position: CursorPositionPercent, scope: CursorPositionScope) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
-        
+
         let displayID: CGDirectDisplayID
         switch scope {
         case .displayId(let id):
@@ -71,21 +64,21 @@ extension EventInjector {
         default:
             displayID = CGMainDisplayID()
         }
-        
+
         let displayLayoutManager = DisplayLayoutManager.shared
         let layouts = displayLayoutManager.displayLayouts.snapshot()
         let mainScreen = layouts[CGMainDisplayID()]
         let targetScreen = layouts[displayID] ?? mainScreen
-        
+
         guard let screen = targetScreen else {
             return
         }
-        
+
         let x11Point = CGPoint(
             x: screen.frame.minX + (screen.frame.width * CGFloat(position.x)),
             y: screen.frame.minY + (screen.frame.height * CGFloat(position.y))
         )
-        
+
         let clampedX11 = CursorState.clampToNearestScreen(x11Point, layouts: layouts)
         let position = mainScreen.map { CursorState.toCoreGraphicsCoordinate(clampedX11, mainScreen: $0) } ?? clampedX11
 
@@ -109,42 +102,35 @@ extension EventInjector {
         cgEvent.post(tap: .cgSessionEventTap)
 
         lastMousePosition = position
-        
     }
-    
+
     func performMouseMoveRelative(pixel position: CursorPositionPixel) {
-        enqueue { [weak self] in
-            self?.performMouseMoveRelativeOnQueue(pixel: position)
-        }
-    }
-    
-    private func performMouseMoveRelativeOnQueue(pixel position: CursorPositionPixel) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
-        
+
         guard let event = CGEvent(source: nil) else {
             return
         }
-        
+
         let displayLayoutManager = DisplayLayoutManager.shared
         let layouts = displayLayoutManager.displayLayouts.snapshot()
         let mainScreen = layouts[CGMainDisplayID()]
-        
+
         let currentCGPosition = event.location
         let currentX11Position = mainScreen.map {
             CursorState.toX11Coordinate(currentCGPosition, mainScreen: $0)
         } ?? currentCGPosition
-        
+
         let targetX11Position = CGPoint(
             x: currentX11Position.x + CGFloat(position.x),
             y: currentX11Position.y + CGFloat(position.y)
         )
-        
+
         let clampedX11Position = CursorState.clampToNearestScreen(targetX11Position, layouts: layouts)
         let position = mainScreen.map {
             CursorState.toCoreGraphicsCoordinate(clampedX11Position, mainScreen: $0)
         } ?? clampedX11Position
-        
+
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
         } else if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_RIGHT > 0) {
@@ -160,37 +146,30 @@ extension EventInjector {
         else {
             return
         }
-        
+
         cgEvent.sanitizeModifierFlags(with: keyDownState)
         cgEvent.post(tap: .cgSessionEventTap)
 
         lastMousePosition = position
-        
     }
-    
+
     func performMouseMoveRelative(percentage position: CursorPositionPercent) {
-        enqueue { [weak self] in
-            self?.performMouseMoveRelativeOnQueue(percentage: position)
-        }
-    }
-    
-    private func performMouseMoveRelativeOnQueue(percentage position: CursorPositionPercent) {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
-        
+
         guard let event = CGEvent(source: nil) else {
             return
         }
-        
+
         let displayLayoutManager = DisplayLayoutManager.shared
         let layouts = displayLayoutManager.displayLayouts.snapshot()
         let mainScreen = layouts[CGMainDisplayID()]
-        
+
         let currentCGPosition = event.location
         let currentX11Position = mainScreen.map {
             CursorState.toX11Coordinate(currentCGPosition, mainScreen: $0)
         } ?? currentCGPosition
-        
+
         let screenFrame: CGRect
         if let screen = layouts.first(where: { $0.value.frame.contains(currentX11Position) })?.value {
             screenFrame = screen.frame
@@ -199,18 +178,16 @@ extension EventInjector {
         } else {
             screenFrame = CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
         }
-        
+
         let targetX11Position = CGPoint(
             x: currentX11Position.x + (CGFloat(position.x) * screenFrame.size.width),
             y: currentX11Position.y + (CGFloat(position.y) * screenFrame.size.height)
         )
-        
+
         let clampedX11Position = CursorState.clampToNearestScreen(targetX11Position, layouts: layouts)
         let position = mainScreen.map {
             CursorState.toCoreGraphicsCoordinate(clampedX11Position, mainScreen: $0)
         } ?? clampedX11Position
-
-        
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -232,17 +209,10 @@ extension EventInjector {
         cgEvent.post(tap: .cgSessionEventTap)
 
         lastMousePosition = position
-
     }
 
 
     func post(mouseButtonEvent event: MouseButtonEvent) {
-        enqueue { [weak self] in
-            self?.postMouseButtonEventOnQueue(event)
-        }
-    }
-    
-    private func postMouseButtonEventOnQueue(_ event: MouseButtonEvent) {
         var mouseType: CGEventType = .null
         var cgMouseButton: CGMouseButton = .left
 
@@ -294,14 +264,8 @@ extension EventInjector {
     }
 
     func post(mouseWheelEvent event: MouseWheelEvent) {
-        enqueue { [weak self] in
-            self?.postMouseWheelEventOnQueue(event)
-        }
-    }
-    
-    private func postMouseWheelEventOnQueue(_ event: MouseWheelEvent) {
         var mouseType: CGEventType = .null
-        
+
         guard let cgEvent = CGEvent(
                 scrollWheelEvent2Source: eventSource,
                 units: .pixel,

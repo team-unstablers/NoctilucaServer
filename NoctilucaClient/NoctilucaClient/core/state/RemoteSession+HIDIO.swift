@@ -15,7 +15,8 @@ import AppKit
 import SiriusKitCore
 
 extension RemoteSession {
-    class HIDIO: ObservableObject {
+    @MainActor
+    final class HIDIO: ObservableObject {
         private unowned let parent: RemoteSession
 
         let channelID: UUID
@@ -113,8 +114,17 @@ extension RemoteSession {
         }
 
         deinit {
-            controller.removeHook(for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
-            self.session.stopSession()
+            // @MainActor class 이지만 deinit 은 nonisolated.
+            // controller.removeHook / session.stopSession 은 MainActor-isolated 이므로
+            // 캡처를 통해 Task 로 MainActor 에 진입한다.
+            let controller = self.controller
+            let session: HIDIOSession? = self.session
+            Task { @MainActor in
+                controller.removeHook(
+                    for: HIDIOKeystrokeHookIdentifier(rawValue: "app.noctiluca.navigator.hidio.escape-hook")
+                )
+                session?.stopSession()
+            }
         }
     }
 }
