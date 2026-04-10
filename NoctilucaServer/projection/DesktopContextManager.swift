@@ -3,10 +3,10 @@
 //  NoctilucaServer
 //
 
-import Foundation
+@preconcurrency import Foundation
 import CoreGraphics
-import ApplicationServices // For AXUIElement
-import AppKit
+@preconcurrency import ApplicationServices // For AXUIElement
+@preconcurrency import AppKit
 import Combine
 
 // MARK: - Core Types
@@ -130,7 +130,7 @@ final class AppSession {
     private var axObserver: AXObserver?
     private var observerRefCon: UnsafeMutableRawPointer?
 
-    private nonisolated let observedNotifications: [CFString] = [
+    nonisolated(unsafe) private let observedNotifications: [CFString] = [
         kAXWindowCreatedNotification as CFString,
         kAXUIElementDestroyedNotification as CFString,
         kAXFocusedWindowChangedNotification as CFString,
@@ -502,6 +502,7 @@ final class DesktopContextManager {
         self.registerWorkspaceNotifications()
     }
     
+    @MainActor
     deinit {
         workspaceObservers.forEach { observer in
             workspace.notificationCenter.removeObserver(observer)

@@ -18,7 +18,8 @@ enum DiagLevel {
     case detailed
 }
 
-class DiagPrinter {
+@MainActor
+final class DiagPrinter: Sendable {
     func generate(level: DiagLevel) async -> String {
         var lines: [String] = []
 
@@ -29,11 +30,11 @@ class DiagPrinter {
 
         appendAppInfo(&lines)
         appendSystemInfo(&lines, level: level)
-        appendServerInfo(&lines, level: level)
-        await appendDisplayInfo(&lines, level: level)
+        await appendServerInfo(&lines, level: level)
+        appendDisplayInfo(&lines, level: level)
         await appendPermissionInfo(&lines)
         appendTelemetryInfo(&lines)
-        appendPluginInfo(&lines, level: level)
+        await appendPluginInfo(&lines, level: level)
 
         if level == .detailed {
             appendNetworkInfo(&lines)
@@ -81,7 +82,8 @@ class DiagPrinter {
         lines.append("")
     }
 
-    private func appendServerInfo(_ lines: inout [String], level: DiagLevel) {
+    @MainActor
+    private func appendServerInfo(_ lines: inout [String], level: DiagLevel) async {
         let server = NoctilucaServer.shared
         let settings = SettingsStore.shared.settings!
 
@@ -136,6 +138,7 @@ class DiagPrinter {
         lines.append("")
     }
 
+    @MainActor
     private func appendTelemetryInfo(_ lines: inout [String]) {
         let settings = SettingsStore.shared.settings!
 
@@ -145,8 +148,8 @@ class DiagPrinter {
         lines.append("")
     }
 
-    private func appendPluginInfo(_ lines: inout [String], level: DiagLevel) {
-        let bundles = PluginBundleRegistry.shared.bundles
+    private func appendPluginInfo(_ lines: inout [String], level: DiagLevel) async {
+        let bundles = await PluginBundleRegistry.shared.bundles
 
         lines.append("--- Plugins ---")
         lines.append("Count: \(bundles.count)")

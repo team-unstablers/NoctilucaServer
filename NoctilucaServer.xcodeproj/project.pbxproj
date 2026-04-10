@@ -30,7 +30,6 @@
 		F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */; };
 		F6B57F162F5049F8002BBDDC /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6B57F152F5049F8002BBDDC /* SiriusKit */; };
 		F6B57F172F5049F8002BBDDC /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6B57F152F5049F8002BBDDC /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		F6CC7D3D2F51904400AA6DC2 /* CJKKeyboardHacks.nocbundle in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6CC83562F5A885000AA6DC2 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F6CC83552F5A885000AA6DC2 /* Alamofire */; };
 		F6CC836C2F5B33FC00AA6DC2 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = F6CC836B2F5B33FC00AA6DC2 /* Inject */; };
 		F6CC83832F5B522800AA6DC2 /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F6CC837A2F5B522800AA6DC2 /* NoctilucaWebPEncoder */; };
@@ -125,7 +124,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				F6CC7D3D2F51904400AA6DC2 /* CJKKeyboardHacks.nocbundle in Embed PlugIns */,
 			);
 			name = "Embed PlugIns";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -680,6 +678,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = nocbundle;
@@ -705,6 +704,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = nocbundle;

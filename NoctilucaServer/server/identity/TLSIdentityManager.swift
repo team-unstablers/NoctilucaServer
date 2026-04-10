@@ -14,7 +14,7 @@ enum ServerIdentitySource: Equatable, Hashable, Codable {
     case pemFile(certFilePath: String, keyFilePath: String)
 }
 
-class ServerIdentityManager {
+actor ServerIdentityManager {
     // macOSエンジニアあるある：すぐsingletonにしたがる
     public static let shared = ServerIdentityManager()
     

@@ -8,7 +8,7 @@
 import Foundation
 import SiriusKit
 
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 class MockServer {
     private let logger = SiriusLogger(category: "MockServer", subsystem: "app.noctiluca.mockserver")

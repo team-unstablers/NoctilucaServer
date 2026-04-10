@@ -176,7 +176,7 @@ extension EventInjector {
         } else if let mainScreen {
             screenFrame = mainScreen.frame
         } else {
-            screenFrame = CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
+            screenFrame = CGRect.zero // CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
         }
 
         let targetX11Position = CGPoint(

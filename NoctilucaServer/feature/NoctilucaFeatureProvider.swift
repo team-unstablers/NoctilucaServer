@@ -10,6 +10,7 @@ import SiriusKit
 final class NoctilucaFeatureProvider: FeatureProvider {
     private let state = State()
 
+    // FIXME: 이거 제거해야 함
     actor State {
         weak var clipboardChannel: ClipboardChannel?
         
@@ -20,6 +21,15 @@ final class NoctilucaFeatureProvider: FeatureProvider {
         func getClipboardChannel() -> ClipboardChannel? {
             return self.clipboardChannel
         }
+    }
+    
+    func supportedFeatures() -> Set<SiriusFeature> {
+        return [
+            .hidio,
+            .projection,
+            .transfer,
+            .clipboard
+        ]
     }
 
     func supports(_ feature: SiriusFeature) -> Bool {
@@ -52,12 +62,10 @@ final class NoctilucaFeatureProvider: FeatureProvider {
             return .accepted(HIDIOChannel(handle: handle))
 
         case .projection:
-            // TODO: 후속 PR 에서 v2 로 이식.
-            fatalError("TODO: projection channel v2 migration pending")
-            
+            return .accepted(ProjectionChannel(handle: handle))
+
         case .projectionData:
-            // TODO: 후속 PR 에서 v2 로 이식.
-            fatalError("TODO: projectionData channel v2 migration pending")
+            return .accepted(ProjectionDataChannel(handle: handle))
 
         case .transfer:
             let result = try await TransferChannel.createIfAccepts(
@@ -73,7 +81,7 @@ final class NoctilucaFeatureProvider: FeatureProvider {
                     channel.onReady = {
                         Task {
                             let clip = await state.getClipboardChannel()
-                            clip?.serveTransferData(channel,
+                            await clip?.serveTransferData(channel,
                                                     itemIndex: itemIdx,
                                                     representationIndex: reprIdx)
                         }
@@ -83,7 +91,7 @@ final class NoctilucaFeatureProvider: FeatureProvider {
                         channel.onReady = {
                             Task {
                                 let clip = await state.getClipboardChannel()
-                                clip?.serveFileTransferData(channel,
+                                await clip?.serveFileTransferData(channel,
                                                             name: name, path: path,
                                                             offset: offset, length: length)
                             }

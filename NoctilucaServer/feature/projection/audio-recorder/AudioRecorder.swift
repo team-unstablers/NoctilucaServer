@@ -37,20 +37,21 @@ enum AudioRecorderPrepareError: LocalizedError {
     case internalError
 }
 
-protocol AudioRecorderDelegate: AnyObject {
+protocol AudioRecorderDelegate: AnyObject, Sendable {
     func audioRecorderDidStart(_ recorder: any AudioRecorder)
     func audioRecorder(_ recorder: any AudioRecorder, didStopWithError error: Error?)
     func audioRecorder(_ recorder: any AudioRecorder, didCaptureFrame frameData: CMSampleBuffer)
 }
 
-protocol AudioRecorder: AnyObject, Identifiable {
+/// NOTE: 본체 프로토콜에 Sendable 필요. 사유는 `ScreenRecorder` 주석 참조.
+protocol AudioRecorder: AnyObject, Identifiable, Sendable {
     var id: UUID { get }
-    
-    var queue: DispatchQueue { get set }
+
+    var queue: DispatchQueue { get }
     var delegate: AudioRecorderDelegate? { get set }
-    
+
     func prepare(with args: AudioRecorderArgs) async throws
-    
+
     func start() async throws
     func stop() async throws
 }

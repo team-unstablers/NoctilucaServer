@@ -7,7 +7,7 @@
 
 import Foundation
 import Cocoa
-import ApplicationServices
+@preconcurrency import ApplicationServices
 import UserNotifications
 import CoreGraphics
 
@@ -19,7 +19,7 @@ enum TCCScope {
     case notifications
 }
 
-class TCCUtil {
+class TCCUtil: @unchecked Sendable {
     public static let shared = TCCUtil()
     
     private let logger = NoctilucaLogger(category: "TCCUtil")

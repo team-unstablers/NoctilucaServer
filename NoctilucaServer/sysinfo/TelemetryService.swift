@@ -11,7 +11,7 @@ import OSLog
 
 import Sentry
 
-final class TelemetryService {
+final class TelemetryService: @unchecked Sendable {
     static let shared = TelemetryService()
 
     private let logger = Logger(

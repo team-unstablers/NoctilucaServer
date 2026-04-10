@@ -7,7 +7,7 @@
 
 import Foundation
 
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 class NoctilucaCoreAuth: NoctilucaPluginBundle {
     static let metadata = BuiltinPluginBundleMetadata(
@@ -43,14 +43,14 @@ class NoctilucaCoreAuth: NoctilucaPluginBundle {
     }
     
 #if DEBUG
-    static var exports: [NoctilucaPluginExport] = [
+    static let exports: [NoctilucaPluginExport] = [
         .auth(PAMAuthPlugin()),
         .auth(SimplePasswordAuthPlugin()),
         .auth(SSHAuthPlugin()),
         .auth(NullAuthPlugin())
     ]
 #else
-    static var exports: [NoctilucaPluginExport] = [
+    static let exports: [NoctilucaPluginExport] = [
         .auth(PAMAuthPlugin()),
         .auth(SSHAuthPlugin()),
         .auth(SimplePasswordAuthPlugin()),

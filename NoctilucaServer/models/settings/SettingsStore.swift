@@ -10,7 +10,8 @@ import Combine
 
 import SiriusKit
 
-final class SettingsStore: ObservableObject {
+@MainActor
+final class SettingsStore: ObservableObject, Sendable {
     private static let logger = NoctilucaLogger(category: "SettingsStore")
 
     static let shared = SettingsStore()

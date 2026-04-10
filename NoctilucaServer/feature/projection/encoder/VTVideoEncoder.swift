@@ -13,9 +13,11 @@ private final class FrameEncodeContext {
     }
 }
 
-final class VTVideoEncoder: NSObject, VideoEncoder {
+/// @unchecked Sendable: 모든 가변 상태 접근이 `workerQueue.sync` 로 직렬화되어 있다.
+/// 문서 Rule G 확장: 고빈도 미디어 파이프라인 class 예외.
+final class VTVideoEncoder: NSObject, VideoEncoder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "VTVideoEncoder")
-    private let workerQueue: DispatchQueue
+    fileprivate let workerQueue: DispatchQueue
     internal let callbackQueue: DispatchQueue
     private let defaultTargetBitrateKbps = 1200
     private let defaultMaxBitrateKbps = 2400
@@ -886,7 +888,9 @@ private func compressionOutputCallback(
 
     // 키프레임마다 SPS/PPS를 재전송하여 첫 프레임 드랍 시에도 클라이언트가 디코더를 초기화할 수 있도록 함
     if isKeyFrame {
-        encoder.shouldEmitParameterSets = true
+        encoder.workerQueue.sync {
+            encoder.shouldEmitParameterSets = true
+        }
     }
 
     guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
@@ -929,20 +933,22 @@ private func compressionOutputCallback(
         formatDescription: nil
     )
     
-    if encoder.shouldEmitParameterSets {
-        assert(encoder.configuration != nil, "configuration must be set if parameter sets are to be emitted")
+    encoder.workerQueue.sync {
+        if encoder.shouldEmitParameterSets {
+            assert(encoder.configuration != nil, "configuration must be set if parameter sets are to be emitted")
+            
+            let configuration = encoder.configuration!
+            let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)!
+            
+            let parameterSetMessage = CodecParameterSetMessage(from: formatDescription, codec: configuration.codec.fourCC)
+            
+            encoder.continuation.yield(with: .success(.parameterSetChanged(
+                consume parameterSetMessage
+            )))
+            
+            encoder.shouldEmitParameterSets = false
+        }
         
-        let configuration = encoder.configuration!
-        let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)!
-        
-        let parameterSetMessage = CodecParameterSetMessage(from: formatDescription, codec: configuration.codec.fourCC)
-        
-        encoder.continuation.yield(with: .success(.parameterSetChanged(
-            consume parameterSetMessage
-        )))
-        
-        encoder.shouldEmitParameterSets = false
+        encoder.continuation.yield(with: .success(.frameEncoded(consume encodedFrame)))
     }
-    
-    encoder.continuation.yield(with: .success(.frameEncoded(consume encodedFrame)))
 }

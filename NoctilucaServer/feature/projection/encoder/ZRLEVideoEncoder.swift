@@ -7,7 +7,10 @@ import SiriusKit
 import libzstd
 
 /// ZRLE (RLE + Zstd) 비디오 인코더
-final class ZRLEVideoEncoder: VideoEncoder {
+///
+/// @unchecked Sendable: 문서 Rule G 확장 (미디어 파이프라인 class 예외).
+/// 가변 상태는 ProjectionSession actor 경계 및 `workerQueue` 에서 직렬화된 호출을 받는다.
+final class ZRLEVideoEncoder: VideoEncoder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "ZRLEVideoEncoder")
     private let workerQueue: DispatchQueue
     private let callbackQueue: DispatchQueue
@@ -230,7 +233,9 @@ final class ZRLEVideoEncoder: VideoEncoder {
     
     func forceKeyframe() {
         // 타일 차이 기록 초기화를 행한다
-        self.frameTileDiffer.reset()
+        workerQueue.sync {
+            self.frameTileDiffer.reset()
+        }
     }
     
     @discardableResult
@@ -252,7 +257,9 @@ final class ZRLEVideoEncoder: VideoEncoder {
 
     @discardableResult
     func updateQuantizeLevel(_ level: Int) -> Bool {
-        self.quantizeLevel = max(0, min(5, level))
+        workerQueue.sync {
+            self.quantizeLevel = max(0, min(5, level))
+        }
         return true
     }
 }

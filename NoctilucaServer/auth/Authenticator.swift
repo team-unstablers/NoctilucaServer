@@ -10,7 +10,8 @@ import Foundation
 import SiriusKit
 import NoctilucaPluginKit
 
-class Authenticator {
+@MainActor
+final class Authenticator: Sendable {
     private let logger = NoctilucaLogger(category: "Authenticator")
     
     private let registry: AuthPluginRegistry

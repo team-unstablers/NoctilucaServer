@@ -21,7 +21,10 @@ fileprivate extension SiriusKit.Codec {
     }
 }
 
-class AVFoundationScreenRecorder: NSObject, ScreenRecorder {
+/// @unchecked Sendable: 내부의 가변 상태(captureSession/input/output) 는 prepare/start/stop
+/// 라이프사이클 경로에서만 변경되며, ProjectionSession actor 격리 하에서 직렬화된 호출을
+/// 받는다 (문서 Rule G 확장: 미디어 파이프라인 class 예외).
+final class AVFoundationScreenRecorder: NSObject, ScreenRecorder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "AVFoundationScreenRecorder")
     
     let id: UUID = UUID()

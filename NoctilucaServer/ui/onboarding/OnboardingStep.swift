@@ -5,6 +5,7 @@
 
 import SwiftUI
 
+@MainActor
 enum OnboardingStep: Int, CaseIterable, Identifiable {
     case welcome        // Phase 1: 환영
     case permissions    // Phase 2: 권한 설정

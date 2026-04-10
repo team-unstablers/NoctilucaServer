@@ -14,83 +14,39 @@ import UniformTypeIdentifiers
 
 extension SiriusEventLogger.EventType {
     struct Transfer {
-        static let fileTransferStarted   = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_STARTED")
+        static let fileTransferStarted    = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_STARTED")
         static let fileTransferCompleted  = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_COMPLETED")
         static let fileTransferFailed     = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_FAILED")
         static let clipboardDataServed    = SiriusEventLogger.EventType(rawValue: "CLIPBOARD_DATA_SERVED")
     }
 }
 
-// MARK: - ClipboardChannelState
+// MARK: - ClipboardChannel
 
-actor ClipboardChannelState {
-    var remoteSubscription: ClipboardSubscription? = nil
+actor ClipboardChannel: Channel, ChannelEventConsumer {
+    let handle: ChannelHandle
+    private static let defaultServiceClass: ServiceClass = .background
+
+    private let logger = NoctilucaLogger(category: "ClipboardChannel")
+    private var _eventLogger: SiriusEventLogger?
+    
+    private var remoteSubscription: ClipboardSubscription? = nil
 
     /// 서버가 클라이언트에게 보낸 subscribe 요청으로 받은 subscriptionId (bidirectional 시)
-    var localSubscriptionId: UUID? = nil
+    private var localSubscriptionId: UUID? = nil
 
     /// 마지막으로 보낸 ClipboardEvent의 omitted 데이터 스냅샷 (transfer 요청 응답용)
-    var lastSentSnapshot: ClipboardDataSnapshot? = nil
+    private var lastSentSnapshot: ClipboardDataSnapshot? = nil
 
     /// 마지막으로 보낸 ClipboardEvent의 파일 전송 스냅샷 (file-transfer 요청 응답용)
-    var lastFileTransferSnapshot: FileTransferSnapshot? = nil
+    private var lastFileTransferSnapshot: FileTransferSnapshot? = nil
 
     /// 수신 측 FileTransferCoordinator (NSFilePromiseProvider delegate이므로 strong ref 필요)
     private(set) var fileTransferCoordinator: FileTransferCoordinator? = nil
 
     /// 현재 진행 중인 resolve 작업 (취소 가능)
-    var resolveTask: Task<Void, Never>? = nil
+    private var resolveTask: Task<Void, Never>? = nil
 
-    func storeSnapshot(_ snapshot: ClipboardDataSnapshot) {
-        self.lastSentSnapshot = snapshot
-    }
-
-    func storeFileTransferSnapshot(_ snapshot: FileTransferSnapshot) {
-        self.lastFileTransferSnapshot = snapshot
-    }
-
-    func setFileTransferCoordinator(_ coordinator: FileTransferCoordinator?) {
-        self.fileTransferCoordinator = coordinator
-    }
-
-    func setRemoteSubscription(_ subscription: ClipboardSubscription?) {
-        self.remoteSubscription = subscription
-    }
-
-    func getRemoteSubscription() -> ClipboardSubscription? {
-        return remoteSubscription
-    }
-
-    func setLocalSubscriptionId(_ id: UUID?) {
-        self.localSubscriptionId = id
-    }
-
-    func getLocalSubscriptionId() -> UUID? {
-        return localSubscriptionId
-    }
-
-    func setResolveTask(_ task: Task<Void, Never>?) {
-        self.resolveTask = task
-    }
-}
-
-// MARK: - ClipboardChannel
-
-final class ClipboardChannel: Channel, ChannelEventConsumer {
-    let handle: ChannelHandle
-    private static let defaultServiceClass: ServiceClass = .background
-
-    let logger = NoctilucaLogger(category: "ClipboardChannel")
-    
-    // Logger is immutable once set or we can use lazy. Since it requires `clientSession`, 
-    // and `clientSession` is available after init, we use a simple lock or actor if needed.
-    // For simplicity and since it's mostly accessed from async methods, we can keep it inside `ensureEventLogger` 
-    // but Sendable requires it to be protected. Let's use `nonisolated(unsafe)` for `eventLogger` with a comment,
-    // or just let it be created on demand without caching if caching is problematic.
-    private let eventLoggerLock = NSLock()
-    private var _eventLogger: SiriusEventLogger?
-
-    let state = ClipboardChannelState()
 
     // ~Copyable CompatBridge; init 마지막 대입 후 수정 없음.
     nonisolated(unsafe) private var channelEventCompatBridge: ChannelEventCompatBridge<ClipboardChannel>!
@@ -140,30 +96,30 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
             logger.warning("Received unknown opcode: \(frame.opcode)")
         }
     }
+    
+    fileprivate func setFileTransferCoordinator(_ coordinator: FileTransferCoordinator? = nil) {
+        self.fileTransferCoordinator = coordinator
+    }
 
     // MARK: - Snapshot Management
 
     /// ClipboardSubscription에서 이벤트 발송 시 omitted 데이터 스냅샷을 저장합니다.
     func storeSnapshot(_ snapshot: ClipboardDataSnapshot) {
-        Task {
-            await state.storeSnapshot(snapshot)
-        }
+        self.lastSentSnapshot = snapshot
     }
 
     /// 파일 전송 스냅샷을 저장합니다.
     func storeFileTransferSnapshot(_ snapshot: FileTransferSnapshot) {
-        Task {
-            await state.storeFileTransferSnapshot(snapshot)
-        }
+        self.lastFileTransferSnapshot = snapshot
     }
 
     // MARK: - Event Logger
 
     private func ensureEventLogger() -> SiriusEventLogger? {
-        eventLoggerLock.lock()
-        defer { eventLoggerLock.unlock() }
-
-        if let eventLogger = _eventLogger { return eventLogger }
+        if let logger = self._eventLogger {
+            return logger
+        }
+        
         guard let context = self.clientSession?.eventLoggerContext else { return nil }
         let logger = SiriusEventLogger("NoctilucaServer::Transfer", context: context)
         self._eventLogger = logger
@@ -175,7 +131,6 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
     /// FeatureProvider로부터 호출됨: 상대방이 clipboard-data TransferChannel을 열었을 때
     func serveTransferData(_ transferChannel: TransferChannel, itemIndex: Int, representationIndex: Int) {
         Task {
-            let lastSentSnapshot = await state.lastSentSnapshot
             guard let data = lastSentSnapshot?.get(itemIndex: itemIndex, reprIndex: representationIndex) else {
                 logger.warning("No snapshot data for item=\(itemIndex), repr=\(representationIndex)")
                 try? await transferChannel.handle.close()
@@ -206,7 +161,6 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
         Task {
             let evLogger = ensureEventLogger()
 
-            let lastFileTransferSnapshot = await state.lastFileTransferSnapshot
             // 보안 검증: 요청된 경로가 마지막 clipboard copy의 파일인지 확인
             guard let snapshot = lastFileTransferSnapshot,
                   snapshot.validatePath(path.path) else {
@@ -336,16 +290,17 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
         }
 
         // 기존 구독이 있으면 제거
-        if let existing = await state.remoteSubscription {
+        if let existing = remoteSubscription {
             await existing.destroy()
-            await state.setRemoteSubscription(nil)
+            remoteSubscription = nil
         }
 
-        let subscription = ClipboardSubscription()
-        subscription.channel = self
+        let subscription = await ClipboardSubscription()
+        
+        await subscription.setChannel(self)
         await subscription.setup()
 
-        await state.setRemoteSubscription(subscription)
+        remoteSubscription = subscription
 
         logger.info("Clipboard subscription created (id=\(subscription.id), requestId=\(request.requestId))")
 
@@ -361,7 +316,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
     }
 
     private func handleUnsubscribeClipboardRequest(_ request: UnsubscribeClipboardRequest) async throws {
-        guard let subscription = await state.remoteSubscription else {
+        guard let subscription = remoteSubscription else {
             logger.warning("No active subscription to unsubscribe (requestId=\(request.requestId))")
             try await handle.send(opcode: .unsubscribeClipboardResponse, message: UnsubscribeClipboardResponse(
                 requestId: request.requestId,
@@ -373,7 +328,8 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
 
         let subscriptionId = subscription.id
         await subscription.destroy()
-        await state.setRemoteSubscription(nil)
+        
+        self.remoteSubscription = nil
 
         logger.info("Clipboard subscription removed (id=\(subscriptionId), requestId=\(request.requestId))")
 
@@ -418,7 +374,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
         }
 
         // subscriptionId 검증
-        let localSubscriptionId = await state.localSubscriptionId
+        let localSubscriptionId = self.localSubscriptionId
         guard let localSubId = localSubscriptionId, event.subscriptionId == localSubId else {
             logger.warning("Received ClipboardEvent with unknown subscriptionId=\(event.subscriptionId), expected=\(String(describing: localSubscriptionId))")
             return
@@ -432,7 +388,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
     /// 원격에서 수신한 클립보드 아이템을 resolve(omitted data 다운로드)하고 로컬 클립보드에 적용합니다.
     private func resolveAndApplyRemoteItems(_ items: [ClipboardItem], allowFile: Bool) {
         Task {
-            await state.resolveTask?.cancel()
+            await resolveTask?.cancel()
 
             let task = Task { [weak self] in
                 guard let self = self else { return }
@@ -484,7 +440,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
 
                 if !fileTransferItems.isEmpty, allowFile {
                     let coordinator = FileTransferCoordinator(clipboardChannel: self)
-                    await self.state.setFileTransferCoordinator(coordinator)
+                    await self.setFileTransferCoordinator(coordinator)
                     self.logger.info("Applying remote clipboard with file transfers (\(fileTransferItems.count) files, \(resolvedItems.count) items)")
                     await ClipboardManager.shared.setWithFileTransfer(
                         items: resolvedItems,
@@ -497,7 +453,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
                 }
             }
             
-            await state.setResolveTask(task)
+            resolveTask = task
         }
     }
 
@@ -555,10 +511,10 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
 
     private func handleSubscribeClipboardResponse(_ response: SubscribeClipboardResponse) async throws {
         if response.isSuccess, let subscriptionId = response.subscriptionId {
-            await state.setLocalSubscriptionId(subscriptionId)
+            self.localSubscriptionId = subscriptionId
             logger.info("Subscribe to client clipboard succeeded (subscriptionId=\(subscriptionId), requestId=\(response.requestId))")
         } else {
-            await state.setLocalSubscriptionId(nil)
+            self.localSubscriptionId = nil
             logger.warning("Subscribe to client clipboard rejected (requestId=\(response.requestId))")
         }
     }
@@ -569,32 +525,30 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
         } else {
             logger.warning("Unsubscribe from client clipboard failed (requestId=\(response.requestId))")
         }
-        await state.setLocalSubscriptionId(nil)
+        self.localSubscriptionId = nil
     }
 
     // MARK: - Stream Lifecycle
 
     private func cleanupSubscriptions() async {
-        await state.resolveTask?.cancel()
+        await resolveTask?.cancel()
 
         // 로컬 구독 해제 (best-effort unsubscribe 전송)
-        if let localSubId = await state.localSubscriptionId {
+        if let localSubId = self.localSubscriptionId {
             try? await self.handle.send(opcode: .unsubscribeClipboardRequest, message: UnsubscribeClipboardRequest(
                 requestId: 0,
                 subscriptionId: localSubId
             ))
-            await state.setLocalSubscriptionId(nil)
+            self.localSubscriptionId = nil
         }
 
         // 리모트 구독 해제
-        if let subscription = await state.remoteSubscription {
-            await subscription.destroy()
-            await state.setRemoteSubscription(nil)
-        }
-
-        await state.storeSnapshot(ClipboardDataSnapshot())
-        await state.storeFileTransferSnapshot(FileTransferSnapshot())
-        await state.setFileTransferCoordinator(nil)
+        await self.remoteSubscription?.destroy()
+        remoteSubscription = nil
+        
+        storeSnapshot(ClipboardDataSnapshot())
+        storeFileTransferSnapshot(FileTransferSnapshot())
+        fileTransferCoordinator = nil
     }
 
     func handleStreamClose() async {

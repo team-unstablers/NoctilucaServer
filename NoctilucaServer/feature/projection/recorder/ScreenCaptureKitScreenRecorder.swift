@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import CoreVideo
-import ScreenCaptureKit
+@preconcurrency import CoreVideo
+@preconcurrency import ScreenCaptureKit
 
 import SiriusKit
 
@@ -218,7 +218,10 @@ fileprivate extension SiriusKit.Codec {
     }
 }
 
-class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder {
+/// @unchecked Sendable: 내부 SCStream 은 ScreenCaptureKit 이 자체 thread-safe 로 관리하며,
+/// 본 클래스의 가변 상태는 ProjectionSession actor 격리 하에서 직렬 호출을 받는다
+/// (문서 Rule G 확장: 미디어 파이프라인 class 예외).
+final class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "ScreenCaptureKitScreenRecorder")
     
     let id: UUID = UUID()

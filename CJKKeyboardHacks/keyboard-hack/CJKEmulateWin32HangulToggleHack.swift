@@ -8,44 +8,46 @@
 import AppKit
 
 import Carbon
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 import Gesu
 
-class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
-    static var id: String =
+final class CJKEmulateWin32HangulToggleHack: @preconcurrency KeyboardHackPluginV1 {
+    static let id: String =
         "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle"
 
-    static var name: String =
+    static let name: String =
         String(
             localized: "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle.name",
             defaultValue: ""
         )
 
-    static var description: String =
+    static let description: String =
         String(
             localized: "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle.description",
             defaultValue: ""
         )
 
-    static var authors: [String] = [
+    static let authors: [String] = [
         "Gyuhwan Park <unstabler@unstabler.pl>"
     ]
 
-    static var license: SoftwareLicense = .mit
+    static let license: SoftwareLicense = .mit
 
-    static var version: UInt32 = 1
+    static let version: UInt32 = 1
 
-    static var displayVersion: String = "1.0.0"
+    static let displayVersion: String = "1.0.0"
 
-    static var desiredKeyEvents: Set<NoctilucaPluginKit.LinuxKeycode> = [
+    static let desiredKeyEvents: Set<NoctilucaPluginKit.LinuxKeycode> = [
         .KEY_RIGHTMETA,
         .KEY_RIGHTALT,
         .KEY_HANGEUL,
     ]
 
+    @MainActor
     private var workaroundWindow: NSWindow
 
+    @MainActor
     required init() {
         self.workaroundWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),

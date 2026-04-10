@@ -190,7 +190,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
         // 속도 제한 설정 캐시
         if shouldSend() {
-            let limitKBps = SettingsStore.shared.settings.transfer.maxUploadSpeedKBps
+            let limitKBps = await SettingsStore.shared.settings.transfer.maxUploadSpeedKBps
             state.withLock {
                 $0.maxSendBytesPerSecond = limitKBps > 0 ? limitKBps * 1024 : 0
             }

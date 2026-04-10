@@ -9,7 +9,9 @@ import VideoToolbox
 
 import WebP
 
-final class WebPVideoEncoder: VideoEncoder {
+/// @unchecked Sendable: 문서 Rule G 확장 (미디어 파이프라인 class 예외).
+/// 가변 상태는 `workerQueue` 기반 직렬화와 ProjectionSession actor 경계에서 보호된다.
+final class WebPVideoEncoder: VideoEncoder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "WebPVideoEncoder")
     private let workerQueue: DispatchQueue
     private let callbackQueue: DispatchQueue
@@ -283,9 +285,11 @@ final class WebPVideoEncoder: VideoEncoder {
     // MARK: - On-the-fly controls
 
     func forceKeyframe() {
-        logger.info("Force keyframe requested.")
-        // 타일 차이 기록 초기화를 행한다
-        self.frameTileDiffer.reset()
+        workerQueue.sync {
+            logger.info("Force keyframe requested.")
+            // 타일 차이 기록 초기화를 행한다
+            self.frameTileDiffer.reset()
+        }
     }
 
     @discardableResult
@@ -300,15 +304,19 @@ final class WebPVideoEncoder: VideoEncoder {
 
     @discardableResult
     func updateQuality(_ quality: Float) -> Bool {
-        let clamped = min(max(quality, 0.0), 1.0)
-        // 0.0 → 40 (최저), 1.0 → 85 (최고)
-        self.compressionLevel = Int32(40.0 + clamped * 45.0)
+        workerQueue.sync {
+            let clamped = min(max(quality, 0.0), 1.0)
+            // 0.0 → 40 (최저), 1.0 → 85 (최고)
+            self.compressionLevel = Int32(40.0 + clamped * 45.0)
+        }
         return true
     }
 
     @discardableResult
     func updateQuantizeLevel(_ level: Int) -> Bool {
-        self.quantizeLevel = max(0, min(5, level))
+        workerQueue.sync {
+            self.quantizeLevel = max(0, min(5, level))
+        }
         return true
     }
 }

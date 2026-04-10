@@ -9,9 +9,11 @@ import Foundation
 
 import SiriusKit
 
-class CursorEventSubscription {
+@MainActor
+final class CursorEventSubscription {
     private let logger = NoctilucaLogger(category: "CursorEventSubscription")
-    let id: UUID = UUID()
+
+    nonisolated let id: UUID = UUID()
 
     private let cursorStateHolder = CursorStateHolder.shared
     private var stateTask: Task<Void, Never>?
@@ -19,20 +21,23 @@ class CursorEventSubscription {
 
     weak var channel: ProjectionChannel? = nil
 
-    init() {
-    }
+    init() {}
 
     deinit {
-        self.stateTask?.cancel()
-        self.hashTask?.cancel()
+        // nonisolated context. Task<Void, Never>?.cancel() 은 thread-safe.
+        stateTask?.cancel()
+        hashTask?.cancel()
     }
 
-    @MainActor
-    func setup() {
+    func setChannel(_ channel: ProjectionChannel?) {
+        self.channel = channel
+    }
+
+    func setup() async {
         // MainActor에서 스트림과 초기값을 캡처한 뒤, detached Task로 이벤트 루프 실행
-        let cursorStateStream = self.cursorStateHolder.makeCursorStateStream()
-        let cursorHashStream = self.cursorStateHolder.makeCursorHashStream()
-        let initialCursorState = self.cursorStateHolder.cursorState
+        let cursorStateStream  = await self.cursorStateHolder.makeCursorStateStream()
+        let cursorHashStream   = await self.cursorStateHolder.makeCursorHashStream()
+        let initialCursorState = await self.cursorStateHolder.cursorState
 
         // cursorState 소비: 커서 위치 이벤트를 120Hz로 제한하여 메인/네트워크 큐 적체를 완화한다.
         self.stateTask = Task.detached(priority: .userInitiated) { [weak self] in
@@ -41,7 +46,7 @@ class CursorEventSubscription {
             var lastSentAtNanos: UInt64 = 0
 
             for await state in cursorStateStream {
-                guard let channel = self?.channel else { continue }
+                guard let channel = await self?.channel else { continue }
 
                 if lastSentState == state {
                     continue
@@ -57,7 +62,7 @@ class CursorEventSubscription {
                     lastSentState = state
                     lastSentAtNanos = DispatchTime.now().uptimeNanoseconds
                 } catch {
-                    self?.logger.error("Failed to send cursor position update: \(error)")
+                    await self?.logError("Failed to send cursor position update: \(error)")
                 }
             }
         }
@@ -65,28 +70,35 @@ class CursorEventSubscription {
         // cursorHash 소비 (throttle 없음)
         self.hashTask = Task.detached(priority: .userInitiated) { [weak self] in
             for await _ in cursorHashStream {
-                guard let channel = self?.channel else { continue }
+                guard let channel = await self?.channel else { continue }
                 do {
                     try await channel.sendCursorImageEvent()
                 } catch {
-                    self?.logger.error("Failed to send cursor image update: \(error)")
+                    await self?.logError("Failed to send cursor image update: \(error)")
                 }
             }
         }
 
-        Task.detached { [weak self] in
-            try? await self?.channel?.sendCursorImageEvent()
+        let initialChannel = self.channel
+        Task.detached {
+            try? await initialChannel?.sendCursorImageEvent()
 
             if let initialCursorState {
-                try? await self?.channel?.sendCursorPositionEvent(initialCursorState)
+                try? await initialChannel?.sendCursorPositionEvent(initialCursorState)
             }
         }
     }
 
-    func destroy() {
-        self.stateTask?.cancel()
-        self.stateTask = nil
-        self.hashTask?.cancel()
-        self.hashTask = nil
+    nonisolated func destroy() {
+        Task { @MainActor [weak self] in
+            self?.stateTask?.cancel()
+            self?.stateTask = nil
+            self?.hashTask?.cancel()
+            self?.hashTask = nil
+        }
+    }
+
+    private func logError(_ message: String) {
+        logger.error("\(message)")
     }
 }

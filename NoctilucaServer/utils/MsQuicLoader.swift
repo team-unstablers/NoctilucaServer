@@ -5,11 +5,11 @@
 //  Created by Gyuhwan Park on 2/4/26.
 //
 
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 import SiriusKit
 
-class MsQuicLoader {
+class MsQuicLoader: @unchecked Sendable {
     static let shared = MsQuicLoader()
     
     private let logger = NoctilucaLogger(category: "MsQuicLoader")

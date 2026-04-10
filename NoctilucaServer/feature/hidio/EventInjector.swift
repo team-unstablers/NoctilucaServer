@@ -37,7 +37,7 @@ enum EventInjectorError: LocalizedError {
 ///
 /// `DispatchSourceTimer.setEventHandler` 클로저 역시 같은 serial queue 위에서 실행
 /// 되므로, 타이머 콜백 안에서는 `assumeIsolated { ... }` 로 actor hop 없이 isolated
-/// 메서드를 호출한다 (Swift 5.9+ 표준 API).
+/// 메서드를 호출한다 (Swift 5.9+ 표준 API). 
 actor EventInjector {
     public static let MOUSE_DOWN_STATE_LEFT: UInt16 = 0b1
     public static let MOUSE_DOWN_STATE_RIGHT: UInt16 = 0b10

@@ -8,7 +8,7 @@
 import Foundation
 import SiriusKitCore
 
-public protocol SiriusServerDelegate: AnyObject {
+public protocol SiriusServerDelegate: AnyObject, Sendable {
     func siriusServerDidStart(_ server: SiriusServer)
     func siriusServerDidStop(_ server: SiriusServer)
     func siriusServer(_ server: SiriusServer, didEncounterError error: any Error)
@@ -17,20 +17,15 @@ public protocol SiriusServerDelegate: AnyObject {
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusServer, error: any Error)
 }
 
-public class SiriusServer {
+public actor SiriusServer: Sendable {
     let serverTransport: ServerRoleRootTransport
     let featureProvider: (any FeatureProvider)
 
-    private let sessionsLock = NSLock()
-    private var _sessions: [ClientSession] = []
-
-    public var sessions: [ClientSession] {
-        sessionsLock.withLock { _sessions }
-    }
+    private(set) public var sessions: [ClientSession] = []
 
     public weak var delegate: (any SiriusServerDelegate)?
 
-    required init(
+    init(
         serverTransport: ServerRoleRootTransport,
         featureProvider: (any FeatureProvider)
     ) {
@@ -38,6 +33,10 @@ public class SiriusServer {
         self.featureProvider = featureProvider
 
         self.serverTransport.delegate = self
+    }
+    
+    public func setDelegate(_ delegate: (any SiriusServerDelegate)?) {
+        self.delegate = delegate
     }
 
     public func setup() async throws {
@@ -78,49 +77,55 @@ public class SiriusServer {
     }
 
     private func appendSession(_ session: ClientSession) {
-        sessionsLock.withLock {
-            _sessions.append(session)
-        }
+        sessions.append(session)
     }
 
     private func removeSession(id: UUID) {
-        sessionsLock.withLock {
-            _sessions.removeAll { $0.id == id }
-        }
+        sessions.removeAll { $0.id == id }
     }
 
     private func takeSessionsSnapshot() -> [ClientSession] {
-        sessionsLock.withLock {
-            let snapshot = _sessions
-            _sessions.removeAll()
-            return snapshot
-        }
+        let snapshot = sessions
+        
+        // 잠깐, 왜 여기서 removeAll()을 해?
+        sessions.removeAll()
+        return snapshot
     }
 }
 
 extension SiriusServer: ServerRoleRootTransportDelegate {
-    func serverTransportDidStartListening(_ serverTransport: ServerRoleRootTransport) {
-        delegate?.siriusServerDidStart(self)
+    nonisolated func serverTransportDidStartListening(_ serverTransport: ServerRoleRootTransport) {
+        Task {
+            await self.delegate?.siriusServerDidStart(self)
+        }
     }
 
-    func serverTransportDidStopListening(_ serverTransport: ServerRoleRootTransport) {
-        delegate?.siriusServerDidStop(self)
+    nonisolated func serverTransportDidStopListening(_ serverTransport: ServerRoleRootTransport) {
+        Task {
+            await self.delegate?.siriusServerDidStop(self)
+        }
     }
 
-    func serverTransport(_ serverTransport: ServerRoleRootTransport, didEncounterError error: any Error) {
-        delegate?.siriusServer(self, didEncounterError: error)
+    nonisolated func serverTransport(_ serverTransport: ServerRoleRootTransport, didEncounterError error: any Error) {
+        Task {
+            await self.delegate?.siriusServer(self, didEncounterError: error)
+        }
     }
 
-    func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: any ServerRoleClientTransport) {
-        self.createClientSession(clientTransport)
+    nonisolated func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: any ServerRoleClientTransport) {
+        Task {
+            await self.createClientSession(clientTransport)
+        }
     }
 
-    func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: any Error) {
+    nonisolated func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: any Error) {
     }
 }
 
 extension SiriusServer: ClientSessionLifecycleDelegate {
-    func clientSessionDidClose(_ session: ClientSession) {
-        removeSession(id: session.id)
+    nonisolated func clientSessionDidClose(_ session: ClientSession) {
+        Task {
+            await self.removeSession(id: session.id)
+        }
     }
 }

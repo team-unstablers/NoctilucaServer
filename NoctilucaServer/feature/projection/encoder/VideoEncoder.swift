@@ -24,35 +24,39 @@ struct VideoEncoderConfiguration {
     }
 }
 
-struct EncodedFrame {
+struct EncodedFrame: Sendable {
     let header: FrameDataHeader
     let data: Data
     let formatDescription: CMFormatDescription?
 }
 
-enum VideoEncoderEvent {
+enum VideoEncoderEvent: Sendable {
     /// 코덱의 파라미터 세트(예: SPS, PPS 등)가 변경되었음을 알립니다.
     case parameterSetChanged(CodecParameterSetMessage)
     /// 프레임이 인코딩되어 준비되었음을 알립니다.
     case frameEncoded(EncodedFrame)
-    
+
     /// 인코더가 프레임을 완성하지 못하고 건너뛴 경우를 알립니다.
     /// 서버 인코딩 성능 부족 시그널로 사용됩니다.
     case frameSkipped
 
     /// 인코딩 도중에 오류가 발생했음을 알립니다.
-    case errorOccurred(Error)
+    case errorOccurred(any Error)
 
     /// 인코더가 정지되었음을 알립니다.
     case stopped
 }
 
-protocol VideoEncoderDelegate: AnyObject {
+protocol VideoEncoderDelegate: AnyObject, Sendable {
     func videoEncoder(_ encoder: VideoEncoder, didEncode frame: EncodedFrame)
     func videoEncoder(_ encoder: VideoEncoder, didFailWith error: Error)
 }
 
-protocol VideoEncoder: AnyObject {
+/// NOTE: `ProjectionSession` actor 가 encoder 인스턴스를 actor-isolated stored
+/// property 로 저장하지만, prepare 도중 새 encoder 를 만들어 대입하는 경로 (`encoder = VTVideoEncoder()` 등)
+/// 가 actor 초기화 단계에서도 이뤄지므로 타입 자체에 Sendable 표식을 붙인다.
+/// 구현체는 내부 DispatchQueue 직렬화로 thread-safety 를 확보하고 `@unchecked Sendable` 로 표식한다.
+protocol VideoEncoder: AnyObject, Sendable {
     /*
     var delegate: VideoEncoderDelegate? { get set }
      */

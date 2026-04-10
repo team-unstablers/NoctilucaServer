@@ -331,6 +331,12 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
 **규칙**
 - 채널 클래스 본체의 가변 상태는 가능한 한 **state actor로 이동**한다.
 - **예외 (고빈도 전송 채널)**: `TransferChannel`처럼 64KB 단위 청크 전송 등으로 `handleFrame`이 매우 빈번하게 호출되는 경우, Actor Hop 오버헤드를 방지하기 위해 가변 상태를 캡슐화한 **`@unchecked Sendable` 클래스 내부에 `NSLock` (또는 `OSAllocatedUnfairLock`)을 사용하는 패턴**을 허용한다.
+- **예외 (미디어 파이프라인 class)**: `ScreenRecorder` / `AudioRecorder` / `VideoEncoder` / `AudioEncoder` 프로토콜의 구현체와 같은 **외부 미디어 프레임워크(ScreenCaptureKit, VideoToolbox, AVFoundation, libwebp 등) 래퍼 class**는 `@unchecked Sendable` 을 허용한다. 사유는 두 가지다:
+  1. 이들 구현체는 내부에서 `DispatchQueue.sync` (`workerQueue`) 기반으로 가변 상태를 직렬화하고 있어 실제 thread-safety 가 확보되어 있다.
+  2. 호출자(`ProjectionSession` / `AudioProjectionSession` actor) 가 이미 actor 격리 하에서 순차 호출을 보장한다.
+  - actor 로 승격하는 정식 적합화는 이들 프로토콜/구현체의 메서드 시그니처(throws/sync 호출, NS* delegate 대응) 가 함께 바뀌어야 하므로 비용이 크다. 본 마이그레이션의 범위를 벗어난다.
+  - 구현체의 `final class ... @unchecked Sendable` 선언 위에는 **반드시 근거 주석**을 남긴다 (예: "문서 Rule G 확장: 미디어 파이프라인 class 예외").
+  - 후속 과제: delegate → `AsyncStream<Event>` 전환 또는 actor 승격으로 `@unchecked` 제거.
 - `ProjectionChannel` 의 기존 `ProjectionChannelState` 가 레퍼런스 모델.
 - 채널 본체에는 다음 범주만 남긴다:
   - `let handle: ChannelHandle`
@@ -774,11 +780,11 @@ extension ProjectionSession {
 **옵션 2 (미채택)** — 중간 serial queue 에서 판정 후 actor hop
 - FrameDropController 를 actor 바깥 nonisolated 필드로 유지해야 하므로 Sendable 적합성 재작업 필요. 초기 마이그레이션 권장 X.
 
-**옵션 3 (후속 과제)** — actor custom executor 바인딩
+**옵션 3 (채택)** — actor custom executor 바인딩
 - Swift 5.9+ `unowned ActorExecutor` API 로 actor executor 를 `recorderQueue` 로 고정.
 - 캡처 콜백이 이미 해당 queue 에 있으므로 hop 없이 inline 실행.
 - 제약: macOS 14+, 구현 복잡도, 다른 actor 호출도 같은 queue 로 재라우팅됨.
-- **룰**: 우선 옵션 1, 프로파일링에서 Task 생성 오버헤드가 유의미하면 옵션 3 전환. Section 11 에 기록.
+- **룰**: **`ProjectionSession` / `AudioProjectionSession` 은 본 마이그레이션에서 옵션 3 을 채택**한다. `nonisolated let recorderQueue: DispatchSerialQueue` 을 actor 에 소유시키고, `nonisolated var unownedExecutor: UnownedSerialExecutor { recorderQueue.asUnownedSerialExecutor() }` 로 바인딩한다. Recorder delegate 콜백은 `assumeIsolated { me in ... }` 로 hop 없이 actor-isolated 메서드를 호출한다. `EventInjector` (Section 10.7.3) 에 이은 두 번째 참조 구현이다.
 
 ### 6.4. Combine sink → actor 진입
 
@@ -938,6 +944,16 @@ final class CursorEventSubscription {
 
 ## 9. 마이그레이션 체크리스트
 
+### 9.0. 마이그레이션 진행 상황
+
+- [x] MainChannel (SiriusKit 참조 구현)
+- [x] HIDIO (서버/클라이언트)
+- [x] Clipboard (서버/클라이언트)
+- [x] Transfer (서버/클라이언트)
+- [x] **Projection (서버) — 본 PR 에서 완료**
+- [ ] Projection (클라이언트)
+- [ ] ProjectionData (클라이언트)
+
 ### 9.1. 채널 단위
 - [ ] `class Foo: Channel` → `final class Foo: Channel, ChannelEventConsumer`
 - [ ] `required init(using:...)` → `init(handle:)` 교체
@@ -977,6 +993,120 @@ final class CursorEventSubscription {
 - [ ] `weak var clipboardChannel` 등 가변 약 참조는 State actor 로 격리
 - [ ] `FeatureProvider` 가 `final class` + `Sendable` 요건 만족
 - [ ] `handle.activate()` 를 provider 에서 호출하지 않음 확인
+
+---
+
+## 9.5. 서버 Projection 마이그레이션 — 학습 노트 (실제 구현 중 발견)
+
+본 섹션은 2026-04-11 서버 Projection 마이그레이션 PR 작업 중 발견된, **사전에 문서에 기록되지 않았던 실제 이슈와 해결책**을 기록한다. 후속 작업 (클라이언트 Projection, 기타 미디어 파이프라인) 시 참조용.
+
+### 9.5.1. `ProjectionDataChannel` delegate 는 state actor 격리로 (옵션 A 구현)
+
+계획 문서에서 두 가지 후보(actor 격리 vs `nonisolated(unsafe)` 예외 패턴 3) 중 **actor 격리를 채택**했다. 이유:
+
+- 서버 측 delegate 는 "init 직후 1회 대입" 패턴이 아니다. `ProjectionChannel.handleProjectionRequest`, `handleAudioProjectionRequest` 성공/실패 경로 및 `cleanupTerminationTargets` 등 **여러 곳에서 `setDelegate(nil)` 이 호출**된다.
+- Rule I 예외 패턴 3 ("init 직후 1회 설정되는 콜백") 에 엄밀히 부합하지 않는다.
+- actor 격리가 약간의 hop 비용이 있지만 delegate 갱신은 매 프레임 경로가 아닌 세션 수준 이벤트에서만 발생하므로 실질 영향 없음.
+
+구현 형태 (**`ProjectionDataChannel.swift` 참조**):
+
+```swift
+actor ProjectionDataChannelState {
+    private weak var delegate: ProjectionDataChannelDelegate?
+
+    func setDelegate(_ delegate: ProjectionDataChannelDelegate?) { self.delegate = delegate }
+    func getDelegate() -> ProjectionDataChannelDelegate? { self.delegate }
+}
+
+final class ProjectionDataChannel: Channel, ChannelEventConsumer {
+    let handle: ChannelHandle
+    let state = ProjectionDataChannelState()
+    // ...
+
+    func handleError(error: any Error) async {
+        let delegate = await state.getDelegate()
+        delegate?.projectionDataChannel(self, didEncounterError: error)
+    }
+}
+```
+
+호출부(`ProjectionChannel`, `ProjectionSession`) 는 delegate 에 접근할 때 **항상 `await channel.state.setDelegate(...)` / `await channel.state.getDelegate()` 패턴**을 사용한다.
+
+### 9.5.2. Recorder / Encoder 본체 프로토콜에도 `Sendable` 이 필요하다
+
+처음에는 "actor 내부 stored property 로만 저장하면 타입 자체의 Sendable 은 불필요" 라고 판단했으나, 실제로는 `ProjectionSession` actor 의 `async init` 안에서:
+
+```swift
+self.recorder = await ScreenRecorderFactory.create(...)
+```
+
+와 같이 **cross-actor boundary 로 non-Sendable 값을 전달**하게 된다 (`ScreenRecorderFactory.create` 는 `@MainActor` isolated). Swift 6 strict concurrency 는 이 반환값이 Sendable 이어야 actor 내부로 들여올 수 있다고 요구한다.
+
+따라서 다음 네 프로토콜에 모두 `Sendable` 표식이 필요하다:
+
+- `ScreenRecorder: AnyObject, Identifiable, Sendable`
+- `AudioRecorder: AnyObject, Identifiable, Sendable`
+- `VideoEncoder: AnyObject, Sendable`
+- `AudioEncoder: AnyObject, Sendable`
+
+그리고 구현체들은 Rule G 확장 예외(미디어 파이프라인 class) 를 적용해 `final class ... @unchecked Sendable` 로 선언한다. 본 PR 에서 교체된 구현체 목록:
+
+- `ScreenCaptureKitScreenRecorder`, `AVFoundationScreenRecorder`
+- `ScreenCaptureKitAudioRecorder`
+- `VTVideoEncoder`, `ZRLEVideoEncoder`, `MJPGVideoEncoder`, `WebPVideoEncoder`
+- `OpusAudioEncoder`, `PCMAudioEncoder`
+
+각 구현체 class 선언 위에는 **근거 주석을 필수**로 붙인다.
+
+### 9.5.3. Recorder 프로토콜의 `queue` 요구사항은 `get` 으로 축소
+
+v1 의 `var queue: DispatchQueue { get set }` 에서 setter 는 실사용이 없었다. Sendable 적합화를 위해 `var queue: DispatchQueue { get }` 으로 축소했다. 구현체는 기존대로 `init(queue:)` 로 주입받아 `let` 또는 `var` 로 저장한다.
+
+### 9.5.4. `ProjectionChannelState.displayChangesCancellable` 는 actor 내부 필드로 흡수
+
+계획 문서 Rule J 에서는 `installDisplayDisconnectSink(_ callback:)` 메서드를 만들어 Combine cancellable 을 actor 내부로 이동하는 형태를 제안했다. 본 PR 에서는 **정확히 그 형태로 구현**했다:
+
+```swift
+actor ProjectionChannelState {
+    private var displayChangesCancellable: AnyCancellable?
+
+    func installDisplayDisconnectSink(
+        _ callback: @escaping @Sendable (CGDirectDisplayID) -> Void
+    ) {
+        self.displayChangesCancellable = DisplayLayoutManager.shared.displayChangeSubject
+            .filter { $0.eventType.contains(.disconnected) }
+            .sink { event in
+                callback(event.displayID)
+            }
+    }
+}
+```
+
+`ProjectionChannel.init` 에서는 `Task { [state] in await state.installDisplayDisconnectSink { ... } }` 로 한 번 호출하고, `completeDestroy()` 에서 `cancellable?.cancel()` 로 해제한다.
+
+### 9.5.5. `@MainActor` Subscription 의 `setChannel` 메서드
+
+`CursorEventSubscription` / `DisplayEventSubscription` 을 `@MainActor final class` 로 격리하면, 외부에서 `subscription.channel = self` 같은 직접 대입이 non-MainActor 컨텍스트에서 불가능해진다. 다음 형태로 전환한다:
+
+```swift
+@MainActor
+final class CursorEventSubscription {
+    weak var channel: ProjectionChannel? = nil
+    func setChannel(_ channel: ProjectionChannel?) { self.channel = channel }
+}
+```
+
+호출부는 `await subscription.setChannel(self)` 형태가 된다. `destroy()` 는 `nonisolated func destroy()` 로 선언하여 호출부가 await 없이 사용할 수 있게 한다 (내부에서 `Task { @MainActor ... }` 로 진입).
+
+### 9.5.6. `AutoQualityPlanner.onQualityAdjustment` 콜백은 Task 로 래핑
+
+`qualityPlanner?.onQualityAdjustment = { [weak self] event in ... }` 할당은 actor-isolated `prepare()` 안에서 일어나지만, planner 자체는 class 이고 콜백은 임의의 스레드에서 발화될 수 있다. actor-isolated `handleQualityAdjustment(_:planner:)` 를 호출하려면 반드시 `Task { [weak self] in await self?.handleQualityAdjustment(event, planner: autoPlanner) }` 로 진입한다.
+
+### 9.5.7. `deinit` 에서 logger 접근 불가 — 경고 로그 생략
+
+`ProjectionSession` / `AudioProjectionSession` 의 `deinit` 은 nonisolated 이므로 actor-isolated `logger` 접근이 불가능하다. v1 에서 "stop() 미호출 경고 로그" 를 남기던 코드는 제거했고, 대신 `nonisolated let dataChannel` 과 `nonisolated let frameQueue` 만 사용해 safety-net 을 수행한다 (문서 Section 6.5 그대로).
+
+`stop()` 미호출 시의 관측 가능성 손실은 후속 과제 — OSLog 기반 nonisolated logger 채널 또는 `ManagedAtomic<Bool> stopCalled` 플래그로 대체 가능.
 
 ---
 
@@ -1293,11 +1423,11 @@ actor HIDIOKeyboardHackRegistry {
 - **`FrameDropController` 동시성 정식화**
   - 현재는 `ProjectionSession` actor 내부 필드로 격납. 내부 상태가 실제로 actor-isolated 경로만 사용하는지 감사 필요.
   - 장기적으로 struct + inout API 또는 dedicated actor.
-- **actor custom executor (6.3 옵션 3) 검토**
-  - `handleCapturedFrame` 핫 패스 Task 생성 비용 측정 후 적용 여부 결정.
-  - macOS 14+ 제약과 서버 앱 deployment target 확인 필요.
+- **actor custom executor (6.3 옵션 3)** — **채택 완료**
+  - `ProjectionSession` / `AudioProjectionSession` 양쪽에 `DispatchSerialQueue.asUnownedSerialExecutor()` 적용.
+  - 후속 과제: 실제 recorder delegate 가 `assumeIsolated` 호출 시 trap 없이 통과하는지 실기기 검증.
 - **`ProjectionDataChannel` → stream 기반 이벤트 (10.2 옵션 B)**
-  - `projectionDelegate` 완전 제거, `AsyncStream<Event>` 로 전환.
+  - 현재는 옵션 A (`ProjectionDataChannelState` actor 로 delegate 격리) 로 구현되어 있다. 후속 PR 에서 `AsyncStream<Event>` 로 전환해 `weak var delegate` 자체를 제거한다.
 - **`FeatureProvider` 의 `clipboardChannel` 약 참조 제거**
   - `channelManager.filter(byFeature: .clipboard)` 로 대체. State actor 자체 제거.
 - **`ChannelEventCompatBridge` 의 `handleFrame` throw swallow 로깅 보강**

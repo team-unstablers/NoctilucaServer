@@ -46,30 +46,18 @@ class CursorStateHolder {
         self.updateCursorPosition()
         self.updateCursorHash()
     }
-    
-    @MainActor
-    deinit {
-        self.stopObserveCursorEvent()
-        
-        for continuation in stateContinuations.values {
-            continuation.finish()
-        }
-        for continuation in hashContinuations.values {
-            continuation.finish()
-        }
-    }
-    
+
     /// 새로운 CursorState 스트림을 생성합니다. (Multicast 지원)
     func makeCursorStateStream() -> AsyncStream<CursorState> {
         return AsyncStream(CursorState.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
             let id = UUID()
             self.stateContinuations[id] = continuation
-            
+
             // 초기값 전송
             if let currentState = self.cursorState {
                 continuation.yield(currentState)
             }
-            
+
             continuation.onTermination = { [weak self] _ in
                 Task { @MainActor [weak self] in
                     self?.stateContinuations.removeValue(forKey: id)
@@ -77,18 +65,18 @@ class CursorStateHolder {
             }
         }
     }
-    
+
     /// 새로운 CursorHash 스트림을 생성합니다. (Multicast 지원)
     func makeCursorHashStream() -> AsyncStream<Int> {
         return AsyncStream(Int.self, bufferingPolicy: .unbounded) { continuation in
             let id = UUID()
             self.hashContinuations[id] = continuation
-            
+
             // 초기값 전송
             if self.cursorHash != 0 {
                 continuation.yield(self.cursorHash)
             }
-            
+
             continuation.onTermination = { [weak self] _ in
                 Task { @MainActor [weak self] in
                     self?.hashContinuations.removeValue(forKey: id)
@@ -96,13 +84,15 @@ class CursorStateHolder {
             }
         }
     }
-    
+
     private func startObserveCursorEvent() {
         self.stopObserveCursorEvent()
-        
-        self.observerToken = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .cursorUpdate, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]) { event in
-            self.updateCursorPosition()
-            self.updateCursorHash()
+
+        self.observerToken = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .cursorUpdate, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]) { [weak self] event in
+            // NSEvent global monitor 콜백은 MainActor 컨텍스트에서 호출된다.
+            // CursorStateHolder 가 @MainActor 로 격리되어 있으므로 동기 호출이 안전하다.
+            self?.updateCursorPosition()
+            self?.updateCursorHash()
         }
     }
     
@@ -249,6 +239,7 @@ extension CursorState {
         )
     }
     
+    @MainActor
     static func fromNSEvent(_ position: CGPoint) -> CursorState {
         let displayLayoutManager = DisplayLayoutManager.shared
         let layouts = displayLayoutManager.displayLayouts.snapshot()
