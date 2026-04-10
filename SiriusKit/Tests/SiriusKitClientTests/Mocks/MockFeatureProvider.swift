@@ -6,7 +6,7 @@
 import Foundation
 @testable import SiriusKitCore
 
-final class MockFeatureProvider: FeatureProvider {
+final class MockFeatureProvider: FeatureProvider, @unchecked Sendable {
     var supportedFeatures: Set<SiriusFeature> = [.hidio, .projection, .projectionData]
 
     private(set) var createdChannels: [(feature: SiriusFeature, identifier: ChannelIdentifier)] = []
@@ -17,12 +17,10 @@ final class MockFeatureProvider: FeatureProvider {
 
     func createChannel(
         for feature: SiriusFeature,
-        using streamHolder: StreamHolder,
-        identifier: ChannelIdentifier,
-        direction: ChannelDirection,
+        handle: ChannelHandle,
         args: [String]
-    ) -> Channel {
-        createdChannels.append((feature: feature, identifier: identifier))
-        return Channel(using: streamHolder, identifier: identifier, direction: direction)
+    ) async throws -> ChannelCreationResult {
+        createdChannels.append((feature: feature, identifier: handle.identifier))
+        return .accepted(MockChannel(handle: handle))
     }
 }

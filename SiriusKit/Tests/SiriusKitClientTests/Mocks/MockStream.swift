@@ -6,7 +6,7 @@
 import Foundation
 @testable import SiriusKitCore
 
-final class MockStream: SiriusKitCore.Stream {
+final class MockStream: SiriusKitCore.Stream, @unchecked Sendable {
     private(set) var writtenFrames: [(opcode: MessageOpcode, data: Data)] = []
     private(set) var isClosed = false
 
@@ -22,6 +22,22 @@ final class MockStream: SiriusKitCore.Stream {
     }
 
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
+        if let error = writeError {
+            return .failure(error)
+        }
+        return .success(UInt32(data.count))
+    }
+
+    override func writeNonBlocking(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) -> Result<UInt32, StreamError> {
+        writtenFrames.append((opcode: opcode, data: data))
+
+        if let error = writeError {
+            return .failure(error)
+        }
+        return .success(UInt32(data.count))
+    }
+
+    override func writeNonBlocking(_ data: Data) -> Result<UInt32, StreamError> {
         if let error = writeError {
             return .failure(error)
         }

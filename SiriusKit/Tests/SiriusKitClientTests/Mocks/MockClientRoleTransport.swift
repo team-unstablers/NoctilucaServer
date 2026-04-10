@@ -7,13 +7,12 @@ import Foundation
 @testable import SiriusKitCore
 @testable import SiriusKitClient
 
-final class MockClientRoleTransport: ClientRoleTransport {
+final class MockClientRoleTransport: ClientRoleTransport, @unchecked Sendable {
     let id: TransportLayerIdentifier = UUID()
 
     weak var delegate: ClientRoleTransportDelegate?
 
-    var hostname: String = "localhost"
-    var port: UInt16 = 8282
+    var endpoint: SREndpoint = SREndpoint(address: .IPv4(0x7F000001))
     var identity: ServerIdentity? = nil
     var identityValidationPolicy: ServerIdentityValidationPolicy = .dangerouslyAllowAlwaysWithoutValidation
 

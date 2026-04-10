@@ -7,7 +7,7 @@ import Foundation
 @testable import SiriusKitCore
 @testable import SiriusKit
 
-final class MockServerRoleClientTransport: ServerRoleClientTransport {
+final class MockServerRoleClientTransport: ServerRoleClientTransport, @unchecked Sendable {
     let id: TransportLayerIdentifier = UUID()
     private let loggerContext = SharedState(SiriusEventLogger.Context())
 
