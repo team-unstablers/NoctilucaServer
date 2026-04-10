@@ -20,9 +20,13 @@ public extension Channel {
     var feature: SiriusFeature {
         handle.feature
     }
-    
+
     var identifier: ChannelIdentifier {
         handle.identifier
+    }
+
+    var direction: ChannelDirection {
+        handle.direction
     }
 }
 

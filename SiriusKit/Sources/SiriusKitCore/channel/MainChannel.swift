@@ -9,7 +9,7 @@ import Foundation
 
 internal import SwiftProtobuf
 
-public enum MainChannelEvent {
+public enum MainChannelEvent: Sendable {
     case receivedServerNotice(ServerNotice)
     case receivedClientHello(ClientHello)
     case receivedServerHello(ServerHello)

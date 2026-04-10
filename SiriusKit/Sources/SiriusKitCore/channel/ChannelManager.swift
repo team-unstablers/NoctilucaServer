@@ -284,7 +284,7 @@ public actor ChannelManager {
             }
         }
         
-        try await createdChannel?.handle?.activate()
+        try await createdChannel?.handle.activate()
     }
 
     package func teardownAllChannels() async {
