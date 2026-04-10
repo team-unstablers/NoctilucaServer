@@ -6,8 +6,8 @@
 //
 
 import Foundation
-@preconcurrency import MsQuic
-@preconcurrency import SwiftMsQuicHelper
+import MsQuic
+import SwiftMsQuic
 import SiriusKitCore
 
 enum ServerRoleMsQuicRootTransportError: Error, ServerRoleRootTransportError {
@@ -218,19 +218,15 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         connectionInfo: QuicListenerEvent.NewConnectionInfo,
         configuration: QuicConfiguration
     ) throws -> QuicConnection? {
-        // 새 QuicConnection 래퍼 생성
-        let quicConnection: QuicConnection
-        
-        do {
-            quicConnection = try QuicConnection(
-                handle: connectionInfo.connection,
-                configuration: configuration
-            )
-            
-            try quicConnection.setStreamSchedulingScheme(.roundRobin)
-        } catch {
-            throw error
-        }
+        // 새 QuicConnection 래퍼 생성 (v2: info.accept(...)로 raw handle 수락)
+        // peer stream은 이후 installConnectionHandlers()의 onPeerStreamStarted로 처리하므로
+        // streamHandler는 여기서 nil로 전달한다.
+        let quicConnection = try connectionInfo.accept(
+            configuration: configuration,
+            streamHandler: nil
+        )
+
+        try quicConnection.setStreamSchedulingScheme(.roundRobin)
 
         // ServerRoleMsQuicClientTransport 생성
         let clientTransport = ServerRoleMsQuicClientTransport(
@@ -296,7 +292,8 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
             return .success
         }
 
-        connection.onPeerStreamStarted { [weak clientTransport] _, quicStream, flags in
+        connection.onPeerStreamStarted { [weak clientTransport] _, _, quicStream, flags in
+            // StreamHandler v2: (isolated (any Actor)?, QuicConnection, QuicStream, QuicStreamOpenFlags)
             // TODO: flags은 무조건 bidirectional 해야 한다
             guard let clientTransport = clientTransport else { return }
             await clientTransport.handlePeerStream(quicStream)

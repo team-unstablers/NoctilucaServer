@@ -8,7 +8,7 @@
 import Foundation
 import Security
 
-import SwiftMsQuicHelper
+import SwiftMsQuic
 import SiriusKitCore
 
 import CryptoKit

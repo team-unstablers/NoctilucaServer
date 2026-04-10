@@ -7,7 +7,7 @@
 
 import Foundation
 import MsQuic
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 import Atomics
 import SiriusKitCore

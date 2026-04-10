@@ -13,8 +13,8 @@ import Atomics
 import Network
 import Security
 
-@preconcurrency import MsQuic
-@preconcurrency import SwiftMsQuicHelper
+import MsQuic
+import SwiftMsQuic
 import SiriusKitCore
 
 enum ClientRoleMsQuicTransportError: Error {
@@ -356,7 +356,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
 
         // 피어 스트림 핸들러
-        connection.onPeerStreamStarted { [weak self] _, quicStream, flags in
+        // StreamHandler v2: (isolated (any Actor)?, QuicConnection, QuicStream, QuicStreamOpenFlags)
+        connection.onPeerStreamStarted { [weak self] _, _, quicStream, flags in
             // TODO: reject unidirectional stream
             guard let self = self else { return }
             await self.handlePeerStream(quicStream)
