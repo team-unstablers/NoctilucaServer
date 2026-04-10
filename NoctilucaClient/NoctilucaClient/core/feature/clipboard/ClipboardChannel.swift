@@ -248,6 +248,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
 
     // MARK: - Request Handlers (서버 → 클라이언트)
 
+    @MainActor
     private func handleSubscribeClipboardRequest(_ request: SubscribeClipboardRequest) async throws {
         guard clipboardSettings.enabled else {
             logger.info("Clipboard disabled, rejecting subscribe request (requestId=\(request.requestId))")
@@ -499,8 +500,8 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
             await state.setRemoteSubscription(nil)
         }
 
-        await state.storeSnapshot(ClipboardDataSnapshot(items: []))
-        await state.storeFileTransferSnapshot(FileTransferSnapshot(items: []))
+        await state.storeSnapshot(ClipboardDataSnapshot())
+        await state.storeFileTransferSnapshot(FileTransferSnapshot())
         await state.setFileTransferCoordinator(nil)
     }
 
@@ -514,8 +515,3 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
     }
 }
 
-extension ClipboardChannel: Channel.HasFeature {
-    var feature: SiriusFeature {
-        return .clipboard
-    }
-}

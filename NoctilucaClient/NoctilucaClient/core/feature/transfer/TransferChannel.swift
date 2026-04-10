@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os
 
 import SiriusKitClient
 import zlib
@@ -85,7 +86,7 @@ extension TransferChannelArgumentsSet {
 
 /// TransferChannel의 가변 상태를 보호하는 클래스 (Lock 기반 최적화)
 final class TransferState: @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = OSAllocatedUnfairLock()
 
     var startNotification: TransferStartNotification? = nil
     var expectedSequenceNumber: UInt64 = 0
@@ -95,10 +96,10 @@ final class TransferState: @unchecked Sendable {
     var sendSequenceNumber: UInt64 = 0
     var isCompleted: Bool = false
 
-    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+    func withLock<T>(_ body: (TransferState) throws -> T) rethrows -> T {
         lock.lock()
         defer { lock.unlock() }
-        return try body()
+        return try body(self)
     }
 }
 
@@ -129,8 +130,8 @@ final class TransferChannel: Channel, ChannelEventConsumer {
     nonisolated(unsafe) var onTransferCompleted: (@Sendable (_ channelID: UUID) -> Void)? = nil
     nonisolated(unsafe) var onReady: (@Sendable () -> Void)? = nil
 
-    private(set) var transferDirection: TransferChannelDirection? = nil
-    private(set) var task: TransferChannelTask? = nil
+    nonisolated(unsafe) private(set) var transferDirection: TransferChannelDirection? = nil
+    nonisolated(unsafe) private(set) var task: TransferChannelTask? = nil
 
     private let state = TransferState()
 
@@ -248,7 +249,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             return
         }
 
-        onTransferStarted?(handle.identifier.id, notification.totalSize)
+        onTransferStarted?(handle.identifier, notification.totalSize)
         logger.info("Transfer started: name=\(notification.name), totalSize=\(notification.totalSize), contentType=\(notification.contentType)")
     }
 
@@ -296,7 +297,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             state.expectedSequenceNumber += 1
         }
 
-        onProgressUpdate?(handle.identifier.id, UInt64(dataCount))
+        onProgressUpdate?(handle.identifier, UInt64(dataCount))
 
         // EOF 처리
         if isEof {
@@ -319,7 +320,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             }
         }
 
-        onTransferCompleted?(handle.identifier.id)
+        onTransferCompleted?(handle.identifier)
         logger.info("Transfer completed: received \(receivedBytes) bytes")
     }
 
@@ -331,7 +332,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             logger.error("Cannot send on a receive-only channel")
             return
         }
-        onTransferStarted?(handle.identifier.id, notification.totalSize)
+        onTransferStarted?(handle.identifier, notification.totalSize)
         try await handle.send(opcode: .transferStartNotification, message: notification)
     }
 
@@ -361,10 +362,10 @@ final class TransferChannel: Channel, ChannelEventConsumer {
         )
 
         try await handle.send(opcode: .transferDataChunk, message: chunk)
-        onProgressUpdate?(handle.identifier.id, UInt64(chunkData.count))
+        onProgressUpdate?(handle.identifier, UInt64(chunkData.count))
 
         if isEof {
-            onTransferCompleted?(handle.identifier.id)
+            onTransferCompleted?(handle.identifier)
         }
     }
 
@@ -443,7 +444,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
         }
         if !completed {
             logger.warning("Stream closed before transfer completed")
-            onTransferCompleted?(handle.identifier.id)
+            onTransferCompleted?(handle.identifier)
         }
     }
 
@@ -454,7 +455,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             return state.isCompleted
         }
         if !completed {
-            onTransferCompleted?(handle.identifier.id)
+            onTransferCompleted?(handle.identifier)
         }
     }
 }
@@ -478,11 +479,5 @@ extension TransferChannel {
         try await transferChannel.prepare(argsSet)
 
         return .accepted(transferChannel)
-    }
-}
-
-extension TransferChannel: Channel.HasFeature {
-    var feature: SiriusFeature {
-        return .transfer
     }
 }

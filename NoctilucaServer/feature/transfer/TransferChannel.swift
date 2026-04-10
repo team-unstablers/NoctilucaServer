@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os
 
 import SiriusKit
 import zlib
@@ -85,7 +86,7 @@ extension TransferChannelArgumentsSet {
 
 /// TransferChannel의 가변 상태를 보호하는 클래스 (Lock 기반 최적화)
 final class TransferState: @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = OSAllocatedUnfairLock()
 
     var startNotification: TransferStartNotification? = nil
     var expectedSequenceNumber: UInt64 = 0
@@ -99,10 +100,10 @@ final class TransferState: @unchecked Sendable {
     var maxSendBytesPerSecond: Int = 0
     var isCompleted: Bool = false
 
-    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+    func withLock<T>(_ body: (TransferState) throws -> T) rethrows -> T {
         lock.lock()
         defer { lock.unlock() }
-        return try body()
+        return try body(self)
     }
 }
 
@@ -127,8 +128,11 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
     let logger = NoctilucaLogger(category: "TransferChannel")
 
-    private(set) var transferDirection: TransferChannelDirection? = nil
-    private(set) var task: TransferChannelTask? = nil
+    /// FIXME: prepare()에서만 처음 한번 설정되고 이후 변경되지 않으므로 nonisolated(unsafe) 임시 사용한다.
+    nonisolated(unsafe) private(set) var transferDirection: TransferChannelDirection? = nil
+    
+    /// FIXME: prepare()에서만 처음 한번 설정되고 이후 변경되지 않으므로 nonisolated(unsafe) 임시 사용한다.
+    nonisolated(unsafe) private(set) var task: TransferChannelTask? = nil
 
     private let state = TransferState()
 

@@ -25,7 +25,7 @@ public struct ChannelEventCompatBridge<Consumer: ChannelEventConsumer>: ~Copyabl
     
     private let eventConsumerTask: Task<Void, Never>?
     
-    init(consumer: Consumer, handle: ChannelHandle) {
+    public init(consumer: Consumer, handle: ChannelHandle) {
         self.consumer = consumer
         self.handle = handle
         

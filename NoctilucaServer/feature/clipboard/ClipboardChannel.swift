@@ -592,8 +592,8 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
             await state.setRemoteSubscription(nil)
         }
 
-        await state.storeSnapshot(ClipboardDataSnapshot(items: []))
-        await state.storeFileTransferSnapshot(FileTransferSnapshot(items: []))
+        await state.storeSnapshot(ClipboardDataSnapshot())
+        await state.storeFileTransferSnapshot(FileTransferSnapshot())
         await state.setFileTransferCoordinator(nil)
     }
 
