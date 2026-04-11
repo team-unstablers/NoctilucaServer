@@ -334,8 +334,9 @@ private extension VPXVideoEncoder {
             width: CGFloat(CVPixelBufferGetWidth(imageBuffer)),
             height: CGFloat(CVPixelBufferGetHeight(imageBuffer))
         )
-        sourceWidth = Int32(size.width)
-        sourceHeight = Int32(size.height)
+        sourceWidth = Int32((Int(size.width) / 4) * 4)
+        sourceHeight = Int32((Int(size.height) / 4) * 4)
+        
         guard sourceWidth > 0, sourceHeight > 0 else {
             throw VideoEncoderError.invalidDimensions
         }
