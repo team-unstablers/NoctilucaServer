@@ -38,6 +38,7 @@ enum ModifierKeyRebindingConfigurator {
         }
     }
 
+    @MainActor
     static func apply(_ overrides: AppSettings.ModifierKeyOverrides, to rebinder: KeyEventRebinder) {
         rebinder.unregisterAll()
 

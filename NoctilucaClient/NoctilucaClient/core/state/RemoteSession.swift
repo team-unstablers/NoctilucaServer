@@ -69,8 +69,11 @@ class RemoteSession: ObservableObject {
     init(_ client: NoctilucaClient) {
         self.client = client
 
-        // FeatureProvider에 진행률 트래커 주입
-        client.noctilucaFeatureProvider?.progressTracker = progressTracker
+        // FeatureProvider 에 진행률 트래커 주입 (actor state 경유).
+        if let featureProvider = client.noctilucaFeatureProvider {
+            let tracker = progressTracker
+            Task { await featureProvider.setProgressTracker(tracker) }
+        }
 
         // 트래커 → fileTransferProgress 바인딩
         progressCancellable = progressTracker.$aggregatedProgress

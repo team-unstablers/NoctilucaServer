@@ -34,7 +34,9 @@ final class HIDIOController {
 
     private let logger = NoctilucaLogger(category: "HIDIOController")
 
-    private let settingsStore: SettingsStore = .shared
+    private lazy var settingsStore: SettingsStore = {
+        .shared
+    }()
 
     private var invertMouseButtons: Bool = false
     private var invertVerticalScroll: Bool = false
@@ -48,10 +50,12 @@ final class HIDIOController {
     private let eventStream: AsyncStream<HIDEvent>
     private let eventStreamContinuation: AsyncStream<HIDEvent>.Continuation
 
-    private var publisherTask: Task<Void, Never>? = nil
+    nonisolated(unsafe) private var publisherTask: Task<Void, Never>? = nil
     nonisolated private let requestCounter = ManagedAtomic<UInt64>(0)
 
-    let keyEventPipeline = KeyEventPipelineChain()
+    lazy var keyEventPipeline: KeyEventPipelineChain = {
+        KeyEventPipelineChain()
+    }()
 
     private(set) var keyPressState = KeyPressState()
     private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
