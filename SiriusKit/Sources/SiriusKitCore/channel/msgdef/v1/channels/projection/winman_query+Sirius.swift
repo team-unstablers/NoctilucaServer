@@ -24,7 +24,7 @@ public extension MessageOpcode {
     static let windowChangedEvent: MessageOpcode = MessageOpcode(rawValue: 0x806D)
 }
 
-public struct WindowListRequestFlagSet: OptionSet, Hashable, Equatable {
+public struct WindowListRequestFlagSet: OptionSet, Sendable, Hashable, Equatable {
     public let rawValue: UInt32
     
     public init(rawValue: UInt32) {
@@ -36,7 +36,7 @@ public struct WindowListRequestFlagSet: OptionSet, Hashable, Equatable {
     public static let includeHiddenWindows = Self(rawValue: 1 << 1)
 }
 
-public struct WindowEventSubscriptionFlagSet: OptionSet, Hashable, Equatable {
+public struct WindowEventSubscriptionFlagSet: OptionSet, Sendable, Hashable, Equatable {
     public let rawValue: UInt32
     
     public init(rawValue: UInt32) {
@@ -570,9 +570,12 @@ private extension WindowFilterExpression {
             throw SiriusMessageError.invalidProtobufMessage
         }
         
-        self.init(field)
-        self.operator = WindowFilterExpressionOperator(rawValue: protobufMessage.operator)
-        self.invert = protobufMessage.invert
+        var expr = Self(field)
+        
+        expr.operator = WindowFilterExpressionOperator(rawValue: protobufMessage.operator)
+        expr.invert = protobufMessage.invert
+        
+        self = expr
     }
     
     func toProtobufMessage() -> Sirius_Msgdef_V1_Channels_Projection_WindowFilterExpression {

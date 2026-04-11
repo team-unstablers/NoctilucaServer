@@ -101,12 +101,12 @@ final class QUICTransportTest {
     ///   5. 서버가 프레임을 전송하면 클라이언트가 수신한다.
     @Test("E2E 테스트 케이스 #1")
     func e2eTestCase_1() async throws {
-        class TestClientTransportDelegate: ServerRoleClientTransportDelegate {
+        final class TestClientTransportDelegate: ServerRoleClientTransportDelegate, @unchecked Sendable {
             var didOpenStream = false
             var didReceiveFrameFromClient = false
             var receivedFrameFromClient: SiriusFrame?
             var error: (any Error)?
-            
+
             var openedStream: SiriusKit.Stream?
             var streamListenerTask: Task<Void, Never>?
             
@@ -143,7 +143,7 @@ final class QUICTransportTest {
             }
         }
         
-        class TestServerDelegate: ServerRoleRootTransportDelegate {
+        final class TestServerDelegate: ServerRoleRootTransportDelegate, @unchecked Sendable {
             let transportDelegate: TestClientTransportDelegate
             var didStartListening = false
             var didAcceptConnection = false
@@ -201,17 +201,17 @@ final class QUICTransportTest {
         var didReceiveMainStreamOpenEvent = false
         var clientError: (any Error)?
         
-        var iterator = client.events.makeAsyncIterator()
+        let iteratorBox = AsyncIteratorBox(client.events.makeAsyncIterator())
         func nextClientEvent(timeout: Duration = .seconds(3)) async -> SimpleQUICClientEvent? {
             await withTaskGroup(of: SimpleQUICClientEvent?.self) { group in
                 group.addTask {
-                    await iterator.next()
+                    await iteratorBox.next()
                 }
                 group.addTask {
                     try? await Task.sleep(for: timeout)
                     return nil
                 }
-                
+
                 let event = await group.next()!
                 group.cancelAll()
                 return event
@@ -301,5 +301,19 @@ final class QUICTransportTest {
             streamListenerTask.cancel()
         }
     }
-    
+
+}
+
+/// 테스트 내부에서 AsyncIterator 를 @Sendable 컨텍스트로 넘기기 위한 얇은 박스.
+private final class AsyncIteratorBox<Iter: AsyncIteratorProtocol>: @unchecked Sendable
+where Iter.Element: Sendable {
+    private var iterator: Iter
+
+    init(_ iterator: Iter) {
+        self.iterator = iterator
+    }
+
+    func next() async -> Iter.Element? {
+        try? await iterator.next()
+    }
 }

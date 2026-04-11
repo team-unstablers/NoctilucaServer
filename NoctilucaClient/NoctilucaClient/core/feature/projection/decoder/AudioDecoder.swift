@@ -12,7 +12,7 @@ import CoreMedia
 import SiriusKitClient
 
 /// Audio decoder configuration parameters.
-struct AudioDecoderConfiguration {
+struct AudioDecoderConfiguration: Sendable {
     /// Audio codec to use.
     let codec: SiriusKitClient.AudioCodec
 
@@ -34,13 +34,17 @@ struct AudioDecoderConfiguration {
 }
 
 /// Encoded audio frame input from the network.
-struct EncodedAudioFrameInput {
+struct EncodedAudioFrameInput: Sendable {
     let header: FrameDataHeader
     let data: Data
 }
 
 /// Decoded audio frame ready for playback.
-struct DecodedAudioFrame {
+///
+/// `AVAudioPCMBuffer`는 공식적으로 `Sendable`로 선언되지 않았지만, 이 프레임은
+/// 디코더 내부에서 생성된 후 jitter buffer / render callback 까지 한 방향으로만
+/// 전달되고 생성 이후에는 불변으로 취급되므로, `@unchecked Sendable`로 처리한다.
+struct DecodedAudioFrame: @unchecked Sendable {
     /// PCM buffer containing decoded audio samples.
     let pcmBuffer: AVAudioPCMBuffer
 
@@ -52,7 +56,7 @@ struct DecodedAudioFrame {
 }
 
 /// Delegate protocol for receiving decoded audio frames.
-protocol AudioDecoderDelegate: AnyObject {
+protocol AudioDecoderDelegate: AnyObject, Sendable {
     /// Called when an audio frame has been successfully decoded.
     func audioDecoder(_ decoder: AudioDecoder, didDecode frame: DecodedAudioFrame)
 
@@ -61,7 +65,7 @@ protocol AudioDecoderDelegate: AnyObject {
 }
 
 /// Protocol defining the audio decoder interface.
-protocol AudioDecoder: AnyObject {
+protocol AudioDecoder: AnyObject, Sendable {
     /// Delegate to receive decoded frames and errors.
     var delegate: AudioDecoderDelegate? { get set }
 

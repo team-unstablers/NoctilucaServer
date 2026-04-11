@@ -10,6 +10,7 @@ import Combine
 
 import SiriusKitClient
 
+@MainActor
 class FIXME__ContentViewModel: ObservableObject {
     @Published
     var serverAddress: String = ""

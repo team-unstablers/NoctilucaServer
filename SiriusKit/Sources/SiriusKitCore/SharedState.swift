@@ -8,7 +8,7 @@
 import os
 import Foundation
 
-public class SharedState<Struct> {
+public final class SharedState<Struct>: @unchecked Sendable {
     private var lock = os_unfair_lock()
     private var value: Struct
     

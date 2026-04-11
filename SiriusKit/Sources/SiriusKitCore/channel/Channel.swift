@@ -10,179 +10,23 @@ internal import SwiftProtobuf
 
 internal import Atomics
 
-public typealias ChannelIdentifier = UUID
-
-public enum ChannelDirection {
-    case local
-    case remote
-}
-
-internal protocol ChannelLifecycleDelegate: AnyObject {
-    func channelDidClose(_ channel: Channel)
-    func channel(_ channel: Channel, didEncounterError error: any Error)
-}
-
-public enum ChannelError: Error {
-    case invalidFrame
-}
-
-open class Channel {
-    public protocol HasFeature {
-        var feature: SiriusFeature { get }
-    }
-
-    private static let sharedLogger = SiriusLogger(category: "Channel")
-    private var logger: SiriusLogger { Self.sharedLogger }
-
-    package weak var session: (any SiriusSession)?
-    let stream: Stream
-
-    private var streamEventLoopTask: Task<Void, any Error>?
-
-    public let identifier: ChannelIdentifier
-    public let direction: ChannelDirection
+public protocol Channel: AnyObject, Sendable {
+    var handle: ChannelHandle { get }
     
-    open var serviceClass: ServiceClass { .default }
+    init(handle: ChannelHandle)
+}
 
-    internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
-
-    // MARK: - Explicit Activation
-
-    private var _activationLock = NSLock()
-    private var _activationContinuation: CheckedContinuation<Void, Never>?
-    private var _isActivated = false
-
-    /// 이 채널이 프레임 처리를 시작하기 전 명시적인 `activate()` 호출을 필요로 하는지 여부.
-    /// 서브클래스에서 `true`를 반환하면, `activate()`가 호출될 때까지 이벤트 루프가 대기합니다.
-    open var requiresExplicitActivation: Bool { false }
-
-    /// 이벤트 루프를 활성화합니다.
-    /// `requiresExplicitActivation`이 `true`인 채널에서, delegate 설정 등 준비가 완료된 후 호출하세요.
-    public func activate() {
-        _activationLock.withLock {
-            _isActivated = true
-            _activationContinuation?.resume()
-            _activationContinuation = nil
-        }
+public extension Channel {
+    var feature: SiriusFeature {
+        handle.feature
     }
 
-    private func waitForActivation() async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            _activationLock.withLock {
-                if _isActivated {
-                    continuation.resume()
-                } else {
-                    _activationContinuation = continuation
-                }
-            }
-        }
+    var identifier: ChannelIdentifier {
+        handle.identifier
     }
 
-    required public init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        self.stream = streamHolder.stream
-        self.identifier = identifier
-        self.direction = direction
-        
-        Task.detached { [self] in
-            do {
-                self.logger.debug("[\(self.identifier)] setting service class to \(self.serviceClass)")
-                try await stream.setServiceClass(self.serviceClass)
-            } catch {
-                self.logger.error("[\(self.identifier)] failed to set service class \(self.serviceClass): \(error)")
-            }
-        }
-
-        self.streamEventLoopTask = Task.detached(priority: .userInitiated) { [self] in
-            do {
-                try await self.streamEventLoop()
-            } catch {
-                self.logger.fatal("[\(self.identifier)] encountered error in stream event loop: \(error)")
-                self.lifecycleDelegate?.channel(self, didEncounterError: error)
-            }
-        }
-    }
-
-    public func close() async throws {
-        try await self.stream.close()
-    }
-
-    public func send(frame: consuming SiriusFrame) async throws {
-#if DEBUG
-        // self.logger.trace("[\(self.identifier)] frame SEND - opcode \(frame.opcode.hexString), length \(frame.data.count)")
-#endif
-
-        let result = await self.stream.write(frame: frame.data, opcode: frame.opcode, length: frame.length)
-
-        if case .failure(let error) = result {
-            throw error
-        }
-    }
-
-    public func send(opcode: MessageOpcode, message: (any DecodableSiriusMessage)) async throws {
-        // swiftlint:disable:next force_cast
-        let protobufMessage = (message as! any SiriusMessage).toProtobufMessage()
-        let messageData = try protobufMessage.serializedData()
-
-#if DEBUG
-        // self.logger.trace("[\(self.identifier)] frame SEND - opcode \(opcode.hexString), length \(messageData.count)")
-#endif
-
-        let result = await self.stream.write(frame: messageData, opcode: opcode)
-
-        if case .failure(let error) = result {
-            throw error
-        }
-    }
-
-    private func streamEventLoop() async throws {
-        if requiresExplicitActivation {
-            logger.debug("[\(self.identifier)] streamEventLoop(): waiting for explicit activation")
-            await waitForActivation()
-        }
-
-        for await event in self.stream.events {
-            switch event {
-            case .frame(let frame):
-                // 아, 이거 매크로로 하면 개편할텐데 ㅠ
-#if DEBUG
-                // self.logger.trace("[\(self.identifier)] frame RECV - opcode \(frame.opcode.hexString), length \(frame.length)")
-#endif
-
-                do {
-                    try await self.handleFrame(frame: frame)
-                } catch {
-                    self.logger.error("[\(self.identifier)] streamEventLoop(): error occurred while handling frame: \(error)")
-                }
-            case .closed:
-                self.handleStreamClose()
-                self.lifecycleDelegate?.channelDidClose(self)
-                return
-            case .error(let error):
-                self.handleStreamError(error: error)
-                self.lifecycleDelegate?.channel(self, didEncounterError: error)
-                return
-            }
-
-        }
-    }
-
-    open func handleFrame(frame: SiriusFrame) async throws {
-        // to be overridden by subclasses
-    }
-
-    open func handleStreamClose() {
-        // default implementation
-
-    }
-
-    open func handleStreamError(error: (any Error)) {
-        // to be overridden by subclasses
-        logger.error("[\(self.identifier)] stream encountered error: \(error)")
+    var direction: ChannelDirection {
+        handle.direction
     }
 }
 
-extension Channel {
-    convenience init(stream: Stream, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        self.init(using: StreamHolder(stream: stream), identifier: identifier, direction: direction)
-    }
-}

@@ -106,5 +106,6 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 - **2026-02-01**: RemoteApp 지원 준비를 위해 **디렉토리 구조 리팩토링**을 수행했습니다. (`core`, `app`, `resources` 분리)
 - **오디오 프로젝션 기능 구현 완료**: `AudioProjectionSession`, `AudioDecoder` 등
 - **ZRLE 디코더 추가**: `ZRLEVideoDecoder` (RLE + Zstd)
+- **종료 시퀀스 정리**: `NoctilucaClient.close()`는 task 취소 후 `mainChannel` 참조를 명시적으로 해제하고, `SiriusClient.shutdown()`은 transport disconnect 전에 채널 teardown을 수행합니다. 접속 중 종료 시 MsQuic retain chain을 끊기 위한 변경입니다.
 
 </section>

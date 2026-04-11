@@ -59,8 +59,9 @@ fileprivate func displayReconfigurationCallback(
 
     let monitor = DisplayLayoutManager.fromCInteropHandle(userInfo)
 
-    monitor.updateDisplayLayouts()
     Task { @MainActor in
+        monitor.updateDisplayLayouts()
+
         monitor.publishDisplayChangeEvent(DisplayChangeEvent(
             displayID: displayID,
             eventType: flags.asSiriusEventType,
@@ -70,8 +71,9 @@ fileprivate func displayReconfigurationCallback(
 }
 
 /// 디스플레이 구성이 변경될 때 알림을 제공하는 모니터입니다.
-class DisplayLayoutManager: ObservableObject, CInteropHandle {
-    nonisolated static let shared = DisplayLayoutManager()
+@MainActor
+final class DisplayLayoutManager: ObservableObject, CInteropHandle, Sendable {
+    nonisolated(unsafe) static let shared = DisplayLayoutManager()
 
     let logger = NoctilucaLogger(category: "DisplayReconfigurationMonitor")
 
@@ -80,7 +82,7 @@ class DisplayLayoutManager: ObservableObject, CInteropHandle {
     @Published
     private(set) var intermediateGlobalFrame: CGRect = .zero
     
-    private(set) var displayLayouts = ConcurrentDictionary<CGDirectDisplayID, NOCScreen>()
+    let displayLayouts = ConcurrentDictionary<CGDirectDisplayID, NOCScreen>()
     
     let displayChangeSubject = PassthroughSubject<DisplayChangeEvent, Never>()
     let displayLayoutChangeSubject = PassthroughSubject<[CGDirectDisplayID: NOCScreen], Never>()

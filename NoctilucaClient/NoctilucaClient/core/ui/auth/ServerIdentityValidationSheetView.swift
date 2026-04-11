@@ -12,11 +12,14 @@ import Security
 
 import SiriusKitClient
 
-enum ServerIdentityValidationSheetViewExtraInfo: Sendable {
+enum ServerIdentityValidationSheetViewExtraInfo: Sendable, Equatable {
     case none
 
     /// 서버에서 제시한 인증서 지문이 known_hosts의 레코드와 일치하지 않습니다.
     case fingerprintMismatch(expectedFingerprint: String, actualFingerprint: String)
+
+    /// 인증서가 시스템 트러스트 스토어에서 명시적으로 거부되었습니다.
+    case denied
 }
 
 enum ServerIdentityValidationTrustDecision {
@@ -54,9 +57,9 @@ struct ServerIdentityValidationSheetView: View {
     
     var tintColor: Color {
         switch extraInfo {
-        case .fingerprintMismatch(_, _):
+        case .fingerprintMismatch(_, _), .denied:
             return .red
-        default:
+        case .none:
             return .accentColor
         }
     }
@@ -117,6 +120,26 @@ struct ServerIdentityValidationSheetView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity)
+            case .denied:
+                Spacer()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(markdown: String(localized: "auth.identity.danger", defaultValue: "위험"))
+                        .font(.title)
+                        .foregroundStyle(.red)
+                    Text(markdown: String(localized: "auth.identity.denied.title", defaultValue: "차단된 인증서"))
+                        .font(.title2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .bold()
+                .padding(.bottom, 6)
+                .foregroundStyle(.primary)
+
+                Text(String(format: String(localized: "auth.identity.denied.description_format", defaultValue: "`%@`에서 제시한 인증서는 시스템 트러스트 스토어에 의해 신뢰할 수 없다고 판단되었습니다."), hostname))
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.85))
+                    .padding(.bottom, 12)
+
+                Spacer()
             case .none:
                 Spacer()
                 VStack(alignment: .leading, spacing: 6) {
@@ -135,7 +158,7 @@ struct ServerIdentityValidationSheetView: View {
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.85))
                     .padding(.bottom, 12)
-                
+
                 Spacer()
             }
         }
@@ -214,7 +237,52 @@ struct ServerIdentityValidationSheetView: View {
                             .disclosureLabelStyle()
                     }
                     .padding(.bottom, 12)
-                default:
+                case .denied:
+                    DisclosureGroup {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(markdown: String(localized: "auth.identity.help.simple_explanation.denied.body_1", defaultValue: "접속하려는 컴퓨터가 제시한 인증서는 이 Mac에서 **차단**되어 있습니다."))
+                        }
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.callout)
+                    } label: {
+                        Text(markdown: String(localized: "auth.identity.help.what_happened.title", defaultValue: "무슨 의미인지 하나도 모르겠어요. 최대한 쉽게 설명해 주세요."))
+                            .multilineTextAlignment(.leading)
+                            .disclosureLabelStyle()
+                    }
+                    .padding(.bottom, 12)
+
+                    DisclosureGroup {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(markdown: String(localized: "auth.identity.help.why_warning.denied.body_1", defaultValue: "이 경고는 다음과 같은 상황에서 발생할 수 있습니다:"))
+                            Text(markdown: String(localized: "auth.identity.help.why_warning.denied.body_2", defaultValue: "• 사용자가 '키체인 접근'에서 이 인증서를 직접 '신뢰하지 않음'으로 설정한 경우"))
+                            Text(markdown: String(localized: "auth.identity.help.why_warning.denied.body_3", defaultValue: "• 조직의 시스템 관리자가 보안 정책에 따라 이 인증서를 차단한 경우"))
+                            Text(markdown: String(localized: "auth.identity.help.why_warning.denied.body_4", defaultValue: "• 인증서가 유출되었거나 폐기(revoke)되어 수동으로 차단 조치된 경우"))
+                        }
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.callout)
+                    } label: {
+                        Text(markdown: String(localized: "auth.identity.help.why_warning.title", defaultValue: "이 경고는 왜 표시되나요?"))
+                            .disclosureLabelStyle()
+                    }
+                    .padding(.bottom, 12)
+
+                    DisclosureGroup {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(markdown: String(localized: "auth.identity.help.consequences.denied.body_1", defaultValue: "계속 진행하면 정보 유출 등 보안상 위험이 발생할 수 있습니다.\n"))
+                            Text(markdown: String(localized: "auth.identity.help.consequences.denied.body_2", defaultValue: "특히 조직의 관리자가 차단한 경우라면, 계속 진행하기 전에 관리자에게 문의하는 것을 권장합니다."))
+                        }
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.callout)
+                    } label: {
+                        Text(markdown: String(localized: "auth.identity.help.consequences.title", defaultValue: "만약 계속 진행하면 어떻게 되나요?"))
+                            .multilineTextAlignment(.leading)
+                            .disclosureLabelStyle()
+                    }
+                    .padding(.bottom, 12)
+                case .none:
                     DisclosureGroup {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(markdown: String(localized: "auth.identity.help.simple_explanation.untrusted.body_1", defaultValue: "컴퓨터가 제시한 신분증 (인증서)의 진위를 검증할 수 없기 때문에 이 경고가 표시되었습니다.\n"))
@@ -304,8 +372,10 @@ struct ServerIdentityValidationSheetView: View {
                         Button(String(localized: "auth.identity.trust_once", defaultValue: "이번만 신뢰하기")) {
                             handler(.proceed(.once))
                         }
-                        Button(String(localized: "auth.identity.trust_always", defaultValue: "항상 신뢰하기")) {
-                            handler(.proceed(.always))
+                        if extraInfo != .denied {
+                            Button(String(localized: "auth.identity.trust_always", defaultValue: "항상 신뢰하기")) {
+                                handler(.proceed(.always))
+                            }
                         }
                     } label: {
                         Text(markdown: String(localized: "auth.identity.proceed", defaultValue: "계속 진행"))
@@ -325,8 +395,10 @@ struct ServerIdentityValidationSheetView: View {
                         Button(String(localized: "auth.identity.trust_once", defaultValue: "이번만 신뢰하기")) {
                             handler(.proceed(.once))
                         }
-                        Button(String(localized: "auth.identity.trust_always", defaultValue: "항상 신뢰하기")) {
-                            handler(.proceed(.always))
+                        if extraInfo != .denied {
+                            Button(String(localized: "auth.identity.trust_always", defaultValue: "항상 신뢰하기")) {
+                                handler(.proceed(.always))
+                            }
                         }
                     } label: {
                         Text(markdown: String(localized: "auth.identity.proceed", defaultValue: "계속 진행"))

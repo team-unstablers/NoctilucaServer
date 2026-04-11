@@ -6,14 +6,30 @@
 import Foundation
 @testable import SiriusKitCore
 
-final class MockStream: SiriusKitCore.Stream {
-    private(set) var writtenFrames: [(opcode: MessageOpcode, data: Data)] = []
-    private(set) var isClosed = false
+/// `@unchecked Sendable` mock stream for unit tests.
+///
+/// 여러 Task가 동시에 `write(frame:)` / `writeNonBlocking(frame:)` 을 호출하는
+/// 시나리오(예: `ChannelHandleImpl` 의 fast-path / directSend spawn path)를 테스트할 때
+/// `writtenFrames` 배열 동시 수정으로 인한 data race가 발생할 수 있다.
+/// 모든 상태는 `stateLock` 뒤에서 보호한다.
+final class MockStream: SiriusKitCore.Stream, @unchecked Sendable {
+    private let stateLock = NSLock()
+    private var _writtenFrames: [(opcode: MessageOpcode, data: Data)] = []
+    private var _isClosed = false
+
+    var writtenFrames: [(opcode: MessageOpcode, data: Data)] {
+        stateLock.withLock { _writtenFrames }
+    }
+    var isClosed: Bool {
+        stateLock.withLock { _isClosed }
+    }
 
     var writeError: StreamError?
 
     override func write(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) async -> Result<UInt32, StreamError> {
-        writtenFrames.append((opcode: opcode, data: data))
+        stateLock.withLock {
+            _writtenFrames.append((opcode: opcode, data: data))
+        }
 
         if let error = writeError {
             return .failure(error)
@@ -28,8 +44,26 @@ final class MockStream: SiriusKitCore.Stream {
         return .success(UInt32(data.count))
     }
 
+    override func writeNonBlocking(frame data: Data, opcode: MessageOpcode, length: UInt32? = nil) -> Result<UInt32, StreamError> {
+        stateLock.withLock {
+            _writtenFrames.append((opcode: opcode, data: data))
+        }
+
+        if let error = writeError {
+            return .failure(error)
+        }
+        return .success(UInt32(data.count))
+    }
+
+    override func writeNonBlocking(_ data: Data) -> Result<UInt32, StreamError> {
+        if let error = writeError {
+            return .failure(error)
+        }
+        return .success(UInt32(data.count))
+    }
+
     override func close() async throws {
-        isClosed = true
+        stateLock.withLock { _isClosed = true }
         continuation.finish()
     }
 

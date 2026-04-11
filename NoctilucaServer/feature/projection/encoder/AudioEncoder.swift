@@ -24,23 +24,24 @@ struct AudioEncoderConfiguration {
     }
 }
 
-struct EncodedAudioFrame {
+struct EncodedAudioFrame: Sendable {
     let header: FrameDataHeader
     let data: Data
 }
 
-enum AudioEncoderEvent {
+enum AudioEncoderEvent: Sendable {
     /// 프레임이 인코딩되어 준비되었음을 알립니다.
     case frameEncoded(EncodedAudioFrame)
 
     /// 인코딩 도중에 오류가 발생했음을 알립니다.
-    case errorOccurred(Error)
+    case errorOccurred(any Error)
 
     /// 인코더가 정지되었음을 알립니다.
     case stopped
 }
 
-protocol AudioEncoder: AnyObject {
+/// NOTE: 본체 프로토콜에 Sendable 표식 필요. 사유는 `VideoEncoder` 주석 참조.
+protocol AudioEncoder: AnyObject, Sendable {
     var events: AsyncStream<AudioEncoderEvent> { get }
 
     func prepare(with configuration: AudioEncoderConfiguration) throws

@@ -11,7 +11,7 @@ import Foundation
 import OSLog
 #endif
 
-public final class SiriusLogger {
+public final class SiriusLogger: @unchecked Sendable {
     public typealias DestinationBuilder = @Sendable (_ subsystem: String, _ category: String) -> [any SiriusLogDestination]
 
     public static var defaultSubsystem: String {
@@ -19,8 +19,8 @@ public final class SiriusLogger {
     }
 
     private static let configurationQueue = DispatchQueue(label: "so.libsirius.SiriusKit.logger.config")
-    private static var minimumLevel: SiriusLogLevel = .info
-    private static var destinationBuilder: DestinationBuilder = SiriusLogger.defaultDestinations
+    nonisolated(unsafe) private static var minimumLevel: SiriusLogLevel = .info
+    nonisolated(unsafe) private static var destinationBuilder: DestinationBuilder = SiriusLogger.defaultDestinations
 
     private let subsystem: String
     private let category: String

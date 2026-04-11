@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class SiriusKitMeta {
+public final class SiriusKitMeta: Sendable {
     private static var frameworkBundle: Bundle {
         return Bundle(for: SiriusKitMeta.self)
     }
@@ -20,5 +20,5 @@ public class SiriusKitMeta {
         return frameworkBundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
     }
 
-    public static var currentProtocolVersion: SiriusProtocolVersion = .v1_0
+    public static let currentProtocolVersion: SiriusProtocolVersion = .v1_0
 }

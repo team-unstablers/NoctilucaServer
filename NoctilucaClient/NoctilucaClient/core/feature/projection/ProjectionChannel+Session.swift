@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 
 import SiriusKitClient
 
@@ -99,7 +98,7 @@ extension ProjectionChannel {
                 )
 
                 do {
-                    try await self.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
+                    try await self.handle.send(opcode: .audioProjectionRequest, message: AudioProjectionRequest(
                         identifier: identifier,
                         source: source,
                         preferredCodecs: preferredCodecs
@@ -139,21 +138,28 @@ extension ProjectionChannel {
             throw ProjectionChannelError.channelClosed
         }
 
-        let projectionAppSettings = SettingsStore.shared.settings.projection
+        let projectionAppSettings = await SettingsStore.shared.settings.projection
         let enableJitterBuffer = projectionAppSettings.enableJitterBuffer
         let jitterBufferPreset = projectionAppSettings.jitterBufferPreset
-        let session = await ProjectionSession(id: identifier, sourceDescriptor: source, dataChannel: channel, controlChannel: self, enableJitterBuffer: enableJitterBuffer, jitterBufferPreset: jitterBufferPreset)
+        
+        let session = await ProjectionSession(
+            id: identifier,
+            sourceDescriptor: source,
+            dataChannel: channel,
+            controlChannel: self,
+            enableJitterBuffer: enableJitterBuffer,
+            jitterBufferPreset: jitterBufferPreset
+        )
+
+        // init 은 동기이고, 디코더/consumer task 는 setup() 에서 셋업한다.
+        await session.setup()
 
         try await session.prepare(codec: response.codec)
         try await session.start()
 
         await state.setSession(identifier, session)
 
-        defer {
-            Task { @MainActor in
-                self.events.send(.sessionCreated(session))
-            }
-        }
+        continuation.yield(.sessionCreated(session))
 
         return session
     }
@@ -221,7 +227,7 @@ extension ProjectionChannel {
         let allAudioSessions = await state.removeAllAudioSessions()
         for session in allAudioSessions {
             do {
-                try session.stop()
+                try await session.stop()
             } catch {
                 logger.warning("Failed to stop audio projection session: \(error)")
             }
@@ -249,9 +255,7 @@ extension ProjectionChannel {
             logger.error("Failed to stop projection session \(identifier): \(error)")
         }
 
-        Task { @MainActor in
-            self.events.send(.sessionDestroyed(identifier, reason: event.reason, message: event.message))
-        }
+        continuation.yield(.sessionDestroyed(identifier, reason: event.reason, message: event.message))
     }
 
     func handleProjectionSessionChangedEvent(_ event: ProjectionSessionChangedEvent) async {
@@ -272,7 +276,7 @@ extension ProjectionChannel {
             logger.info("Reconfiguring decoder for session \(identifier) with new codec: \(newCodec.fourCC)")
             do {
                 try await session.reconfigure(codec: newCodec)
-                try session.decoder?.start()
+                try await session.decoder?.start()
             } catch {
                 logger.error("Failed to reconfigure session \(identifier): \(error)")
             }

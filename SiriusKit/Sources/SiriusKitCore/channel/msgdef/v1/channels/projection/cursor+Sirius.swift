@@ -18,7 +18,7 @@ public extension MessageOpcode {
     static let cursorEvent: MessageOpcode = .init(rawValue: 0x80A5)
 }
 
-public struct SubscribeCursorEventsFlags: OptionSet {
+public struct SubscribeCursorEventsFlags: OptionSet, Sendable {
     public let rawValue: UInt32
     
     public init(rawValue: UInt32) {
@@ -210,7 +210,7 @@ public struct CursorImageEvent: SiriusMessage {
 public struct CursorEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_CursorEvent
 
-    public enum Event {
+    public enum Event: Sendable {
         case moveEvent(CursorMoveEvent)
         case imageEvent(CursorImageEvent)
         case none

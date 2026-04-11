@@ -1,5 +1,5 @@
 //
-//  EventInjector.swift
+//  EventInjector+Keyboard.swift
 //  NoctilucaServer
 //
 //  Created by Gyuhwan Park on 12/11/25.
@@ -14,24 +14,14 @@ import SiriusKit
 
 extension EventInjector {
     func postKeyDown(_ keyCode: Int) {
-        enqueue { [weak self] in
-            self?.handleKeyDown(keyCode)
-        }
+        handleKeyDown(keyCode)
     }
-    
+
     func postKeyUp(_ keyCode: Int) {
-        enqueue { [weak self] in
-            self?.handleKeyUp(keyCode)
-        }
+        handleKeyUp(keyCode)
     }
 
     func postUcs4Input(_ ucs4: UInt32) {
-        enqueue { [weak self] in
-            self?.handleUcs4Input(ucs4)
-        }
-    }
-
-    private func handleUcs4Input(_ ucs4: UInt32) {
         guard let scalar = UnicodeScalar(ucs4) else { return }
         let utf16Chars = Array(String(scalar).utf16)
 
@@ -52,33 +42,33 @@ extension EventInjector {
         if keyDownState.contains(keyCode) {
             return
         }
-        
+
         keyDownState.insert(keyCode)
         postKeyEvent(keyCode: keyCode, isDown: true, isRepeat: false)
 
         guard isRepeatableKey(keyCode) else {
             return
         }
-        
+
         repeatableKeysInOrder.removeAll(where: { $0 == keyCode })
         repeatableKeysInOrder.append(keyCode)
         repeatKey = keyCode
         refreshKeyRepeatSettings()
         restartRepeatTimerIfNeeded()
     }
-    
+
     func handleKeyUp(_ keyCode: Int) {
         let wasDown = keyDownState.contains(keyCode)
         if wasDown {
             keyDownState.remove(keyCode)
         }
-        
+
         postKeyEvent(keyCode: keyCode, isDown: false, isRepeat: false)
 
         guard isRepeatableKey(keyCode) else {
             return
         }
-        
+
         repeatableKeysInOrder.removeAll(where: { $0 == keyCode })
 
         if repeatKey == keyCode {
@@ -92,27 +82,32 @@ extension EventInjector {
             }
         }
     }
-    
+
     func restartRepeatTimerIfNeeded() {
         stopRepeatTimer()
-        
+
         guard isRepeatEnabled(), let repeatKey = repeatKey, keyDownState.contains(repeatKey) else {
             return
         }
-        
+
         let timer = DispatchSource.makeTimerSource(queue: serialQueue)
         let delay = dispatchInterval(for: repeatDelay)
         let interval = dispatchInterval(for: repeatInterval)
-        
+
         timer.schedule(deadline: .now() + delay, repeating: interval)
         timer.setEventHandler { [weak self] in
-            self?.handleRepeatTick()
+            guard let self else { return }
+            // 타이머는 serialQueue(= actor 의 unowned executor) 위에서 실행되므로
+            // actor-isolated 메서드를 hop 없이 직접 호출할 수 있다.
+            self.assumeIsolated { me in
+                me.handleRepeatTick()
+            }
         }
         timer.resume()
-        
+
         repeatTimer = timer
     }
-    
+
     func handleRepeatTick() {
         guard let repeatKey = repeatKey,
               keyDownState.contains(repeatKey),
@@ -121,10 +116,10 @@ extension EventInjector {
             stopRepeatTimer()
             return
         }
-        
+
         postKeyEvent(keyCode: repeatKey, isDown: true, isRepeat: true)
     }
-    
+
     func isRepeatableKey(_ keyCode: Int) -> Bool {
         switch keyCode {
         case kVK_Shift,

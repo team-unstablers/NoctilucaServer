@@ -8,7 +8,7 @@
 import Foundation
 
 // 여기에 뭐가 더 들어가야 하지...?
-public struct WindowRole: RawRepresentable, Hashable, Equatable, Codable {
+public struct WindowRole: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -28,7 +28,7 @@ public struct WindowRole: RawRepresentable, Hashable, Equatable, Codable {
     public static let notification = WindowRole(rawValue: 5)
 }
 
-public struct WindowFilterExpressionOperator: RawRepresentable, Hashable, Equatable, Codable {
+public struct WindowFilterExpressionOperator: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -43,7 +43,7 @@ public struct WindowFilterExpressionOperator: RawRepresentable, Hashable, Equata
     public static let matchRegex = WindowFilterExpressionOperator(rawValue: 3)
 }
 
-public struct WindowFilterOperator: RawRepresentable, Hashable, Equatable, Codable {
+public struct WindowFilterOperator: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

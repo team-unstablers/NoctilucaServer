@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 final class ClientAuthPluginRegistry {
     static let shared = ClientAuthPluginRegistry()
 

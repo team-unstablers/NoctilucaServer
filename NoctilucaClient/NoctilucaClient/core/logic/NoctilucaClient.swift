@@ -9,6 +9,8 @@ import Foundation
 import Combine
 import Security
 
+import Atomics
+
 import SiriusKitClient
 
 enum NoctilucaClientError: LocalizedError {
@@ -150,7 +152,8 @@ struct InputWarning: Sendable, Equatable {
     let message: String
 }
 
-class NoctilucaClient: ObservableObject {
+@MainActor
+final class NoctilucaClient: ObservableObject, Sendable {
     let logger = SiriusLogger(category: "NoctilucaClient", subsystem: "app.noctiluca.client.logic.NoctilucaClient")
     
     let id: UUID = UUID()
@@ -173,30 +176,41 @@ class NoctilucaClient: ObservableObject {
         return total / Double(pingRTTSamples.count)
     }
     
-    
     var sessionID: UUID?
+    var identity: ServerIdentity? {
+        session.identity
+    }
+    
     var mainChannel: MainChannel!
     
     var hidioChannel: HIDIOChannel!
     var projectionChannel: ProjectionChannel!
+    weak var clipboardChannel: ClipboardChannel?
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
+    var noctilucaFeatureProvider: NoctilucaFeatureProvider? = nil
     var sessionSettings: SessionSettings? = nil
-    
+
     // 기존 접속으로부터 승계된 서버 아이덴티티 검증 정보
     var succeedValidationDecision: SucceedValidationDecision? = nil
     
     // 디시전 UI를 띄우기 전에 접속 종료 처리되는 것을 막기 위한 hacky한 플래그
     private(set) var isValidatingServerIdentity: Bool = false
     
+    private var isFinalized = ManagedAtomic<Bool>(false)
+    
     @Published
     private(set) var phase: NoctilucaClientPhase = .initial {
         didSet {
-            Task {
-                await MainActor.run() {
-                    self.uiEvents.send(.phaseChanged(phase))
-                }
+            guard phase != oldValue else {
+                return
+            }
+            
+            let uiEvents = self.uiEvents
+            let phase = self.phase
+            Task { @MainActor in
+                uiEvents.send(.phaseChanged(phase))
             }
         }
     }
@@ -214,7 +228,7 @@ class NoctilucaClient: ObservableObject {
         authenticator.configureAutoCredentials(sessionEntries: sessionEntries, globalEntries: globalEntries)
     }
     
-    private func setupValidationPolicy() {
+    private func setupValidationPolicy() async {
         let policy = SettingsStore.shared.settings.security.tlsValidationPolicy
         
         let validationBlock: ServerIdentityValidationBlock = { [weak self] identity in
@@ -223,32 +237,35 @@ class NoctilucaClient: ObservableObject {
                 return .deny
             }
             
-            self.isValidatingServerIdentity = true
-            
-            // 과거로부터 '승계된' 디시전 사항이 있는지 확인합니다.
-            guard let succeedDecision = self.succeedValidationDecision else {
-                // 만약 없다면, 새로운 접속입니다. '이 인증서 믿을 수 없는데, 그래도 접속할래?' 따위의 UI를 표시하고, 접속을 끊어야 합니다.
-                self.uiEvents.send(.serverIdentityValidationNeeded(identity))
-                return .deny
-            }
-            
-            // 승계된 디시전이 있습니다.
-            defer { self.isValidatingServerIdentity = false }
-
-            do {
-                // 최소한의 검증: UI를 표시해서 디시전을 받는 그 짧은 사이에도 인증서는 바꿔 끼워질 수 있습니다.
-                //              모든 것을 믿을 수 없는 어지러운 세상(乱世) 입니다.
-                let currentFingerprint = try identity.fingerprint()
-                guard succeedDecision.fingerprint == currentFingerprint else {
-                    // TODO: 이 호스트는 수상한 행동을 합니다. 사용자에게 정말 위험하니 조심하라고 알리는 게 좋을 것 같습니다.
+            /// DispatchQueue.main에서 실행이 보장되므로 assumeIsolated 사용한다
+            return MainActor.assumeIsolated {
+                self.isValidatingServerIdentity = true
+                
+                // 과거로부터 '승계된' 디시전 사항이 있는지 확인합니다.
+                guard let succeedDecision = self.succeedValidationDecision else {
+                    // 만약 없다면, 새로운 접속입니다. '이 인증서 믿을 수 없는데, 그래도 접속할래?' 따위의 UI를 표시하고, 접속을 끊어야 합니다.
+                    self.uiEvents.send(.serverIdentityValidationNeeded(identity))
                     return .deny
                 }
                 
-                // 승계된 디시전이 유효합니다. 그대로 따릅니다.
-                return succeedDecision.decision
-            } catch {
-                // 서버 아이덴티티를 검증하는 도중에 오류가 발생했습니다. 보안을 위해 거부합니다.
-                return .deny
+                // 승계된 디시전이 있습니다.
+                defer { self.isValidatingServerIdentity = false }
+                
+                do {
+                    // 최소한의 검증: UI를 표시해서 디시전을 받는 그 짧은 사이에도 인증서는 바꿔 끼워질 수 있습니다.
+                    //              모든 것을 믿을 수 없는 어지러운 세상(乱世) 입니다.
+                    let currentFingerprint = try identity.fingerprint()
+                    guard succeedDecision.fingerprint == currentFingerprint else {
+                        // TODO: 이 호스트는 수상한 행동을 합니다. 사용자에게 정말 위험하니 조심하라고 알리는 게 좋을 것 같습니다.
+                        return .deny
+                    }
+                    
+                    // 승계된 디시전이 유효합니다. 그대로 따릅니다.
+                    return succeedDecision.decision
+                } catch {
+                    // 서버 아이덴티티를 검증하는 도중에 오류가 발생했습니다. 보안을 위해 거부합니다.
+                    return .deny
+                }
             }
         }
         
@@ -263,7 +280,7 @@ class NoctilucaClient: ObservableObject {
     }
     
     func setup() async throws {
-        self.setupValidationPolicy()
+        await self.setupValidationPolicy()
         
         await session.channelManager.setDelegate(self)
         try await session.setup()
@@ -275,7 +292,7 @@ class NoctilucaClient: ObservableObject {
     }
     
     private func mainChannelEventLoop() async {
-        guard mainChannel != nil else {
+        guard let mainChannel else {
             logger.error("mainChannel is not initialized.")
             return
         }
@@ -367,15 +384,19 @@ class NoctilucaClient: ObservableObject {
             }
 
             Task {
-                try? await self.mainChannel.sendPing()
+                guard let mainChannel = self.mainChannel else {
+                    continuation.finish()
+                    return
+                }
+
+                try? await mainChannel.sendPing()
             }
         }
 
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask {
                 var iterator = stream.makeAsyncIterator()
-                _ = await iterator.next()
-                return true
+                return await iterator.next() != nil
             }
 
             group.addTask {
@@ -392,6 +413,7 @@ class NoctilucaClient: ObservableObject {
 
             return result
         }
+        return true
     }
 
     @inline(__always) // 이게 효과가 있을지?
@@ -400,6 +422,15 @@ class NoctilucaClient: ObservableObject {
             logger.error("assertPhase(): Expected phase \(expected), but current phase is \(self.phase)")
             throw NoctilucaClientError.invalidPhase
         }
+    }
+
+    func requireMainChannel() throws -> MainChannel {
+        guard let mainChannel else {
+            logger.error("mainChannel is not initialized.")
+            throw NoctilucaClientError.invalidPhase
+        }
+
+        return mainChannel
     }
     
     /// Phase 전환을 시도한다.
@@ -450,7 +481,7 @@ class NoctilucaClient: ObservableObject {
     }
 
     func close() async {
-        guard self.phase != .closed else {
+        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
 
@@ -470,6 +501,9 @@ class NoctilucaClient: ObservableObject {
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
         self.pingTask?.cancel()
+        self.pongHandler = nil
+
+        self.mainChannel = nil
 
         await self.session.shutdown()
 
@@ -480,33 +514,33 @@ class NoctilucaClient: ObservableObject {
 
 extension NoctilucaClient: SiriusClientDelegate {
     func siriusClientDidCloseTransport(_ client: SiriusKitClient.SiriusClient) {
-        Task {
-            await self.close()
+        Task { [weak self] in
+            await self?.close()
         }
     }
 
     func siriusClient(_ client: SiriusClient, didCreateMainChannel mainChannel: MainChannel) {
         self.mainChannel = mainChannel
-        self.eventLoopTask = Task.detached(priority: .userInitiated) {
-            await self.mainChannelEventLoop()
+        self.eventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.mainChannelEventLoop()
         }
-        self.pingTask = Task.detached(priority: .userInitiated) {
-            await self.pingLoop()
+        self.pingTask = Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.pingLoop()
         }
 
-        Task.detached {
-            try await self.sendClientHello()
+        Task.detached { [weak self] in
+            try await self?.sendClientHello()
         }
     }
     
     func siriusClient(_ client: SiriusClient, didEncounterError error: any Error) {
-        Task.detached {
+        Task.detached { [weak self] in
             if let error = error as? ClientTransportError {
-                self.handleTransportError(error)
+                await self?.handleTransportError(error)
                 return
             }
             
-            self.handleError(error)
+            await self?.handleError(error)
         }
     }
     
@@ -519,27 +553,27 @@ extension NoctilucaClient: SiriusClientDelegate {
         }
         
         
-        Task { @MainActor in
-            self.uiEvents.send(.errorOccurred(error))
+        Task { @MainActor [weak self] in
+            self?.uiEvents.send(.errorOccurred(error))
         }
     }
     
     private func handleError(_ error: (any Error)) {
-        // TODO
+        logger.error("Unhandled error: \(error)")
     }
 }
 
 
 extension NoctilucaClient: ChannelManagerDelegate {
     func channelManager(_ manager: ChannelManager, didRegisterChannel channel: Channel, for feature: SiriusFeature) {
-        Task { @MainActor in
-            self.uiEvents.send(.channelCreated(feature, channel))
+        Task { @MainActor [weak self] in
+            self?.uiEvents.send(.channelCreated(feature, channel))
         }
     }
     
     func channelManager(_ manager: ChannelManager, willUnregisterChannel channel: Channel) {
-        Task { @MainActor in
-            self.uiEvents.send(.channelClosed(channel.identifier))
+        Task { @MainActor [weak self] in
+            self?.uiEvents.send(.channelClosed(channel.identifier))
         }
     }
 }

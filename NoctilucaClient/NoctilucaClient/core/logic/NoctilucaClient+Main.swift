@@ -48,11 +48,39 @@ extension NoctilucaClient {
         // _ = try await channel.createSession(for: primaryDisplayID, projectionSettings: sessionSettings?.projection)
     }
     
+    func initializeClipboard() async throws {
+        guard let channel = try await session.channelManager.openChannel(for: .clipboard, identifier: ChannelIdentifier()) as? ClipboardChannel else {
+            // FIXME
+            return
+        }
+        
+        self.clipboardChannel = channel
+        channel.clipboardSettings = self.sessionSettings?.clipboard
+            ?? SettingsStore.shared.settings.sessionDefaults.clipboard
+        self.logger.info("initializeClipboard(): created ClipboardChannel")
+
+        guard channel.clipboardSettings.enabled else {
+            self.logger.info("initializeClipboard(): clipboard disabled by settings, skipping subscription")
+            return
+        }
+
+        let request = SubscribeClipboardRequest(requestId: 1, flags: 0)
+        try await clipboardChannel?.handle.send(opcode: .subscribeClipboardRequest, message: request)
+    }
+    
     
     func startSession() async throws {
         try assertPhase(expected: .ready)
         
-        try await initializeHIDIO()
-        try await initializeProjection()
+        async let hidio: Void = await initializeHIDIO()
+        async let projection: Void = try await initializeProjection()
+        
+        _ = try await (hidio, projection)
+        
+        do {
+            try await initializeClipboard()
+        } catch {
+            logger.warning("Failed to initialize clipboard channel: \(error)")
+        }
     }
 }

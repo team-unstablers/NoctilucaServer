@@ -7,16 +7,16 @@
 
 import Foundation
 
-public struct CodecOptionValue: RawRepresentable, Codable, Hashable, Equatable {
-    public var rawValue: String
+public struct CodecOptionValue: RawRepresentable, Codable, Hashable, Equatable, Sendable {
+    public let rawValue: String
     
     public init(rawValue: String) {
         self.rawValue = rawValue
     }
 }
 
-public struct CodecOptionKey: RawRepresentable, Codable, Hashable, Equatable {
-    public var rawValue: String
+public struct CodecOptionKey: RawRepresentable, Codable, Hashable, Equatable, Sendable {
+    public let rawValue: String
     
     public init(rawValue: String) {
         self.rawValue = rawValue
@@ -59,7 +59,7 @@ public struct CodecOptionKey: RawRepresentable, Codable, Hashable, Equatable {
     public static let quantizeLevel = Self(rawValue: "quantize-level")
 }
 
-public struct CodecOptions: Codable, Equatable, Hashable {
+public struct CodecOptions: Codable, Equatable, Hashable, Sendable {
     /// '필수' 옵션들 - 해당 옵션들이 서로 지원되지 않으면 호환되지 않는다고 판정됩니다
     public var mandatory: [CodecOptionKey: CodecOptionValue]
     /// '선택' 옵션들 - 희망 사항으로써 둡니다. 해당 옵션들이 서로 지원되지 않아도 호환된다고 판정됩니다

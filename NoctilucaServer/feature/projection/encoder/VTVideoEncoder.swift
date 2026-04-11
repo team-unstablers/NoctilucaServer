@@ -13,9 +13,11 @@ private final class FrameEncodeContext {
     }
 }
 
-final class VTVideoEncoder: NSObject, VideoEncoder {
+/// @unchecked Sendable: 모든 가변 상태 접근이 `workerQueue.sync` 로 직렬화되어 있다.
+/// 문서 Rule G 확장: 고빈도 미디어 파이프라인 class 예외.
+final class VTVideoEncoder: NSObject, VideoEncoder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "VTVideoEncoder")
-    private let workerQueue: DispatchQueue
+    fileprivate let workerQueue: DispatchQueue
     internal let callbackQueue: DispatchQueue
     private let defaultTargetBitrateKbps = 1200
     private let defaultMaxBitrateKbps = 2400
@@ -91,15 +93,33 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     }
     
     func stop() throws {
-        workerQueue.sync {
-            if let session = compressionSession {
-                VTCompressionSessionCompleteFrames(session, untilPresentationTimeStamp: .invalid)
-                VTCompressionSessionInvalidate(session)
-            }
+        // lock 안에서는 "소유권 탈취" 만 수행한다.
+        // VTCompressionSessionCompleteFrames 는 모든 pending output callback 이 발화될 때까지
+        // 블록하는데, 그 콜백들이 다시 `workerQueue.sync` 를 획득하려 하기 때문에
+        // lock 을 잡은 채로 CompleteFrames 를 호출하면 데드락/순서 역전이 발생한다.
+        // (FigSimpleMutexLock 크래시의 원인)
+        let (sessionToTeardown, refConToRelease) = workerQueue.sync {
+            () -> (VTCompressionSession?, UnsafeMutableRawPointer?) in
+            let session = compressionSession
+            let refCon = compressionSessionRefCon
             compressionSession = nil
-            releaseCompressionSessionRefConIfNeeded()
+            compressionSessionRefCon = nil
             isStarted = false
+            return (session, refCon)
         }
+
+        // lock 밖에서 drain + invalidate. 이제 콜백이 들어와도 workerQueue 를 즉시
+        // 획득해 정상적으로 drain 될 수 있다. CompleteFrames 가 반환되면 모든 pending
+        // 콜백의 발화가 끝났다는 의미이므로, 이후 Invalidate + refCon release 가 안전하다.
+        if let session = sessionToTeardown {
+            VTCompressionSessionCompleteFrames(session, untilPresentationTimeStamp: .invalid)
+            VTCompressionSessionInvalidate(session)
+        }
+
+        if let refCon = refConToRelease {
+            Unmanaged<VTVideoEncoder>.fromOpaque(refCon).release()
+        }
+
         continuation.finish()
     }
     
@@ -109,10 +129,14 @@ final class VTVideoEncoder: NSObject, VideoEncoder {
     }
     
     func encode(frameID: UInt64, sampleBuffer: CMSampleBuffer) throws {
-        guard isStarted else { throw VideoEncoderError.notStarted }
         guard CMSampleBufferDataIsReady(sampleBuffer) else { throw VideoEncoderError.invalidSampleBuffer }
-        
+
         try workerQueue.sync {
+            // isStarted 체크를 lock 안으로 이동: stop() 과의 TOCTOU 레이스 방지.
+            // lock 밖에서 체크하면 guard 통과 직후 stop() 이 isStarted=false 로 바꿀 수 있고,
+            // 그 상태에서 ensureCompressionSession 이 호출되면 "이미 중지된 인코더" 에
+            // 좀비 세션이 생성되는 문제가 발생한다.
+            guard isStarted else { throw VideoEncoderError.notStarted }
             let session = try ensureCompressionSession(for: sampleBuffer)
             guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
                 throw VideoEncoderError.invalidSampleBuffer
@@ -886,7 +910,9 @@ private func compressionOutputCallback(
 
     // 키프레임마다 SPS/PPS를 재전송하여 첫 프레임 드랍 시에도 클라이언트가 디코더를 초기화할 수 있도록 함
     if isKeyFrame {
-        encoder.shouldEmitParameterSets = true
+        encoder.workerQueue.sync {
+            encoder.shouldEmitParameterSets = true
+        }
     }
 
     guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
@@ -929,20 +955,22 @@ private func compressionOutputCallback(
         formatDescription: nil
     )
     
-    if encoder.shouldEmitParameterSets {
-        assert(encoder.configuration != nil, "configuration must be set if parameter sets are to be emitted")
+    encoder.workerQueue.sync {
+        if encoder.shouldEmitParameterSets {
+            assert(encoder.configuration != nil, "configuration must be set if parameter sets are to be emitted")
+            
+            let configuration = encoder.configuration!
+            let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)!
+            
+            let parameterSetMessage = CodecParameterSetMessage(from: formatDescription, codec: configuration.codec.fourCC)
+            
+            encoder.continuation.yield(with: .success(.parameterSetChanged(
+                consume parameterSetMessage
+            )))
+            
+            encoder.shouldEmitParameterSets = false
+        }
         
-        let configuration = encoder.configuration!
-        let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)!
-        
-        let parameterSetMessage = CodecParameterSetMessage(from: formatDescription, codec: configuration.codec.fourCC)
-        
-        encoder.continuation.yield(with: .success(.parameterSetChanged(
-            consume parameterSetMessage
-        )))
-        
-        encoder.shouldEmitParameterSets = false
+        encoder.continuation.yield(with: .success(.frameEncoded(consume encodedFrame)))
     }
-    
-    encoder.continuation.yield(with: .success(.frameEncoded(consume encodedFrame)))
 }

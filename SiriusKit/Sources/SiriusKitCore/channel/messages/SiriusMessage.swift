@@ -14,7 +14,7 @@ public enum SiriusMessageError: Error {
     case invalidProtobufMessage
 }
 
-public struct MessageOpcode: RawRepresentable, Equatable, Hashable {
+public struct MessageOpcode: RawRepresentable, Equatable, Hashable, Sendable {
     public typealias RawValue = UInt16
     public let rawValue: UInt16
 
@@ -31,7 +31,7 @@ public struct MessageOpcode: RawRepresentable, Equatable, Hashable {
     public static let encapsulatedProtocolMessage = MessageOpcode(rawValue: 0xFFFE)
 }
 
-protocol SiriusEnum<ProtobufEnum>: RawRepresentable, Equatable, Hashable where RawValue: SignedInteger {
+protocol SiriusEnum<ProtobufEnum>: RawRepresentable, Equatable, Hashable, Sendable where RawValue: SignedInteger {
     associatedtype ProtobufEnum: SwiftProtobuf.Enum
 
     var rawValue: RawValue { get }
@@ -40,7 +40,7 @@ protocol SiriusEnum<ProtobufEnum>: RawRepresentable, Equatable, Hashable where R
 
 }
 
-protocol SiriusStruct<ProtobufMessage> {
+protocol SiriusStruct<ProtobufMessage>: Sendable {
     associatedtype ProtobufMessage: SwiftProtobuf.Message
 
     func toProtobufMessage() -> ProtobufMessage
@@ -48,7 +48,7 @@ protocol SiriusStruct<ProtobufMessage> {
     init(from protobufMessage: ProtobufMessage) throws
 }
 
-public protocol DecodableSiriusMessage {
+public protocol DecodableSiriusMessage: Sendable {
     static func fromProtobufBytes(_ bytes: Data) throws -> Self
 }
 

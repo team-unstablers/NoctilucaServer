@@ -6,7 +6,11 @@ import SiriusKitClient
 import libturbojpeg
 
 /// MJPG (tiled JPEG) 소프트웨어 디코더
-final class MJPGVideoDecoder: VideoDecoder {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// 내부 workerQueue/callbackQueue 기반 직렬화와 호출자(ProjectionSession actor)의
+/// 순차 호출 보장으로 실제 thread-safety 확보.
+final class MJPGVideoDecoder: VideoDecoder, @unchecked Sendable {
     weak var delegate: VideoDecoderDelegate?
     weak var tileDelegate: TiledVideoDecoderDelegate?
 
@@ -146,7 +150,7 @@ private extension MJPGVideoDecoder {
         results.initialize(repeating: nil)
         defer { results.deallocate() }
 
-        var firstError: Error?
+        nonisolated(unsafe) var firstError: Error?
         let errorLock = NSLock()
 
         DispatchQueue.concurrentPerform(iterations: count) { index in

@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct SiriusQUICAlpn: RawRepresentable, Equatable, Hashable {
+public struct SiriusQUICAlpn: RawRepresentable, Equatable, Hashable, Sendable {
     public typealias RawValue = String
     public var rawValue: String
     

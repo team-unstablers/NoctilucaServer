@@ -76,7 +76,7 @@ protocol NoctilucaClientSessionDelegate: AnyObject {
     func noctilucaClientSessionDidClose(_ session: NoctilucaClientSession)
 }
 
-class NoctilucaClientSession: Identifiable {
+actor NoctilucaClientSession: @preconcurrency Identifiable {
     let logger = SiriusLogger(category: "NoctilucaClientSession", subsystem: "app.noctiluca.server")
     let eventLogger: SiriusEventLogger
     
@@ -105,6 +105,8 @@ class NoctilucaClientSession: Identifiable {
     private var phaseShiftAssertionTask: Task<Void, Never>?
     private var didNotifyClose: Bool = false
     
+    private var userActivityAssertion: UserActivityAssertion?
+    
     init(session: ClientSession, server: ServerContext) {
         self.session = session
         self.server = server
@@ -120,6 +122,8 @@ class NoctilucaClientSession: Identifiable {
             return
         }
         
+        UserActivityAssertion.wakeup()
+        self.userActivityAssertion = UserActivityAssertion.acquire()
         self.remoteAddress = session.remoteEndpoint?.description ?? "(unknown)"
         
         // 우선 5초 이내에 client hello를 받아야 한다
@@ -262,7 +266,7 @@ class NoctilucaClientSession: Identifiable {
 
         if self.phase == .ready {
             Task { @MainActor in
-                AppNotification.connectionClosed(endpoint: remoteAddress).post()
+                await AppNotification.connectionClosed(endpoint: remoteAddress).post()
             }
         }
 
@@ -280,6 +284,7 @@ class NoctilucaClientSession: Identifiable {
         self.eventLoopTask?.cancel()
 
         await self.session.close()
+        self.userActivityAssertion = nil
     }
 
     private func notifyCloseIfNeeded() {
@@ -287,19 +292,34 @@ class NoctilucaClientSession: Identifiable {
         didNotifyClose = true
         delegate?.noctilucaClientSessionDidClose(self)
     }
+    
+    // MARK: - FIXME
+    func setDelegate(_ delegate: NoctilucaClientSessionDelegate) {
+        self.delegate = delegate
+    }
+    
+    fileprivate func setMainChannel(_ mainChannel: MainChannel) {
+        self.mainChannel = mainChannel
+    }
+    
+    fileprivate func startMainChannelEventLoop() {
+        self.eventLoopTask = Task {
+            await mainChannelEventLoop()
+        }
+    }
 }
 
 extension NoctilucaClientSession: ClientSessionDelegate {
-    func clientSessionDidCloseTransport(_ session: SiriusKit.ClientSession) {
+    nonisolated func clientSessionDidCloseTransport(_ session: SiriusKit.ClientSession) {
         Task {
             await self.close()
         }
     }
     
-    func clientSessionDidCreateMainChannel(_ session: SiriusKit.ClientSession, mainChannel: MainChannel) {
-        self.mainChannel = mainChannel
-        self.eventLoopTask = Task {
-            await mainChannelEventLoop()
+    nonisolated func clientSessionDidCreateMainChannel(_ session: SiriusKit.ClientSession, mainChannel: MainChannel) {
+        Task {
+            await self.setMainChannel(mainChannel)
+            await self.startMainChannelEventLoop()
         }
     }
 }

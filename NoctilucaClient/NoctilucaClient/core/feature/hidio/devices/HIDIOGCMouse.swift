@@ -39,17 +39,18 @@ extension HIDIOVirtualDeviceIdentifier {
 /// - 이 장치가 HIDIOController에 연결되어 있는 동안, 윈도우의 루트 뷰 컨트롤러에 커서 락이 걸립니다. (= 마우스 커서가 숨겨지고, 중앙에 고정됩니다)
 ///
 ///
-class HIDIOGCMouse: HIDIOVirtualDevice {
-    private static var _shared: HIDIOGCMouse? = nil
-    
+@MainActor
+final class HIDIOGCMouse: HIDIOVirtualDevice {
+    nonisolated(unsafe) private static var _shared: HIDIOGCMouse? = nil
+
     static func shared() -> HIDIOGCMouse? {
         if _shared == nil {
             let shared = HIDIOGCMouse()
             shared.setup()
-            
+
             _shared = shared
         }
-        
+
         return _shared
     }
     
@@ -62,7 +63,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
 
     private var cancellables: Set<AnyCancellable> = []
     
-    private var controller: HIDIOController?
+    private weak var controller: HIDIOController?
 
 #if os(macOS)
     weak var window: NSWindow?
@@ -70,48 +71,58 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
 
 #if os(macOS)
     private static let recenterIntervalNanoseconds: UInt64 = 8_000_000
-    private let shouldRecenterCursor = ManagedAtomic<Bool>(false)
+    nonisolated private let shouldRecenterCursor = ManagedAtomic<Bool>(false)
     private var recenterTask: Task<Void, Never>?
 #endif
-    
+
     init() {
     }
-    
+
     deinit {
-        self.disconnect()
+        // HIDIOGCMouse 는 @MainActor 이지만 deinit 은 nonisolated.
+        // disconnect() 는 MainActor-isolated 이므로 직접 호출할 수 없다.
+        // 정상 경로에서는 상위가 disconnect() 를 호출한다는 전제.
     }
 
     fileprivate func setup() {
         NotificationCenter.default.publisher(for: .GCMouseDidConnect)
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
-                self?.logger.debug("GCMouse did connect: \(mouse)")
-                self?.updateHandler()
+                Task { @MainActor [weak self] in
+                    self?.logger.debug("GCMouse did connect: \(mouse)")
+                    self?.updateHandler()
+                }
             }
             .store(in: &cancellables)
-        
+
         NotificationCenter.default.publisher(for: .GCMouseDidDisconnect)
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
-                self?.logger.debug("GCMouse did disconnect: \(mouse)")
-                self?.updateHandler()
+                Task { @MainActor [weak self] in
+                    self?.logger.debug("GCMouse did disconnect: \(mouse)")
+                    self?.updateHandler()
+                }
             }
             .store(in: &cancellables)
- 
-        
+
+
         NotificationCenter.default.publisher(for: .GCMouseDidBecomeCurrent)
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
-                self?.logger.debug("GCMouse mouse did become current: \(mouse)")
-                self?.updateHandler()
+                Task { @MainActor [weak self] in
+                    self?.logger.debug("GCMouse mouse did become current: \(mouse)")
+                    self?.updateHandler()
+                }
             }
             .store(in: &cancellables)
-        
+
         NotificationCenter.default.publisher(for: .GCMouseDidStopBeingCurrent)
             .compactMap { $0.object as? GCMouse }
             .sink { [weak self] mouse in
-                self?.logger.debug("GCMouse mouse did stop being current: \(mouse)")
-                self?.updateHandler()
+                Task { @MainActor [weak self] in
+                    self?.logger.debug("GCMouse mouse did stop being current: \(mouse)")
+                    self?.updateHandler()
+                }
             }
             .store(in: &cancellables)
 
@@ -120,7 +131,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         } else if let firstMouse = GCMouse.mice().first {
             self.logger.debug("Found existing GCMouse (not current): \(firstMouse)")
         }
-        
+
         self.updateHandler()
     }
     
@@ -142,61 +153,69 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         guard self.controller != nil else {
             return
         }
-        
+
         for mouse in GCMouse.mice() {
             guard let mouseInput = mouse.mouseInput else {
                 return
             }
-            
+
+            // GameController 콜백은 기본적으로 main queue 에서 delivery 되지만
+            // 문서상 isolation 보장이 없으므로 Task { @MainActor } 로 명시 진입한다.
             mouseInput.mouseMovedHandler = { [weak self] mouse, deltaX, deltaY in
-                guard let controller = self?.controller else {
-                    return
-                }
-                
-                let delta = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
-                controller.moveMouseRelative(to: delta)
-                self?.requestCursorRecenter()
-            }
-            
-            func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
-                button.preferredSystemGestureState = .alwaysReceive
-                button.valueChangedHandler = { [weak self] button, value, pressed in
+                Task { @MainActor [weak self] in
                     guard let controller = self?.controller else {
                         return
                     }
-                    
-                    if pressed {
-                        controller.mouseButtonDown(button: buttonType)
-                    } else {
-                        controller.mouseButtonUp(button: buttonType)
+
+                    let delta = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
+                    controller.moveMouseRelative(to: delta)
+                    self?.requestCursorRecenter()
+                }
+            }
+
+            func setupButtonHandler(button: GCControllerButtonInput, as buttonType: MouseButtonType) {
+                button.preferredSystemGestureState = .alwaysReceive
+                button.valueChangedHandler = { [weak self] button, value, pressed in
+                    Task { @MainActor [weak self] in
+                        guard let controller = self?.controller else {
+                            return
+                        }
+
+                        if pressed {
+                            controller.mouseButtonDown(button: buttonType)
+                        } else {
+                            controller.mouseButtonUp(button: buttonType)
+                        }
                     }
                 }
-                
+
             }
-            
+
             setupButtonHandler(button: mouseInput.leftButton, as: .left)
-            
+
             if let rightButton = mouseInput.rightButton {
                 setupButtonHandler(button: rightButton, as: .right)
             }
-            
-            
+
+
             mouseInput.scroll.valueChangedHandler = { [weak self] wheel, xValue, yValue in
-                guard let controller = self?.controller else {
-                    return
-                }
-                
-                self?.logger.debug("Mouse wheel changed: xValue=\(xValue), yValue=\(yValue)")
-                
+                Task { @MainActor [weak self] in
+                    guard let controller = self?.controller else {
+                        return
+                    }
+
+                    self?.logger.debug("Mouse wheel changed: xValue=\(xValue), yValue=\(yValue)")
+
 #if os(macOS)
-                let multiplier: Float = 16.0
-                /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
-                let delta = CGPoint(x: CGFloat(xValue * multiplier), y: CGFloat(yValue * multiplier))
+                    let multiplier: Float = 16.0
+                    /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
+                    let delta = CGPoint(x: CGFloat(xValue * multiplier), y: CGFloat(yValue * multiplier))
 #else
-                /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
-                let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
+                    /// TODO: 이거 화면 회전에 대응한 값이 오지 않음!!!
+                    let delta = CGPoint(x: CGFloat(yValue), y: CGFloat(-xValue))
 #endif
-                controller.mouseWheel(delta: delta)
+                    controller.mouseWheel(delta: delta)
+                }
             }
         }
     }
@@ -216,27 +235,23 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
         self.controller = controller
         self.setupMouseInputHandler()
 #if os(macOS)
-        Task { @MainActor in
-            self.hideCursor()
-            self.startRecenterLoopIfNeeded()
-        }
+        self.hideCursor()
+        self.startRecenterLoopIfNeeded()
 #endif
     }
-    
+
     func disconnect() {
         self.controller = nil
         self.destroyMouseInputHandler()
 #if os(macOS)
-        Task { @MainActor in
-            self.showCursor()
-            self.startRecenterLoopIfNeeded()
-        }
+        self.showCursor()
+        self.stopRecenterLoop()
 #endif
     }
 
     private func requestCursorRecenter() {
 #if os(macOS)
-        shouldRecenterCursor.store(true, ordering: .relaxed)
+        shouldRecenterCursor.store(true, ordering: .releasing)
 #endif
     }
 
@@ -254,7 +269,7 @@ class HIDIOGCMouse: HIDIOVirtualDevice {
                     return
                 }
 
-                let shouldRecenter = self.shouldRecenterCursor.exchange(false, ordering: .relaxed)
+                let shouldRecenter = self.shouldRecenterCursor.exchange(false, ordering: .acquiring)
                 guard shouldRecenter else {
                     continue
                 }

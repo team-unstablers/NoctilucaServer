@@ -201,6 +201,8 @@ let hidioChannel = try await client.channelManager.openChannel(
 - QUIC 스트림 수신 로직은 현재 프레임 단위 고정 길이 수신을 가정합니다. (fragmented read TODO)
 - `TransportLayer`의 기본 구현은 비어있으며, QUIC 또는 커스텀 구현이 필요합니다.
 - MsQuic `receiveLoop`는 `SiriusFrameStreamDecoder` 기반 증분 파서를 사용합니다. 헤더는 버퍼 인덱싱으로 파싱하고 payload는 프레임 완성 시 1회 복사합니다.
+- `SiriusClient.shutdown()`은 transport disconnect 전에 `ChannelManager.teardownAllChannels()`를 호출하여 일반 채널과 main channel을 명시적으로 닫고 참조를 해제합니다. MsQuic 종료 시 retain chain을 끊기 위한 정리 순서입니다.
+- `SiriusServer`는 닫힌 `ClientSession`을 즉시 `sessions` 컬렉션에서 제거합니다. 서버 `ClientSession.close()`도 transport disconnect 전에 `ChannelManager.teardownAllChannels()`를 호출하므로, 서버 세션 종료 후 transport/stream 참조가 남지 않는 순서를 가정해도 됩니다.
 
 </section>
 <section id="about-sirius-protocol">

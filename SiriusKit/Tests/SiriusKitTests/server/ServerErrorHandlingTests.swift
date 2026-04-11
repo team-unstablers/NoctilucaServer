@@ -37,6 +37,7 @@ struct ServerErrorHandlingTests {
         await sessionHarness.clientTransport.simulateClose()
 
         #expect(sessionHarness.sessionDelegate.didCloseTransport)
+        #expect(harness.server.sessions.isEmpty)
     }
 
     @Test("여러 클라이언트가 동시에 접속할 수 있다")
@@ -64,5 +65,20 @@ struct ServerErrorHandlingTests {
 
         #expect(session1.sessionDelegate.didCloseTransport)
         #expect(!session2.sessionDelegate.didCloseTransport)
+        #expect(harness.server.sessions.count == 2)
+    }
+
+    @Test("이미 닫힌 transport는 ClientSession을 만들지 않는다")
+    func closedTransportIsNotAcceptedAsSession() async throws {
+        let harness = ServerTestHarness()
+        try await harness.startup()
+
+        let clientTransport = MockServerRoleClientTransport()
+        clientTransport.isClosed = true
+
+        harness.rootTransport.simulateClientConnection(clientTransport)
+
+        #expect(harness.server.sessions.isEmpty)
+        #expect(harness.serverDelegate.acceptedSessions.isEmpty)
     }
 }

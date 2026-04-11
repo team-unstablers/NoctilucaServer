@@ -174,7 +174,7 @@ struct QualityAdjustmentEvent {
     let degradationIndex: Int
 }
 
-class AutoQualityPlanner: QualityPlanner {
+actor AutoQualityPlanner: QualityPlanner {
     var allowDegradation: Bool = true
 
     let codec: CodecFourCC
@@ -219,7 +219,7 @@ class AutoQualityPlanner: QualityPlanner {
     private let minMultiplier: Float = 0.4
     private let maxMultiplier: Float = 1.5
     
-    required init(codec: CodecFourCC, resolution: CGSize, frameRate: Float) {
+    init(codec: CodecFourCC, resolution: CGSize, frameRate: Float) {
         self.codec = codec
         self.resolution = resolution
         self.frameRate = frameRate
@@ -231,10 +231,23 @@ class AutoQualityPlanner: QualityPlanner {
         self.state = .initial
     }
 
-    convenience init(codec: CodecFourCC, resolution: CGSize, frameRate: Float, strategy: AutoQualityStrategy) {
+    init(codec: CodecFourCC, resolution: CGSize, frameRate: Float, strategy: AutoQualityStrategy) async {
         self.init(codec: codec, resolution: resolution, frameRate: frameRate)
-        self.strategy = strategy
-        self.degradationSteps = AutoQualityPlanner.makeDegradationSteps(for: strategy, codec: codec, resolution: resolution, frameRate: frameRate)
+        self.updateStrategy(strategy)
+    }
+    
+    func updateStrategy(_ newStrategy: AutoQualityStrategy) {
+        guard strategy != newStrategy else { return }
+        strategy = newStrategy
+        degradationSteps = AutoQualityPlanner.makeDegradationSteps(for: strategy, codec: codec, resolution: resolution, frameRate: frameRate)
+    }
+    
+    func setOnQualityAdjustmentHandler(_ handler: @escaping (QualityAdjustmentEvent) -> Void) {
+        self.onQualityAdjustment = handler
+    }
+    
+    func setAllowDegradation(_ allow: Bool) {
+        self.allowDegradation = allow
     }
     
     func feed(report: ProjectionPerformanceReport) {

@@ -6,19 +6,20 @@
 //
 
 import AppKit
-import Combine
+@preconcurrency import Combine
 import SwiftUI
 import UserNotifications
 
 import SiriusKit
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 import Sparkle
 
-import Inject
+@preconcurrency import Inject
 
 @main
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+@MainActor
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
     private let server = NoctilucaServer.shared
     private var settingsWindowController: AppKitSettingsWindowController?
     private var onboardingWindowController: OnboardingWindowController?
@@ -70,10 +71,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         UNUserNotificationCenter.current().delegate = self
         
-        setupMainMenu()
-        setupStatusItem()
-        bindServerState()
-        updateMenuState()
+        Task { @MainActor in
+            setupMainMenu()
+            await setupStatusItem()
+            await bindServerState()
+            await updateMenuState()
+        }
 
         if getuid() != 0 && !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
             showOnboardingWindow(nil)
@@ -92,7 +95,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
             await LicenseManager.shared.startPeriodicExpirationCheck()
 
-            if server.settings.general.autoStart {
+            if await server.settings.general.autoStart {
                 self.startServer(nil)
             }
         }
@@ -102,12 +105,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task {
+            Task { @MainActor in
                 let state = await LicenseManager.shared.validationState
                 if state == .expired {
-                    await MainActor.run {
-                        self?.showLicensingWindow(nil)
-                    }
+                    self?.showLicensingWindow(nil)
                 }
             }
         }
@@ -118,12 +119,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
-        sessionListViewModel.refresh(from: server)
-        updateMenuState()
-        updateLicensingMenuState()
+        Task { @MainActor in
+            await sessionListViewModel.refresh(from: server)
+            await updateMenuState()
+            updateLicensingMenuState()
+        }
     }
 
     @objc
+    @MainActor
     func showOnboardingWindow(_ sender: Any?) {
         if onboardingWindowController == nil {
             onboardingWindowController = OnboardingWindowController()
@@ -137,6 +141,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc
+    @MainActor
     func showLicensingWindow(_ sender: Any?) {
         if licensingWindowController == nil {
             licensingWindowController = LicensingWindowController()
@@ -150,6 +155,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc
+    @MainActor
     func showAboutAppWindow(_ sender: Any?) {
         if aboutAppWindowController == nil {
             aboutAppWindowController = AboutAppWindowController()
@@ -163,6 +169,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc
+    @MainActor
     func showSettingsWindow(_ sender: Any?) {
         if settingsWindowController == nil {
             settingsWindowController = AppKitSettingsWindowController()
@@ -249,7 +256,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.mainMenu = mainMenu
     }
 
-    private func setupStatusItem() {
+    @MainActor
+    private func setupStatusItem() async {
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
             button.image = NSImage(named: "TrayIconInactive")
@@ -258,7 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu()
         menu.delegate = self
 
-        setupSessionListView()
+        await setupSessionListView()
 
         startStopItem.target = self
 
@@ -304,28 +312,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         self.trayMenu = menu
     }
 
-    private func bindServerState() {
-        server.$state
+    private func bindServerState() async {
+        await server.$state
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateTrayIcon()
-                self?.updateMenuState()
+                Task { [weak self] in
+                    await self?.updateTrayIcon()
+                    await self?.updateMenuState()
+                }
             }
             .store(in: &cancellables)
 
-        server.$clients
+        await server.$clients
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateTrayIcon()
-                self?.updateMenuState()
+                Task { [weak self] in
+                    await self?.updateTrayIcon()
+                    await self?.updateMenuState()
+                }
             }
             .store(in: &cancellables)
     }
 
-    private func setupSessionListView() {
-        sessionListViewModel.bind(to: server)
+    @MainActor
+    private func setupSessionListView() async {
+        await sessionListViewModel.bind(to: server)
+        
         sessionListViewModel.disconnectHandler = { [weak self] sessionIDs in
-            self?.disconnectSessions(sessionIDs)
+            Task {
+                await self?.disconnectSessions(sessionIDs)
+            }
         }
 
         let listView = ClientSessionListView(viewModel: sessionListViewModel)
@@ -335,34 +351,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         sessionListItem.view = hostingView
     }
 
-    private func disconnectSessions(_ sessionIDs: Set<UUID>) {
+    private func disconnectSessions(_ sessionIDs: Set<UUID>) async {
         for sessionID in sessionIDs {
-            guard let session = server.clients[sessionID] else { continue }
+            guard let session = await server.clients[sessionID] else { continue }
             Task {
                 await session.closeWithGoodbye(code: .successful, message: nil)
             }
         }
     }
     
-    private func updateTrayIcon() {
+    @MainActor
+    private func updateTrayIcon() async {
         guard let button = statusItem?.button else {
             return
         }
         
-        if case .idle = self.server.state {
+        if case .idle = await self.server.state {
             button.image = NSImage(named: "TrayIconInactive")
             return
         }
         
-        if self.server.clients.isEmpty {
+        if await self.server.clients.isEmpty {
             button.image = NSImage(named: "TrayIcon")
         } else {
             button.image = NSImage(named: "TrayIconActive")
         }
     }
 
-    private func updateMenuState() {
-        switch server.state {
+    @MainActor
+    private func updateMenuState() async {
+        switch await server.state {
         case .idle:
             startStopItem.title = String(localized: "menu.start-server", defaultValue: "서버 시작")
             startStopItem.action = #selector(startServer(_:))

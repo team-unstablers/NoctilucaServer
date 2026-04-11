@@ -10,7 +10,7 @@ public final class SiriusFileLogDestination: SiriusLogDestination {
     // MARK: - Static Instance Tracking
 
     private static let instancesLock = NSLock()
-    private static var instances = NSHashTable<SiriusFileLogDestination>.weakObjects()
+    nonisolated(unsafe) private static var instances = NSHashTable<SiriusFileLogDestination>.weakObjects()
 
     /// Flushes all active file log destinations immediately.
     /// Call from application termination handlers (e.g. applicationWillTerminate, atexit)
@@ -126,7 +126,12 @@ public final class SiriusFileLogDestination: SiriusLogDestination {
 
         let formatted: String
         if includeMetadata {
-            formatted = "[\(SiriusLogTimestamp.now())][\(subsystem)][\(category):\(level.label)][\(file):\(line)][\(function)] \(message)\n"
+#if DEBUG
+            let sourceLocation = "[\(file):\(line)][\(function)] "
+#else
+            let sourceLocation = ""
+#endif
+            formatted = "[\(SiriusLogTimestamp.now())][\(subsystem)][\(category):\(level.label)]\(sourceLocation)\(message)\n"
         } else {
             formatted = "\(message)\n"
         }

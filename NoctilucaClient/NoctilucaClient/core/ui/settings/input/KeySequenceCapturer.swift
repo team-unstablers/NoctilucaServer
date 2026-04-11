@@ -39,7 +39,7 @@ struct KeySequenceLabel: View {
     }
 }
 
-struct KeySequenceCapturerPolicy: OptionSet {
+struct KeySequenceCapturerPolicy: OptionSet, Sendable {
     let rawValue: Int
     
     static let none = Self([])

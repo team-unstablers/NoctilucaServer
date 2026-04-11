@@ -10,7 +10,7 @@ import Quartz
 import SiriusKit
 
 @MainActor
-class ScreenLockObserver: ObservableObject {
+final class ScreenLockObserver: ObservableObject, Sendable {
     static let shared = ScreenLockObserver()
     
     private let logger = NoctilucaLogger(category: "projection.ScreenLockObserver")

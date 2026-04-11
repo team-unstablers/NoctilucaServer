@@ -10,7 +10,7 @@ import Foundation
 import libbcrypt
 
 import SiriusKit
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(

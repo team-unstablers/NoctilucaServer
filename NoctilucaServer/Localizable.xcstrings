@@ -128,25 +128,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto \"We make your dreams come true,\" we have primarily focused on addressing technical challenges that many clients have been unable to resolve. In candor, we continued to undertake such work because we were uncertain of our long-term direction, and the area in which we were most competent was computing.\n\nHowever, due to the ongoing economic downturn and the resulting changes to our revenue structure, the long-term sustainability of our company has become uncertain. We have accrued delays in salary payments and tax obligations, and our corporate bank account has also been subject to seizure.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you."
+            "value" : "Hello. We are **team unstablers Inc.** (주식회사 팀언스테이블러즈), a small software development company based in Ansan, Gyeonggi-do, Republic of Korea.\n\nUnder the motto \"We make your dreams come true,\" we have primarily focused on addressing technical challenges that many clients have been unable to resolve. Computing was what we did best, so we kept helping people through technology.\n\nHowever, sustaining our company has become difficult amid the prolonged economic downturn.\n\nNoctiluca / Sirius is one of the few projects that I was able to conceive and develop from the ground up during this period. After spending nearly several years transforming the concept into a tangible product, I am honored to present it to you for the first time.\n\nWe do not seek wealth. We simply wish to continue programming every day without the constant concern of survival.\n\nThank you."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "こんにちは、私たちは大韓民国京畿道安山市に位置する零細ソフトウェア開発会社 **株式会社チーム・アンステイブラーズ** (team unstablers Inc.) です。\n\n私たちは「皆様の夢を叶えます」というモットーの下、多くのクライアントが達成できなかった技術的難題を主に解決してきました。実は私たちは「自分たちが何をしたいのかわからなくて」、「せめてできるのがコンピュータくらいで」このようなモットーを掲げて人を助ける仕事を続けてきました。\n\nしかし、不況により収益構造にも様々な変動が生じ、会社の持続可能性も不透明になりました。給与や税金も滞り、会社の口座には差し押さえも入るようになりました。\n\nNoctiluca / Siriusはそんな中、愚かな私が一から構想し実現できた数少ないプロジェクトの一つでした。数年近く考えを具体化しながら、初めて皆様にお披露目できるようになったことを誇りに思っています。\n\n私たちはお金持ちになりたいわけではありません。ただ毎日、生存に対する心配なくコンピュータプログラミングをしたいだけなのです。\n\nありがとうございます。"
+            "value" : "こんにちは、私たちは大韓民国京畿道安山市に位置する零細ソフトウェア開発会社 **株式会社チーム・アンステイブラーズ** (team unstablers Inc.) です。\n\n私たちは「皆様の夢を叶えます」というモットーの下、多くのクライアントが達成できなかった技術的難題を主に解決してきました。私たちが最も得意とするのがコンピュータだったからこそ、技術で人々を助ける仕事を続けてきました。\n\nしかし、長引く不況の中で会社の存続が難しくなりました。\n\nNoctiluca / Siriusはそんな中、私が一から構想し実現できた数少ないプロジェクトの一つでした。数年近く考えを具体化しながら、初めて皆様にお披露目できるようになったことを誇りに思っています。\n\n私たちはお金持ちになりたいわけではありません。ただ毎日、生存に対する心配なくコンピュータプログラミングをしたいだけなのです。\n\nありがとうございます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \"여러분들의 꿈을 이루어 드립니다\" 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 사실은 저희는 \"우리가 하고 싶은 것이 무엇인지 몰라서\", \"그나마 할 줄 아는 것이 컴퓨터 뿐이어서\" 이런 모토를 내걸고 남을 돕는 일을 계속 해왔습니다.\n\n하지만, 불경기로 인해 수익 구조에도 여러 변동이 생기면서, 저희 회사의 지속 가능 여부도 불투명해졌습니다. 급여와 세금도 밀리고, 회사 통장에는 압류도 들어오게 되었습니다.\n\nNoctiluca / Sirius는 그런 와중에 멍청한 제가 바닥부터 구상해내고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다."
+            "value" : "안녕하세요, 저희는 대한민국 경기도 안산에 위치한 영세한 소프트웨어 개발 업체인 **주식회사 팀언스테이블러즈** (team unstablers Inc.) 입니다. \n\n저희는 \"여러분들의 꿈을 이루어 드립니다\" 라는 모토 아래, 많은 클라이언트들이 이루지 못한 기술적 난제를 주로 해결해오곤 했습니다. 저희가 가장 잘 하는 것이 컴퓨터였기에, 기술로 사람들을 돕는 일을 계속 해왔습니다.\n\n하지만, 오랜 불경기 속에서 회사의 지속이 어려워졌습니다.\n\nNoctiluca / Sirius는 그런 와중에 제가 바닥부터 구상하고 실현할 수 있었던 몇 안되는 프로젝트 중 하나였습니다. 몇 년 가까이 생각을 구체화 하면서, 처음으로 여러분께 선보일 수 있게 된 것을 자랑스럽게 생각하고 있습니다.\n\n저희는 부자가 되고 싶지 않습니다. 그저 매일마다 생존에 대한 걱정 없이 컴퓨터 프로그래밍을 하고 싶을 뿐입니다.\n\n감사합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在\"为您实现梦想\"的座右铭下，主要解决许多客户未能解决的技术难题。事实上，我们之所以以此为座右铭并坚持助人，是因为\"不知道自己想做什么\"，以及\"除了电脑大概什么都不会\"。\n\n但是，由于经济不景气导致收益结构发生变化，公司的可持续性也变得不透明。工资和税金被拖欠，公司账户也遭到了扣押。\n\nNoctiluca / Sirius 是在这种情况下，愚蠢的我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。"
+            "value" : "您好，我们是位于韩国京畿道安山市的一家小型软件开发公司 **team unstablers Inc.**。\n\n我们在\"为您实现梦想\"的座右铭下，主要解决许多客户未能解决的技术难题。计算机是我们最擅长的领域，因此我们一直坚持用技术帮助他人。\n\n然而，在长期的经济低迷中，公司的维持变得愈发困难。\n\nNoctiluca / Sirius 是在这种情况下，我从零开始构思并能够实现的为数不多的项目之一。将几年的想法具体化，我很自豪能首次向大家展示。\n\n我们不想成为富翁。只想每天不用担心生存问题，专心地编写程序。\n\n谢谢。"
           }
         }
       }
@@ -878,17 +878,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关闭"
-          }
-        }
-      }
-    },
-    "common.ok" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "확인"
           }
         }
       }
@@ -3473,6 +3462,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要紧急更新"
+          }
+        }
+      }
+    },
+    "notification.file_transfer_sent.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트로 '%@' 파일이 전송되었습니다."
+          }
+        }
+      }
+    },
+    "notification.file_transfer_sent.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 전송 완료"
           }
         }
       }
@@ -6997,215 +7008,6 @@
         }
       }
     },
-    "settings.app_stream.advanced.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "고급 설정"
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.add.error.blocked.message" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "이 앱은 AppStream을 통한 프로젝션이 허용되지 않습니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.add.error.blocked.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "차단된 앱"
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.add.error.duplicate.message" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "이 앱은 이미 허용된 앱 목록에 추가되어 있습니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.add.error.duplicate.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "이미 추가된 앱"
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.add.error.invalid_app.message" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "선택한 파일은 유효한 앱 번들이 아닙니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.add.error.invalid_app.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "유효하지 않은 앱"
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.add.panel_title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "앱 선택"
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AppStream을 통한 앱 단위 프로젝션을 허용할 앱 목록을 관리합니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.invalid_bundle" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "(유효하지 않은 번들)"
-          }
-        }
-      }
-    },
-    "settings.app_stream.allowed_apps.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "허용된 앱 목록"
-          }
-        }
-      }
-    },
-    "settings.app_stream.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AppStream은 Sirius 프로토콜의 프로젝션 채널을 활용하여, 앱 단위 프로젝션을 지원하는 실험적 기능입니다. 이 기능을 활성화하면, 클라이언트는 전체 디스플레이 대신 특정 앱의 창만 선택하여 프로젝션할 수 있습니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.disable_common_shortcuts.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AppStream이 활성화 된 동안, ⌘+Tab 같은 앱 포커스를 뺏어갈 가능성이 있는 시스템 단축키를 무시하여, 프로젝션된 앱이 더 원활하게 작동하도록 합니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.disable_common_shortcuts.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "앱 포커스를 뺏어갈 수 있는 시스템 단축키 무시하기"
-          }
-        }
-      }
-    },
-    "settings.app_stream.disclaimer" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "현재 AppStream은 동시에 최대 1개의 앱만 프로젝션할 수 있으며, 일부 앱에서는 호환성 문제가 발생할 수 있습니다. 또한, 이 기능은 실험 단계에 있으므로 예기치 않은 동작이 발생할 수 있습니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.enable" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AppStream 활성화"
-          }
-        }
-      }
-    },
-    "settings.app_stream.ignore_invisible_windows.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "일부 앱에서는 기능 보조를 위해 보이지 않는 윈도우를 생성할 수 있습니다.\n이러한 윈도우까지 프로젝션을 수행하게 되면 예기치 않은 동작이 발생할 수 있습니다."
-          }
-        }
-      }
-    },
-    "settings.app_stream.ignore_invisible_windows.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "보이지 않는 윈도우 무시하기"
-          }
-        }
-      }
-    },
-    "settings.app_stream.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AppStream (실험 단계)"
-          }
-        }
-      }
-    },
     "settings.general.autolaunch.global.description" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8711,6 +8513,17 @@
         }
       }
     },
+    "settings.notification.on_clipboard_access" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 내용에 접근했을 때"
+          }
+        }
+      }
+    },
     "settings.notification.on_connect" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -8794,6 +8607,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "发生错误时"
+          }
+        }
+      }
+    },
+    "settings.notification.on_file_transfer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 전송이 시작되었을 때"
           }
         }
       }
@@ -20717,17 +20541,6 @@
         }
       }
     },
-    "settings.tab.app_stream" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AppStream"
-          }
-        }
-      }
-    },
     "settings.tab.general" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -20873,6 +20686,17 @@
         }
       }
     },
+    "settings.tab.transfer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "데이터 전송"
+          }
+        }
+      }
+    },
     "settings.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -20898,6 +20722,731 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "设置"
+          }
+        }
+      }
+    },
+    "settings.transfer.channel.compression.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to use Zstd compression.\nThis may reduce data transfer volume, but may increase computing resource usage."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zstd圧縮を使用するかどうかを設定します。\nデータ転送量が減少する可能性がありますが、コンピューティングリソースの使用量が増加する可能性があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Zstd 압축을 사용할지 여부를 설정합니다.\n데이터 전송량이 줄어들 수 있지만, 컴퓨팅 자원 사용량이 늘어날 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否使用Zstd压缩。\n可能减少数据传输量，但可能增加计算资源使用量。"
+          }
+        }
+      }
+    },
+    "settings.transfer.channel.compression.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Compression When Possible"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可能な場合は圧縮を使用する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가능한 경우 압축 사용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尽可能使用压缩"
+          }
+        }
+      }
+    },
+    "settings.transfer.channel.max_upload_speed.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets the maximum speed for sending data from the server to the client. Set to 0 for unlimited."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーからクライアントへデータを送信する際の最大速度を設定します。0に設定すると無制限で送信します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에서 클라이언트로 데이터를 전송할 때의 최대 속도를 설정합니다. 0으로 설정하면 제한 없이 전송합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置从服务器向客户端传输数据时的最大速度。设为0则不限制传输速度。"
+          }
+        }
+      }
+    },
+    "settings.transfer.channel.max_upload_speed.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max Upload Speed (KB/s)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大アップロード速度 (KB/s)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "최대 업로드 속도 (KB/s)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大上传速度 (KB/s)"
+          }
+        }
+      }
+    },
+    "settings.transfer.channel.section_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure policies for the Transfer channel used for data transmission."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "データ転送のためのTransferチャンネルに関するポリシーを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "데이터 전송을 위한 Transfer 채널 관련 정책을 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置用于数据传输的Transfer通道相关策略。"
+          }
+        }
+      }
+    },
+    "settings.transfer.channel.section_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer Channel"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferチャンネル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Transfer 채널"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer通道"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_file.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to allow copying files through clipboard copy/paste operations such as ⌘C / ⌘V."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘C / ⌘Vなどのクリップボードのコピー/ペースト操作を通じてファイルをコピーすることを許可するかどうかを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "⌘C / ⌘V와 같은 클립보드 복사/붙여넣기 동작을 통해 파일을 복사하는 것을 허용할지 여부를 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否允许通过 ⌘C / ⌘V 等剪贴板复制/粘贴操作来复制文件。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_file.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow File Copying"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイルのコピーを許可する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 복사 허용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许复制文件"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_image.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to allow sharing image data through the clipboard."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像データをクリップボードを通じて共有することを許可するかどうかを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이미지 데이터를 클립보드를 통해 공유하는 것을 허용할지 여부를 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否允许通过剪贴板共享图片数据。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_image.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Image Copying"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像のコピーを許可する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이미지 복사 허용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许复制图片"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_rich_text.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to allow sharing rich text or HTML format data through the clipboard."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リッチテキストまたはHTML形式のデータをクリップボードを通じて共有することを許可するかどうかを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "리치 텍스트 또는 HTML 형식의 데이터를 클립보드를 통해 공유하는 것을 허용할지 여부를 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否允许通过剪贴板共享富文本或HTML格式的数据。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_rich_text.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Rich Text / HTML Copying"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リッチテキスト / HTML のコピーを許可する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "리치 텍스트 / HTML 복사 허용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许复制富文本 / HTML"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_unknown_format.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to allow sharing data in formats other than text, image, and rich text/HTML through the clipboard."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テキスト、画像、リッチテキスト/HTML以外の形式のデータをクリップボードを通じて共有することを許可するかどうかを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "텍스트, 이미지, 리치 텍스트/HTML 이외의 형식으로 된 데이터를 클립보드를 통해 공유하는 것을 허용할지 여부를 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否允许通过剪贴板共享文本、图片、富文本/HTML以外格式的数据。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.allow_unknown_format.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Copying Unknown Format Data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不明な形式のデータのコピーを許可する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "잘 알려지지 않은 형식의 데이터 복사 허용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许复制未知格式的数据"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.enabled.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to use the clipboard sharing feature. When enabled, clipboard data can be exchanged between the client and server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード共有機能を使用するかどうかを設定します。この機能が有効な場合、クライアントとサーバー間でクリップボードデータをやり取りできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 공유 기능을 사용할지 여부를 설정합니다. 이 기능이 활성화된 경우, 클라이언트와 서버 간에 클립보드 데이터를 주고받을 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否使用剪贴板共享功能。启用后，客户端与服务器之间可以交换剪贴板数据。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.enabled.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Clipboard Sharing"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード共有を使用する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 공유 사용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用剪贴板共享"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.footer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Note**: File copying and clipboard data over 128KB are transferred through the Transfer channel."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**注意**: ファイルのコピーおよび128KB以上のクリップボードデータはTransferチャンネルを通じて転送されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**참고**: 파일 복사 및 128KB 이상의 클립보드 데이터는 Transfer 채널을 통해 전송됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**注意**：文件复制及超过128KB的剪贴板数据将通过Transfer通道传输。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.section_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure clipboard sharing policies."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード共有に関するポリシーを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 공유 관련 정책을 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置剪贴板共享相关策略。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.section_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard Channel"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボードチャンネル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 채널"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板通道"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.sync_direction.bidirectional" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bidirectional"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "双方向"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "양방향"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "双向"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.sync_direction.local_to_remote" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server → Client only"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバー → クライアントのみ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 → 클라이언트만"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器 → 客户端"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.sync_direction.remote_to_local" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client → Server only"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クライアント → サーバーのみ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트 → 서버만"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "客户端 → 服务器"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.sync_direction.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard Sharing Direction"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード共有の方向"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 공유 방향"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板共享方向"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.text_only.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure whether to share clipboard data other than text. When enabled, the clipboard sharing feature will only work for text data, and other clipboard data sharing options below will be automatically disabled."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テキスト以外のクリップボードデータを共有するかどうかを設定します。このオプションが有効な場合、クリップボード共有機能はテキストデータに対してのみ動作し、以下の他のクリップボードデータ共有オプションは自動的に無効になります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "텍스트 데이터를 제외한 클립보드 데이터를 공유할지 여부를 설정합니다. 이 옵션이 활성화된 경우, 클립보드 공유 기능은 텍스트 데이터에 대해서만 동작하게 되며, 아래의 다른 클립보드 데이터 공유를 허용하는 옵션은 자동으로 비활성화됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置是否共享文本以外的剪贴板数据。启用后，剪贴板共享功能仅对文本数据生效，以下其他剪贴板数据共享选项将自动禁用。"
+          }
+        }
+      }
+    },
+    "settings.transfer.clipboard.text_only.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Text Only"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テキストのみ許可する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "텍스트만 허용하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅允许文本"
           }
         }
       }

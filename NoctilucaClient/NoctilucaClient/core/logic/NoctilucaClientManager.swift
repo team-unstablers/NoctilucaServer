@@ -27,15 +27,17 @@ class NoctilucaClientManager: ObservableObject {
         to endpoint: SREndpoint,
         settings: SessionSettings?,
     ) async throws -> NoctilucaClient {
+        let featureProvider = NoctilucaFeatureProvider()
         let siriusClientResult = SiriusClientBuilder()
             .useTransportProtocol(.quic(endpoint: endpoint))
-            .useFeatureProvider(NoctilucaFeatureProvider())
+            .useFeatureProvider(featureProvider)
             .useServerIdentityValidationPolicy(.systemOnly) // 유저랜드 핸들러는 나중에 세팅할 것임
             .build()
-        
+
         let session = try siriusClientResult.get()
         let client = NoctilucaClient(session)
-        
+
+        client.noctilucaFeatureProvider = featureProvider
         client.sessionSettings = settings
         
         guard !clients.keys.contains(client.id) else {

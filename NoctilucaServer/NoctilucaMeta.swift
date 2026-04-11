@@ -7,7 +7,7 @@
 
 import Foundation
 
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 struct NoctilucaMeta {
     static var productName: String {
@@ -26,7 +26,7 @@ struct NoctilucaMeta {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
     }
     
-    static var license: SoftwareLicense = .proprietary(name: "Noctiluca Server EULA",
+    static let license: SoftwareLicense = .proprietary(name: "Noctiluca Server EULA",
                                                        url: URL(string: "https://unstabler.pl")!)
     
 }

@@ -23,7 +23,7 @@ enum QualityDegradation: Hashable {
     case increaseQuantization(level: Int)
 }
 
-protocol QualityPlanner {
+protocol QualityPlanner: Actor, Sendable {
     /// 품질 디그레이드를 허용합니다.
     var allowDegradation: Bool { get set }
     

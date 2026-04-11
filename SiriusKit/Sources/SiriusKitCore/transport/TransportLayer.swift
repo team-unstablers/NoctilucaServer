@@ -16,7 +16,7 @@ package enum TransportLayerError: Error {
     case mainChannelOpenFailed
 }
 
-package protocol TransportLayer: AnyObject, Identifiable {
+package protocol TransportLayer: AnyObject, Identifiable, Sendable {
     var id: TransportLayerIdentifier { get }
 
     func disconnect() async

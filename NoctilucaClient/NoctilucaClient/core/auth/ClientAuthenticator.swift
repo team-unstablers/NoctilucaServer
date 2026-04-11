@@ -9,6 +9,7 @@ import Foundation
 
 import SiriusKitClient
 
+@MainActor
 final class ClientAuthenticator {
     private let logger = NoctilucaLogger(category: "ClientAuthenticator")
 

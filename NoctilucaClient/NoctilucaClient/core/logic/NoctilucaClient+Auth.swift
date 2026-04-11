@@ -22,6 +22,7 @@ extension NoctilucaClient {
     
     func sendClientHello() async throws {
         let clientHello = clientHelloMessage()
+        let mainChannel = try requireMainChannel()
         try await mainChannel.sendClientHello(consume clientHello)
     }
     
@@ -35,6 +36,7 @@ extension NoctilucaClient {
             payload: payload
         )
 
+        let mainChannel = try requireMainChannel()
         try await mainChannel.sendAuthRequest(consume authRequest)
     }
     

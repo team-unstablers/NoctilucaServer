@@ -8,7 +8,7 @@
 import Foundation
 
 /// 서비스에서 전송될 컨텐츠의 유형 / 우선순위
-public enum ServiceClass {
+public enum ServiceClass: Sendable {
     ///  사용자 입력 (가장 높음)
     case userInput
     
@@ -32,19 +32,19 @@ package extension ServiceClass {
     var asMsQuicPriority: UInt16 {
         switch self {
         case .userInput:
-            return 0xBEEF // 장난 치지 마세요! 💢
-            
-        case .realtimeVideo:
-            return 0x87FF
-            
+            return 0xE000
+
         case .realtimeAudio:
-            return 0x8000
-            
+            return 0xC000
+
+        case .realtimeVideo:
+            return 0xA000
+
         case .signaling:
             return 0x7FFF
-            
+
         case .background:
-            return 0x3000
+            return 0x4000
         }
     }
     

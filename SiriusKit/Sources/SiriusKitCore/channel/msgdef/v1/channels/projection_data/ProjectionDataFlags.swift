@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ProjectionDataFlags: OptionSet, Hashable, Equatable {
+public struct ProjectionDataFlags: OptionSet, Sendable, Hashable, Equatable {
     public let rawValue: UInt32
     
     public init(rawValue: UInt32) {

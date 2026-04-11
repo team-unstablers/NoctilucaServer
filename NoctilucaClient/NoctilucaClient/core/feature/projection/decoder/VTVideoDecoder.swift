@@ -30,7 +30,10 @@ private final class FrameDecodeContext {
     }
 }
 
-final class VTVideoDecoder: NSObject, VideoDecoder {
+// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+// 내부 workerQueue/callbackQueue 기반 DispatchQueue 직렬화로 실제 thread-safety 확보.
+// 호출자(ProjectionSession actor)가 순차 호출 보장.
+final class VTVideoDecoder: NSObject, VideoDecoder, @unchecked Sendable {
     typealias DecompressionSessionCreateHandler = (
         CMFormatDescription,
         CFDictionary?,
@@ -192,7 +195,7 @@ final class VTVideoDecoder: NSObject, VideoDecoder {
 // MARK: - Session setup
 
 private extension VTVideoDecoder {
-    static func defaultDecompressionSessionCreateHandler(
+    nonisolated static func defaultDecompressionSessionCreateHandler(
         formatDescription: CMFormatDescription,
         decoderSpecification: CFDictionary?,
         imageBufferAttributes: CFDictionary?,

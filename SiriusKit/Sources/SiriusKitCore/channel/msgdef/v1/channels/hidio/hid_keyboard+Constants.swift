@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct KeyboardLayoutId: RawRepresentable, Hashable, Equatable, Codable {
+public struct KeyboardLayoutId: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -22,7 +22,7 @@ public struct KeyboardLayoutId: RawRepresentable, Hashable, Equatable, Codable {
     public static let virtual = KeyboardLayoutId(rawValue: 15)
 }
 
-public struct KeyboardEventType: RawRepresentable, Hashable, Equatable, Codable {
+public struct KeyboardEventType: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

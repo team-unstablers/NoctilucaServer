@@ -8,11 +8,13 @@
 import Foundation
 import Combine
 
+import Atomics
+
 import Network
 import Security
 
 import MsQuic
-import SwiftMsQuicHelper
+import SwiftMsQuic
 import SiriusKitCore
 
 enum ClientRoleMsQuicTransportError: Error {
@@ -42,8 +44,9 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     private var connection: QuicConnection?
 
     private var streams: [StreamIdentifier: ClientRoleMsQuicStream] = [:]
-    private var isFinalized: Bool = false
+    private var isFinalized = ManagedAtomic<Bool>(false)
     
+    @MainActor
     private var addressMonitorCancellation: AnyCancellable?
 
     nonisolated(unsafe) var identity: ServerIdentity? = nil
@@ -69,7 +72,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     }
 
     private func connectInternal() async throws {
-        setupAddressMonitor()
+        await setupAddressMonitor()
 
         // 1. MsQuic API 초기화 (전역적으로 한 번만 호출됨)
         _ = SwiftMsQuicAPI.open()
@@ -84,24 +87,15 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
 
         // 3. Configuration 생성
         var settings = QuicSettings()
-        settings.idleTimeoutMs = 10000
+        settings.idleTimeoutMs = 15000
         settings.keepAliveIntervalMs = 5000
-        settings.disconnectTimeoutMs = 2000
+        settings.disconnectTimeoutMs = 3000
 
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
 
-        settings.pacingEnabled = false
-        
-        
-        // settings.tlsClientMaxSendBuffer = 10485760
-        settings.streamRecvBufferDefault = 4 * 1024 * 1024
-        settings.streamRecvWindowDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowBidiRemoteDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowUnidiDefault = 512 * 1024
-        settings.connFlowControlWindow = 16 * 1024 * 1024
-        settings.sendBufferingEnabled = true
+        settings.pacingEnabled = true
+        settings.sendBufferingEnabled = false
 
         settings.ecnEnabled = true
 
@@ -168,11 +162,9 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     }
 
     func disconnect() async {
-        guard !isFinalized else {
+        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
-
-        self.isFinalized = true
 
         // 모든 스트림 종료
         let snapshot = Array(self.streams.values)
@@ -189,8 +181,10 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
 
         // 리소스 정리
-        self.addressMonitorCancellation?.cancel()
-        self.addressMonitorCancellation = nil
+        await Task { @MainActor in
+            self.addressMonitorCancellation?.cancel()
+            self.addressMonitorCancellation = nil
+        }
         self.configuration = nil
         self.registration = nil
 
@@ -224,7 +218,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     // MARK: - Internal Stream Management
 
     internal func registerStream(_ stream: ClientRoleMsQuicStream) {
-        let streamId = stream.id
+        let streamId = stream.id()
         guard !self.streams.keys.contains(streamId) else {
             return
         }
@@ -233,18 +227,19 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     }
 
     internal func unregisterStream(_ stream: ClientRoleMsQuicStream) {
-        guard self.streams.keys.contains(stream.id) else {
+        let streamId = stream.id()
+        guard self.streams.keys.contains(streamId) else {
             return
         }
 
-        self.streams.removeValue(forKey: stream.id)
+        self.streams.removeValue(forKey: streamId)
     }
     
     // MARK: - Connection Migration
-
     /// 네트워크 주소 변경을 감지하여 QUIC 커넥션 마이그레이션을 수행합니다.
-    private func setupAddressMonitor() {
-        self.addressMonitorCancellation = AddressMonitor.shared
+    @MainActor
+    private func setupAddressMonitor() async {
+        self.addressMonitorCancellation = await AddressMonitor.shared
             .$currentAddresses
             .dropFirst()
             .map { $0.compactMap { $0.asString() } }
@@ -292,7 +287,9 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
         
         if policy.requiresAppValidation, let block = policy.validationBlock {
-            return block(identity)
+            return DispatchQueue.main.sync {
+                block(identity)
+            }
         }
         
         return .deny
@@ -361,7 +358,8 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
 
         // 피어 스트림 핸들러
-        connection.onPeerStreamStarted { [weak self] _, quicStream, flags in
+        // StreamHandler v2: (isolated (any Actor)?, QuicConnection, QuicStream, QuicStreamOpenFlags)
+        connection.onPeerStreamStarted { [weak self] _, _, quicStream, flags in
             // TODO: reject unidirectional stream
             guard let self = self else { return }
             await self.handlePeerStream(quicStream)

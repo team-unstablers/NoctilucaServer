@@ -15,7 +15,10 @@ import SiriusKit
 
 /// G.711 mu-law/A-law encoder.
 /// Uses AVAudioConverter for resampling and a high-performance bit-pattern Lookup Table (LUT) for G.711 encoding.
-final class PCMAudioEncoder: NSObject, AudioEncoder {
+///
+/// @unchecked Sendable: 문서 Rule G 확장 (미디어 파이프라인 class 예외).
+/// 가변 상태는 `workerQueue` 기반 직렬화와 AudioProjectionSession actor 경계에서 보호된다.
+final class PCMAudioEncoder: NSObject, AudioEncoder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "PCMAudioEncoder")
     private let workerQueue: DispatchQueue
 
@@ -236,7 +239,7 @@ final class PCMAudioEncoder: NSObject, AudioEncoder {
 }
 
 // MARK: - G.711 Lookup Table (Bit-Pattern Optimized)
-final class G711LUT {
+final class G711LUT: Sendable {
     static let shared = G711LUT()
     
     // Indices 0x0000...0xFFFF correspond directly to Int16 bit patterns.

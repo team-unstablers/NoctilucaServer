@@ -8,7 +8,7 @@
 import Foundation
 
 import SiriusKit
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 final class PAMAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(

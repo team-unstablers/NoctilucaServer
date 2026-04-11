@@ -82,7 +82,9 @@ protocol HIDIOSessionDelegate: AnyObject {
     func hidioSession(_ session: HIDIOSession, didSwitchMode mode: HIDIOSessionMode, reason: HIDIOSessionModeSwitchReason)
 }
 
+@MainActor
 class HIDIOSession: ObservableObject {
+    @MainActor
     protocol Driver {
         init(_ session: HIDIOSession)
         
@@ -118,7 +120,7 @@ class HIDIOSession: ObservableObject {
         (driver as! IOSDriver).defaultSubMouse
     }
 
-    var rootViewController: Weak<RootViewController>? = nil
+    weak var rootViewController: RootViewController? = nil
 #endif
 #if os(macOS)
     weak var window: NSWindow? = nil

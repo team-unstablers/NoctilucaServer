@@ -30,7 +30,6 @@
 		F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F696483A2F33AAF50093CFC2 /* AsyncAlgorithms */; };
 		F6B57F162F5049F8002BBDDC /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6B57F152F5049F8002BBDDC /* SiriusKit */; };
 		F6B57F172F5049F8002BBDDC /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6B57F152F5049F8002BBDDC /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		F6CC7D3D2F51904400AA6DC2 /* CJKKeyboardHacks.nocbundle in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6CC83562F5A885000AA6DC2 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F6CC83552F5A885000AA6DC2 /* Alamofire */; };
 		F6CC836C2F5B33FC00AA6DC2 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = F6CC836B2F5B33FC00AA6DC2 /* Inject */; };
 		F6CC83832F5B522800AA6DC2 /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F6CC837A2F5B522800AA6DC2 /* NoctilucaWebPEncoder */; };
@@ -125,7 +124,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				F6CC7D3D2F51904400AA6DC2 /* CJKKeyboardHacks.nocbundle in Embed PlugIns */,
 			);
 			name = "Embed PlugIns";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -200,6 +198,8 @@
 				"installer-templates/distribution.xml",
 				"installer-templates/Resources/Localizable.strings",
 				"installer-templates/Resources/readme.html",
+				"navigator-dmg-templates/background.png",
+				"navigator-dmg-templates/background2.png",
 			);
 			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
 		};
@@ -228,6 +228,8 @@
 				"installer-templates/distribution.xml",
 				"installer-templates/Resources/Localizable.strings",
 				"installer-templates/Resources/readme.html",
+				"navigator-dmg-templates/background.png",
+				"navigator-dmg-templates/background2.png",
 			);
 			target = F6CC836F2F5B522800AA6DC2 /* NoctilucaServerTestsHost */;
 		};
@@ -676,8 +678,9 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = nocbundle;
 			};
 			name = Debug;
@@ -701,8 +704,9 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = nocbundle;
 			};
 			name = Release;
@@ -725,7 +729,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoctilucaServerTestsHost.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoctilucaServerTestsHost";
 			};
 			name = Debug;
@@ -746,7 +750,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoctilucaServerTestsHost.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoctilucaServerTestsHost";
 			};
 			name = Release;
@@ -884,7 +888,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = NO;
@@ -912,7 +916,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.9;
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-interposable",
@@ -934,7 +938,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaServer/NoctilucaServer-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -949,7 +953,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = "";
@@ -978,7 +982,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.9;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -996,7 +1000,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaServer/NoctilucaServer-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -1011,7 +1015,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = NO;
@@ -1039,7 +1043,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.9;
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-interposable",
@@ -1061,7 +1065,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaServer/NoctilucaServer-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -1076,7 +1080,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = "";
 				ENABLE_APP_SANDBOX = NO;
@@ -1104,7 +1108,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.9;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server.testing.host;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1121,7 +1125,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "NoctilucaServer/NoctilucaServer-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};

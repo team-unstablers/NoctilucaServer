@@ -7,15 +7,18 @@
 
 import Foundation
 
-public protocol FeatureProvider: AnyObject {
+public enum ChannelCreationResult: Sendable {
+    case accepted(Channel)
+    case rejected(code: Int, reason: String)
+}
+
+public protocol FeatureProvider: AnyObject, Sendable {
     // Returns true if the feature is supported
     func supports(_ feature: SiriusFeature) -> Bool
 
     func createChannel(
         for feature: SiriusFeature,
-        using streamHolder: StreamHolder,
-        identifier: ChannelIdentifier,
-        direction: ChannelDirection,
+        handle: ChannelHandle,
         args: [String]
-    ) -> Channel
+    ) async throws -> ChannelCreationResult
 }

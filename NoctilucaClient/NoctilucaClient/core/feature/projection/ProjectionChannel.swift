@@ -1,12 +1,11 @@
 //
 //  ProjectionChannel.swift
-//  NoctilucaServer
+//  NoctilucaClient
 //
 //  Created by Gyuhwan Park on 12/12/25.
 //
 
 import Foundation
-import Combine
 import Atomics
 
 import CoreGraphics
@@ -50,9 +49,6 @@ enum ProjectionChannelEvent: Sendable {
     /// 오디오 프로젝션 세션이 종료되었습니다.
     case audioSessionDestroyed(UUID, reason: AudioSessionEndReason, message: String?)
 
-    /// 디스플레이 변경 이벤트가 발생했습니다.
-    // case displayLayoutChanged() // TODO: 전체 레이아웃을 들고 있거나 하는게 좋을거같음
-
     /// 커서 이미지가 변경되었습니다.
     case cursorImageChanged(CursorImageEvent)
 
@@ -63,10 +59,12 @@ enum ProjectionChannelEvent: Sendable {
     case appStreamWindowEvent(AppStreamWindowEvent)
 }
 
-class ProjectionChannel: Channel {
+final class ProjectionChannel: Channel, ChannelEventConsumer {
     let logger = NoctilucaLogger(category: "ProjectionChannel")
 
-    override var serviceClass: ServiceClass { .userInput }
+    let handle: ChannelHandle
+
+    private static let defaultServiceClass: ServiceClass = .userInput
 
     /// Request ID 생성을 위한 atomic 카운터
     private let requestCounter = ManagedAtomic<UInt64>(0)
@@ -74,17 +72,44 @@ class ProjectionChannel: Channel {
     /// Actor-isolated mutable state
     let state = ProjectionChannelState()
 
-    let displayLayoutManager = DisplayLayoutManager()
+    // Rule I 패턴 1: init 에서 1회 생성 후 참조 불변. 내부 가변 상태는 @MainActor
+    // 로 격리되어 있어, 외부에서의 접근은 모두 await MainActor 경유로 이루어진다.
+    nonisolated(unsafe) let displayLayoutManager = DisplayLayoutManager()
 
-    let events = PassthroughSubject<ProjectionChannelEvent, Never>()
+    /// 외부 노출 이벤트 스트림.
+    nonisolated(unsafe) let events: AsyncStream<ProjectionChannelEvent>
+    // Rule I 패턴 1: init 에서 1회 대입 후 불변.
+    nonisolated(unsafe) let continuation: AsyncStream<ProjectionChannelEvent>.Continuation
 
-    required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        super.init(using: streamHolder, identifier: identifier, direction: direction)
+    // ~Copyable CompatBridge; init 마지막 대입 후 수정 없음. (Rule I 패턴 2)
+    nonisolated(unsafe) private var channelEventCompatBridge:
+        ChannelEventCompatBridge<ProjectionChannel>!
 
-        assert(direction == .local, "ProjectionChannel must be opened from client side")
+    init(handle: ChannelHandle) {
+        self.handle = handle
+        assert(handle.direction == .local,
+               "ProjectionChannel must be opened from client side")
+
+        var continuationLocal: AsyncStream<ProjectionChannelEvent>.Continuation!
+        self.events = AsyncStream<ProjectionChannelEvent>(
+            ProjectionChannelEvent.self,
+            bufferingPolicy: .unbounded
+        ) { continuation in
+            continuationLocal = continuation
+        }
+        self.continuation = continuationLocal
+
+        self.channelEventCompatBridge =
+            ChannelEventCompatBridge(consumer: self, handle: handle)
     }
 
-    override func handleFrame(frame: SiriusFrame) async throws {
+    // MARK: - ChannelEventConsumer
+
+    func handleChannelReady() async {
+        await handle.setServiceClass(Self.defaultServiceClass)
+    }
+
+    func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
@@ -194,6 +219,24 @@ class ProjectionChannel: Channel {
         }
     }
 
+    func handleError(error: any Error) async {
+        logger.warning("ProjectionChannel error: \(error)")
+        await cancelAllPending(with: error)
+        continuation.finish()
+    }
+
+    func handleStreamClose() async {
+        logger.info("ProjectionChannel stream closed")
+        await cancelAllPending(with: ProjectionChannelError.channelClosed)
+        continuation.finish()
+    }
+
+    private func cancelAllPending(with error: Error) async {
+        await state.cancelAllPendingSessions(with: error)
+        await state.cancelAllPendingRequests(with: error)
+        await state.cancelAllPendingAudioSessionRequests()
+    }
+
     /// 다음 request ID를 생성합니다.
     func nextRequestID() -> UInt64 {
         requestCounter.loadThenWrappingIncrement(ordering: .relaxed)
@@ -225,12 +268,10 @@ class ProjectionChannel: Channel {
 
     func sendStopAudioProjectionRequest(identifier: UUID) {
         Task { [weak self] in
-            guard let self else {
-                return
-            }
+            guard let self else { return }
 
             do {
-                try await self.send(
+                try await self.handle.send(
                     opcode: .stopAudioProjectionRequest,
                     message: StopAudioProjectionRequest(identifier: identifier)
                 )
@@ -251,7 +292,7 @@ class ProjectionChannel: Channel {
     }
 
 
-   func sendSessionRequest<T: DecodableSiriusMessage>(
+    func sendSessionRequest<T: DecodableSiriusMessage>(
         sessionID: UUID,
         opcode: MessageOpcode,
         message: any DecodableSiriusMessage
@@ -278,7 +319,7 @@ class ProjectionChannel: Channel {
                     }
 
                     do {
-                        try await self.send(opcode: opcode, message: message)
+                        try await self.handle.send(opcode: opcode, message: message)
                     } catch {
                         await self.state.removePendingSession(sessionID)
                         continuation.resume(throwing: error)
@@ -319,7 +360,7 @@ class ProjectionChannel: Channel {
                     }
 
                     do {
-                        try await self.send(opcode: opcode, message: message)
+                        try await self.handle.send(opcode: opcode, message: message)
                     } catch {
                         await self.state.removePendingRequest(requestID)
                         continuation.resume(throwing: error)

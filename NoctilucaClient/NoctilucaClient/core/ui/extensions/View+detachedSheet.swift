@@ -24,6 +24,7 @@ extension View {
 }
 
 #if os(macOS)
+@MainActor
 private struct DetachedSheetModifier<SheetContent: View>: ViewModifier {
     @Binding var isPresented: Bool
     let sheetContent: () -> SheetContent
@@ -46,6 +47,7 @@ private struct DetachedSheetModifier<SheetContent: View>: ViewModifier {
     }
 }
 
+@MainActor
 private struct DetachedSheetUpdater: NSViewRepresentable {
     let isPresented: Bool
     let content: AnyView
@@ -64,11 +66,13 @@ private struct DetachedSheetUpdater: NSViewRepresentable {
     }
 }
 
+@MainActor
 private final class DimmingWindow: NSWindow {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 }
 
+@MainActor
 private final class DetachedSheetController: ObservableObject {
     private var sheetWindow: NSWindow?
     private var dimmingWindow: NSWindow?
@@ -76,6 +80,7 @@ private final class DetachedSheetController: ObservableObject {
     private weak var parentWindow: NSWindow?
     private var parentObservers: [NSObjectProtocol] = []
 
+    @MainActor
     deinit {
         destroy()
     }

@@ -18,7 +18,7 @@ import SiriusKitCore
 #if DEBUG
 
 /// 테스트 용도로만 사용되는 QUICServerIdentity 구현체입니다.
-internal class InMemoryQUICServerIdentity: QUICServerIdentity {
+internal final class InMemoryQUICServerIdentity: QUICServerIdentity, @unchecked Sendable {
     private let identity: SecIdentity
 
     internal required init(_ identity: SecIdentity) {

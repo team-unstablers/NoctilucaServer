@@ -17,6 +17,7 @@ extension HIDIOVirtualDeviceIdentifier {
 }
 
 @available(iOS, unavailable)
+@MainActor
 final class HIDIOAppKitPointer: HIDIOVirtualDevice {
     static let kind: HIDIOVirtualDeviceKind = .mouse
     static let identifier: HIDIOVirtualDeviceIdentifier = .appKitMouse

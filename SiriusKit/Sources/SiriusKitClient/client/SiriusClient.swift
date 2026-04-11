@@ -8,16 +8,20 @@
 import Foundation
 import SiriusKitCore
 
+import Atomics
+
 public protocol SiriusClientDelegate: AnyObject {
     func siriusClient(_ client: SiriusClient, didCreateMainChannel mainChannel: MainChannel)
     func siriusClient(_ client: SiriusClient, didEncounterError error: (any Error))
     func siriusClientDidCloseTransport(_ client: SiriusClient)
 }
 
-public class SiriusClient: SiriusSession {
+public class SiriusClient: SiriusSession, @unchecked Sendable {
     private let logger = SiriusLogger(category: "SiriusClient")
 
     public let id: UUID
+    
+    private var isFinalized = ManagedAtomic<Bool>(false)
 
     let clientTransport: any ClientRoleTransport
     package var transport: any TransportLayer { clientTransport }
@@ -28,7 +32,7 @@ public class SiriusClient: SiriusSession {
     public var shouldAcceptChannelCreation: Bool = false
 
     public weak var delegate: (any SiriusClientDelegate)?
-    
+
     // MARK: Computed Properties
     
     public var endpoint: SREndpoint {
@@ -66,7 +70,17 @@ public class SiriusClient: SiriusSession {
     }
 
     public func shutdown() async {
-        await clientTransport.disconnect()
+        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
+            return
+        }
+        
+        shouldAcceptChannelCreation = false
+        await channelManager.teardownAllChannels()
+        
+        // HACK: 별도 Task로 분리하지 않으면 여기서 데드락 걸림
+        Task.detached { [clientTransport] in
+            await clientTransport.disconnect()
+        }
     }
 }
 

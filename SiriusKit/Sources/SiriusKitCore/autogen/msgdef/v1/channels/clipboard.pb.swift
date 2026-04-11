@@ -21,17 +21,21 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+//// 클립보드 아이템의 개별 표현(representation)을 나타냅니다.
+//// 하나의 클립보드 아이템은 같은 데이터를 여러 형식으로 표현할 수 있습니다.
+//// (예: text/plain + text/html + text/rtf)
 struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  //// MIME 타입 (예: "text/plain", "image/png")
   var contentType: String = String()
 
+  //// 원본 데이터의 크기 (바이트 단위)
   var size: UInt64 = 0
 
-  //// 2KB 이하의 데이터는 여기에 포함될 수 있습니다.
-  /// TODO: 대용량 데이터 전송 방법 정의
+  //// 클립보드 데이터 본문. omitted 플래그가 설정된 경우 생략될 수 있습니다.
   var data: Data {
     get {return _data ?? Data()}
     set {_data = newValue}
@@ -41,6 +45,9 @@ struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: Sendable {
   /// Clears the value of `data`. Subsequent reads from it will return its default value.
   mutating func clearData() {self._data = nil}
 
+  /// @optionset: ClipboardDataFlags
+  var flags: UInt32 = 0
+
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
@@ -48,28 +55,185 @@ struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: Sendable {
   fileprivate var _data: Data? = nil
 }
 
-/// @opcode: 0x8001
-struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: Sendable {
+//// 하나의 클립보드 아이템을 나타냅니다.
+//// 각 아이템은 동일한 데이터의 여러 표현(representation)을 포함할 수 있습니다.
+struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardItem: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var timestamp: UInt64 = 0
+  //// 이 아이템의 표현 목록 (예: text/plain, text/html이 동시에 포함될 수 있음)
+  var representations: [Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData] = []
 
-  var data: Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData {
-    get {return _data ?? Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData()}
-    set {_data = newValue}
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// 클립보드 변경 이벤트의 구독을 요청합니다.
+/// @opcode: 0x8001
+struct Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  /// reserved
+  var flags: UInt32 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// SubscribeClipboardRequest에 대한 응답 메시지입니다.
+/// @opcode: 0x8002
+struct Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  //// 구독 요청 처리 성공 여부. 거부된 경우 false.
+  var isSuccess: Bool = false
+
+  //// 구독 식별자. 이후 이벤트 수신 및 구독 해제에 사용됩니다.
+  //// isSuccess가 false인 경우 유효하지 않을 수 있습니다.
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
+    set {_subscriptionID = newValue}
   }
-  /// Returns true if `data` has been explicitly set.
-  var hasData: Bool {return self._data != nil}
-  /// Clears the value of `data`. Subsequent reads from it will return its default value.
-  mutating func clearData() {self._data = nil}
+  /// Returns true if `subscriptionID` has been explicitly set.
+  var hasSubscriptionID: Bool {return self._subscriptionID != nil}
+  /// Clears the value of `subscriptionID`. Subsequent reads from it will return its default value.
+  mutating func clearSubscriptionID() {self._subscriptionID = nil}
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 
-  fileprivate var _data: Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData? = nil
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
+}
+
+//// 클립보드 변경 이벤트의 구독을 해제합니다.
+/// @opcode: 0x8003
+struct Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  //// 해제할 구독의 식별자.
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
+    set {_subscriptionID = newValue}
+  }
+  /// Returns true if `subscriptionID` has been explicitly set.
+  var hasSubscriptionID: Bool {return self._subscriptionID != nil}
+  /// Clears the value of `subscriptionID`. Subsequent reads from it will return its default value.
+  mutating func clearSubscriptionID() {self._subscriptionID = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
+}
+
+//// UnsubscribeClipboardRequest에 대한 응답 메시지입니다.
+/// @opcode: 0x8004
+struct Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  //// 해제된 구독의 식별자.
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
+    set {_subscriptionID = newValue}
+  }
+  /// Returns true if `subscriptionID` has been explicitly set.
+  var hasSubscriptionID: Bool {return self._subscriptionID != nil}
+  /// Clears the value of `subscriptionID`. Subsequent reads from it will return its default value.
+  mutating func clearSubscriptionID() {self._subscriptionID = nil}
+
+  //// 구독 해제 성공 여부.
+  var isSuccess: Bool = false
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
+}
+
+//// 클립보드 변경 이벤트.
+/// @opcode: 0x8005
+struct Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// 이 이벤트가 속한 구독의 식별자.
+  var subscriptionID: Sirius_Msgdef_SRUUID {
+    get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
+    set {_subscriptionID = newValue}
+  }
+  /// Returns true if `subscriptionID` has been explicitly set.
+  var hasSubscriptionID: Bool {return self._subscriptionID != nil}
+  /// Clears the value of `subscriptionID`. Subsequent reads from it will return its default value.
+  mutating func clearSubscriptionID() {self._subscriptionID = nil}
+
+  //// 클립보드 변경이 발생한 시각 (밀리초 단위 Unix timestamp)
+  var timestamp: UInt64 = 0
+
+  //// 클립보드 아이템 목록.
+  var items: [Sirius_Msgdef_V1_Channels_Clipboard_ClipboardItem] = []
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
+}
+
+//// 클립보드 데이터를 온디맨드로 요청합니다.
+/// @opcode: 0x8006
+struct Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// GetClipboardRequest에 대한 응답 메시지입니다.
+/// @opcode: 0x8007
+struct Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  //// 요청 처리 성공 여부. 거부된 경우 false.
+  var success: Bool = false
+
+  //// 클립보드 아이템 목록.
+  var items: [Sirius_Msgdef_V1_Channels_Clipboard_ClipboardItem] = []
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -78,7 +242,7 @@ fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.clipboard"
 
 extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ClipboardData"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}contentType\0\u{1}size\0\u{1}data\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}contentType\0\u{1}size\0\u{1}data\0\u{2}\u{c}flags\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -89,6 +253,7 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: SwiftProtobuf.Messa
       case 1: try { try decoder.decodeSingularStringField(value: &self.contentType) }()
       case 2: try { try decoder.decodeSingularUInt64Field(value: &self.size) }()
       case 3: try { try decoder.decodeSingularBytesField(value: &self._data) }()
+      case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
     }
@@ -108,6 +273,9 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: SwiftProtobuf.Messa
     try { if let v = self._data {
       try visitor.visitSingularBytesField(value: v, fieldNumber: 3)
     } }()
+    if self.flags != 0 {
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -115,14 +283,15 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardData: SwiftProtobuf.Messa
     if lhs.contentType != rhs.contentType {return false}
     if lhs.size != rhs.size {return false}
     if lhs._data != rhs._data {return false}
+    if lhs.flags != rhs.flags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ClipboardEvent"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}timestamp\0\u{1}data\0")
+extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardItem: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".ClipboardItem"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}representations\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -130,8 +299,74 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: SwiftProtobuf.Mess
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.timestamp) }()
-      case 2: try { try decoder.decodeSingularMessageField(value: &self._data) }()
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.representations) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.representations.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.representations, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_ClipboardItem, rhs: Sirius_Msgdef_V1_Channels_Clipboard_ClipboardItem) -> Bool {
+    if lhs.representations != rhs.representations {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".SubscribeClipboardRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{2}\u{e}flags\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.flags != 0 {
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardRequest, rhs: Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.flags != rhs.flags {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".SubscribeClipboardResponse"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}isSuccess\0\u{1}subscriptionId\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.isSuccess) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
       default: break
       }
     }
@@ -142,18 +377,219 @@ extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: SwiftProtobuf.Mess
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
-    if self.timestamp != 0 {
-      try visitor.visitSingularUInt64Field(value: self.timestamp, fieldNumber: 1)
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
     }
-    try { if let v = self._data {
+    if self.isSuccess != false {
+      try visitor.visitSingularBoolField(value: self.isSuccess, fieldNumber: 2)
+    }
+    try { if let v = self._subscriptionID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardResponse, rhs: Sirius_Msgdef_V1_Channels_Clipboard_SubscribeClipboardResponse) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.isSuccess != rhs.isSuccess {return false}
+    if lhs._subscriptionID != rhs._subscriptionID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".UnsubscribeClipboardRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}subscriptionId\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    try { if let v = self._subscriptionID {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardRequest, rhs: Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs._subscriptionID != rhs._subscriptionID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".UnsubscribeClipboardResponse"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}subscriptionId\0\u{1}isSuccess\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.isSuccess) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    try { if let v = self._subscriptionID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    if self.isSuccess != false {
+      try visitor.visitSingularBoolField(value: self.isSuccess, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardResponse, rhs: Sirius_Msgdef_V1_Channels_Clipboard_UnsubscribeClipboardResponse) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs._subscriptionID != rhs._subscriptionID {return false}
+    if lhs.isSuccess != rhs.isSuccess {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".ClipboardEvent"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}subscriptionId\0\u{1}timestamp\0\u{1}items\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._subscriptionID) }()
+      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.timestamp) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.items) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._subscriptionID {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if self.timestamp != 0 {
+      try visitor.visitSingularUInt64Field(value: self.timestamp, fieldNumber: 2)
+    }
+    if !self.items.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.items, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent, rhs: Sirius_Msgdef_V1_Channels_Clipboard_ClipboardEvent) -> Bool {
+    if lhs._subscriptionID != rhs._subscriptionID {return false}
     if lhs.timestamp != rhs.timestamp {return false}
-    if lhs._data != rhs._data {return false}
+    if lhs.items != rhs.items {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".GetClipboardRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardRequest, rhs: Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".GetClipboardResponse"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}items\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.success) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.items) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.success != false {
+      try visitor.visitSingularBoolField(value: self.success, fieldNumber: 2)
+    }
+    if !self.items.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.items, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardResponse, rhs: Sirius_Msgdef_V1_Channels_Clipboard_GetClipboardResponse) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.success != rhs.success {return false}
+    if lhs.items != rhs.items {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

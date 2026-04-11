@@ -39,7 +39,7 @@ struct RemoteSessionProjectionView: View {
     var subscription: ProjectionSessionSubscription?
 
     var source: ProjectionSession? { subscription?.session }
-    
+
 #if os(macOS)
     let mouse: HIDIOAppKitPointer?
 #endif
@@ -61,6 +61,8 @@ struct RemoteSessionProjectionView: View {
     @StateObject private var zoomController = ProjectionZoomController()
     @StateObject private var keyboardObserver = KeyboardHeightObserver()
     @EnvironmentObject private var windowViewModel: SessionWindowViewModel
+
+    @State private var debugViewModel: RemoteSessionDebugViewModel?
 #endif
 
     private var currentScale: CGFloat {
@@ -89,7 +91,7 @@ struct RemoteSessionProjectionView: View {
         }
         return sourceSize
     }
-    
+
 #if os(iOS)
     init(
         remoteSession: RemoteSession,
@@ -132,6 +134,12 @@ struct RemoteSessionProjectionView: View {
         }
     }
 
+    private func syncCASSettings() {
+        guard let renderer = subscription?.metalVideoRenderer else { return }
+        renderer.casEnabled = settingsStore.settings.projection.casEnabled
+        renderer.casSharpness = Float(settingsStore.settings.projection.casSharpness)
+    }
+
     private func syncMouseScope() {
         let scope = sourceDescriptor.toCursorPositionScope()
 
@@ -168,8 +176,16 @@ struct RemoteSessionProjectionView: View {
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
                             .scaleEffect(currentScale)
+                    } else if let renderer = subscription?.metalVideoRenderer {
+                        // Metal 비디오 렌더러 경로 (VT 코덱)
+                        MetalVideoView(renderer: renderer)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .offset(currentOffset)
+                            .frame(width: rect.width, height: rect.height)
+                            .position(x: rect.midX, y: rect.midY)
+                            .scaleEffect(currentScale)
                     } else if let displayLayer = subscription?.displayLayer {
-                        // AVSampleBufferDisplayLayer 경로 (VT 코덱)
+                        // AVSampleBufferDisplayLayer fallback (Metal 불가 시)
                         SampleBufferDisplayView(displayLayer: displayLayer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .offset(currentOffset)
@@ -262,10 +278,20 @@ struct RemoteSessionProjectionView: View {
                             droppedFrames: lastPerformanceReport?.droppedFrameCount ?? 0,
                             avgDecodeMs: lastPerformanceReport?.averageDecodeTimeMs ?? 0,
                             dataRateKbps: source?.currentDataRateKbps ?? 0,
-                            decoderType: source?.decoderTypeName ?? "N/A"
+                            decoderType: "N/A"
                         )
                         .padding(8)
                     }
+
+#if os(iOS)
+                    if settingsStore.settings.misc.showDebugWindow,
+                       let debugViewModel {
+                        DebugOverlayContainer(
+                            viewModel: debugViewModel
+                        )
+                        .padding(8)
+                    }
+#endif
                 }
 #if os(iOS)
                 .background(.background)
@@ -275,14 +301,24 @@ struct RemoteSessionProjectionView: View {
                 .onAppear {
                     syncSourceMetadata()
                     syncMouseScope()
+                    syncCASSettings()
 #if os(iOS)
                     let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
                     zoomController.mode = .defaultFor(settingsStore.settings.input.touchInputMode)
                     zoomController.updateGeometry(contentRect: rect, containerSize: geometry.size)
+                    if debugViewModel == nil {
+                        debugViewModel = RemoteSessionDebugViewModel(remoteSession: remoteSession)
+                    }
 #endif
                 }
                 .onChange(of: source?.id) { _, _ in
                     syncSourceMetadata()
+                }
+                .onChange(of: settingsStore.settings.projection.casEnabled) { _, _ in
+                    syncCASSettings()
+                }
+                .onChange(of: settingsStore.settings.projection.casSharpness) { _, _ in
+                    syncCASSettings()
                 }
 #if os(iOS)
                 .onChange(of: geometry.size) { _, newSize in
@@ -316,24 +352,26 @@ struct RemoteSessionProjectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .if(subscription != nil) {
                     $0
-                        .onReceive(source!.events) { event in
-                            switch event {
-                            case .sizeChanged(let size):
-                                sourceSize = size
-                                if size.width > 0, size.height > 0 {
-                                    projectionAspectRatio = size.width / size.height
+                        .task {
+                            for await event in source!.events {
+                                switch event {
+                                case .sizeChanged(let size):
+                                    sourceSize = size
+                                    if size.width > 0, size.height > 0 {
+                                        projectionAspectRatio = size.width / size.height
+                                    }
+                                case .performanceReportEmitted(let report):
+                                    lastPerformanceReport = report
+                                case .codecConfigured(let isTiledCodec):
+                                    subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
+                                    useCanvasRendering = isTiledCodec
+                                case .errorOccurred(let error, let fatal):
+                                    if fatal {
+                                        Self.logger.error("Fatal projection error: \(error.localizedDescription)")
+                                    }
+                                default:
+                                    break
                                 }
-                            case .performanceReportEmitted(let report):
-                                lastPerformanceReport = report
-                            case .codecConfigured(let isTiledCodec):
-                                subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
-                                useCanvasRendering = isTiledCodec
-                            case .errorOccurred(let error, let fatal):
-                                if fatal {
-                                    Self.logger.error("Fatal projection error: \(error.localizedDescription)")
-                                }
-                            default:
-                                break
                             }
                         }
                 }

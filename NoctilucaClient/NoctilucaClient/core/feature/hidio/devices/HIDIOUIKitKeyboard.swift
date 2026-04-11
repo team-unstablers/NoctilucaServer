@@ -17,6 +17,7 @@ extension HIDIOVirtualDeviceIdentifier {
     static let uiKitKeyboard = Self(rawValue: UUID(uuidString: "7C3A0B9A-0A9C-4A0C-9B43-5F1C4E1C6A51")!)
 }
 
+@MainActor
 final class HIDIOUIKitKeyboard: ObservableObject, HIDIOVirtualDevice {
     static let kind: HIDIOVirtualDeviceKind = .keyboard
     static let identifier: HIDIOVirtualDeviceIdentifier = .uiKitKeyboard

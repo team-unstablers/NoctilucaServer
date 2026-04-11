@@ -19,7 +19,7 @@ enum ScreenThumbnailerError: Error {
 
 /// ScreenCaptureKit 기반 one-shot 썸네일 캡처 유틸리티.
 /// 단일 프레임을 캡처한 후 레코더를 정리한다.
-class ScreenThumbnailer {
+final class ScreenThumbnailer: @unchecked Sendable {
     private static let queue: DispatchQueue = DispatchQueue(label: "app.noctiluca.server.projection.ScreenThumbnailer", attributes: .concurrent)
 
     private let recorder: any ScreenRecorder

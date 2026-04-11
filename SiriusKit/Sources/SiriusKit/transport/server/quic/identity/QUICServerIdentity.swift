@@ -148,7 +148,7 @@ public struct QUICServerIdentityCreationArgs {
     }
 }
 
-public protocol QUICServerIdentity {
+public protocol QUICServerIdentity: Sendable {
     static func createSelfSignedIdentity(args: QUICServerIdentityCreationArgs) throws -> Self
 
     func getServerIdentity() async throws -> SecIdentity

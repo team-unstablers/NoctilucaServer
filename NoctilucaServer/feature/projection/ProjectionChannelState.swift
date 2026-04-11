@@ -6,6 +6,7 @@
 //
 
 import Foundation
+@preconcurrency import Combine
 import CoreGraphics
 
 import SiriusKit
@@ -71,6 +72,9 @@ actor ProjectionChannelState {
 
     private var appEventSubscriptionId: UUID?
     private var appStreamSession: AppStreamSessionInfo?
+    
+    /// `DisplayLayoutManager.displayChangeSubject` 구독. 채널 수명과 동일.
+    private var displayChangesCancellable: AnyCancellable?
 
     func reserveSession(identifier: UUID, kind: SessionKind) -> Bool {
         guard lifecycleState == .active else {
@@ -303,6 +307,24 @@ actor ProjectionChannelState {
 
     func completeDestroy() {
         lifecycleState = .destroyed
+
+        displayChangesCancellable?.cancel()
+        displayChangesCancellable = nil
+    }
+
+    /// `DisplayLayoutManager` 의 disconnect 이벤트를 구독해 `callback` 으로 라우팅합니다.
+    /// 이 메서드는 채널 수명 동안 **정확히 한 번** 호출되어야 합니다 (ProjectionChannel.init 에서).
+    /// Combine sink 는 `AnyCancellable` 로 actor 내부에 보관하여 Sendable 을 만족시킵니다.
+    func installDisplayDisconnectSink(
+        _ callback: @escaping @Sendable (CGDirectDisplayID) -> Void
+    ) async {
+        self.displayChangesCancellable = await (Task { @MainActor in
+            DisplayLayoutManager.shared.displayChangeSubject
+                .filter { $0.eventType.contains(.disconnected) }
+                .sink { event in
+                    callback(event.displayID)
+                }
+        }).value
     }
 
     private func isIdentifierInUse(_ identifier: UUID) -> Bool {

@@ -5,10 +5,11 @@
 
 import os
 
-import Foundation
+@preconcurrency import Foundation
+
 import CoreGraphics
-import ApplicationServices // For AXUIElement
-import AppKit
+@preconcurrency import ApplicationServices // For AXUIElement
+@preconcurrency import AppKit
 import Combine
 
 import SiriusKit
@@ -253,7 +254,7 @@ final class AppSession {
     private var axObserver: AXObserver?
     private var observerRefCon: UnsafeMutableRawPointer?
 
-    private nonisolated let observedNotifications: [CFString] = [
+    nonisolated(unsafe) private let observedNotifications: [CFString] = [
         kAXWindowCreatedNotification as CFString,
         kAXUIElementDestroyedNotification as CFString,
         kAXFocusedWindowChangedNotification as CFString,
@@ -718,14 +719,14 @@ final class DesktopContextManager {
     private let workspace: NSWorkspace
     private var workspaceObservers: [Any] = []
 
-    nonisolated init(workspace: NSWorkspace = .shared) {
+    init(workspace: NSWorkspace = .shared) {
         self.workspace = workspace
 
         Task { [weak self] in
             await self?.registerWorkspaceNotifications()
         }
     }
-
+    
     @MainActor
     deinit {
         workspaceObservers.forEach { observer in
@@ -819,7 +820,7 @@ final class DesktopContextManager {
     ///
     /// `CGWindowListCopyWindowInfo`는 thread-safe이므로 MainActor 외부에서도 호출 가능하다.
     /// TTL 캐시를 사용하여 마우스 이벤트마다 발생하는 CGWindowList IPC를 최소화한다.
-    private static let boundsCacheTTL: CFAbsoluteTime = 0.5
+    nonisolated private static let boundsCacheTTL: CFAbsoluteTime = 0.5
 
     private static let boundsCache = OSAllocatedUnfairLock(initialState: (
         windowID: WindowID(0),
@@ -827,7 +828,7 @@ final class DesktopContextManager {
         timestamp: CFAbsoluteTime(0)
     ))
 
-    nonisolated static func queryWindowBounds(for windowID: WindowID) -> CGRect? {
+    static func queryWindowBounds(for windowID: WindowID) -> CGRect? {
         let now = CFAbsoluteTimeGetCurrent()
 
         let cached: CGRect? = boundsCache.withLock { state in

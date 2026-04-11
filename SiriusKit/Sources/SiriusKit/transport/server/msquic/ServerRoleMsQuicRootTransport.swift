@@ -7,7 +7,7 @@
 
 import Foundation
 import MsQuic
-import SwiftMsQuicHelper
+import SwiftMsQuic
 import SiriusKitCore
 
 enum ServerRoleMsQuicRootTransportError: Error, ServerRoleRootTransportError {
@@ -49,6 +49,7 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     private var identityAdapter: MsQuicServerIdentityAdapter?
 
     private(set) var clients: [ServerRoleMsQuicClientTransport] = []
+    private var isShuttingDown = false
 
     nonisolated(unsafe) weak var delegate: ServerRoleRootTransportDelegate?
 
@@ -62,6 +63,8 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     // MARK: - ServerRoleRootTransport Protocol
 
     func startup() async throws {
+        self.isShuttingDown = false
+
         // 1. MsQuic Registration 생성
         let regConfig = QuicRegistrationConfig(
             appName: "SiriusKit-MsQuic",
@@ -89,25 +92,19 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
 
         // 3. Configuration 생성 (ALPN 설정)
         var settings = QuicSettings()
-        settings.idleTimeoutMs = 10000
+        settings.idleTimeoutMs = 15000
         settings.keepAliveIntervalMs = 5000
-        settings.disconnectTimeoutMs = 2000
+        settings.disconnectTimeoutMs = 15000
 
         settings.peerBidiStreamCount = 128
         settings.migrationEnabled = true
-        settings.sendBufferingEnabled = true
+        settings.sendBufferingEnabled = false
         settings.serverResumptionLevel = UInt8(Int(exactly: QUIC_SERVER_RESUME_AND_ZERORTT.rawValue)!)
         
-        settings.pacingEnabled = false
-        
-        settings.streamRecvBufferDefault = 4 * 1024 * 1024
-        settings.streamRecvWindowDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowBidiLocalDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowBidiRemoteDefault = 2 * 1024 * 1024
-        settings.streamRecvWindowUnidiDefault = 512 * 1024
-        settings.connFlowControlWindow = 16 * 1024 * 1024
+        settings.pacingEnabled = true
         
         settings.ecnEnabled = true
+        
 
 
         do {
@@ -179,8 +176,19 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     }
 
     func shutdown() async throws {
-        // 1. 모든 클라이언트 연결 종료
-        // 순환 참조를 먼저 끊고, 이후 종료 작업을 진행합니다.
+        guard !self.isShuttingDown else {
+            return
+        }
+
+        self.isShuttingDown = true
+
+        // 1. Listener 중지
+        if let listener = self.listener {
+            await listener.stop()
+            self.listener = nil
+        }
+
+        // 2. 모든 클라이언트 연결 종료
         let clientSnapshot = self.clients
         self.clients.removeAll()
 
@@ -190,12 +198,6 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
                     await client.disconnect()
                 }
             }
-        }
-
-        // 2. Listener 중지 (역순 해제)
-        if let listener = self.listener {
-            await listener.stop()
-            self.listener = nil
         }
 
         // 3. Configuration 해제 (deinit에서 자동 처리)
@@ -216,18 +218,15 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
         connectionInfo: QuicListenerEvent.NewConnectionInfo,
         configuration: QuicConfiguration
     ) throws -> QuicConnection? {
-        // 새 QuicConnection 래퍼 생성
-        let quicConnection: QuicConnection
-        do {
-            quicConnection = try QuicConnection(
-                handle: connectionInfo.connection,
-                configuration: configuration
-            )
-            
-            try quicConnection.setStreamSchedulingScheme(.roundRobin)
-        } catch {
-            throw error
-        }
+        // 새 QuicConnection 래퍼 생성 (v2: info.accept(...)로 raw handle 수락)
+        // peer stream은 이후 installConnectionHandlers()의 onPeerStreamStarted로 처리하므로
+        // streamHandler는 여기서 nil로 전달한다.
+        let quicConnection = try connectionInfo.accept(
+            configuration: configuration,
+            streamHandler: nil
+        )
+
+        try quicConnection.setStreamSchedulingScheme(.roundRobin)
 
         // ServerRoleMsQuicClientTransport 생성
         let clientTransport = ServerRoleMsQuicClientTransport(
@@ -244,12 +243,26 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
     }
 
     internal func registerClientTransport(_ transport: ServerRoleMsQuicClientTransport) async {
+        guard !self.isShuttingDown else {
+            await transport.disconnect()
+            return
+        }
+
+        guard !transport.isClosed else {
+            return
+        }
+
+        self.clients.append(transport)
+
         // 델리게이트 콜백 (QUICClientTransportDelegate 설정할 타이밍 제공)
         delegate?.serverTransportDidAcceptConnection(self, clientTransport: transport)
 
-        await transport.start()
+        guard !transport.isClosed else {
+            self.clients.removeAll { $0.id == transport.id }
+            return
+        }
 
-        self.clients.append(transport)
+        await transport.start()
     }
 
     internal func unregisterClientTransport(_ transport: ServerRoleMsQuicClientTransport) async {
@@ -279,7 +292,8 @@ actor ServerRoleMsQuicRootTransport: ServerRoleRootTransport {
             return .success
         }
 
-        connection.onPeerStreamStarted { [weak clientTransport] _, quicStream, flags in
+        connection.onPeerStreamStarted { [weak clientTransport] _, _, quicStream, flags in
+            // StreamHandler v2: (isolated (any Actor)?, QuicConnection, QuicStream, QuicStreamOpenFlags)
             // TODO: flags은 무조건 bidirectional 해야 한다
             guard let clientTransport = clientTransport else { return }
             await clientTransport.handlePeerStream(quicStream)

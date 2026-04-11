@@ -79,20 +79,26 @@ enum ScreenRecorderPrepareError: LocalizedError {
     case internalError
 }
 
-protocol ScreenRecorderDelegate: AnyObject {
+protocol ScreenRecorderDelegate: AnyObject, Sendable {
     func screenRecorderDidStart(_ recorder: any ScreenRecorder)
     func screenRecorder(_ recorder: any ScreenRecorder, didStopWithError error: Error?)
     func screenRecorder(_ recorder: any ScreenRecorder, didCaptureFrame frameData: CMSampleBuffer)
 }
 
-protocol ScreenRecorder: AnyObject, Identifiable {
+/// NOTE: `ProjectionSession` actor 가 `async init` 안에서
+/// `ScreenRecorderFactory.create(...)` 를 `await` 로 호출해 recorder 를 actor-isolated
+/// stored property 로 저장한다. 이 cross-actor 반환값 전달에 Sendable 이 필요하므로
+/// 본체 프로토콜에도 Sendable 표식을 붙인다. 구현체는 내부 DispatchQueue 직렬화로
+/// 실제 thread-safety 를 확보하고, `@unchecked Sendable` 로 표식한다 (문서 Rule G 확장:
+/// "고빈도 미디어 파이프라인 class 에 한해 `@unchecked Sendable` 허용").
+protocol ScreenRecorder: AnyObject, Identifiable, Sendable {
     var id: UUID { get }
-    
-    var queue: DispatchQueue { get set }
+
+    var queue: DispatchQueue { get }
     var delegate: ScreenRecorderDelegate? { get set }
-    
+
     func prepare(with args: ScreenRecorderArgs) async throws
-    
+
     func start() async throws
     func stop() async throws
 }

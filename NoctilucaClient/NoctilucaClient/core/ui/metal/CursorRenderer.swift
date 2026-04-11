@@ -24,6 +24,9 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     private var targetDisplayID: Int = -1
     private var currentDisplayID: Int? = nil
 
+    // 마지막 draw 시 커서가 보였는지 여부 (invisible 상태에서 반복 clear 방지)
+    private var lastDrawnVisible: Bool = false
+
     private let textureLoader: MTKTextureLoader
 
     // Combine 기반 직접 구독 (SwiftUI 뷰 업데이트 파이프라인 우회)
@@ -139,30 +142,35 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     private func updateCursorState(_ state: RemoteSession.CursorState, sourceSize: CGSize, targetDisplayID: Int, in view: MTKView) {
         var needsRedraw = false
 
-        // targetDisplayID 변경 감지
+        // targetDisplayID/displayID 변경 → visibility 전환 가능 → 항상 redraw
         if self.targetDisplayID != targetDisplayID {
             self.targetDisplayID = targetDisplayID
             needsRedraw = true
         }
 
-        // displayID 변경 감지 (커서가 다른 디스플레이로 이동)
         if self.currentDisplayID != state.displayID {
             self.currentDisplayID = state.displayID
             needsRedraw = true
         }
 
-        // 위치 변경 감지
+        let isOnThisDisplay = self.currentDisplayID == self.targetDisplayID
+
+        // 위치 변경: 이 디스플레이에 커서가 있을 때만 redraw
         if self.currentPosition != state.position {
             self.currentPosition = state.position
-            needsRedraw = true
+            if isOnThisDisplay {
+                needsRedraw = true
+            }
         }
 
-        // 이미지 변경 감지
+        // 이미지 변경: 이 디스플레이에 커서가 있을 때만 redraw
         if let image = state.image {
             if self.lastCursorImageID != image.id {
                  loadCursorImage(image)
                  self.lastCursorImageID = image.id
-                 needsRedraw = true
+                 if isOnThisDisplay {
+                     needsRedraw = true
+                 }
             }
         } else {
             if self.currentTexture != nil {
@@ -174,7 +182,9 @@ class CursorRenderer: NSObject, MTKViewDelegate {
 
         if self.currentSourceSize != sourceSize {
             self.currentSourceSize = sourceSize
-            needsRedraw = true
+            if isOnThisDisplay {
+                needsRedraw = true
+            }
         }
 
         // 변경사항이 있을 때만 그리기 요청
@@ -201,8 +211,12 @@ class CursorRenderer: NSObject, MTKViewDelegate {
     }
     
     func draw(in view: MTKView) {
-        // displayID가 일치하지 않으면 투명하게 클리어만 수행
         let isVisible = currentDisplayID == targetDisplayID
+
+        // 이미 invisible 상태이고 이전에 clear도 완료 → GPU 작업 스킵
+        if !isVisible && !lastDrawnVisible {
+            return
+        }
 
         guard let drawable = view.currentDrawable,
               let descriptor = view.currentRenderPassDescriptor else {
@@ -214,7 +228,7 @@ class CursorRenderer: NSObject, MTKViewDelegate {
               let vertexBuffer = vertexBuffer,
               let texture = currentTexture,
               let samplerState = samplerState else {
-            // 커서가 보이지 않거나 텍스처가 없는 경우: 투명하게 클리어
+            // visible→invisible 전환 또는 텍스처 없음: 한 번만 clear
             descriptor.colorAttachments[0].loadAction = .clear
             descriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
             if let commandBuffer = commandQueue.makeCommandBuffer(),
@@ -223,25 +237,26 @@ class CursorRenderer: NSObject, MTKViewDelegate {
                 commandBuffer.present(drawable)
                 commandBuffer.commit()
             }
+            lastDrawnVisible = false
             return
         }
 
         if viewportSize != view.drawableSize {
             viewportSize = view.drawableSize
         }
-        
+
         // 배경 투명 처리
         descriptor.colorAttachments[0].loadAction = .clear
         descriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        
+
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
             return
         }
-        
+
         encoder.setRenderPipelineState(pipelineState)
         encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        
+
         let resolvedSourceSize = (currentSourceSize.width > 0 && currentSourceSize.height > 0) ? currentSourceSize : viewportSize
         let scaleX = resolvedSourceSize.width > 0 ? viewportSize.width / resolvedSourceSize.width : 1.0
         let scaleY = resolvedSourceSize.height > 0 ? viewportSize.height / resolvedSourceSize.height : 1.0
@@ -265,16 +280,17 @@ class CursorRenderer: NSObject, MTKViewDelegate {
             hotspot: SIMD2<Float>(Float(scaledHotspot.x), Float(scaledHotspot.y)),
             viewportSize: SIMD2<Float>(Float(viewportSize.width), Float(viewportSize.height))
         )
-        
+
         encoder.setVertexBytes(&uniforms, length: MemoryLayout<CursorUniforms>.size, index: 1)
         encoder.setFragmentTexture(texture, index: 0)
         encoder.setFragmentSamplerState(samplerState, index: 0)
-        
+
         encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
-        
+
         encoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
+        lastDrawnVisible = true
     }
 }
 

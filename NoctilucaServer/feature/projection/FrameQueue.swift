@@ -10,13 +10,14 @@ import Foundation
 import SiriusKit
 
 
-actor FrameQueue<Frame> {
+actor FrameQueue<Frame: Sendable> {
     private let logger = NoctilucaLogger(category: "FrameQueue")
     
     private var capacity: Int
     private var queue: [Frame] = []
     
-    private nonisolated(unsafe) var waiter: CheckedContinuation<Frame, any Error>? = nil
+    // deinit에서 접근하기 위해 nonisolated로 선언.
+    nonisolated(unsafe) private var waiter: CheckedContinuation<Frame, any Error>? = nil
     
     init(capacity: Int) {
         self.capacity = capacity

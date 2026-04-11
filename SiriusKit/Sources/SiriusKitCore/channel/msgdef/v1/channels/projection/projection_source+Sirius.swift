@@ -90,7 +90,7 @@ public struct SingleWindowProjectionSource: SiriusMessage {
 public struct ProjectionSource: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_ProjectionSource
     
-    public enum OneOf_Value {
+    public enum OneOf_Value: Sendable {
         case entireDisplay(EntireDisplayProjectionSource)
         case region(DisplayRegionProjectionSource)
         case singleWindow(SingleWindowProjectionSource)

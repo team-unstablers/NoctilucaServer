@@ -10,9 +10,10 @@ import Combine
 
 import SiriusKitClient
 
+@MainActor
 final class SettingsStore: ObservableObject {
     private static let logger = NoctilucaLogger(category: "SettingsStore")
-    
+
     static let shared = SettingsStore()
 
     @Published

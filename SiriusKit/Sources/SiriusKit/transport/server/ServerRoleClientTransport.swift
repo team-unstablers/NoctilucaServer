@@ -23,6 +23,7 @@ protocol ServerRoleClientTransport: TransportLayer, Hashable, SiriusEventLogger.
     var delegate: ServerRoleClientTransportDelegate? { get set }
     // swiftlint:disable:next identifier_name
     var remoteEndpoint: SREndpoint? { get }
+    var isClosed: Bool { get }
     
     func issueResumeTicket() async throws
     

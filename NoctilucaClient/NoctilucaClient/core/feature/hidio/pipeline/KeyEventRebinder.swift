@@ -9,7 +9,8 @@ import Foundation
 
 import SiriusKitClient
 
-class KeyEventRebinder: KeyEventPipeline {
+@MainActor
+final class KeyEventRebinder: KeyEventPipeline {
     // nil value = disabled (이벤트 삭제)
     // key 없음 = 패스스루
     private var bindings: [LinuxKeycode: LinuxKeycode?] = [:]

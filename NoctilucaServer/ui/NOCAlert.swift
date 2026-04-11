@@ -21,7 +21,8 @@ typealias NOCAlertInternal = UIAlertController
 typealias NOCAlertInternal = NSAlert
 #endif
 
-class NOCAlert: NSObject {
+@MainActor
+class NOCAlert: NSObject, Sendable {
     let alert: NOCAlertInternal
     
 #if canImport(UIKit)

@@ -6,31 +6,38 @@
 //
 
 import Foundation
-import Combine
+@preconcurrency import Combine
 
-import CoreGraphics
-import CoreMedia
+@preconcurrency import CoreGraphics
+@preconcurrency import CoreMedia
 
 import SiriusKit
 
-class AudioProjectionSession: Identifiable {
+actor AudioProjectionSession: Identifiable {
     private let logger = NoctilucaLogger(category: "AudioProjectionSession")
 
-    private let recorderQueue = DispatchQueue(
+    /// AudioRecorder delegate callbacks 가 이 queue 위에서 직접 실행된다.
+    /// actor 의 `unownedExecutor` 를 이 queue 에 바인딩하여, 같은 queue 에서 호출되는
+    /// 콜백은 `assumeIsolated` 로 hop 없이 actor-isolated 상태에 접근할 수 있다.
+    nonisolated let recorderQueue: DispatchSerialQueue = DispatchSerialQueue(
         label: "app.noctiluca.server.projection.recorder.audio",
         qos: .userInitiated
     )
 
-    let id: UUID
-    let dataChannel: ProjectionDataChannel
+    nonisolated var unownedExecutor: UnownedSerialExecutor {
+        recorderQueue.asUnownedSerialExecutor()
+    }
+
+    nonisolated let id: UUID
+    nonisolated let dataChannel: ProjectionDataChannel
 
     private var recorderArgs: AudioRecorderArgs!
 
-    var recorder: any AudioRecorder
-    var encoder: (any AudioEncoder)?
-    var codec: SiriusKit.AudioCodec?
-    
-    private let frameQueue = FrameQueue<EncodedAudioFrame>(capacity: 4)
+    private var recorder: any AudioRecorder
+    private var encoder: (any AudioEncoder)?
+    private var codec: SiriusKit.AudioCodec?
+
+    nonisolated let frameQueue = FrameQueue<EncodedAudioFrame>(capacity: 4)
 
     private var encoderEventLoopTask: Task<Void, Error>?
     private var senderEventLoopTask: Task<Void, Error>?
@@ -39,12 +46,15 @@ class AudioProjectionSession: Identifiable {
     private var isReconfiguring = false
     private var isStopped = false
 
-    init(id: UUID, dataChannel: ProjectionDataChannel) {
+    init(id: UUID, dataChannel: ProjectionDataChannel) async {
         self.id = id
-
         self.dataChannel = dataChannel
         self.recorder = ScreenCaptureKitAudioRecorder(queue: recorderQueue)
 
+        await self.setup()
+    }
+
+    private func setup() async {
         self.recorder.delegate = self
     }
 
@@ -89,7 +99,8 @@ class AudioProjectionSession: Identifiable {
 
         // 모든 재시도 실패
         logger.error("reconfigureRecorder(): all retries exhausted for audio projection session \(self.id)")
-        dataChannel.projectionDelegate?.projectionDataChannel(
+        let delegate = await dataChannel.state.getDelegate()
+        delegate?.projectionDataChannel(
             dataChannel,
             didEncounterError: lastError ?? AudioRecorderPrepareError.internalError
         )
@@ -117,7 +128,7 @@ class AudioProjectionSession: Identifiable {
     private func processEncodedFrame(_ frame: consuming EncodedAudioFrame) async throws {
         await frameQueue.enqueue(frame)
     }
-    
+
     private func senderEventLoopMain() async throws {
         while !Task.isCancelled {
             let frame: EncodedAudioFrame
@@ -126,19 +137,21 @@ class AudioProjectionSession: Identifiable {
             } catch is CancellationError {
                 return
             }
-            
-            try await self.dataChannel.send(audioFrame: frame)
+
+            // send-and-forget: unbuffer 모드에서는 이렇게 하지 않으면 괴로움
+            dataChannel.send(audioFrame: frame)
         }
     }
 
-    private func handleLoopFailure(loopName: String, error: any Error) {
+    private func handleLoopFailure(loopName: String, error: any Error) async {
         guard !(error is CancellationError) else {
             return
         }
 
         self.logger.warning("Audio projection session \(self.id) \(loopName) loop failed: \(error)")
 
-        self.dataChannel.projectionDelegate?.projectionDataChannel(
+        let delegate = await self.dataChannel.state.getDelegate()
+        delegate?.projectionDataChannel(
             self.dataChannel,
             didEncounterError: error
         )
@@ -182,8 +195,8 @@ class AudioProjectionSession: Identifiable {
                 .receive(on: DispatchQueue.main)
                 .removeDuplicates()
                 .dropFirst()
-                .sink { [weak self] isLocked in
-                    Task {
+                .sink { [weak self] _ in
+                    Task { [weak self] in
                         await self?.reconfigureRecorder()
                     }
                 }
@@ -192,12 +205,12 @@ class AudioProjectionSession: Identifiable {
         // Cancel existing encoder event loop task and clean up encoder
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
-        
+
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
         await frameQueue.clear()
         await frameQueue.cancelWaiter()
-        
+
         try? self.encoder?.stop()
 
         // Create appropriate encoder based on codec
@@ -221,7 +234,7 @@ class AudioProjectionSession: Identifiable {
             do {
                 try await self.encoderEventLoopMain()
             } catch {
-                self.handleLoopFailure(loopName: "encoder", error: error)
+                await self.handleLoopFailure(loopName: "encoder", error: error)
             }
         }
 
@@ -230,7 +243,7 @@ class AudioProjectionSession: Identifiable {
             do {
                 try await self.senderEventLoopMain()
             } catch {
-                self.handleLoopFailure(loopName: "sender", error: error)
+                await self.handleLoopFailure(loopName: "sender", error: error)
             }
         }
     }
@@ -284,61 +297,53 @@ class AudioProjectionSession: Identifiable {
 
         // 6. Data channel 정리
         do {
-            try await self.dataChannel.close()
+            try await self.dataChannel.handle.close()
         } catch {
             self.logger.warning("Failed to close projection data channel \(self.dataChannel.identifier): \(error)")
         }
     }
 
     deinit {
-        // 동기 작업 수행
-        encoderEventLoopTask?.cancel()
-        senderEventLoopTask?.cancel()
-        screenLockCancellable?.cancel()
-        recorder.delegate = nil
-        try? encoder?.stop()
-
-        // Safety-net: stop() 미호출 시 async 리소스를 비동기적으로 정리
-        guard !isStopped else { return }
-
-        logger.warning("AudioProjectionSession \(self.id) deallocated without explicit stop() - triggering safety-net async cleanup")
-
-        let recorder = self.recorder
+        // nonisolated context. actor-isolated 필드 접근 금지.
+        // `stop()` 호출은 상위(ProjectionChannelState.beginDestroy) 에서 보장됨.
         let dataChannel = self.dataChannel
         let frameQueue = self.frameQueue
 
         Task.detached {
             await frameQueue.cancelWaiter()
-            try? await recorder.stop()
-            try? await dataChannel.close()
+            try? await dataChannel.handle.close()
         }
     }
 }
 
 extension AudioProjectionSession: AudioRecorderDelegate {
-    func audioRecorderDidStart(_ recorder: any AudioRecorder) {
-        self.logger.info("audio recorder started for audio projection session \(self.id)")
+    nonisolated func audioRecorderDidStart(_ recorder: any AudioRecorder) {
+        self.assumeIsolated { me in
+            me.logger.info("audio recorder started for audio projection session \(me.id)")
+        }
     }
 
-    func audioRecorder(_ recorder: any AudioRecorder, didStopWithError error: (any Error)?) {
-        self.logger.info("audio recorder stopped for audio projection session \(self.id), error: \(String(describing: error))")
+    nonisolated func audioRecorder(_ recorder: any AudioRecorder, didStopWithError error: (any Error)?) {
+        self.assumeIsolated { me in
+            me.logger.info("audio recorder stopped for audio projection session \(me.id), error: \(String(describing: error))")
 
-        if error != nil, !isStopped {
-            Task {
-                await self.reconfigureRecorder()
+            if error != nil, !me.isStopped {
+                Task { [me] in await me.reconfigureRecorder() }
             }
         }
     }
 
-    func audioRecorder(_ recorder: any AudioRecorder, didCaptureFrame frameData: CMSampleBuffer) {
-        guard let encoder = self.encoder else {
-            return
-        }
+    nonisolated func audioRecorder(_ recorder: any AudioRecorder, didCaptureFrame frameData: CMSampleBuffer) {
+        self.assumeIsolated { me in
+            guard let encoder = me.encoder else {
+                return
+            }
 
-        do {
-            try encoder.encode(sampleBuffer: frameData)
-        } catch {
-            logger.error("Failed to encode audio frame: \(error)")
+            do {
+                try encoder.encode(sampleBuffer: frameData)
+            } catch {
+                me.logger.error("Failed to encode audio frame: \(error)")
+            }
         }
     }
 }

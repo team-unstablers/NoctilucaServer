@@ -7,6 +7,7 @@
 
 import Foundation
 import Network
+internal import Atomics
 import SiriusKitCore
 
 enum ServerRoleQUICClientTransportError: Error {
@@ -23,10 +24,10 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
 
     private let queue = DispatchQueue(label: "io.siriuskit.quic.server.client")
 
-    private var isFinalized: Bool = false
+    private let isFinalized = ManagedAtomic(false)
     
     // TODO: Network.framework 구현체를 버리긴 버리더라도 쓰는 동안은 구현 제대로 해야 하지 않을까...
-    private var eventLoggerContext: SharedState<SiriusEventLogger.Context> = SharedState(SiriusEventLogger.Context())
+    private let loggerContext = SharedState(SiriusEventLogger.Context())
 
     nonisolated var remoteEndpoint: SREndpoint? {
         guard let endpoint = self.connectionGroup.descriptor.members.first else {
@@ -34,6 +35,10 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
         }
 
         return SREndpoint(from: endpoint)
+    }
+
+    nonisolated var isClosed: Bool {
+        isFinalized.load(ordering: .acquiring)
     }
 
     init(_ connectionGroup: NWConnectionGroup, serverTransport: ServerRoleQUICRootTransport, id: ServerRoleClientTransportIdentifier) {
@@ -48,11 +53,9 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
 
     func disconnect() async {
-        guard !isFinalized else {
+        if isFinalized.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
-
-        self.isFinalized = true
 
         let snapshot = Array(self.streams.values)
         self.streams.removeAll()
@@ -93,8 +96,8 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
         // NO-OP: Network.framework (NWConnection)에서는 resumption ticket 발행을 직접 지원하지 않음
     }
     
-    func eventLoggerContext() async -> SharedState<SiriusEventLogger.Context> {
-        return eventLoggerContext
+    nonisolated func eventLoggerContext() -> SharedState<SiriusEventLogger.Context> {
+        return loggerContext
     }
 
     internal func setup() {
@@ -158,7 +161,7 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     internal func registerStream(_ stream: ServerRoleQUICStream) {
         assert(stream.connection.state == .ready)
 
-        let streamId = stream.id
+        let streamId = stream.id()
         guard !self.streams.keys.contains(streamId) else {
             return
         }
@@ -167,11 +170,13 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
 
     internal func unregisterStream(_ stream: ServerRoleQUICStream) {
-        guard self.streams.keys.contains(stream.id) else {
+        let streamId = stream.id()
+        
+        guard self.streams.keys.contains(streamId) else {
             return
         }
 
-        self.streams.removeValue(forKey: stream.id)
+        self.streams.removeValue(forKey: streamId)
     }
 }
 

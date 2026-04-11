@@ -7,7 +7,7 @@
 
 import Foundation
 import MsQuic
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 import Atomics
 import SiriusKitCore
@@ -19,6 +19,8 @@ import SiriusKitCore
 class ClientRoleMsQuicStream: SiriusKitCore.Stream {
     let quicStream: QuicStream
     let transport: ClientRoleMsQuicTransport
+    
+    private var _id: StreamIdentifier = .zero
 
     private var receiveTask: Task<Void, Error>?
     private let isClosed = ManagedAtomic(false)
@@ -28,13 +30,17 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
         self.transport = transport
 
         super.init()
-        self.id = identifier
+        self._id = identifier
 
         // 수신 루프 시작
         startReceiveLoop()
     }
 
     // MARK: - Stream Protocol Overrides
+    
+    override func id() -> StreamIdentifier {
+        return _id
+    }
 
     override func close() async throws {
         if self.isClosed.load(ordering: .acquiring) {
@@ -49,6 +55,15 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
     override func write(_ data: Data) async -> Result<UInt32, StreamError> {
         do {
             try await quicStream.send(data)
+            return .success(UInt32(data.count))
+        } catch {
+            return .failure(mapQuicError(error))
+        }
+    }
+
+    override func writeNonBlocking(_ data: Data) -> Result<UInt32, StreamError> {
+        do {
+            try quicStream.send(data)
             return .success(UInt32(data.count))
         } catch {
             return .failure(mapQuicError(error))
@@ -111,7 +126,7 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
     // MARK: - Finalization
 
     private func finalize(event: StreamEvent) async {
-        if self.isClosed.exchange(true, ordering: .acquiring) {
+        if self.isClosed.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 
@@ -128,10 +143,10 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
 
 extension ClientRoleMsQuicStream: Hashable, Equatable {
     static func == (lhs: ClientRoleMsQuicStream, rhs: ClientRoleMsQuicStream) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.id() == rhs.id()
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(id())
     }
 }

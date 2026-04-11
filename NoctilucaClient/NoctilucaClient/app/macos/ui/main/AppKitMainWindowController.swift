@@ -22,8 +22,10 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     
     private var subDisplayWindowManager: SubDisplayWindowManager?
     private var appStreamWindowManager: AppStreamWindowManager?
+    private var debugWindowController: AppKitDebugWindowController?
     
     private var remoteSessionCancellable: AnyCancellable?
+    private var debugWindowCancellable: AnyCancellable?
     
     init(settingsStore: SettingsStore) {
         self.viewModel = SessionWindowViewModel()
@@ -57,7 +59,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
         
         super.init(window: window)
         
-        viewModel.mainWindowController = Weak(self)
+        viewModel.mainWindowController = self
         window.delegate = self
         
         self.window = window
@@ -76,6 +78,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
                     self.viewModel.onDetachDisplay = { [weak self] displayID in
                         try await self?.subDisplayWindowManager?.spawn(for: displayID)
                     }
+                    self.updateDebugWindow(session: session)
                 } else {
                     self.subDisplayWindowManager?.destroyAll()
                     self.subDisplayWindowManager = nil
@@ -83,11 +86,42 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
                     self.appStreamWindowManager = nil
                     self.viewModel.appStreamWindowManager = nil
                     self.viewModel.onDetachDisplay = nil
+                    self.debugWindowController?.close()
+                    self.debugWindowController = nil
+                }
+            }
+
+        debugWindowCancellable = SettingsStore.shared.$settings
+            .compactMap { $0?.misc.showDebugWindow }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] showDebugWindow in
+                guard let self else { return }
+                if showDebugWindow {
+                    if let session = self.viewModel.remoteSession {
+                        self.updateDebugWindow(session: session)
+                    }
+                } else {
+                    self.debugWindowController?.close()
+                    self.debugWindowController = nil
                 }
             }
     }
 
+    private func updateDebugWindow(session: RemoteSession) {
+        guard SettingsStore.shared.settings.misc.showDebugWindow else { return }
+        guard let parentWindow = self.window else { return }
+
+        if debugWindowController == nil {
+            debugWindowController = AppKitDebugWindowController()
+        }
+        debugWindowController?.show(for: session, parentWindow: parentWindow)
+    }
+
     func windowWillClose(_ notification: Notification) {
+        debugWindowController?.close()
+        debugWindowController = nil
+
         subDisplayWindowManager?.destroyAll()
         subDisplayWindowManager = nil
         

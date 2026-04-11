@@ -63,7 +63,7 @@ class MockProjectionSession: Identifiable {
             for await event in encoder.events {
                 switch event {
                 case .parameterSetChanged(let parameterSetMessage):
-                    try await self.dataChannel.send(parameterSetMessage: parameterSetMessage)
+                    self.dataChannel.send(parameterSetMessage: parameterSetMessage)
                 case .frameEncoded(let encodedFrame):
                     await self.frameQueue.enqueue(encodedFrame)
                 case .frameSkipped:
@@ -87,7 +87,7 @@ class MockProjectionSession: Identifiable {
                 } catch is CancellationError {
                     return
                 }
-                try await self.dataChannel.send(videoFrame: frame)
+                self.dataChannel.send(videoFrame: frame)
             }
         }
 

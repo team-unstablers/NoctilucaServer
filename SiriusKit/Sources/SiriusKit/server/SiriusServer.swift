@@ -8,7 +8,7 @@
 import Foundation
 import SiriusKitCore
 
-public protocol SiriusServerDelegate: AnyObject {
+public protocol SiriusServerDelegate: AnyObject, Sendable {
     func siriusServerDidStart(_ server: SiriusServer)
     func siriusServerDidStop(_ server: SiriusServer)
     func siriusServer(_ server: SiriusServer, didEncounterError error: any Error)
@@ -17,15 +17,15 @@ public protocol SiriusServerDelegate: AnyObject {
     func siriusServerDidFailToAcceptClientSession(_ server: SiriusServer, error: any Error)
 }
 
-public class SiriusServer {
+public actor SiriusServer: Sendable {
     let serverTransport: ServerRoleRootTransport
     let featureProvider: (any FeatureProvider)
 
-    public var sessions: [ClientSession] = []
+    private(set) public var sessions: [ClientSession] = []
 
     public weak var delegate: (any SiriusServerDelegate)?
 
-    required init(
+    init(
         serverTransport: ServerRoleRootTransport,
         featureProvider: (any FeatureProvider)
     ) {
@@ -33,6 +33,10 @@ public class SiriusServer {
         self.featureProvider = featureProvider
 
         self.serverTransport.delegate = self
+    }
+    
+    public func setDelegate(_ delegate: (any SiriusServerDelegate)?) {
+        self.delegate = delegate
     }
 
     public func setup() async throws {
@@ -43,8 +47,7 @@ public class SiriusServer {
     }
 
     public func shutdown() async throws {
-        let sessionSnapshot = self.sessions
-        self.sessions.removeAll()
+        let sessionSnapshot = self.takeSessionsSnapshot()
 
         for session in sessionSnapshot {
             await session.close()
@@ -53,36 +56,76 @@ public class SiriusServer {
         try await serverTransport.shutdown()
     }
 
-    private func createClientSession(_ transport: any ServerRoleClientTransport) async {
-        let eventLoggerContext = await transport.eventLoggerContext()
-        let session = ClientSession(id: UUID(), transport: transport, featureProvider: featureProvider, eventLoggerContext: eventLoggerContext)
+    private func createClientSession(_ transport: any ServerRoleClientTransport) {
+        guard !transport.isClosed else {
+            return
+        }
 
-        // FIXME: self.sessions의 concurrent modification 가능성 있음
-        self.sessions.append(session)
+        let eventLoggerContext = transport.eventLoggerContext()
+        let session = ClientSession(id: UUID(), transport: transport, featureProvider: featureProvider, eventLoggerContext: eventLoggerContext)
+        session.lifecycleDelegate = self
+
+        appendSession(session)
         self.delegate?.siriusServerDidAcceptClientSession(self, session: session)
+        session.activate()
+
+        if transport.isClosed {
+            Task {
+                await session.close()
+            }
+        }
+    }
+
+    private func appendSession(_ session: ClientSession) {
+        sessions.append(session)
+    }
+
+    private func removeSession(id: UUID) {
+        sessions.removeAll { $0.id == id }
+    }
+
+    private func takeSessionsSnapshot() -> [ClientSession] {
+        let snapshot = sessions
+        
+        // 잠깐, 왜 여기서 removeAll()을 해?
+        sessions.removeAll()
+        return snapshot
     }
 }
 
 extension SiriusServer: ServerRoleRootTransportDelegate {
-    func serverTransportDidStartListening(_ serverTransport: ServerRoleRootTransport) {
-        delegate?.siriusServerDidStart(self)
+    nonisolated func serverTransportDidStartListening(_ serverTransport: ServerRoleRootTransport) {
+        Task {
+            await self.delegate?.siriusServerDidStart(self)
+        }
     }
 
-    func serverTransportDidStopListening(_ serverTransport: ServerRoleRootTransport) {
-        delegate?.siriusServerDidStop(self)
+    nonisolated func serverTransportDidStopListening(_ serverTransport: ServerRoleRootTransport) {
+        Task {
+            await self.delegate?.siriusServerDidStop(self)
+        }
     }
 
-    func serverTransport(_ serverTransport: ServerRoleRootTransport, didEncounterError error: any Error) {
-        delegate?.siriusServer(self, didEncounterError: error)
+    nonisolated func serverTransport(_ serverTransport: ServerRoleRootTransport, didEncounterError error: any Error) {
+        Task {
+            await self.delegate?.siriusServer(self, didEncounterError: error)
+        }
     }
 
-    func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: any ServerRoleClientTransport) {
-        // FIXME: self.sessions의 concurrent modification 가능성 있음
-        Task.detached {
+    nonisolated func serverTransportDidAcceptConnection(_ serverTransport: ServerRoleRootTransport, clientTransport: any ServerRoleClientTransport) {
+        Task {
             await self.createClientSession(clientTransport)
         }
     }
 
-    func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: any Error) {
+    nonisolated func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: any Error) {
+    }
+}
+
+extension SiriusServer: ClientSessionLifecycleDelegate {
+    nonisolated func clientSessionDidClose(_ session: ClientSession) {
+        Task {
+            await self.removeSession(id: session.id)
+        }
     }
 }

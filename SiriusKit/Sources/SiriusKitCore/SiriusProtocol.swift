@@ -16,7 +16,7 @@ import Foundation
    |-- 0x02: 프로토콜 마이너 버전
    |-- 0x03: 리비전 넘버
  */
-public struct SiriusProtocolVersion: RawRepresentable, Equatable, Hashable {
+public struct SiriusProtocolVersion: RawRepresentable, Equatable, Hashable, Sendable {
     public typealias RawValue = UInt32
     public let rawValue: RawValue
 
@@ -58,7 +58,7 @@ public struct SiriusProtocolVersion: RawRepresentable, Equatable, Hashable {
     public static let v1_0: SiriusProtocolVersion = SiriusProtocolVersion(rawValue: 0x0001_0000)
 }
 
-public struct SiriusFeature: RawRepresentable, Equatable, Hashable {
+public struct SiriusFeature: RawRepresentable, Equatable, Hashable, Sendable {
     public typealias RawValue = UUID
     public let rawValue: UUID
 
@@ -85,4 +85,9 @@ public struct SiriusFeature: RawRepresentable, Equatable, Hashable {
      Clipboard: 클립보드 내용을 서버와 클라이언트 간에 동기화합니다.
      */
     public static let clipboard = SiriusFeature(rawValue: UUID(uuidString: "8A3D9F2E-6B1C-4E75-B8A0-D4F2C7E19A3B")!)
+    
+    /**
+     Transfer
+     */
+    public static let transfer = SiriusFeature(rawValue: UUID(uuidString: "9F4EE026-35B4-4B3D-AD0B-168EE4CDB175")!)
 }

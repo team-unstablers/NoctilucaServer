@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct CodecFourCC: RawRepresentable, Codable, Equatable {
+public struct CodecFourCC: RawRepresentable, Codable, Equatable, Sendable {
     public var rawValue: UInt32
     
     public init(rawValue: RawValue) {

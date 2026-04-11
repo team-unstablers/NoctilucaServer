@@ -6,6 +6,7 @@
 //
 
 import Foundation
+internal import Atomics
 import SiriusKitCore
 
 public protocol ClientSessionDelegate: AnyObject {
@@ -13,7 +14,11 @@ public protocol ClientSessionDelegate: AnyObject {
     func clientSessionDidCreateMainChannel(_ session: ClientSession, mainChannel: MainChannel)
 }
 
-public class ClientSession: SiriusSession {
+protocol ClientSessionLifecycleDelegate: AnyObject {
+    func clientSessionDidClose(_ session: ClientSession)
+}
+
+public class ClientSession: SiriusSession, @unchecked Sendable {
     private let logger = SiriusLogger(category: "ClientSession")
 
     public let id: UUID
@@ -31,9 +36,12 @@ public class ClientSession: SiriusSession {
     public var shouldAcceptChannelCreation: Bool = false
 
     public weak var delegate: (any ClientSessionDelegate)?
+    weak var lifecycleDelegate: (any ClientSessionLifecycleDelegate)?
     
     private(set) public var eventLoggerContext: SharedState<SiriusEventLogger.Context>
     private let eventLogger: SiriusEventLogger
+    private let isActivated = ManagedAtomic(false)
+    private let didNotifyTransportClosure = ManagedAtomic(false)
 
     init(id: UUID, transport: any ServerRoleClientTransport, featureProvider: (any FeatureProvider), eventLoggerContext: SharedState<SiriusEventLogger.Context>) {
         self.id = id
@@ -45,6 +53,14 @@ public class ClientSession: SiriusSession {
         self.eventLogger = SiriusEventLogger("SiriusKit::ClientSession", context: eventLoggerContext)
         
         self.channelManager = ChannelManager(session: self)
+    }
+
+    func activate() {
+        guard isActivated.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
+            return
+        }
+
+        self.clientTransport.delegate = self
 
         Task {
             await self.channelManager.createEventLogger(self.eventLoggerContext)
@@ -54,10 +70,14 @@ public class ClientSession: SiriusSession {
     
     /// transport delegate 설정 전에 열린 스트림이 있으면 메인 채널로 승격시키고, delegate를 설정합니다.
     private func initialize() async {
+        guard await channelManager.mainChannel == nil else {
+            return
+        }
+
         let streams = await clientTransport.getStreams().values
 
-        defer {
-            self.clientTransport.delegate = self
+        guard await channelManager.mainChannel == nil else {
+            return
         }
 
         guard let mainChannelStream = streams.first else {
@@ -79,7 +99,10 @@ public class ClientSession: SiriusSession {
     }
 
     public func close() async {
+        shouldAcceptChannelCreation = false
+        await channelManager.teardownAllChannels()
         await self.clientTransport.disconnect()
+        notifyTransportClosedIfNeeded()
     }
     
     /// 트랜스포트 레이어 레벨의 세션 재개 티켓을 클라이언트에게 발행합니다.
@@ -92,6 +115,15 @@ public class ClientSession: SiriusSession {
         } catch {
             logger.error("Failed to issue resume ticket: \(error)")
         }
+    }
+
+    private func notifyTransportClosedIfNeeded() {
+        guard didNotifyTransportClosure.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
+            return
+        }
+
+        lifecycleDelegate?.clientSessionDidClose(self)
+        delegate?.clientSessionDidCloseTransport(self)
     }
 }
 
@@ -119,7 +151,9 @@ extension ClientSession: ServerRoleClientTransportDelegate {
     }
 
     func clientTransportDidClose(_ transport: any ServerRoleClientTransport) async {
-        self.delegate?.clientSessionDidCloseTransport(self)
+        shouldAcceptChannelCreation = false
+        await channelManager.teardownAllChannels()
+        notifyTransportClosedIfNeeded()
     }
 
     func clientTransport(_ transport: any ServerRoleClientTransport, didEncounterError error: any Error) async {

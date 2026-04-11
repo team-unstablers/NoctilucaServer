@@ -17,6 +17,7 @@ enum AppState {
     case foreground
 }
 
+@MainActor
 class AppStateHolder: ObservableObject {
     static let shared = AppStateHolder()
     

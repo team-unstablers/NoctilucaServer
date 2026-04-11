@@ -8,7 +8,7 @@
 import SiriusKitCore
 protocol ServerRoleRootTransportError: Error {}
 
-protocol ServerRoleRootTransportDelegate: AnyObject {
+protocol ServerRoleRootTransportDelegate: AnyObject, Sendable {
     /// TODO: Add parameters for listening info
     func serverTransportDidStartListening(_ serverTransport: ServerRoleRootTransport)
     func serverTransportDidStopListening(_ serverTransport: ServerRoleRootTransport)
@@ -18,7 +18,7 @@ protocol ServerRoleRootTransportDelegate: AnyObject {
     func serverTransportDidFailToAcceptConnection(_ serverTransport: ServerRoleRootTransport, error: Error)
 }
 
-protocol ServerRoleRootTransport: AnyObject {
+protocol ServerRoleRootTransport: AnyObject, Sendable {
     var delegate: ServerRoleRootTransportDelegate? { get set }
 
     func startup() async throws

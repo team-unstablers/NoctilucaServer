@@ -13,10 +13,10 @@ import SwiftUI
 
 import SiriusKitClient
 
+@MainActor
 class SubDisplayWindow: NSWindow {
     let targetDisplayID: Int
     let mouse: HIDIOAppKitPointer
-    
     weak var hidioController: HIDIOController?
 
     init(displayID: Int, remoteSession: RemoteSession, subscription: ProjectionSessionSubscription) {
@@ -56,6 +56,7 @@ class SubDisplayWindow: NSWindow {
         self.contentView = NSHostingView(rootView: rootView)
     }
     
+    @MainActor
     deinit {
         hidioController?.disconnect(mouse.identifierString)
     }
