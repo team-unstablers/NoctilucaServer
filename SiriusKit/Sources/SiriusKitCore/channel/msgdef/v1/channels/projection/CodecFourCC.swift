@@ -62,6 +62,9 @@ public extension CodecFourCC {
     /// High Efficiency Video Coding (H.265), MPEG-H Part 2
     static let hvc1 = CodecFourCC("H", "V", "C", "1")
     
+    /// Google VP8
+    static let vp80 = CodecFourCC("V", "P", "8", "0")
+
     /// ZRLE (Zlib Run-Length Encoding), RLE + Zstd
     static let zrle = CodecFourCC("Z", "R", "L", "E")
 
