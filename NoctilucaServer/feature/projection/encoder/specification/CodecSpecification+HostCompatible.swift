@@ -14,11 +14,11 @@ extension CodecSpecification {
         switch self.fourCC {
         case .avc1, .hvc1:
             return VTVideoEncoder.isSupported(codec: self)
-            
-        case .mjpg, .zrle, .webp:
+
+        case .mjpg, .zrle, .webp, .vp80:
             // 소프트웨어 인코더 지원
             return true
-            
+
         default:
             return false
         }
@@ -32,7 +32,7 @@ extension SiriusKit.Codec {
         switch self.fourCC {
         case .avc1, .hvc1:
             return true
-        case .mjpg, .zrle, .webp:
+        case .mjpg, .zrle, .webp, .vp80:
             return true
         default:
             return false

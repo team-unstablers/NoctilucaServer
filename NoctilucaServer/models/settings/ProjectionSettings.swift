@@ -11,10 +11,10 @@ extension AppSettings {
     struct Projection: Category {
         static func defaultCodecSpecifications() -> [CodecSpecification] {
             if SystemCapability.isVirtualMachine {
-                return [.mjpg, .zrle]
+                return [.vp8]
             }
             
-            return [.hevc, .h264]
+            return [.hevc, .h264, .vp8]
         }
         
         /// 사용자가 선호하는 화면 녹화기 구현체 순서.
