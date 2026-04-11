@@ -287,7 +287,9 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
         }
         
         if policy.requiresAppValidation, let block = policy.validationBlock {
-            return block(identity)
+            return DispatchQueue.main.sync {
+                block(identity)
+            }
         }
         
         return .deny

@@ -45,7 +45,7 @@ public enum ClientTransportError: LocalizedError, Sendable {
 }
 
 /// 서버 아이덴티티 타입
-public enum ServerIdentity {
+public enum ServerIdentity: Sendable {
     /// SSL 인증서
     case sslCertificate(leaf: SecCertificate, chain: [SecCertificate])
     
@@ -133,7 +133,7 @@ extension ServerIdentityValidationPolicy {
     
 }
 
-public enum ServerIdentityTrustDecision {
+public enum ServerIdentityTrustDecision: Sendable {
     /// 이 아이덴티티를 신뢰합니다.
     case allow
     
@@ -142,6 +142,7 @@ public enum ServerIdentityTrustDecision {
 }
 
 /// 어플리케이션 레이어에서의 검증 블록.
+/// NOTE: 이 검증 블록은 DispatchQueue.main에서 실행이 **보장**됩니다. 
 /// NOTE: 이 검증 블록은 **최대한 빠르게** 처리되어야 합니다.
 ///       단, 위 문장은 'UI 표시를 하지 말라'라는 의미가 아닙니다. UI 표시 (사용자 동의) 등을 받아야 하는 경우,
 ///       우선 .deny로 접속을 끊고, 디시전을 받은 뒤 재접속 시 디시전 결과를 넘기는 식의 사용을 권장합니다.
