@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 final class RecentConnectionStore: ObservableObject {
     static let shared = RecentConnectionStore()
 

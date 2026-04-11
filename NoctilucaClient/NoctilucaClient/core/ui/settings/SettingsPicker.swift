@@ -8,19 +8,24 @@
 import SwiftUI
 
 #if os(iOS)
+@MainActor
 private struct SettingsPickerUpdateCurrentValueKey: EnvironmentKey {
     static let defaultValue = { (_: AnyHashable?) in }
 }
 
+@MainActor
 private struct SettingsPickerCurrentValueKey: EnvironmentKey {
     static let defaultValue = AnyHashable?.none
 }
 
 fileprivate extension EnvironmentValues {
+    @MainActor
     var settingsPickerCurrentValue: AnyHashable? {
         get { self[SettingsPickerCurrentValueKey.self] }
         set { self[SettingsPickerCurrentValueKey.self] = newValue }
     }
+    
+    @MainActor
     var settingsPickerUpdateCurrentValue: ((AnyHashable?) -> Void) {
         get { self[SettingsPickerUpdateCurrentValueKey.self] }
         set { self[SettingsPickerUpdateCurrentValueKey.self] = newValue }

@@ -52,6 +52,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
             }
     }
 
+    @MainActor
     deinit {
         if let focusDismissMonitor {
             NSEvent.removeMonitor(focusDismissMonitor)

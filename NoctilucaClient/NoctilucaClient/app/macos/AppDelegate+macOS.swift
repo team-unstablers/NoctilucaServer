@@ -21,6 +21,7 @@ protocol EditMenuActions {
 }
 
 @main
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsStore = SettingsStore.shared
     private var mainWindowControllers: [AppKitMainWindowController] = []

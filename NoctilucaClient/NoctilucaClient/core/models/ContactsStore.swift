@@ -12,7 +12,8 @@ enum ContactsStoreError: LocalizedError {
     case contactNotFound
 }
 
-final class ContactsStore: ObservableObject {
+@MainActor
+final class ContactsStore: ObservableObject, Sendable {
     static let shared = ContactsStore()
 
     private static let contactsDirectoryName = "contacts"

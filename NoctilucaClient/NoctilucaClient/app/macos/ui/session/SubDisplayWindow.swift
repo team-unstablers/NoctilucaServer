@@ -13,6 +13,7 @@ import SwiftUI
 
 import SiriusKitClient
 
+@MainActor
 class SubDisplayWindow: NSWindow {
     let targetDisplayID: Int
     let mouse: HIDIOAppKitPointer
@@ -56,6 +57,7 @@ class SubDisplayWindow: NSWindow {
         self.contentView = NSHostingView(rootView: rootView)
     }
 
+    @MainActor
     deinit {
         hidioController?.disconnect(mouse.identifierString)
     }
