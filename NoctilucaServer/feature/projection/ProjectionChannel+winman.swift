@@ -30,7 +30,7 @@ extension ProjectionChannel {
             isLastPage: true
         )
 
-        try await self.send(opcode: .windowListResponse, message: response)
+        try await self.handle.send(opcode: .windowListResponse, message: response)
     }
 
     func handleGetWindowInfoRequest(_ request: GetWindowInfoRequest) async throws {
@@ -41,7 +41,7 @@ extension ProjectionChannel {
             requestID: request.requestID,
             info: info
         )
-        try await self.send(opcode: .getWindowInfoResponse, message: response)
+        try await self.handle.send(opcode: .getWindowInfoResponse, message: response)
     }
 
     func handleGetWindowIconRequest(_ request: GetWindowIconRequest) async throws {
@@ -55,7 +55,7 @@ extension ProjectionChannel {
             windowID: request.windowID,
             icon: iconData
         )
-        try await self.send(opcode: .getWindowIconResponse, message: response)
+        try await self.handle.send(opcode: .getWindowIconResponse, message: response)
     }
 
     func handleGetWindowThumbnailRequest(_ request: GetWindowThumbnailRequest) async throws {
@@ -65,7 +65,7 @@ extension ProjectionChannel {
             windowID: request.windowID,
             thumbnail: nil
         )
-        try await self.send(opcode: .getWindowThumbnailResponse, message: response)
+        try await self.handle.send(opcode: .getWindowThumbnailResponse, message: response)
     }
 
     // MARK: - Window Event Subscription Handlers
@@ -77,7 +77,7 @@ extension ProjectionChannel {
             flags: request.flags
         ) { [weak self] event in
             Task { [weak self] in
-                try? await self?.send(opcode: .windowChangedEvent, message: event)
+                try? await self?.handle.send(opcode: .windowChangedEvent, message: event)
             }
         }
 
@@ -85,7 +85,7 @@ extension ProjectionChannel {
             requestID: request.requestID,
             subscriptionID: subscriptionID
         )
-        try await self.send(opcode: .subscribeWindowEventsResponse, message: response)
+        try await self.handle.send(opcode: .subscribeWindowEventsResponse, message: response)
     }
 
     func handleUnsubscribeWindowEventsRequest(_ request: UnsubscribeWindowEventsRequest) async throws {
@@ -96,7 +96,7 @@ extension ProjectionChannel {
             subscriptionID: request.subscriptionID,
             isSuccess: success
         )
-        try await self.send(opcode: .unsubscribeWindowEventsResponse, message: response)
+        try await self.handle.send(opcode: .unsubscribeWindowEventsResponse, message: response)
     }
 
     // MARK: - Window Manipulation Handlers
@@ -126,14 +126,14 @@ extension ProjectionChannel {
                 code: 0,
                 message: nil
             )
-            try await self.send(opcode: .windowManipulationResponse, message: response)
+            try await self.handle.send(opcode: .windowManipulationResponse, message: response)
         } catch {
             let response = WindowManipulationResponse(
                 isSuccess: false,
                 code: 1,
                 message: error.localizedDescription
             )
-            try await self.send(opcode: .windowManipulationResponse, message: response)
+            try await self.handle.send(opcode: .windowManipulationResponse, message: response)
         }
     }
 }

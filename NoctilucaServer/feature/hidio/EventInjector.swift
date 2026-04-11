@@ -42,14 +42,11 @@ actor EventInjector {
     public static let MOUSE_DOWN_STATE_LEFT: UInt16 = 0b1
     public static let MOUSE_DOWN_STATE_RIGHT: UInt16 = 0b10
 
-    /// actor 의 유일한 실행 executor. 기존 serialQueue 직렬화 semantic 을 재현한다.
-    nonisolated let serialQueue: DispatchSerialQueue = DispatchSerialQueue(
-        label: "EventInjector",
-        qos: .userInteractive
-    )
+    // 어쩔 수 없었다. 미안하다.
+    nonisolated let dispatchQueue = DispatchQueue.main
 
     nonisolated var unownedExecutor: UnownedSerialExecutor {
-        serialQueue.asUnownedSerialExecutor()
+        MainActor.sharedUnownedExecutor
     }
 
     var eventSource: CGEventSource!

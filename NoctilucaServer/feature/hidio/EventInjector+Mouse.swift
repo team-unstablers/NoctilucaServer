@@ -57,7 +57,7 @@ extension EventInjector {
 
         switch scope {
         case .windowId(let windowId):
-            guard let bounds = DesktopContextManager.queryWindowBounds(for: CGWindowID(windowId)) else {
+            guard let bounds = MainActor.assumeIsolated({ DesktopContextManager.queryWindowBounds(for: CGWindowID(windowId)) }) else {
                 return
             }
             targetPosition = CGPoint(
@@ -186,7 +186,9 @@ extension EventInjector {
         } else if let mainScreen {
             screenFrame = mainScreen.frame
         } else {
-            screenFrame = CGRect.zero // CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
+            screenFrame = MainActor.assumeIsolated {
+                CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
+            }
         }
 
         let targetX11Position = CGPoint(

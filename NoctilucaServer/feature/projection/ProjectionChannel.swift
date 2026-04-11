@@ -16,6 +16,12 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
     private static let defaultServiceClass: ServiceClass = .userInput
 
     let state = ProjectionChannelState()
+    
+    @MainActor
+    var desktopContextManager: DesktopContextManager {
+        DesktopContextManager.shared
+    }
+    
 
     // ~Copyable CompatBridge; init 마지막 대입 후 수정 없음. (Rule I 패턴 2)
     nonisolated(unsafe) private var channelEventCompatBridge:

@@ -41,10 +41,10 @@ extension ProjectionChannel {
     // MARK: - Application List
 
     func handleApplicationListRequest(_ request: ApplicationListRequest) async throws {
-        let appStreamSettings = NoctilucaServer.shared.settings.appStream
+        let appStreamSettings = await NoctilucaServer.shared.settings.appStream
 
         guard appStreamSettings.enabled else {
-            try await self.send(opcode: .applicationListResponse, message: ApplicationListResponse(
+            try await self.handle.send(opcode: .applicationListResponse, message: ApplicationListResponse(
                 requestId: request.requestId,
                 applications: [],
                 isLastPage: true
@@ -93,7 +93,7 @@ extension ProjectionChannel {
             }
         }
 
-        try await self.send(opcode: .applicationListResponse, message: ApplicationListResponse(
+        try await self.handle.send(opcode: .applicationListResponse, message: ApplicationListResponse(
             requestId: request.requestId,
             applications: applications,
             isLastPage: true
@@ -103,16 +103,16 @@ extension ProjectionChannel {
     // MARK: - Application Launch
 
     func handleApplicationLaunchRequest(_ request: ApplicationLaunchRequest) async throws {
-        guard NoctilucaServer.shared.settings.appStream.enabled else {
-            try await self.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
+        guard await NoctilucaServer.shared.settings.appStream.enabled else {
+            try await self.handle.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
                 requestId: request.requestId, isSuccess: false, code: 1,
                 message: "AppStream is disabled"
             ))
             return
         }
 
-        guard isAllowedApp(bundleId: request.bundleId) else {
-            try await self.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
+        guard await isAllowedApp(bundleId: request.bundleId) else {
+            try await self.handle.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
                 requestId: request.requestId, isSuccess: false, code: 2,
                 message: "Application is not in the allowed list"
             ))
@@ -124,11 +124,11 @@ extension ProjectionChannel {
                 bundleId: request.bundleId,
                 arguments: request.arguments
             )
-            try await self.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
+            try await self.handle.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
                 requestId: request.requestId, isSuccess: true, code: 0, message: nil
             ))
         } catch {
-            try await self.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
+            try await self.handle.send(opcode: .applicationLaunchResponse, message: ApplicationLaunchResponse(
                 requestId: request.requestId, isSuccess: false, code: 3,
                 message: error.localizedDescription
             ))
@@ -138,16 +138,16 @@ extension ProjectionChannel {
     // MARK: - Application Terminate
 
     func handleApplicationTerminateRequest(_ request: ApplicationTerminateRequest) async throws {
-        guard NoctilucaServer.shared.settings.appStream.enabled else {
-            try await self.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
+        guard await NoctilucaServer.shared.settings.appStream.enabled else {
+            try await self.handle.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
                 requestId: request.requestId, isSuccess: false, code: 1,
                 message: "AppStream is disabled"
             ))
             return
         }
 
-        guard isAllowedApp(bundleId: request.bundleId) else {
-            try await self.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
+        guard await isAllowedApp(bundleId: request.bundleId) else {
+            try await self.handle.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
                 requestId: request.requestId, isSuccess: false, code: 2,
                 message: "Application is not in the allowed list"
             ))
@@ -159,12 +159,12 @@ extension ProjectionChannel {
                 bundleId: request.bundleId,
                 force: request.force
             )
-            try await self.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
+            try await self.handle.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
                 requestId: request.requestId, isSuccess: result, code: result ? 0 : 4,
                 message: result ? nil : "Terminate request was rejected by the application"
             ))
         } catch {
-            try await self.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
+            try await self.handle.send(opcode: .applicationTerminateResponse, message: ApplicationTerminateResponse(
                 requestId: request.requestId, isSuccess: false, code: 3,
                 message: error.localizedDescription
             ))
@@ -174,7 +174,7 @@ extension ProjectionChannel {
     // MARK: - Subscribe Application Events
 
     func handleSubscribeApplicationEventsRequest(_ request: SubscribeApplicationEventsRequest) async throws {
-        guard NoctilucaServer.shared.settings.appStream.enabled else {
+        guard await NoctilucaServer.shared.settings.appStream.enabled else {
             return
         }
 
@@ -192,7 +192,7 @@ extension ProjectionChannel {
             return
         }
 
-        try await self.send(opcode: .subscribeApplicationEventsResponse, message: SubscribeApplicationEventsResponse(
+        try await self.handle.send(opcode: .subscribeApplicationEventsResponse, message: SubscribeApplicationEventsResponse(
             requestId: request.requestId,
             subscriptionId: subscriptionId
         ))
@@ -202,7 +202,7 @@ extension ProjectionChannel {
 
     func handleUnsubscribeApplicationEventsRequest(_ request: UnsubscribeApplicationEventsRequest) async throws {
         guard let subscriptionId = await state.removeAppEventSubscription() else {
-            try await self.send(opcode: .unsubscribeApplicationEventsResponse, message: UnsubscribeApplicationEventsResponse(
+            try await self.handle.send(opcode: .unsubscribeApplicationEventsResponse, message: UnsubscribeApplicationEventsResponse(
                 requestId: request.requestId,
                 subscriptionId: request.subscriptionId,
                 isSuccess: false
@@ -212,7 +212,7 @@ extension ProjectionChannel {
 
         await desktopContextManager.unsubscribeAppEvents(id: subscriptionId)
 
-        try await self.send(opcode: .unsubscribeApplicationEventsResponse, message: UnsubscribeApplicationEventsResponse(
+        try await self.handle.send(opcode: .unsubscribeApplicationEventsResponse, message: UnsubscribeApplicationEventsResponse(
             requestId: request.requestId,
             subscriptionId: subscriptionId,
             isSuccess: true
@@ -222,18 +222,18 @@ extension ProjectionChannel {
     // MARK: - Start AppStream
 
     func handleStartAppStreamRequest(_ request: StartAppStreamRequest) async throws {
-        let appStreamSettings = NoctilucaServer.shared.settings.appStream
+        let appStreamSettings = await NoctilucaServer.shared.settings.appStream
 
         guard appStreamSettings.enabled else {
-            try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
+            try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
                 requestId: request.requestId, streamId: UUID(), isSuccess: false, code: 1,
                 message: "AppStream is disabled", initialWindows: []
             ))
             return
         }
 
-        guard isAllowedApp(bundleId: request.bundleId) else {
-            try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
+        guard await isAllowedApp(bundleId: request.bundleId) else {
+            try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
                 requestId: request.requestId, streamId: UUID(), isSuccess: false, code: 2,
                 message: "Application is not in the allowed list", initialWindows: []
             ))
@@ -241,7 +241,7 @@ extension ProjectionChannel {
         }
 
         if let existing = await state.currentAppStreamSession() {
-            try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
+            try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
                 requestId: request.requestId, streamId: UUID(), isSuccess: false, code: 3,
                 message: "An AppStream session is already active for \(existing.bundleId)",
                 initialWindows: []
@@ -256,7 +256,7 @@ extension ProjectionChannel {
                 runningApp = try await desktopContextManager.launchApplication(bundleId: request.bundleId)
                 try await Task.sleep(for: .milliseconds(500))
             } catch {
-                try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
+                try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
                     requestId: request.requestId, streamId: UUID(), isSuccess: false, code: 4,
                     message: "Failed to launch application: \(error.localizedDescription)",
                     initialWindows: []
@@ -266,7 +266,7 @@ extension ProjectionChannel {
         }
 
         guard let app = runningApp else {
-            try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
+            try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
                 requestId: request.requestId, streamId: UUID(), isSuccess: false, code: 5,
                 message: "Application could not be started", initialWindows: []
             ))
@@ -317,7 +317,7 @@ extension ProjectionChannel {
         guard await state.activateAppStreamSession(sessionInfo) else {
             await desktopContextManager.unsubscribeWindowEvents(id: windowSubscriptionId)
             await desktopContextManager.unsubscribeAppEvents(id: appTerminationSubId)
-            try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
+            try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
                 requestId: request.requestId, streamId: streamId, isSuccess: false, code: 6,
                 message: "Failed to activate AppStream session", initialWindows: []
             ))
@@ -332,7 +332,7 @@ extension ProjectionChannel {
         
         windowTracker.addInitialWindows(initialWindows)
 
-        try await self.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
+        try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
             requestId: request.requestId,
             streamId: streamId,
             isSuccess: true,
@@ -346,7 +346,7 @@ extension ProjectionChannel {
 
     func handleStopAppStreamRequest(_ request: StopAppStreamRequest) async throws {
         guard let session = await state.removeAppStreamSession(streamId: request.streamId) else {
-            try await self.send(opcode: .stopAppStreamResponse, message: StopAppStreamResponse(
+            try await self.handle.send(opcode: .stopAppStreamResponse, message: StopAppStreamResponse(
                 requestId: request.requestId, isSuccess: false
             ))
             return
@@ -354,7 +354,7 @@ extension ProjectionChannel {
 
         await cleanupAppStreamSession(session)
 
-        try await self.send(opcode: .stopAppStreamResponse, message: StopAppStreamResponse(
+        try await self.handle.send(opcode: .stopAppStreamResponse, message: StopAppStreamResponse(
             requestId: request.requestId, isSuccess: true
         ))
     }
@@ -363,12 +363,12 @@ extension ProjectionChannel {
 
     func sendApplicationChangedEvent(_ event: ApplicationChangedEvent) async throws {
         guard await state.lifecycleState == .active else { return }
-        try await self.send(opcode: .applicationChangedEvent, message: event)
+        try await self.handle.send(opcode: .applicationChangedEvent, message: event)
     }
 
     func sendAppStreamWindowEvent(_ event: AppStreamWindowEvent) async throws {
         guard await state.lifecycleState == .active else { return }
-        try await self.send(opcode: .appStreamWindowEvent, message: event)
+        try await self.handle.send(opcode: .appStreamWindowEvent, message: event)
     }
 
     // MARK: - AppStream Internal
@@ -427,6 +427,7 @@ extension ProjectionChannel {
 
     // MARK: - Helpers
 
+    @MainActor
     private func isAllowedApp(bundleId: String) -> Bool {
         let allowedApps = NoctilucaServer.shared.settings.appStream.allowedApps
         return allowedApps.contains { $0.bundleIdentifier == bundleId }

@@ -90,7 +90,7 @@ extension EventInjector {
             return
         }
 
-        let timer = DispatchSource.makeTimerSource(queue: serialQueue)
+        let timer = DispatchSource.makeTimerSource(queue: dispatchQueue)
         let delay = dispatchInterval(for: repeatDelay)
         let interval = dispatchInterval(for: repeatInterval)
 
