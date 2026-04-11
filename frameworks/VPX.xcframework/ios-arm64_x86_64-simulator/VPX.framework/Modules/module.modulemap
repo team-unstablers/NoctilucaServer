@@ -1,0 +1,6 @@
+framework module VPX {
+  umbrella "Headers"
+
+  export *
+  module * { export * }
+}

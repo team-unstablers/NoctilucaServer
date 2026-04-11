@@ -13,3 +13,9 @@ SharpYuv.xcframework/ios-arm64_x86_64-maccatalyst/libsharpyuv.a filter=lfs diff=
 SharpYuv.xcframework/ios-arm64_x86_64-simulator/libsharpyuv.a filter=lfs diff=lfs merge=lfs -text
 SharpYuv.xcframework/macos-arm64_x86_64/libsharpyuv.a filter=lfs diff=lfs merge=lfs -text
 libturbojpeg.xcframework/ios-simulator-arm64_x86_64/libturbojpeg.framework/libturbojpeg filter=lfs diff=lfs merge=lfs -text
+VPX.xcframework/ios-arm64_x86_64-simulator/VPX.framework/VPX filter=lfs diff=lfs merge=lfs -text
+VPX.xcframework/macos-arm64_x86_64/VPX.framework/VPX filter=lfs diff=lfs merge=lfs -text
+VPX.xcframework/ios-arm64/VPX.framework/VPX filter=lfs diff=lfs merge=lfs -text
+VPXDecoder.xcframework/ios-arm64/VPXDecoder.framework/VPXDecoder filter=lfs diff=lfs merge=lfs -text
+VPXDecoder.xcframework/ios-arm64_x86_64-simulator/VPXDecoder.framework/VPXDecoder filter=lfs diff=lfs merge=lfs -text
+VPXDecoder.xcframework/macos-arm64_x86_64/VPXDecoder.framework/VPXDecoder filter=lfs diff=lfs merge=lfs -text
