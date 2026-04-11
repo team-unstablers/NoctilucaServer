@@ -7,7 +7,7 @@ import Foundation
 @testable import SiriusKitCore
 @testable import SiriusKit
 
-final class MockSiriusServerDelegate: SiriusServerDelegate {
+final class MockSiriusServerDelegate: SiriusServerDelegate, @unchecked Sendable {
     private(set) var didStart = false
     private(set) var didStop = false
     private(set) var lastError: Error?

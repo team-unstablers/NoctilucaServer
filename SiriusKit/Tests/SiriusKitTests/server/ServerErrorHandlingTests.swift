@@ -37,7 +37,7 @@ struct ServerErrorHandlingTests {
         await sessionHarness.clientTransport.simulateClose()
 
         #expect(sessionHarness.sessionDelegate.didCloseTransport)
-        #expect(harness.server.sessions.isEmpty)
+        #expect(await harness.server.sessions.isEmpty)
     }
 
     @Test("여러 클라이언트가 동시에 접속할 수 있다")
@@ -49,7 +49,7 @@ struct ServerErrorHandlingTests {
         let session2 = harness.simulateClientConnection()
         let session3 = harness.simulateClientConnection()
 
-        #expect(harness.server.sessions.count == 3)
+        #expect(await harness.server.sessions.count == 3)
         #expect(harness.serverDelegate.acceptedSessions.count == 3)
 
         // 각 세션이 독립적으로 메인 채널을 가질 수 있다
@@ -65,7 +65,7 @@ struct ServerErrorHandlingTests {
 
         #expect(session1.sessionDelegate.didCloseTransport)
         #expect(!session2.sessionDelegate.didCloseTransport)
-        #expect(harness.server.sessions.count == 2)
+        #expect(await harness.server.sessions.count == 2)
     }
 
     @Test("이미 닫힌 transport는 ClientSession을 만들지 않는다")
@@ -78,7 +78,7 @@ struct ServerErrorHandlingTests {
 
         harness.rootTransport.simulateClientConnection(clientTransport)
 
-        #expect(harness.server.sessions.isEmpty)
+        #expect(await harness.server.sessions.isEmpty)
         #expect(harness.serverDelegate.acceptedSessions.isEmpty)
     }
 }

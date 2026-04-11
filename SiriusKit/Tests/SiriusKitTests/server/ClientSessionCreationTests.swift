@@ -19,7 +19,7 @@ struct ClientSessionCreationTests {
 
         harness.simulateClientConnection()
 
-        #expect(harness.server.sessions.count == 1)
+        #expect(await harness.server.sessions.count == 1)
     }
 
     @Test("delegate.siriusServerDidAcceptClientSession이 호출된다")
@@ -54,7 +54,7 @@ struct ClientSessionCreationTests {
         await sessionHarness.session.close()
 
         #expect(sessionHarness.clientTransport.disconnectCalled)
-        #expect(harness.server.sessions.isEmpty)
+        #expect(await harness.server.sessions.isEmpty)
     }
 
     @Test("close()는 메인 채널을 teardown한다")
