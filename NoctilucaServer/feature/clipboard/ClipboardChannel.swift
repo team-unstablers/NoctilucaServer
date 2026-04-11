@@ -277,7 +277,7 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
     // MARK: - Request Handlers (클라이언트 → 서버)
 
     private func handleSubscribeClipboardRequest(_ request: SubscribeClipboardRequest) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else {
             logger.info("Clipboard disabled, rejecting subscribe request (requestId=\(request.requestId))")
@@ -341,7 +341,7 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
     }
 
     private func handleGetClipboardRequest(_ request: GetClipboardRequest) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else {
             logger.info("Clipboard disabled, rejecting get request (requestId=\(request.requestId))")
@@ -363,7 +363,7 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
     }
 
     private func handleClipboardEvent(_ event: ClipboardEvent) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else { return }
 
@@ -489,7 +489,7 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
     // MARK: - Response Handlers (서버가 클라이언트에게 보낸 요청의 응답)
 
     private func handleGetClipboardResponse(_ response: GetClipboardResponse) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else { return }
         guard settings.syncDirection == .remoteToLocal ||

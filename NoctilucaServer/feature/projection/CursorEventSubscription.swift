@@ -51,7 +51,7 @@ final class CursorEventSubscription {
                 if lastSentState == state {
                     continue
                 }
-
+                
                 let now = DispatchTime.now().uptimeNanoseconds
                 if lastSentAtNanos != 0, (now - lastSentAtNanos) < minSendIntervalNanos {
                     continue
