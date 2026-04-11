@@ -950,9 +950,9 @@ final class CursorEventSubscription {
 - [x] HIDIO (서버/클라이언트)
 - [x] Clipboard (서버/클라이언트)
 - [x] Transfer (서버/클라이언트)
-- [x] **Projection (서버) — 본 PR 에서 완료**
-- [ ] Projection (클라이언트)
-- [ ] ProjectionData (클라이언트)
+- [x] Projection (서버) — 2026-04-11
+- [x] **Projection (클라이언트) — 2026-04-11**
+- [x] **ProjectionData (클라이언트) — 2026-04-11**
 
 ### 9.1. 채널 단위
 - [ ] `class Foo: Channel` → `final class Foo: Channel, ChannelEventConsumer`
@@ -1107,6 +1107,112 @@ final class CursorEventSubscription {
 `ProjectionSession` / `AudioProjectionSession` 의 `deinit` 은 nonisolated 이므로 actor-isolated `logger` 접근이 불가능하다. v1 에서 "stop() 미호출 경고 로그" 를 남기던 코드는 제거했고, 대신 `nonisolated let dataChannel` 과 `nonisolated let frameQueue` 만 사용해 safety-net 을 수행한다 (문서 Section 6.5 그대로).
 
 `stop()` 미호출 시의 관측 가능성 손실은 후속 과제 — OSLog 기반 nonisolated logger 채널 또는 `ManagedAtomic<Bool> stopCalled` 플래그로 대체 가능.
+
+---
+
+## 9.6. 클라이언트 Projection 마이그레이션 — 학습 노트 (2026-04-11)
+
+본 섹션은 2026-04-11 클라이언트 Projection 마이그레이션 작업 중 발견된 이슈 및 해결책을 기록한다.
+
+### 9.6.1. `ProjectionDataChannel` 은 옵션 B (`AsyncStream<Event>`) 로 구현
+
+서버는 옵션 A (delegate + `ProjectionDataChannelState` actor) 로 구현되었지만, 클라이언트는 옵션 B 를 채택했다. 이유:
+
+1. **`requiresExplicitActivation=true` 의 대체**. v1 클라이언트는 `ProjectionSession` 이 delegate 설정 후 수동 `dataChannel.activate()` 를 호출하여 "delegate 설정 전 프레임 유실" race 를 막았다. v2 에는 이 API 가 없고, `ChannelManager.remoteChannelOpen` 이 `createChannel` 직후 `activate()` 를 자동 호출하므로 프레임이 delegate 설정 전에 도착할 수 있다.
+2. `AsyncStream.unbounded` 버퍼가 consumer(세션) 가 `for await` 루프를 시작하기 전에 도착한 모든 이벤트를 자연스럽게 축적하므로, race 가 원천 차단된다.
+3. `weak var delegate` 자체를 제거할 수 있어 Sendable 요건이 깔끔해진다.
+
+구체 모양:
+
+```swift
+enum DataChannelEvent: Sendable {
+    case codecParameterSets(CodecParameterSetMessage)
+    case videoFrame(EncodedFrameInput)
+    case audioFrame(EncodedAudioFrameInput)
+    case degradationNotice(DegradationNotice)
+    case closed
+    case error(any Error)
+}
+
+final class ProjectionDataChannel: Channel, ChannelEventConsumer {
+    nonisolated(unsafe) let events: AsyncStream<DataChannelEvent>
+    private let continuation: AsyncStream<DataChannelEvent>.Continuation
+    // ...
+}
+```
+
+하나의 wire 프레임에 대해 비디오용 `videoFrame` 과 오디오용 `audioFrame` 양쪽 case 를 모두 `continuation.yield` 한다 (wire format 이 동일하므로). consumer 쪽에서 자기 관심 case 만 골라서 처리한다.
+
+### 9.6.2. `ProjectionSession` actor + custom executor — 디코더 `callbackQueue` 주입
+
+서버 `ProjectionSession` 의 `EventInjector` 스타일 (actor 의 `unownedExecutor` 를 `DispatchSerialQueue` 로 바인딩) 을 클라이언트 `ProjectionSession` 에도 적용했다. 핵심 차이점:
+
+- 서버는 **recorder** 가 콜백을 `recorderQueue` 에서 호출하므로 그 큐를 executor 로 잡는다.
+- 클라이언트는 **decoder** 가 콜백을 호출한다. 다행히 모든 비디오 디코더(`VTVideoDecoder`, `ZRLEVideoDecoder`, `MJPGVideoDecoder`, `WebPVideoDecoder`) 가 `init(workerQueue:, callbackQueue:)` 오버로드를 이미 가지고 있어서, **actor 의 `serialQueue` 를 디코더의 `callbackQueue` 로 주입** 하면 된다. 이 덕분에 디코더 delegate 콜백에서 `assumeIsolated { me in ... }` 로 hop 없이 actor-isolated 메서드를 호출할 수 있다.
+- 결과적으로 비디오 디코드 hot path 에서 `Task` 생성 및 actor hop 이 전혀 발생하지 않는다.
+
+### 9.6.3. `AudioProjectionSession` 은 hybrid 격리
+
+audio render callback 은 CoreAudio 의 real-time thread 에서 호출되므로 actor executor 로 잡을 수 없다. 해결:
+
+- **actor-isolated**: `decoder`, `sourceNode`, `outputFormat`, `codec`, 라이프사이클 메서드 (`prepare`, `start`, `stop`)
+- **nonisolated (render callback 경로)**:
+  - `jitterBuffer: AudioJitterBuffer` (`nonisolated let`, 내부 `os_unfair_lock` 기반 thread-safe)
+  - `isStartedFlag`, `isStoppingFlag`, `fadeOutCompleteFlag` → `ManagedAtomic<Bool>`
+  - `fadeGain` → `OSAllocatedUnfairLock<Float>` (real-time safe unfair lock)
+  - `renderCallback(...)`, `applyFadeIn/Out`, `fillSilence` → 모두 `nonisolated private func`
+
+`AudioDecoderDelegate.didDecode` 콜백도 `nonisolated func` 로 구현한다. `audio decoder` 에는 `callbackQueue` 주입 API 가 없으므로 `assumeIsolated` 가 불가능하지만, 어차피 callback 이 하는 일은 `jitterBuffer.enqueue(frame)` 한 번 호출이고, jitter buffer 자체가 thread-safe 이므로 actor hop 없이 직접 호출해도 안전하다.
+
+### 9.6.4. `ProjectionSession.events` / `ProjectionChannel.events` 는 `AsyncStream` 전환
+
+서버 `MainChannel` 패턴과 동일하게 `PassthroughSubject` 를 `AsyncStream` 로 교체했다. 소비자 (`RemoteSession.Projection` 의 `eventConsumerTask`) 는 `Task { for await event in channel.events }` 루프로 consume 한다.
+
+### 9.6.5. 디버그 UI 용 nonisolated snapshot 패턴 (신규)
+
+`ProjectionSession` 이 actor 가 되면서, SwiftUI 디버그 뷰가 `session.codec`, `session.size`, `session.decoderTypeName` 같은 필드를 sync 로 읽을 수 없게 되었다. 해결:
+
+```swift
+actor ProjectionSession {
+    struct DebugSnapshot: Sendable {
+        let codec: Codec?
+        let size: CGSize
+        let decoderTypeName: String
+    }
+    nonisolated private let debugSnapshotLock = OSAllocatedUnfairLock<DebugSnapshot>(
+        initialState: .init(codec: nil, size: .zero, decoderTypeName: "N/A")
+    )
+    nonisolated var debugSnapshot: DebugSnapshot { debugSnapshotLock.withLock { $0 } }
+
+    private func updateDebugSnapshot() { /* actor-isolated 에서 필드 읽고 lock 에 쓰기 */ }
+}
+```
+
+상태 변경 시 (`prepare`, `reconfigure`, `setSize`) actor-isolated 에서 `updateDebugSnapshot()` 을 호출하고, UI 는 `session.debugSnapshot.codec` 으로 hop 없이 읽는다. 정보가 조금 지연되어도 되는 "디버그/진단 readout" 에만 사용하고, 동작 로직에는 쓰지 않는다.
+
+`AudioProjectionSession` 도 동일 패턴 (`DebugSnapshot { codec }`).
+
+### 9.6.6. `RemoteSession.Projection` 은 `@MainActor final class` 전체 격리
+
+기존 `class Projection: ObservableObject` 를 `@MainActor final class` 로 변경. `ObservableObject` + `@Published` 가 SwiftUI main thread 소비를 전제하므로 MainActor 격리가 자연스럽고, hop 도 최소화된다.
+
+Combine `.sink` 구독은 `Task { for await event in channel.events }` 패턴으로 교체. `sessionEventSubscriptions: [UUID: AnyCancellable]` → `sessionEventTasks: [UUID: Task<Void, Never>]`.
+
+`deinit` 은 nonisolated 이지만, `Task<Void, Never>.cancel()` 이 Sendable 이라 직접 호출 가능. `NSLock` 기반 cursor move coalescing 은 MainActor 전환으로 lock 이 불필요해져 제거.
+
+### 9.6.7. `ProjectionSessionSubscription` 의 register API 호출은 `Task { await }` 로 감쌈
+
+`@MainActor final class ProjectionSessionSubscription` 선언. 내부에서 `session.registerDisplayLayer(layer)` 같은 actor-isolated async API 를 호출할 때는 `Task { await session.registerDisplayLayer(layer) }` 패턴을 쓴다 (init 내부, invalidate 내부, updateRenderingPath 내부 전부).
+
+`deinit` 에서는 MainActor-isolated 필드 직접 접근 불가. ticket release 가 `SessionReferenceTicket.deinit` 에서 처리되고, 나머지 resource unregister 는 `invalidate()` 가 정상 경로에서 호출되는 것을 전제로 한다.
+
+### 9.6.8. Decoder / Renderer / Compositor 구현체는 서버와 동일하게 `@unchecked Sendable` (Rule G 확장)
+
+- `VTVideoDecoder`, `ZRLEVideoDecoder`, `MJPGVideoDecoder`, `WebPVideoDecoder`, `OpusAudioDecoder`, `PCMAudioDecoder`
+- `CPUTileCompositor`, `MetalTileCompositor`, `ProjectionCanvasRenderer`, `MetalVideoRenderer`
+- `VideoJitterBuffer`, `AudioJitterBuffer`
+
+모두 `final class ... @unchecked Sendable` + Rule G 예외 근거 주석을 붙였다. 정식 Sendable 적합화 (lock 기반 재작성) 는 후속 과제.
 
 ---
 
@@ -1427,7 +1533,11 @@ actor HIDIOKeyboardHackRegistry {
   - `ProjectionSession` / `AudioProjectionSession` 양쪽에 `DispatchSerialQueue.asUnownedSerialExecutor()` 적용.
   - 후속 과제: 실제 recorder delegate 가 `assumeIsolated` 호출 시 trap 없이 통과하는지 실기기 검증.
 - **`ProjectionDataChannel` → stream 기반 이벤트 (10.2 옵션 B)**
-  - 현재는 옵션 A (`ProjectionDataChannelState` actor 로 delegate 격리) 로 구현되어 있다. 후속 PR 에서 `AsyncStream<Event>` 로 전환해 `weak var delegate` 자체를 제거한다.
+  - **클라이언트: 채택 완료 (2026-04-11)** — `DataChannelEvent` enum + `AsyncStream<DataChannelEvent>` 로 전환. `weak var delegate` 자체 제거.
+  - 서버는 여전히 옵션 A (`ProjectionDataChannelState` actor 로 delegate 격리) 를 사용 중. 서버 ProjectionDataChannel 이 실제로 `send-only` 여서 race 이슈가 없기 때문. 후속 PR 에서 대칭성을 위해 서버도 옵션 B 로 전환 검토.
+- **`ProjectionSession` / `AudioProjectionSession` 의 actor 승격 (클라이언트)** — **채택 완료 (2026-04-11)**
+  - 클라이언트 `ProjectionSession` 은 `DispatchSerialQueue.asUnownedSerialExecutor()` + 비디오 디코더 `callbackQueue` 주입 조합으로 hop-free 디코드 경로를 구현.
+  - `AudioProjectionSession` 은 hybrid 격리 (actor-isolated + nonisolated render callback 필드).
 - **`FeatureProvider` 의 `clipboardChannel` 약 참조 제거**
   - `channelManager.filter(byFeature: .clipboard)` 로 대체. State actor 자체 제거.
 - **`ChannelEventCompatBridge` 의 `handleFrame` throw swallow 로깅 보강**
@@ -1655,3 +1765,63 @@ deinit {
 | `KeyEventPipelineChain` / `KeyEventRebinder` | `@MainActor final class` | 호출처(`HIDIOController`, `RemoteSession.HIDIO`) 모두 MainActor |
 | `SettingsStore` | `@MainActor final class` | 사용처가 대부분 SwiftUI/MainActor 컨텍스트, `static let shared` 의 Sendable 보장 |
 | `KeyboardHackPluginV1` (NoctilucaPluginKit) | `protocol ... Sendable` | actor 경계 cross. 구현체 Sendable 적합화는 후속 |
+
+### 13.7. 클라이언트 Projection 세션 패턴
+
+**참조 구현**: `NoctilucaClient/NoctilucaClient/core/feature/projection/ProjectionSession.swift`, `AudioProjectionSession.swift`, `ProjectionDataChannel.swift`, `ProjectionSessionSubscription.swift`, `core/state/RemoteSession+Projection.swift` (2026-04-11 이식).
+
+클라이언트 Projection 은 서버와 다른 고유한 제약 (디코더 콜백, VideoToolbox decompression thread, CoreAudio render callback, SwiftUI main thread 바인딩) 을 가지므로 별도의 패턴 규범이 필요하다.
+
+#### 13.7.1. `ProjectionDataChannel` 은 옵션 B 를 우선한다
+
+- `weak var delegate` 를 두지 않는다. 대신 `nonisolated(unsafe) let events: AsyncStream<DataChannelEvent>` 를 노출하고, 세션이 `for await` 으로 consume 한다.
+- 사유: v2 는 remote create 후 `handle.activate()` 가 자동 호출되므로 delegate 설정 전에 프레임이 도착할 수 있다. AsyncStream unbounded buffer 가 이를 자연스럽게 흡수한다.
+- 통합 `DataChannelEvent` enum 으로 비디오/오디오/파라미터 셋/디그레이데이션/닫힘/에러를 모두 싣는다. 한 wire 프레임에서 `videoFrame` 과 `audioFrame` 양쪽 case 를 모두 `yield` 한다 (wire format 이 동일). consumer 가 자기 관심 case 만 선별 처리.
+
+#### 13.7.2. `ProjectionSession` 은 actor + custom executor
+
+- `actor ProjectionSession` + `nonisolated let serialQueue: DispatchSerialQueue` + `nonisolated var unownedExecutor: UnownedSerialExecutor { serialQueue.asUnownedSerialExecutor() }`.
+- **모든 비디오 디코더의 `callbackQueue` 로 `serialQueue` 를 주입** 한다. `VTVideoDecoder`, `ZRLEVideoDecoder`, `MJPGVideoDecoder`, `WebPVideoDecoder` 가 전부 `init(workerQueue:, callbackQueue:)` 오버로드를 제공한다.
+- `VideoDecoderDelegate` / `TiledVideoDecoderDelegate` 콜백은 `nonisolated func` shim + `self.assumeIsolated { me in ... }` 패턴으로 hop 없이 actor-isolated 본체를 호출.
+- `init` 은 동기. `setup()` 비동기 메서드에서 디코더 생성 + consume loop 시작 + jitterBuffer 등록.
+- 데이터 채널 consume 은 별도 actor-isolated `private var dataChannelConsumerTask: Task<Void, Never>?` 로 관리. `stop()` 에서 cancel.
+- `deinit` 은 nonisolated — `continuation.finish()` 외에는 아무것도 하지 않는다. `stop()` 호출을 상위에서 보장해야 한다.
+- 디버그 UI 용으로 `nonisolated var debugSnapshot: DebugSnapshot { get }` (OSAllocatedUnfairLock backed) 을 별도로 노출. `prepare`, `reconfigure`, `setSize` 등에서 `updateDebugSnapshot()` 호출로 갱신. SwiftUI 쪽은 hop 없이 읽기.
+
+#### 13.7.3. `AudioProjectionSession` 은 hybrid 격리
+
+- `actor AudioProjectionSession` 로 승격하지만 custom executor 는 사용하지 않는다 (render callback 이 CoreAudio real-time thread 에서 오므로 잡을 수 없다).
+- **actor-isolated**: `decoder`, `sourceNode`, `outputFormat`, `codec`, 라이프사이클 메서드.
+- **nonisolated (render callback 경로)**:
+  - `jitterBuffer: AudioJitterBuffer` — `nonisolated let`, 내부 `os_unfair_lock` 기반. `@unchecked Sendable` (Rule G 확장).
+  - `isStartedFlag`, `isStoppingFlag`, `fadeOutCompleteFlag` — `ManagedAtomic<Bool>`.
+  - `fadeGainLock` — `OSAllocatedUnfairLock<Float>` (real-time safe).
+  - `renderCallback(...)` / `applyFadeIn/Out` / `fillSilence` — 모두 `nonisolated private func`.
+- `AudioDecoderDelegate.audioDecoder(_:didDecode:)` 콜백은 `nonisolated func` 로 두고, `jitterBuffer.enqueue(frame)` 한 번 호출로 끝낸다 (audio decoder 에 callbackQueue 주입 API 가 없어 `assumeIsolated` 는 못 쓰지만, jitter buffer 내부 lock 이 thread-safety 를 보장).
+- `stop()` 의 fade-out 폴링은 `Task.sleep(nanoseconds: 1_000_000)` 로 1ms 간격 루프. 최대 30ms 대기.
+
+#### 13.7.4. `ProjectionSession.events` / `ProjectionChannel.events` 는 AsyncStream
+
+- `PassthroughSubject` 를 `nonisolated(unsafe) let events: AsyncStream<...>` + `private let continuation` 으로 교체.
+- `@MainActor` 뷰/ViewModel 쪽 구독은 `Task { for await event in session.events { ... } }` 로 변경. Combine `.sink` + `AnyCancellable` 저장은 제거.
+- `continuation.yield(...)` 는 stream-safe 이므로 actor-isolated / nonisolated 어느 쪽에서든 호출 가능.
+
+#### 13.7.5. `ProjectionSessionSubscription` 은 `@MainActor final class`
+
+- `@MainActor` 격리로 `displayLayer`, `metalVideoRenderer`, `canvasRenderer`, `rendererImplementation`, `isInvalidated` 등 필드 접근을 단순화.
+- `session.registerDisplayLayer(_:)` 같은 actor-isolated async API 호출은 **반드시 `Task { await session.xxx(...) }`** 로 감싼다 (init / invalidate / updateRenderingPath 전부).
+- `deinit` 은 nonisolated — MainActor-isolated 필드 직접 접근 불가. `SessionReferenceTicket.deinit` 이 참조 release 를 처리하므로, 정상 경로에서 `invalidate()` 가 호출된다고 invariant 를 강화하고 deinit 내부 cleanup 은 생략.
+
+#### 13.7.6. `RemoteSession.Projection` 은 `@MainActor final class` 전체 격리
+
+- `ObservableObject` + `@Published` 는 main thread 소비가 전제이므로 `@MainActor` 격리가 자연스럽다.
+- `subscribeEvents()` 는 `Task { for await event in channel.events }` 루프. `sessionEventTasks: [UUID: Task<Void, Never>]` 로 관리.
+- `deinit` 은 nonisolated 이지만 `Task<Void, Never>.cancel()` 은 Sendable 이라 직접 호출 가능.
+- `NSLock` 기반 cursor move coalescing 은 MainActor 격리 후 lock 이 불필요해져 단순화 (`pendingCursorMoveEvent` + `isCursorMoveDeliveryScheduled` 플래그 만으로 충분).
+- 백그라운드 PNG 디코딩 같은 CPU 작업은 `Task.detached` + `MainActor.run { ... }` 으로 안으로 return 하는 기존 패턴 유지.
+
+#### 13.7.7. 디코더 / 렌더러 / 컴포지터 구현체
+
+- 모두 `final class ... @unchecked Sendable` + Rule G 확장 주석 (문서 Section 9.5.2 인용).
+- 내부 `workerQueue` / `callbackQueue` / `commandQueue` (Metal) 기반 직렬화로 thread-safety 가 확보되어 있음.
+- 정식 Sendable 적합화 (OSAllocatedUnfairLock 기반 재작성) 는 후속 과제.
