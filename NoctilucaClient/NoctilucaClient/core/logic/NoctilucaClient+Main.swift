@@ -58,7 +58,7 @@ extension NoctilucaClient {
         }
 
         let request = SubscribeClipboardRequest(requestId: 1, flags: 0)
-        try await clipboardChannel?.send(opcode: .subscribeClipboardRequest, message: request)
+        try await clipboardChannel?.handle.send(opcode: .subscribeClipboardRequest, message: request)
     }
     
     
