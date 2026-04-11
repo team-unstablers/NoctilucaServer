@@ -141,7 +141,7 @@ class RemoteSessionDebugViewModel: ObservableObject {
                 self?.audioSessions = sessions.values.map { session in
                     AudioSessionDebugInfo(
                         id: session.id,
-                        codec: session.codec
+                        codec: session.debugSnapshot.codec
                     )
                 }
             }
@@ -151,12 +151,13 @@ class RemoteSessionDebugViewModel: ObservableObject {
     private func updateVideoSessions(_ sessions: [UUID: ProjectionSession], projection: RemoteSession.Projection?) {
         self.videoSessions = sessions.values.map { session in
             let refCount = projection?.projectionSessionReferences[session.id]?.load(ordering: .relaxed) ?? 0
+            let snapshot = session.debugSnapshot
             return VideoSessionDebugInfo(
                 id: session.id,
                 displayID: session.displayID,
-                codec: session.codec,
-                size: session.size,
-                decoderTypeName: session.decoderTypeName,
+                codec: snapshot.codec,
+                size: snapshot.size,
+                decoderTypeName: snapshot.decoderTypeName,
                 dataRateKbps: session.currentDataRateKbps,
                 referenceCount: refCount
             )
@@ -204,24 +205,17 @@ class RemoteSessionDebugViewModel: ObservableObject {
 
         self.channels = channelMap.values.map { channel in
             let featureName: String
-            let featureID: UUID?
-            if let hasFeature = channel as? Channel.HasFeature {
-                let feature = hasFeature.feature
-                featureID = feature.rawValue
-                featureName = Self.featureDisplayName(feature)
-            } else {
-                featureID = nil
-                featureName = "unknown"
-            }
+            let feature = channel.handle.feature
+            featureName = Self.featureDisplayName(feature)
 
             return ChannelDebugInfo(
                 id: channel.identifier,
                 featureName: featureName,
-                featureID: featureID,
-                serviceClass: channel.serviceClass,
-                direction: channel.direction,
-                uplinkDataRate: channel.uplinkDataRate,
-                downlinkDataRate: channel.downlinkDataRate
+                featureID: feature.rawValue,
+                serviceClass: channel.handle.serviceClass,
+                direction: channel.handle.direction,
+                uplinkDataRate: channel.handle.uplinkDataRate,
+                downlinkDataRate: channel.handle.downlinkDataRate
             )
         }.sorted { $0.featureName < $1.featureName }
     }
@@ -232,7 +226,7 @@ class RemoteSessionDebugViewModel: ObservableObject {
         guard let session = remoteSession?.client.session else { return }
         Task {
             let channel = await session.channelManager.channels[channelID]
-            try? await channel?.close()
+            try? await channel?.handle.close()
         }
     }
 

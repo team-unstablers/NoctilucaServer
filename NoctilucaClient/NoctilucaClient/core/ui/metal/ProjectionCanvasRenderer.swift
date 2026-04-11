@@ -11,7 +11,11 @@ import MetalKit
 ///
 /// MetalTileCompositor가 타일을 블리팅한 캔버스 텍스처를 fullscreen quad로 그려서
 /// CVPixelBuffer → CMSampleBuffer → AVSampleBufferDisplayLayer 경유를 제거한다.
-final class ProjectionCanvasRenderer: NSObject, MTKViewDelegate {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// canvasTexture 는 ProjectionSession actor 가 순차적으로 갱신하고, draw(in:) 은
+/// MTKView delegate 로 main thread 에서만 호출되므로 실제 race 는 없다.
+final class ProjectionCanvasRenderer: NSObject, MTKViewDelegate, @unchecked Sendable {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let pipelineState: MTLRenderPipelineState

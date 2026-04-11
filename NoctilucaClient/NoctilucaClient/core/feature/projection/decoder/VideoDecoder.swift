@@ -1,13 +1,14 @@
 import Foundation
-import AVFoundation
-import VideoToolbox
+@preconcurrency import AVFoundation
+@preconcurrency import VideoToolbox
+
 import SiriusKitClient
 
-struct VideoDecoderConfiguration {
+struct VideoDecoderConfiguration: Sendable {
     let codec: Codec
     let preferredOutputPixelFormat: OSType?
     let initialFormatDescription: CMFormatDescription?
-    
+
     init(
         codec: Codec,
         preferredOutputPixelFormat: OSType? = nil,
@@ -19,13 +20,13 @@ struct VideoDecoderConfiguration {
     }
 }
 
-struct EncodedFrameInput {
+struct EncodedFrameInput: Sendable {
     let header: FrameDataHeader
     let data: Data
     let formatDescription: CMFormatDescription?
 }
 
-struct DecodedFrame {
+struct DecodedFrame: Sendable {
     let pixelBuffer: CVPixelBuffer
     let pts: CMTime
     let isKeyFrame: Bool
@@ -33,15 +34,15 @@ struct DecodedFrame {
     let decodeTimeMs: Double
 }
 
-protocol VideoDecoderDelegate: AnyObject {
+protocol VideoDecoderDelegate: AnyObject, Sendable {
     func videoDecoder(_ decoder: VideoDecoder, didDecode frame: DecodedFrame)
     func videoDecoder(_ decoder: VideoDecoder, didFailWith error: Error)
     func videoDecoder(_ decoder: VideoDecoder, didDropFrameWithID frameID: UInt64, reason: String)
 }
 
-protocol VideoDecoder: AnyObject {
+protocol VideoDecoder: AnyObject, Sendable {
     var delegate: VideoDecoderDelegate? { get set }
-    
+
     func prepare(with configuration: VideoDecoderConfiguration) throws
     func start() throws
     func decode(_ frame: EncodedFrameInput) throws

@@ -19,7 +19,12 @@ import AppKit
 /// CADisplayLink를 통해 vsync에 동기화하여 일정한 간격으로 릴리즈하는 지터 버퍼.
 ///
 /// AudioJitterBuffer와 동일한 앵커 기반 클록 동기화 및 3-state 머신 패턴을 사용한다.
-final class VideoJitterBuffer: NSObject {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// 모든 가변 상태가 내부 `os_unfair_lock` 으로 직렬화되어 있고, 프레임 생산(디코더 콜백
+/// 큐)과 소비(CADisplayLink main thread) 는 lock 으로 안전하게 분리된다. 호출자
+/// (ProjectionSession actor) 가 enqueue / start / stop 호출 순서를 보장한다.
+final class VideoJitterBuffer: NSObject, @unchecked Sendable {
 
     // MARK: - Configuration
 
@@ -140,7 +145,7 @@ final class VideoJitterBuffer: NSObject {
 
     /// 프레임이 릴리즈 준비되었을 때 호출되는 콜백.
     /// CMSampleBuffer를 생성하여 전달한다.
-    var onFrameReady: ((CMSampleBuffer) -> Void)?
+    var onFrameReady: (@Sendable (CMSampleBuffer) -> Void)?
 
     // MARK: - Statistics
 

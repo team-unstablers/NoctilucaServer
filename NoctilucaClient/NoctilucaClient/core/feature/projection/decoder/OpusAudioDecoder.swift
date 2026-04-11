@@ -14,7 +14,11 @@ import SiriusKitClient
 
 /// Opus decoder using AVAudioConverter.
 /// Decodes Opus frames to PCM (48kHz, stereo, Float32).
-final class OpusAudioDecoder: NSObject, AudioDecoder {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// 내부 workerQueue 기반 직렬화와 호출자(AudioProjectionSession actor)의
+/// 순차 호출 보장으로 실제 thread-safety 확보.
+final class OpusAudioDecoder: NSObject, AudioDecoder, @unchecked Sendable {
     private let logger = SiriusLogger(category: "OpusAudioDecoder", subsystem: "app.noctiluca.client")
     private let workerQueue: DispatchQueue
 

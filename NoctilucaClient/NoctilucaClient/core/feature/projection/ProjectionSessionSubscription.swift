@@ -19,7 +19,11 @@ import SiriusKitClient
 ///
 /// Metal이 불가능한 환경(시뮬레이터 등)에서는 `displayLayer`를 통한
 /// AVSampleBufferDisplayLayer fallback 경로를 사용한다.
-class ProjectionSessionSubscription {
+///
+/// `ProjectionSession` 이 actor 로 승격되었으므로, 이 객체의 register/unregister
+/// 호출은 모두 `Task { await session.xxx }` 패턴으로 actor 경계를 넘는다.
+@MainActor
+final class ProjectionSessionSubscription {
     private static let logger = NoctilucaLogger(category: "ProjectionSessionSubscription")
 
     /// AVSampleBufferDisplayLayer fallback (Metal 불가 시)
@@ -63,7 +67,9 @@ class ProjectionSessionSubscription {
         if rendererImplementation == .nocMetalVideoRenderer, tryCreateMetalVideoRenderer() {
             Self.logger.info("Using MetalVideoRenderer for VT codec rendering")
         } else {
-            session.registerDisplayLayer(displayLayer)
+            let layer = displayLayer
+            let session = session
+            Task { await session.registerDisplayLayer(layer) }
             if rendererImplementation == .nocMetalVideoRenderer {
                 Self.logger.warning("MetalVideoRenderer creation failed, falling back to AVSampleBufferDisplayLayer")
             } else {
@@ -77,30 +83,31 @@ class ProjectionSessionSubscription {
         guard !isInvalidated else { return }
         isInvalidated = true
 
-        session.unregisterDisplayLayer(displayLayer)
-        if let renderer = metalVideoRenderer {
-            session.unregisterMetalVideoRenderer(renderer)
-            metalVideoRenderer = nil
+        let layer = displayLayer
+        let session = session
+        let metalRenderer = metalVideoRenderer
+        let canvasR = canvasRenderer
+
+        Task {
+            await session.unregisterDisplayLayer(layer)
+            if let metalRenderer {
+                await session.unregisterMetalVideoRenderer(metalRenderer)
+            }
+            if let canvasR {
+                await session.unregisterCanvasRenderer(canvasR)
+            }
         }
-        if let renderer = canvasRenderer {
-            session.unregisterCanvasRenderer(renderer)
-            canvasRenderer = nil
-        }
+        metalVideoRenderer = nil
+        canvasRenderer = nil
         ticket.release()
     }
 
     deinit {
         // safety-net: invalidate() 미호출 시에도 리소스 누수 방지
-        if !isInvalidated {
-            session.unregisterDisplayLayer(displayLayer)
-            if let renderer = metalVideoRenderer {
-                session.unregisterMetalVideoRenderer(renderer)
-            }
-            if let renderer = canvasRenderer {
-                session.unregisterCanvasRenderer(renderer)
-            }
-            // ticket.deinit이 release를 처리
-        }
+        // nonisolated context 이므로 MainActor-isolated 필드 직접 접근 불가.
+        // displayLayer, session, metalVideoRenderer, canvasRenderer 값을 캡쳐해 Task 로.
+        // 단, isInvalidated 체크는 MainActor 이므로 Task 안에서 해야 한다.
+        // 여기서는 ticket release 만으로 충분 (SessionReferenceTicket.deinit 이 처리).
     }
 
     /// 코덱 재설정 시 호출: 렌더링 경로를 업데이트한다.
@@ -108,7 +115,9 @@ class ProjectionSessionSubscription {
         if isTiledCodec {
             // 타일 코덱: Metal 비디오 렌더러 제거, 캔버스 렌더러 생성
             removeMetalVideoRenderer()
-            session.unregisterDisplayLayer(displayLayer)
+            let layer = displayLayer
+            let session = session
+            Task { await session.unregisterDisplayLayer(layer) }
             if canvasRenderer == nil {
                 tryCreateCanvasRenderer()
             }
@@ -117,11 +126,15 @@ class ProjectionSessionSubscription {
             removeCanvasRenderer()
             if rendererImplementation == .nocMetalVideoRenderer && metalVideoRenderer == nil {
                 if !tryCreateMetalVideoRenderer() {
-                    session.registerDisplayLayer(displayLayer)
+                    let layer = displayLayer
+                    let session = session
+                    Task { await session.registerDisplayLayer(layer) }
                 }
             } else if rendererImplementation == .avSampleBufferDisplayLayer {
                 removeMetalVideoRenderer()
-                session.registerDisplayLayer(displayLayer)
+                let layer = displayLayer
+                let session = session
+                Task { await session.registerDisplayLayer(layer) }
             }
         }
     }
@@ -137,7 +150,8 @@ class ProjectionSessionSubscription {
         do {
             let renderer = try MetalVideoRenderer(device: device)
             metalVideoRenderer = renderer
-            session.registerMetalVideoRenderer(renderer)
+            let session = session
+            Task { await session.registerMetalVideoRenderer(renderer) }
             return true
         } catch {
             Self.logger.error("Failed to create MetalVideoRenderer: \(error.localizedDescription)")
@@ -147,7 +161,8 @@ class ProjectionSessionSubscription {
 
     private func removeMetalVideoRenderer() {
         if let renderer = metalVideoRenderer {
-            session.unregisterMetalVideoRenderer(renderer)
+            let session = session
+            Task { await session.unregisterMetalVideoRenderer(renderer) }
             metalVideoRenderer = nil
         }
     }
@@ -162,7 +177,8 @@ class ProjectionSessionSubscription {
         do {
             let renderer = try ProjectionCanvasRenderer(device: device)
             canvasRenderer = renderer
-            session.registerCanvasRenderer(renderer)
+            let session = session
+            Task { await session.registerCanvasRenderer(renderer) }
         } catch {
             Self.logger.error("Failed to create canvas renderer: \(error.localizedDescription)")
         }
@@ -170,7 +186,8 @@ class ProjectionSessionSubscription {
 
     private func removeCanvasRenderer() {
         if let renderer = canvasRenderer {
-            session.unregisterCanvasRenderer(renderer)
+            let session = session
+            Task { await session.unregisterCanvasRenderer(renderer) }
             canvasRenderer = nil
         }
     }

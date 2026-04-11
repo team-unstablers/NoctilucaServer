@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 
 import SiriusKitClient
 
@@ -45,29 +44,32 @@ extension ProjectionChannel {
             return
         }
 
-        let audioProjectionPolicy = SettingsStore.shared.settings.projection.audioProjectionPolicy
-        let session = AudioProjectionSession(id: event.identifier, dataChannel: channel, controlChannel: self, audioJitterBufferPreset: audioProjectionPolicy.bufferPreset)
+        let audioProjectionPolicy = await SettingsStore.shared.settings.projection.audioProjectionPolicy
+        let session = AudioProjectionSession(
+            id: event.identifier,
+            dataChannel: channel,
+            controlChannel: self,
+            audioJitterBufferPreset: audioProjectionPolicy.bufferPreset
+        )
+
+        // data channel 이벤트 consume 루프 설치
+        await session.setup()
 
         do {
             try await session.prepare(codec: event.codec)
             try await session.start()
 
-            // Set up data channel delegate
-            channel.delegate = session
-
             await state.setAudioSession(event.identifier, session)
             self.logger.info("Audio projection session started: \(event.identifier)")
 
-            Task { @MainActor in
-                self.events.send(.audioSessionCreated(session))
-            }
+            continuation.yield(.audioSessionCreated(session))
 
             _ = await state.succeedPendingAudioSessionRequest(event.identifier, event: event)
         } catch {
             self.logger.error("Failed to start audio projection session: \(error)")
 
             do {
-                try session.stop()
+                try await session.stop()
             } catch {
                 self.logger.warning("Failed to rollback audio session after start failure: \(error)")
             }
@@ -92,13 +94,11 @@ extension ProjectionChannel {
         }
 
         do {
-            try session.stop()
+            try await session.stop()
         } catch {
             self.logger.error("Failed to stop audio session: \(error)")
         }
 
-        Task { @MainActor in
-            self.events.send(.audioSessionDestroyed(event.identifier, reason: event.reason, message: event.message))
-        }
+        continuation.yield(.audioSessionDestroyed(event.identifier, reason: event.reason, message: event.message))
     }
 }

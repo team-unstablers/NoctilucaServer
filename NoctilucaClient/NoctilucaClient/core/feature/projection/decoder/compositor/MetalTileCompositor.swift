@@ -11,7 +11,11 @@ import CoreVideo
 import Metal
 
 /// GPU 기반 타일 합성기
-final class MetalTileCompositor: CanvasTileCompositor {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// 호출자(ProjectionSession actor)의 순차 호출 보장과 Metal command queue 내부
+/// 순서 보장으로 thread-safety 확보.
+final class MetalTileCompositor: CanvasTileCompositor, @unchecked Sendable {
     var frameSize: CGSize {
         didSet {
             if frameSize != oldValue {

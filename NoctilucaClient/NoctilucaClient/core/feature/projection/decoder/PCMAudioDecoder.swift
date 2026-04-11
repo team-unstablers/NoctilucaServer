@@ -15,7 +15,11 @@ import SiriusKitClient
 
 /// G.711 mu-law/A-law decoder.
 /// Performs manual G.711 decoding to LPCM using LUT, then resamples using AVAudioConverter.
-final class PCMAudioDecoder: NSObject, AudioDecoder {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// 내부 workerQueue 기반 직렬화와 호출자(AudioProjectionSession actor)의
+/// 순차 호출 보장으로 실제 thread-safety 확보.
+final class PCMAudioDecoder: NSObject, AudioDecoder, @unchecked Sendable {
     private let logger = SiriusLogger(category: "PCMAudioDecoder", subsystem: "app.noctiluca.client")
     private let workerQueue: DispatchQueue
 
@@ -203,7 +207,7 @@ final class PCMAudioDecoder: NSObject, AudioDecoder {
 }
 
 // MARK: - G.711 Decoder Lookup Table
-final class G711DecoderLUT {
+struct G711DecoderLUT: Sendable {
     static let shared = G711DecoderLUT()
     
     let ulawTable: [Int16]
