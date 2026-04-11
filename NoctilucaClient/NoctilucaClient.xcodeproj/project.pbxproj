@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F621CB0A2F8AE97700AEF0FA /* NoctilucaLibVPXDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB092F8AE97700AEF0FA /* NoctilucaLibVPXDecoder */; };
+		F621CB0B2F8AE97700AEF0FA /* NoctilucaLibVPXDecoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB092F8AE97700AEF0FA /* NoctilucaLibVPXDecoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F621CB0D2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB0C2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder */; };
+		F621CB0E2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB0C2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F627116D2F08626200E8A3D7 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F627116C2F08626200E8A3D7 /* libzstd */; };
 		F64AF1642F6C5D8300C0EDD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F64AF1632F6C5D8300C0EDD8 /* Sparkle */; };
 		F64AF16D2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */; };
@@ -56,6 +60,7 @@
 				F6682AD02F43F8930042F213 /* NoctilucaWebPDecoder in Embed Frameworks */,
 				F6682AD12F43F8930042F213 /* Xuanxue in Embed Frameworks */,
 				F6682AD22F43F8930042F213 /* libturbojpeg.xcframework in Embed Frameworks */,
+				F621CB0E2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder in Embed Frameworks */,
 				F6682AD32F43F8930042F213 /* SiriusKitClient in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -70,6 +75,7 @@
 				F686CFF22F3A34C8004383CF /* NoctilucaWebPDecoder in Embed Frameworks */,
 				F686CFF62F3A47A4004383CF /* Xuanxue in Embed Frameworks */,
 				F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */,
+				F621CB0B2F8AE97700AEF0FA /* NoctilucaLibVPXDecoder in Embed Frameworks */,
 				F686CFEE2F3A23C8004383CF /* SiriusKitClient in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -143,6 +149,7 @@
 				F64AF1642F6C5D8300C0EDD8 /* Sparkle in Frameworks */,
 				F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */,
 				F6682AC92F43F8930042F213 /* libturbojpeg.xcframework in Frameworks */,
+				F621CB0D2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder in Frameworks */,
 				F6682ACA2F43F8930042F213 /* libzstd in Frameworks */,
 				F6682ACB2F43F8930042F213 /* SiriusKitClient in Frameworks */,
 				F6682ACC2F43F8930042F213 /* AsyncAlgorithms in Frameworks */,
@@ -157,6 +164,7 @@
 				F686CFF12F3A34C8004383CF /* NoctilucaWebPDecoder in Frameworks */,
 				F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F627116D2F08626200E8A3D7 /* libzstd in Frameworks */,
+				F621CB0A2F8AE97700AEF0FA /* NoctilucaLibVPXDecoder in Frameworks */,
 				F6F98E7D2F306B6C0024513A /* SiriusKitClient in Frameworks */,
 				F6C2ADFD2EFDCD960089E63C /* AsyncAlgorithms in Frameworks */,
 				F69644AC2F3296D30093CFC2 /* Xuanxue in Frameworks */,
@@ -252,6 +260,7 @@
 				F6682AC32F43F8930042F213 /* Xuanxue */,
 				F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */,
 				F64AF1632F6C5D8300C0EDD8 /* Sparkle */,
+				F621CB0C2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder */,
 			);
 			productName = NoctilucaClient;
 			productReference = F6682AD72F43F8930042F213 /* Noctiluca Navigator.app */;
@@ -280,6 +289,7 @@
 				F6F98E7C2F306B6C0024513A /* SiriusKitClient */,
 				F69644AB2F3296D30093CFC2 /* Xuanxue */,
 				F686CFF02F3A34C8004383CF /* NoctilucaWebPDecoder */,
+				F621CB092F8AE97700AEF0FA /* NoctilucaLibVPXDecoder */,
 			);
 			productName = NoctilucaClient;
 			productReference = F6BD3E962EDA1AF6000011DF /* Noctiluca Navigator.app */;
@@ -914,6 +924,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F621CB092F8AE97700AEF0FA /* NoctilucaLibVPXDecoder */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NoctilucaLibVPXDecoder;
+		};
+		F621CB0C2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NoctilucaLibVPXDecoder;
+		};
 		F627116C2F08626200E8A3D7 /* libzstd */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F627116B2F08626200E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */;
