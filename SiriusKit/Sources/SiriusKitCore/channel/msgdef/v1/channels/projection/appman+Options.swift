@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ApplicationEventType: OptionSet {
+public struct ApplicationEventType: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -28,7 +28,7 @@ public struct ApplicationEventType: OptionSet {
     public static let windowClosed = ApplicationEventType(rawValue: 0x20)
 }
 
-public struct ApplicationListRequestFlags: OptionSet {
+public struct ApplicationListRequestFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -41,7 +41,7 @@ public struct ApplicationListRequestFlags: OptionSet {
     public static let runningOnly = ApplicationListRequestFlags(rawValue: 0x2)
 }
 
-public struct AppStreamFlags: OptionSet {
+public struct AppStreamFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

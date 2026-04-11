@@ -154,7 +154,7 @@ class RemoteSessionDebugViewModel: ObservableObject {
             let snapshot = session.debugSnapshot
             return VideoSessionDebugInfo(
                 id: session.id,
-                displayID: session.displayID,
+                displayID: -42,
                 codec: snapshot.codec,
                 size: snapshot.size,
                 decoderTypeName: snapshot.decoderTypeName,

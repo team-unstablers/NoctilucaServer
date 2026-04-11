@@ -74,6 +74,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
                     self.subDisplayWindowManager = SubDisplayWindowManager(remoteSession: session)
                     self.appStreamWindowManager = AppStreamWindowManager(remoteSession: session)
                     self.viewModel.appStreamWindowManager = self.appStreamWindowManager
+                    session.appStreamWindowManager = self.appStreamWindowManager
                     
                     self.viewModel.onDetachDisplay = { [weak self] displayID in
                         try await self?.subDisplayWindowManager?.spawn(for: displayID)

@@ -261,8 +261,15 @@ extension RemoteSession {
                     }
                 }
 
-            case .appStreamWindowEvent:
-                break // AppStreamWindowManager가 직접 events를 구독하여 처리
+            case .appStreamWindowEvent(let appStreamEvent):
+#if os(macOS)
+                guard let appStreamWindowManager = parent?.appStreamWindowManager else {
+                    return
+                }
+                
+                appStreamWindowManager.handleAppStreamWindowEvent(appStreamEvent)
+#endif
+                break
             }
         }
 

@@ -90,7 +90,6 @@ actor ProjectionSession: Identifiable {
     nonisolated(unsafe) weak var controlChannel: ProjectionChannel?
 
     nonisolated let sourceDescriptor: ProjectionSourceDescriptor
-    nonisolated let displayID: Int
     nonisolated let enableJitterBuffer: Bool
     nonisolated let jitterBufferPreset: AppSettings.JitterBufferPreset
 

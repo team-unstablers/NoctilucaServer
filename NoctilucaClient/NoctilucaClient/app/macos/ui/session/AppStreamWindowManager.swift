@@ -42,16 +42,12 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             return
         }
 
-        // 이벤트 구독 먼저 시작 (response 전에 도착하는 이벤트 놓치지 않도록)
-        subscribeAppStreamEvents()
-
         let response = try await projectionChannel.startAppStream(
             bundleId: bundleId,
             flags: [.ignoreInvisibleWindows]
         )
 
         guard response.isSuccess else {
-            unsubscribeEvents()
             logger.error("StartAppStream failed: code=\(response.code), message=\(response.message ?? "nil")")
             throw AppStreamError.startFailed(code: response.code, message: response.message)
         }
@@ -72,8 +68,6 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     }
 
     func stop() async {
-        unsubscribeEvents()
-
         // 모든 윈도우 닫기 (스트림 자체를 종료하므로 서버에 close를 보내지 않음)
         let windowIDs = Array(windows.keys)
         for windowID in windowIDs {
@@ -89,8 +83,6 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     }
 
     func destroyAll() {
-        unsubscribeEvents()
-
         let windowIDs = Array(windows.keys)
         for windowID in windowIDs {
             destroyWindow(windowID: windowID, sendCloseToServer: false)
@@ -194,26 +186,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
 
     // MARK: - Event Subscription
 
-    private func subscribeAppStreamEvents() {
-        guard let projection = remoteSession.projection else { return }
-
-        eventSubscription = projection.channel.events
-            .compactMap { event -> AppStreamWindowEvent? in
-                if case .appStreamWindowEvent(let e) = event { return e }
-                return nil
-            }
-            .receive(on: RunLoop.main)
-            .sink { [weak self] event in
-                self?.handleAppStreamWindowEvent(event)
-            }
-    }
-
-    private func unsubscribeEvents() {
-        eventSubscription?.cancel()
-        eventSubscription = nil
-    }
-
-    private func handleAppStreamWindowEvent(_ event: AppStreamWindowEvent) {
+    func handleAppStreamWindowEvent(_ event: AppStreamWindowEvent) {
         guard event.streamId == self.streamId else { return }
 
         switch event.eventType {

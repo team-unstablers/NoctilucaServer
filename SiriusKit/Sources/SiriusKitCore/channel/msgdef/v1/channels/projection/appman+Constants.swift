@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ApplicationState: RawRepresentable, Hashable, Equatable, Codable {
+public struct ApplicationState: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -24,7 +24,7 @@ public struct ApplicationState: RawRepresentable, Hashable, Equatable, Codable {
     public static let background = ApplicationState(rawValue: 2)
 }
 
-public struct AppStreamWindowEventType: RawRepresentable, Hashable, Equatable, Codable {
+public struct AppStreamWindowEventType: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

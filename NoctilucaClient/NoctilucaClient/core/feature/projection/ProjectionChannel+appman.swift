@@ -51,7 +51,7 @@ extension ProjectionChannel {
         windowID: UInt64,
         operation: WindowManipulationRequest.Operation
     ) async throws {
-        try await self.send(
+        try await self.handle.send(
             opcode: .windowManipulationRequest,
             message: WindowManipulationRequest(
                 windowID: windowID,
@@ -65,6 +65,6 @@ extension ProjectionChannel {
     // MARK: Event Handlers
 
     func handleAppStreamWindowEvent(_ event: AppStreamWindowEvent) async {
-        events.send(.appStreamWindowEvent(event))
+        continuation.yield(.appStreamWindowEvent(event))
     }
 }

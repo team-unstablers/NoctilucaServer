@@ -4,6 +4,16 @@
     "" : {
 
     },
+    "  %@ = %@" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "  %1$@ = %2$@"
+          }
+        }
+      }
+    },
     "-10%" : {
 
     },
@@ -13,7 +23,22 @@
     "**[Codec]**" : {
 
     },
+    "**[Flags]** %@" : {
+
+    },
+    "**[Hints]** %@" : {
+
+    },
+    "**[Metadata]**" : {
+
+    },
     "**[Performance]**" : {
+
+    },
+    "**[WindowInfo]**" : {
+
+    },
+    "#%llu" : {
 
     },
     "%@" : {
@@ -28,6 +53,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ ↑ %2$@ ↓"
+          }
+        }
+      }
+    },
+    "%lld×%lld" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld×%2$lld"
           }
         }
       }
@@ -687,7 +722,20 @@
     "App Store" : {
 
     },
+    "App: %@ (%@)" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "App: %1$@ (%2$@)"
+          }
+        }
+      }
+    },
     "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle" : {
+
+    },
+    "AppStream 활성화됨" : {
 
     },
     "Audio" : {
@@ -2793,10 +2841,23 @@
         }
       }
     },
+    "Bounds: (%lld, %lld) %lld×%lld" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bounds: (%1$lld, %2$lld) %3$lld×%4$lld"
+          }
+        }
+      }
+    },
     "Channels" : {
 
     },
     "Channels (%lld)" : {
+
+    },
+    "Class: %@" : {
 
     },
     "Cocoa Event Tap" : {
@@ -7604,6 +7665,12 @@
     "Options:" : {
 
     },
+    "Parent: %llu" : {
+
+    },
+    "PID: %llu" : {
+
+    },
     "Ping: %@ ms" : {
 
     },
@@ -7946,6 +8013,9 @@
           }
         }
       }
+    },
+    "Role: %@" : {
+
     },
     "SDR (Standard Dynamic Range)" : {
 
@@ -17261,6 +17331,9 @@
     "Status" : {
 
     },
+    "Title: %@" : {
+
+    },
     "Unleashed Edition" : {
 
     },
@@ -17268,6 +17341,9 @@
 
     },
     "Video Sessions (%lld)" : {
+
+    },
+    "Window ID: %llu" : {
 
     },
     "YUV 4:2:0" : {

@@ -53,6 +53,10 @@ class RemoteSession: ObservableObject {
     private var progressCancellable: AnyCancellable? = nil
 
     private let errorEvents = PassthroughSubject<NoctilucaClientError, Never>()
+    
+#if os(macOS)
+    weak var appStreamWindowManager: AppStreamWindowManager? = nil
+#endif
 
     var errorPublisher: AnyPublisher<NoctilucaClientError, Never> {
         errorEvents.eraseToAnyPublisher()

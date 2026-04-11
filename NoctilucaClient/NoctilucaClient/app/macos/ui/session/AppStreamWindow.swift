@@ -23,6 +23,7 @@ class ObservableWindowInfo: ObservableObject {
     }
 }
 
+@MainActor
 class AppStreamWindow: NSWindow {
     let windowID: Int
     let mouse: HIDIOAppKitPointer
@@ -91,6 +92,7 @@ class AppStreamWindow: NSWindow {
         super.sendEvent(event)
     }
 
+    @MainActor
     deinit {
         hidioController?.disconnect(mouse.identifierString)
     }
