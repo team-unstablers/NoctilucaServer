@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct LinuxKeycode: RawRepresentable, Hashable, Equatable, Codable {
+public struct LinuxKeycode: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt16
     
     public init(rawValue: UInt16) {

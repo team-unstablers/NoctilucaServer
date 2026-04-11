@@ -7,7 +7,7 @@ import Foundation
 @testable import SiriusKitCore
 @testable import SiriusKit
 
-final class MockServerRoleClientTransport: ServerRoleClientTransport {
+final class MockServerRoleClientTransport: ServerRoleClientTransport, @unchecked Sendable {
     let id: TransportLayerIdentifier = UUID()
     private let loggerContext = SharedState(SiriusEventLogger.Context())
 
@@ -62,7 +62,7 @@ final class MockServerRoleClientTransport: ServerRoleClientTransport {
     // MARK: - Simulation (async)
 
     func simulateRemoteStreamOpen(_ stream: MockStream) async throws {
-        openStreams[stream.id] = stream
+        openStreams[stream.id()] = stream
         try await delegate?.clientTransportDidOpenRemoteStream(self, stream: stream)
     }
 

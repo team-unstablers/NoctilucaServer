@@ -9,11 +9,13 @@ import Foundation
 
 import SiriusKitClient
 
+@MainActor
 protocol KeyEventPipeline {
     func process(_ keyEvent: KeyboardEvent) -> KeyboardEvent?
 }
 
-class KeyEventPipelineChain: KeyEventPipeline {
+@MainActor
+final class KeyEventPipelineChain: KeyEventPipeline {
     private var stages: [KeyEventPipeline] = []
 
     func append(_ stage: KeyEventPipeline) {

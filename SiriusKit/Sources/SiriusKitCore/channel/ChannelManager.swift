@@ -23,8 +23,8 @@ enum ChannelManagerError: Error {
 }
 
 public protocol ChannelManagerDelegate: AnyObject {
-    func channelManager(_ manager: ChannelManager, didRegisterChannel channel: Channel, for feature: SiriusFeature)
-    func channelManager(_ manager: ChannelManager, willUnregisterChannel channel: Channel)
+    func channelManager(_ manager: ChannelManager, didRegisterChannel channel: any Channel, for feature: SiriusFeature)
+    func channelManager(_ manager: ChannelManager, willUnregisterChannel channel: any Channel)
 }
 
 public actor ChannelManager {
@@ -35,7 +35,7 @@ public actor ChannelManager {
     private let channelOpenTimeout: TimeInterval
 
     private(set) public var mainChannel: MainChannel?
-    private(set) public var channels: [UUID: Channel] = [:]
+    private(set) public var channels: [UUID: any Channel] = [:]
 
     private weak var delegate: ChannelManagerDelegate?
     
@@ -62,7 +62,7 @@ public actor ChannelManager {
             delegate?.channelManager(self, didRegisterChannel: channel, for: feature)
         }
 
-        channel.lifecycleDelegate = self
+        channel.handle.asImpl.lifecycleDelegate = self
 
         self.channels[channel.identifier] = channel
     }
@@ -82,7 +82,7 @@ public actor ChannelManager {
 
     public func filter(byFeature feature: SiriusFeature) -> [Channel] {
         return self.channels.values.filter {
-            ($0 as? Channel.HasFeature)?.feature == feature
+            $0.feature == feature
         }
     }
 
@@ -94,9 +94,19 @@ public actor ChannelManager {
         case .failure(let error):
             throw error
         case .success(let stream):
-            let mainChannel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
-            mainChannel.session = self.session
-            mainChannel.lifecycleDelegate = self
+            let handle = ChannelHandleImpl(
+                feature: .init(rawValue: .zero),
+                session: session,
+                stream: stream,
+                identifier: ChannelIdentifier(),
+                direction: .local
+            )
+            
+            let mainChannel = MainChannel(handle: handle)
+            handle.lifecycleDelegate = self
+            
+            try await handle.activate()
+            
             self.mainChannel = mainChannel
 
             return
@@ -144,11 +154,17 @@ public actor ChannelManager {
             )
             try await openTask.perform()
             
+            let handle = ChannelHandleImpl(
+                feature: feature,
+                session: session,
+                stream: stream,
+                identifier: identifier,
+                direction: .local
+            )
+            
             let result = try await session.featureProvider.createChannel(
                 for: feature,
-                using: StreamHolder(stream: stream),
-                identifier: identifier,
-                direction: .local,
+                handle: handle,
                 args: args
             )
             
@@ -160,14 +176,13 @@ public actor ChannelManager {
             
             switch result {
             case .accepted(let channel):
-                channel.session = self.session
                 success = true
 
                 logger.info("Opened channel \(channel.identifier) for feature \(feature)")
                 try self.registerChannel(channel, for: feature)
                 logger.info("Registered channel \(channel.identifier)")
 
-                channel.channelDidBecomeReady()
+                try await handle.activate()
 
                 return channel
             case .rejected(let code, let reason):
@@ -181,11 +196,20 @@ public actor ChannelManager {
         if mainChannel == nil {
             // 첫번째 스트림은 반드시 메인 채널로 사용한다
             // 프로토콜 상 약속이므로 ChannelOpenTask를 사용할 필요가 없다
-            let channel = MainChannel(stream: stream, identifier: ChannelIdentifier(), direction: .local)
-            channel.session = self.session
-            channel.lifecycleDelegate = self
+            let handle = ChannelHandleImpl(
+                feature: .init(rawValue: .zero),
+                session: session,
+                stream: stream,
+                identifier: ChannelIdentifier(),
+                direction: .local
+            )
+            
+            let mainChannel = MainChannel(handle: handle)
+            handle.lifecycleDelegate = self
+            
+            try await handle.activate()
 
-            self.mainChannel = channel
+            self.mainChannel = mainChannel
             return
         }
 
@@ -230,20 +254,25 @@ public actor ChannelManager {
             guard session.featureProvider.supports(feature) else {
                 return false
             }
+            
+            let handle = ChannelHandleImpl(
+                feature: feature,
+                session: session,
+                stream: stream,
+                identifier: channelID,
+                direction: .remote
+            )
 
             let result = try await session.featureProvider.createChannel(
                 for: feature,
-                using: StreamHolder(stream: stream),
-                identifier: channelID,
-                direction: .remote,
+                handle: handle,
                 args: request.args
             )
 
             switch result {
             case .accepted(let channel):
-                channel.session = self.session
-
                 try self.registerChannel(channel, for: feature)
+                
                 success = true
                 createdChannel = channel
 
@@ -254,9 +283,8 @@ public actor ChannelManager {
                 throw ChannelManagerError.channelOpenRejected(code: code, reason: reason)
             }
         }
-
-        // ChannelStartResponse 전송 완료 후 채널에 ready 알림
-        createdChannel?.channelDidBecomeReady()
+        
+        try await createdChannel?.handle.activate()
     }
 
     package func teardownAllChannels() async {
@@ -268,13 +296,13 @@ public actor ChannelManager {
 
         for channel in channels {
             delegate?.channelManager(self, willUnregisterChannel: channel)
-            channel.lifecycleDelegate = nil
+            channel.handle.asImpl.lifecycleDelegate = nil
         }
-        mainChannel?.lifecycleDelegate = nil
+        mainChannel?.handle.asImpl.lifecycleDelegate = nil
 
         for channel in channels {
             do {
-                try await channel.close()
+                try await channel.handle.close()
             } catch {
                 logger.warning("Failed to close channel \(channel.identifier) during teardown: \(error)")
             }
@@ -285,7 +313,7 @@ public actor ChannelManager {
         }
 
         do {
-            try await mainChannel.close()
+            try await mainChannel.handle.close()
         } catch {
             logger.warning("Failed to close main channel \(mainChannel.identifier) during teardown: \(error)")
         }
@@ -294,11 +322,11 @@ public actor ChannelManager {
 }
 
 extension ChannelManager: ChannelLifecycleDelegate {
-    nonisolated func channelDidClose(_ channel: Channel) {
-        Task { await self.unregisterChannel(identifier: channel.identifier) }
+    nonisolated func channelDidClose(_ handle: any ChannelHandle) {
+        Task { await self.unregisterChannel(identifier: handle.identifier) }
     }
 
-    nonisolated func channel(_ channel: Channel, didEncounterError error: any Error) {
-        Task { await self.unregisterChannel(identifier: channel.identifier) }
+    nonisolated func channel(_ handle: any ChannelHandle, didEncounterError error: any Error) {
+        Task { await self.unregisterChannel(identifier: handle.identifier) }
     }
 }

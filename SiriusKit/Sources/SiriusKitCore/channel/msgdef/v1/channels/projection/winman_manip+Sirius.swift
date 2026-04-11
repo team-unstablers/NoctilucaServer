@@ -16,7 +16,7 @@ public extension MessageOpcode {
 public struct WindowManipulationRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_WindowManipulationRequest
     
-    public enum Operation {
+    public enum Operation: Sendable {
         case stateCommand(WindowStateCommand)
         case focus(Bool)
         case setGeometry(SRRect)

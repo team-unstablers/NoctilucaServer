@@ -8,14 +8,15 @@ import Foundation
 
 import SiriusKitClient
 
-class ClipboardSubscription: Identifiable {
+final class ClipboardSubscription: Identifiable, Sendable {
     let id: UUID
 
     private let logger = NoctilucaLogger(category: "ClipboardSubscription")
 
-    weak var channel: ClipboardChannel?
+    nonisolated(unsafe) weak var channel: ClipboardChannel?
 
     /// 세션 설정에서 주입된 클립보드 설정
+    @MainActor
     var clipboardSettings: SessionSettings.Clipboard = .init()
 
     init() {
@@ -62,7 +63,7 @@ class ClipboardSubscription: Identifiable {
             do {
                 channel.storeSnapshot(snapshot.omittedData)
                 channel.storeFileTransferSnapshot(snapshot.fileTransferData)
-                try await channel.send(opcode: .clipboardEvent, message: event)
+                try await channel.handle.send(opcode: .clipboardEvent, message: event)
             } catch {
                 logger.error("Failed to send ClipboardEvent: \(error)")
             }

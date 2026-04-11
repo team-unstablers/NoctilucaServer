@@ -8,7 +8,7 @@
 import Foundation
 import MsQuic
 import os
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 internal import Atomics
 import SiriusKitCore
@@ -88,7 +88,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     // MARK: - TransportLayer Protocol
 
     func disconnect() async {
-        if isFinalized.exchange(true, ordering: .acquiring) {
+        if isFinalized.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 
@@ -208,7 +208,7 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     }
 
     internal func registerStream(_ stream: ServerRoleMsQuicStream) {
-        let streamId = stream.id
+        let streamId = stream.id()
         guard !self.streams.keys.contains(streamId) else {
             return
         }
@@ -217,11 +217,12 @@ actor ServerRoleMsQuicClientTransport: ServerRoleClientTransport {
     }
 
     internal func unregisterStream(_ stream: ServerRoleMsQuicStream) {
-        guard self.streams.keys.contains(stream.id) else {
+        let streamId = stream.id()
+        guard self.streams.keys.contains(streamId) else {
             return
         }
 
-        self.streams.removeValue(forKey: stream.id)
+        self.streams.removeValue(forKey: streamId)
     }
 }
 

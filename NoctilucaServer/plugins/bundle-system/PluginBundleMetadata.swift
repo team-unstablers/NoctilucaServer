@@ -7,14 +7,14 @@
 
 import NoctilucaPluginKit
 
-protocol PluginBundleExportMetadata: Identifiable {
+protocol PluginBundleExportMetadata: Identifiable, Sendable {
     var id: String { get }
     var displayName: String { get }
     var type: NoctilucaPluginType { get }
     var description: String { get }
 }
 
-protocol PluginBundleMetadata: Identifiable {
+protocol PluginBundleMetadata: Identifiable, Sendable {
     var id: String { get }
     var displayName: String { get }
     

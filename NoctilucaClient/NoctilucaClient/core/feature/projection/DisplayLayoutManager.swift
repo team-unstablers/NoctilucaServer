@@ -11,7 +11,7 @@ import Combine
 import SiriusKitClient
 
 @MainActor
-class DisplayLayoutManager: ObservableObject {
+final class DisplayLayoutManager: ObservableObject {
     typealias DisplayID = Int
     
     let logger = NoctilucaLogger(category: "DisplayLayoutManager")

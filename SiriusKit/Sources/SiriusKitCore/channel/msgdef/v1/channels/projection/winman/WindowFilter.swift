@@ -41,10 +41,10 @@ public enum WindowFilterExpressionField {
 }
 
 
-public struct WindowFilterExpression {
+public struct WindowFilterExpression: @unchecked Sendable {
     public let field: WindowFilterExpressionField
-    public var `operator`: WindowFilterExpressionOperator
-    public var invert: Bool
+    package(set) public var `operator`: WindowFilterExpressionOperator
+    package(set) public var invert: Bool
     
     public init(_ field: WindowFilterExpressionField) {
         self.field = field
@@ -115,7 +115,7 @@ public extension WindowFilterExpression {
     }
 }
 
-public struct WindowFilter {
+public struct WindowFilter: Sendable {
     public typealias Operator = WindowFilterOperator
     
     public let `operator`: Operator

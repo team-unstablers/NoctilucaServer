@@ -295,7 +295,7 @@ struct RemoteSessionProjectionView: View {
                             droppedFrames: lastPerformanceReport?.droppedFrameCount ?? 0,
                             avgDecodeMs: lastPerformanceReport?.averageDecodeTimeMs ?? 0,
                             dataRateKbps: source?.currentDataRateKbps ?? 0,
-                            decoderType: source?.decoderTypeName ?? "N/A"
+                            decoderType: "N/A"
                         )
                         .padding(8)
                     }
@@ -369,24 +369,26 @@ struct RemoteSessionProjectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .if(subscription != nil) {
                     $0
-                        .onReceive(source!.events) { event in
-                            switch event {
-                            case .sizeChanged(let size):
-                                sourceSize = size
-                                if size.width > 0, size.height > 0 {
-                                    projectionAspectRatio = size.width / size.height
+                        .task {
+                            for await event in source!.events {
+                                switch event {
+                                case .sizeChanged(let size):
+                                    sourceSize = size
+                                    if size.width > 0, size.height > 0 {
+                                        projectionAspectRatio = size.width / size.height
+                                    }
+                                case .performanceReportEmitted(let report):
+                                    lastPerformanceReport = report
+                                case .codecConfigured(let isTiledCodec):
+                                    subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
+                                    useCanvasRendering = isTiledCodec
+                                case .errorOccurred(let error, let fatal):
+                                    if fatal {
+                                        Self.logger.error("Fatal projection error: \(error.localizedDescription)")
+                                    }
+                                default:
+                                    break
                                 }
-                            case .performanceReportEmitted(let report):
-                                lastPerformanceReport = report
-                            case .codecConfigured(let isTiledCodec):
-                                subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
-                                useCanvasRendering = isTiledCodec
-                            case .errorOccurred(let error, let fatal):
-                                if fatal {
-                                    Self.logger.error("Fatal projection error: \(error.localizedDescription)")
-                                }
-                            default:
-                                break
                             }
                         }
                 }

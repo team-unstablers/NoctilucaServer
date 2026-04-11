@@ -9,7 +9,7 @@
 
 import Foundation
 import Cocoa
-import ApplicationServices
+@preconcurrency import ApplicationServices
 
 enum TCCScope {
     case accessibility
@@ -17,6 +17,7 @@ enum TCCScope {
     case inputMonitoring
 }
 
+@MainActor
 class TCCUtil {
     public static let shared = TCCUtil()
 

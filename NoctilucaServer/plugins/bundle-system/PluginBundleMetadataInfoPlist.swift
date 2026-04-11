@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 12/7/25.
 //
 
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 struct PluginBundleMetadataParsingError: LocalizedError {
     let reason: String

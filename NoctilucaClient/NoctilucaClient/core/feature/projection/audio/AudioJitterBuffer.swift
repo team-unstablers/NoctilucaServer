@@ -19,11 +19,16 @@ import os
 /// - Late frame detection and skipping
 /// - Buffering state management (buffering → playing → underflow)
 /// - Clock synchronization between remote PTS and local playback time
-final class AudioJitterBuffer {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// 모든 가변 상태가 내부 `os_unfair_lock` (real-time safe) 으로 직렬화되어 있고,
+/// producer(디코더 쓰레드) 와 consumer(CoreAudio real-time render thread) 가 lock 으로
+/// 안전하게 분리된다. 호출자(AudioProjectionSession) 가 수명 관리 순서를 보장한다.
+final class AudioJitterBuffer: @unchecked Sendable {
 
     // MARK: - Preset
 
-    struct Preset {
+    nonisolated struct Preset {
         let minBufferMs: Int
         let maxBufferMs: Int
         let lateThresholdMs: Int

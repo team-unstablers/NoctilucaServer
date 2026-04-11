@@ -11,7 +11,7 @@ import os
 // @codex, Dictionary-like protocol이 있어? 만약 그렇다면 이걸 만족할 수 있도록 하고 싶어
 
 @available(iOS 16.0, macOS 13.0, *)
-public final class ConcurrentDictionary<Key: Hashable, Value> {
+public final class ConcurrentDictionary<Key: Hashable, Value>: @unchecked Sendable where Key: Sendable, Value: Sendable {
     private var dictionary: [Key: Value] = [:]
     private let lock = OSAllocatedUnfairLock()
     

@@ -90,9 +90,7 @@ struct HIDIOUIKitKeyboardInputHost: View {
     }
 
     private func updateConnection(isEnabled: Bool) {
-        guard let controller = client.hidioChannel.controller else {
-            return
-        }
+        let controller = client.hidioChannel.controller
 
         if isEnabled {
             controller.connect(keyboard)

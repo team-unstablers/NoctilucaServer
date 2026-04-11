@@ -8,7 +8,7 @@
 import Foundation
 
 /// 디그레이드 사유
-public struct DegradationReason: OptionSet {
+public struct DegradationReason: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -23,7 +23,7 @@ public struct DegradationReason: OptionSet {
     public static let poorServerEncodingPerformance = DegradationReason(rawValue: 0x4)
 }
 
-public struct DegradationAdditionalInfo: OptionSet {
+public struct DegradationAdditionalInfo: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -35,7 +35,7 @@ public struct DegradationAdditionalInfo: OptionSet {
 }
 
 /// 퀄리티 디그레이드 유형
-public struct DegradationType: OptionSet {
+public struct DegradationType: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

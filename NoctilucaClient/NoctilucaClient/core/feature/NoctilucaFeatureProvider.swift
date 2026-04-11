@@ -1,15 +1,40 @@
 //
 //  NoctilucaFeatureProvider.swift
-//  NoctilucaServer
+//  NoctilucaClient
 //
 //  Created by Gyuhwan Park on 11/24/25.
 //
 
 import SiriusKitClient
 
-class NoctilucaFeatureProvider: FeatureProvider {
-    private weak var clipboardChannel: ClipboardChannel?
-    weak var progressTracker: FileTransferProgressTracker?
+final class NoctilucaFeatureProvider: FeatureProvider {
+    private let state = State()
+
+    actor State {
+        weak var clipboardChannel: ClipboardChannel?
+        weak var progressTracker: FileTransferProgressTracker?
+
+        func setClipboardChannel(_ ch: ClipboardChannel?) {
+            self.clipboardChannel = ch
+        }
+
+        func getClipboardChannel() -> ClipboardChannel? {
+            return self.clipboardChannel
+        }
+
+        func setProgressTracker(_ t: FileTransferProgressTracker?) {
+            self.progressTracker = t
+        }
+
+        func getProgressTracker() -> FileTransferProgressTracker? {
+            return self.progressTracker
+        }
+    }
+
+    /// `RemoteSession` 생성 직후에 호출되어 TransferChannel 진행률 추적을 연결한다.
+    func setProgressTracker(_ tracker: FileTransferProgressTracker?) async {
+        await state.setProgressTracker(tracker)
+    }
 
     func supportedFeatures() -> [SiriusFeature] {
         return [
@@ -19,7 +44,7 @@ class NoctilucaFeatureProvider: FeatureProvider {
             .clipboard,
         ]
     }
-    
+
     func supports(_ feature: SiriusKitClient.SiriusFeature) -> Bool {
         switch feature {
         case .hidio:
@@ -28,7 +53,7 @@ class NoctilucaFeatureProvider: FeatureProvider {
             return true
         case .projectionData:
             return true
-            
+
         case .transfer:
             return true
 
@@ -39,32 +64,32 @@ class NoctilucaFeatureProvider: FeatureProvider {
             return false
         }
     }
-    
-    func createChannel(for feature: SiriusKitClient.SiriusFeature,
-                       using streamHolder: SiriusKitClient.StreamHolder,
-                       identifier: SiriusKitClient.ChannelIdentifier,
-                       direction: SiriusKitClient.ChannelDirection,
-                       args: [String]) async throws -> ChannelCreationResult {
-        
+
+    func createChannel(
+        for feature: SiriusKitClient.SiriusFeature,
+        handle: ChannelHandle,
+        args: [String]
+    ) async throws -> ChannelCreationResult {
+
         switch feature {
         case .hidio:
-            return .accepted(HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction))
+            return .accepted(HIDIOChannel(handle: handle))
         case .projection:
-            return .accepted(ProjectionChannel(using: streamHolder, identifier: identifier, direction: direction))
+            return .accepted(ProjectionChannel(handle: handle))
         case .projectionData:
-            return .accepted(ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction))
-            
+            return .accepted(ProjectionDataChannel(handle: handle))
+
         case .transfer:
             let result = try await TransferChannel.createIfAccepts(
-                streamHolder,
-                identifier: identifier,
-                direction: direction,
+                handle: handle,
                 args: args
             )
 
             if case .accepted(let channel as TransferChannel) = result {
+                let state = self.state
+
                 // 진행률 콜백 배선
-                if let tracker = progressTracker {
+                if let tracker = await state.getProgressTracker() {
                     channel.onTransferStarted = { [weak tracker] channelID, totalSize in
                         Task { @MainActor in tracker?.register(channelID: channelID, totalSize: totalSize) }
                     }
@@ -79,13 +104,19 @@ class NoctilucaFeatureProvider: FeatureProvider {
                 if channel.shouldSend() {
                     switch channel.task {
                     case .clipboardData(let itemIdx, let reprIdx):
-                        channel.onReady = { [weak self] in
-                            self?.clipboardChannel?.serveTransferData(channel, itemIndex: itemIdx, representationIndex: reprIdx)
+                        channel.onReady = {
+                            Task {
+                                let clip = await state.getClipboardChannel()
+                                clip?.serveTransferData(channel, itemIndex: itemIdx, representationIndex: reprIdx)
+                            }
                         }
                     case .fileTransfer(let name, let path, let offset, let length):
                         if let path = path {
-                            channel.onReady = { [weak self] in
-                                self?.clipboardChannel?.serveFileTransferData(channel, name: name, path: path, offset: offset, length: length)
+                            channel.onReady = {
+                                Task {
+                                    let clip = await state.getClipboardChannel()
+                                    clip?.serveFileTransferData(channel, name: name, path: path, offset: offset, length: length)
+                                }
                             }
                         }
                     default:
@@ -97,13 +128,12 @@ class NoctilucaFeatureProvider: FeatureProvider {
             return result
 
         case .clipboard:
-            let channel = ClipboardChannel(using: streamHolder, identifier: identifier, direction: direction)
-            self.clipboardChannel = channel
+            let channel = ClipboardChannel(handle: handle)
+            await state.setClipboardChannel(channel)
             return .accepted(channel)
 
         default:
             fatalError("Unsupported feature: \(feature)")
         }
     }
-    
 }

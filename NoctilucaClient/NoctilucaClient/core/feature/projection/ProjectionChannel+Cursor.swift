@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 
 import CoreGraphics
 
@@ -27,40 +26,31 @@ extension ProjectionChannel {
     }
     
     func handleCursorMoveEvent(_ event: CursorMoveEvent) {
-        self.events.send(.cursorMoved(event))
+        self.continuation.yield(.cursorMoved(event))
     }
-    
+
     func handleCursorImageEvent(_ event: CursorImageEvent) async throws {
         guard let data = event.imageData,
-              let dataProvider = CGDataProvider(data: data as CFData)
+              CGDataProvider(data: data as CFData) != nil
         else {
             return
         }
-        
-        let cursorImage = CGImage(
-            pngDataProviderSource: dataProvider,
-            decode: nil,
-            shouldInterpolate: true,
-            intent: .defaultIntent
-        )
-        
-        await MainActor.run {
-            self.events.send(.cursorImageChanged(event))
-        }
+
+        self.continuation.yield(.cursorImageChanged(event))
     }
-    
+
     // MARK: - Cursor Event Subscription
 
     func subscribeCursorEvents() async throws {
-        try await self.send(opcode: .subscribeCursorEventsRequest, message: SubscribeCursorEventsRequest(
+        try await self.handle.send(opcode: .subscribeCursorEventsRequest, message: SubscribeCursorEventsRequest(
             // FIXME
             requestID: nextRequestID(),
             flags: []
         ))
     }
-    
+
     func unsubscribeCursorEvents() async throws {
-        try await self.send(opcode: .unsubscribeCursorEventsRequest, message: UnsubscribeCursorEventsRequest(
+        try await self.handle.send(opcode: .unsubscribeCursorEventsRequest, message: UnsubscribeCursorEventsRequest(
             // FIXME
             requestID: nextRequestID(),
             subscriptionID: UUID()

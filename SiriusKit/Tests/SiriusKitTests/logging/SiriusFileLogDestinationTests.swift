@@ -31,6 +31,7 @@ struct SiriusFileLogDestinationTests {
         let dest = SiriusFileLogDestination(fileURL: fileURL, includeMetadata: false)
         dest.write(level: .info, subsystem: "test", category: "cat", message: "hello world",
                    file: "f", function: "fn", line: 1)
+        dest.flush()
 
         let content = try String(contentsOf: fileURL, encoding: .utf8)
         #expect(content == "hello world\n")
@@ -45,6 +46,7 @@ struct SiriusFileLogDestinationTests {
         let dest = SiriusFileLogDestination(fileURL: fileURL, includeMetadata: true)
         dest.write(level: .warning, subsystem: "sub", category: "cat", message: "warn msg",
                    file: "File.swift", function: "doStuff()", line: 42)
+        dest.flush()
 
         let content = try String(contentsOf: fileURL, encoding: .utf8)
         #expect(content.contains("[sub]"))
@@ -63,6 +65,7 @@ struct SiriusFileLogDestinationTests {
         let dest = SiriusFileLogDestination(fileURL: fileURL, includeMetadata: false)
         dest.write(level: .off, subsystem: "test", category: "cat", message: "nope",
                    file: "f", function: "fn", line: 1)
+        dest.flush()
 
         let content = try String(contentsOf: fileURL, encoding: .utf8)
         #expect(content.isEmpty)
@@ -77,6 +80,7 @@ struct SiriusFileLogDestinationTests {
         let dest = SiriusFileLogDestination(fileURL: fileURL, includeMetadata: false)
         dest.write(level: .info, subsystem: "test", category: "cat", message: "created",
                    file: "f", function: "fn", line: 1)
+        dest.flush()
 
         #expect(FileManager.default.fileExists(atPath: fileURL.path))
         let content = try String(contentsOf: fileURL, encoding: .utf8)
@@ -93,6 +97,7 @@ struct SiriusFileLogDestinationTests {
         let dest = SiriusFileLogDestination(fileURL: fileURL, includeMetadata: false)
         dest.write(level: .info, subsystem: "test", category: "cat", message: "appended",
                    file: "f", function: "fn", line: 1)
+        dest.flush()
 
         let content = try String(contentsOf: fileURL, encoding: .utf8)
         #expect(content == "existing\nappended\n")
@@ -108,9 +113,11 @@ struct SiriusFileLogDestinationTests {
         let dest = SiriusFileLogDestination(fileURL: fileURL, rotationPolicy: policy, includeMetadata: false)
 
         // Write enough to trigger rotation (each write ~11 bytes: "message ##\n")
+        // flush() after each write so the rotation check runs per message.
         for i in 0..<10 {
             dest.write(level: .info, subsystem: "s", category: "c", message: "message \(String(format: "%02d", i))",
                        file: "f", function: "fn", line: 1)
+            dest.flush()
         }
 
         // Check that rotated files exist
@@ -129,10 +136,12 @@ struct SiriusFileLogDestinationTests {
         let policy = SiriusFileLogDestination.RotationPolicy(maxFileSize: 20, maxFileCount: 2)
         let dest = SiriusFileLogDestination(fileURL: fileURL, rotationPolicy: policy, includeMetadata: false)
 
-        // Write many messages to trigger multiple rotations
+        // Write many messages to trigger multiple rotations.
+        // flush() after each write so the rotation check runs per message.
         for i in 0..<20 {
             dest.write(level: .info, subsystem: "s", category: "c", message: "msg-\(String(format: "%02d", i))",
                        file: "f", function: "fn", line: 1)
+            dest.flush()
         }
 
         // maxFileCount=2 means current file + 1 rotated file max
@@ -155,6 +164,7 @@ struct SiriusFileLogDestinationTests {
         for i in 0..<50 {
             dest.write(level: .info, subsystem: "s", category: "c", message: "line \(i)",
                        file: "f", function: "fn", line: 1)
+            dest.flush()
         }
 
         // No rotated files should exist
@@ -174,6 +184,7 @@ struct SiriusFileLogDestinationTests {
         for i in 0..<10 {
             dest.write(level: .info, subsystem: "s", category: "c", message: "msg-\(String(format: "%02d", i))",
                        file: "f", function: "fn", line: 1)
+            dest.flush()
         }
 
         // Without extension, rotated file should be "logfile.1" (not "logfile.1.")

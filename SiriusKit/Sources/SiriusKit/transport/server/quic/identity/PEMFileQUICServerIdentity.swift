@@ -14,7 +14,7 @@ internal import SwiftASN1
 internal import X509
 import SiriusKitCore
 
-public class PEMFileQUICServerIdentity: QUICServerIdentity {
+public final class PEMFileQUICServerIdentity: QUICServerIdentity {
     private let certPath: String
     private let keyPath: String
 

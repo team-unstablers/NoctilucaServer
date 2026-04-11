@@ -18,7 +18,7 @@ protocol ClientSessionLifecycleDelegate: AnyObject {
     func clientSessionDidClose(_ session: ClientSession)
 }
 
-public class ClientSession: SiriusSession {
+public class ClientSession: SiriusSession, @unchecked Sendable {
     private let logger = SiriusLogger(category: "ClientSession")
 
     public let id: UUID
@@ -56,7 +56,7 @@ public class ClientSession: SiriusSession {
     }
 
     func activate() {
-        guard isActivated.compareExchange(expected: false, desired: true, ordering: .acquiring).original == false else {
+        guard isActivated.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
 
@@ -118,7 +118,7 @@ public class ClientSession: SiriusSession {
     }
 
     private func notifyTransportClosedIfNeeded() {
-        guard didNotifyTransportClosure.compareExchange(expected: false, desired: true, ordering: .acquiring).original == false else {
+        guard didNotifyTransportClosure.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
 

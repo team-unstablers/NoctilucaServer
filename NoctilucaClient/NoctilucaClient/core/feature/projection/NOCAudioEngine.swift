@@ -6,21 +6,37 @@
 //
 
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
+import os
 import SiriusKitClient
 
 /// Shared audio engine manager for mixing multiple audio sessions.
 /// Maintains a single `AVAudioEngine` instance and manages its lifecycle based on active connections.
 /// Handles audio interruptions and route changes to automatically recover playback.
-final class NOCAudioEngine: @unchecked Sendable {
+///
+/// `AVAudioEngine` 과 내부 `DispatchQueue` 는 모두 `let` 불변 필드이고, 가변 상태
+/// (`activeNodes`) 는 `OSAllocatedUnfairLock<State>` 안으로 격납된다. 따라서
+/// 정식 `Sendable` 로 채택한다 (`@unchecked` 사용하지 않음).
+final class NOCAudioEngine: Sendable {
     static let shared = NOCAudioEngine()
 
     private let logger = SiriusLogger(category: "NOCAudioEngine", subsystem: "app.noctiluca.client")
 
-    private let engine = AVAudioEngine()
+    // Rule I 패턴 1: init 에서 1회 대입 후 불변. 모든 `engine` 접근은
+    // 아래의 `queue`(serial DispatchQueue) 경유로 직렬화된다.
+    nonisolated(unsafe) private let engine = AVAudioEngine()
+
+    // DispatchQueue 는 정식 Sendable.
     private let queue = DispatchQueue(label: "app.noctiluca.client.audio-engine")
 
-    private(set) var activeNodes: Int = 0
+    private struct State {
+        var activeNodes: Int = 0
+    }
+    private let stateLock = OSAllocatedUnfairLock<State>(initialState: State())
+
+    var activeNodes: Int {
+        stateLock.withLock { $0.activeNodes }
+    }
 
     private init() {
         logger.info("NOCAudioEngine initialized")
@@ -158,14 +174,14 @@ final class NOCAudioEngine: @unchecked Sendable {
 
     /// Restarts the engine if there are active nodes but the engine is not running.
     private func restartEngineIfNeeded() {
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            guard self.activeNodes > 0, !self.engine.isRunning else { return }
+        queue.async { [self] in
+            let currentActiveNodes = self.stateLock.withLock { $0.activeNodes }
+            guard currentActiveNodes > 0, !self.engine.isRunning else { return }
 
             do {
                 self.engine.prepare()
                 try self.engine.start()
-                self.logger.info("AVAudioEngine restarted successfully (active nodes: \(self.activeNodes))")
+                self.logger.info("AVAudioEngine restarted successfully (active nodes: \(currentActiveNodes))")
             } catch {
                 self.logger.error("Failed to restart AVAudioEngine: \(error.localizedDescription)")
             }
@@ -180,12 +196,7 @@ final class NOCAudioEngine: @unchecked Sendable {
     ///   - format: The audio format for the connection.
     func attach(_ node: AVAudioNode, format: AVAudioFormat) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            queue.async { [weak self] in
-                guard let self = self else {
-                    continuation.resume(throwing: NSError(domain: "NOCAudioEngine", code: -1, userInfo: [NSLocalizedDescriptionKey: "Engine deallocated"]))
-                    return
-                }
-
+            queue.async { [self] in
                 do {
                     // 1. Attach and connect
                     if self.engine.attachedNodes.contains(node) {
@@ -199,10 +210,13 @@ final class NOCAudioEngine: @unchecked Sendable {
                     self.engine.connect(node, to: self.engine.mainMixerNode, format: format)
 
                     // 2. Manage lifecycle
-                    self.activeNodes += 1
-                    self.logger.debug("Node attached. Active nodes: \(self.activeNodes)")
+                    let newActiveNodes = self.stateLock.withLock { state -> Int in
+                        state.activeNodes += 1
+                        return state.activeNodes
+                    }
+                    self.logger.debug("Node attached. Active nodes: \(newActiveNodes)")
 
-                    if self.activeNodes == 1 {
+                    if newActiveNodes == 1 {
                         if !self.engine.isRunning {
                             self.logger.info("Starting AVAudioEngine...")
                             self.engine.prepare()
@@ -216,7 +230,9 @@ final class NOCAudioEngine: @unchecked Sendable {
                     self.logger.error("Failed to start engine: \(error.localizedDescription)")
 
                     // Rollback
-                    self.activeNodes -= 1
+                    self.stateLock.withLock { state in
+                        state.activeNodes -= 1
+                    }
                     self.engine.detach(node)
 
                     continuation.resume(throwing: error)
@@ -238,13 +254,16 @@ final class NOCAudioEngine: @unchecked Sendable {
             engine.disconnectNodeOutput(node)
             engine.detach(node)
 
-            if activeNodes > 0 {
-                activeNodes -= 1
+            let newActiveNodes = stateLock.withLock { state -> Int in
+                if state.activeNodes > 0 {
+                    state.activeNodes -= 1
+                }
+                return state.activeNodes
             }
 
-            logger.debug("Node detached. Active nodes: \(self.activeNodes)")
+            logger.debug("Node detached. Active nodes: \(newActiveNodes)")
 
-            if activeNodes == 0 && engine.isRunning {
+            if newActiveNodes == 0 && engine.isRunning {
                 logger.info("No active nodes. Pausing AVAudioEngine to save resources.")
                 engine.pause()
             }

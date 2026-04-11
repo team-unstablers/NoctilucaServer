@@ -15,7 +15,8 @@ import AppKit
 import SiriusKitCore
 
 extension RemoteSession {
-    class HIDIO: ObservableObject {
+    @MainActor
+    final class HIDIO: ObservableObject {
         private unowned let parent: RemoteSession
 
         let channelID: UUID
@@ -112,9 +113,14 @@ extension RemoteSession {
             controller.installHook(hook, for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
         }
 
+        @MainActor
         deinit {
-            controller.removeHook(for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
-            self.session.stopSession()
+            let controller = self.controller
+            let session: HIDIOSession? = self.session
+            controller.removeHook(
+                for: HIDIOKeystrokeHookIdentifier(rawValue: "app.noctiluca.navigator.hidio.escape-hook")
+            )
+            session?.stopSession()
         }
     }
 }

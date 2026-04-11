@@ -10,7 +10,7 @@ public final class SiriusFileLogDestination: SiriusLogDestination {
     // MARK: - Static Instance Tracking
 
     private static let instancesLock = NSLock()
-    private static var instances = NSHashTable<SiriusFileLogDestination>.weakObjects()
+    nonisolated(unsafe) private static var instances = NSHashTable<SiriusFileLogDestination>.weakObjects()
 
     /// Flushes all active file log destinations immediately.
     /// Call from application termination handlers (e.g. applicationWillTerminate, atexit)

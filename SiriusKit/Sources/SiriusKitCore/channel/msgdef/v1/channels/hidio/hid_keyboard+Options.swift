@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct KeyboardModifier: OptionSet {
+public struct KeyboardModifier: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

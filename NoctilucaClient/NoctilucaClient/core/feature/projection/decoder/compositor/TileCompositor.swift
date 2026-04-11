@@ -12,7 +12,7 @@ import CoreVideo
 import Metal
 
 /// 디코딩된 단일 타일
-struct DecodedTile {
+struct DecodedTile: Sendable {
     /// 프레임 내 타일 위치 및 크기
     let rect: CGRect
 
@@ -22,7 +22,7 @@ struct DecodedTile {
 }
 
 /// 타일 프레임 (디코더 출력)
-struct DecodedTileFrame {
+struct DecodedTileFrame: Sendable {
     /// 이 프레임에 포함된 타일들
     let tiles: [DecodedTile]
 
@@ -40,12 +40,12 @@ struct DecodedTileFrame {
 }
 
 /// 타일 기반 디코더 델리게이트
-protocol TiledVideoDecoderDelegate: AnyObject {
+protocol TiledVideoDecoderDelegate: AnyObject, Sendable {
     func tiledVideoDecoder(_ decoder: any VideoDecoder, didDecode frame: DecodedTileFrame)
 }
 
 /// 타일 합성기 프로토콜
-protocol TileCompositor: AnyObject {
+protocol TileCompositor: AnyObject, Sendable {
     /// 프레임 크기 (변경 시 내부 버퍼 재생성)
     var frameSize: CGSize { get set }
 

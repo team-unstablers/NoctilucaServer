@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct WindowStateCommand: RawRepresentable, Hashable, Equatable, Codable {
+public struct WindowStateCommand: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

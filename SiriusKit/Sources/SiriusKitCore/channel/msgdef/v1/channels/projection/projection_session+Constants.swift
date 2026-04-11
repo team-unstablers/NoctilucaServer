@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct VideoSessionEndReason: RawRepresentable, Hashable, Equatable, Codable, Sendable {
+public struct VideoSessionEndReason: RawRepresentable, Hashable, Equatable, Codable, Sendable, Sendable {
     public let rawValue: Int32
 
     public init(rawValue: Int32) {
@@ -27,7 +27,7 @@ public struct VideoSessionEndReason: RawRepresentable, Hashable, Equatable, Coda
     public static let dataChannelError = VideoSessionEndReason(rawValue: 5)
 }
 
-public struct VideoSessionFailureReason: RawRepresentable, Hashable, Equatable, Codable, Sendable {
+public struct VideoSessionFailureReason: RawRepresentable, Hashable, Equatable, Codable, Sendable, Sendable {
     public let rawValue: Int32
 
     public init(rawValue: Int32) {

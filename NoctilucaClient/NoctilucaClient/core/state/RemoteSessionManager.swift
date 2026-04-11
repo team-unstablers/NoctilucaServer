@@ -10,7 +10,8 @@ import Combine
 
 import SiriusKitClient
 
-class RemoteSessionManager: ObservableObject {
+@MainActor
+class RemoteSessionManager: ObservableObject, Sendable {
     static let shared = RemoteSessionManager()
     
     @Published
@@ -20,12 +21,10 @@ class RemoteSessionManager: ObservableObject {
         
     }
     
-    @MainActor
     func register(_ session: RemoteSession, forId id: UUID) {
         sessions[id] = session
     }
     
-    @MainActor
     func unregister(_ id: UUID) {
         guard sessions.keys.contains(id) else {
             return

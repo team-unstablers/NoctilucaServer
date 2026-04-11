@@ -22,7 +22,11 @@ import SiriusKitClient
 /// ## 스레드 모델
 /// - `present(_:)`: 디코더 콜백 큐에서 호출 (thread-safe)
 /// - `draw(in:)`: Main thread (MTKView delegate)
-final class MetalVideoRenderer: NSObject, MTKViewDelegate {
+///
+/// Rule G 확장: 미디어 파이프라인 class 예외 (문서 Section 9.5.2 참조).
+/// 내부 Metal command queue의 순서 보장과 lastPixelBuffer용 lock 으로
+/// thread-safety 확보.
+final class MetalVideoRenderer: NSObject, MTKViewDelegate, @unchecked Sendable {
     private static let logger = NoctilucaLogger(category: "MetalVideoRenderer")
 
     // MARK: - GPU Resources

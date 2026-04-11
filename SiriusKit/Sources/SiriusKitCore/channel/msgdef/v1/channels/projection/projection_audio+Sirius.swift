@@ -24,7 +24,7 @@ public extension MessageOpcode {
 public struct AudioCodec: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_AudioCodec
 
-    public enum Quality {
+    public enum Quality: Sendable {
         case constantBitrate(bitrateKbps: UInt32)
         case variableBitrate(targetBitrateKbps: UInt32, maxBitrateKbps: UInt32)
         case auto
@@ -112,7 +112,7 @@ public struct AudioCodec: SiriusMessage {
 
 // MARK: - AudioSource
 
-public enum AudioSource {
+public enum AudioSource: Sendable {
     /// 세션 전역 오디오 루프백
     case sessionAudio
 

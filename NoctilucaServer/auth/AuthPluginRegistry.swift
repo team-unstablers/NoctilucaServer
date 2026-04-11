@@ -7,9 +7,10 @@
 
 import Foundation
 
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
-class AuthPluginRegistry {
+@MainActor
+final class AuthPluginRegistry: Sendable {
     static let shared = AuthPluginRegistry()
    
     private(set) public var plugins: [AuthPluginV1] = []

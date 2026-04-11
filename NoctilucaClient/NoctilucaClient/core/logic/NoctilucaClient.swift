@@ -152,7 +152,8 @@ struct InputWarning: Sendable, Equatable {
     let message: String
 }
 
-class NoctilucaClient: ObservableObject {
+@MainActor
+final class NoctilucaClient: ObservableObject, Sendable {
     let logger = SiriusLogger(category: "NoctilucaClient", subsystem: "app.noctiluca.client.logic.NoctilucaClient")
     
     let id: UUID = UUID()
@@ -227,7 +228,7 @@ class NoctilucaClient: ObservableObject {
         authenticator.configureAutoCredentials(sessionEntries: sessionEntries, globalEntries: globalEntries)
     }
     
-    private func setupValidationPolicy() {
+    private func setupValidationPolicy() async {
         let policy = SettingsStore.shared.settings.security.tlsValidationPolicy
         
         let validationBlock: ServerIdentityValidationBlock = { [weak self] identity in
@@ -236,32 +237,35 @@ class NoctilucaClient: ObservableObject {
                 return .deny
             }
             
-            self.isValidatingServerIdentity = true
-            
-            // 과거로부터 '승계된' 디시전 사항이 있는지 확인합니다.
-            guard let succeedDecision = self.succeedValidationDecision else {
-                // 만약 없다면, 새로운 접속입니다. '이 인증서 믿을 수 없는데, 그래도 접속할래?' 따위의 UI를 표시하고, 접속을 끊어야 합니다.
-                self.uiEvents.send(.serverIdentityValidationNeeded(identity))
-                return .deny
-            }
-            
-            // 승계된 디시전이 있습니다.
-            defer { self.isValidatingServerIdentity = false }
-
-            do {
-                // 최소한의 검증: UI를 표시해서 디시전을 받는 그 짧은 사이에도 인증서는 바꿔 끼워질 수 있습니다.
-                //              모든 것을 믿을 수 없는 어지러운 세상(乱世) 입니다.
-                let currentFingerprint = try identity.fingerprint()
-                guard succeedDecision.fingerprint == currentFingerprint else {
-                    // TODO: 이 호스트는 수상한 행동을 합니다. 사용자에게 정말 위험하니 조심하라고 알리는 게 좋을 것 같습니다.
+            /// DispatchQueue.main에서 실행이 보장되므로 assumeIsolated 사용한다
+            return MainActor.assumeIsolated {
+                self.isValidatingServerIdentity = true
+                
+                // 과거로부터 '승계된' 디시전 사항이 있는지 확인합니다.
+                guard let succeedDecision = self.succeedValidationDecision else {
+                    // 만약 없다면, 새로운 접속입니다. '이 인증서 믿을 수 없는데, 그래도 접속할래?' 따위의 UI를 표시하고, 접속을 끊어야 합니다.
+                    self.uiEvents.send(.serverIdentityValidationNeeded(identity))
                     return .deny
                 }
                 
-                // 승계된 디시전이 유효합니다. 그대로 따릅니다.
-                return succeedDecision.decision
-            } catch {
-                // 서버 아이덴티티를 검증하는 도중에 오류가 발생했습니다. 보안을 위해 거부합니다.
-                return .deny
+                // 승계된 디시전이 있습니다.
+                defer { self.isValidatingServerIdentity = false }
+                
+                do {
+                    // 최소한의 검증: UI를 표시해서 디시전을 받는 그 짧은 사이에도 인증서는 바꿔 끼워질 수 있습니다.
+                    //              모든 것을 믿을 수 없는 어지러운 세상(乱世) 입니다.
+                    let currentFingerprint = try identity.fingerprint()
+                    guard succeedDecision.fingerprint == currentFingerprint else {
+                        // TODO: 이 호스트는 수상한 행동을 합니다. 사용자에게 정말 위험하니 조심하라고 알리는 게 좋을 것 같습니다.
+                        return .deny
+                    }
+                    
+                    // 승계된 디시전이 유효합니다. 그대로 따릅니다.
+                    return succeedDecision.decision
+                } catch {
+                    // 서버 아이덴티티를 검증하는 도중에 오류가 발생했습니다. 보안을 위해 거부합니다.
+                    return .deny
+                }
             }
         }
         
@@ -276,7 +280,7 @@ class NoctilucaClient: ObservableObject {
     }
     
     func setup() async throws {
-        self.setupValidationPolicy()
+        await self.setupValidationPolicy()
         
         await session.channelManager.setDelegate(self)
         try await session.setup()
@@ -477,7 +481,7 @@ class NoctilucaClient: ObservableObject {
     }
 
     func close() async {
-        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiring).original == false else {
+        guard isFinalized.compareExchange(expected: false, desired: true, ordering: .acquiringAndReleasing).original == false else {
             return
         }
 
@@ -532,11 +536,11 @@ extension NoctilucaClient: SiriusClientDelegate {
     func siriusClient(_ client: SiriusClient, didEncounterError error: any Error) {
         Task.detached { [weak self] in
             if let error = error as? ClientTransportError {
-                self?.handleTransportError(error)
+                await self?.handleTransportError(error)
                 return
             }
             
-            self?.handleError(error)
+            await self?.handleError(error)
         }
     }
     

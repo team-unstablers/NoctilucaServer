@@ -8,7 +8,7 @@
 import Foundation
 internal import SwiftProtobuf
 
-public struct SRRect: Equatable, Hashable {
+public struct SRRect: Equatable, Hashable, Sendable {
     public let x: Double
     public let y: Double
     public let width: Double
@@ -41,7 +41,7 @@ public struct SRRect: Equatable, Hashable {
     }
 }
 
-public struct SRPoint: Equatable, Hashable {
+public struct SRPoint: Equatable, Hashable, Sendable {
     public let x: Double
     public let y: Double
     
@@ -65,7 +65,7 @@ public struct SRPoint: Equatable, Hashable {
     }
 }
 
-public struct SRSize: Equatable, Hashable {
+public struct SRSize: Equatable, Hashable, Sendable {
     public let width: Double
     public let height: Double
     

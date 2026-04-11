@@ -12,7 +12,7 @@ internal import SwiftProtobuf
 public struct Codec: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_Codec
     
-    public enum Quality: Equatable, Hashable, Codable {
+    public enum Quality: Equatable, Hashable, Codable, Sendable {
         case constantBitrate(bitrateKbps: Int32)
         case variableBitrate(targetBitrateKbps: Int32, maxBitrateKbps: Int32)
         case fixedQuality(factor: Int32)

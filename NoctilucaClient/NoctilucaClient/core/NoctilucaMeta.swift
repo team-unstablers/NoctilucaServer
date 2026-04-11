@@ -11,7 +11,7 @@ import Foundation
 import UIKit
 #endif
 
-struct NoctilucaMeta {
+struct NoctilucaMeta: Sendable {
     static var productName: String {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Noctiluca Navigator"
     }
@@ -28,7 +28,7 @@ struct NoctilucaMeta {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
     }
 
-    static var license: SoftwareLicense = .proprietary(name: "Noctiluca Client EULA",
+    static let license: SoftwareLicense = .proprietary(name: "Noctiluca Client EULA",
                                                        url: URL(string: "https://unstabler.pl")!)
     
     

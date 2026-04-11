@@ -10,7 +10,7 @@ import Foundation
 import Xuanxue
 
 import SiriusKit
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 typealias SSHPublicKey = Xuanxue.PublicKey
 

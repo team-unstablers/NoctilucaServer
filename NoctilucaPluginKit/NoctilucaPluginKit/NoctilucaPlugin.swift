@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 12/5/25.
 //
 
-public enum NoctilucaPluginType: String {
+public enum NoctilucaPluginType: String, Sendable {
     /// 인증 플러그인. 사용자 인증과 관련된 플러그인입니다. (예: OAuth, LDAP, SSO 등...)
     case auth = "auth"
     

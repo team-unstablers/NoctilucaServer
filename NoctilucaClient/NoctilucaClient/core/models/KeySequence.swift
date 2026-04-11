@@ -8,7 +8,7 @@
 import Foundation
 import SiriusKitClient
 
-struct KeySequence: Hashable, Equatable, Codable {
+struct KeySequence: Hashable, Equatable, Codable, Sendable {
     let modifier: Set<LinuxKeycode>
     let key: LinuxKeycode
     

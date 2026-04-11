@@ -128,7 +128,9 @@ extension JPEGQuantizationTables {
 
 // MARK: - MJPGVideoEncoder
 
-final class MJPGVideoEncoder: VideoEncoder {
+/// @unchecked Sendable: 문서 Rule G 확장 (미디어 파이프라인 class 예외).
+/// 가변 상태는 `workerQueue` 기반 직렬화와 ProjectionSession actor 경계에서 보호된다.
+final class MJPGVideoEncoder: VideoEncoder, @unchecked Sendable {
     private let logger = NoctilucaLogger(category: "MJPGVideoEncoder")
     private let workerQueue: DispatchQueue
     private let callbackQueue: DispatchQueue
@@ -366,7 +368,9 @@ final class MJPGVideoEncoder: VideoEncoder {
     func forceKeyframe() {
         logger.info("Force keyframe requested.")
         // 타일 차이 기록 초기화를 행한다
-        self.frameTileDiffer.reset()
+        workerQueue.sync {
+            self.frameTileDiffer.reset()
+        }
     }
 
     @discardableResult
@@ -381,15 +385,19 @@ final class MJPGVideoEncoder: VideoEncoder {
 
     @discardableResult
     func updateQuality(_ quality: Float) -> Bool {
-        let clamped = min(max(quality, 0.0), 1.0)
-        // 0.0 → 15 (최저), 1.0 → 45 (최고)
-        self.compressMode = .quality(Int32(15.0 + clamped * 30.0))
+        workerQueue.sync {
+            let clamped = min(max(quality, 0.0), 1.0)
+            // 0.0 → 15 (최저), 1.0 → 45 (최고)
+            self.compressMode = .quality(Int32(15.0 + clamped * 30.0))
+        }
         return true
     }
 
     @discardableResult
     func updateQuantizeLevel(_ level: Int) -> Bool {
-        self.quantizeLevel = max(0, min(5, level))
+        workerQueue.sync {
+            self.quantizeLevel = max(0, min(5, level))
+        }
         return true
     }
 }

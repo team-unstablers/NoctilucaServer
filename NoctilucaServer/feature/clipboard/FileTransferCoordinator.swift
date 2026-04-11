@@ -15,11 +15,11 @@ import UniformTypeIdentifiers
 /// 수신 측에서 파일 다운로드를 조율하는 클래스.
 /// macOS에서는 NSFilePromiseProviderDelegate를 구현하여
 /// pasteboard의 file promise가 이행될 때 원격에서 파일을 다운로드한다.
-class FileTransferCoordinator: NSObject {
+final class FileTransferCoordinator: NSObject, Sendable {
     private let logger = NoctilucaLogger(category: "FileTransferCoordinator")
 
     /// 파일 다운로드를 수행할 채널 (weak)
-    private weak var clipboardChannel: ClipboardChannel?
+    nonisolated(unsafe) private weak var clipboardChannel: ClipboardChannel?
 
     /// delegate 콜백용 작업 큐
     let operationQueue: OperationQueue
@@ -186,49 +186,6 @@ class FileTransferCoordinator: NSObject {
     }
 }
 
-// MARK: - NSFilePromiseProviderDelegate
-
-extension FileTransferCoordinator: NSFilePromiseProviderDelegate {
-    func filePromiseProvider(
-        _ filePromiseProvider: NSFilePromiseProvider,
-        fileNameForType fileType: String
-    ) -> String {
-        guard let metadata = filePromiseProvider.userInfo as? FileTransferMetadata else {
-            return "unknown"
-        }
-        return metadata.name
-    }
-
-    func filePromiseProvider(
-        _ filePromiseProvider: NSFilePromiseProvider,
-        writePromiseTo url: URL,
-        completionHandler: @escaping ((any Error)?) -> Void
-    ) {
-        guard let metadata = filePromiseProvider.userInfo as? FileTransferMetadata else {
-            completionHandler(FileTransferError.fileNotFound(path: "unknown"))
-            return
-        }
-
-        Task {
-            do {
-                if metadata.isDirectory {
-                    try await self.downloadDirectory(metadata: metadata, to: url)
-                } else {
-                    try await self.downloadFile(metadata: metadata, to: url)
-                }
-                completionHandler(nil)
-            } catch {
-                self.logger.error("File promise fulfillment failed: \(error)")
-                completionHandler(error)
-            }
-        }
-    }
-
-    func operationQueue(for filePromiseProvider: NSFilePromiseProvider) -> OperationQueue {
-        return self.operationQueue
-    }
-}
-
 // MARK: - PendingFileTransfer
 
 /// NSFilePresenter를 구현하여 placeholder 파일에 대한 읽기 요청 시
@@ -241,7 +198,7 @@ extension FileTransferCoordinator: NSFilePromiseProviderDelegate {
 ///
 /// 디렉토리의 경우 `FileTransferCoordinator.preparePendingTransfer(for:)`를 통해
 /// 재귀적으로 하위 항목의 PendingFileTransfer를 미리 생성한다.
-class PendingFileTransfer: NSObject, NSFilePresenter {
+class PendingFileTransfer: NSObject, NSFilePresenter, @unchecked Sendable { // TODO: Sendable 준수
     private let logger = NoctilucaLogger(category: "PendingFileTransfer")
 
     /// 다운로드 완료 후 파일을 유지하는 시간 (초)
@@ -399,7 +356,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter {
 
     // MARK: - NSFilePresenter
 
-    func relinquishPresentedItem(toReader reader: @escaping ((() -> Void)?) -> Void) {
+    func relinquishPresentedItem(toReader reader: @escaping @Sendable ((@Sendable () -> Void)?) -> Void) {
         guard !metadata.isDirectory else {
             reader(nil)
             return

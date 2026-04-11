@@ -55,7 +55,7 @@ public extension FrameDataHeader {
     }
 }
 
-public struct CodecParameterSet {
+public struct CodecParameterSet: Sendable {
     public let type: CodecParameterSetType
     public let data: Data
     public let flags: UInt32

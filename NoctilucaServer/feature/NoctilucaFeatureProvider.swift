@@ -7,19 +7,32 @@
 
 import SiriusKit
 
-class NoctilucaFeatureProvider: FeatureProvider {
-    private weak var clipboardChannel: ClipboardChannel?
+final class NoctilucaFeatureProvider: FeatureProvider {
+    private let state = State()
 
-    func supportedFeatures() -> [SiriusFeature] {
+    // FIXME: 이거 제거해야 함
+    actor State {
+        weak var clipboardChannel: ClipboardChannel?
+        
+        func setClipboardChannel(_ ch: ClipboardChannel?) {
+            self.clipboardChannel = ch
+        }
+        
+        func getClipboardChannel() -> ClipboardChannel? {
+            return self.clipboardChannel
+        }
+    }
+    
+    func supportedFeatures() -> Set<SiriusFeature> {
         return [
             .hidio,
             .projection,
             .transfer,
-            .clipboard,
+            .clipboard
         ]
     }
-    
-    func supports(_ feature: SiriusKit.SiriusFeature) -> Bool {
+
+    func supports(_ feature: SiriusFeature) -> Bool {
         switch feature {
         case .hidio:
             return true
@@ -27,7 +40,7 @@ class NoctilucaFeatureProvider: FeatureProvider {
             return true
         case .projectionData:
             return true
-            
+
         case .transfer:
             return true
 
@@ -38,40 +51,50 @@ class NoctilucaFeatureProvider: FeatureProvider {
             return false
         }
     }
-    
-    func createChannel(for feature: SiriusKit.SiriusFeature,
-                       using streamHolder: SiriusKit.StreamHolder,
-                       identifier: SiriusKit.ChannelIdentifier,
-                       direction: SiriusKit.ChannelDirection,
-                       args: [String]) async throws -> ChannelCreationResult {
-        
+
+    func createChannel(
+        for feature: SiriusFeature,
+        handle: ChannelHandle,
+        args: [String]
+    ) async throws -> ChannelCreationResult {
         switch feature {
         case .hidio:
-            return .accepted(HIDIOChannel(using: streamHolder, identifier: identifier, direction: direction))
+            return .accepted(HIDIOChannel(handle: handle))
+
         case .projection:
-            return .accepted(ProjectionChannel(using: streamHolder, identifier: identifier, direction: direction))
+            return .accepted(ProjectionChannel(handle: handle))
+
         case .projectionData:
-            return .accepted(ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction))
-            
+            return .accepted(ProjectionDataChannel(handle: handle))
+
         case .transfer:
             let result = try await TransferChannel.createIfAccepts(
-                streamHolder,
-                identifier: identifier,
-                direction: direction,
+                handle: handle,
                 args: args
             )
 
             if case .accepted(let channel as TransferChannel) = result,
                channel.shouldSend() {
+                let state = self.state
                 switch channel.task {
                 case .clipboardData(let itemIdx, let reprIdx):
-                    channel.onReady = { [weak self] in
-                        self?.clipboardChannel?.serveTransferData(channel, itemIndex: itemIdx, representationIndex: reprIdx)
+                    channel.onReady = {
+                        Task {
+                            let clip = await state.getClipboardChannel()
+                            await clip?.serveTransferData(channel,
+                                                    itemIndex: itemIdx,
+                                                    representationIndex: reprIdx)
+                        }
                     }
                 case .fileTransfer(let name, let path, let offset, let length):
                     if let path = path {
-                        channel.onReady = { [weak self] in
-                            self?.clipboardChannel?.serveFileTransferData(channel, name: name, path: path, offset: offset, length: length)
+                        channel.onReady = {
+                            Task {
+                                let clip = await state.getClipboardChannel()
+                                await clip?.serveFileTransferData(channel,
+                                                            name: name, path: path,
+                                                            offset: offset, length: length)
+                            }
                         }
                     }
                 default:
@@ -82,13 +105,12 @@ class NoctilucaFeatureProvider: FeatureProvider {
             return result
 
         case .clipboard:
-            let channel = ClipboardChannel(using: streamHolder, identifier: identifier, direction: direction)
-            self.clipboardChannel = channel
+            let channel = ClipboardChannel(handle: handle)
+            await state.setClipboardChannel(channel)
             return .accepted(channel)
 
         default:
             fatalError("Unsupported feature: \(feature)")
         }
     }
-    
 }

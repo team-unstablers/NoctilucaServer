@@ -8,7 +8,7 @@
 import Foundation
 import Security
 
-import SwiftMsQuicHelper
+import SwiftMsQuic
 import SiriusKitCore
 
 import CryptoKit
@@ -33,7 +33,7 @@ private func generateAsciiPassword(count: Int) throws -> Data {
 /// MsQuic은 PKCS#12 형식의 인증서를 요구하므로, SecIdentity를 PKCS#12로 export하여
 /// 임시 파일로 저장한 뒤 MsQuic에 전달합니다.
 /// 이 클래스가 deinit될 때 임시 파일이 자동으로 삭제됩니다.
-final class MsQuicServerIdentityAdapter {
+final actor MsQuicServerIdentityAdapter {
     enum AdapterError: Error {
         case pemExportFailed(OSStatus)
         case tempFileCreationFailed

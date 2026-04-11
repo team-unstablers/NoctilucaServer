@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 import SiriusKitClient
 
 // MARK: - Displayman Request/Response
@@ -61,7 +60,7 @@ extension ProjectionChannel {
 
         let requestID = nextRequestID()
 
-        try await self.send(opcode: .unsubscribeDisplayChangesRequest, message: UnsubscribeDisplayChangesRequest(
+        try await self.handle.send(opcode: .unsubscribeDisplayChangesRequest, message: UnsubscribeDisplayChangesRequest(
             requestID: requestID,
             subscriptionID: subscriptionID
         ))

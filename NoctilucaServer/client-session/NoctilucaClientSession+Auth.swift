@@ -46,8 +46,8 @@ extension NoctilucaClientSession {
     }
     
     /// 인증 챌린지 메시지를 생성한다.
-    func authChallengeMessage(nonce: Data) -> AuthChallenge {
-        let acceptedMethods = server.authenticator.supportedMethods().map {
+    func authChallengeMessage(nonce: Data) async -> AuthChallenge {
+        let acceptedMethods = await server.authenticator.supportedMethods().map {
             $0.rawValue
         }
         let message = server.settings.transport.authChallengeMessage
@@ -141,7 +141,7 @@ extension NoctilucaClientSession {
         logger.debug("Received AuthRequest with method: \(message.method)")
         
         let method = AuthMethod(rawValue: message.method)
-        guard server.authenticator.supports(method: method) else {
+        guard await server.authenticator.supports(method: method) else {
             // unsupported method는 뱉어낸다.
             eventLogger.log(.NoctilucaClientSession.authenticate, args: [
                 "method": message.method,
@@ -193,7 +193,7 @@ extension NoctilucaClientSession {
             try await self.mainChannel.sendAuthResponse(AuthResponse(sessionID: self.id))
             
             Task { @MainActor in
-                AppNotification.newConnection(endpoint: remoteAddress).post()
+                await AppNotification.newConnection(endpoint: remoteAddress).post()
             }
             return
             

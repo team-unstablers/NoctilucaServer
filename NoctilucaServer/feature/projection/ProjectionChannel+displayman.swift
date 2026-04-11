@@ -29,7 +29,7 @@ extension ProjectionChannel {
             displays.append(displayInfo)
         }
 
-        try await self.send(opcode: .displayListResponse, message: DisplayListResponse(
+        try await handle.send(opcode: .displayListResponse, message: DisplayListResponse(
             requestID: request.requestID,
             displays: displays
         ))
@@ -38,8 +38,8 @@ extension ProjectionChannel {
     // MARK: - Subscribe Display Changes
 
     func handleSubscribeDisplayChangesRequest(_ request: SubscribeDisplayChangesRequest) async throws {
-        let subscription = DisplayEventSubscription(eventMask: request.eventMask)
-        subscription.channel = self
+        let subscription = await DisplayEventSubscription(eventMask: request.eventMask)
+        await subscription.setChannel(self)
 
         let result = await state.replaceDisplaySubscription(subscription)
 
@@ -58,7 +58,7 @@ extension ProjectionChannel {
 
             previousSubscription?.destroy()
 
-            try await self.send(opcode: .subscribeDisplayChangesResponse, message: SubscribeDisplayChangesResponse(
+            try await handle.send(opcode: .subscribeDisplayChangesResponse, message: SubscribeDisplayChangesResponse(
                 requestID: request.requestID,
                 subscriptionID: subscription.id
             ))
@@ -72,7 +72,7 @@ extension ProjectionChannel {
 
         switch unsubscribeResult {
         case .notFound, .mismatchedSubscriptionID:
-            try await self.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
+            try await handle.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
                 requestID: request.requestID,
                 subscriptionID: request.subscriptionID,
                 isSuccess: false
@@ -81,7 +81,7 @@ extension ProjectionChannel {
         case .unsubscribed(let subscription):
             subscription.destroy()
 
-            try await self.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
+            try await handle.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
                 requestID: request.requestID,
                 subscriptionID: subscription.id,
                 isSuccess: true
@@ -125,7 +125,7 @@ extension ProjectionChannel {
             displayInfo = await buildDisplayInfo(from: nocScreen, displayID: event.displayID)
         }
 
-        try await self.send(opcode: .displayChangedEvent, message: DisplayChangedEvent(
+        try await handle.send(opcode: .displayChangedEvent, message: DisplayChangedEvent(
             eventType: event.eventType,
             display: displayInfo
         ))

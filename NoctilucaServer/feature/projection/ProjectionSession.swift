@@ -6,10 +6,10 @@
 //
 
 import Foundation
-import Combine
+@preconcurrency import Combine
 
 import CoreGraphics
-import CoreMedia
+@preconcurrency import CoreMedia
 
 import SiriusKit
 
@@ -17,35 +17,45 @@ enum ProjectionSessionError: Error {
     case invalidSource
 }
 
-protocol ProjectionSessionDelegate: AnyObject {
+protocol ProjectionSessionDelegate: AnyObject, Sendable {
     func projectionSession(_ session: ProjectionSession, didChangeResolution newCodec: Codec)
     func projectionSession(_ session: ProjectionSession, didFailWithError error: Error)
 }
 
-class ProjectionSession: Identifiable {
+actor ProjectionSession: Identifiable {
     private let logger = NoctilucaLogger(category: "ProjectionSession")
-    
-    private let recorderQueue = DispatchQueue(
+
+    /// Recorder delegate callbacks 가 이 queue 위에서 직접 실행된다.
+    /// actor 의 `unownedExecutor` 를 이 queue 에 바인딩하여, 같은 queue 에서 호출되는
+    /// 콜백은 `assumeIsolated` 로 hop 없이 actor-isolated 상태에 접근할 수 있다.
+    /// (문서 Section 6.3 옵션 3, Section 10.7.3 `EventInjector` 와 동일 패턴)
+    nonisolated let recorderQueue: DispatchSerialQueue = DispatchSerialQueue(
         label: "app.noctiluca.server.projection.recorder.video",
         // 가장 높은 우선순위
         qos: .userInteractive
     )
-    
-    let id: UUID
-    let dataChannel: ProjectionDataChannel
+
+    nonisolated var unownedExecutor: UnownedSerialExecutor {
+        recorderQueue.asUnownedSerialExecutor()
+    }
+
+    nonisolated let id: UUID
+    nonisolated let dataChannel: ProjectionDataChannel
+
     private let preferredRecorderType: ScreenRecorderType
-    
+
     private var recorderArgs: ScreenRecorderArgs!
-    
-    var recorder: any ScreenRecorder
-    var encoder: any VideoEncoder
-    var codec: Codec?
-    
-    private let frameQueue = FrameQueue<EncodedFrame>(capacity: 8)
-    
+
+    private var recorder: any ScreenRecorder
+    private var encoder: any VideoEncoder
+    private var codec: Codec?
+
+    // FrameQueue 는 이미 actor → nonisolated let 으로 노출 가능.
+    nonisolated let frameQueue = FrameQueue<EncodedFrame>(capacity: 8)
+
     private var encoderEventLoopTask: Task<Void, Error>?
     private var senderEventLoopTask: Task<Void, Error>?
-    
+
     private var qualityPlanner: (any QualityPlanner)?
     private var pressureAccumulator: Float = 0.0
     private var pressureWindowCount: Int = 0
@@ -58,16 +68,16 @@ class ProjectionSession: Identifiable {
     private var originalFrameRate: Float = 30.0
     private var currentAppliedFrameRate: Float? = nil
 
-    private var screenLockCancellable: AnyCancellable!
+    private var screenLockCancellable: AnyCancellable?
     private var displayChangeCancellable: AnyCancellable?
 
-    weak var sessionDelegate: ProjectionSessionDelegate?
+    private weak var sessionDelegate: ProjectionSessionDelegate?
 
     private var originalRequest: ProjectionRequest?
 
     // FIXME
-    var targetBitrate = 0
-    var maxBitrate = 0
+    private var targetBitrate = 0
+    private var maxBitrate = 0
 
     private var isReconfiguring = false
     private var isStopped = false
@@ -76,23 +86,30 @@ class ProjectionSession: Identifiable {
         self.id = id
         self.dataChannel = dataChannel
         self.preferredRecorderType = preferredRecorderType
-        
+
         self.recorder = await ScreenRecorderFactory.create(preferred: preferredRecorderType, queue: recorderQueue)
         self.encoder = VTVideoEncoder()
-        
+
+        // Combine sink 설치와 recorder.delegate 대입은 actor-isolated setup() 으로 분리.
+        await self.setup()
+    }
+
+    private func setup() async {
         self.screenLockCancellable = await ScreenLockObserver.shared.$isScreenLocked
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .dropFirst()
-            .sink { [weak self] isLocked in
-                Task {
-                    await self?.reconfigureRecorder()
-                }
+            .sink { [weak self] _ in
+                Task { [weak self] in await self?.reconfigureRecorder() }
             }
-        
+
         self.recorder.delegate = self
     }
-    
+
+    func setSessionDelegate(_ delegate: ProjectionSessionDelegate?) {
+        self.sessionDelegate = delegate
+    }
+
     private func reconfigureRecorder() async {
         guard !isReconfiguring else {
             logger.info("reconfigureRecorder(): already in progress, skipping")
@@ -137,7 +154,8 @@ class ProjectionSession: Identifiable {
 
         // 모든 재시도 실패
         logger.error("reconfigureRecorder(): all retries exhausted for projection session \(self.id)")
-        dataChannel.projectionDelegate?.projectionDataChannel(
+        let delegate = await dataChannel.state.getDelegate()
+        delegate?.projectionDataChannel(
             dataChannel,
             didEncounterError: lastError ?? ScreenRecorderPrepareError.internalError
         )
@@ -190,7 +208,7 @@ class ProjectionSession: Identifiable {
             try await self.prepare(request, codec: updatedCodec)
             // recorder도 새 해상도로 재구성
             await reconfigureRecorder()
-            
+
             try self.encoder.start()
 
             sessionDelegate?.projectionSession(self, didChangeResolution: updatedCodec)
@@ -218,7 +236,7 @@ class ProjectionSession: Identifiable {
             }
         }
     }
-    
+
     private func processEncodedFrame(_ frame: consuming EncodedFrame) async {
         let dropped = await frameQueue.enqueue(frame)
 
@@ -234,10 +252,10 @@ class ProjectionSession: Identifiable {
         // 큐 압력을 QualityPlanner에 피드
         if let planner = self.qualityPlanner {
             let pressure = await frameQueue.pressure
-            accumulateQueuePressure(pressure, planner: planner)
+            await accumulateQueuePressure(pressure, planner: planner)
         }
     }
-    
+
     private func senderEventLoopMain() async throws {
         while !Task.isCancelled {
             let frame: EncodedFrame
@@ -246,29 +264,30 @@ class ProjectionSession: Identifiable {
             } catch is CancellationError {
                 return
             }
-            
+
             // send-and-forget: unbuffer 모드에서는 이렇게 하지 않으면 괴로움
             dataChannel.send(videoFrame: frame)
         }
     }
 
-    private func handleLoopFailure(loopName: String, error: any Error) {
+    private func handleLoopFailure(loopName: String, error: any Error) async {
         guard !(error is CancellationError) else {
             return
         }
 
         self.logger.warning("Projection session \(self.id) \(loopName) loop failed: \(error)")
 
-        self.dataChannel.projectionDelegate?.projectionDataChannel(
+        let delegate = await self.dataChannel.state.getDelegate()
+        delegate?.projectionDataChannel(
             self.dataChannel,
             didEncounterError: error
         )
     }
-    
-    func handlePerformanceReport(_ report: ProjectionPerformanceReport) {
+
+    func handlePerformanceReport(_ report: ProjectionPerformanceReport) async {
         guard let planner = self.qualityPlanner else { return }
-        planner.feed(report: report)
-        applyQualityPlan()
+        await planner.feed(report: report)
+        await applyQualityPlan()
     }
 
     func prepare(_ request: ProjectionRequest, codec: Codec) async throws {
@@ -292,10 +311,10 @@ class ProjectionSession: Identifiable {
 
         // 디스플레이 해상도 변경 구독 (최초 prepare 시에만 설정)
         if displayChangeCancellable == nil {
-            displayChangeCancellable = DisplayLayoutManager.shared.displayLayoutChangeSubject
+            displayChangeCancellable = await DisplayLayoutManager.shared.displayLayoutChangeSubject
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] layouts in
-                    Task {
+                    Task { [weak self] in
                         await self?.handleDisplayLayoutChange(layouts)
                     }
                 }
@@ -304,12 +323,12 @@ class ProjectionSession: Identifiable {
         // 기존 encoder event loop task 취소 및 encoder 정리
         encoderEventLoopTask?.cancel()
         encoderEventLoopTask = nil
-        
+
         senderEventLoopTask?.cancel()
         senderEventLoopTask = nil
         await frameQueue.clear()
         await frameQueue.cancelWaiter()
-        
+
         try? self.encoder.stop()
 
         switch codec.fourCC {
@@ -322,12 +341,12 @@ class ProjectionSession: Identifiable {
         default:
             encoder = VTVideoEncoder()
         }
-        
+
         try self.encoder.prepare(with: .init(
             codec: codec,
             inputFormatDescription: nil
         ))
-        
+
         let frameRate = codec.frameRate ?? 60.0
         self.originalFrameRate = frameRate
         self.currentAppliedFrameRate = nil
@@ -336,32 +355,34 @@ class ProjectionSession: Identifiable {
         frameDropController.configure(frameRate: frameRate)
 
         if case .auto(_) = codec.quality {
-            let (qualityPlanner, plannerFrameRate) = Self.makeQualityPlanner(codec: codec)
+            let (qualityPlanner, plannerFrameRate) = await Self.makeQualityPlanner(codec: codec)
             self.qualityPlanner = qualityPlanner
             self.originalFrameRate = plannerFrameRate
             frameDropController.configure(frameRate: plannerFrameRate)
 
             if let autoPlanner = qualityPlanner as? AutoQualityPlanner {
-                autoPlanner.onQualityAdjustment = { [weak self] event in
-                    self?.handleQualityAdjustment(event, planner: autoPlanner)
+                await autoPlanner.setOnQualityAdjustmentHandler { [weak self] event in
+                    Task { [weak self] in
+                        await self?.handleQualityAdjustment(event, planner: autoPlanner)
+                    }
                 }
             }
 
             if let planner = self.qualityPlanner {
-                _ = self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
-                _ = self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
+                _ = await self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
+                _ = await self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
             }
         } else {
             self.qualityPlanner = nil
         }
-        
-        
+
+
         self.encoderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             do {
                 try await self.encoderEventLoopMain()
             } catch {
-                self.handleLoopFailure(loopName: "encoder", error: error)
+                await self.handleLoopFailure(loopName: "encoder", error: error)
             }
         }
 
@@ -370,11 +391,11 @@ class ProjectionSession: Identifiable {
             do {
                 try await self.senderEventLoopMain()
             } catch {
-                self.handleLoopFailure(loopName: "sender", error: error)
+                await self.handleLoopFailure(loopName: "sender", error: error)
             }
         }
     }
-    
+
     func start() async throws {
         do {
             try await self.recorder.start()
@@ -382,16 +403,11 @@ class ProjectionSession: Identifiable {
         } catch {
             self.logger.error("Failed to start projection session \(self.id): \(error)")
 
-            do {
-                try await self.stop()
-            } catch {
-                self.logger.error("Failed to cleanup projection session after start failure \(self.id): \(error)")
-            }
-
+            await self.stop()
             throw error
         }
     }
-    
+
     func stop() async {
         guard !isStopped else { return }
 
@@ -432,55 +448,56 @@ class ProjectionSession: Identifiable {
 
         // 6. Data channel 정리
         do {
-            try await dataChannel.close()
+            try await dataChannel.handle.close()
         } catch {
             self.logger.warning("Failed to close projection data channel \(self.dataChannel.identifier): \(error)")
         }
     }
 
     deinit {
-        // 동기 작업 수행
-        encoderEventLoopTask?.cancel()
-        senderEventLoopTask?.cancel()
-        screenLockCancellable?.cancel()
-        displayChangeCancellable?.cancel()
-
-        // VTVideoEncoder의 Unmanaged refCon retain cycle을 끊는다 (동기 메서드)
-        try? encoder.stop()
-
-        // Safety-net: stop() 미호출 시 async 리소스를 비동기적으로 정리
-        guard !isStopped else { return }
-
-        logger.warning("ProjectionSession \(self.id) deallocated without explicit stop() - triggering safety-net async cleanup")
-
-        let recorder = self.recorder
+        // deinit 은 nonisolated context → actor-isolated 필드에 직접 접근 불가.
+        // nonisolated let 필드만 사용해 safety-net 을 최소화한다. recorder/encoder/Task
+        // cancel 은 `stop()` 이 호출되는 것이 전제다. `ProjectionChannelState.beginDestroy`
+        // 경로가 `stop()` 을 보장한다 (문서 Section 6.5).
         let dataChannel = self.dataChannel
         let frameQueue = self.frameQueue
 
         Task.detached {
             await frameQueue.cancelWaiter()
-            try? await recorder.stop()
-            try? await dataChannel.close()
+            try? await dataChannel.handle.close()
         }
     }
 }
 
 extension ProjectionSession: ScreenRecorderDelegate {
-    func screenRecorderDidStart(_ recorder: any ScreenRecorder) {
-        self.logger.info("Screen recorder started for projection session \(self.id)")
+    nonisolated func screenRecorderDidStart(_ recorder: any ScreenRecorder) {
+        // recorderQueue 위에서 호출되는 콜백. actor 의 unownedExecutor 가 같은 queue 에
+        // 바인딩되어 있으므로 `assumeIsolated` 로 hop 없이 actor-isolated 메서드를 호출할 수 있다.
+        self.assumeIsolated { me in
+            me.logger.info("Screen recorder started for projection session \(me.id)")
+        }
     }
-    
-    func screenRecorder(_ recorder: any ScreenRecorder, didStopWithError error: (any Error)?) {
-        self.logger.info("Screen recorder stopped for projection session \(self.id), error: \(String(describing: error))")
 
-        if error != nil, !isStopped {
-            Task {
-                await self.reconfigureRecorder()
+    nonisolated func screenRecorder(_ recorder: any ScreenRecorder, didStopWithError error: (any Error)?) {
+        self.assumeIsolated { me in
+            me.logger.info("Screen recorder stopped for projection session \(me.id), error: \(String(describing: error))")
+
+            if error != nil, !me.isStopped {
+                Task { [me] in await me.reconfigureRecorder() }
             }
         }
     }
-    
-    func screenRecorder(_ recorder: any ScreenRecorder, didCaptureFrame frameData: CMSampleBuffer) {
+
+    nonisolated func screenRecorder(_ recorder: any ScreenRecorder, didCaptureFrame frameData: CMSampleBuffer) {
+        // 핫 패스. unownedExecutor 바인딩 덕에 actor-isolated 상태를 hop 없이 만진다.
+        self.assumeIsolated { me in
+            me.handleCapturedFrame(frameData)
+        }
+    }
+}
+
+extension ProjectionSession {
+    private func handleCapturedFrame(_ frameData: CMSampleBuffer) {
         // PTS 기반 드랍 판정 (인코딩 전)
         let ptsDropResult = frameDropController.shouldDropByPts(frameData)
         if ptsDropResult.shouldDrop {
@@ -492,45 +509,31 @@ extension ProjectionSession: ScreenRecorderDelegate {
             encoder.forceKeyframe()
         }
 
-        /*
-        let pixelBuffer = frameData.imageBuffer
-        CVBufferRemoveAttachment(pixelBuffer!, kCVImageBufferICCProfileKey)
-        let colorAttachments: [CFString: Any] = [
-            kCVImageBufferColorPrimariesKey: kCVImageBufferColorPrimaries_ITU_R_2020,
-            kCVImageBufferTransferFunctionKey: kCVImageBufferTransferFunction_ITU_R_2100_HLG, // kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ, // HLG라면
-            kCVImageBufferYCbCrMatrixKey: kCVImageBufferYCbCrMatrix_ITU_R_2020
-        ]
-
-        // 3. PixelBuffer에 태그 주입
-        // CVBufferSetAttachments는 기존 키가 있으면 덮어씁니다.
-        CVBufferSetAttachments(pixelBuffer!, colorAttachments as CFDictionary, .shouldPropagate)
-         */
-
         try? encoder.encode(frameID: UInt64(Date().timeIntervalSince1970 * 1000), sampleBuffer: frameData)
     }
 }
 
 private extension ProjectionSession {
-    func accumulateQueuePressure(_ pressure: Float, planner: any QualityPlanner) {
+    func accumulateQueuePressure(_ pressure: Float, planner: any QualityPlanner) async {
         pressureWindowCount += 1
         pressureAccumulator += pressure
 
         if pressureWindowCount >= pressureWindowSize {
             let avgPressure = pressureAccumulator / Float(pressureWindowCount)
-            planner.feed(queuePressure: avgPressure)
-            applyQualityPlan()
+            await planner.feed(queuePressure: avgPressure)
+            await applyQualityPlan()
             pressureWindowCount = 0
             pressureAccumulator = 0.0
         }
     }
-    
-    static func makeQualityPlanner(codec: Codec) -> (planner: QualityPlanner, frameRate: Float) {
+
+    static func makeQualityPlanner(codec: Codec) async -> (planner: QualityPlanner, frameRate: Float) {
         // FIXME: 기본값 하드코딩하지 말고 실제 소스로부터 받아오도록. 기본값이 없으면 실제 소스의 해상도/프레임레이트를 측정해서 넣어야 함
-        var frameRate = codec.frameRate ?? 60.0
+        let frameRate = codec.frameRate ?? 60.0
         let resolution = codec.size ?? SRSize(width: 2880, height: 2560)
 
         // FIXME: 무조건 AutoQuality를 쓰는건 아니잖아요.
-        let planner = AutoQualityPlanner(
+        let planner = await AutoQualityPlanner(
             codec: codec.fourCC,
             resolution: resolution.cgSize,
             frameRate: frameRate,
@@ -538,28 +541,31 @@ private extension ProjectionSession {
         )
 
         // FIXME: codec.options로부터 allow-degradation 옵션을 읽어오도록
-        planner.allowDegradation = true
+        await planner.setAllowDegradation(true)
         return (planner, frameRate)
     }
-    
-    
-    func applyQualityPlan() {
+
+
+    func applyQualityPlan() async {
         guard let planner = self.qualityPlanner else { return }
+        
+        let targetBitrateKbps = await planner.targetBitrateKbps()
+        let maxBitrateKbps = await planner.maxBitrateKbps()
 
-        if self.targetBitrate != planner.targetBitrateKbps() {
-            logger.debug("Applying quality plan: target bitrate = \(planner.targetBitrateKbps()) kbps, max bitrate = \(planner.maxBitrateKbps()) kbps")
+        if self.targetBitrate != targetBitrateKbps {
+            logger.debug("Applying quality plan: target bitrate = \(targetBitrateKbps) kbps, max bitrate = \(maxBitrateKbps) kbps")
 
-            self.targetBitrate = planner.targetBitrateKbps()
+            self.targetBitrate = targetBitrateKbps
             _ = self.encoder.updateTargetBitrate(self.targetBitrate)
         }
 
-        if self.maxBitrate != planner.maxBitrateKbps() {
-            self.maxBitrate = planner.maxBitrateKbps()
+        if self.maxBitrate != maxBitrateKbps {
+            self.maxBitrate = maxBitrateKbps
             _ = self.encoder.updateMaxBitrate(bitrateKbps: self.maxBitrate)
         }
 
         // degradation 적용
-        let degradations = planner.plannedDegradations()
+        let degradations = await planner.plannedDegradations()
         applyDegradations(degradations)
     }
 
@@ -588,8 +594,8 @@ private extension ProjectionSession {
         applyFrameRateChange(effectiveFps)
     }
 
-    func handleQualityAdjustment(_ event: QualityAdjustmentEvent, planner: AutoQualityPlanner) {
-        let notice = buildDegradationNotice(from: event, planner: planner)
+    func handleQualityAdjustment(_ event: QualityAdjustmentEvent, planner: AutoQualityPlanner) async {
+        let notice = await buildDegradationNotice(from: event, planner: planner)
 
         // 이전에 보낸 notice와 동일하면 전송하지 않음
         if let last = lastSentDegradationNotice,
@@ -607,12 +613,12 @@ private extension ProjectionSession {
             do {
                 try await dataChannel.send(degradationNotice: notice)
             } catch {
-                self.logger.warning("Failed to send DegradationNotice: \(error)")
+                // detached send; 여기서는 isolated logger 접근이 어렵다 — drop.
             }
         }
     }
 
-    func buildDegradationNotice(from event: QualityAdjustmentEvent, planner: AutoQualityPlanner) -> DegradationNotice {
+    func buildDegradationNotice(from event: QualityAdjustmentEvent, planner: AutoQualityPlanner) async -> DegradationNotice {
         // 완전 회복 시 빈 notice
         if event.direction == .recovered && event.degradationIndex == 0 {
             return DegradationNotice(
@@ -640,7 +646,7 @@ private extension ProjectionSession {
 
         // type 매핑: 현재 활성화된 degradation steps로부터 판별
         var type: DegradationType = [.bitrateDegradation] // multiplier 감소는 항상 발생
-        let degradations = planner.plannedDegradations()
+        let degradations = await planner.plannedDegradations()
         for degradation in degradations {
             switch degradation {
             case .lowerResolution:
@@ -684,7 +690,7 @@ extension ProjectionSource {
         case .region(let regionSource):
             let displayID = regionSource.displayID
             let region = regionSource.region
-            
+
             return .displayRegion(displayID: Int64(displayID), region: region.cgRect)
         case .singleWindow(let windowSource):
             // FIXME: force unwrap

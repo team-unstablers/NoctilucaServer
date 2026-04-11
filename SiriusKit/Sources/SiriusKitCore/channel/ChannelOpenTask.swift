@@ -8,8 +8,8 @@
 import Foundation
 internal import SwiftProtobuf
 
-internal class ChannelOpenTask {
-    var logger: SiriusLogger?
+internal class ChannelOpenTask: @unchecked Sendable {
+    package var logger: SiriusLogger?
 
     let stream: Stream
     let timeout: TimeInterval
@@ -83,15 +83,17 @@ internal class ChannelOpenTask {
     }
 }
 
-internal class RemoteChannelOpenTask: ChannelOpenTask {
-
+internal final class RemoteChannelOpenTask: ChannelOpenTask, @unchecked Sendable {
     override init(stream: Stream, timeout: TimeInterval) {
         super.init(stream: stream, timeout: timeout)
 
         self.logger = SiriusLogger(category: "RemoteChannelOpenTask")
     }
 
-    func perform(_ channelCreationBlock: ((ChannelStartRequest) async throws -> Bool)) async throws {
+    func perform(
+        isolation: isolated (any Actor)? = #isolation,
+        _ channelCreationBlock: ((ChannelStartRequest) async throws -> Bool)
+    ) async throws {
         self.logger?.info("performing remote channel open task - waiting for channel start request")
 
         let frame: SiriusFrame
@@ -125,7 +127,7 @@ internal class RemoteChannelOpenTask: ChannelOpenTask {
     }
 }
 
-internal class LocalChannelOpenTask: ChannelOpenTask {
+internal class LocalChannelOpenTask: ChannelOpenTask, @unchecked Sendable {
     let feature: SiriusFeature
     let identifier: ChannelIdentifier
     let args: [String]

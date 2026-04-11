@@ -18,7 +18,7 @@ import AppKit
 /// - NOCScreen의 (0, 0)은 그냥 전체 뷰포트의 (0, 0)입니다. NSScreen의 (0, 0)은 메인 디스플레이의 좌측 하단입니다.
 /// - NOCScreen의 y축은 아래로 증가합니다. 반면 NSScreen의 y축은 위로 증가합니다.
 ///
-struct NOCScreen: Identifiable, Hashable, Equatable {
+struct NOCScreen: Identifiable, Hashable, Equatable, Sendable {
     /// 디스플레이 ID.
     let id: CGDirectDisplayID
     
@@ -34,7 +34,7 @@ struct NOCScreen: Identifiable, Hashable, Equatable {
     let scaleFactor: CGFloat
     
     /// FIXME: 가급적 쓰지 말 것
-    let backingNSScreen: NSScreen?
+    nonisolated(unsafe) let backingNSScreen: NSScreen?
     
     
     init(id: CGDirectDisplayID, frame: CGRect, displayResolution: CGSize, backingNSScreen: NSScreen? = nil) {

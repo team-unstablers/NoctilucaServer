@@ -36,11 +36,12 @@ enum NoctilucaServerState {
     case running(server: SiriusServer)
 }
 
-class NoctilucaServerContext: ServerContext {
+@MainActor
+final class NoctilucaServerContext: ServerContext, Sendable {
     private let server: NoctilucaServer
 
     var featureProvider: NoctilucaFeatureProvider { server.featureProvider }
-
+    
     var authenticator: Authenticator { server.authenticator }
     var settings: AppSettings { SettingsStore.shared.settings }
 
@@ -60,8 +61,8 @@ class NoctilucaServerContext: ServerContext {
     }
 }
 
-// @MainActor <- 근데 과거의 나는 이걸 왜 붙였지? 인생 편하게 살고 싶었나..?
-class NoctilucaServer: ObservableObject {
+@MainActor
+final class NoctilucaServer: ObservableObject {
     static let shared = NoctilucaServer()
 
     private let logger = SiriusLogger(category: "NoctilucaServer", subsystem: "app.noctiluca.server")
@@ -75,7 +76,9 @@ class NoctilucaServer: ObservableObject {
 
     let authenticator: Authenticator
 
-    var context: NoctilucaServerContext!
+    lazy var context: NoctilucaServerContext = {
+        NoctilucaServerContext(server: self)
+    }()
 
     var settings: AppSettings {
         get { SettingsStore.shared.settings }
@@ -93,7 +96,6 @@ class NoctilucaServer: ObservableObject {
 
     init() {
         self.authenticator = Authenticator(registry: authPluginRegistry)
-        self.context = NoctilucaServerContext(server: self)
 
         logger.info("NoctilucaServer initialized")
 
@@ -101,6 +103,10 @@ class NoctilucaServer: ObservableObject {
             // FIXME
             try await initialize()
         }
+    }
+    
+    fileprivate func setPreviousAllowedEntries(_ entries: [AuthEntry]) {
+        self.previousAllowedEntries = entries
     }
     
     private func loadIdentity() async throws {
@@ -143,7 +149,6 @@ class NoctilucaServer: ObservableObject {
     }
     
     
-    @MainActor
     func initialize() async throws {
         DisplayLayoutManager.shared.startMonitoring()
         DisplayLayoutManager.shared.updateDisplayLayouts()
@@ -152,7 +157,7 @@ class NoctilucaServer: ObservableObject {
         NoctilucaLoggingConfigurator.apply(settings: settings.logging)
 
         // 보안 정책 주입
-        pluginBundleRegistry.configure(policy: settings.security.pluginBundleSecurityPolicy)
+        await pluginBundleRegistry.configure(policy: settings.security.pluginBundleSecurityPolicy)
 
         // 1. 내장 번들 등록
         try await pluginBundleRegistry.registerBuiltinBundles()
@@ -181,16 +186,19 @@ class NoctilucaServer: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newEntries in
                 guard let self else { return }
-                let oldEntries = self.previousAllowedEntries
-                self.previousAllowedEntries = newEntries
+                
                 Task {
-                    await self.authenticator.updateAllowedEntries(from: oldEntries, to: newEntries)
+                    let oldEntries = self.previousAllowedEntries
+                    self.setPreviousAllowedEntries(newEntries)
+                    
+                    Task {
+                        await self.authenticator.updateAllowedEntries(from: oldEntries, to: newEntries)
+                    }
                 }
             }
             .store(in: &cancellables)
     }
     
-    @MainActor
     func startup() async throws {
         guard case .idle = state else {
             return
@@ -229,7 +237,7 @@ class NoctilucaServer: ObservableObject {
             }
             
             let server = try result.get()
-            server.delegate = self
+            await server.setDelegate(self)
             
             try await server.setup()
             try await server.startup()
@@ -255,53 +263,71 @@ class NoctilucaServer: ObservableObject {
     }
 }
 
+fileprivate extension NoctilucaServer {
+    func addClientSession(_ session: NoctilucaClientSession) async {
+        await self.clients[session.id] = session
+    }
+    
+    func removeClientSession(_ session: NoctilucaClientSession) async {
+        let id = await session.id
+        
+        self.clients[id] = nil
+        self.clients.removeValue(forKey: id)
+    }
+    
+    func mutateState(to newState: NoctilucaServerState) {
+        self.state = newState
+    }
+}
+
 
 extension NoctilucaServer: SiriusServerDelegate {
-    func siriusServerDidStart(_ server: SiriusKit.SiriusServer) {
+    nonisolated func siriusServerDidStart(_ server: SiriusKit.SiriusServer) {
         logger.info("NoctilucaServer is now running.")
         Task {
-            await MainActor.run {
-                AppNotification.serverStarted.post()
-                self.state = .running(server: server)
-            }
+            await AppNotification.serverStarted.post()
+            await self.mutateState(to: .running(server: server))
         }
     }
     
-    func siriusServerDidStop(_ server: SiriusKit.SiriusServer) {
+    nonisolated func siriusServerDidStop(_ server: SiriusKit.SiriusServer) {
         logger.info("NoctilucaServer has stopped.")
         Task { @MainActor in
             AppNotification.serverStopped.post()
-            self.state = .idle
+            self.mutateState(to: .idle)
         }
     }
     
-    func siriusServer(_ server: SiriusKit.SiriusServer, didEncounterError error: any Error) {
+    nonisolated func siriusServer(_ server: SiriusKit.SiriusServer, didEncounterError error: any Error) {
         logger.error("NoctilucaServer encountered an error: \(error)")
     }
     
-    func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
-        let session = NoctilucaClientSession(session: session, server: context)
-        session.delegate = self
-        session.initialize()
-
+    nonisolated func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
         Task { @MainActor in
-            guard self.clients.count < self.settings.general.maxConcurrentSessions else {
-                logger.info("Maximum concurrent sessions exceeded (\(self.settings.general.maxConcurrentSessions)), rejecting session")
+            let session = NoctilucaClientSession(session: session, server: context)
+            await session.setDelegate(self)
+            await session.initialize()
+            
+            let maxConcurrentSessions = self.settings.general.maxConcurrentSessions
+            
+            guard self.clients.count < maxConcurrentSessions else {
+                logger.info("Maximum concurrent sessions exceeded (\(maxConcurrentSessions)), rejecting session")
                 Task { await session.closeWithGoodbye(code: .sessionAllocationFailed) }
                 return
             }
-            self.clients[session.id] = session
+            
+            await self.addClientSession(session)
         }
     }
     
-    func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {
+    nonisolated func siriusServerDidFailToAcceptClientSession(_ server: SiriusKit.SiriusServer, error: any Error) {
     }
 }
 
 extension NoctilucaServer: NoctilucaClientSessionDelegate {
-    func noctilucaClientSessionDidClose(_ session: NoctilucaClientSession) {
-        Task { @MainActor in
-            self.clients[session.id] = nil
+    nonisolated func noctilucaClientSessionDidClose(_ session: NoctilucaClientSession) {
+        Task {
+            await self.removeClientSession(session)
         }
     }
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 import MsQuic
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 internal import Atomics
 import SiriusKitCore
@@ -22,22 +22,28 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
 
     private var receiveTask: Task<Void, Error>?
     private let isClosed = ManagedAtomic(false)
+    
+    private var _id: StreamIdentifier = .zero
 
     init(quicStream: QuicStream, transport: ServerRoleMsQuicClientTransport, identifier: StreamIdentifier = StreamIdentifier()) {
         self.quicStream = quicStream
         self.transport = transport
 
         super.init()
-        self.id = identifier
+        self._id = identifier
 
         // 수신 루프 시작
         startReceiveLoop()
     }
 
     // MARK: - Stream Protocol Overrides
+    
+    override func id() -> StreamIdentifier {
+        return _id
+    }
 
     override func close() async throws {
-        if self.isClosed.exchange(true, ordering: .acquiring) {
+        if self.isClosed.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 
@@ -130,7 +136,7 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
     // MARK: - Finalization
 
     private func finalize(event: StreamEvent) async {
-        if self.isClosed.exchange(true, ordering: .acquiring) {
+        if self.isClosed.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 
@@ -147,10 +153,10 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
 
 extension ServerRoleMsQuicStream: Hashable, Equatable {
     static func == (lhs: ServerRoleMsQuicStream, rhs: ServerRoleMsQuicStream) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.id() == rhs.id()
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(id())
     }
 }

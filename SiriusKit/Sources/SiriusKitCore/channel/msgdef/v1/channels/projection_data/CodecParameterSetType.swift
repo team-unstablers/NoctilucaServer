@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct CodecParameterSetType: RawRepresentable, Hashable, Equatable {
+public struct CodecParameterSetType: RawRepresentable, Hashable, Equatable, Sendable {
     public let rawValue: UInt64
     
     public init(rawValue: UInt64) {

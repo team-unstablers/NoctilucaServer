@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ClipboardDataFlags: OptionSet {
+public struct ClipboardDataFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

@@ -7,7 +7,7 @@
 
 import Foundation
 
-package protocol SiriusSession: AnyObject, Identifiable {
+package protocol SiriusSession: AnyObject, Identifiable, Sendable {
     var id: UUID { get }
 
     var transport: (any TransportLayer) { get }

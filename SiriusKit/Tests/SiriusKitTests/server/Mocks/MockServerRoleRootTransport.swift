@@ -7,7 +7,7 @@ import Foundation
 @testable import SiriusKitCore
 @testable import SiriusKit
 
-final class MockServerRoleRootTransport: ServerRoleRootTransport {
+final class MockServerRoleRootTransport: ServerRoleRootTransport, @unchecked Sendable {
     weak var delegate: ServerRoleRootTransportDelegate?
 
     // MARK: - Tracking

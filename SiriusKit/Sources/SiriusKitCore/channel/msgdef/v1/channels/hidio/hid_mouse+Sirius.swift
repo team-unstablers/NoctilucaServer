@@ -61,7 +61,7 @@ public struct CursorPositionPercent: SiriusMessage {
     }
 }
 
-public enum CursorPositionScope {
+public enum CursorPositionScope: Sendable {
     case displayId(Int32)
     case windowId(Int64)
     
@@ -93,7 +93,7 @@ public enum CursorPositionScope {
 }
 
 public struct MouseMoveEvent: HIDEvent, HIDEventConvertable {
-    public enum OneOf_CursorPosition {
+    public enum OneOf_CursorPosition: Sendable {
         case pixel(CursorPositionPixel)
         case percent(CursorPositionPercent)
     }

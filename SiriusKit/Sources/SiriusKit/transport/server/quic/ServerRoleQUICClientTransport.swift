@@ -53,7 +53,7 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
 
     func disconnect() async {
-        if isFinalized.exchange(true, ordering: .acquiring) {
+        if isFinalized.exchange(true, ordering: .acquiringAndReleasing) {
             return
         }
 
@@ -161,7 +161,7 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     internal func registerStream(_ stream: ServerRoleQUICStream) {
         assert(stream.connection.state == .ready)
 
-        let streamId = stream.id
+        let streamId = stream.id()
         guard !self.streams.keys.contains(streamId) else {
             return
         }
@@ -170,11 +170,13 @@ actor ServerRoleQUICClientTransport: ServerRoleClientTransport {
     }
 
     internal func unregisterStream(_ stream: ServerRoleQUICStream) {
-        guard self.streams.keys.contains(stream.id) else {
+        let streamId = stream.id()
+        
+        guard self.streams.keys.contains(streamId) else {
             return
         }
 
-        self.streams.removeValue(forKey: stream.id)
+        self.streams.removeValue(forKey: streamId)
     }
 }
 

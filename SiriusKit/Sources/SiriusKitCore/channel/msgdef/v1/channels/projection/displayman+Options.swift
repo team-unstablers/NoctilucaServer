@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct DisplayChangeEventType: OptionSet {
+public struct DisplayChangeEventType: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -24,7 +24,7 @@ public struct DisplayChangeEventType: OptionSet {
     public static let becamePrimary = DisplayChangeEventType(rawValue: 0x0008)
 }
 
-public struct DisplayListRequestFlags: OptionSet {
+public struct DisplayListRequestFlags: OptionSet, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

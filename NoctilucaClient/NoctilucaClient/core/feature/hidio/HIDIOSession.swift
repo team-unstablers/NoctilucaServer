@@ -82,7 +82,9 @@ protocol HIDIOSessionDelegate: AnyObject {
     func hidioSession(_ session: HIDIOSession, didSwitchMode mode: HIDIOSessionMode, reason: HIDIOSessionModeSwitchReason)
 }
 
+@MainActor
 class HIDIOSession: ObservableObject {
+    @MainActor
     protocol Driver {
         init(_ session: HIDIOSession)
         

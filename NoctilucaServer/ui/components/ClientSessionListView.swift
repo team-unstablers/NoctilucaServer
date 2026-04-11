@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import Combine
+@preconcurrency import Combine
 
 // MARK: - Display Model
 
@@ -41,8 +41,8 @@ struct ClientSessionInfo: Identifiable, Hashable {
 }
 
 // MARK: - ViewModel
-
-class ClientSessionListViewModel: ObservableObject {
+@MainActor
+final class ClientSessionListViewModel: ObservableObject, @unchecked Sendable {
     @Published var sessions: [ClientSessionInfo] = []
     @Published var selection: Set<UUID> = []
 
@@ -50,17 +50,19 @@ class ClientSessionListViewModel: ObservableObject {
 
     var disconnectHandler: ((_ sessionIDs: Set<UUID>) -> Void)?
 
-    func bind(to server: NoctilucaServer) {
-        server.$clients
+    func bind(to server: NoctilucaServer) async {
+        await server.$clients
             .receive(on: DispatchQueue.main)
             .sink { [weak self] clients in
-                self?.updateSessions(from: clients)
+                Task { [weak self] in
+                    await self?.updateSessions(from: clients)
+                }
             }
             .store(in: &cancellables)
     }
 
-    func refresh(from server: NoctilucaServer) {
-        updateSessions(from: server.clients)
+    func refresh(from server: NoctilucaServer) async {
+        await updateSessions(from: server.clients)
     }
 
     func disconnectSelected() {
@@ -74,18 +76,21 @@ class ClientSessionListViewModel: ObservableObject {
         disconnectHandler?(allIDs)
     }
 
-    private func updateSessions(from clients: [UUID: NoctilucaClientSession]) {
-        sessions = clients.values.map { session in
-            ClientSessionInfo(
+    private func updateSessions(from clients: [UUID: NoctilucaClientSession]) async {
+        var sessions: [ClientSessionInfo] = []
+        
+        for session in clients.values {
+            let info = await ClientSessionInfo(
                 id: session.id,
                 agentName: session.clientInfo?.agentName
                     ?? String(localized: "menu.session.unknown_agent", defaultValue: "(알 수 없음)"),
                 remoteAddress: session.remoteAddress,
                 phase: session.phase
             )
+            sessions.append(info)
         }
-        .sorted { $0.agentName < $1.agentName }
-
+        
+        self.sessions = sessions.sorted { $0.agentName < $1.agentName }
         let validIDs = Set(sessions.map(\.id))
         selection = selection.intersection(validIDs)
     }

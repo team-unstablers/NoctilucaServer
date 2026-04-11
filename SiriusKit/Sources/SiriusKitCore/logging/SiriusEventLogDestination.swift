@@ -4,7 +4,7 @@
 //
 
 /// Destination abstraction for logs.
-public protocol SiriusEventLogDestination {
+public protocol SiriusEventLogDestination: Sendable {
     func write(
         message: String,
     )

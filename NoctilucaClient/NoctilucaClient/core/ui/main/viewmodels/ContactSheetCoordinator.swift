@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Combine
 
+@MainActor
 final class ContactSheetCoordinator: ObservableObject {
     enum Mode: Hashable {
         case quickConnect

@@ -7,12 +7,13 @@ import Foundation
 
 /// 이벤트 로그를 파일에 기록하는 destination.
 /// SiriusFileLogDestination과 동일한 버퍼링/로테이션 로직을 사용한다.
-public final class SiriusEventFileLogDestination: SiriusEventLogDestination {
+// FIXME: 시간이 없어 @unchecked Sendable로 마킹. 
+public final class SiriusEventFileLogDestination: SiriusEventLogDestination, @unchecked Sendable {
 
     // MARK: - Static Instance Tracking
 
     private static let instancesLock = NSLock()
-    private static var instances = NSHashTable<SiriusEventFileLogDestination>.weakObjects()
+    nonisolated(unsafe) private static var instances = NSHashTable<SiriusEventFileLogDestination>.weakObjects()
 
     /// Flushes all active event file log destinations immediately.
     /// Call from application termination handlers to prevent log loss.

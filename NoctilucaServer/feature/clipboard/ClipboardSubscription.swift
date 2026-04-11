@@ -8,7 +8,8 @@ import Foundation
 
 import SiriusKit
 
-class ClipboardSubscription: Identifiable {
+@MainActor
+final class ClipboardSubscription: Identifiable, Sendable {
     let id: UUID
 
     private let logger = NoctilucaLogger(category: "ClipboardSubscription")
@@ -19,19 +20,20 @@ class ClipboardSubscription: Identifiable {
         self.id = UUID()
     }
 
+    @MainActor
     deinit {
         let id = self.id
-        Task { @MainActor in
-            ClipboardWatcher.shared.removeSubscriberById(id)
-        }
+        ClipboardWatcher.shared.removeSubscriberById(id)
+    }
+    
+    func setChannel(_ channel: ClipboardChannel) {
+        self.channel = channel
     }
 
-    @MainActor
     func setup() {
         ClipboardWatcher.shared.addSubscriber(self)
     }
 
-    @MainActor
     func destroy() {
         ClipboardWatcher.shared.removeSubscriber(self)
     }
@@ -54,11 +56,11 @@ class ClipboardSubscription: Identifiable {
             items: snapshot.items
         )
 
-        Task {
+        Task { [channel] in
             do {
-                channel.storeSnapshot(snapshot.omittedData)
-                channel.storeFileTransferSnapshot(snapshot.fileTransferData)
-                try await channel.send(opcode: .clipboardEvent, message: event)
+                await channel.storeSnapshot(snapshot.omittedData)
+                await channel.storeFileTransferSnapshot(snapshot.fileTransferData)
+                try await channel.handle.send(opcode: .clipboardEvent, message: event)
             } catch {
                 logger.error("Failed to send ClipboardEvent: \(error)")
             }

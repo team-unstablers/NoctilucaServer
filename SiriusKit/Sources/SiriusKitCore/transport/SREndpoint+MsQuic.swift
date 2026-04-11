@@ -6,7 +6,7 @@
 //
 
 import MsQuic
-import SwiftMsQuicHelper
+import SwiftMsQuic
 
 package extension SREndpoint {
     init(msQuicAddress: QuicAddress) {

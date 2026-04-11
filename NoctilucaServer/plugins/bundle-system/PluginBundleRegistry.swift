@@ -9,7 +9,7 @@ import Foundation
 import AppKit
 
 import SiriusKit
-import NoctilucaPluginKit
+@preconcurrency import NoctilucaPluginKit
 
 enum PluginBundleRegistryError: LocalizedError {
     /// 번들이 존재하지 않거나, 번들 검증에 실패한 경우
@@ -72,7 +72,7 @@ struct PluginBundleHandle {
     let signingResult: CodeSigningVerificationResult?
 }
 
-class PluginBundleRegistry {
+actor PluginBundleRegistry {
     static let shared = PluginBundleRegistry()
     
     private let logger = NoctilucaLogger(category: "PluginBundleRegistry")
@@ -215,14 +215,16 @@ class PluginBundleRegistry {
         for export in bundleClass.exports {
             switch export {
             case .auth(let plugin):
-                AuthPluginRegistry.shared.register(plugin: plugin)
+                await AuthPluginRegistry.shared.register(plugin: plugin)
                 logger.info("Registered auth plugin: \(plugin.id) from bundle: \(metadata.id)")
             case .extension(let extensionPlugin):
                 // TODO: ExtensionPluginRegistry 연동 (향후 구현)
                 logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(metadata.id)")
             case .keyboardHack(let keyboardHack):
-                HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
+                await HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
                 logger.info("Registered keyboard hack: \(type(of: keyboardHack).id) from bundle: \(metadata.id)")
+            @unknown default:
+                logger.warning("Encountered unknown plugin export type from bundle: \(metadata.id), skipping registration")
             }
         }
         
@@ -356,10 +358,15 @@ extension PluginBundleRegistry {
     /// - Returns: 검증 성공 시 `nil`, 실패 시 상세 사유 문자열
     func validatePluginMetadata(pluginExport: NoctilucaPluginExport, with pluginsMetadata: [PluginBundleExportPlistMetadata]) -> String? {
         let exportId = pluginExport.id
-        let exportType: NoctilucaPluginType = switch pluginExport {
+        let exportType: NoctilucaPluginType? = switch pluginExport {
         case .auth: .auth
         case .extension: .extension
         case .keyboardHack: .keyboardHack
+        @unknown default: nil
+        }
+        
+        guard let exportType else {
+            return "Unknown plugin export type for plugin with id: \(exportId)"
         }
 
         let matchingById = pluginsMetadata.filter { $0.id == exportId }

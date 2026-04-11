@@ -8,11 +8,11 @@
 import os
 import Foundation
 
-public final class SiriusEventLogger {
+public final class SiriusEventLogger: @unchecked Sendable {
     public typealias DestinationBuilder = @Sendable () -> [any SiriusEventLogDestination]
     
     private static let configurationQueue = DispatchQueue(label: "so.libsirius.SiriusKit.EventLogger.config")
-    private static var destinationBuilder: DestinationBuilder = SiriusEventLogger.defaultDestinations
+    nonisolated(unsafe) private static var destinationBuilder: DestinationBuilder = SiriusEventLogger.defaultDestinations
 
     private let category: String
     private let context: SharedState<Context>

@@ -40,7 +40,11 @@ extension RemoteSession {
     }
     
     /// 커서 이미지를 캐싱합니다.
-    fileprivate class CursorImageCacheManager {
+    ///
+    /// `ConcurrentDictionary` 기반이라 thread-safe. `Projection` 클래스는
+    /// `@MainActor` 격리되지만, 이 캐시는 백그라운드 PNG 디코딩 task 에서도
+    /// 읽혀야 하므로 `nonisolated let` 필드로 노출한다.
+    fileprivate final class CursorImageCacheManager: @unchecked Sendable {
         let cache = ConcurrentDictionary<CursorHash, CursorImage>()
 
         func updateCache(_ image: CursorImage) {
@@ -115,20 +119,21 @@ extension RemoteSession {
         }
     }
     
-    class Projection: ObservableObject {
+    @MainActor
+    final class Projection: ObservableObject {
         private let logger = NoctilucaLogger(category: "RemoteSession.Projection")
-        
+
         private weak var parent: RemoteSession?
         private(set) var channel: ProjectionChannel
-        
+
         let channelID: UUID
-        
-        private var eventSubscription: AnyCancellable? = nil
+
+        private var eventConsumerTask: Task<Void, Never>? = nil
 
         @Published
         private(set) var projectionSessions: [UUID: ProjectionSession] = [:]
         private(set) var projectionSessionReferences: [UUID: ManagedAtomic<Int>] = [:]
-        
+
         @Published
         private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
 
@@ -147,18 +152,17 @@ extension RemoteSession {
         private var audioRetryState = RetryState()
         private var audioRetryTask: Task<Void, Never>?
 
-        private var sessionEventSubscriptions: [UUID: AnyCancellable] = [:]
+        private var sessionEventTasks: [UUID: Task<Void, Never>] = [:]
 
-        private let cursorImageCacheManager = CursorImageCacheManager()
+        nonisolated private let cursorImageCacheManager = CursorImageCacheManager()
         let cursorState = CursorState()
-        private let cursorMoveCoalescingLock = NSLock()
         private var pendingCursorMoveEvent: CursorMoveEvent?
         private var isCursorMoveDeliveryScheduled = false
         
         init(_ parent: RemoteSession, channel: ProjectionChannel) {
             self.parent = parent
             self.channel = channel
-            
+
             // cache the channel ID
             self.channelID = channel.identifier
 
@@ -166,24 +170,29 @@ extension RemoteSession {
         }
 
         deinit {
+            // nonisolated context. MainActor-isolated 메서드 직접 호출 불가 —
+            // Task<Void, Never> 과 AnyCancellable 의 cancel() 은 Sendable 이므로 OK.
             audioRetryTask?.cancel()
-            unsubscribeEvents()
-            sessionEventSubscriptions.values.forEach { $0.cancel() }
-            sessionEventSubscriptions.removeAll()
+            eventConsumerTask?.cancel()
+            for task in sessionEventTasks.values {
+                task.cancel()
+            }
         }
-        
+
         private func subscribeEvents() {
-            self.eventSubscription = channel.events
-                // .receive(on: RunLoop.main)
-                .sink { [weak self] event in
-                    self?.handleEvent(event)
+            self.eventConsumerTask = Task { [weak self] in
+                guard let channel = self?.channel else { return }
+                for await event in channel.events {
+                    guard let self else { return }
+                    self.handleEvent(event)
                 }
+            }
         }
-        
-        
+
+
         private func unsubscribeEvents() {
-            self.eventSubscription?.cancel()
-            self.eventSubscription = nil
+            self.eventConsumerTask?.cancel()
+            self.eventConsumerTask = nil
         }
         
         private func handleEvent(_ event: ProjectionChannelEvent) {
@@ -202,10 +211,8 @@ extension RemoteSession {
                 self.notifySessionFailure(reason: reason, message: message)
 
             case .audioSessionCreated(let audioSession):
-                guard let dataChannel = audioSession.dataChannel else {
-                    return
-                }
-                self.audioSessions.updateValue(audioSession, forKey: dataChannel.identifier)
+                let dataChannelID = audioSession.dataChannel.identifier
+                self.audioSessions.updateValue(audioSession, forKey: dataChannelID)
                 self.audioRetryState.reset()
                 self.audioSessionError = nil
             case .audioSessionDestroyed(let sessionID, let reason, let message):
@@ -259,18 +266,19 @@ extension RemoteSession {
         private func subscribeSessionEvents(_ session: ProjectionSession) {
             let sessionID = session.dataChannel.identifier
 
-            let subscription = session.events
-                .receive(on: RunLoop.main)
-                .sink { [weak self] event in
-                    self?.handleSessionEvent(event)
+            let task = Task { [weak self] in
+                for await event in session.events {
+                    guard let self else { return }
+                    self.handleSessionEvent(event)
                 }
+            }
 
-            sessionEventSubscriptions[sessionID] = subscription
+            sessionEventTasks[sessionID] = task
         }
 
         private func unsubscribeSessionEvents(_ sessionID: UUID) {
-            sessionEventSubscriptions[sessionID]?.cancel()
-            sessionEventSubscriptions.removeValue(forKey: sessionID)
+            sessionEventTasks[sessionID]?.cancel()
+            sessionEventTasks.removeValue(forKey: sessionID)
         }
 
         private func handleSessionEvent(_ event: ProjectionSessionEvent) {
@@ -293,33 +301,24 @@ extension RemoteSession {
         }
 
         private func enqueueCursorMoveEvent(_ moveEvent: CursorMoveEvent) {
-            cursorMoveCoalescingLock.lock()
+            // @MainActor 격리이므로 lock 없이도 race 없음.
             pendingCursorMoveEvent = moveEvent
 
-            let shouldSchedule = !isCursorMoveDeliveryScheduled
-            if shouldSchedule {
-                isCursorMoveDeliveryScheduled = true
-            }
-            cursorMoveCoalescingLock.unlock()
-
-            guard shouldSchedule else {
+            guard !isCursorMoveDeliveryScheduled else {
                 return
             }
+            isCursorMoveDeliveryScheduled = true
 
-            DispatchQueue.main.async { [weak self] in
+            // coalesce: 같은 turn 내의 다중 move 를 하나로 합친다.
+            Task { @MainActor [weak self] in
                 self?.drainCoalescedCursorMoveEvent()
             }
         }
 
-        @MainActor
         private func drainCoalescedCursorMoveEvent() {
-            let moveEvent: CursorMoveEvent?
-
-            cursorMoveCoalescingLock.lock()
-            moveEvent = pendingCursorMoveEvent
+            let moveEvent = pendingCursorMoveEvent
             pendingCursorMoveEvent = nil
             isCursorMoveDeliveryScheduled = false
-            cursorMoveCoalescingLock.unlock()
 
             guard let moveEvent else {
                 return
@@ -398,7 +397,7 @@ extension RemoteSession {
                 referenceCounter.wrappingIncrement(ordering: .relaxed)
 
                 let ticket = SessionReferenceTicket(id: UUID()) {
-                    referenceCounter.wrappingDecrement(ordering: .relaxed)
+                    referenceCounter.wrappingDecrement(ordering: .releasing)
 
                     Task {
                         await self.handleSessionReferenceDecrement(for: sessionKey)
@@ -422,7 +421,7 @@ extension RemoteSession {
             projectionSessionReferences[sessionID] = referenceCounter
 
             let ticket = SessionReferenceTicket(id: UUID()) {
-                referenceCounter.wrappingDecrement(ordering: .relaxed)
+                referenceCounter.wrappingDecrement(ordering: .releasing)
 
                 Task {
                     await self.handleSessionReferenceDecrement(for: sessionID)
@@ -509,7 +508,7 @@ fileprivate extension RemoteSession.Projection {
             return
         }
         
-        let count = referenceCounter.load(ordering: .relaxed)
+        let count = referenceCounter.load(ordering: .acquiring)
         
         if count == 0 {
             // 레퍼런스 카운터가 0이 되었으므로 세션 종료

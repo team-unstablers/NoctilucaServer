@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct AudioFourCC: RawRepresentable, Hashable, Equatable, Codable {
+public struct AudioFourCC: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -22,7 +22,7 @@ public struct AudioFourCC: RawRepresentable, Hashable, Equatable, Codable {
     public static let pcma = AudioFourCC(rawValue: 0x50434D41)
 }
 
-public struct AudioSessionFailureReason: RawRepresentable, Hashable, Equatable, Codable {
+public struct AudioSessionFailureReason: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -38,7 +38,7 @@ public struct AudioSessionFailureReason: RawRepresentable, Hashable, Equatable, 
     public static let permissionDenied = AudioSessionFailureReason(rawValue: 3)
 }
 
-public struct AudioSessionChangeReason: RawRepresentable, Hashable, Equatable, Codable {
+public struct AudioSessionChangeReason: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {
@@ -52,7 +52,7 @@ public struct AudioSessionChangeReason: RawRepresentable, Hashable, Equatable, C
     public static let codecRenegotiated = AudioSessionChangeReason(rawValue: 2)
 }
 
-public struct AudioSessionEndReason: RawRepresentable, Hashable, Equatable, Codable {
+public struct AudioSessionEndReason: RawRepresentable, Hashable, Equatable, Codable, Sendable {
     public let rawValue: UInt32
 
     public init(rawValue: UInt32) {

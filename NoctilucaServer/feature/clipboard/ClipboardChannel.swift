@@ -14,19 +14,22 @@ import UniformTypeIdentifiers
 
 extension SiriusEventLogger.EventType {
     struct Transfer {
-        static let fileTransferStarted   = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_STARTED")
+        static let fileTransferStarted    = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_STARTED")
         static let fileTransferCompleted  = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_COMPLETED")
         static let fileTransferFailed     = SiriusEventLogger.EventType(rawValue: "FILE_TRANSFER_FAILED")
         static let clipboardDataServed    = SiriusEventLogger.EventType(rawValue: "CLIPBOARD_DATA_SERVED")
     }
 }
 
-class ClipboardChannel: Channel {
-    override var serviceClass: ServiceClass { .background }
+// MARK: - ClipboardChannel
 
-    let logger = NoctilucaLogger(category: "ClipboardChannel")
-    private var eventLogger: SiriusEventLogger?
+actor ClipboardChannel: Channel, ChannelEventConsumer {
+    let handle: ChannelHandle
+    private static let defaultServiceClass: ServiceClass = .background
 
+    private let logger = NoctilucaLogger(category: "ClipboardChannel")
+    private var _eventLogger: SiriusEventLogger?
+    
     private var remoteSubscription: ClipboardSubscription? = nil
 
     /// 서버가 클라이언트에게 보낸 subscribe 요청으로 받은 subscriptionId (bidirectional 시)
@@ -44,12 +47,21 @@ class ClipboardChannel: Channel {
     /// 현재 진행 중인 resolve 작업 (취소 가능)
     private var resolveTask: Task<Void, Never>? = nil
 
-    required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        super.init(using: streamHolder, identifier: identifier, direction: direction)
-        
+
+    // ~Copyable CompatBridge; init 마지막 대입 후 수정 없음.
+    nonisolated(unsafe) private var channelEventCompatBridge: ChannelEventCompatBridge<ClipboardChannel>!
+
+    init(handle: ChannelHandle) {
+        self.handle = handle
+
+        self.channelEventCompatBridge = ChannelEventCompatBridge(consumer: self, handle: handle)
     }
 
-    override func handleFrame(frame: SiriusFrame) async throws {
+    func handleChannelReady() async {
+        await handle.setServiceClass(Self.defaultServiceClass)
+    }
+
+    func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
@@ -84,6 +96,10 @@ class ClipboardChannel: Channel {
             logger.warning("Received unknown opcode: \(frame.opcode)")
         }
     }
+    
+    fileprivate func setFileTransferCoordinator(_ coordinator: FileTransferCoordinator? = nil) {
+        self.fileTransferCoordinator = coordinator
+    }
 
     // MARK: - Snapshot Management
 
@@ -100,10 +116,13 @@ class ClipboardChannel: Channel {
     // MARK: - Event Logger
 
     private func ensureEventLogger() -> SiriusEventLogger? {
-        if let eventLogger { return eventLogger }
+        if let logger = self._eventLogger {
+            return logger
+        }
+        
         guard let context = self.clientSession?.eventLoggerContext else { return nil }
         let logger = SiriusEventLogger("NoctilucaServer::Transfer", context: context)
-        self.eventLogger = logger
+        self._eventLogger = logger
         return logger
     }
 
@@ -114,7 +133,7 @@ class ClipboardChannel: Channel {
         Task {
             guard let data = lastSentSnapshot?.get(itemIndex: itemIndex, reprIndex: representationIndex) else {
                 logger.warning("No snapshot data for item=\(itemIndex), repr=\(representationIndex)")
-                try? await transferChannel.close()
+                try? await transferChannel.handle.close()
                 return
             }
 
@@ -123,7 +142,7 @@ class ClipboardChannel: Channel {
                     name: "clipboard-data",
                     totalSize: UInt64(data.count),
                     contentType: "application/octet-stream",
-                    description: "Omitted clipboard data (item=\(itemIndex), repr=\(representationIndex))",
+                    description: "Omitted clipboard data (item=\(itemIndex), repr=\(representationIndex))"
                 ))
                 try await transferChannel.write(data)
                 ensureEventLogger()?.log(.Transfer.clipboardDataServed, args: [
@@ -150,7 +169,7 @@ class ClipboardChannel: Channel {
                     "name": name,
                     "reason": "path_validation_failed",
                 ])
-                try? await transferChannel.close()
+                try? await transferChannel.handle.close()
                 return
             }
 
@@ -163,7 +182,7 @@ class ClipboardChannel: Channel {
                     "name": name,
                     "reason": "file_not_found",
                 ])
-                try? await transferChannel.close()
+                try? await transferChannel.handle.close()
                 return
             }
 
@@ -176,7 +195,7 @@ class ClipboardChannel: Channel {
                     "name": name,
                     "reason": "special_file_rejected",
                 ])
-                try? await transferChannel.close()
+                try? await transferChannel.handle.close()
                 return
             }
 
@@ -250,7 +269,7 @@ class ClipboardChannel: Channel {
                     "reason": "exception",
                     "error": String(describing: error),
                 ])
-                try? await transferChannel.close()
+                try? await transferChannel.handle.close()
             }
         }
     }
@@ -258,11 +277,11 @@ class ClipboardChannel: Channel {
     // MARK: - Request Handlers (클라이언트 → 서버)
 
     private func handleSubscribeClipboardRequest(_ request: SubscribeClipboardRequest) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else {
             logger.info("Clipboard disabled, rejecting subscribe request (requestId=\(request.requestId))")
-            try await send(opcode: .subscribeClipboardResponse, message: SubscribeClipboardResponse(
+            try await handle.send(opcode: .subscribeClipboardResponse, message: SubscribeClipboardResponse(
                 requestId: request.requestId,
                 isSuccess: false,
                 subscriptionId: nil
@@ -276,29 +295,30 @@ class ClipboardChannel: Channel {
             remoteSubscription = nil
         }
 
-        let subscription = ClipboardSubscription()
-        subscription.channel = self
+        let subscription = await ClipboardSubscription()
+        
+        await subscription.setChannel(self)
         await subscription.setup()
 
         remoteSubscription = subscription
 
         logger.info("Clipboard subscription created (id=\(subscription.id), requestId=\(request.requestId))")
 
-        try await send(opcode: .subscribeClipboardResponse, message: SubscribeClipboardResponse(
+        try await handle.send(opcode: .subscribeClipboardResponse, message: SubscribeClipboardResponse(
             requestId: request.requestId,
             isSuccess: true,
             subscriptionId: subscription.id
         ))
 
         if settings.syncDirection == .bidirectional || settings.syncDirection == .remoteToLocal {
-            try? await self.send(opcode: .subscribeClipboardRequest, message: SubscribeClipboardRequest(requestId: 1, flags: 0))
+            try? await self.handle.send(opcode: .subscribeClipboardRequest, message: SubscribeClipboardRequest(requestId: 1, flags: 0))
         }
     }
 
     private func handleUnsubscribeClipboardRequest(_ request: UnsubscribeClipboardRequest) async throws {
         guard let subscription = remoteSubscription else {
             logger.warning("No active subscription to unsubscribe (requestId=\(request.requestId))")
-            try await send(opcode: .unsubscribeClipboardResponse, message: UnsubscribeClipboardResponse(
+            try await handle.send(opcode: .unsubscribeClipboardResponse, message: UnsubscribeClipboardResponse(
                 requestId: request.requestId,
                 subscriptionId: request.subscriptionId,
                 isSuccess: false
@@ -308,11 +328,12 @@ class ClipboardChannel: Channel {
 
         let subscriptionId = subscription.id
         await subscription.destroy()
-        remoteSubscription = nil
+        
+        self.remoteSubscription = nil
 
         logger.info("Clipboard subscription removed (id=\(subscriptionId), requestId=\(request.requestId))")
 
-        try await send(opcode: .unsubscribeClipboardResponse, message: UnsubscribeClipboardResponse(
+        try await handle.send(opcode: .unsubscribeClipboardResponse, message: UnsubscribeClipboardResponse(
             requestId: request.requestId,
             subscriptionId: subscriptionId,
             isSuccess: true
@@ -320,11 +341,11 @@ class ClipboardChannel: Channel {
     }
 
     private func handleGetClipboardRequest(_ request: GetClipboardRequest) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else {
             logger.info("Clipboard disabled, rejecting get request (requestId=\(request.requestId))")
-            try await send(opcode: .getClipboardResponse, message: GetClipboardResponse(
+            try await handle.send(opcode: .getClipboardResponse, message: GetClipboardResponse(
                 requestId: request.requestId,
                 success: false,
                 items: []
@@ -334,7 +355,7 @@ class ClipboardChannel: Channel {
 
         let items = await ClipboardManager.shared.current()
 
-        try await send(opcode: .getClipboardResponse, message: GetClipboardResponse(
+        try await handle.send(opcode: .getClipboardResponse, message: GetClipboardResponse(
             requestId: request.requestId,
             success: true,
             items: items
@@ -342,7 +363,7 @@ class ClipboardChannel: Channel {
     }
 
     private func handleClipboardEvent(_ event: ClipboardEvent) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else { return }
 
@@ -353,8 +374,9 @@ class ClipboardChannel: Channel {
         }
 
         // subscriptionId 검증
+        let localSubscriptionId = self.localSubscriptionId
         guard let localSubId = localSubscriptionId, event.subscriptionId == localSubId else {
-            logger.warning("Received ClipboardEvent with unknown subscriptionId=\(event.subscriptionId), expected=\(String(describing: self.localSubscriptionId))")
+            logger.warning("Received ClipboardEvent with unknown subscriptionId=\(event.subscriptionId), expected=\(String(describing: localSubscriptionId))")
             return
         }
 
@@ -365,69 +387,73 @@ class ClipboardChannel: Channel {
 
     /// 원격에서 수신한 클립보드 아이템을 resolve(omitted data 다운로드)하고 로컬 클립보드에 적용합니다.
     private func resolveAndApplyRemoteItems(_ items: [ClipboardItem], allowFile: Bool) {
-        resolveTask?.cancel()
+        Task {
+            await resolveTask?.cancel()
 
-        resolveTask = Task { [weak self] in
-            guard let self = self else { return }
+            let task = Task { [weak self] in
+                guard let self = self else { return }
 
-            var resolvedItems: [ClipboardItem] = []
-            var fileTransferItems: [(Int, FileTransferMetadata)] = []
+                var resolvedItems: [ClipboardItem] = []
+                var fileTransferItems: [(Int, FileTransferMetadata)] = []
 
-            for (itemIndex, item) in items.enumerated() {
-                // 파일 전송 아이템인지 체크
-                if let fileRepr = item.representations.first(where: {
-                    $0.contentType == FileTransferContentType.fileTransfer
-                }),
-                   let data = fileRepr.data,
-                   let metadata = try? JSONDecoder().decode(FileTransferMetadata.self, from: data) {
-                    fileTransferItems.append((itemIndex, metadata))
-                    continue
-                }
+                for (itemIndex, item) in items.enumerated() {
+                    // 파일 전송 아이템인지 체크
+                    if let fileRepr = item.representations.first(where: {
+                        $0.contentType == FileTransferContentType.fileTransfer
+                    }),
+                       let data = fileRepr.data,
+                       let metadata = try? JSONDecoder().decode(FileTransferMetadata.self, from: data) {
+                        fileTransferItems.append((itemIndex, metadata))
+                        continue
+                    }
 
-                // 일반 아이템: omitted resolve 로직
-                var resolvedRepresentations: [ClipboardData] = []
+                    // 일반 아이템: omitted resolve 로직
+                    var resolvedRepresentations: [ClipboardData] = []
 
-                for (reprIndex, representation) in item.representations.enumerated() {
-                    guard !Task.isCancelled else { return }
+                    for (reprIndex, representation) in item.representations.enumerated() {
+                        guard !Task.isCancelled else { return }
 
-                    if representation.flags.contains(.omitted) {
-                        if let data = try? await self.resolveOmittedData(
-                            itemIndex: itemIndex, reprIndex: reprIndex
-                        ) {
-                            resolvedRepresentations.append(ClipboardData(
-                                contentType: representation.contentType,
-                                size: UInt64(data.count),
-                                data: data,
-                                flags: []
-                            ))
-                        } else {
-                            self.logger.warning("Failed to resolve omitted data (item=\(itemIndex), repr=\(reprIndex))")
+                        if representation.flags.contains(.omitted) {
+                            if let data = try? await self.resolveOmittedData(
+                                itemIndex: itemIndex, reprIndex: reprIndex
+                            ) {
+                                resolvedRepresentations.append(ClipboardData(
+                                    contentType: representation.contentType,
+                                    size: UInt64(data.count),
+                                    data: data,
+                                    flags: []
+                                ))
+                            } else {
+                                self.logger.warning("Failed to resolve omitted data (item=\(itemIndex), repr=\(reprIndex))")
+                            }
+                        } else if representation.data != nil {
+                            resolvedRepresentations.append(representation)
                         }
-                    } else if representation.data != nil {
-                        resolvedRepresentations.append(representation)
+                    }
+
+                    if !resolvedRepresentations.isEmpty {
+                        resolvedItems.append(ClipboardItem(representations: resolvedRepresentations))
                     }
                 }
 
-                if !resolvedRepresentations.isEmpty {
-                    resolvedItems.append(ClipboardItem(representations: resolvedRepresentations))
+                guard !Task.isCancelled else { return }
+
+                if !fileTransferItems.isEmpty, allowFile {
+                    let coordinator = FileTransferCoordinator(clipboardChannel: self)
+                    await self.setFileTransferCoordinator(coordinator)
+                    self.logger.info("Applying remote clipboard with file transfers (\(fileTransferItems.count) files, \(resolvedItems.count) items)")
+                    await ClipboardManager.shared.setWithFileTransfer(
+                        items: resolvedItems,
+                        fileTransferItems: fileTransferItems,
+                        coordinator: coordinator
+                    )
+                } else if !resolvedItems.isEmpty {
+                    self.logger.info("Applying remote clipboard (\(resolvedItems.count) items)")
+                    await ClipboardManager.shared.set(items: resolvedItems)
                 }
             }
-
-            guard !Task.isCancelled else { return }
-
-            if !fileTransferItems.isEmpty, allowFile {
-                let coordinator = FileTransferCoordinator(clipboardChannel: self)
-                self.fileTransferCoordinator = coordinator
-                self.logger.info("Applying remote clipboard with file transfers (\(fileTransferItems.count) files, \(resolvedItems.count) items)")
-                await ClipboardManager.shared.setWithFileTransfer(
-                    items: resolvedItems,
-                    fileTransferItems: fileTransferItems,
-                    coordinator: coordinator
-                )
-            } else if !resolvedItems.isEmpty {
-                self.logger.info("Applying remote clipboard (\(resolvedItems.count) items)")
-                await ClipboardManager.shared.set(items: resolvedItems)
-            }
+            
+            resolveTask = task
         }
     }
 
@@ -463,7 +489,7 @@ class ClipboardChannel: Channel {
     // MARK: - Response Handlers (서버가 클라이언트에게 보낸 요청의 응답)
 
     private func handleGetClipboardResponse(_ response: GetClipboardResponse) async throws {
-        let settings = SettingsStore.shared.settings.clipboard
+        let settings = await SettingsStore.shared.settings.clipboard
 
         guard settings.enabled else { return }
         guard settings.syncDirection == .remoteToLocal ||
@@ -485,10 +511,10 @@ class ClipboardChannel: Channel {
 
     private func handleSubscribeClipboardResponse(_ response: SubscribeClipboardResponse) async throws {
         if response.isSuccess, let subscriptionId = response.subscriptionId {
-            localSubscriptionId = subscriptionId
+            self.localSubscriptionId = subscriptionId
             logger.info("Subscribe to client clipboard succeeded (subscriptionId=\(subscriptionId), requestId=\(response.requestId))")
         } else {
-            localSubscriptionId = nil
+            self.localSubscriptionId = nil
             logger.warning("Subscribe to client clipboard rejected (requestId=\(response.requestId))")
         }
     }
@@ -499,46 +525,38 @@ class ClipboardChannel: Channel {
         } else {
             logger.warning("Unsubscribe from client clipboard failed (requestId=\(response.requestId))")
         }
-        localSubscriptionId = nil
+        self.localSubscriptionId = nil
     }
 
     // MARK: - Stream Lifecycle
 
-    private func cleanupSubscriptions() {
-        resolveTask?.cancel()
+    private func cleanupSubscriptions() async {
+        await resolveTask?.cancel()
 
         // 로컬 구독 해제 (best-effort unsubscribe 전송)
-        if let localSubId = localSubscriptionId {
-            Task {
-                try? await self.send(opcode: .unsubscribeClipboardRequest, message: UnsubscribeClipboardRequest(
-                    requestId: 0,
-                    subscriptionId: localSubId
-                ))
-            }
-            localSubscriptionId = nil
+        if let localSubId = self.localSubscriptionId {
+            try? await self.handle.send(opcode: .unsubscribeClipboardRequest, message: UnsubscribeClipboardRequest(
+                requestId: 0,
+                subscriptionId: localSubId
+            ))
+            self.localSubscriptionId = nil
         }
 
         // 리모트 구독 해제
-        if let subscription = remoteSubscription {
-            Task { @MainActor in
-                subscription.destroy()
-            }
-            remoteSubscription = nil
-        }
-
-        lastSentSnapshot = nil
-        lastFileTransferSnapshot = nil
+        await self.remoteSubscription?.destroy()
+        remoteSubscription = nil
+        
+        storeSnapshot(ClipboardDataSnapshot())
+        storeFileTransferSnapshot(FileTransferSnapshot())
         fileTransferCoordinator = nil
     }
 
-    override func handleStreamClose() {
-        cleanupSubscriptions()
-        super.handleStreamClose()
+    func handleStreamClose() async {
+        await cleanupSubscriptions()
     }
 
-    override func handleStreamError(error: any Error) {
+    func handleError(error: any Error) async {
         logger.error("ClipboardChannel stream error: \(error)")
-        cleanupSubscriptions()
-        super.handleStreamError(error: error)
+        await cleanupSubscriptions()
     }
 }

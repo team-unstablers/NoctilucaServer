@@ -7,18 +7,18 @@
 
 import Foundation
 
-public enum KeyboardHackResult {
+public enum KeyboardHackResult: Sendable {
     /// 다음 파이프라인으로 키보드 입력이 전달됩니다.
     case passthrough
-    
+
     /// 키보드 입력이 수정되어 다음 파이프라인으로 전달됩니다.
     case modify(LinuxKeycode)
-    
+
     /// 키보드 입력을 전달하지 않습니다.
     case stop
 }
 
-public protocol KeyboardHackPluginV1: AnyObject {
+public protocol KeyboardHackPluginV1: AnyObject, Sendable {
     static var id: String { get }
     static var name: String { get }
     static var description: String { get }

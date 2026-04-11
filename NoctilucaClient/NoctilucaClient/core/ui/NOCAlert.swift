@@ -21,6 +21,7 @@ typealias NOCAlertInternal = UIAlertController
 typealias NOCAlertInternal = NSAlert
 #endif
 
+@MainActor
 class NOCAlert: NSObject {
     let alert: NOCAlertInternal
     
@@ -57,8 +58,8 @@ class NOCAlert: NSObject {
     }
     
 #if canImport(UIKit)
-    func addButton(title: String, action: @escaping () -> Void) {
-        alert.addAction(UIAlertAction(title: title, style: .default) { _ in
+    func addButton(title: String, action: @escaping @Sendable () -> Void) {
+        alert.addAction(UIAlertAction(title: title, style: .default) { @Sendable [action] _ in
             action()
         })
     }

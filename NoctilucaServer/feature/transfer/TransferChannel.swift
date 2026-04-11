@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os
 
 import SiriusKit
 import zlib
@@ -81,11 +82,36 @@ extension TransferChannelArgumentsSet {
     }
 }
 
+// MARK: - TransferState
+
+/// TransferChannel의 가변 상태를 보호하는 클래스 (Lock 기반 최적화)
+final class TransferState: @unchecked Sendable {
+    private let lock = OSAllocatedUnfairLock()
+
+    var startNotification: TransferStartNotification? = nil
+    var expectedSequenceNumber: UInt64 = 0
+    var receivedTotalBytes: UInt64 = 0
+    var dataContinuation: AsyncStream<Data>.Continuation? = nil
+
+    var sendSequenceNumber: UInt64 = 0
+    var sendStartTime: ContinuousClock.Instant? = nil
+    var sentTotalBytes: UInt64 = 0
+
+    var maxSendBytesPerSecond: Int = 0
+    var isCompleted: Bool = false
+
+    func withLock<T>(_ body: (TransferState) throws -> T) rethrows -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return try body(self)
+    }
+}
+
 // MARK: - TransferChannel
 
-class TransferChannel: Channel {
-    override var serviceClass: ServiceClass { .background }
-    override var requiresExplicitActivation: Bool { true }
+final class TransferChannel: Channel, ChannelEventConsumer {
+    let handle: ChannelHandle
+    private static let defaultServiceClass: ServiceClass = .background
 
     static let defaultChunkSize: Int = 64 * 1024
 
@@ -100,38 +126,33 @@ class TransferChannel: Channel {
         )
     }
 
-
     let logger = NoctilucaLogger(category: "TransferChannel")
 
-    private(set) var transferDirection: TransferChannelDirection? = nil
-    private(set) var task: TransferChannelTask? = nil
+    /// FIXME: prepare()에서만 처음 한번 설정되고 이후 변경되지 않으므로 nonisolated(unsafe) 임시 사용한다.
+    nonisolated(unsafe) private(set) var transferDirection: TransferChannelDirection? = nil
+    
+    /// FIXME: prepare()에서만 처음 한번 설정되고 이후 변경되지 않으므로 nonisolated(unsafe) 임시 사용한다.
+    nonisolated(unsafe) private(set) var task: TransferChannelTask? = nil
 
-    // MARK: 수신 상태
-    private var startNotification: TransferStartNotification? = nil
-    private var expectedSequenceNumber: UInt64 = 0
-    private var receivedTotalBytes: UInt64 = 0
-    private var dataContinuation: AsyncStream<Data>.Continuation? = nil
-    private(set) var dataStream: AsyncStream<Data>? = nil
+    private let state = TransferState()
 
-    // MARK: 송신 상태
-    private var sendSequenceNumber: UInt64 = 0
-    private var sendStartTime: ContinuousClock.Instant? = nil
-    private var sentTotalBytes: UInt64 = 0
+    // AsyncStream 자체는 init 1회 설정 패턴 허용 대상
+    nonisolated(unsafe) private(set) var dataStream: AsyncStream<Data>? = nil
 
-    // MARK: 속도 제한 (bytes/s, 0 = 무제한)
-    private var maxSendBytesPerSecond: Int = 0
+    // Post-open 콜백. 한 번 설정된 후 변경되지 않으므로 nonisolated(unsafe) 허용.
+    nonisolated(unsafe) var onReady: (@Sendable () -> Void)? = nil
 
-    // MARK: Post-open 콜백
-    var onReady: (() -> Void)?
+    // ~Copyable CompatBridge; init 마지막 대입 후 수정 없음.
+    nonisolated(unsafe) private var channelEventCompatBridge: ChannelEventCompatBridge<TransferChannel>!
 
-    private(set) var isCompleted: Bool = false
+    init(handle: ChannelHandle) {
+        self.handle = handle
 
-    required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        super.init(using: streamHolder, identifier: identifier, direction: direction)
+        self.channelEventCompatBridge = ChannelEventCompatBridge(consumer: self, handle: handle)
     }
 
-    override func channelDidBecomeReady() {
-        activate()
+    func handleChannelReady() async {
+        await handle.setServiceClass(Self.defaultServiceClass)
         onReady?()
         onReady = nil
     }
@@ -169,30 +190,40 @@ class TransferChannel: Channel {
 
         // 속도 제한 설정 캐시
         if shouldSend() {
-            let limitKBps = SettingsStore.shared.settings.transfer.maxUploadSpeedKBps
-            maxSendBytesPerSecond = limitKBps > 0 ? limitKBps * 1024 : 0
+            let limitKBps = await SettingsStore.shared.settings.transfer.maxUploadSpeedKBps
+            state.withLock {
+                $0.maxSendBytesPerSecond = limitKBps > 0 ? limitKBps * 1024 : 0
+            }
         }
 
         if shouldRecv() {
-            let (stream, continuation) = AsyncStream<Data>.makeStream()
-            self.dataStream = stream
-            self.dataContinuation = continuation
+            var continuationRef: AsyncStream<Data>.Continuation? = nil
+            self.dataStream = AsyncStream<Data> { continuation in
+                continuationRef = continuation
+            }
+            state.withLock {
+                $0.dataContinuation = continuationRef
+            }
         }
     }
 
     func shouldRecv() -> Bool {
-        return (direction == .local && transferDirection == .download) ||
-               (direction == .remote && transferDirection == .upload)
+        return (handle.direction == .local && transferDirection == .download) ||
+               (handle.direction == .remote && transferDirection == .upload)
     }
 
     func shouldSend() -> Bool {
-        return (direction == .local && transferDirection == .upload) ||
-               (direction == .remote && transferDirection == .download)
+        return (handle.direction == .local && transferDirection == .upload) ||
+               (handle.direction == .remote && transferDirection == .download)
+    }
+
+    var isCompleted: Bool {
+        return state.withLock { $0.isCompleted }
     }
 
     // MARK: - 수신 (handleFrame)
 
-    override func handleFrame(frame: SiriusFrame) async throws {
+    func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
@@ -219,34 +250,44 @@ class TransferChannel: Channel {
     private func handleTransferStartNotification(_ frame: SiriusFrame) async throws {
         let notification = try TransferStartNotification.fromProtobufBytes(frame.data)
 
-        guard startNotification == nil else {
+        let isDuplicate = state.withLock { state in
+            if state.startNotification != nil { return true }
+            state.startNotification = notification
+            return false
+        }
+
+        guard !isDuplicate else {
             logger.error("Received duplicate TransferStartNotification - closing channel")
-            dataContinuation?.finish()
-            Task { [weak self] in try await self?.close() }
+            state.withLock { $0.dataContinuation?.finish() }
+            try? await handle.close()
             return
         }
 
-        self.startNotification = notification
         logger.info("Transfer started: name=\(notification.name), totalSize=\(notification.totalSize), contentType=\(notification.contentType)")
     }
 
     private func handleTransferDataChunk(_ frame: SiriusFrame) async throws {
-        guard startNotification != nil else {
-            logger.error("Received TransferDataChunk before TransferStartNotification - closing channel")
-            dataContinuation?.finish()
-            Task { [weak self] in try await self?.close() }
-            return
-        }
+        let chunk = try TransferDataChunk.fromProtobufBytes(frame.data)
         
         logger.info("handleTransferDataChunk() called - frame.length = \(frame.length)")
 
-        let chunk = try TransferDataChunk.fromProtobufBytes(frame.data)
+        let (hasStarted, seqMismatch, expectedSeq) = state.withLock { state -> (Bool, Bool, UInt64) in
+            let started = state.startNotification != nil
+            let mismatch = chunk.sequenceNumber != state.expectedSequenceNumber
+            return (started, mismatch, state.expectedSequenceNumber)
+        }
 
-        // 시퀀스 번호 검증
-        guard chunk.sequenceNumber == expectedSequenceNumber else {
-            logger.error("Sequence number mismatch: expected \(self.expectedSequenceNumber), got \(chunk.sequenceNumber)")
-            dataContinuation?.finish()
-            Task { [weak self] in try await self?.close() }
+        guard hasStarted else {
+            logger.error("Received TransferDataChunk before TransferStartNotification - closing channel")
+            state.withLock { $0.dataContinuation?.finish() }
+            try? await handle.close()
+            return
+        }
+
+        guard !seqMismatch else {
+            logger.error("Sequence number mismatch: expected \(expectedSeq), got \(chunk.sequenceNumber)")
+            state.withLock { $0.dataContinuation?.finish() }
+            try? await handle.close()
             return
         }
 
@@ -255,37 +296,44 @@ class TransferChannel: Channel {
             let computedCRC = CRC32Util.compute(chunk.data)
             if computedCRC != chunk.crc32 {
                 logger.error("CRC32 mismatch at sequence \(chunk.sequenceNumber): expected \(chunk.crc32), computed \(computedCRC)")
-                dataContinuation?.finish()
-                Task { [weak self] in try await self?.close() }
+                state.withLock { $0.dataContinuation?.finish() }
+                try? await handle.close()
                 return
             }
         }
 
         // 데이터를 AsyncStream으로 전달
-        receivedTotalBytes += UInt64(chunk.data.count)
-        dataContinuation?.yield(chunk.data)
-        expectedSequenceNumber += 1
+        let isEof = chunk.isEof
+        let dataCount = chunk.data.count
+
+        state.withLock { state in
+            state.receivedTotalBytes += UInt64(dataCount)
+            state.dataContinuation?.yield(chunk.data)
+            state.expectedSequenceNumber += 1
+        }
 
         // EOF 처리
-        // close()는 streamEventLoopTask.result를 await하므로,
-        // streamEventLoop 내부에서 직접 호출하면 self-deadlock이 발생한다.
-        if chunk.isEof {
+        if isEof {
             handleTransferComplete()
-            Task { [weak self] in try await self?.close() }
+            try? await handle.close()
         }
     }
 
     private func handleTransferComplete() {
+        let (notification, receivedBytes) = state.withLock { state -> (TransferStartNotification?, UInt64) in
+            state.dataContinuation?.finish()
+            state.isCompleted = true
+            return (state.startNotification, state.receivedTotalBytes)
+        }
+
         // totalSize 검증
-        if let notification = startNotification, notification.totalSize > 0 {
-            if receivedTotalBytes != notification.totalSize {
-                logger.warning("Total size mismatch: expected \(notification.totalSize), received \(self.receivedTotalBytes)")
+        if let notification = notification, notification.totalSize > 0 {
+            if receivedBytes != notification.totalSize {
+                logger.warning("Total size mismatch: expected \(notification.totalSize), received \(receivedBytes)")
             }
         }
 
-        dataContinuation?.finish()
-        isCompleted = true
-        logger.info("Transfer completed: received \(self.receivedTotalBytes) bytes")
+        logger.info("Transfer completed: received \(receivedBytes) bytes")
     }
 
     // MARK: - 송신
@@ -296,7 +344,7 @@ class TransferChannel: Channel {
             logger.error("Cannot send on a receive-only channel")
             return
         }
-        try await send(opcode: .transferStartNotification, message: notification)
+        try await handle.send(opcode: .transferStartNotification, message: notification)
     }
 
     /// 단일 청크를 전송합니다. 스트리밍 송신 시 사용.
@@ -308,33 +356,41 @@ class TransferChannel: Channel {
 
         let crc = CRC32Util.compute(chunkData)
 
+        let seqNum = state.withLock { state -> UInt64 in
+            let seq = state.sendSequenceNumber
+            state.sendSequenceNumber += 1
+            if isEof {
+                state.isCompleted = true
+            }
+            return seq
+        }
+
         let chunk = TransferDataChunk(
-            sequenceNumber: sendSequenceNumber,
+            sequenceNumber: seqNum,
             data: chunkData,
             crc32: crc,
             isEof: isEof
         )
 
-        try await send(opcode: .transferDataChunk, message: chunk)
-        sendSequenceNumber += 1
+        try await handle.send(opcode: .transferDataChunk, message: chunk)
 
-        if isEof {
-            isCompleted = true
-        } else {
+        if !isEof {
             try await throttleSendIfNeeded(bytesSent: chunkData.count)
         }
     }
 
     private func throttleSendIfNeeded(bytesSent: Int) async throws {
-        guard maxSendBytesPerSecond > 0 else { return }
+        let (maxLimit, startTime, sentBytes) = state.withLock { state -> (Int, ContinuousClock.Instant, UInt64) in
+            if state.sendStartTime == nil { state.sendStartTime = ContinuousClock.now }
+            state.sentTotalBytes += UInt64(bytesSent)
+            return (state.maxSendBytesPerSecond, state.sendStartTime!, state.sentTotalBytes)
+        }
+
+        guard maxLimit > 0 else { return }
 
         let now = ContinuousClock.now
-        if sendStartTime == nil { sendStartTime = now }
-
-        sentTotalBytes += UInt64(bytesSent)
-
-        let expectedDuration = Duration.seconds(Double(sentTotalBytes) / Double(maxSendBytesPerSecond))
-        let elapsed = now - sendStartTime!
+        let expectedDuration = Duration.seconds(Double(sentBytes) / Double(maxLimit))
+        let elapsed = now - startTime
 
         if expectedDuration > elapsed {
             try await Task.sleep(for: expectedDuration - elapsed)
@@ -409,18 +465,19 @@ class TransferChannel: Channel {
 
     // MARK: - 스트림 종료 처리
 
-    override func handleStreamClose() {
-        if !isCompleted {
+    func handleStreamClose() async {
+        let completed = state.withLock { state -> Bool in
+            state.dataContinuation?.finish()
+            return state.isCompleted
+        }
+        if !completed {
             logger.warning("Stream closed before transfer completed")
         }
-        dataContinuation?.finish()
-        super.handleStreamClose()
     }
 
-    override func handleStreamError(error: any Error) {
+    func handleError(error: any Error) async {
         logger.error("Stream error: \(error)")
-        dataContinuation?.finish()
-        super.handleStreamError(error: error)
+        state.withLock { $0.dataContinuation?.finish() }
     }
 }
 
@@ -428,20 +485,18 @@ class TransferChannel: Channel {
 
 extension TransferChannel {
     static func createIfAccepts(
-        _ streamHolder: StreamHolder,
-        identifier: ChannelIdentifier,
-        direction: ChannelDirection,
+        handle: ChannelHandle,
         args: [String]
     ) async throws -> ChannelCreationResult {
         guard let argsSet = TransferChannelArgumentsSet.parse(from: args) else {
             return .rejected(code: -1, reason: "Invalid arguments for transfer channel")
         }
 
-        guard TransferChannel.accepts(argsSet, direction: direction) else {
+        guard TransferChannel.accepts(argsSet, direction: handle.direction) else {
             return .rejected(code: -1, reason: "Unacceptable arguments for transfer channel")
         }
 
-        let transferChannel = TransferChannel(using: streamHolder, identifier: identifier, direction: direction)
+        let transferChannel = TransferChannel(handle: handle)
         try await transferChannel.prepare(argsSet)
 
         return .accepted(transferChannel)

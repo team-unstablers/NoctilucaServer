@@ -22,7 +22,7 @@ enum SimpleQUICClientEvent {
 }
 
 // 단일 스트림을 열고 간단한 메시지를 주고받는 QUIC 클라이언트.
-class SimpleQUICClient {
+final class SimpleQUICClient: @unchecked Sendable {
     let events: AsyncStream<SimpleQUICClientEvent>
     let continuation: AsyncStream<SimpleQUICClientEvent>.Continuation
     
@@ -49,50 +49,68 @@ class SimpleQUICClient {
         let parameters = self.makeParameters()
         let endpoint = NWEndpoint.hostPort(host: .init(self.host), port: .init(integerLiteral: self.port))
         let connection = NWConnection(to: endpoint, using: parameters)
-        
+
         self.connection = connection
-        
+
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            var resumed = false
-            let resumeOnce: () -> Void = {
-                guard resumed == false else { return }
-                resumed = true
-                cont.resume()
-            }
-            
+            let resumer = ResumeOnce(continuation: cont)
+
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(5))
-                guard resumed == false else { return }
-                
+                if resumer.isResumed { return }
+
                 self?.continuation.yield(.error(error: SimpleQUICClientError.connectTimeout))
                 self?.continuation.yield(.disconnected)
                 connection.cancel()
-                resumeOnce()
+                resumer.resume()
             }
-            
+
             connection.stateUpdateHandler = { [weak self] state in
                 guard let self else { return }
-                
+
                 switch state {
                 case .ready:
                     self.continuation.yield(.connected)
                     self.continuation.yield(.mainStreamOpen)
-                    resumeOnce()
+                    resumer.resume()
                 case .waiting(let error):
                     self.continuation.yield(.error(error: error))
                 case .failed(let error):
                     self.continuation.yield(.error(error: error))
                     self.continuation.yield(.disconnected)
-                    resumeOnce()
+                    resumer.resume()
                 case .cancelled:
                     self.continuation.yield(.disconnected)
-                    resumeOnce()
+                    resumer.resume()
                 default:
                     break
                 }
             }
-            
+
             connection.start(queue: self.queue)
+        }
+    }
+
+    private final class ResumeOnce: @unchecked Sendable {
+        private let lock = NSLock()
+        private var resumed = false
+        private let cont: CheckedContinuation<Void, Never>
+
+        init(continuation: CheckedContinuation<Void, Never>) {
+            self.cont = continuation
+        }
+
+        var isResumed: Bool {
+            lock.withLock { resumed }
+        }
+
+        func resume() {
+            let shouldResume: Bool = lock.withLock {
+                guard !resumed else { return false }
+                resumed = true
+                return true
+            }
+            if shouldResume { cont.resume() }
         }
     }
     

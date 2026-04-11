@@ -38,7 +38,7 @@ public extension Binding {
     where TFloat:  BinaryFloatingPoint{
         Binding<TFloat> (
             get: { TFloat(Int(valueBinding.wrappedValue?.rawValue ?? "0")!) },
-            set: { valueBinding.wrappedValue?.rawValue = String(Int($0)) }
+            set: { valueBinding.wrappedValue = .init(rawValue: String(Int($0))) }
         )
     }
 
