@@ -432,7 +432,8 @@ final class AppSession {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
         
-        var origin = frame.origin
+        // FIXME: 멀티 디스플레이 사용 시 이건 난감해짐
+        var origin = CGPoint(x: max(0, frame.origin.x), y: max(0, frame.origin.y))
         var size = frame.size
         
         guard let positionValue = AXValueCreate(.cgPoint, &origin),
