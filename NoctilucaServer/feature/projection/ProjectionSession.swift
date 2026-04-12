@@ -527,11 +527,13 @@ extension ProjectionSession: ScreenRecorderDelegate {
     }
 
     nonisolated func screenRecorder(_ recorder: any ScreenRecorder, didStopWithError error: (any Error)?) {
-        self.assumeIsolated { me in
-            me.logger.info("Screen recorder stopped for projection session \(me.id), error: \(String(describing: error))")
+        Task {
+            await self.logger.info("Screen recorder stopped for projection session \(self.id), error: \(String(describing: error))")
+            
+            let isStopped = await self.isStopped
 
-            if error != nil, !me.isStopped {
-                Task { [me] in await me.reconfigureRecorder() }
+            if error != nil, !isStopped {
+                Task { [weak self] in await self?.reconfigureRecorder() }
             }
         }
     }

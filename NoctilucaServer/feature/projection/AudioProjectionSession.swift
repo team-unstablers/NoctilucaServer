@@ -324,11 +324,13 @@ extension AudioProjectionSession: AudioRecorderDelegate {
     }
 
     nonisolated func audioRecorder(_ recorder: any AudioRecorder, didStopWithError error: (any Error)?) {
-        self.assumeIsolated { me in
-            me.logger.info("audio recorder stopped for audio projection session \(me.id), error: \(String(describing: error))")
+        Task {
+            await self.logger.info("audio recorder stopped for audio projection session \(self.id), error: \(String(describing: error))")
+            
+            let isStopped = await self.isStopped
 
-            if error != nil, !me.isStopped {
-                Task { [me] in await me.reconfigureRecorder() }
+            if error != nil, !isStopped {
+                Task { [self] in await self.reconfigureRecorder() }
             }
         }
     }
