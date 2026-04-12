@@ -100,8 +100,17 @@ struct CodecSpecificationListContainer: View {
                     }
                 },
                 editSheet: { specification, onSave in
-                    CodecSpecificationSheet(specification: specification) { newSpecification in
-                        onSave(newSpecification)
+                    Group {
+                        switch specification.fourCC {
+                        case .vp80:
+                            VP8CodecSpecificationSheet(specification: specification) { newSpecification in
+                                onSave(newSpecification)
+                            }
+                        default:
+                            CodecSpecificationSheet(specification: specification) { newSpecification in
+                                onSave(newSpecification)
+                            }
+                        }
                     }
                 }
             )
