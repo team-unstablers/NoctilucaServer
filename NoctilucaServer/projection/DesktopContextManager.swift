@@ -1396,6 +1396,18 @@ extension DesktopContextManager: AppSessionDelegate {
 
     func appSession(_ session: AppSession, didUpdateWindow window: WindowInfo) {
         logger.info("[\(session.appIdentifier)] window updated: #\(window.windowID) \"\(window.windowTitle)\" (\(window.bounds.x),\(window.bounds.y) \(window.bounds.width)x\(window.bounds.height))")
+
+        // FIXME: 멀티 디스플레이 사용 시 이건 난감해짐
+        if window.bounds.x < 0 || window.bounds.y < 0 {
+            let correctedOrigin = CGPoint(x: max(0, window.bounds.x), y: max(0, window.bounds.y))
+            let correctedFrame = CGRect(
+                origin: correctedOrigin,
+                size: CGSize(width: window.bounds.width, height: window.bounds.height)
+            )
+            logger.warning("[\(session.appIdentifier)] window #\(window.windowID) out of bounds (\(window.bounds.x),\(window.bounds.y)), forcing to (\(correctedOrigin.x),\(correctedOrigin.y))")
+            try? session.setWindowFrame(id: CGWindowID(window.windowID), frame: correctedFrame)
+        }
+
         // 통합 이벤트: 이동, 리사이즈, 메타 변경을 하나로 전달
         let event = WindowChangedEvent(
             eventType: [.moved, .resized, .metadataChanged],
