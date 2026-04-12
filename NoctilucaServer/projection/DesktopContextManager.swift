@@ -1186,6 +1186,7 @@ final class DesktopContextManager {
                 guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
                     return
                 }
+                self.logger.info("[Workspace] app launched: \(app.localizedName ?? "?") (\(app.bundleIdentifier ?? "?"), pid=\(app.processIdentifier))")
                 self.delegate?.desktopManager(self, didDetectAppLaunch: app)
 
                 let appInfo = ApplicationInfo(
@@ -1214,6 +1215,7 @@ final class DesktopContextManager {
                 guard let self, let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
                     return
                 }
+                self.logger.info("[Workspace] app terminated: \(app.localizedName ?? "?") (\(app.bundleIdentifier ?? "?"), pid=\(app.processIdentifier))")
                 if let session = self.activeSessions[app.processIdentifier] {
                     session.delegate?.appSessionDidTerminate(session)
                 }
@@ -1245,9 +1247,11 @@ final class DesktopContextManager {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-                self.delegate?.desktopManager(self, didChangeFrontmostApp: app ?? self.workspace.frontmostApplication)
+                let activatedApp = app ?? self.workspace.frontmostApplication
+                self.logger.info("[Workspace] app activated: \(activatedApp?.localizedName ?? "?") (\(activatedApp?.bundleIdentifier ?? "?"), pid=\(activatedApp?.processIdentifier ?? -1))")
+                self.delegate?.desktopManager(self, didChangeFrontmostApp: activatedApp)
 
-                if let activatedApp = app ?? self.workspace.frontmostApplication {
+                if let activatedApp {
                     let appInfo = ApplicationInfo(
                         bundleId: activatedApp.bundleIdentifier ?? "",
                         displayName: activatedApp.localizedName ?? "",
@@ -1332,6 +1336,7 @@ final class DesktopContextManager {
 
 extension DesktopContextManager: AppSessionDelegate {
     func appSessionDidTerminate(_ session: AppSession) {
+        logger.info("[\(session.appIdentifier)] app terminated (windows: \(session.monitoredWindows.count))")
         // 해당 앱의 모든 윈도우에 closed 이벤트
         for (windowID, _) in session.monitoredWindows {
             let event = WindowChangedEvent(
@@ -1348,18 +1353,19 @@ extension DesktopContextManager: AppSessionDelegate {
     }
 
     func appSessionDidBecomeActive(_ session: AppSession) {
-        // 현재 미사용
+        logger.info("[\(session.appIdentifier)] became active")
     }
 
     func appSessionDidResignActive(_ session: AppSession) {
-        // 현재 미사용
+        logger.info("[\(session.appIdentifier)] resigned active")
     }
 
     func appSessionDidUpdateMenu(_ session: AppSession, menu: AppMenuNode) {
-        // 현재 미사용
+        logger.info("[\(session.appIdentifier)] menu updated: \"\(menu.title)\"")
     }
 
     func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo) {
+        logger.info("[\(session.appIdentifier)] window discovered: #\(window.windowID) \"\(window.windowTitle)\" (\(window.role), \(window.bounds.width)x\(window.bounds.height))")
         let event = WindowChangedEvent(
             eventType: .metadataChanged,
             windowID: window.windowID,
@@ -1369,6 +1375,7 @@ extension DesktopContextManager: AppSessionDelegate {
     }
 
     func appSession(_ session: AppSession, didUpdateWindow window: WindowInfo) {
+        logger.info("[\(session.appIdentifier)] window updated: #\(window.windowID) \"\(window.windowTitle)\" (\(window.bounds.x),\(window.bounds.y) \(window.bounds.width)x\(window.bounds.height))")
         // 통합 이벤트: 이동, 리사이즈, 메타 변경을 하나로 전달
         let event = WindowChangedEvent(
             eventType: [.moved, .resized, .metadataChanged],
@@ -1379,6 +1386,7 @@ extension DesktopContextManager: AppSessionDelegate {
     }
 
     func appSession(_ session: AppSession, didCloseWindow windowID: WindowID) {
+        logger.info("[\(session.appIdentifier)] window closed: #\(windowID)")
         let event = WindowChangedEvent(
             eventType: .closed,
             windowID: UInt64(windowID),
@@ -1388,6 +1396,7 @@ extension DesktopContextManager: AppSessionDelegate {
     }
 
     func appSession(_ session: AppSession, didChangeWindowFocusTo windowID: WindowID?) {
+        logger.info("[\(session.appIdentifier)] window focus changed: \(windowID.map { "#\($0)" } ?? "none")")
         if let windowID {
             let window = session.monitoredWindows[windowID]
             let event = WindowChangedEvent(
