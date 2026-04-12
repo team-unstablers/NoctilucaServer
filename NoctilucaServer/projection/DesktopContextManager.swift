@@ -267,7 +267,7 @@ final class AppSession {
     // 디바운스+병합: 잦은 AX 노티를 100~200ms 간격으로 묶고, 실행 중 중복을 한 번으로 합친다.
     private let refreshSubject = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
-    private let refreshDelay: TimeInterval = 0.15
+    private let refreshDelay: TimeInterval = 0.05
     private var isRefreshing = false
     private var pendingRefresh = false
     private var isStopped = false
@@ -1366,6 +1366,74 @@ extension DesktopContextManager: AppSessionDelegate {
 
     func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo) {
         logger.info("[\(session.appIdentifier)] window discovered: #\(window.windowID) \"\(window.windowTitle)\" (\(window.role), \(window.bounds.width)x\(window.bounds.height))")
+        
+        guard let connection = SkyLightPrivate.SLSMainConnectionID?() else {
+            return
+        }
+        
+        var targetConnection: CGSConnectionID = 0
+        _ = SkyLightPrivate.SLSGetWindowOwner?(connection, CGWindowID(window.windowID), &targetConnection)
+        
+        
+        var spaceList: CFArray = [] as CFArray
+        
+        let alsoMinimized = true
+        let options = alsoMinimized ? 0x7 : 0x2
+        
+        var setTags: UInt64 = 0
+        var clearTags: UInt64 = 0
+        
+        let windowList = SkyLightPrivate.SLSCopyWindowsWithOptionsAndTags?(
+            connection,
+            UInt32(targetConnection),
+            spaceList,
+            UInt32(0x2),
+            &setTags,
+            &clearTags
+        )
+        
+        logger.info("\(windowList!)")
+        
+        
+        let query = SkyLightPrivate.SLSWindowQueryWindows?(connection, [window.windowID] as CFArray, 1)
+        let iterator = SkyLightPrivate.SLSWindowQueryResultCopyWindows!(query!)
+        
+        let windowId = SkyLightPrivate.SLSWindowIteratorGetWindowID!(iterator!)
+        let parentId = SkyLightPrivate.SLSWindowIteratorGetParentID!(iterator!)
+        let tags = SkyLightPrivate.SLSWindowIteratorGetTags!(iterator!)
+        let attributes = SkyLightPrivate.SLSWindowIteratorGetAttributes!(iterator!)
+        SkyLightPrivate.SLSCopyWindowProperty
+        
+        let cond1 = (attributes & 0x2) != 0
+        let cond2 = ((tags & 0x400000000000000) != 0)
+        let cond3 = ((tags & 0x1) != 0)
+        let cond4 = ((tags & 0x2) != 0)
+        let cond5 = ((tags & 0x80000000) != 0)
+        
+        logger.info("[APPSTREAM] [\(session.appIdentifier)] [\(iterator)] \(windowId) => \(parentId)")
+        logger.info("[APPSTREAM] \(tags) \(attributes), cond1: \(cond1), cond2: \(cond2), cond3: \(cond3), cond4: \(cond4), cond5: \(cond5)")
+        
+        // not documented
+        let isNormalWindow = ((windowId == 0) && (((attributes & 0x2) != 0) || ((tags & 0x400000000000000) != 0)) && ((((tags & 0x1)) != 0) || (((tags & 0x2) != 0) && ((tags & 0x80000000) != 0))))
+        
+
+        
+        
+        
+        while (true) {
+            let result = SkyLightPrivate.SLSWindowIteratorAdvance!(iterator!)
+            
+            guard result == .success else {
+                logger.error("failed: \(result)")
+                break
+            }
+            
+            let windowId = SkyLightPrivate.SLSWindowIteratorGetWindowID!(iterator!)
+            let parentId = SkyLightPrivate.SLSWindowIteratorGetParentID!(iterator!)
+            
+            logger.info("[\(session.appIdentifier)] \(windowId) => \(parentId)")
+        }
+        
         let event = WindowChangedEvent(
             eventType: .metadataChanged,
             windowID: window.windowID,

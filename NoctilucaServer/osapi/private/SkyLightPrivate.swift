@@ -210,6 +210,12 @@ class SkyLightPrivate {
         args: (CFTypeRef.self,),
         ret: UInt64.self
     )
+    
+    #PrivateFunction(
+        "SLSWindowIteratorGetAttributes",
+        args: (CFTypeRef.self,),
+        ret: UInt64.self
+    )
 
     // MARK: - Display / Space Management
 
