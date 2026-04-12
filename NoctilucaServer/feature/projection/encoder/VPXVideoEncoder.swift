@@ -291,7 +291,7 @@ final class VPXVideoEncoder: VideoEncoder, @unchecked Sendable {
                 success = true
                 return
             }
-            self.encoderCfg.rc_target_bitrate = UInt32(bitrateKbps)
+            self.applyTargetBitrate(Int(max(bitrateKbps, 1)), to: &self.encoderCfg)
             let status = vpx_codec_enc_config_set(ctx, &self.encoderCfg)
             if status != VPX_CODEC_OK {
                 self.logger.error("vpx_codec_enc_config_set failed status=\(status.rawValue)")
@@ -305,15 +305,30 @@ final class VPXVideoEncoder: VideoEncoder, @unchecked Sendable {
 
     @discardableResult
     func updateMaxBitrate(bitrateKbps: Int) -> Bool {
-        // VP8 in libvpx has no direct analog to VideoToolbox's DataRateLimits.
-        // Keep the requested value for bookkeeping but do not reconfigure the
-        // codec. The effective cap is still controlled by `rc_target_bitrate`
-        // plus the VBV buffer parameters set in `ensureEncoderContext`.
         guard bitrateKbps > 0 else { return false }
+        
+        var success = false
+        
         workerQueue.sync {
             self.maxBitrateKbps = bitrateKbps
+            guard let ctx = self.encoderCtx else {
+                // Encoder not yet created — value will be picked up on next init.
+                success = true
+                return
+            }
+            
+            self.applyMaxBitrate(Int(max(bitrateKbps, 1)), to: &self.encoderCfg)
+            
+            let status = vpx_codec_enc_config_set(ctx, &self.encoderCfg)
+            if status != VPX_CODEC_OK {
+                self.logger.error("vpx_codec_enc_config_set failed status=\(status.rawValue)")
+                success = false
+                return
+            }
+            success = true
         }
-        return true
+        
+        return success
     }
 
     static func isSupported(codec: CodecSpecification) -> Bool {
@@ -382,8 +397,6 @@ private extension VPXVideoEncoder {
             if framesPerSecond <= 0 { framesPerSecond = 60 }
         }
         
-        framesPerSecond = 60
-        
         encodedFrameDurationMicros = UInt(1_000_000 / framesPerSecond)
 
         cfg.g_w = UInt32(sourceWidth)
@@ -391,12 +404,23 @@ private extension VPXVideoEncoder {
         cfg.g_timebase = vpx_rational_t(num: 1, den: 1_000_000)
         cfg.g_pass = VPX_RC_ONE_PASS
         cfg.g_lag_in_frames = 0
-        // cfg.g_threads = 2
+        // cfg.g_threads = 4
         cfg.g_error_resilient = 1
         cfg.kf_mode = VPX_KF_AUTO
         cfg.kf_min_dist = 0
         
         // cfg.rc_dropframe_thresh = 30
+        cfg.rc_dropframe_thresh = 0
+        
+        let vtCompatMaxDuration = 1.0
+        
+        let maxBufferSize = vtCompatMaxDuration * 1000
+        // videoToolboxDataRateLimits = [bytesPerSecond, 1.0]
+        /*
+        cfg.rc_buf_sz = UInt32(maxBufferSize)
+        cfg.rc_buf_initial_sz = UInt32(maxBufferSize * 0.5)
+        cfg.rc_buf_optimal_sz = UInt32(maxBufferSize)
+         */
         
         // Match VTVideoEncoder's ~4-second keyframe interval. `kf_max_dist`
         // counts input frames, not ticks, so this stays expressed in frames.
@@ -430,7 +454,7 @@ private extension VPXVideoEncoder {
             logger.warning("VP8E_SET_STATIC_THRESHOLD failed status=\(staticThreshStatus)")
         }
         
-        let partitionStatus = noctiluca_vpx_codec_control_int(rawCtx, Int32(VP8E_SET_TOKEN_PARTITIONS.rawValue), 4)
+        let partitionStatus = noctiluca_vpx_codec_control_int(rawCtx, Int32(VP8E_SET_TOKEN_PARTITIONS.rawValue), 2)
         if partitionStatus != 0 {
             logger.warning("VP8E_SET_TOKEN_PARTITIONS failed status=\(partitionStatus)")
         }
@@ -484,19 +508,41 @@ private extension VPXVideoEncoder {
 // MARK: - Quality mapping
 
 private extension VPXVideoEncoder {
+    func bitrateBitsPerSecond(fromKbps bitrateKbps: Int) -> Int {
+        return max(bitrateKbps, 0) * 1000
+    }
+    
+    func bitrateBytesPerSecond(fromKbps bitrateKbps: Int) -> Int {
+        return bitrateBitsPerSecond(fromKbps: bitrateKbps) / 8
+    }
+    
+    func applyTargetBitrate(_ bitrateKbps: Int, to cfg: inout vpx_codec_enc_cfg_t) {
+        cfg.rc_target_bitrate = UInt32(bitrateKbps)
+    }
+    
+    func applyMaxBitrate(_ bitrateKbps: Int, to cfg: inout vpx_codec_enc_cfg_t) {
+        let targetBitrate = cfg.rc_target_bitrate
+        let overshootPercent = UInt32(((Double(bitrateKbps) - Double(targetBitrate)) / Double(targetBitrate)) * 100)
+        cfg.rc_overshoot_pct = overshootPercent
+    }
+    
     func applyQualityMapping(to cfg: inout vpx_codec_enc_cfg_t, codec: SiriusKit.Codec) {
         switch codec.quality {
         case .constantBitrate(let bitrateKbps):
             targetBitrateKbps = Int(bitrateKbps)
             maxBitrateKbps = Int(bitrateKbps)
             cfg.rc_end_usage = VPX_CBR
-            cfg.rc_target_bitrate = UInt32(max(bitrateKbps, 1))
+            
+            self.applyTargetBitrate(Int(max(bitrateKbps, 1)), to: &cfg)
+            self.applyMaxBitrate(Int(max(bitrateKbps, 1)), to: &cfg)
 
         case .variableBitrate(let targetKbps, let maxKbps):
             targetBitrateKbps = Int(targetKbps)
             maxBitrateKbps = Int(maxKbps)
             cfg.rc_end_usage = VPX_VBR
-            cfg.rc_target_bitrate = UInt32(max(targetKbps, 1))
+            
+            self.applyTargetBitrate(Int(max(targetKbps, 1)), to: &cfg)
+            self.applyMaxBitrate(Int(max(maxKbps, 1)), to: &cfg)
 
         case .fixedQuality(let factor):
             let clamped = max(0, min(Int(factor), 100))
@@ -521,7 +567,9 @@ private extension VPXVideoEncoder {
             targetBitrateKbps = defaultTargetBitrateKbps
             maxBitrateKbps = defaultMaxBitrateKbps
             cfg.rc_end_usage = VPX_VBR
-            cfg.rc_target_bitrate = UInt32(defaultTargetBitrateKbps)
+            
+            self.applyTargetBitrate(defaultTargetBitrateKbps, to: &cfg)
+            self.applyMaxBitrate(defaultMaxBitrateKbps, to: &cfg)
         }
     }
 }
