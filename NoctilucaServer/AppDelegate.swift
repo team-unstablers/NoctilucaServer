@@ -68,6 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         TCCUtil.shared.requestAccess(for: .notifications)
         
         try? ApplicationServicesPrivate.open()
+        try? SkyLightPrivate.open()
         
         UNUserNotificationCenter.current().delegate = self
         
