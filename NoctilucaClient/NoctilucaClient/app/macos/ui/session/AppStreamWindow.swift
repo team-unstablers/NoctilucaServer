@@ -80,18 +80,6 @@ class AppStreamWindow: NSWindow {
         self.contentView = NSHostingView(rootView: rootView)
     }
     
-    override func sendEvent(_ event: NSEvent) {
-        if !isKeyWindow {
-            switch event.type {
-            case .mouseMoved, .mouseEntered:
-                makeKeyAndOrderFront(nil)
-            default:
-                break
-            }
-        }
-        super.sendEvent(event)
-    }
-
     @MainActor
     deinit {
         hidioController?.disconnect(mouse.identifierString)
