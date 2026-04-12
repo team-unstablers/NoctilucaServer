@@ -25,6 +25,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     }
 
     private(set) var windows: [UInt64: WindowState] = [:]
+    private var closedWindowIDs: Set<UInt64> = []
     private var streamId: UUID?
     private var eventSubscription: AnyCancellable?
     private var resizeDebounceTask: [UInt64: Task<Void, Never>] = [:]
@@ -80,6 +81,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         }
 
         self.streamId = nil
+        self.closedWindowIDs.removeAll()
     }
 
     func destroyAll() {
@@ -89,12 +91,15 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         }
 
         self.streamId = nil
+        self.closedWindowIDs.removeAll()
     }
 
     // MARK: - Window Management
 
     private func spawnWindow(_ windowInfo: WindowInfo) async {
         let windowID = windowInfo.windowID
+
+        guard !closedWindowIDs.contains(windowID) else { return }
 
         guard windows[windowID] == nil else {
             windows[windowID]?.window.makeKeyAndOrderFront(nil)
@@ -141,6 +146,10 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     private func destroyWindow(windowID: UInt64, sendCloseToServer: Bool) {
         resizeDebounceTask[windowID]?.cancel()
         resizeDebounceTask.removeValue(forKey: windowID)
+
+        if sendCloseToServer {
+            closedWindowIDs.insert(windowID)
+        }
 
         // 딕셔너리에서 먼저 제거하여 windowWillClose → destroyWindow 재귀 호출 방지
         guard let state = windows.removeValue(forKey: windowID) else { return }
