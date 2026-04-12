@@ -44,6 +44,22 @@ private func axElementAttribute(_ element: AXUIElement, _ attribute: String) -> 
     return (ref as! AXUIElement)
 }
 
+/// SkyLight Window Query API를 통해 윈도우의 parent window ID를 조회한다.
+/// 실패 시 nil.
+private func skyLightParentWindowID(for windowID: CGWindowID) -> UInt64? {
+    guard let connection = SkyLightPrivate.SLSMainConnectionID?() else {
+        return nil
+    }
+    guard let query = SkyLightPrivate.SLSWindowQueryWindows?(connection, [windowID] as CFArray, 1) else {
+        return nil
+    }
+    guard let iterator = SkyLightPrivate.SLSWindowQueryResultCopyWindows?(query) else {
+        return nil
+    }
+    let parentID = SkyLightPrivate.SLSWindowIteratorGetParentID?(iterator) ?? 0
+    return parentID != 0 ? UInt64(parentID) : nil
+}
+
 /// AXRole/AXSubrole 조합을 WindowRole로 매핑
 private func mapAXRoleToWindowRole(axRole: String?, axSubrole: String?) -> WindowRole {
     guard let axRole else { return .normal }
@@ -72,14 +88,13 @@ private struct AXWindowAttributes {
     let axClassName: String?
     let axRole: String?
     let axSubrole: String?
-    let parentWindowID: UInt64?
 
     var windowRole: WindowRole {
         mapAXRoleToWindowRole(axRole: axRole, axSubrole: axSubrole)
     }
 
     static let empty = AXWindowAttributes(
-        axClassName: nil, axRole: nil, axSubrole: nil, parentWindowID: nil
+        axClassName: nil, axRole: nil, axSubrole: nil
     )
 }
 
@@ -89,20 +104,10 @@ private func readAXWindowAttributes(from element: AXUIElement) -> AXWindowAttrib
     let axRole = axStringAttribute(element, kAXRoleAttribute as String)
     let axSubrole = axStringAttribute(element, kAXSubroleAttribute as String)
 
-    var parentWindowID: UInt64? = nil
-    if let parentElement = axElementAttribute(element, kAXParentAttribute as String) {
-        var parentWinID: CGWindowID = 0
-        if let error = ApplicationServicesPrivate._AXUIElementGetWindow?(parentElement, &parentWinID),
-           error == .success, parentWinID != 0 {
-            parentWindowID = UInt64(parentWinID)
-        }
-    }
-
     return AXWindowAttributes(
         axClassName: axClassName,
         axRole: axRole,
-        axSubrole: axSubrole,
-        parentWindowID: parentWindowID
+        axSubrole: axSubrole
     )
 }
 
@@ -660,7 +665,7 @@ final class AppSession {
                 applicationBundleID: bundleID,
                 windowClass: axAttrs.axClassName ?? bundleID,
                 role: axAttrs.windowRole,
-                parentWindowID: axAttrs.parentWindowID,
+                parentWindowID: skyLightParentWindowID(for: windowID),
                 bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
                 iconHash: nil,
                 thumbnail: nil,
@@ -669,7 +674,7 @@ final class AppSession {
                 flags: flags
             )
             
-            if windowInfo.isNSLocalWindowSharingWindow {
+            if windowInfo.isNSLocalWindowSharingWindow || !windowInfo.isStandaloneWindow {
                 return nil
             }
             
@@ -1124,7 +1129,7 @@ final class DesktopContextManager {
                 applicationBundleID: bundleID,
                 windowClass: axAttrs.axClassName ?? bundleID,
                 role: axAttrs.windowRole,
-                parentWindowID: axAttrs.parentWindowID,
+                parentWindowID: skyLightParentWindowID(for: windowID),
                 bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
                 iconHash: nil,
                 thumbnail: nil,
@@ -1133,7 +1138,7 @@ final class DesktopContextManager {
                 flags: flags
             )
             
-            if windowInfo.isNSLocalWindowSharingWindow {
+            if windowInfo.isNSLocalWindowSharingWindow || !windowInfo.isStandaloneWindow {
                 return nil
             }
             
@@ -1366,74 +1371,20 @@ extension DesktopContextManager: AppSessionDelegate {
 
     func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo) {
         logger.info("[\(session.appIdentifier)] window discovered: #\(window.windowID) \"\(window.windowTitle)\" (\(window.role), \(window.bounds.width)x\(window.bounds.height))")
-        
-        guard let connection = SkyLightPrivate.SLSMainConnectionID?() else {
-            return
-        }
-        
-        var targetConnection: CGSConnectionID = 0
-        _ = SkyLightPrivate.SLSGetWindowOwner?(connection, CGWindowID(window.windowID), &targetConnection)
-        
-        
-        var spaceList: CFArray = [] as CFArray
-        
-        let alsoMinimized = true
-        let options = alsoMinimized ? 0x7 : 0x2
-        
-        var setTags: UInt64 = 0
-        var clearTags: UInt64 = 0
-        
-        let windowList = SkyLightPrivate.SLSCopyWindowsWithOptionsAndTags?(
-            connection,
-            UInt32(targetConnection),
-            spaceList,
-            UInt32(0x2),
-            &setTags,
-            &clearTags
-        )
-        
-        logger.info("\(windowList!)")
-        
-        
-        let query = SkyLightPrivate.SLSWindowQueryWindows?(connection, [window.windowID] as CFArray, 1)
-        let iterator = SkyLightPrivate.SLSWindowQueryResultCopyWindows!(query!)
-        
-        let windowId = SkyLightPrivate.SLSWindowIteratorGetWindowID!(iterator!)
-        let parentId = SkyLightPrivate.SLSWindowIteratorGetParentID!(iterator!)
-        let tags = SkyLightPrivate.SLSWindowIteratorGetTags!(iterator!)
-        let attributes = SkyLightPrivate.SLSWindowIteratorGetAttributes!(iterator!)
-        SkyLightPrivate.SLSCopyWindowProperty
-        
-        let cond1 = (attributes & 0x2) != 0
-        let cond2 = ((tags & 0x400000000000000) != 0)
-        let cond3 = ((tags & 0x1) != 0)
-        let cond4 = ((tags & 0x2) != 0)
-        let cond5 = ((tags & 0x80000000) != 0)
-        
-        logger.info("[APPSTREAM] [\(session.appIdentifier)] [\(iterator)] \(windowId) => \(parentId)")
-        logger.info("[APPSTREAM] \(tags) \(attributes), cond1: \(cond1), cond2: \(cond2), cond3: \(cond3), cond4: \(cond4), cond5: \(cond5)")
-        
-        // not documented
-        let isNormalWindow = ((windowId == 0) && (((attributes & 0x2) != 0) || ((tags & 0x400000000000000) != 0)) && ((((tags & 0x1)) != 0) || (((tags & 0x2) != 0) && ((tags & 0x80000000) != 0))))
-        
+        logger.info("[\(session.appIdentifier)] window #\(window.windowID) parentWindowID: \(window.parentWindowID.map { "#\($0)" } ?? "nil")")
 
-        
-        
-        
-        while (true) {
-            let result = SkyLightPrivate.SLSWindowIteratorAdvance!(iterator!)
-            
-            guard result == .success else {
-                logger.error("failed: \(result)")
-                break
-            }
-            
-            let windowId = SkyLightPrivate.SLSWindowIteratorGetWindowID!(iterator!)
-            let parentId = SkyLightPrivate.SLSWindowIteratorGetParentID!(iterator!)
-            
-            logger.info("[\(session.appIdentifier)] \(windowId) => \(parentId)")
-        }
-        
+        // TODO: SkyLight Window Iterator를 사용한 윈도우 열거 (참고용)
+        // guard let connection = SkyLightPrivate.SLSMainConnectionID?() else { return }
+        // let query = SkyLightPrivate.SLSWindowQueryWindows?(connection, [CGWindowID(window.windowID)] as CFArray, 1)
+        // guard let query, let iterator = SkyLightPrivate.SLSWindowQueryResultCopyWindows?(query) else { return }
+        // while true {
+        //     let result = SkyLightPrivate.SLSWindowIteratorAdvance?(iterator)
+        //     guard result == .success else { break }
+        //     let windowId = SkyLightPrivate.SLSWindowIteratorGetWindowID?(iterator) ?? 0
+        //     let parentId = SkyLightPrivate.SLSWindowIteratorGetParentID?(iterator) ?? 0
+        //     logger.info("[\(session.appIdentifier)] \(windowId) => \(parentId)")
+        // }
+
         let event = WindowChangedEvent(
             eventType: .metadataChanged,
             windowID: window.windowID,
@@ -1572,5 +1523,9 @@ extension WindowInfo {
     var isNSLocalWindowSharingWindow: Bool {
         self.role == .dialog &&
         ((self.bounds.width == 66 || self.bounds.width == 60) && self.bounds.height == 20)
+    }
+    
+    var isStandaloneWindow: Bool {
+        self.parentWindowID == nil || self.parentWindowID == 0
     }
 }
