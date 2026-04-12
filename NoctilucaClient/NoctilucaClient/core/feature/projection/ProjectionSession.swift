@@ -476,6 +476,16 @@ actor ProjectionSession: Identifiable {
             formatDescription = nil
 #endif
 
+        case .vp80:
+            let vpxDecoder = VPXVideoDecoder(
+                workerQueue: DispatchQueue(label: "app.noctiluca.client.projection.session.decoder.vpx.worker", qos: .userInitiated),
+                callbackQueue: serialQueue
+            )
+            vpxDecoder.delegate = self
+            decoder = vpxDecoder
+            tileCompositor = nil
+            formatDescription = nil
+
         default:
             let vtDecoder = VTVideoDecoder(
                 workerQueue: DispatchQueue(label: "app.noctiluca.client.projection.session.decoder.vt.worker", qos: .userInitiated),

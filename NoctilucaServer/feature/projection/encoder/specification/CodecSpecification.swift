@@ -150,6 +150,13 @@ extension CodecSpecification {
         .option(.colorRange, .kColorRangeLimited)
         .option(.displayDensity, .kDisplayDensityAuto)
     
+    static let vp8 = CodecSpecification(fourCC: .vp80)
+        .option(.hardwareAcceleration, .kHardwareAccelerationFalse)
+        .option(.colorFormat, .kColorFormatYUV420)
+        .option(.dynamicRange, .kDynamicRangeSDR)
+        .option(.colorRange, .kColorRangeLimited)
+        .option(.displayDensity, .kDisplayDensityAuto)
+    
     static let zrle = CodecSpecification(fourCC: .zrle)
         .option(.colorFormat, .kColorFormatRGB565)
         .option(.compressionLevel, .init(rawValue: "3"))
@@ -180,12 +187,14 @@ extension CodecSpecification {
             return "Advanced Video Coding (H.264)"
         case .hvc1:
             return "High Efficiency Video Coding (H.265)"
+        case .vp80:
+            return "VP8"
         case .zrle:
-            return "Run-Length Encoding (RLE) + Zstd"
+            return "Run-Length Encoding (RLE) + Zstd (Deprecated)"
         case .mjpg:
-            return "Motion JPEG"
+            return "Motion JPEG (Deprecated)"
         case .webp:
-            return "WebP"
+            return "WebP (Deprecated)"
 
         default:
             return "Unknown Codec (\(fourCC.stringRepresentation))"

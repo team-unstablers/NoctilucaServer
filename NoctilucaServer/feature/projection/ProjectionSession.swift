@@ -380,6 +380,8 @@ actor ProjectionSession: Identifiable {
             encoder = MJPGVideoEncoder()
         case .webp:
             encoder = WebPVideoEncoder()
+        case .vp80:
+            encoder = VPXVideoEncoder()
         default:
             encoder = VTVideoEncoder()
         }

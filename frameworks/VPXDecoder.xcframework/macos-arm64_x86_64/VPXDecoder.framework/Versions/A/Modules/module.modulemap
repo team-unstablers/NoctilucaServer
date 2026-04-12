@@ -1,0 +1,6 @@
+framework module VPXDecoder {
+  umbrella "Headers"
+
+  export *
+  module * { export * }
+}

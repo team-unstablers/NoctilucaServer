@@ -18,10 +18,10 @@ struct ServerTestHarness {
         featureProvider = MockFeatureProvider()
         serverDelegate = MockSiriusServerDelegate()
         server = SiriusServer(serverTransport: rootTransport, featureProvider: featureProvider)
-        server.delegate = serverDelegate
     }
 
     func startup() async throws {
+        await server.setDelegate(serverDelegate)
         try await server.startup()
     }
 

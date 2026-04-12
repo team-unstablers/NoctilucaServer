@@ -188,7 +188,7 @@ extension SessionSettings {
     struct Projection: Codable, Sendable {
         var codecSettingsMode: CodecSettingsMode = .useDefault
         var codecNegotiationPolicy: CodecNegotiationPolicy = .asOptional
-        var codecSpecifications: [CodecSpecification] = [.hevc, .h264, .webp, .mjpg, .zrle]
+        var codecSpecifications: [CodecSpecification] = [.hevc, .h264, .vp8]
         
         var isAudioProjectionEnabled: Bool = true
         var audioCodecSpecifications: [AudioCodecSpecification] = [.opus, .pcmu, .pcma]

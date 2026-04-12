@@ -9100,7 +9100,7 @@
       }
     },
     "session-settings.projection.codec_list.template.mjpg.description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9129,7 +9129,7 @@
       }
     },
     "session-settings.projection.codec_list.template.mjpg.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9158,7 +9158,7 @@
       }
     },
     "session-settings.projection.codec_list.template.webp.description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9187,7 +9187,7 @@
       }
     },
     "session-settings.projection.codec_list.template.webp.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9216,7 +9216,7 @@
       }
     },
     "session-settings.projection.codec_list.template.zrle.description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9245,7 +9245,7 @@
       }
     },
     "session-settings.projection.codec_list.template.zrle.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16048,6 +16048,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "锐化滤镜 (CAS)"
+          }
+        }
+      }
+    },
+    "settings.projection.codec_add.vp8.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Google에서 개발한 자유로운(free) 비디오 코덱입니다. H.264와 유사한 압축 효율을 제공합니다.\n호스트가 가상 머신인 경우 적합합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.codec_add.vp8.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "VP8"
+          }
+        }
+      }
+    },
+    "settings.projection.codec_sheet.hardware_acceleration.description_disabled" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 코덱은 하드웨어 가속 인코딩을 지원하지 않습니다."
           }
         }
       }

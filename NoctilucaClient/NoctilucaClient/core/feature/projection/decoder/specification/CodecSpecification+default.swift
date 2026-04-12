@@ -12,8 +12,6 @@ extension CodecSpecification {
     static let defaultSpecifications: [CodecSpecification] = [
         .hevc,
         .h264,
-        .webp,
-        .mjpg,
-        .zrle
+        .vp8,
     ]
 }

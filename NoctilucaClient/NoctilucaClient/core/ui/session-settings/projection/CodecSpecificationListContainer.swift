@@ -50,8 +50,17 @@ struct CodecSpecificationListContainer: View {
                 }
             },
             editSheet: { specification, onSave in
-                CodecSpecificationSheet(specification: specification) { newSpecification in
-                    onSave(newSpecification)
+                Group {
+                    switch specification.fourCC {
+                    case .vp80:
+                        VP8CodecSpecificationSheet(specification: specification) { newSpecification in
+                            onSave(newSpecification)
+                        }
+                    default:
+                        CodecSpecificationSheet(specification: specification) { newSpecification in
+                            onSave(newSpecification)
+                        }
+                    }
                 }
             }
         )
@@ -155,22 +164,10 @@ struct CodecSpecificationAddSheet: View {
             description: String(localized: "session-settings.projection.codec_list.template.h264.description", defaultValue: "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다.")
         ),
         .init(
-            specification: .webp,
-            title: String(localized: "session-settings.projection.codec_list.template.webp.title", defaultValue: "Tiled WebP"),
-            description: String(localized: "session-settings.projection.codec_list.template.webp.description", defaultValue: "타일링된 WebP를 사용합니다.\nMJPG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
+            specification: .vp8,
+            title: String(localized: "settings.projection.codec_add.vp8.title", defaultValue: "VP8"),
+            description: String(localized: "settings.projection.codec_add.vp8.description", defaultValue: "Google에서 개발한 자유로운(free) 비디오 코덱입니다. H.264와 유사한 압축 효율을 제공합니다.\n호스트가 가상 머신인 경우 적합합니다.")
         ),
-
-        .init(
-            specification: .mjpg,
-            title: String(localized: "session-settings.projection.codec_list.template.mjpg.title", defaultValue: "Motion JPEG"),
-            description: String(localized: "session-settings.projection.codec_list.template.mjpg.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다.")
-        ),
-        .init(
-            specification: .zrle,
-            title: String(localized: "session-settings.projection.codec_list.template.zrle.title", defaultValue: "RLE + Zstd"),
-            description: String(localized: "session-settings.projection.codec_list.template.zrle.description", defaultValue: "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 기반 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다.")
-        ),
-
     ]
 
     let handler: (CodecSpecification) -> Void
