@@ -29,17 +29,17 @@ public enum ClientTransportError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .certificateValidationFailed:
-            return "서버 인증서 검증에 실패했습니다."
+            return "Server certificate validation failed."
         case .connectionRefused:
-            return "서버가 연결을 거부했습니다."
+            return "The server refused the connection."
         case .connectionTimeout:
-            return "연결 시간이 초과되었습니다."
+            return "The connection timed out."
         case .handshakeFailure:
-            return "TLS 핸드셰이크에 실패했습니다."
+            return "TLS handshake failed."
         case .unreachable:
-            return "서버에 연결할 수 없습니다."
+            return "The server is unreachable."
         case .connectionFailed(let description):
-            return "연결에 실패했습니다: \(description)"
+            return "Connection failed: \(description)"
         }
     }
 }
