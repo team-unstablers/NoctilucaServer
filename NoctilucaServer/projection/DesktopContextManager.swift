@@ -44,9 +44,14 @@ private func axElementAttribute(_ element: AXUIElement, _ attribute: String) -> 
     return (ref as! AXUIElement)
 }
 
+struct SkyLightWindowInfo: Sendable {
+    let parentWindowId: CGWindowID?
+    let tag: CGSWindowTag
+}
+
 /// SkyLight Window Query API를 통해 윈도우의 parent window ID를 조회한다.
 /// 실패 시 nil.
-private func skyLightParentWindowID(for windowID: CGWindowID) -> UInt64? {
+private func getSkyLightWindowInfo(for windowID: CGWindowID) -> SkyLightWindowInfo? {
     guard let connection = SkyLightPrivate.SLSMainConnectionID?() else {
         return nil
     }
@@ -56,8 +61,15 @@ private func skyLightParentWindowID(for windowID: CGWindowID) -> UInt64? {
     guard let iterator = SkyLightPrivate.SLSWindowQueryResultCopyWindows?(query) else {
         return nil
     }
-    let parentID = SkyLightPrivate.SLSWindowIteratorGetParentID?(iterator) ?? 0
-    return parentID != 0 ? UInt64(parentID) : nil
+    
+    _ = SkyLightPrivate.SLSWindowIteratorAdvance?(iterator)
+    
+    let rawTag = SkyLightPrivate.SLSWindowIteratorGetTags?(iterator) ?? 0
+    let tag = CGSWindowTag(rawValue: rawTag)
+    
+    let parentID = SkyLightPrivate.SLSWindowIteratorGetParentID?(iterator)
+    
+    return SkyLightWindowInfo(parentWindowId: parentID, tag: tag)
 }
 
 /// AXRole/AXSubrole 조합을 WindowRole로 매핑
@@ -631,6 +643,7 @@ final class AppSession {
                 axAttrs = .empty
             }
 
+            // FIXME
             var hints: WindowHint = [
                 .hasShadow,
                 .hasTransparency,
@@ -649,14 +662,27 @@ final class AppSession {
                 "app.noctiluca.server.x-window-layer": "\(layer)",
                 "app.noctiluca.server.x-window-alpha": "\(alpha)",
             ]
-            if let axRole = axAttrs.axRole {
-                metadata["app.noctiluca.server.x-axrole"] = axRole
+            
+            guard let axRole = axAttrs.axRole,
+                  let axSubrole = axAttrs.axSubrole
+            else {
+                // HACK(Xcode): treat as closed window when axRole is nil (shift-f2)
+                return nil
             }
-            if let axSubrole = axAttrs.axSubrole {
-                metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
-            }
+            
+            metadata["app.noctiluca.server.x-axrole"] = axRole
+            metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
 
             let bundleID = runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
+            guard let skyLightWindowInfo = getSkyLightWindowInfo(for: windowID) else {
+                return nil
+            }
+            
+            let parentWindowID = if let cgParentWindowID = skyLightWindowInfo.parentWindowId {
+                UInt64(cgParentWindowID)
+            } else {
+                UInt64(0)
+            }
             
             let windowInfo = WindowInfo(
                 windowID: UInt64(windowID),
@@ -666,7 +692,7 @@ final class AppSession {
                 applicationBundleID: bundleID,
                 windowClass: axAttrs.axClassName ?? bundleID,
                 role: axAttrs.windowRole,
-                parentWindowID: skyLightParentWindowID(for: windowID),
+                parentWindowID: parentWindowID,
                 bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
                 iconHash: nil,
                 thumbnail: nil,
@@ -675,6 +701,7 @@ final class AppSession {
                 flags: flags
             )
             
+            // FIXME: ...
             if windowInfo.isNSLocalWindowSharingWindow || !windowInfo.isStandaloneWindow {
                 return nil
             }
@@ -1113,14 +1140,30 @@ final class DesktopContextManager {
                 "app.noctiluca.server.x-window-layer": "\(layer)",
                 "app.noctiluca.server.x-window-alpha": "\(alpha)",
             ]
-            if let axRole = axAttrs.axRole {
-                metadata["app.noctiluca.server.x-axrole"] = axRole
+            
+            guard let axRole = axAttrs.axRole,
+                  let axSubrole = axAttrs.axSubrole
+            else {
+                // HACK(Xcode): treat as closed window when axRole is nil (shift-f2)
+                return nil
             }
-            if let axSubrole = axAttrs.axSubrole {
-                metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
-            }
+            
+            metadata["app.noctiluca.server.x-axrole"] = axRole
+            metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
+
 
             let bundleID = relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
+            
+            guard let skyLightWindowInfo = getSkyLightWindowInfo(for: windowID) else {
+                return nil
+            }
+            
+            let parentWindowID = if let cgParentWindowID = skyLightWindowInfo.parentWindowId {
+                UInt64(cgParentWindowID)
+            } else {
+                UInt64(0)
+            }
+            
 
             let windowInfo = WindowInfo(
                 windowID: UInt64(windowID),
@@ -1130,7 +1173,7 @@ final class DesktopContextManager {
                 applicationBundleID: bundleID,
                 windowClass: axAttrs.axClassName ?? bundleID,
                 role: axAttrs.windowRole,
-                parentWindowID: skyLightParentWindowID(for: windowID),
+                parentWindowID: parentWindowID,
                 bounds: SRRect(x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height),
                 iconHash: nil,
                 thumbnail: nil,
