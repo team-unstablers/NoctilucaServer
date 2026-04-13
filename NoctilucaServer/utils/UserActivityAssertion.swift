@@ -13,7 +13,7 @@ struct UserActivityAssertion: ~Copyable {
     static func acquire() -> UserActivityAssertion? {
         var assertionID: IOPMAssertionID = 0
         let result = IOPMAssertionCreateWithName(
-            kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
+            kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString,
             IOPMAssertionLevel(kIOPMAssertionLevelOn),
             "NoctilucaServer User Activity" as CFString,
             &assertionID
