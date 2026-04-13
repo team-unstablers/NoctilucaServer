@@ -99,7 +99,9 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     private func spawnWindow(_ windowInfo: WindowInfo) async {
         let windowID = windowInfo.windowID
 
-        guard !closedWindowIDs.contains(windowID) else { return }
+        if closedWindowIDs.contains(windowID) {
+            closedWindowIDs.remove(windowID)
+        }
 
         guard windows[windowID] == nil else {
             windows[windowID]?.window.makeKeyAndOrderFront(nil)
@@ -241,9 +243,27 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         remoteSession.hidio?.session.deactivateSession()
     }
 
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard let window = sender as? AppStreamWindow else { return true }
+
+        // 실제로 닫지 않고 서버에 close 요청만 전송
+        // 서버 앱이 실제로 닫히면 disappeared 이벤트로 로컬 윈도우 정리
+        let windowID = UInt64(window.windowID)
+        closedWindowIDs.insert(windowID)
+        Task { [weak self] in
+            guard let projectionChannel = self?.remoteSession.projection?.channel else { return }
+            try? await projectionChannel.sendWindowManipulation(
+                windowID: windowID,
+                operation: .stateCommand(.close)
+            )
+        }
+
+        return false
+    }
+
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? AppStreamWindow else { return }
-        destroyWindow(windowID: UInt64(window.windowID), sendCloseToServer: true)
+        destroyWindow(windowID: UInt64(window.windowID), sendCloseToServer: false)
     }
 
     func windowDidEndLiveResize(_ notification: Notification) {

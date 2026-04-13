@@ -264,6 +264,8 @@ class RemoteSession: ObservableObject {
             }
 
             self.projection = Projection(self, channel: projectionChannel)
+            
+            // FIXME
             Task { [weak self] in
                 guard let self else {
                     return
