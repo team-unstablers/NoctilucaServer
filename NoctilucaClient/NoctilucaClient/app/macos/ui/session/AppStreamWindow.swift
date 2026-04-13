@@ -51,7 +51,7 @@ class AppStreamWindow: NSWindow {
         self.titlebarAppearsTransparent = true
         self.titleVisibility = .hidden
         
-        self.minSize = NSSize(width: 640, height: 480)
+        // self.minSize = NSSize(width: 640, height: 480)
         self.isReleasedWhenClosed = false
         self.center()
 
