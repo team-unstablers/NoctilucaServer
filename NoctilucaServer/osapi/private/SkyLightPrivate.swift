@@ -13,6 +13,198 @@ import Gesu
 
 // NOTE: CGSConnectionID는 CoreGraphicsPrivate.swift에 정의되어 있음
 
+// MARK: - CGSWindowTagBit
+// ref: https://github.com/NUIKit/CGSInternal (CGSWindow.h)
+// ref: https://github.com/koekeishiya/yabai (src/misc/extern.h, src/window.c)
+
+struct CGSWindowTag: OptionSet, Sendable {
+    let rawValue: UInt64
+
+    // MARK: Lo Word (bits 0-31)
+
+    /// 기본 document 윈도우 스타일
+    static let documentWindow                   = CGSWindowTag(rawValue: 1 << 0)
+    /// 플로팅 윈도우
+    static let floatingWindow                   = CGSWindowTag(rawValue: 1 << 1)
+    /// Dock 타일 배지 비활성화
+    static let doNotShowBadgeInDock             = CGSWindowTag(rawValue: 1 << 2)
+    /// 윈도우 그림자 비활성화
+    static let disableShadow                    = CGSWindowTag(rawValue: 1 << 3)
+    /// 고품질 리샘플링 활성화
+    static let highQualityResampling            = CGSWindowTag(rawValue: 1 << 4)
+    /// 비활성 앱에서도 커서 변경 가능
+    static let setsCursorInBackground           = CGSWindowTag(rawValue: 1 << 5)
+    /// 모달 런 루프 중에도 동작
+    static let worksWhenModal                   = CGSWindowTag(rawValue: 1 << 6)
+    /// 다른 윈도우에 앵커링
+    static let attachedWindow                   = CGSWindowTag(rawValue: 1 << 7)
+    /// 드래그 중 100% 불투명하게 표시
+    static let ignoreAlphaForDragging           = CGSWindowTag(rawValue: 1 << 8)
+    /// 마우스 이벤트 투과 (click-through)
+    static let ignoreForEvents                  = CGSWindowTag(rawValue: 1 << 9)
+    /// 이벤트에 불투명 (ignoreForEvents와 상호 배타적)
+    static let opaqueForEvents                  = CGSWindowTag(rawValue: 1 << 10)
+    /// 모든 Space에 표시 (sticky)
+    static let onAllWorkspaces                  = CGSWindowTag(rawValue: 1 << 11)
+    /// (미문서화)
+    static let pointerEventsAvoidCPS            = CGSWindowTag(rawValue: 1 << 12)
+    /// (미문서화)
+    static let kitVisible                       = CGSWindowTag(rawValue: 1 << 13)
+    /// 앱 비활성화 시 윈도우 목록에서 제거
+    static let hideOnDeactivate                 = CGSWindowTag(rawValue: 1 << 14)
+    /// 표시 시 앱을 포그라운드로 가져오지 않음
+    static let avoidsActivation                 = CGSWindowTag(rawValue: 1 << 15)
+    /// 선택 시 앱을 포그라운드로 가져오지 않음
+    static let preventsActivation               = CGSWindowTag(rawValue: 1 << 16)
+    /// (미문서화)
+    static let ignoresOption                    = CGSWindowTag(rawValue: 1 << 17)
+    /// 윈도우 순환(Cmd+F4 등)에서 제외
+    static let ignoresCycle                     = CGSWindowTag(rawValue: 1 << 18)
+    /// (미문서화)
+    static let defersOrdering                   = CGSWindowTag(rawValue: 1 << 19)
+    /// (미문서화)
+    static let defersActivation                 = CGSWindowTag(rawValue: 1 << 20)
+    /// WindowServer가 order-front 요청을 무시
+    static let ignoreAsFrontWindow              = CGSWindowTag(rawValue: 1 << 21)
+    /// WindowServer가 드래그 rect를 통해 윈도우 이동 제어
+    static let enableServerSideDrag             = CGSWindowTag(rawValue: 1 << 22)
+    /// (미문서화)
+    static let mouseDownEventsGrabbed           = CGSWindowTag(rawValue: 1 << 23)
+    /// 숨기기 요청 무시
+    static let dontHide                         = CGSWindowTag(rawValue: 1 << 24)
+    /// (미문서화)
+    static let dontDimWindowDisplay             = CGSWindowTag(rawValue: 1 << 25)
+    /// 진입 시 커서를 윈도우의 포인터 타입으로 변환
+    static let instantMouserWindow              = CGSWindowTag(rawValue: 1 << 26)
+    /// 활성 Space에 표시, Space 전환 추적
+    static let windowOwnerFollowsForeground     = CGSWindowTag(rawValue: 1 << 27)
+    /// (미문서화)
+    static let activationWindowLevel            = CGSWindowTag(rawValue: 1 << 28)
+    /// 선택 시 소유 앱을 포그라운드로 가져옴
+    static let bringOwningApplicationForward    = CGSWindowTag(rawValue: 1 << 29)
+    /// 로그인 화면 위에 표시 허용
+    static let permittedBeforeLogin             = CGSWindowTag(rawValue: 1 << 30)
+    /// 모달 윈도우
+    static let modalWindow                      = CGSWindowTag(rawValue: 1 << 31)
+
+    // MARK: Hi Word (bits 32-63)
+
+    /// Dock처럼 그리기 ("Magic Mirror")
+    static let windowIsMagicMirror              = CGSWindowTag(rawValue: 1 << 33)
+    /// (미문서화)
+    static let followsUser                      = CGSWindowTag(rawValue: 1 << 34)
+    /// (미문서화)
+    static let windowDoesNotCastMirrorReflection = CGSWindowTag(rawValue: 1 << 35)
+    /// (미문서화)
+    static let meshedWindow                     = CGSWindowTag(rawValue: 1 << 36)
+    /// CoreDrag에 의해 드래그 중일 때 설정됨
+    static let coreDragIsDraggingWindow         = CGSWindowTag(rawValue: 1 << 37)
+    /// 화면 캡처 회피
+    static let avoidsCapture                    = CGSWindowTag(rawValue: 1 << 38)
+    /// Mission Control / Exposé에서 무시
+    static let ignoreForExpose                  = CGSWindowTag(rawValue: 1 << 39)
+    /// 윈도우가 숨겨진 상태
+    static let hidden                           = CGSWindowTag(rawValue: 1 << 40)
+    /// 윈도우 순환에 명시적으로 포함
+    static let includeInCycle                   = CGSWindowTag(rawValue: 1 << 41)
+    /// 비포그라운드에서도 제스처 이벤트 캡처
+    static let wantGesturesInBackground         = CGSWindowTag(rawValue: 1 << 42)
+    /// 풀스크린 상태
+    static let fullScreen                       = CGSWindowTag(rawValue: 1 << 43)
+    /// (미문서화)
+    static let windowIsMagicZoom                = CGSWindowTag(rawValue: 1 << 44)
+    /// "슈퍼 스티키" (미문서화)
+    static let superSticky                      = CGSWindowTag(rawValue: 1 << 45)
+    /// 메뉴 바에 부착
+    static let attachesToMenuBar                = CGSWindowTag(rawValue: 1 << 46)
+    /// 메뉴 바에 표시 (메뉴 바 아이템용)
+    static let mergesWithMenuBar                = CGSWindowTag(rawValue: 1 << 47)
+    /// 절대 sticky 하지 않음
+    static let neverSticky                      = CGSWindowTag(rawValue: 1 << 48)
+    /// 데스크톱 배경 레벨에 표시
+    static let desktopPicture                   = CGSWindowTag(rawValue: 1 << 49)
+    /// 리드로우 시 앞으로 이동 (디버그용)
+    static let ordersForwardWhenSurfaceFlushed  = CGSWindowTag(rawValue: 1 << 50)
+    /// (미문서화)
+    static let dragsMovementGroupParent         = CGSWindowTag(rawValue: 1 << 51)
+    /// (미문서화)
+    static let neverFlattenSurfacesDuringSwipes = CGSWindowTag(rawValue: 1 << 52)
+    /// 풀스크린 가능
+    static let fullScreenCapable                = CGSWindowTag(rawValue: 1 << 53)
+    /// 풀스크린 타일 가능
+    static let fullScreenTileCapable            = CGSWindowTag(rawValue: 1 << 54)
+}
+
+extension CGSWindowTag: CustomDebugStringConvertible {
+    private static let knownTags: [(CGSWindowTag, String)] = [
+        (.documentWindow, "documentWindow"),
+        (.floatingWindow, "floatingWindow"),
+        (.doNotShowBadgeInDock, "doNotShowBadgeInDock"),
+        (.disableShadow, "disableShadow"),
+        (.highQualityResampling, "highQualityResampling"),
+        (.setsCursorInBackground, "setsCursorInBackground"),
+        (.worksWhenModal, "worksWhenModal"),
+        (.attachedWindow, "attachedWindow"),
+        (.ignoreAlphaForDragging, "ignoreAlphaForDragging"),
+        (.ignoreForEvents, "ignoreForEvents"),
+        (.opaqueForEvents, "opaqueForEvents"),
+        (.onAllWorkspaces, "onAllWorkspaces"),
+        (.pointerEventsAvoidCPS, "pointerEventsAvoidCPS"),
+        (.kitVisible, "kitVisible"),
+        (.hideOnDeactivate, "hideOnDeactivate"),
+        (.avoidsActivation, "avoidsActivation"),
+        (.preventsActivation, "preventsActivation"),
+        (.ignoresOption, "ignoresOption"),
+        (.ignoresCycle, "ignoresCycle"),
+        (.defersOrdering, "defersOrdering"),
+        (.defersActivation, "defersActivation"),
+        (.ignoreAsFrontWindow, "ignoreAsFrontWindow"),
+        (.enableServerSideDrag, "enableServerSideDrag"),
+        (.mouseDownEventsGrabbed, "mouseDownEventsGrabbed"),
+        (.dontHide, "dontHide"),
+        (.dontDimWindowDisplay, "dontDimWindowDisplay"),
+        (.instantMouserWindow, "instantMouserWindow"),
+        (.windowOwnerFollowsForeground, "windowOwnerFollowsForeground"),
+        (.activationWindowLevel, "activationWindowLevel"),
+        (.bringOwningApplicationForward, "bringOwningApplicationForward"),
+        (.permittedBeforeLogin, "permittedBeforeLogin"),
+        (.modalWindow, "modalWindow"),
+        (.windowIsMagicMirror, "windowIsMagicMirror"),
+        (.followsUser, "followsUser"),
+        (.windowDoesNotCastMirrorReflection, "windowDoesNotCastMirrorReflection"),
+        (.meshedWindow, "meshedWindow"),
+        (.coreDragIsDraggingWindow, "coreDragIsDraggingWindow"),
+        (.avoidsCapture, "avoidsCapture"),
+        (.ignoreForExpose, "ignoreForExpose"),
+        (.hidden, "hidden"),
+        (.includeInCycle, "includeInCycle"),
+        (.wantGesturesInBackground, "wantGesturesInBackground"),
+        (.fullScreen, "fullScreen"),
+        (.windowIsMagicZoom, "windowIsMagicZoom"),
+        (.superSticky, "superSticky"),
+        (.attachesToMenuBar, "attachesToMenuBar"),
+        (.mergesWithMenuBar, "mergesWithMenuBar"),
+        (.neverSticky, "neverSticky"),
+        (.desktopPicture, "desktopPicture"),
+        (.ordersForwardWhenSurfaceFlushed, "ordersForwardWhenSurfaceFlushed"),
+        (.dragsMovementGroupParent, "dragsMovementGroupParent"),
+        (.neverFlattenSurfacesDuringSwipes, "neverFlattenSurfacesDuringSwipes"),
+        (.fullScreenCapable, "fullScreenCapable"),
+        (.fullScreenTileCapable, "fullScreenTileCapable"),
+    ]
+
+    var debugDescription: String {
+        var names: [String] = []
+        for (tag, name) in Self.knownTags where contains(tag) {
+            names.append(name)
+        }
+        if names.isEmpty {
+            return "Tag: [] (rawValue: 0x\(String(rawValue, radix: 16)))"
+        }
+        return "Tag: [\(names.joined(separator: ", "))]"
+    }
+}
+
 @PrivateLibrary(path: "/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight")
 class SkyLightPrivate {
     // MARK: - Connection
