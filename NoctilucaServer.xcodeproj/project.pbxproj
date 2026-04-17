@@ -10,6 +10,7 @@
 		F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */ = {isa = PBXBuildFile; productRef = F61AB32D2F4146CF00BB69AF /* Gesu */; };
 		F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; };
 		F621CB052F8AC11900AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F621D2102F91FDA500AEF0FA /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F621D20F2F91FDA500AEF0FA /* ArgumentParser */; };
 		F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; };
 		F624FD762EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD862EE2B2E6007A68B3 /* libpam.tbd */; };
@@ -83,6 +84,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		F621D2052F91FC4F00AEF0FA /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		F66965392ECF27110032EF4E /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -162,6 +172,7 @@
 
 /* Begin PBXFileReference section */
 		F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CJKKeyboardHacks.nocbundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = nocvirtdisplay; sourceTree = BUILT_PRODUCTS_DIR; };
 		F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = NoctilucaPluginKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F624FD862EE2B2E6007A68B3 /* libpam.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpam.tbd; path = usr/lib/libpam.tbd; sourceTree = SDKROOT; };
 		F627113E2F084EBB00E8A3D7 /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
@@ -177,6 +188,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F621D2182F920DEF00AEF0FA /* Exceptions for "NoctilucaServer" folder in "nocvirtdisplay" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"projection/display-layout/NOCDisplaySpec.swift",
+			);
+			target = F621D2062F91FC4F00AEF0FA /* nocvirtdisplay */;
+		};
 		F624FDB72EE2D41B007A68B3 /* Exceptions for "NoctilucaServer" folder in "NoctilucaServer" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -261,6 +279,11 @@
 			path = CJKKeyboardHacks;
 			sourceTree = "<group>";
 		};
+		F621D2082F91FC4F00AEF0FA /* nocvirtdisplay */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = nocvirtdisplay;
+			sourceTree = "<group>";
+		};
 		F6379F9C2EEAAFD9004BC795 /* pam.d */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -289,6 +312,7 @@
 			exceptions = (
 				F624FDB72EE2D41B007A68B3 /* Exceptions for "NoctilucaServer" folder in "NoctilucaServer" target */,
 				F6CC84602F5B52A300AA6DC2 /* Exceptions for "NoctilucaServer" folder in "NoctilucaServerTestsHost" target */,
+				F621D2182F920DEF00AEF0FA /* Exceptions for "NoctilucaServer" folder in "nocvirtdisplay" target */,
 			);
 			path = NoctilucaServer;
 			sourceTree = "<group>";
@@ -301,6 +325,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F621D2042F91FC4F00AEF0FA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F621D2102F91FDA500AEF0FA /* ArgumentParser in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -368,6 +400,7 @@
 				F6379F9C2EEAAFD9004BC795 /* pam.d */,
 				F669650D2ECF26770032EF4E /* NoctilucaServer */,
 				F659BDF32EF3C1730010A18E /* NoctilucaServerTests */,
+				F621D2082F91FC4F00AEF0FA /* nocvirtdisplay */,
 				F66965352ECF27110032EF4E /* Frameworks */,
 				F669650C2ECF26770032EF4E /* Products */,
 			);
@@ -380,6 +413,7 @@
 				F659BDF22EF3C1730010A18E /* NoctilucaServerTests.xctest */,
 				F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */,
 				F6CC839F2F5B522800AA6DC2 /* NoctilucaServerTestsHost.app */,
+				F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -424,6 +458,29 @@
 			productName = CJKKeyboardHacks;
 			productReference = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */;
 			productType = "com.apple.product-type.bundle";
+		};
+		F621D2062F91FC4F00AEF0FA /* nocvirtdisplay */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F621D20B2F91FC4F00AEF0FA /* Build configuration list for PBXNativeTarget "nocvirtdisplay" */;
+			buildPhases = (
+				F621D2032F91FC4F00AEF0FA /* Sources */,
+				F621D2042F91FC4F00AEF0FA /* Frameworks */,
+				F621D2052F91FC4F00AEF0FA /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F621D2082F91FC4F00AEF0FA /* nocvirtdisplay */,
+			);
+			name = nocvirtdisplay;
+			packageProductDependencies = (
+				F621D20F2F91FDA500AEF0FA /* ArgumentParser */,
+			);
+			productName = nocvirtdisplay;
+			productReference = F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */;
+			productType = "com.apple.product-type.tool";
 		};
 		F659BDF12EF3C1730010A18E /* NoctilucaServerTests */ = {
 			isa = PBXNativeTarget;
@@ -532,11 +589,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2610;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					F61AB3172F41274E00BB69AF = {
 						CreatedOnToolsVersion = 26.1;
+					};
+					F621D2062F91FC4F00AEF0FA = {
+						CreatedOnToolsVersion = 26.2;
+						LastSwiftMigration = 2620;
 					};
 					F659BDF12EF3C1730010A18E = {
 						CreatedOnToolsVersion = 26.1;
@@ -568,6 +629,7 @@
 				F6CC83542F5A885000AA6DC2 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				F6CC836A2F5B33FB00AA6DC2 /* XCRemoteSwiftPackageReference "Inject" */,
 				F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+				F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669650C2ECF26770032EF4E /* Products */;
@@ -578,6 +640,7 @@
 				F659BDF12EF3C1730010A18E /* NoctilucaServerTests */,
 				F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */,
 				F6CC836F2F5B522800AA6DC2 /* NoctilucaServerTestsHost */,
+				F621D2062F91FC4F00AEF0FA /* nocvirtdisplay */,
 			);
 		};
 /* End PBXProject section */
@@ -616,6 +679,13 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		F61AB3142F41274E00BB69AF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F621D2032F91FC4F00AEF0FA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -713,6 +783,39 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = nocbundle;
+			};
+			name = Release;
+		};
+		F621D20C2F91FC4F00AEF0FA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "nocvirtdisplay/nocvirtdisplay-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F621D20D2F91FC4F00AEF0FA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XHA76UVA95;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "nocvirtdisplay/nocvirtdisplay-Bridging-Header.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1146,6 +1249,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F621D20B2F91FC4F00AEF0FA /* Build configuration list for PBXNativeTarget "nocvirtdisplay" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F621D20C2F91FC4F00AEF0FA /* Debug */,
+				F621D20D2F91FC4F00AEF0FA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F659BDFA2EF3C1730010A18E /* Build configuration list for PBXNativeTarget "NoctilucaServerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1185,6 +1297,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.1;
+			};
+		};
 		F62711422F0852DE00E8A3D7 /* XCRemoteSwiftPackageReference "zstd" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/facebook/zstd";
@@ -1299,6 +1419,11 @@
 		F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NoctilucaLibVPX;
+		};
+		F621D20F2F91FDA500AEF0FA /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
 		};
 		F62689442F1E50F60030D59B /* Gesu */ = {
 			isa = XCSwiftPackageProductDependency;
