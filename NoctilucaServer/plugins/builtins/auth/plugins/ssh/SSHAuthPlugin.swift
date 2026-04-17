@@ -14,7 +14,7 @@ import SiriusKit
 
 typealias SSHPublicKey = Xuanxue.PublicKey
 
-final class SSHAuthPlugin: BuiltInAuthPluginV1 {
+actor SSHAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(
         id: "app.noctiluca.server.auth.plugin.ssh",
         displayName: NSLocalizedString("plugins.auth.SSHAuthPlugin.name", comment: "SSHAuthPlugin"),

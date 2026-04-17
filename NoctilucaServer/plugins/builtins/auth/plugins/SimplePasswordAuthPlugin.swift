@@ -12,7 +12,7 @@ import libbcrypt
 import SiriusKit
 @preconcurrency import NoctilucaPluginKit
 
-final class SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
+actor SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(
         id: "app.noctiluca.server.auth.plugin.simple-password",
         displayName: NSLocalizedString("plugins.auth.SimplePasswordAuthPlugin.name", comment: "SimplePasswordAuthPlugin"),

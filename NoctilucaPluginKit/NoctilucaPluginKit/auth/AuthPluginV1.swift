@@ -8,7 +8,7 @@
 
 import Foundation
 
-public protocol AuthPluginV1: AnyObject, Sendable {
+public protocol AuthPluginV1: Actor {
     static var id: String { get }
     static var name: String { get }
     static var description: String { get }
