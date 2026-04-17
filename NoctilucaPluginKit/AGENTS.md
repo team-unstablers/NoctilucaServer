@@ -109,6 +109,13 @@ Info.plist 및 번들 클래스가 아래 조건을 **정확히 충족**해야 �
 - 현재 `NoctilucaPluginExport`는 `.auth`만 제공하며, 다른 타입은 서버 로딩 경로가 없음
 - `extensioin/NoctilucaServerExtensionV1.swift`는 **주석 처리된 스케치**로, 실제 구현/ABI 없음
 - `SamplePluginBundle/Info.plist`는 **NOC* 키가 아닌 구형 키**를 사용하므로 실제 로더와 불일치 가능성 있음 (참고용)
+- **Swift 6 동시성 모델 적합화 (2026-04-17)**:
+  - 다음 타입에 `Sendable` 적합성 추가: `NoctilucaPluginKitVersion`, `NoctilucaPluginBundle`,
+    `NoctilucaPluginExport`, `AuthPluginV1`, `AuthError`, `NoctilucaServerExtensionV1`, `KeySequence`
+  - `AuthError.authenticationFailed`의 associated value 타입을 `Error?` → `(any Error & Sendable)?`로 좁힘
+  - `NoctilucaServerExtensionV1.onEvent(...)`의 `payload` 타입을 `Any` → `any Sendable`로 변경
+  - 서버/클라이언트의 `@preconcurrency import NoctilucaPluginKit` 사용처는 별도 정리 필요
+    (특히 `AuthPluginV1` 구현체가 mutable state를 가질 경우 actor화 또는 `@unchecked Sendable` 처리 필요)
 
 </section>
 <section id="agent-rules">

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol NoctilucaPluginBundle: AnyObject {
+public protocol NoctilucaPluginBundle: AnyObject, Sendable {
     /// The name of the plugin bundle.
     /// This should be a human-readable name.
     static var name: String { get }
