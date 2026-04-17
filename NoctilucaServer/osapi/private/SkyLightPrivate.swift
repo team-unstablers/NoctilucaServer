@@ -477,6 +477,22 @@ class SkyLightPrivate {
         ret: CFString?.self
     )
 
+    // MARK: - Display Enable / Disable
+
+    /// 지정한 디스플레이를 활성/비활성화한다.
+    ///
+    /// - Warning: 비활성화는 영구적이지 않으나, 복원 책임은 호출자에 있다.
+    ///            프로세스가 비정상 종료되면 해당 디스플레이는 비활성화된 채로 남을 수 있다.
+    #PrivateFunction(
+        "SLSConfigureDisplayEnabled",
+        args: (
+            CGSConnectionID.self,
+            CGDirectDisplayID.self,
+            Bool.self
+        ),
+        ret: CGError.self
+    )
+
     // MARK: - Space Properties
 
     #PrivateFunction(
