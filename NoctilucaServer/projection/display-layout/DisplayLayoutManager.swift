@@ -70,6 +70,12 @@ fileprivate func displayReconfigurationCallback(
     }
 }
 
+enum DisplayLayoutManagerError: Error, Sendable {
+    case unknownError
+    case displaySpecNotCompatible
+    case displaySpecApplyFailure(CGError?)
+}
+
 /// 디스플레이 구성이 변경될 때 알림을 제공하는 모니터입니다.
 @MainActor
 final class DisplayLayoutManager: ObservableObject, CInteropHandle, Sendable {
