@@ -103,6 +103,20 @@ swiftlint lint --config .swiftlint.yml
 - 서버는 인증을 플러그인 번들로 확장할 수 있습니다. 기본 인증 번들이 포함되어 있습니다.
 - 플러그인 메타데이터는 NoctilucaPluginKit 스펙을 따릅니다.
 
+## 6) AppStream (Experimental)
+Microsoft RDP의 RemoteApp에서 영감을 받은 기능으로, 원격 Mac의 개별 앱 윈도우를 로컬 앱처럼 사용할 수 있게 합니다.
+이 기능은 영구적으로 **experimental** 상태입니다.
+
+- **프로토콜**: Projection 채널의 `0x80xx` opcode 범위에서 Application Management(appman) 메시지를 정의
+  - 앱 목록 조회, 앱 실행/종료, 앱 이벤트 구독, AppStream 시작/종료, 윈도우 이벤트 등
+  - 프로토콜 정의: `SiriusProtocol/v1/channels/projection/appman.mdproto.md`
+- **일반 Projection과의 차이**: 전체 디스플레이 대신 개별 윈도우 단위로 `ProjectionSession`을 생성하며, 클라이언트는 원격 윈도우마다 네이티브 `NSWindow`를 생성
+- **서버**: `ProjectionChannel+appman.swift`에서 요청 처리, `DesktopContextManager`로 윈도우/앱 이벤트 감시, `allowedApps` 보안 정책 적용
+- **클라이언트 (macOS only)**: `AppStreamWindowManager`가 윈도우 생성/파괴/업데이트 관리, `AppStreamWindow`(NSWindow 서브클래스)가 각 원격 윈도우를 렌더링
+- **Qt 클라이언트**: msgdef 바인딩만 존재, AppStream UI/로직 미구현
+- **현재 구현 상태**: 윈도우 스트리밍 기본 동작 구현 완료. 앱 선택 UI, `disableSystemShortcuts` 실제 적용 등 미완성 부분 존재
+- **향후 계획**: File System Redirection 등 추가 기능 구현 예정
+
 # COORDINATION & SOURCE OF TRUTH
 
 - 프로토콜/메시지/코덱 옵션과 같은 공용 규격은 SiriusKit이 기준입니다.
@@ -115,6 +129,10 @@ swiftlint lint --config .swiftlint.yml
 
 ## Recent Notes
 
+- **AppStream (Experimental) 윈도우 스트리밍 구현** (서버/클라이언트):
+  - 서버: appman 메시지 핸들링, 윈도우 이벤트 구독, allowedApps 보안 정책
+  - 클라이언트 (macOS): `AppStreamWindowManager` + `AppStreamWindow`로 원격 윈도우별 네이티브 윈도우 생성
+  - 미완성: 앱 선택 UI (현재 Xcode 하드코딩), `disableSystemShortcuts` 미적용
 - **오디오 프로젝션 기능 구현 완료 (서버/클라이언트)**:
   - 서버: `AudioEncoder` 프로토콜 및 `OpusAudioEncoder`, `PCMAudioEncoder` 구현
   - 클라이언트: `AudioProjectionSession`, `AudioDecoder` 구현
