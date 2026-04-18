@@ -137,13 +137,32 @@ However, since it was originally written for use inside Noctiluca Server, correc
         sigintSource.resume()
         sigtermSource.resume()
 
+        // 부모 프로세스 사망 감지 — stdin을 부모-자식 lifetime pipe로 사용.
+        // 부모가 write end를 보유하다가 사망하면 자식 stdin이 EOF를 받는다.
+        // 터미널에서 직접 실행한 경우엔 stdin이 tty에 붙어있으므로 EOF가 오지 않아 정상.
+        let stdinSource = DispatchSource.makeReadSource(
+            fileDescriptor: STDIN_FILENO,
+            queue: sigQueue
+        )
+        stdinSource.setEventHandler {
+            var buf = [UInt8](repeating: 0, count: 64)
+            let n = read(STDIN_FILENO, &buf, buf.count)
+            if n <= 0 {
+                // n == 0: EOF (부모가 write end를 닫음, 즉 부모 사망)
+                // n  < 0: read error — 이 경로도 부모 사망과 동등 취급
+                NocVirtDisplay.exit()
+            }
+            // n > 0: 부모가 실수로 데이터를 보낸 경우. 버리고 계속 대기한다.
+        }
+        stdinSource.resume()
+
         // CFRunLoopRun()은 attach된 source가 없으면 즉시 리턴하므로 빈 source로 run loop를 살려둔다.
         var keepAliveContext = CFRunLoopSourceContext()
         let keepAliveSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &keepAliveContext)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), keepAliveSource, .defaultMode)
 
         // 로컬 변수로 둔 DispatchSource / CGVirtualDisplay를 블로킹 직전에 명시적으로 참조해 해제를 방지.
-        withExtendedLifetime((display, sigintSource, sigtermSource, keepAliveSource)) {
+        withExtendedLifetime((display, sigintSource, sigtermSource, stdinSource, keepAliveSource)) {
             CFRunLoopRun()
         }
     }
