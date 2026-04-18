@@ -66,6 +66,54 @@ struct MainWindowRemoteSessionView: View {
             }
         }
         #endif
+        .sessionOverlay(isPresented: $viewModel.shouldPresentDisplaySwitchSheet) {
+            if case .displayID(let currentActive) = sourceDescriptor {
+                let displayLayoutManager = projection.channel.displayLayoutManager
+                let displays = Array(displayLayoutManager.displayLayouts.values)
+                
+                DisplaySwitcherSheet(
+                    displays: displays,
+                    currentActive: currentActive,
+                    action: { newSourceDisplayID in
+                        Task {
+                            do {
+                                try await self.updateProjectionTarget(newSourceDisplayID)
+                            } catch {
+                                Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
+                            }
+                        }
+                    },
+                    onDetach: viewModel.onDetachDisplay
+                )
+                    .task {
+                        // 시트 표시 시 thumbnail 포함 디스플레이 목록 재요청
+                        guard let response = try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails) else {
+                            return
+                        }
+
+                        for display in response.displays {
+                            await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
+                        }
+                    }
+                /*
+                    .presentationDragIndicator(.visible)
+                    .if(DeviceKind.current == .iPhone) {
+                        $0.presentationDetents([.height(260)])
+                    }
+                    .if(DeviceKind.current == .iPad) {
+                        $0.presentationSizing(.fitted)
+                    }
+                 */
+            }
+        } subcontent: {
+            if case .displayID(let currentActive) = sourceDescriptor {
+                let displayLayoutManager = projection.channel.displayLayoutManager
+                let displays = Array(displayLayoutManager.displayLayouts.values)
+                
+                DisplayLayoutRendererView(displays: displays)
+            }
+        }
+        /*
         .sheet(isPresented: $viewModel.shouldPresentDisplaySwitchSheet) {
             if case .displayID(let currentActive) = sourceDescriptor {
                 let displayLayoutManager = projection.channel.displayLayoutManager
@@ -104,6 +152,7 @@ struct MainWindowRemoteSessionView: View {
                     }
             }
         }
+         */
         /*
          // TODO: 어떤 세션에 대한 에러인지 구분이 안되니까, 다른 디스플레이로 전환했을 때 그냥 꺼짐
         .onReceive(projection.$sessionError) { error in
