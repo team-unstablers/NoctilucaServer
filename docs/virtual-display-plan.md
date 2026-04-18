@@ -1,7 +1,7 @@
 # Noctiluca Server — 가상 디스플레이 기능 계획서 (초안)
 
 > 작성일: 2026-04-17
-> 상태: **Draft** — 의사 결정 과정 기록용. 본격 구현 전 팀 내부 재검토 필요.
+> 상태: **Draft** — PoC 검증 1차 반영(2026-04-17). 본격 구현 전 팀 내부 재검토 필요.
 > 기반 리서치: [`docs/macOS-virtual-display-research.md`](./macOS-virtual-display-research.md)
 
 ---
@@ -13,13 +13,14 @@
 | # | 결정 사항 | 내용 |
 |---|-----------|------|
 | D1 | **API 세대** | 3세대 `CGVirtualDisplay` Private API (macOS 14+). 1·2세대는 검토 대상 아님. |
-| D2 | **프로세스 모델** | 메인 서버 프로세스에서 직접 호출하지 않고, **별도 XPC 헬퍼 (`VirtualDisplayHelper.xpc`)** 로 분리. TCC/WindowServer 문제 회피 + 권한 격리. |
+| D2 | **프로세스 모델** | 메인 서버 프로세스에서 직접 호출하지 않고, **별도 헬퍼 바이너리 `nocvirtdisplay` 서브프로세스**로 분리. XPC 서비스는 쓰지 않음 — `CGVirtualDisplay`가 내부적으로 WindowServer와 XPC로 통신하므로, helper 프로세스 사망만으로도 OS-레벨 자동 cleanup이 보장된다(2026-04-17 PoC 확인). |
 | D3 | **물리 디스플레이 비활성화** | 지원함 (`SLSConfigureDisplayEnabled(..., false)`). 단, **RAII 스타일 핸들**로 서버 측이 확실히 복원 책임을 진다. |
 | D4 | **가상 디스플레이 수명 주기** | **이중 바인딩**: (1) 핸들 명시적 파괴가 정상 경로, (2) 미처 정리 못 한 것은 세션 종료 시 fallback cleanup. |
 | D5 | **Sirius 네임스페이스** | 신규 채널을 만들지 않고 **기존 `displayman` 네임스페이스(opcode `0x8041~`) 확장**. 가상 디스플레이 opcode는 `0x8048~` 부터 할당 제안. |
 | D6 | **DisplayLayoutManager V2** | 기존 V1(read-only + change-subscribe)을 갈아엎지 않고 부가 API를 얹는 형태. 호출부에서 물리/가상 구분 없이 `CGDirectDisplayID`로 다룬다. |
 | D7 | **AppStream 통합** | 별도 feature가 아니라, AppStream 쪽이 가상 디스플레이를 *소비하는* 형태로 결합. AppStream 윈도우 라이프타임 ↔ VD 라이프타임 1:1 바인딩. |
 | D8 | **App Store 배포** | 이미 Private API(`Gesu`) 사용 중이므로 배포 경로에 **영향 없음**. Private API 사용 사실은 고지 문서에 그대로 반영. |
+| D9 | **Helper 바이너리 외부 사용 정책** | `nocvirtdisplay` 는 형식적으로 독립 실행 가능하나, **유효한 Noctiluca Server 라이선스 보유자의 개인 스크립팅 용도**에 한정(honor-system, 라이선스 런타임 검증 없음). CLI/출력 포맷은 **안정 ABI로 약속하지 않는다.** `--help` NOTE 블록에 같은 취지 명시. |
 
 ---
 
@@ -27,7 +28,7 @@
 
 Noctiluca Server에 **가상 디스플레이(Virtual Display)** 기능을 추가해, 호스트 Mac의 물리 디스플레이 구성과 무관하게 클라이언트에게 원하는 해상도·개수의 화면을 제공할 수 있도록 한다.
 
-구현 기반은 macOS 14(Sonoma)+의 `CGVirtualDisplay` Private API이며, TCC/WindowServer 호환성을 위해 별도 XPC 헬퍼 프로세스를 두는 구조를 택한다.
+구현 기반은 macOS 14(Sonoma)+의 `CGVirtualDisplay` Private API이며, 안정성·권한 격리·자동 cleanup을 위해 별도 헬퍼 바이너리(`nocvirtdisplay`) 서브프로세스 구조를 택한다.
 
 이 기능은 크게 두 가지 방향에서 가치가 있다.
 
@@ -122,42 +123,95 @@ Noctiluca Server v0.9.x는 호스트의 **물리 디스플레이 레이아웃을
 │  │  (Sirius, displayman ext)│   │          V2            │   │
 │  └──────────────────────────┘   └───────────┬────────────┘   │
 │                                             │                │
-│                                       NSXPCConnection        │
+│                            posix_spawn + pipe (stdout/stderr)│
+│                            + lifetime pipe (EOF 감지)         │
 │                                             │                │
 └─────────────────────────────────────────────┼────────────────┘
                                               │
                                               ▼
 ┌──────────────────────────────────────────────────────────────┐
-│              VirtualDisplayHelper.xpc (child)                │
+│        nocvirtdisplay  (helper binary, child process)        │
 │                                                              │
-│  - CGVirtualDisplayDescriptor 생성                            │
+│  - ArgumentParser-based CLI                                  │
+│  - CGVirtualDisplayDescriptor 생성                           │
 │  - CGVirtualDisplay initWithDescriptor:                      │
 │  - applySettings:                                            │
-│  - SLSConfigureDisplayEnabled (활성화)                        │
-│  - CGDisplaySetDisplayMode (모드 전환)                         │
-│  - 프로세스 종료 시 모든 VD 자동 소멸                            │
+│  - stdout: "<DisplayID>\n"                                   │
+│  - stderr: "nocvirtdisplay: <reason>"                        │
+│  - SIGINT / SIGTERM → 즉시 종료                              │
+│  - 프로세스 사망 → WindowServer가 내부 XPC 끊김 감지           │
+│    → 해당 프로세스가 만든 VD 전부 자동 제거 (OS-level)        │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 5.1 Virtual Display Helper (XPC 서비스)
+### 5.1 Virtual Display Helper (`nocvirtdisplay` 서브프로세스)
 
 **역할.**
-- `CGVirtualDisplay` 오브젝트의 실제 소유/생성/파괴.
-- `SLSConfigureDisplayEnabled` 호출로 물리·가상 디스플레이의 enable/disable.
-- `CGDisplaySetDisplayMode` 를 통한 모드 전환.
+- `CGVirtualDisplay` 오브젝트의 실제 소유/생성.
+- (향후 서브커맨드로) `SLSConfigureDisplayEnabled` 호출로 물리·가상 디스플레이의 enable/disable.
+- (향후 서브커맨드로) `CGDisplaySetDisplayMode` 를 통한 모드 전환.
 
-**왜 분리하는가.** 리서치(§1, Lumen `vd_helper`)에서 확인된 바와 같이, 메인 프로세스에서 직접 `CGVirtualDisplay`를 만들면 TCC / WindowServer 등록 타이밍 문제로 디스플레이가 시스템에 정상 노출되지 않는 케이스가 있다. 또한 Private API 호출을 격리함으로써, 서버 본체가 크래시해도 호스트 OS 디스플레이 구성을 비교적 안전하게 복원할 여지를 준다.
+**왜 XPC 서비스가 아닌 일반 서브프로세스인가.** 초기 드래프트에서는 `NSXPCConnection` 기반 XPC 서비스를 검토했다. 그러나 2026-04-17 PoC에서 다음이 확인됨:
+
+- `CGVirtualDisplay` 자체가 내부적으로 WindowServer와 XPC로 통신한다.
+- 즉 **"helper 프로세스 사망 → WindowServer가 XPC 끊김 감지 → 해당 프로세스가 만든 VD 자동 정리"** 라는 OS-레벨 cleanup 경로가 이미 내장되어 있다.
+- 따라서 helper를 `.xpc` 서비스 번들로 만들 필요 없이, **일반 서브프로세스 바이너리**로도 "고아 VD 방지" 보장을 공짜로 얻을 수 있다.
+
+서브프로세스 쪽이 가지는 추가 장점:
+- 빌드/테스트가 단순 (하나의 실행 바이너리, ArgumentParser로 CLI 구성).
+- 라이선스 보유 사용자의 개인 스크립팅 용도로 **제한 노출** 가능 (D9).
+- 크래시 시 코어 덤프 수집·디버깅이 XPC 서비스 대비 용이.
+
+XPC 대비 감수하는 것:
+- `NSXPCConnection`의 `invalidationHandler` / `interruptionHandler` 같은 공짜 훅이 없다. 부모 측에서 `waitpid` / `kevent EVFILT_PROC` 등으로 수명 감지를 직접 구현해야 한다.
+- 구조화된 RPC가 아닌 line-based stdout 프로토콜. 메시지가 복잡해지면 파서 부담이 생길 수 있음. (현재 설계 범위는 "DisplayID 한 줄 + 시그널로 종료" 이므로 충분히 단순.)
 
 **번들링.**
-- `NoctilucaServer.app/Contents/XPCServices/VirtualDisplayHelper.xpc`
-- Bundle ID 예: `app.noctiluca.server.VirtualDisplayHelper`
+- `NoctilucaServer.app/Contents/Helpers/nocvirtdisplay`
+- 독립 Swift 타깃. Swift ArgumentParser 기반 CLI.
 
-**통신 방식.**
-- `NSXPCConnection` + `@objc` 프로토콜.
-- 가능하다면 Swift Concurrency(`async`) 친화적 래퍼를 메인 프로세스 쪽에 둔다.
+**부모 → 자식 호출 (개요).**
+
+```swift
+// 부모 측 (Swift, 개념 스케치)
+let pid = try spawnChild(
+    executablePath: noctilucaServerBundle.helpersURL
+        .appendingPathComponent("nocvirtdisplay").path,
+    argv0: "nocvirtdisplay",  // ps / Activity Monitor 표시용
+    arguments: [
+        "--identifier", handle.internalIdentifier,
+        "--serial-num", handle.serialNum,
+        "2560x1440@60+2x,1920x1080@60+2x"
+    ]
+)
+// 자식의 stdout 한 줄에서 DisplayID 파싱 → NOCVirtualDisplayHandle 에 저장
+```
+
+**CLI 인터페이스 (2026-04-17 PoC 기준).**
+
+```
+USAGE: nocvirtdisplay [--identifier <id>] [--serial-num <sn>] <specs>
+
+<specs>  =  "WxH@RATE[+<scale>x]{,...}"
+             예: 640x480@59.94+1x,1280x720@60+2x,3840x2160@29.97
+             (하나의 VD가 여러 모드를 동시에 노출할 수 있다.
+              첫 모드가 기본값으로 활성화됨.)
+
+OUTPUTS
+  stdout   성공 시 DisplayID 10진수 한 줄
+  stderr   에러 발생 시 "nocvirtdisplay: <reason>"
+
+EXIT CODES
+  0   정상 종료
+  1   CGVirtualDisplay 초기화 실패 (descriptor rejected)
+  2   applySettings 실패
+  3   displayID 획득 실패 (0 반환)
+  64  인자 파싱 실패 (ArgumentParser 기본)
+```
 
 **권한.**
-- 헬퍼 자체는 최소 권한으로만. 화면 캡처(TCC) / 입력 인젝션 / 네트워크 등은 **모두 메인 프로세스 책임**. 헬퍼는 `CoreGraphics` + `SkyLight Private API` 접근만.
+- 헬퍼 자체는 TCC 권한(화면 녹화/접근성)을 요청하지 않는다.
+- `posix_spawn`된 자식은 기본적으로 부모의 TCC 승인을 상속하지만, 헬퍼 구현은 그 권한을 **사용하지 않는다**. 화면 캡처 / 네트워크 / 입력 인젝션은 어디까지나 메인 프로세스 책임.
 
 ### 5.2 DisplayLayoutManager V2
 
@@ -166,7 +220,7 @@ Noctiluca Server v0.9.x는 호스트의 **물리 디스플레이 레이아웃을
 - 변경 이벤트 구독
 
 V2는 여기에 다음 책임을 얹는다.
-- **가상 디스플레이 acquire / destroy** (XPC 헬퍼를 통해)
+- **가상 디스플레이 acquire / destroy** (서브프로세스 helper 를 통해)
 - **디스플레이 활성 상태 제어** (`setActive`) — 물리/가상 공통
 - **메인 디스플레이 승격** (`promoteToMain`)
 - **레이아웃 재배치** (`arrange`, CGConfigureDisplayOrigin 래핑)
@@ -215,14 +269,16 @@ V2는 V1을 *대체하지 않는다*. 같은 클래스를 진화시키되, 기�
 
 > 아래 코드는 **의사 코드(pseudo-code)** 이며, 타입/모듈 경계가 최종 구현과 정확히 일치하지 않을 수 있다. "이 방향으로 간다" 정도의 골격으로 읽어주길.
 
-### 6.1 식별자
+### 6.1 식별자 — 내부 ID와 외부 표시명 분리
 
 ```swift
 // 예: "app.noctiluca.server.0F3B1E5A-….virtual-display.A12C-…"
 public typealias NOCVirtualDisplayIdentifier = String
 ```
 
-식별자는 **세션 UUID + VD UUID** 조합의 RDNS 스타일 문자열. 서버 로그/크래시 리포트에서 "어느 세션이 만든 VD인가?"가 즉각 읽혀야 한다.
+`NOCVirtualDisplayIdentifier` 는 **세션 UUID + VD UUID** 조합의 RDNS 스타일 문자열로, **내부 식별자**다. 서버 로그/크래시 리포트/crash dump 등에서 "어느 세션이 만든 VD인가?" 가 즉각 읽혀야 하는 곳에만 쓴다.
+
+> **표시명은 별도로 분리한다.** macOS 시스템 설정의 "디스플레이" 화면, Activity Monitor 등 **사용자에게 노출되는 이름**은 `NOCDisplaySpec.displayName` 필드에 실어 전달한다 — 내부용 RDNS 문자열이 시스템 UI에 그대로 새면 흉측하기 때문. (2026-04-17 PoC 확인: `nocvirtdisplay --identifier 'testrun'` 결과 시스템 설정에 **`Noctiluca Virtual Display (testrun)`** 로 표시되며, 이 문자열이 곧 *외부 표시명* 역할을 함.)
 
 ### 6.2 기본 타입
 
@@ -233,10 +289,25 @@ public enum NOCVirtualDisplayPurpose: Sendable {
     case other(String)            // 확장 여지 (외부 플러그인 등)
 }
 
+/// 가상 디스플레이가 노출할 개별 모드.
+/// `nocvirtdisplay` CLI의 "WxH@RATE+<scale>x" 토큰 하나에 대응.
+public struct NOCDisplayMode: Sendable, Equatable, Hashable {
+    public let resolution: CGSize     // 픽셀 단위 (예: 2560×1440)
+    public let refreshRate: Double    // Hz (예: 60.0, 59.94)
+    public let scaleFactor: CGFloat   // @1x / @2x — Retina 여부
+}
+
+/// 가상 디스플레이 사양.
+/// - 하나의 VD는 **여러 모드를 동시에 노출**할 수 있다.
+///   (2026-04-17 PoC: 2560×1440@60+2x 하나만 넘겨도 시스템 설정의
+///    해상도 목록에 1920×1080 / 1600×900 / 1280×720 가 자동 파생돼 나타난다.
+///    복수 모드를 명시적으로 실어주면 그 조합이 그대로 노출됨.)
+/// - `modes` 배열의 **첫 번째 원소**가 기본(Default)으로 활성화된다.
 public struct NOCDisplaySpec: Sendable, Equatable {
-    public let viewportResolution: CGSize   // 논리 포인트 단위
-    public let scaleFactor: CGFloat         // 1.0 / 2.0 ...
-    // 이후 확장: color profile, refresh rate, HDR, ...
+    /// 사용자 노출용 표시명. 시스템 설정 "디스플레이" 에 그대로 뜸.
+    public let displayName: String
+    public let modes: [NOCDisplayMode]
+    // 이후 확장: color profile, HDR, physical size override, ...
 }
 
 public struct NOCVirtualDisplayHandle: Sendable {
@@ -279,14 +350,16 @@ public final class DisplayLayoutManager {
         [NOCVirtualDisplayIdentifier: NOCVirtualDisplayHandle]
 
     /// 새 가상 디스플레이 생성.
-    /// - 반환되는 핸들은 RAII 스타일로 취급. 명시적으로 destroyVirtualDisplay(_:)를
-    ///   호출해서 정리하는 것이 정상 경로.
+    /// - 내부적으로 `nocvirtdisplay` 서브프로세스를 `posix_spawn` 하고,
+    ///   stdout 의 DisplayID 한 줄을 파싱해 핸들을 구성한다.
+    /// - 반환되는 핸들은 RAII 스타일. destroyVirtualDisplay(_:)가 정상 경로.
     public func acquireVirtualDisplay(
         relatedTo sessionID: UUID,
         purpose: NOCVirtualDisplayPurpose,
         spec: NOCDisplaySpec
     ) async throws -> NOCVirtualDisplayHandle
 
+    /// 핸들 기반 파괴. 해당 helper 프로세스에 SIGTERM → WindowServer가 VD 제거.
     public func destroyVirtualDisplay(
         _ handle: NOCVirtualDisplayHandle
     ) async throws
@@ -356,8 +429,8 @@ try await projectionChannel.startProjection(.display(vd2.id))
 
 가상 디스플레이는 다음 두 경로로 사라질 수 있다.
 
-1. **정상 경로 — 핸들 명시적 파괴.** 클라이언트가 `destroyVirtualDisplay` 요청을 보내거나, 서버 측 소유자(예: AppStream 세션)가 해당 VD를 더 이상 필요로 하지 않을 때 명시적으로 `DisplayLayoutManager.destroyVirtualDisplay(_:)` 호출.
-2. **Fallback 경로 — 세션 종료 시 cleanup.** Sirius 세션(혹은 Projection 채널)이 닫히거나 비정상 종료되면, `DisplayLayoutManager`는 해당 세션이 만든 VD 중 아직 살아 있는 것을 전부 파괴한다.
+1. **정상 경로 — 핸들 명시적 파괴.** 클라이언트가 `destroyVirtualDisplay` 요청을 보내거나, 서버 측 소유자(예: AppStream 세션)가 해당 VD를 더 이상 필요로 하지 않을 때 명시적으로 `DisplayLayoutManager.destroyVirtualDisplay(_:)` 호출 → 해당 helper 프로세스에 SIGTERM.
+2. **Fallback 경로 — 세션 종료 시 cleanup.** Sirius 세션(혹은 Projection 채널)이 닫히거나 비정상 종료되면, `DisplayLayoutManager`는 해당 세션이 만든 모든 helper 프로세스에 SIGTERM을 일괄 송신.
 
 > **원칙.** 정상 경로가 실패해도 서비스가 망가지지 않도록, Fallback 경로를 **항상 준비**한다.
 
@@ -368,13 +441,33 @@ try await projectionChannel.startProjection(.display(vd2.id))
 - `DisplayLayoutManager` 내부에 `DeactivatedPhysicalDisplay` 장부 유지.
 - 장부 엔트리 제거는 (a) 동일 세션에서 다시 `setDisplayActive(_, true)` 호출되거나 (b) 세션이 종료될 때만.
 - 세션 종료 훅: `ProjectionChannel` teardown에 "내가 비활성화시킨 물리 디스플레이가 있으면 원상 복구" 단계를 강제.
-- 서버 프로세스 비정상 종료 대비: helper XPC 프로세스 또한 자체 종료 시 (모든) 비활성화된 물리 디스플레이를 복원한다.
+- 서버 프로세스 비정상 종료 대비: helper 프로세스 측도 자체 종료 시(부모 파이프 EOF 감지 포함) 비활성화된 물리 디스플레이를 복원하고 마무리.
 
-### 7.3 서버 재기동 / 크래시 시 Orphan 정리
+### 7.3 헬퍼 / 서버 종료 시 자동 정리
 
-XPC 헬퍼는 **부모 프로세스(NoctilucaServer main)가 죽으면 같이 죽는** 모델을 기본으로. 이 경우 자식에서 만든 `CGVirtualDisplay` 객체도 해제 → OS에서 해당 VD가 제거된다.
+`CGVirtualDisplay` 는 내부적으로 WindowServer 와 XPC 채널을 유지하며, 이 채널은 **프로세스 단위**다. 해당 프로세스가 어떤 경로로든 종료되면 WindowServer 가 XPC 끊김을 감지하고, **그 프로세스가 만든 VD 전부를 자동 제거**한다.
 
-만약 어떤 이유로든 orphan VD가 남는다면 (예: helper가 좀비 상태), 서버 재기동 시 `CGGetOnlineDisplayList`로 전수 조사 후, Noctiluca 식별자 규약(`app.noctiluca.server.*`)에 해당하는 VD 중 "현재 세션과 무관한 것"을 강제 파괴.
+이 OS-레벨 cleanup 경로 덕분에 Noctiluca 쪽에서 수동으로 관리할 범위는 상당히 좁다.
+
+| 사건 | 결과 |
+|------|------|
+| `nocvirtdisplay` 프로세스 정상 종료 (SIGTERM) | 해당 프로세스가 만든 VD 전부 자동 소멸 |
+| `nocvirtdisplay` 프로세스 크래시 | 동일 (WindowServer 측 XPC 끊김 감지) |
+| 부모(NoctilucaServer main) 정상 종료 | 부모는 종료 직전 모든 활성 helper 에 SIGTERM 송신 |
+| 부모(NoctilucaServer main) 크래시 | 자식 helper 는 launchd 로 reparent 되어 생존 가능 → §7.3.1 |
+
+#### 7.3.1 부모 사망 시 helper 생존 방지
+
+macOS 는 Linux 의 `prctl(PR_SET_PDEATHSIG)` 같은 자동 사망 훅을 제공하지 않는다. 따라서 helper 쪽에서 부모 생존을 감시해야 한다. 설계 옵션:
+
+- **라이프타임 파이프 + EOF 감지** *(권장)* — 부모가 `posix_spawn` 시 unnamed pipe 한 쌍을 열어 읽기 FD를 자식에게 넘긴다. 부모 사망 시 파이프가 닫히고 자식은 `read()` 에서 EOF → self-terminate.
+- `kqueue` + `EVFILT_PROC` + `NOTE_EXIT` 로 부모 pid 감시. 더 직접적이지만 race 와 `getppid()` 폴링 조합이 필요.
+
+구현 단순성과 신뢰도 면에서 **파이프 EOF 방식**을 채택한다.
+
+#### 7.3.2 재기동 시 잔존 VD 탐지 (세이프티 넷)
+
+그래도 어떤 이유로든 orphan VD가 남는다면, 서버 재기동 시 `CGGetOnlineDisplayList` 로 전수 조사 후, Noctiluca 식별자 규약(`app.noctiluca.server.*`) 매칭 + 현재 세션과 무관한 VD → 강제 파괴.
 
 ---
 
@@ -385,24 +478,26 @@ XPC 헬퍼는 **부모 프로세스(NoctilucaServer main)가 죽으면 같이 �
 | **물리 디스플레이 비활성화 허용** | 서버 설정에서 사용자가 명시적으로 on/off. **기본값은 OFF** (Phase 1 기준). ON으로 둔 경우에도 클라이언트가 실제 비활성화를 요청하면 서버 UI에서 1회 확인(그냥 로그만 남길지, 모달을 띄울지는 §10 Open Question). |
 | **최대 동시 VD 개수** | 세션당 4장을 기본 상한으로. 전체 호스트 기준으로는 16장 상한. 초과 시 `acquireVirtualDisplay`가 즉시 실패. (레퍼런스: BetterDisplay도 실용상 10장 이내 권장) |
 | **최대 해상도** | VD당 7680×4320 (8K) 상한. 이 이상은 `supportsSpec = false` 반환. 물리 크기 선언은 27" 상당(597×336mm)로 고정하여 리서치 §1의 "물리 크기 검증" 문제 회피. |
-| **TCC/권한 격리** | 헬퍼 XPC는 TCC 권한(화면 녹화/접근성)을 요청하지 않는다. 가상 디스플레이 생성/파괴만 담당. 화면 캡처는 어디까지나 메인 프로세스 책임. |
+| **TCC/권한 격리** | helper 는 TCC 권한(화면 녹화/접근성)을 요청하지 않는다. 가상 디스플레이 생성/파괴만 담당. 화면 캡처는 어디까지나 메인 프로세스 책임. (`posix_spawn` 된 자식은 부모의 TCC 승인을 상속하지만, helper 구현은 그 권한을 *사용하지 않음*) |
 | **플러그인으로부터의 호출** | `NoctilucaServerExtensionV1` 등 플러그인은 이 API에 **직접 접근 불가**. 플러그인이 VD 필요로 하는 시나리오는 Phase 3+ 에서 ABI 설계 후 열어준다. |
+| **Helper 바이너리의 외부 직접 실행** | 라이선스 보유자의 개인 스크립팅 용도로만 한정 (D9, honor-system). CLI/출력 포맷은 안정 ABI 아님. `--help` NOTE에 명시. |
 | **known-hosts** | 기존 모델 그대로. 가상 디스플레이 관련 메시지가 추가됐다는 이유만으로 known-hosts 검증 로직은 변경되지 않는다. |
 
 ---
 
 ## 9. 단계적 도입 계획 (Phasing)
 
-### Phase 0 — PoC (1~2주)
-- [ ] 최소 형태의 `VirtualDisplayHelper.xpc` 번들 생성. `CGVirtualDisplay` 기반 1장 생성/파괴.
-- [ ] 메인 프로세스에서 NSXPCConnection으로 헬퍼 호출, 생성된 VD가 `CGGetOnlineDisplayList`에 보이는지 검증.
-- [ ] ScreenCaptureKit이 VD를 정상 캡처하는지 확인 (UC-1 핵심 전제).
+### Phase 0 — PoC ← **대부분 완료 (2026-04-17)**
+- [x] 최소 형태의 `nocvirtdisplay` 헬퍼 바이너리 구현. Swift ArgumentParser CLI 기반, `CGVirtualDisplay` 1장 생성/파괴.
+- [x] 생성된 VD 가 `CGGetOnlineDisplayList` 에 노출되고 **시스템 설정 → 디스플레이**에 표시됨 (`Noctiluca Virtual Display (testrun)`; 2560×1440 기본 + 1920×1080 / 1600×900 / 1280×720 모드).
+- [ ] ScreenCaptureKit 이 VD 를 정상 캡처하는지 확인 (UC-1 핵심 전제, 남은 유일한 Phase 0 작업).
+- [ ] 부모↔자식 라이프타임 파이프(EOF 감지) PoC.
 
 ### Phase 1 — 기본 기능 (3~4주)
 - [ ] `DisplayLayoutManager` V2 API 구현 (acquire/destroy/arrange/setActive).
 - [ ] Sirius `displayman` opcode 확장 (§5.3의 `0x8048~0x8051`).
 - [ ] NoctilucaClient (macOS) 측 최소 UI — "내 레이아웃으로 동기화" 버튼.
-- [ ] 세션 종료 시 orphan cleanup.
+- [ ] 세션 종료 시 orphan cleanup (§7.3.2 세이프티 넷 포함).
 - [ ] **허용: 물리 디스플레이 유지, 가상 디스플레이 추가만.** (정책 D3의 비활성화는 Phase 2로)
 
 ### Phase 2 — 정책 & 레이아웃 완전체 (3~4주)
@@ -424,11 +519,12 @@ XPC 헬퍼는 **부모 프로세스(NoctilucaServer main)가 죽으면 같이 �
 ## 10. Open Questions (구현 전에 풀어야 할 것)
 
 - **Q-10.1.** `NOCScreen.frame`의 origin 기준을 좌측 상단으로 할지 좌측 하단(Cocoa 관례)으로 할지. 프로토콜 일관성(클라이언트 Qt/Windows까지 고려) 관점에서는 좌측 상단이 자연스럽지만, 서버 내부 NSScreen 브리징 비용이 있다. 드래프트에서는 좌측 상단으로 잠정 결정.
-- **Q-10.2.** AppStream에서 "앱을 특정 VD로 이주"하는 public/private API 경로. `NSWindow.setFrame` 수준으로 충분한가, 아니면 Private API(`_setWorkspace:` 계열)가 필요한가? 리서치 필요.
+- **Q-10.2.** AppStream에서 "앱을 특정 VD로 이주"하는 public/private API 경로. `NSWindow.setFrame` 수준으로 충분한가, 아니면 Private API(`_setWorkspace:` 계열)가 필요한가? Phase 3 착수 전 스파이크 필요.
 - **Q-10.3.** 물리 디스플레이 비활성화 시 호스트 측 UX. 모달 확인창? 조용히 비활성화? 전통 RDP의 "Lock screen on host" 스위치와 유사한 사용자 동의 플로우를 둘지.
-- **Q-10.4.** ScreenCaptureKit이 VD를 캡처할 때 `SCDisplay` 속성(특히 `frame`/`displayID`)이 물리 디스플레이와 동일한 신뢰도로 채워지는지. Phase 0 PoC에서 반드시 검증.
+- **Q-10.4.** ScreenCaptureKit이 VD를 캡처할 때 `SCDisplay` 속성(특히 `frame`/`displayID`)이 물리 디스플레이와 동일한 신뢰도로 채워지는지. **Phase 0 잔여 작업**에서 반드시 검증.
 - **Q-10.5.** Navigator Qt(Windows/Linux)에서 `displayman` 확장 opcode를 언제 지원할지. macOS Navigator 선행 → Qt는 Phase 1.5 즈음 합류가 자연스러움.
-- **Q-10.6.** 헬퍼 XPC 서비스를 Gesu 스타일로 빌드 타임 코드생성에 녹일지, 아니면 별도 타깃으로 독립시킬지. 지금 감각으론 독립 타깃이 빌드·테스트 분리 면에서 유리.
+- **Q-10.6.** `arrangeDisplay` API 의 시그니처를 **단일 디스플레이 단위**로 둘지, **여러 디스플레이의 배치를 한 트랜잭션에 묶은 `applyDisplayArrangement([displayID: CGRect])`** 로 둘지. CGConfigureDisplayOrigin 은 "스냅" 동작을 하므로 후자 쪽이 의도대로 배치될 확률이 높다. (참고: 2019년 Stack Overflow 포스트 "macOS CGConfigureDisplayOrigin doesn't work as expected" Ken Thomases 답변.)
+- ~~**Q-10.x. (舊)** 헬퍼 XPC 서비스를 Gesu 스타일로 빌드 타임 코드생성에 녹일지, 아니면 별도 타깃으로 독립시킬지.~~ **→ 해결 (D2 개정)**: 별도 타깃의 **서브프로세스 바이너리 `nocvirtdisplay`** 로 확정. 2026-04-17 PoC 로 아키텍처 검증 완료.
 
 ---
 
@@ -437,11 +533,14 @@ XPC 헬퍼는 **부모 프로세스(NoctilucaServer main)가 죽으면 같이 �
 | 리스크 | 영향 | 완화 |
 |-------|------|------|
 | macOS 업데이트로 `CGVirtualDisplay` private symbol 변경 | 기능 완전 파괴 | Gesu 스타일의 동적 dlsym 래핑. 실패 시 "가상 디스플레이 미지원" 모드로 graceful degrade. |
-| `SLSConfigureDisplayEnabled`로 물리 디스플레이 껐다가 복원 실패 | **호스트 Mac 블랙스크린** — 현장 사용자가 물리 접근 못하면 심각 | (a) 서버 프로세스 다운 시 helper 자동 복원, (b) helper 다운 시 메인이 대체 복원 시도, (c) "전통적" 복원 경로 실패 시 SSH 접근자를 위한 `noctilucactl restore-displays` CLI. |
-| TCC 경로에서 헬퍼 프로세스만으로는 VD 생성 안 되는 엣지 케이스 | Phase 0에서 발견되면 아키텍처 재검토 | Phase 0을 길게 잡고, 실패 시 "메인 프로세스에서 직접 호출" 또는 "launchd daemon" 등 대안 검토. |
+| `SLSConfigureDisplayEnabled`로 물리 디스플레이 껐다가 복원 실패 | **호스트 Mac 블랙스크린** — 현장 사용자가 물리 접근 못하면 심각 | (a) 서버 프로세스 다운 시 helper가 자체 복원, (b) helper 다운 시 메인이 대체 복원 시도, (c) "전통적" 복원 경로 실패 시 SSH 접근자를 위한 `noctilucactl restore-displays` CLI. |
+| 부모(NoctilucaServer main) 사망 시 helper 생존 (orphan 프로세스 + orphan VD) | helper가 좀비로 남고 VD 도 잔존 | §7.3.1 라이프타임 파이프 EOF 감지로 1차 해소. §7.3.2 재기동 세이프티 넷으로 2차 방어. |
 | Private API 사용 고지 누락 | 사용자 오해/신뢰 저하 | 릴리즈 노트와 `docs/earlybird-impl-status.md`에 명시. Gesu 케이스와 동일 수준으로 투명하게. |
 | 과도한 개수의 VD로 WindowServer 포화 | 성능 저하/행업 | 정책상 상한(§8). 상한 도달 시 명확한 에러로 거절. |
 | Qt Navigator 개발 지연으로 "macOS Navigator만 되는 비대칭 기능" 장기화 | UX 혼선 | 계획서 §9 Phasing에서 Qt 합류 시점을 명시. 마케팅/릴리즈 노트에서도 "현재 macOS Navigator 한정"을 정확히 기재. |
+| Helper 바이너리 CLI/출력 포맷을 외부 사용자가 스크립트에서 고정 ABI로 취급 | 내부 인터페이스 변경 시 사용자 스크립트 깨짐 | `--help` NOTE에 "intended purpose 외 동작 보장 안 됨" 명시 (D9). 필요 시 major 버전 변경 시점에만 출력 포맷 변경. |
+
+> **제거된 리스크.** "TCC 경로에서 헬퍼 프로세스만으로는 VD 생성이 안 되는 엣지 케이스" 는 2026-04-17 PoC 에서 일반 서브프로세스로부터 VD 생성이 정상 작동함을 확인하여 **해소**되었다.
 
 ---
 
@@ -454,3 +553,4 @@ XPC 헬퍼는 **부모 프로세스(NoctilucaServer main)가 죽으면 같이 �
 - KhaosT/CGVirtualDisplay — API 레퍼런스
 - Stengo/DeskPad — 유저스페이스 VD 사용 예
 - trollzem/Lumen — `vd_helper` 서브프로세스 패턴
+- Stack Overflow, "macOS CGConfigureDisplayOrigin doesn't work as expected" (Ken Thomases 답변, 2019) — §10 Q-10.6 근거
