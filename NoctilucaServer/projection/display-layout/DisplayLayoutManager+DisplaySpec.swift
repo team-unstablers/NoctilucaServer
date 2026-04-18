@@ -91,10 +91,19 @@ extension DisplayLayoutManager {
     /// `CGConfigureDisplayOrigin`은 메인 디스플레이 좌상단을 (0,0)으로 삼는 global display coordinate를
     /// 쓰며, Y축 방향은 동일합니다. 따라서 `mainDisplayID`의 origin만큼 평행 이동만 해주면 되고,
     /// 결과적으로 해당 디스플레이가 (0,0)에 위치하게 되어 자동으로 메인으로 지정됩니다.
-    func applyLayout(layout: [CGDirectDisplayID: CGRect], mainDisplayID: CGDirectDisplayID? = nil) throws {
+    func applyLayout(layout: [CGDirectDisplayID: CGRect?], mainDisplayID: CGDirectDisplayID? = nil) throws {
         let mainDisplayID = mainDisplayID ?? CGMainDisplayID()
+        
+        guard let mainConnectionID = CoreGraphicsPrivate.CGSMainConnectionID?(),
+              let SLSConfigureDisplayEnabled = SkyLightPrivate.SLSConfigureDisplayEnabled
+        else {
+            logger.error("applyLayout: assertion failed, private API not available")
+            throw DisplayLayoutManagerError.unknownError
+        }
 
-        guard let mainFrame = layout[mainDisplayID] else {
+        guard let mainFrame = layout[mainDisplayID],
+              let mainFrame
+        else {
             logger.error("applyLayout: main display #\(mainDisplayID) is not in the given layout")
             throw DisplayLayoutManagerError.unknownError
         }
@@ -110,10 +119,16 @@ extension DisplayLayoutManager {
         }
 
         for (displayID, frame) in layout {
-            let cgX = Int32(frame.origin.x - mainFrame.origin.x)
-            let cgY = Int32(frame.origin.y - mainFrame.origin.y)
-
-            try cgEval { CGConfigureDisplayOrigin(configRef, displayID, cgX, cgY) }
+            if let frame = frame {
+                let cgX = Int32(frame.origin.x - mainFrame.origin.x)
+                let cgY = Int32(frame.origin.y - mainFrame.origin.y)
+                
+                try? cgEval { SLSConfigureDisplayEnabled(mainConnectionID, displayID, true) }
+                try cgEval { CGConfigureDisplayOrigin(configRef, displayID, cgX, cgY) }
+            } else {
+                // disable display
+                try? cgEval { SLSConfigureDisplayEnabled(mainConnectionID, displayID, false) }
+            }
         }
 
         try cgEval { CGCompleteDisplayConfiguration(configRef, [.forSession]) }
