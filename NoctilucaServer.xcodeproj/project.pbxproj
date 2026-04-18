@@ -11,6 +11,7 @@
 		F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; };
 		F621CB052F8AC11900AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F621D2102F91FDA500AEF0FA /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F621D20F2F91FDA500AEF0FA /* ArgumentParser */; };
+		F621D22B2F93287B00AEF0FA /* nocvirtdisplay in CopyFiles */ = {isa = PBXBuildFile; fileRef = F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; };
 		F624FD762EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD862EE2B2E6007A68B3 /* libpam.tbd */; };
@@ -92,6 +93,16 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
+		};
+		F621D22A2F93286B00AEF0FA /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				F621D22B2F93287B00AEF0FA /* nocvirtdisplay in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F66965392ECF27110032EF4E /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -518,6 +529,7 @@
 				F66965092ECF26770032EF4E /* Resources */,
 				F66965392ECF27110032EF4E /* Embed Frameworks */,
 				F6CC7D3C2F51903500AA6DC2 /* Embed PlugIns */,
+				F621D22A2F93286B00AEF0FA /* CopyFiles */,
 			);
 			buildRules = (
 			);
