@@ -216,7 +216,9 @@ actor PluginBundleRegistry {
             switch export {
             case .auth(let plugin):
                 await AuthPluginRegistry.shared.register(plugin: plugin)
-                logger.info("Registered auth plugin: \(plugin.id) from bundle: \(metadata.id)")
+                let pluginId = await plugin.id
+                
+                logger.info("Registered auth plugin: \(pluginId) from bundle: \(metadata.id)")
             case .extension(let extensionPlugin):
                 // TODO: ExtensionPluginRegistry 연동 (향후 구현)
                 logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(metadata.id)")

@@ -7,10 +7,10 @@
 
 import Foundation
 
-public enum AuthError: LocalizedError {
+public enum AuthError: LocalizedError, Sendable {
     case unknownError
 
     case unsupportedMethod
     case invalidPayload
-    case authenticationFailed(Error?)
+    case authenticationFailed((any Error & Sendable)?)
 }

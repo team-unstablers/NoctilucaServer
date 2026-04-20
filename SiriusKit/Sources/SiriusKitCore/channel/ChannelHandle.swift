@@ -109,7 +109,12 @@ package final class ChannelHandleImpl: ChannelHandle {
 
     nonisolated(unsafe) package weak var session: (any SiriusSession)?
     nonisolated(unsafe) private var streamEventLoopTask: Task<Void, any Error>?
-    nonisolated(unsafe) internal weak var lifecycleDelegate: ChannelLifecycleDelegate?
+
+    /// lifecycle delegate는 `stateLock`으로 보호합니다.
+    /// 직접 접근 대신 `setLifecycleDelegate(_:)` / `takeLifecycleDelegateForNotification()` /
+    /// `suppressLifecycleNotifications()`를 사용하세요.
+    nonisolated(unsafe) private weak var _lifecycleDelegate: ChannelLifecycleDelegate?
+    nonisolated(unsafe) private var _lifecycleNotified: Bool = false
 
     // MARK: - public fields
     public let feature: SiriusFeature
@@ -167,8 +172,40 @@ package final class ChannelHandleImpl: ChannelHandle {
                 self.logger.fatal("[\(self.identifier)] encountered error in stream event loop: \(error)")
                 self.eventsContinuation.yield(.error(error))
                 self.eventsContinuation.finish()
-                self.lifecycleDelegate?.channel(self, didEncounterError: error)
+                self.takeLifecycleDelegateForNotification()?.channel(self, didEncounterError: error)
             }
+        }
+    }
+
+    // MARK: - Lifecycle delegate
+
+    /// lifecycle delegate를 설정합니다. `stateLock`으로 보호되어 스레드 안전합니다.
+    internal func setLifecycleDelegate(_ delegate: ChannelLifecycleDelegate?) {
+        stateLock.withLock {
+            _lifecycleDelegate = delegate
+        }
+    }
+
+    /// lifecycle 알림을 선제적으로 봉인합니다. 이후 `takeLifecycleDelegateForNotification()`은
+    /// 항상 nil을 반환하여 콜백이 1회도 일어나지 않습니다. teardown 시 중복 unregister/race를
+    /// 막기 위해 사용됩니다.
+    internal func suppressLifecycleNotifications() {
+        stateLock.withLock {
+            _lifecycleNotified = true
+            _lifecycleDelegate = nil
+        }
+    }
+
+    /// lifecycle 콜백 1회 발사용으로 delegate를 소비합니다. 이미 한 번 반환됐거나
+    /// `suppressLifecycleNotifications()`로 봉인된 경우 nil을 반환합니다.
+    /// 호출자는 반환된 delegate를 lock 밖에서 호출해야 합니다 (reentrancy 회피).
+    private func takeLifecycleDelegateForNotification() -> ChannelLifecycleDelegate? {
+        stateLock.withLock {
+            guard !_lifecycleNotified else { return nil }
+            _lifecycleNotified = true
+            let delegate = _lifecycleDelegate
+            _lifecycleDelegate = nil
+            return delegate
         }
     }
 
@@ -513,7 +550,7 @@ package final class ChannelHandleImpl: ChannelHandle {
             logger.debug("[\(self.identifier)] streamEventLoop(): channel is closing, aborting event loop")
             eventsContinuation.yield(.closed)
             eventsContinuation.finish()
-            self.lifecycleDelegate?.channelDidClose(self)
+            self.takeLifecycleDelegateForNotification()?.channelDidClose(self)
             return
         }
 
@@ -527,12 +564,12 @@ package final class ChannelHandleImpl: ChannelHandle {
             case .closed:
                 eventsContinuation.yield(.closed)
                 eventsContinuation.finish()
-                self.lifecycleDelegate?.channelDidClose(self)
+                self.takeLifecycleDelegateForNotification()?.channelDidClose(self)
                 return
             case .error(let error):
                 eventsContinuation.yield(.error(error))
                 eventsContinuation.finish()
-                self.lifecycleDelegate?.channel(self, didEncounterError: error)
+                self.takeLifecycleDelegateForNotification()?.channel(self, didEncounterError: error)
                 return
             }
         }

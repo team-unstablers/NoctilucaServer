@@ -402,7 +402,7 @@ class SkyLightPrivate {
         args: (CFTypeRef.self,),
         ret: UInt64.self
     )
-    
+
     #PrivateFunction(
         "SLSWindowIteratorGetAttributes",
         args: (CFTypeRef.self,),
@@ -481,6 +481,25 @@ class SkyLightPrivate {
             UInt64.self
         ),
         ret: CFString?.self
+    )
+
+    // MARK: - Display Enable / Disable
+
+    /// 지정한 디스플레이의 enable/disable 변경을 display config transaction에 추가한다.
+    ///
+    /// - Parameter config: `SLSBeginDisplayConfiguration` 등으로 획득한 config 핸들.
+    /// - Note: 실제 적용은 `SLSCompleteDisplayConfiguration` 호출 시점이며, 이 함수 자체는
+    ///         pending 리스트에 항목을 append 할 뿐이다.
+    /// - Warning: 비활성화는 영구적이지 않으나, 복원 책임은 호출자에 있다.
+    ///            프로세스가 비정상 종료되면 해당 디스플레이는 비활성화된 채로 남을 수 있다.
+    #PrivateFunction(
+        "SLSConfigureDisplayEnabled",
+        args: (
+            CGDisplayConfigRef.self,
+            CGDirectDisplayID.self,
+            Bool.self
+        ),
+        ret: CGError.self
     )
 
     // MARK: - Space Properties

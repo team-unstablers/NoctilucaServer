@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import Observation
 
 #if os(macOS)
 import AppKit
@@ -16,21 +17,25 @@ import SiriusKitCore
 
 extension RemoteSession {
     @MainActor
-    final class HIDIO: ObservableObject {
+    @Observable
+    final class HIDIO {
+        @ObservationIgnored
         private unowned let parent: RemoteSession
 
         let channelID: UUID
+        @ObservationIgnored
         let controller: HIDIOController
 
+        @ObservationIgnored
         private let rebinder = KeyEventRebinder()
+        @ObservationIgnored
         private var cancellables: Set<AnyCancellable> = []
 
+        @ObservationIgnored
         private(set) var session: HIDIOSession!
 
-        @Published
         private(set) var sessionState: HIDIOSessionState = .inactive
 
-        @Published
         private(set) var sessionMode: HIDIOSessionMode = .shared
 
         init(_ parent: RemoteSession, channel: HIDIOChannel) {

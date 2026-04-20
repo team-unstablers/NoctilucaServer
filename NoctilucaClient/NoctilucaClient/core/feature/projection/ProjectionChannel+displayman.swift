@@ -21,7 +21,7 @@ extension ProjectionChannel {
             opcode: .displayListRequest,
             message: DisplayListRequest(
                 requestID: requestID,
-                flags: flags.rawValue
+                flags: flags
             )
         )
     }

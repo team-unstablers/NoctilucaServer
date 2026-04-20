@@ -9,7 +9,7 @@ import Foundation
 
 @preconcurrency import NoctilucaPluginKit
 
-class NoctilucaCoreAuth: NoctilucaPluginBundle {
+final class NoctilucaCoreAuth: NoctilucaPluginBundle {
     static let metadata = BuiltinPluginBundleMetadata(
         id: "app.noctiluca.server.bundles.NoctilucaCoreAuth",
         displayName: NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.name", comment: "Noctiluca 기본 인증 플러그인 번들"),

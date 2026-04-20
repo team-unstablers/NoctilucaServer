@@ -8,7 +8,7 @@
 import Foundation
 import SiriusKit
 
-actor FrameQueue<Frame> {
+actor FrameQueue<Frame: Sendable> {
     private let logger = SiriusLogger(category: "FrameQueue", subsystem: "app.noctiluca.mockserver")
 
     private var capacity: Int

@@ -23,8 +23,6 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     private var subDisplayWindowManager: SubDisplayWindowManager?
     private var appStreamWindowManager: AppStreamWindowManager?
     private var debugWindowController: AppKitDebugWindowController?
-    
-    private var remoteSessionCancellable: AnyCancellable?
     private var debugWindowCancellable: AnyCancellable?
     
     init(settingsStore: SettingsStore) {
@@ -66,31 +64,32 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
 
         toolbarController.attach(to: window)
 
-        remoteSessionCancellable = viewModel.$remoteSession
-            .receive(on: RunLoop.main)
-            .sink { [weak self] session in
-                guard let self else { return }
-                if let session {
-                    self.subDisplayWindowManager = SubDisplayWindowManager(remoteSession: session)
-                    self.appStreamWindowManager = AppStreamWindowManager(remoteSession: session)
-                    self.viewModel.appStreamWindowManager = self.appStreamWindowManager
-                    session.appStreamWindowManager = self.appStreamWindowManager
-                    
-                    self.viewModel.onDetachDisplay = { [weak self] displayID in
-                        try await self?.subDisplayWindowManager?.spawn(for: displayID)
-                    }
-                    self.updateDebugWindow(session: session)
-                } else {
-                    self.subDisplayWindowManager?.destroyAll()
-                    self.subDisplayWindowManager = nil
-                    self.appStreamWindowManager?.destroyAll()
-                    self.appStreamWindowManager = nil
-                    self.viewModel.appStreamWindowManager = nil
-                    self.viewModel.onDetachDisplay = nil
-                    self.debugWindowController?.close()
-                    self.debugWindowController = nil
+        // viewModel이 @Observable로 전환되어 `$remoteSession` publisher가 없어졌으므로
+        // observeChanges 헬퍼로 프로퍼티 변경을 추적한다.
+        observeChanges { [weak self] in
+            guard let self else { return }
+            let session = self.viewModel.remoteSession
+            if let session {
+                self.subDisplayWindowManager = SubDisplayWindowManager(remoteSession: session)
+                self.appStreamWindowManager = AppStreamWindowManager(remoteSession: session)
+                self.viewModel.appStreamWindowManager = self.appStreamWindowManager
+                session.appStreamWindowManager = self.appStreamWindowManager
+
+                self.viewModel.onDetachDisplay = { [weak self] displayID in
+                    try await self?.subDisplayWindowManager?.spawn(for: displayID)
                 }
+                self.updateDebugWindow(session: session)
+            } else {
+                self.subDisplayWindowManager?.destroyAll()
+                self.subDisplayWindowManager = nil
+                self.appStreamWindowManager?.destroyAll()
+                self.appStreamWindowManager = nil
+                self.viewModel.appStreamWindowManager = nil
+                self.viewModel.onDetachDisplay = nil
+                self.debugWindowController?.close()
+                self.debugWindowController = nil
             }
+        }
 
         debugWindowCancellable = SettingsStore.shared.$settings
             .compactMap { $0?.misc.showDebugWindow }

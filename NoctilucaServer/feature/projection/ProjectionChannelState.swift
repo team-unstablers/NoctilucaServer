@@ -40,6 +40,7 @@ actor ProjectionChannelState {
         let displaySubscription: DisplayEventSubscription?
         let appEventSubscriptionId: UUID?
         let appStreamSession: AppStreamSessionInfo?
+        let virtualDisplayHandles: [NOCVirtualDisplayHandle]
     }
 
     struct TerminationTargets {
@@ -72,7 +73,11 @@ actor ProjectionChannelState {
 
     private var appEventSubscriptionId: UUID?
     private var appStreamSession: AppStreamSessionInfo?
-    
+
+    /// 클라이언트가 보낸 wire UUID → 서버 VD handle 매핑.
+    /// VirtualDisplayCreate 시 등록, VirtualDisplayDestroy 또는 채널 destroy 시 회수한다.
+    private var virtualDisplayHandles: [UUID: NOCVirtualDisplayHandle] = [:]
+
     /// `DisplayLayoutManager.displayChangeSubject` 구독. 채널 수명과 동일.
     private var displayChangesCancellable: AnyCancellable?
 
@@ -288,7 +293,8 @@ actor ProjectionChannelState {
             cursorSubscription: cursorSubscription,
             displaySubscription: displaySubscription,
             appEventSubscriptionId: appEventSubscriptionId,
-            appStreamSession: appStreamSession
+            appStreamSession: appStreamSession,
+            virtualDisplayHandles: Array(virtualDisplayHandles.values)
         )
 
         sessions.removeAll()
@@ -296,6 +302,7 @@ actor ProjectionChannelState {
         projectionDataChannels.removeAll()
         reservations.removeAll()
         sessionDisplayIDs.removeAll()
+        virtualDisplayHandles.removeAll()
 
         cursorSubscription = nil
         displaySubscription = nil
@@ -325,6 +332,48 @@ actor ProjectionChannelState {
                     callback(event.displayID)
                 }
         }).value
+    }
+
+    // MARK: - Virtual Display Registry
+
+    /// 주어진 wire UUID 목록 중 이미 등록되어 있거나 목록 내부에서 중복되는 첫 번째 UUID를 반환한다.
+    func virtualDisplayIdentifierConflict(in candidates: [UUID]) -> UUID? {
+        var seen: Set<UUID> = []
+        for id in candidates {
+            if virtualDisplayHandles[id] != nil { return id }
+            if !seen.insert(id).inserted { return id }
+        }
+        return nil
+    }
+
+    /// 채널 lifecycle이 active이고 externalID가 비어 있을 때만 등록한다.
+    func registerVirtualDisplay(externalID: UUID, handle: NOCVirtualDisplayHandle) -> Bool {
+        guard lifecycleState == .active else { return false }
+        guard virtualDisplayHandles[externalID] == nil else { return false }
+
+        virtualDisplayHandles[externalID] = handle
+        return true
+    }
+
+    /// externalID로 등록된 핸들을 꺼내고 레지스트리에서 제거한다.
+    func takeVirtualDisplay(externalID: UUID) -> NOCVirtualDisplayHandle? {
+        return virtualDisplayHandles.removeValue(forKey: externalID)
+    }
+
+    /// rollback 경로용. handle을 직접 받아서 일치하는 entry를 제거한다.
+    func unregisterVirtualDisplay(_ handle: NOCVirtualDisplayHandle) {
+        for (externalID, registered) in virtualDisplayHandles where registered === handle {
+            virtualDisplayHandles.removeValue(forKey: externalID)
+            return
+        }
+    }
+
+    /// 주어진 CGDirectDisplayID에 대응하는 wire UUID를 반환한다. (DisplayInfo.virtualDisplayIdentifier 채우기용)
+    func virtualDisplayExternalID(forDisplayID displayID: CGDirectDisplayID) -> UUID? {
+        for (externalID, handle) in virtualDisplayHandles where handle.displayID == displayID {
+            return externalID
+        }
+        return nil
     }
 
     private func isIdentifierInUse(_ identifier: UUID) -> Bool {

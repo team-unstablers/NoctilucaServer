@@ -6,19 +6,20 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 /// 활성 TransferChannel들의 진행률을 집계하여 UI에 노출하는 트래커.
 /// 모든 메서드는 @MainActor에서 호출되어야 한다.
 @MainActor
-class FileTransferProgressTracker: ObservableObject {
+@Observable
+final class FileTransferProgressTracker {
     struct Entry {
         let totalSize: UInt64
         var transferredBytes: UInt64
     }
 
     /// 집계된 진행률. 활성 전송이 없으면 nil.
-    @Published private(set) var aggregatedProgress: Double? = nil
+    private(set) var aggregatedProgress: Double? = nil
 
     private var entries: [UUID: Entry] = [:]
 

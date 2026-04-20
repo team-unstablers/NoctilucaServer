@@ -21,18 +21,18 @@ struct AudioEncoderConfiguration {
     }
 }
 
-struct EncodedAudioFrame {
+struct EncodedAudioFrame: Sendable {
     let header: FrameDataHeader
     let data: Data
 }
 
-enum AudioEncoderEvent {
+enum AudioEncoderEvent: Sendable {
     case frameEncoded(EncodedAudioFrame)
-    case errorOccurred(Error)
+    case errorOccurred(any Error)
     case stopped
 }
 
-protocol AudioEncoder: AnyObject {
+protocol AudioEncoder: AnyObject, Sendable {
     var events: AsyncStream<AudioEncoderEvent> { get }
 
     func prepare(with configuration: AudioEncoderConfiguration) throws

@@ -6,17 +6,18 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 import SiriusKitClient
 
 @MainActor
-final class DisplayLayoutManager: ObservableObject {
+@Observable
+final class DisplayLayoutManager {
     typealias DisplayID = Int
-    
+
+    @ObservationIgnored
     let logger = NoctilucaLogger(category: "DisplayLayoutManager")
-    
-    @Published
+
     private(set) var displayLayouts: [DisplayID: DisplayInfo] = [:]
     
     var primaryDisplayID: DisplayID? {
@@ -66,9 +67,12 @@ final class DisplayLayoutManager: ObservableObject {
             colorProfile: new.colorProfile,
             physicalSizeInfo: new.physicalSizeInfo,
             scaleFactor: new.scaleFactor,
+            rotation: new.rotation,
+            supportedSpecs: new.supportedSpecs,
             thumbnail: thumbnail,
             metadata: new.metadata,
-            flags: new.flags
+            flags: new.flags,
+            virtualDisplayIdentifier: new.virtualDisplayIdentifier,
         )
     }
     

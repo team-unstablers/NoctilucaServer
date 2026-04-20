@@ -18,28 +18,64 @@ public extension MessageOpcode {
     static let displayChangedEvent: MessageOpcode = MessageOpcode(rawValue: 0x8047)
 }
 
+public struct DisplaySpec: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplaySpec
+
+    public let resolution: SRSize?
+    public let refreshRate: Double
+    public let scaleFactor: Double
+    public let metadata: [String: String]
+
+    public init(resolution: SRSize?, refreshRate: Double, scaleFactor: Double, metadata: [String: String]) {
+        self.resolution = resolution
+        self.refreshRate = refreshRate
+        self.scaleFactor = scaleFactor
+        self.metadata = metadata
+    }
+
+    init(from protobufMessage: ProtobufMessage) throws {
+        self.resolution = protobufMessage.hasResolution ? SRSize(from: protobufMessage.resolution) : nil
+        self.refreshRate = protobufMessage.refreshRate
+        self.scaleFactor = protobufMessage.scaleFactor
+        self.metadata = protobufMessage.metadata
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        if let resolution = self.resolution {
+            message.resolution = resolution.toProtobufMessage()
+        }
+        message.refreshRate = self.refreshRate
+        message.scaleFactor = self.scaleFactor
+        message.metadata = self.metadata
+
+        return message
+    }
+}
+
 public struct DisplayListRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest
-    
+
     public let requestID: UInt64
-    public let flags: UInt32
+    public let flags: DisplayListRequestFlags
 
 
-    public init(requestID: UInt64, flags: UInt32) {
+    public init(requestID: UInt64, flags: DisplayListRequestFlags) {
         self.requestID = requestID
         self.flags = flags
     }
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.requestID = protobufMessage.requestID
-        self.flags = protobufMessage.flags
+        self.flags = DisplayListRequestFlags(rawValue: protobufMessage.flags)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
         var message = ProtobufMessage()
 
         message.requestID = self.requestID
-        message.flags = self.flags
+        message.flags = self.flags.rawValue
 
         return message
     }
@@ -47,7 +83,7 @@ public struct DisplayListRequest: SiriusMessage {
 
 public struct DisplayState: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplayState
-    
+
     public let isPrimary: Bool
     public let isConnected: Bool
     public let isActive: Bool
@@ -78,7 +114,7 @@ public struct DisplayState: SiriusMessage {
 
 public struct DisplayPhysicalSizeInfo: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo
-    
+
     public let physicalSize: SRSize
     public let dpi: UInt32
 
@@ -105,21 +141,24 @@ public struct DisplayPhysicalSizeInfo: SiriusMessage {
 
 public struct DisplayInfo: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplayInfo
-    
+
     public let displayID: UInt32
     public let kind: DisplayKind
     public let displayName: String
     public let state: DisplayState
     public let bounds: SRRect
-    public let refreshRate: Float
+    public let refreshRate: Double
     public let colorDepth: DisplayColorDepth
     public let dynamicRange: DisplayDynamicRange
     public let colorProfile: DisplayColorProfile?
     public let physicalSizeInfo: DisplayPhysicalSizeInfo?
-    public let scaleFactor: Float
+    public let scaleFactor: Double
+    public let rotation: DisplayRotation
+    public let supportedSpecs: [DisplaySpec]
     public let thumbnail: Data?
     public let metadata: [String: String]
     public let flags: UInt32
+    public let virtualDisplayIdentifier: UUID?
 
 
     public init(
@@ -128,15 +167,18 @@ public struct DisplayInfo: SiriusMessage {
         displayName: String,
         state: DisplayState,
         bounds: SRRect,
-        refreshRate: Float,
+        refreshRate: Double,
         colorDepth: DisplayColorDepth,
         dynamicRange: DisplayDynamicRange,
         colorProfile: DisplayColorProfile?,
         physicalSizeInfo: DisplayPhysicalSizeInfo?,
-        scaleFactor: Float,
+        scaleFactor: Double,
+        rotation: DisplayRotation,
+        supportedSpecs: [DisplaySpec],
         thumbnail: Data?,
         metadata: [String: String],
-        flags: UInt32
+        flags: UInt32,
+        virtualDisplayIdentifier: UUID?
     ) {
         self.displayID = displayID
         self.kind = kind
@@ -149,9 +191,12 @@ public struct DisplayInfo: SiriusMessage {
         self.colorProfile = colorProfile
         self.physicalSizeInfo = physicalSizeInfo
         self.scaleFactor = scaleFactor
+        self.rotation = rotation
+        self.supportedSpecs = supportedSpecs
         self.thumbnail = thumbnail
         self.metadata = metadata
         self.flags = flags
+        self.virtualDisplayIdentifier = virtualDisplayIdentifier
     }
 
     init(from protobufMessage: ProtobufMessage) throws {
@@ -166,9 +211,12 @@ public struct DisplayInfo: SiriusMessage {
         self.colorProfile = protobufMessage.hasColorProfile ? DisplayColorProfile(rawValue: protobufMessage.colorProfile) : nil
         self.physicalSizeInfo = protobufMessage.hasPhysicalSizeInfo ? try DisplayPhysicalSizeInfo(from: protobufMessage.physicalSizeInfo) : nil
         self.scaleFactor = protobufMessage.scaleFactor == 0.0 ? 1.0 : protobufMessage.scaleFactor
+        self.rotation = DisplayRotation(rawValue: protobufMessage.rotation)
+        self.supportedSpecs = try protobufMessage.supportedSpecs.map { try DisplaySpec(from: $0) }
         self.thumbnail = protobufMessage.hasThumbnail ? protobufMessage.thumbnail : nil
         self.metadata = protobufMessage.metadata
         self.flags = protobufMessage.flags
+        self.virtualDisplayIdentifier = protobufMessage.hasVirtualDisplayIdentifier ? UUID(msgdef: protobufMessage.virtualDisplayIdentifier) : nil
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -189,11 +237,16 @@ public struct DisplayInfo: SiriusMessage {
             message.physicalSizeInfo = physicalSizeInfo.toProtobufMessage()
         }
         message.scaleFactor = self.scaleFactor
+        message.rotation = self.rotation.rawValue
+        message.supportedSpecs = self.supportedSpecs.map { $0.toProtobufMessage() }
         if let thumbnail = self.thumbnail {
             message.thumbnail = thumbnail
         }
         message.metadata = self.metadata
         message.flags = self.flags
+        if let virtualDisplayIdentifier = self.virtualDisplayIdentifier {
+            message.virtualDisplayIdentifier = virtualDisplayIdentifier.asMsgDef()
+        }
 
         return message
     }
@@ -201,7 +254,7 @@ public struct DisplayInfo: SiriusMessage {
 
 public struct DisplayListResponse: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplayListResponse
-    
+
     public let requestID: UInt64
     public let displays: [DisplayInfo]
 
@@ -228,7 +281,7 @@ public struct DisplayListResponse: SiriusMessage {
 
 public struct SubscribeDisplayChangesRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest
-    
+
     public let requestID: UInt64
     public let eventMask: DisplayChangeEventType
     public let flags: UInt32
@@ -259,7 +312,7 @@ public struct SubscribeDisplayChangesRequest: SiriusMessage {
 
 public struct SubscribeDisplayChangesResponse: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse
-    
+
     public let requestID: UInt64
     public let subscriptionID: UUID
 
@@ -286,7 +339,7 @@ public struct SubscribeDisplayChangesResponse: SiriusMessage {
 
 public struct UnsubscribeDisplayChangesRequest: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest
-    
+
     public let requestID: UInt64
     public let subscriptionID: UUID
 
@@ -313,7 +366,7 @@ public struct UnsubscribeDisplayChangesRequest: SiriusMessage {
 
 public struct UnsubscribeDisplayChangesResponse: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse
-    
+
     public let requestID: UInt64
     public let subscriptionID: UUID
     public let isSuccess: Bool
@@ -344,7 +397,7 @@ public struct UnsubscribeDisplayChangesResponse: SiriusMessage {
 
 public struct DisplayChangedEvent: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Projection_DisplayChangedEvent
-    
+
     public let eventType: DisplayChangeEventType
     public let display: DisplayInfo
 

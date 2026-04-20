@@ -58,6 +58,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // load MsQuic
         _ = MsQuicLoader.shared
+        
+        try? CoreGraphicsPrivate.open()
+        try? SkyLightPrivate.open()
 
         // Sentry telemetry (opt-in, EEA/UK 제외)
         server.settings.telemetry.ensureIdentifier()

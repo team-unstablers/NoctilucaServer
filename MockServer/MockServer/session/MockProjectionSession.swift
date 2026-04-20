@@ -6,24 +6,24 @@
 //
 
 import Foundation
-import CoreMedia
+@preconcurrency import CoreMedia
 
 import SiriusKit
 
 /// 파일 기반 비디오 프로젝션 세션.
 /// FileVideoReader에서 프레임을 읽고 → VTVideoEncoder로 인코딩 → ProjectionDataChannel로 전송.
-class MockProjectionSession: Identifiable {
+actor MockProjectionSession: @preconcurrency Identifiable {
     private let logger = SiriusLogger(category: "MockProjectionSession", subsystem: "app.noctiluca.mockserver")
 
-    let id: UUID
-    let dataChannel: ProjectionDataChannel
-    let sourceURL: URL
-    let codec: Codec
+    nonisolated let id: UUID
+    nonisolated let dataChannel: ProjectionDataChannel
+    nonisolated let sourceURL: URL
+    nonisolated let codec: Codec
 
     private var reader: FileVideoReader?
     private var encoder: (any VideoEncoder)?
 
-    private let frameQueue = FrameQueue<EncodedFrame>(capacity: 8)
+    nonisolated let frameQueue = FrameQueue<EncodedFrame>(capacity: 8)
 
     private var readerLoopTask: Task<Void, Never>?
     private var encoderEventLoopTask: Task<Void, Error>?
@@ -57,19 +57,22 @@ class MockProjectionSession: Identifiable {
         }
         try encoder.start()
 
+        let dataChannel = self.dataChannel
+        let frameQueue = self.frameQueue
+        let logger = self.logger
+
         // Encoder event loop: encoder -> frameQueue
-        self.encoderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self else { return }
+        self.encoderEventLoopTask = Task.detached(priority: .userInitiated) {
             for await event in encoder.events {
                 switch event {
                 case .parameterSetChanged(let parameterSetMessage):
-                    self.dataChannel.send(parameterSetMessage: parameterSetMessage)
+                    dataChannel.send(parameterSetMessage: parameterSetMessage)
                 case .frameEncoded(let encodedFrame):
-                    await self.frameQueue.enqueue(encodedFrame)
+                    await frameQueue.enqueue(encodedFrame)
                 case .frameSkipped:
                     break
                 case .errorOccurred(let error):
-                    self.logger.error("Encoder error: \(error)")
+                    logger.error("Encoder error: \(error)")
                     throw error
                 case .stopped:
                     return
@@ -78,27 +81,26 @@ class MockProjectionSession: Identifiable {
         }
 
         // Sender loop: frameQueue -> dataChannel
-        self.senderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self else { return }
+        self.senderEventLoopTask = Task.detached(priority: .userInitiated) {
             while !Task.isCancelled {
                 let frame: EncodedFrame
                 do {
-                    frame = try await self.frameQueue.next()
+                    frame = try await frameQueue.next()
                 } catch is CancellationError {
                     return
                 }
-                self.dataChannel.send(videoFrame: frame)
+                dataChannel.send(videoFrame: frame)
             }
         }
 
         // Reader loop: reader -> encoder (절대 시간 기준 실시간 페이싱)
         guard let reader = self.reader else { return }
-        let frameRate = max(Double(reader.nominalFrameRate), 1.0)
+        let nominalFrameRate = await reader.nominalFrameRate
+        let frameRate = max(Double(nominalFrameRate), 1.0)
         let frameDurationNs = Int64((1.0 / frameRate) * 1_000_000_000.0)
         let frameDuration = Duration.nanoseconds(frameDurationNs)
 
-        self.readerLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self else { return }
+        self.readerLoopTask = Task.detached(priority: .userInitiated) {
             var frameCounter: UInt64 = 0
             let maxDriftThreshold = Duration.milliseconds(200)
             var nextFrameTime = ContinuousClock.now
@@ -123,19 +125,19 @@ class MockProjectionSession: Identifiable {
                 } catch is CancellationError {
                     return
                 } catch {
-                    self.logger.error("Reader loop error: \(error)")
+                    logger.error("Reader loop error: \(error)")
                     try? await Task.sleep(for: .milliseconds(100))
                     nextFrameTime = ContinuousClock.now
                 }
             }
         }
 
-        logger.info("MockProjectionSession \(self.id) started (fps=\(reader.nominalFrameRate))")
+        logger.info("MockProjectionSession \(self.id) started (fps=\(nominalFrameRate))")
     }
 
     func stop() async {
         guard !isStopped else { return }
-        defer { isStopped = true }
+        isStopped = true
 
         readerLoopTask?.cancel()
         readerLoopTask = nil
@@ -149,16 +151,9 @@ class MockProjectionSession: Identifiable {
         await frameQueue.clear()
         await frameQueue.cancelWaiter()
 
-        reader?.stop()
+        await reader?.stop()
         try? encoder?.stop()
 
         logger.info("MockProjectionSession \(self.id) stopped")
-    }
-
-    deinit {
-        readerLoopTask?.cancel()
-        encoderEventLoopTask?.cancel()
-        senderEventLoopTask?.cancel()
-        try? encoder?.stop()
     }
 }

@@ -561,6 +561,7 @@ actor ProjectionSession: Identifiable {
         }
 
         continuation.yield(.projectionStopped)
+        continuation.finish()
 
         try? await self.dataChannel.handle.close()
     }

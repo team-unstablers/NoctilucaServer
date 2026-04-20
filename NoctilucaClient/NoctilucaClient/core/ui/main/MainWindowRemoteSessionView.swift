@@ -12,17 +12,14 @@ import SiriusKitClient
 struct MainWindowRemoteSessionView: View {
     static let logger = NoctilucaLogger(category: "MainWindowRemoteSessionView")
     
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
-    
-    @ObservedObject
-    var remoteSession: RemoteSession
-    
-    @ObservedObject
-    var projection: RemoteSession.Projection
-    
-    @ObservedObject
-    var hidio: RemoteSession.HIDIO
+
+    let remoteSession: RemoteSession
+
+    let projection: RemoteSession.Projection
+
+    let hidio: RemoteSession.HIDIO
 
     @State
     var subscription: ProjectionSessionSubscription?
@@ -31,6 +28,9 @@ struct MainWindowRemoteSessionView: View {
     var sourceDescriptor: ProjectionSourceDescriptor = .displayID(-1)
 
     var body: some View {
+        // @Environment로 받은 viewModel을 Binding으로 사용하기 위해 @Bindable 지역 선언.
+        @Bindable var viewModel = viewModel
+
         VStack {
             if case .active(_) =  viewModel.appStreamState {
                 Text("AppStream 활성화됨")
@@ -75,6 +75,51 @@ struct MainWindowRemoteSessionView: View {
             }
         }
         #endif
+        .sessionOverlay(isPresented: $viewModel.shouldPresentDisplaySwitchSheet) {
+            if case .displayID(let currentActive) = sourceDescriptor {
+                let displayLayoutManager = projection.channel.displayLayoutManager
+                let displays = Array(displayLayoutManager.displayLayouts.values)
+                
+                DisplaySwitcherSheet(
+                    displays: displays,
+                    currentActive: currentActive,
+                ) { action in
+                    try await self.dispatchDisplaySwitcherAction(action)
+                }
+                .task {
+                    // 시트 표시 시 thumbnail 포함 디스플레이 목록 재요청
+                    guard let response = try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails) else {
+                        return
+                    }
+                    
+                    for display in response.displays {
+                        await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
+                    }
+                }
+                /*
+                    .presentationDragIndicator(.visible)
+                    .if(DeviceKind.current == .iPhone) {
+                        $0.presentationDetents([.height(260)])
+                    }
+                    .if(DeviceKind.current == .iPad) {
+                        $0.presentationSizing(.fitted)
+                    }
+                 */
+            }
+        } subcontent: {
+            if case .displayID(let currentActive) = sourceDescriptor {
+                let displayLayoutManager = projection.channel.displayLayoutManager
+                let displays = Array(displayLayoutManager.displayLayouts.values)
+
+                DisplayLayoutModifierView(displays: displays) { operations, mainDisplayID in
+                    _ = try await remoteSession.client.projectionChannel.requestDisplayTransaction(
+                        operations: operations,
+                        mainDisplayID: mainDisplayID
+                    )
+                }
+            }
+        }
+        /*
         .sheet(isPresented: $viewModel.shouldPresentDisplaySwitchSheet) {
             if case .displayID(let currentActive) = sourceDescriptor {
                 let displayLayoutManager = projection.channel.displayLayoutManager
@@ -113,9 +158,10 @@ struct MainWindowRemoteSessionView: View {
                     }
             }
         }
+         */
 #if os(macOS)
         .sheet(isPresented: $viewModel.isAppStreamAppSelectorPresented) {
-            
+
         }
 #endif
         /*
@@ -129,6 +175,38 @@ struct MainWindowRemoteSessionView: View {
         }
          */
     }
+    
+    func dispatchDisplaySwitcherAction(_ action: DisplaySwitcherAction) async throws {
+        switch action {
+        case .switchDisplay(let displayID):
+            do {
+                try await self.updateProjectionTarget(.displayID(displayID))
+            } catch {
+                Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
+            }
+        case .createDetachedDisplay(let displayID):
+            try await viewModel.onDetachDisplay?(displayID)
+        case .createVirtualDisplay(let spec):
+            let siriusSpec = DisplaySpec(
+                resolution: SRSize(width: Double(spec.width), height: Double(spec.height)),
+                refreshRate: spec.refreshRate,
+                scaleFactor: spec.isHiDPI ? 2.0 : 1.0,
+                metadata: [:]
+            )
+            _ = try await viewModel.remoteSession?.client.projectionChannel.requestDisplayTransaction(operations: [
+                .init(operation: .createVirtualDisplay(VirtualDisplayCreate(
+                    identifier: UUID(),
+                    desiredSpecs: [siriusSpec],
+                    purpose: "virtual-display",
+                    metadata: [:]
+                )))
+            ])
+        case .destroyVirtualDisplay(let identifier):
+            _ = try await viewModel.remoteSession?.client.projectionChannel.requestDisplayTransaction(operations: [
+                .init(operation: .destroyVirtualDisplay(VirtualDisplayDestroy(identifier: identifier)))
+            ])
+        }
+    }
 
     func decideTargetDisplayID() async throws {
         if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
@@ -137,11 +215,15 @@ struct MainWindowRemoteSessionView: View {
     }
 
     func updateProjectionTarget(_ source: ProjectionSourceDescriptor) async throws {
-        let subscription = try await projection.subscribeProjectionSession(for: source)
+        let newSubscription = try await projection.subscribeProjectionSession(for: source)
 
-        await MainActor.run {
-            self.subscription = subscription
+        let previousSubscription = await MainActor.run { () -> ProjectionSessionSubscription? in
+            let previous = self.subscription
+            self.subscription = newSubscription
             self.sourceDescriptor = source
+            return previous
         }
+
+        previousSubscription?.invalidate()
     }
 }

@@ -8,7 +8,7 @@
 import Foundation
 import Atomics
 
-import Combine
+import Observation
 
 import CoreGraphics
 
@@ -52,14 +52,13 @@ extension RemoteSession {
         }
     }
     
-    class CursorState: ObservableObject {
-        @Published
+    @MainActor
+    @Observable
+    final class CursorState {
         var image: CursorImage? = nil
-        
-        @Published
+
         var displayID: Int? = nil
-        
-        @Published
+
         var position: CGPoint = .zero
     }
     
@@ -120,7 +119,8 @@ extension RemoteSession {
     }
     
     @MainActor
-    final class Projection: ObservableObject {
+    @Observable
+    final class Projection {
         private let logger = NoctilucaLogger(category: "RemoteSession.Projection")
 
         private weak var parent: RemoteSession?
@@ -128,25 +128,22 @@ extension RemoteSession {
 
         let channelID: UUID
 
+        @ObservationIgnored
         private var eventConsumerTask: Task<Void, Never>? = nil
 
-        @Published
         private(set) var projectionSessions: [UUID: ProjectionSession] = [:]
+        @ObservationIgnored
         private(set) var projectionSessionReferences: [UUID: ManagedAtomic<Int>] = [:]
 
-        @Published
         private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
 
         /// 현재 활성화된 DegradationNotice. nil이면 notice를 받지 않았거나 회복된 상태.
-        @Published
         private(set) var degradationNotice: DegradationNotice? = nil
 
         /// 프로젝션 세션 오류 정보. auto-restart 실패 시 설정됨.
-        @Published
         private(set) var sessionError: ProjectionSessionFailureInfo? = nil
 
         /// 오디오 세션 오류 정보.
-        @Published
         private(set) var audioSessionError: AudioSessionFailureInfo? = nil
 
         private var audioRetryState = RetryState()
@@ -169,9 +166,8 @@ extension RemoteSession {
             subscribeEvents()
         }
 
+        @MainActor
         deinit {
-            // nonisolated context. MainActor-isolated 메서드 직접 호출 불가 —
-            // Task<Void, Never> 과 AnyCancellable 의 cancel() 은 Sendable 이므로 OK.
             audioRetryTask?.cancel()
             eventConsumerTask?.cancel()
             for task in sessionEventTasks.values {

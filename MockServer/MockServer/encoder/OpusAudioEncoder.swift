@@ -14,7 +14,8 @@ import SiriusKit
 
 /// Opus encoder using AVAudioConverter.
 /// Supports 48kHz stereo input with configurable bitrate.
-final class OpusAudioEncoder: NSObject, AudioEncoder {
+/// @unchecked Sendable: 모든 가변 상태 접근이 `workerQueue.sync` 로 직렬화된다.
+final class OpusAudioEncoder: NSObject, AudioEncoder, @unchecked Sendable {
     private let logger = SiriusLogger(category: "OpusAudioEncoder")
     private let workerQueue: DispatchQueue
 

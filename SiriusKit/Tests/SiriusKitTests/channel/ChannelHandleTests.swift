@@ -525,7 +525,7 @@ struct ChannelHandleTests {
     func lifecycleDelegate_channelDidCloseCalledOnStreamClose() async throws {
         let f = ChannelHandleFixture()
         let delegate = ObservingLifecycleDelegate()
-        f.handle.lifecycleDelegate = delegate
+        f.handle.setLifecycleDelegate(delegate)
 
         try await f.handle.activate()
         try await Task.sleep(nanoseconds: 10_000_000)
@@ -544,7 +544,7 @@ struct ChannelHandleTests {
     func lifecycleDelegate_didEncounterErrorCalledOnStreamError() async throws {
         let f = ChannelHandleFixture()
         let delegate = ObservingLifecycleDelegate()
-        f.handle.lifecycleDelegate = delegate
+        f.handle.setLifecycleDelegate(delegate)
 
         try await f.handle.activate()
         try await Task.sleep(nanoseconds: 10_000_000)

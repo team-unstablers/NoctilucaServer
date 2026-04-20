@@ -39,8 +39,6 @@ final class RootViewController: UINavigationController {
         return topViewController
     }
 
-    private var fullscreenCancellable: AnyCancellable?
-
     init() {
         let mainWindowViewModel = SessionWindowViewModel()
         let settingsStore = SettingsStore.shared
@@ -125,16 +123,17 @@ final class RootViewController: UINavigationController {
     private func observeFullscreenState() {
         guard let mainWindowViewModel else { return }
 
-        fullscreenCancellable = mainWindowViewModel.$isFullscreen
-            .receive(on: RunLoop.main)
-            .sink { [weak self] isFullscreen in
-                guard let self else { return }
-                self.setNavigationBarHidden(isFullscreen, animated: true)
-                UIView.animate(withDuration: 0.3) {
-                    self.topViewController?.setNeedsStatusBarAppearanceUpdate()
-                }
-                self.topViewController?.setNeedsUpdateOfHomeIndicatorAutoHidden()
+        // viewModel이 @Observable로 전환되어 $isFullscreen publisher가 없어졌으므로
+        // observeChanges 헬퍼로 프로퍼티 변경을 추적한다.
+        observeChanges { [weak self, weak mainWindowViewModel] in
+            guard let self, let mainWindowViewModel else { return }
+            let isFullscreen = mainWindowViewModel.isFullscreen
+            self.setNavigationBarHidden(isFullscreen, animated: true)
+            UIView.animate(withDuration: 0.3) {
+                self.topViewController?.setNeedsStatusBarAppearanceUpdate()
             }
+            self.topViewController?.setNeedsUpdateOfHomeIndicatorAutoHidden()
+        }
     }
 }
 

@@ -42,9 +42,12 @@ struct AudioSessionDebugInfo: Identifiable {
 // MARK: - ViewModel
 
 @MainActor
-class RemoteSessionDebugViewModel: ObservableObject {
-    private var cancellables: Set<AnyCancellable> = []
+final class RemoteSessionDebugViewModel: ObservableObject {
     private var pollingTask: Task<Void, Never>?
+
+    /// HIDIO의 `keyStateDidChange`(Combine Publisher)는 `@Observable` 대상이 아니므로
+    /// `hidio` 인스턴스가 교체될 때마다 이 cancellable을 갈아끼운다.
+    private var keyStateCancellable: AnyCancellable?
 
     private weak var remoteSession: RemoteSession?
 
@@ -103,49 +106,58 @@ class RemoteSessionDebugViewModel: ObservableObject {
     // MARK: - Subscriptions
 
     private func subscribe(to session: RemoteSession) {
-        // Projection 구독
-        session.$projection
-            .sink { [weak self] projection in
-                self?.subscribeProjection(projection)
+        // projection.projectionSessions 자동 갱신.
+        // session.projection 자체 또는 내부 projectionSessions가 바뀌면 observe가 재실행된다.
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else {
+                self?.videoSessions = []
+                return
             }
-            .store(in: &cancellables)
-
-        // HIDIO 구독
-        session.$hidio
-            .sink { [weak self] hidio in
-                self?.subscribeHIDIO(hidio)
+            if let projection = session.projection {
+                self.updateVideoSessions(projection.projectionSessions, projection: projection)
+            } else {
+                self.videoSessions = []
             }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeProjection(_ projection: RemoteSession.Projection?) {
-        // 기존 구독 정리 (projection 관련만)
-        cancellables = cancellables.filter { _ in true } // keep all, re-subscribe below
-
-        guard let projection else {
-            self.videoSessions = []
-            self.audioSessions = []
-            return
         }
 
-        projection.$projectionSessions
-            .receive(on: RunLoop.main)
-            .sink { [weak self, weak projection] sessions in
-                self?.updateVideoSessions(sessions, projection: projection)
+        // projection.audioSessions 자동 갱신.
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else {
+                self?.audioSessions = []
+                return
             }
-            .store(in: &cancellables)
-
-        projection.$audioSessions
-            .receive(on: RunLoop.main)
-            .sink { [weak self] sessions in
-                self?.audioSessions = sessions.values.map { session in
+            if let projection = session.projection {
+                self.audioSessions = projection.audioSessions.values.map { audioSession in
                     AudioSessionDebugInfo(
-                        id: session.id,
-                        codec: session.debugSnapshot.codec
+                        id: audioSession.id,
+                        codec: audioSession.debugSnapshot.codec
                     )
                 }
+            } else {
+                self.audioSessions = []
             }
-            .store(in: &cancellables)
+        }
+
+        // hidio.sessionMode
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.hidioSessionMode = session.hidio?.sessionMode ?? .shared
+        }
+
+        // hidio.sessionState
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.hidioSessionState = session.hidio?.sessionState ?? .inactive
+        }
+
+        // hidio 인스턴스 교체 감지 → keyStateDidChange(Combine) 재구독.
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else {
+                self?.rebindKeyState(to: nil)
+                return
+            }
+            self.rebindKeyState(to: session.hidio)
+        }
     }
 
     private func updateVideoSessions(_ sessions: [UUID: ProjectionSession], projection: RemoteSession.Projection?) {
@@ -164,28 +176,20 @@ class RemoteSessionDebugViewModel: ObservableObject {
         }
     }
 
-    private func subscribeHIDIO(_ hidio: RemoteSession.HIDIO?) {
+    private func rebindKeyState(to hidio: RemoteSession.HIDIO?) {
+        keyStateCancellable?.cancel()
+        keyStateCancellable = nil
+
         guard let hidio else {
-            self.hidioSessionMode = .shared
-            self.hidioSessionState = .inactive
             self.pressedKeys = []
             return
         }
 
-        hidio.$sessionMode
-            .receive(on: RunLoop.main)
-            .assign(to: &$hidioSessionMode)
-
-        hidio.$sessionState
-            .receive(on: RunLoop.main)
-            .assign(to: &$hidioSessionState)
-
-        hidio.controller.keyStateDidChange
+        keyStateCancellable = hidio.controller.keyStateDidChange
             .receive(on: RunLoop.main)
             .sink { [weak self] keys in
                 self?.pressedKeys = keys
             }
-            .store(in: &cancellables)
     }
 
     // MARK: - Channel Polling (1초)

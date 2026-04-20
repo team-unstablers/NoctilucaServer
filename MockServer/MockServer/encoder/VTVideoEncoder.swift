@@ -13,7 +13,8 @@ private final class FrameEncodeContext {
     }
 }
 
-final class VTVideoEncoder: NSObject, VideoEncoder {
+/// @unchecked Sendable: 모든 가변 상태 접근이 `workerQueue.sync` 로 직렬화된다.
+final class VTVideoEncoder: NSObject, VideoEncoder, @unchecked Sendable {
     private let logger = SiriusLogger(category: "VTVideoEncoder")
     private let workerQueue: DispatchQueue
     internal let callbackQueue: DispatchQueue

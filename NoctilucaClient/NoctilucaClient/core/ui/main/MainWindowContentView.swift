@@ -10,11 +10,10 @@ import SwiftUI
 import SiriusKitClient
 
 fileprivate struct MainWindowContentViewInternal: View {
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
 
-    @ObservedObject
-    var remoteSession: RemoteSession
+    let remoteSession: RemoteSession
     
     var body: some View {
         switch viewModel.phase {
@@ -103,10 +102,10 @@ struct MainWindowContentView: View {
     var horizontalSizeClass
 #endif
     
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
-    
-    
+
+
     var body: some View {
         content
     }

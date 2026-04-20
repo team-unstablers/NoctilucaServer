@@ -18,6 +18,8 @@ enum ProjectionChannelError: Error {
     case audioSessionCreationFailed(identifier: UUID, reason: AudioSessionFailureReason, message: String?)
     case audioSessionCreationTimedOut(identifier: UUID, timeout: TimeInterval)
     case audioSessionStartFailed(identifier: UUID, underlying: Error)
+    case displayTransactionFailed(transactionID: UUID, reason: String?)
+    case displayTransactionTimedOut(transactionID: UUID, timeout: TimeInterval)
 }
 
 extension ProjectionChannelError {
@@ -150,6 +152,10 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
             let event = try DisplayChangedEvent.fromProtobufBytes(frame.data)
             try await self.handleDisplayChangedEvent(event)
 
+        case .displayTransactionResponse:
+            let response = try DisplayTransactionResponse.fromProtobufBytes(frame.data)
+            await self.handleDisplayTransactionResponse(response)
+
         // MARK: - Window Manager opcodes
 
         case .windowListResponse:
@@ -235,6 +241,7 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
         await state.cancelAllPendingSessions(with: error)
         await state.cancelAllPendingRequests(with: error)
         await state.cancelAllPendingAudioSessionRequests()
+        await state.cancelAllPendingDisplayTransactions(with: error)
     }
 
     /// 다음 request ID를 생성합니다.
@@ -288,6 +295,51 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
         )
         if didFailPending {
             sendStopAudioProjectionRequest(identifier: identifier)
+        }
+    }
+
+    func registerPendingDisplayTransaction(
+        transactionID: UUID,
+        timeout: TimeInterval,
+        continuation: CheckedContinuation<DisplayTransactionResponse, Error>
+    ) async {
+        let timeoutNanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
+        let timeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: timeoutNanoseconds)
+            await self?.handleDisplayTransactionTimeout(transactionID: transactionID, timeout: timeout)
+        }
+
+        await state.registerPendingDisplayTransaction(transactionID, request: PendingDisplayTransaction(
+            continuation: continuation,
+            timeoutTask: timeoutTask
+        ))
+    }
+
+    private func handleDisplayTransactionTimeout(transactionID: UUID, timeout: TimeInterval) async {
+        _ = await state.failPendingDisplayTransaction(
+            transactionID,
+            error: ProjectionChannelError.displayTransactionTimedOut(transactionID: transactionID, timeout: timeout)
+        )
+    }
+
+    func handleDisplayTransactionResponse(_ response: DisplayTransactionResponse) async {
+        if response.isSuccess {
+            let dispatched = await state.succeedPendingDisplayTransaction(response.transactionID, response: response)
+            if !dispatched {
+                self.logger.warning("No pending display transaction found for transactionID: \(response.transactionID)")
+            }
+        } else {
+            self.logger.error("Display transaction failed: transactionID=\(response.transactionID), reason=\(response.reason ?? "(nil)")")
+            let dispatched = await state.failPendingDisplayTransaction(
+                response.transactionID,
+                error: ProjectionChannelError.displayTransactionFailed(
+                    transactionID: response.transactionID,
+                    reason: response.reason
+                )
+            )
+            if !dispatched {
+                self.logger.warning("No pending display transaction found for transactionID: \(response.transactionID)")
+            }
         }
     }
 

@@ -11,7 +11,7 @@ import Foundation
 
 import NoctilucaPluginKit
 
-final class NullAuthPlugin: BuiltInAuthPluginV1 {
+actor NullAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "app.noctiluca.server.auth.plugin.null"
     
     static let name = NSLocalizedString("plugins.auth.NullAuthPlugin.name", comment: "NullAuthPlugin")

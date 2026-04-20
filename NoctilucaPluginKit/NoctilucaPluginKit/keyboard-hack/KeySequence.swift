@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 2/14/26.
 //
 
-public struct KeySequence: Hashable, Equatable, Codable {
+public struct KeySequence: Hashable, Equatable, Codable, Sendable {
     public let modifier: Set<LinuxKeycode>
     public let key: LinuxKeycode
     

@@ -10,7 +10,7 @@ import Foundation
 import SiriusKit
 @preconcurrency import NoctilucaPluginKit
 
-final class PAMAuthPlugin: BuiltInAuthPluginV1 {
+actor PAMAuthPlugin: BuiltInAuthPluginV1 {
     static let metadata = BuiltinPluginBundleExportMetadata(
         id: "app.noctiluca.server.plugins.auth.pam",
         displayName: NSLocalizedString("plugins.auth.PAMAuthPlugin.name", comment: "PAMAuthPlugin"),

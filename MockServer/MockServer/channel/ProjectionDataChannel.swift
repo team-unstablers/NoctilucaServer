@@ -8,40 +8,73 @@
 import SiriusKit
 import CoreMedia
 
-protocol ProjectionDataChannelDelegate: AnyObject {
+protocol ProjectionDataChannelDelegate: AnyObject, Sendable {
     func projectionDataChannelDidClose(_ channel: ProjectionDataChannel)
     func projectionDataChannel(_ channel: ProjectionDataChannel, didEncounterError error: any Error)
 }
 
-class ProjectionDataChannel: Channel {
-    weak var projectionDelegate: ProjectionDataChannelDelegate?
+// MARK: - ProjectionDataChannelState
 
-    override var serviceClass: ServiceClass { .realtimeVideo }
+actor ProjectionDataChannelState {
+    private weak var delegate: ProjectionDataChannelDelegate?
 
-    required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        super.init(using: streamHolder, identifier: identifier, direction: direction)
+    func setDelegate(_ delegate: ProjectionDataChannelDelegate?) {
+        self.delegate = delegate
     }
 
-    override func handleFrame(frame: SiriusFrame) async throws {
+    func getDelegate() -> ProjectionDataChannelDelegate? {
+        return self.delegate
+    }
+}
+
+// MARK: - ProjectionDataChannel
+
+final class ProjectionDataChannel: Channel, ChannelEventConsumer {
+    let handle: ChannelHandle
+
+    private static let defaultServiceClass: ServiceClass = .realtimeVideo
+
+    private let logger = SiriusLogger(category: "ProjectionDataChannel", subsystem: "app.noctiluca.mockserver")
+
+    let state = ProjectionDataChannelState()
+
+    nonisolated(unsafe) private var channelEventCompatBridge:
+        ChannelEventCompatBridge<ProjectionDataChannel>!
+
+    init(handle: ChannelHandle) {
+        self.handle = handle
+        self.channelEventCompatBridge =
+            ChannelEventCompatBridge(consumer: self, handle: handle)
+    }
+
+    // MARK: - ChannelEventConsumer
+
+    func handleChannelReady() async {
+        await handle.setServiceClass(Self.defaultServiceClass)
+    }
+
+    func handleFrame(frame: SiriusFrame) async throws {
         // Server-side: send only
     }
 
-    override func handleStreamClose() {
-        super.handleStreamClose()
-        projectionDelegate?.projectionDataChannelDidClose(self)
+    func handleError(error: any Error) async {
+        let delegate = await state.getDelegate()
+        delegate?.projectionDataChannel(self, didEncounterError: error)
     }
 
-    override func handleStreamError(error: any Error) {
-        super.handleStreamError(error: error)
-        projectionDelegate?.projectionDataChannel(self, didEncounterError: error)
+    func handleStreamClose() async {
+        let delegate = await state.getDelegate()
+        delegate?.projectionDataChannelDidClose(self)
     }
+
+    // MARK: - Send helpers
 
     func send(parameterSetMessage: CodecParameterSetMessage) {
-        self.sendNonBlocking(opcode: .codecParameterSets, message: parameterSetMessage)
+        handle.send(nonblocking: .codecParameterSets, message: parameterSetMessage)
     }
 
     func send(degradationNotice: DegradationNotice) {
-        self.sendNonBlocking(opcode: .degradationNotice, message: degradationNotice)
+        handle.send(nonblocking: .degradationNotice, message: degradationNotice)
     }
 
     func send(videoFrame frame: EncodedFrame) {
@@ -73,7 +106,7 @@ class ProjectionDataChannel: Channel {
             data: consume siriusFrameData
         )
 
-        self.sendNonBlocking(frame: consume siriusFrame)
+        handle.send(nonblocking: consume siriusFrame)
     }
 
     func send(audioFrame frame: EncodedAudioFrame) {
@@ -105,6 +138,6 @@ class ProjectionDataChannel: Channel {
             data: consume siriusFrameData
         )
 
-        self.sendNonBlocking(frame: consume siriusFrame)
+        handle.send(nonblocking: consume siriusFrame)
     }
 }

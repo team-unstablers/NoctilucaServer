@@ -21,6 +21,9 @@ extension AppSettings {
         /// 잠금 화면 등에서는 AVFoundation 기반 녹화기로 폴백할 수 있습니다.
         var preferredScreenRecorder: ScreenRecorderType = .screenCaptureKit
         
+        var allowModifyDisplayLayout: Bool = true
+        var allowVirtualDisplay: Bool = true
+        
         /// 코덱 협상 정책.
         var codecNegotiationPolicy: CodecNegotiationPolicy = .balanced
         
@@ -36,6 +39,8 @@ extension AppSettings {
 
         enum CodingKeys: String, CodingKey {
             case preferredScreenRecorder
+            case allowModifyDisplayLayout
+            case allowVirtualDisplay
             case codecNegotiationPolicy
             case codecSpecifications
             case isAudioProjectionEnabled
@@ -50,6 +55,10 @@ extension AppSettings {
             }
 
             preferredScreenRecorder = container.decodeSafe(ScreenRecorderType.self, forKey: .preferredScreenRecorder, default: preferredScreenRecorder)
+            
+            allowModifyDisplayLayout = container.decodeSafe(Bool.self, forKey: .allowModifyDisplayLayout, default: allowModifyDisplayLayout)
+            allowVirtualDisplay = container.decodeSafe(Bool.self, forKey: .allowVirtualDisplay, default: allowVirtualDisplay)
+
             codecNegotiationPolicy = container.decodeSafe(CodecNegotiationPolicy.self, forKey: .codecNegotiationPolicy, default: codecNegotiationPolicy)
             codecSpecifications = container.decodeSafe([CodecSpecification].self, forKey: .codecSpecifications, default: codecSpecifications)
             
@@ -60,6 +69,8 @@ extension AppSettings {
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(preferredScreenRecorder, forKey: .preferredScreenRecorder)
+            try container.encode(allowModifyDisplayLayout, forKey: .allowModifyDisplayLayout)
+            try container.encode(allowVirtualDisplay, forKey: .allowVirtualDisplay)
             try container.encode(codecNegotiationPolicy, forKey: .codecNegotiationPolicy)
             try container.encode(codecSpecifications, forKey: .codecSpecifications)
             try container.encode(isAudioProjectionEnabled, forKey: .isAudioProjectionEnabled)

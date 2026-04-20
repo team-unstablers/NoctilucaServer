@@ -14,9 +14,9 @@ import Combine
 import SiriusKitClient
 
 struct UIKitMainWindow: View {
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
-    
+
     @EnvironmentObject
     var contactSheetCoordinator: ContactSheetCoordinator
 
@@ -24,6 +24,8 @@ struct UIKitMainWindow: View {
     private var settingsStore: SettingsStore
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         ZStack {
             VStack {
                 VStack(spacing: 0) {
@@ -79,7 +81,7 @@ typealias MainWindow = UIKitMainWindow
 #Preview {
     let viewModel = SessionWindowViewModel()
     UIKitMainWindow()
-        .environmentObject(viewModel)
+        .environment(viewModel)
         .environmentObject(viewModel.contactSheetCoordinator)
         .environmentObject(SettingsStore.shared)
 }
