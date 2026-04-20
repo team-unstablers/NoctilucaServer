@@ -59,6 +59,9 @@ enum ProjectionChannelEvent: Sendable {
 
     /// AppStream 윈도우 이벤트 (appeared/disappeared/updated)
     case appStreamWindowEvent(AppStreamWindowEvent)
+
+    /// Accessibility 트리(현재는 메뉴바) 업데이트 이벤트
+    case accessibilityTreeUpdateEvent(AccessibilityTreeUpdateEvent)
 }
 
 final class ProjectionChannel: Channel, ChannelEventConsumer {
@@ -209,6 +212,28 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
         case .appStreamWindowEvent:
             let event = try AppStreamWindowEvent.fromProtobufBytes(frame.data)
             await self.handleAppStreamWindowEvent(event)
+
+        // MARK: - Accessibility opcodes
+
+        case .getAccessibilityTreeResponse:
+            let response = try GetAccessibilityTreeResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .subscribeAccessibilityTreeUpdatesResponse:
+            let response = try SubscribeAccessibilityTreeUpdatesResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .unsubscribeAccessibilityTreeUpdatesResponse:
+            let response = try UnsubscribeAccessibilityTreeUpdatesResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .accessibilityTreeUpdateEvent:
+            let event = try AccessibilityTreeUpdateEvent.fromProtobufBytes(frame.data)
+            continuation.yield(.accessibilityTreeUpdateEvent(event))
+
+        case .dispatchActionResponse:
+            let response = try DispatchActionResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
 
         // MARK: - Audio projection opcodes
 
