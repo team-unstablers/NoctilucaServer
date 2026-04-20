@@ -7,14 +7,14 @@
 
 import Foundation
 import AVFoundation
-import CoreMedia
+@preconcurrency import CoreMedia
 import SiriusKit
 
 /// AVAssetReader 기반 비디오 파일 읽기. 파일 끝 도달 시 자동으로 처음부터 재시작(루프).
-class FileVideoReader {
+actor FileVideoReader {
     private let logger = SiriusLogger(category: "FileVideoReader", subsystem: "app.noctiluca.mockserver")
 
-    let url: URL
+    nonisolated let url: URL
 
     private(set) var naturalSize: CGSize = .zero
     private(set) var nominalFrameRate: Float = 30.0
