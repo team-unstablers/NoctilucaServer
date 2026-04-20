@@ -152,17 +152,6 @@ enum AppIdentifier: Hashable, CustomStringConvertible {
     }
 }
 
-// 메뉴 구조는 재귀적이므로 간결하게 정의
-struct AppMenuNode {
-    let title: String
-    let isEnabled: Bool
-    let shortcut: String?
-    let children: [AppMenuNode]? // nil이면 Leaf node (Action)
-    
-    // 실행을 위한 식별자 (AXUIElement 등)
-    let actionIdentifier: Any?
-}
-
 // MARK: - Errors
 
 enum DesktopContextError: Error, LocalizedError {
@@ -218,10 +207,12 @@ protocol AppSessionDelegate: AnyObject {
     // App Focus
     func appSessionDidBecomeActive(_ session: AppSession)
     func appSessionDidResignActive(_ session: AppSession)
-    
-    // Menu
-    func appSessionDidUpdateMenu(_ session: AppSession, menu: AppMenuNode)
-    
+
+    // Menu (accessibility.mdproto AccessibilityNode 기반)
+    /// 앱의 메뉴바 서브트리에 변화가 감지되면 호출된다. 초기 구현은 전체 재스냅샷을 전달한다.
+    /// Phase 4에서 diff 기반 세밀한 이벤트로 확장 예정.
+    func appSession(_ session: AppSession, didUpdateMenuBar rootNode: AccessibilityNode)
+
     // Window Events (winman.proto의 Window...Event 메시지들과 대응)
     /// 윈도우가 생성되었거나, 감시 대상에 포함됨
     func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo)
@@ -278,16 +269,27 @@ final class AppSession {
         kAXMainWindowChangedNotification as CFString,
         kAXWindowMovedNotification as CFString,
         kAXWindowResizedNotification as CFString,
-        kAXTitleChangedNotification as CFString
+        kAXTitleChangedNotification as CFString,
+        kAXMenuOpenedNotification as CFString,
+        kAXMenuClosedNotification as CFString,
+        kAXMenuItemSelectedNotification as CFString
     ]
 
     // 디바운스+병합: 잦은 AX 노티를 100~200ms 간격으로 묶고, 실행 중 중복을 한 번으로 합친다.
     private let refreshSubject = PassthroughSubject<Void, Never>()
+    private let menuRefreshSubject = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
     private let refreshDelay: TimeInterval = 0.05
+    private let menuRefreshDelay: TimeInterval = 0.2
     private var isRefreshing = false
     private var pendingRefresh = false
     private var isStopped = false
+
+    nonisolated(unsafe) private static let menuNotifications: Set<String> = [
+        kAXMenuOpenedNotification as String,
+        kAXMenuClosedNotification as String,
+        kAXMenuItemSelectedNotification as String
+    ]
     
     init(runningApp: NSRunningApplication) throws {
         if let bundleID = runningApp.bundleIdentifier, bundleID.isEmpty == false {
@@ -305,6 +307,7 @@ final class AppSession {
         
         try self.setupObserver()
         self.setupRefreshPipeline()
+        self.setupMenuRefreshPipeline()
         self.monitoredWindows = self.fetchWindowList()
     }
     
@@ -358,6 +361,17 @@ final class AppSession {
         }
     }
     
+    /// 현재 앱의 메뉴바를 `AccessibilityNode` 트리로 스냅샷한다.
+    /// - Parameter depth: 최대 재귀 깊이. 음수면 무제한. eager 로드는 2, lazy 요청은 음수 권장.
+    /// - Returns: 메뉴바 루트 노드. AX 권한이 없거나 메뉴바를 조회할 수 없으면 nil.
+    ///
+    /// 호출마다 `AppMenuRegistry`에 새 UUID들이 발급되어 누적된다. 필요하면 호출 전에
+    /// `AppMenuRegistry.shared.prune(pid:)`로 기존 매핑을 정리한다.
+    func snapshotMenuBar(depth: Int = 2) -> AccessibilityNode? {
+        let builder = AccessibilityTreeBuilder(pid: self.pid, maxDepth: depth)
+        return builder.snapshotMenuBar(appElement: self.appElement)
+    }
+
     /// 전체 윈도우 정보 강제 갱신 (Polling 방식이 필요할 때 사용)
     func refreshWindows() {
         let previousWindows = self.monitoredWindows
@@ -470,8 +484,11 @@ final class AppSession {
     
     /// AXObserver 콜백 등에서 호출되어 Delegate에게 알림
     private func handleAXNotification(_ notification: CFString) {
-        _ = notification // 현재는 이벤트 유형별 분기를 하지 않지만, 구분을 위해 보존
-        refreshSubject.send(())
+        if Self.menuNotifications.contains(notification as String) {
+            menuRefreshSubject.send(())
+        } else {
+            refreshSubject.send(())
+        }
     }
     
     private func setupObserver() throws {
@@ -511,6 +528,27 @@ final class AppSession {
                 self?.enqueueRefresh()
             }
             .store(in: &cancellables)
+    }
+
+    /// 메뉴 변경 노티 디바운스 파이프라인. snapshotMenuBar → delegate 전파를 트리거한다.
+    private func setupMenuRefreshPipeline() {
+        let delay = DispatchQueue.SchedulerTimeType.Stride.milliseconds(Int(menuRefreshDelay * 1000))
+        menuRefreshSubject
+            .debounce(for: delay, scheduler: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                // 새 스냅샷을 찍기 전에 기존 매핑을 정리 (stale UUID 누적 방지)
+                AppMenuRegistry.shared.prune(pid: self.pid)
+                if let root = self.snapshotMenuBar(depth: 2) {
+                    self.delegate?.appSession(self, didUpdateMenuBar: root)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    /// 명시적으로 메뉴 재스냅샷을 요청한다. 폴링 fallback 등에서 사용한다.
+    func requestMenuRefresh() {
+        menuRefreshSubject.send(())
     }
     
     /// 실제 refresh 실행을 직렬화하고, 실행 중 추가 요청은 한 번 더 실행하도록 병합
@@ -730,6 +768,15 @@ struct AppEventSubscription {
     let callback: @MainActor @Sendable (ApplicationChangedEvent) -> Void
 }
 
+// MARK: - Menu Event Subscription
+
+struct MenuEventSubscription {
+    let id: UUID
+    let pid: pid_t
+    /// 메뉴바 재스냅샷 결과를 전달받는 콜백. `root`는 `AccessibilityNode(role=menu)`이다.
+    let callback: @MainActor @Sendable (AccessibilityNode) -> Void
+}
+
 /// 시스템 전체의 앱 실행 상태와 포커스를 관장하는 매니저
 /// (기존 WindowManagerOrSpy)
 @MainActor
@@ -748,6 +795,9 @@ final class DesktopContextManager {
 
     /// 활성 앱 이벤트 구독 (SubscriptionID: Subscription)
     private var appEventSubscriptions: [UUID: AppEventSubscription] = [:]
+
+    /// 활성 메뉴 이벤트 구독 (SubscriptionID: Subscription)
+    private var menuEventSubscriptions: [UUID: MenuEventSubscription] = [:]
 
     private let workspace: NSWorkspace
     private var workspaceObservers: [Any] = []
@@ -1036,6 +1086,27 @@ final class DesktopContextManager {
     /// 앱 이벤트 구독 해제
     func unsubscribeAppEvents(id: UUID) -> Bool {
         return appEventSubscriptions.removeValue(forKey: id) != nil
+    }
+
+    // MARK: - Menu Event Subscription
+
+    /// 메뉴바 변경 이벤트 구독 등록. pid가 현재 감시 중인 AppSession이 아니면 callback은 호출되지 않는다.
+    /// - Parameter pid: 감시 대상 앱의 PID
+    /// - Parameter callback: 메뉴바 스냅샷이 갱신될 때 호출되는 핸들러 (root는 role=menu 노드)
+    /// - Returns: 구독 UUID
+    func subscribeMenuEvents(
+        pid: pid_t,
+        callback: @escaping @MainActor @Sendable (AccessibilityNode) -> Void
+    ) -> UUID {
+        let id = UUID()
+        menuEventSubscriptions[id] = MenuEventSubscription(id: id, pid: pid, callback: callback)
+        return id
+    }
+
+    /// 메뉴 이벤트 구독 해제
+    @discardableResult
+    func unsubscribeMenuEvents(id: UUID) -> Bool {
+        return menuEventSubscriptions.removeValue(forKey: id) != nil
     }
 
     // MARK: - App Management Helpers
@@ -1409,8 +1480,12 @@ extension DesktopContextManager: AppSessionDelegate {
         logger.info("[\(session.appIdentifier)] resigned active")
     }
 
-    func appSessionDidUpdateMenu(_ session: AppSession, menu: AppMenuNode) {
-        logger.info("[\(session.appIdentifier)] menu updated: \"\(menu.title)\"")
+    func appSession(_ session: AppSession, didUpdateMenuBar rootNode: AccessibilityNode) {
+        logger.debug("[\(session.appIdentifier)] menu updated: \(rootNode.children.count) top-level item(s)")
+        let targets = menuEventSubscriptions.values.filter { $0.pid == session.pid }
+        for subscription in targets {
+            subscription.callback(rootNode)
+        }
     }
 
     func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo) {
