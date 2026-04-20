@@ -37,7 +37,7 @@ private class AppStreamWindowTracker: @unchecked Sendable {
     }
 }
 
-/// AppStream 대상 윈도우를 가상 디스플레이 중심에 고정한다.
+/// AppStream 대상 윈도우를 가상 디스플레이의 좌상단(origin)에 고정한다.
 ///
 /// `setWindowFrame` 호출은 그 자체로 `.moved`/`.resized` 이벤트를 다시 유발하므로,
 /// 의도한 origin을 `expectedOrigins`에 기록해 두고 동일 origin이 들어오는 self-triggered
@@ -45,20 +45,17 @@ private class AppStreamWindowTracker: @unchecked Sendable {
 private class AppStreamWindowAnchor: @unchecked Sendable {
     private let lock = NSLock()
     private var expectedOrigins: [UInt64: CGPoint] = [:]
-    let displayCenter: CGPoint
+    let displayOrigin: CGPoint
 
-    init(displayCenter: CGPoint) {
-        self.displayCenter = displayCenter
+    init(displayOrigin: CGPoint) {
+        self.displayOrigin = displayOrigin
     }
 
-    /// 윈도우 정보를 기반으로 center 정렬 frame을 계산하고 expected에 등록한다.
+    /// 윈도우의 좌상단을 가상 디스플레이의 좌상단에 정렬한 frame을 계산하고 expected에 등록한다.
     /// 호출측은 반환된 frame으로 `setWindowFrame`을 실행해야 한다.
     func planAnchor(for window: WindowInfo) -> CGRect {
         let bounds = window.bounds
-        let newOrigin = CGPoint(
-            x: displayCenter.x - bounds.width / 2,
-            y: displayCenter.y - bounds.height / 2
-        )
+        let newOrigin = displayOrigin
         lock.lock()
         defer { lock.unlock() }
         expectedOrigins[window.windowID] = newOrigin
@@ -334,8 +331,8 @@ extension ProjectionChannel {
         let windowTracker = AppStreamWindowTracker()
 
         // AppStream 전용 가상 디스플레이 확보 (실패 시 메인 디스플레이로 fallback).
-        let (virtualDisplayHandle, displayCenter) = await acquireAppStreamDisplay()
-        let windowAnchor = AppStreamWindowAnchor(displayCenter: displayCenter)
+        let (virtualDisplayHandle, displayOrigin) = await acquireAppStreamDisplay()
+        let windowAnchor = AppStreamWindowAnchor(displayOrigin: displayOrigin)
 
         // PID 기반 윈도우 이벤트 구독
         let windowSubscriptionId = await desktopContextManager.subscribeWindowEvents(
@@ -544,11 +541,11 @@ extension ProjectionChannel {
     )
 
     /// AppStream 전용 가상 디스플레이를 생성한다.
-    /// 실패 시 핸들 없이 메인 디스플레이의 중심 좌표를 반환한다.
-    private func acquireAppStreamDisplay() async -> (handle: NOCVirtualDisplayHandle?, center: CGPoint) {
+    /// 실패 시 핸들 없이 메인 디스플레이의 좌상단 좌표를 반환한다.
+    private func acquireAppStreamDisplay() async -> (handle: NOCVirtualDisplayHandle?, origin: CGPoint) {
         guard let sessionID = clientSession?.id else {
             logger.warning("AppStream: clientSession 없음. 메인 디스플레이로 fallback.")
-            return (nil, mainDisplayCenter())
+            return (nil, mainDisplayOrigin())
         }
 
         let layoutManager = await DisplayLayoutManager.shared
@@ -559,18 +556,16 @@ extension ProjectionChannel {
                 specs: [Self.appStreamVirtualDisplaySpec]
             )
             let bounds = CGDisplayBounds(handle.displayID)
-            let center = CGPoint(x: bounds.midX, y: bounds.midY)
             logger.info("AppStream virtual display acquired: displayID=\(handle.displayID) bounds=\(bounds)")
-            return (handle, center)
+            return (handle, bounds.origin)
         } catch {
             logger.warning("AppStream virtual display spawn failed: \(error). Falling back to main display.")
-            return (nil, mainDisplayCenter())
+            return (nil, mainDisplayOrigin())
         }
     }
 
-    private func mainDisplayCenter() -> CGPoint {
-        let bounds = CGDisplayBounds(CGMainDisplayID())
-        return CGPoint(x: bounds.midX, y: bounds.midY)
+    private func mainDisplayOrigin() -> CGPoint {
+        return CGDisplayBounds(CGMainDisplayID()).origin
     }
 
     /// MainActor 컨텍스트에서 호출하여 윈도우를 가상 디스플레이 중심으로 이동시킨다.
