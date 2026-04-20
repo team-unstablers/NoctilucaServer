@@ -21,7 +21,254 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// 디스플레이 목록을 요청합니다. (request-response 모델)
+//// Describes a desired display mode (resolution, refresh rate, scale factor).
+struct Sirius_Msgdef_V1_Channels_Projection_DisplaySpec: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Viewport size in points. Pixel size is `resolution * scaleFactor`.
+  var resolution: Sirius_Msgdef_V1_Channels_Projection_SRSize {
+    get {return _resolution ?? Sirius_Msgdef_V1_Channels_Projection_SRSize()}
+    set {_resolution = newValue}
+  }
+  /// Returns true if `resolution` has been explicitly set.
+  var hasResolution: Bool {return self._resolution != nil}
+  /// Clears the value of `resolution`. Subsequent reads from it will return its default value.
+  mutating func clearResolution() {self._resolution = nil}
+
+  //// Refresh rate in Hz (e.g. 60, 59.94). Zero indicates unspecified.
+  var refreshRate: Double = 0
+
+  //// Scale factor (e.g. 1.0 for standard, 2.0 for Retina).
+  var scaleFactor: Double = 0
+
+  //// Additional metadata.
+  //// All metadata keys are optional and treated as hints only.
+  //// Implementation-specific keys SHOULD follow the reverse domain name format.
+  //// (e.g. `com.contoso.superremote.native-display-mode-id`)
+  var metadata: Dictionary<String,String> = [:]
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _resolution: Sirius_Msgdef_V1_Channels_Projection_SRSize? = nil
+}
+
+//// Current state information of a display
+struct Sirius_Msgdef_V1_Channels_Projection_DisplayState: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Whether the display is the primary display
+  var isPrimary: Bool = false
+
+  //// Whether the display is currently connected
+  var isConnected: Bool = false
+
+  //// Whether the display is currently active (powered on)
+  var isActive: Bool = false
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// Physical size information of a display
+struct Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Physical size of the display (in millimeters)
+  var physicalSize: Sirius_Msgdef_V1_Channels_Projection_SRSize {
+    get {return _physicalSize ?? Sirius_Msgdef_V1_Channels_Projection_SRSize()}
+    set {_physicalSize = newValue}
+  }
+  /// Returns true if `physicalSize` has been explicitly set.
+  var hasPhysicalSize: Bool {return self._physicalSize != nil}
+  /// Clears the value of `physicalSize`. Subsequent reads from it will return its default value.
+  mutating func clearPhysicalSize() {self._physicalSize = nil}
+
+  //// Pixel density of the display (DPI: Dots Per Inch)
+  var dpi: UInt32 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _physicalSize: Sirius_Msgdef_V1_Channels_Projection_SRSize? = nil
+}
+
+//// Detailed information about a display
+struct Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: @unchecked Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Display identification ID assigned by the OS / DM.
+  var displayID: UInt32 {
+    get {return _storage._displayID}
+    set {_uniqueStorage()._displayID = newValue}
+  }
+
+  //// Display type.
+  /// @constset: DisplayKind
+  var kind: UInt32 {
+    get {return _storage._kind}
+    set {_uniqueStorage()._kind = newValue}
+  }
+
+  //// Display name of the monitor device.
+  //// This value MAY be empty or non-standardized depending on the server implementation.
+  var displayName: String {
+    get {return _storage._displayName}
+    set {_uniqueStorage()._displayName = newValue}
+  }
+
+  //// Display state information
+  var state: Sirius_Msgdef_V1_Channels_Projection_DisplayState {
+    get {return _storage._state ?? Sirius_Msgdef_V1_Channels_Projection_DisplayState()}
+    set {_uniqueStorage()._state = newValue}
+  }
+  /// Returns true if `state` has been explicitly set.
+  var hasState: Bool {return _storage._state != nil}
+  /// Clears the value of `state`. Subsequent reads from it will return its default value.
+  mutating func clearState() {_uniqueStorage()._state = nil}
+
+  //// Display resolution and position information
+  //// x, y: top-left corner coordinates in the global virtual screen coordinate system
+  //// width, height: display size in pixels
+  var bounds: Sirius_Msgdef_V1_Channels_Projection_SRRect {
+    get {return _storage._bounds ?? Sirius_Msgdef_V1_Channels_Projection_SRRect()}
+    set {_uniqueStorage()._bounds = newValue}
+  }
+  /// Returns true if `bounds` has been explicitly set.
+  var hasBounds: Bool {return _storage._bounds != nil}
+  /// Clears the value of `bounds`. Subsequent reads from it will return its default value.
+  mutating func clearBounds() {_uniqueStorage()._bounds = nil}
+
+  //// Display refresh rate (Hz)
+  //// Expressed as float since values like 59.94 or 23.976 may occur.
+  //// Depending on the server implementation, platform, or display type, this value
+  //// may differ from the actual display's capabilities or may not be provided.
+  //// (0, negative, or highly abnormal values may occur)
+  var refreshRate: Double {
+    get {return _storage._refreshRate}
+    set {_uniqueStorage()._refreshRate = newValue}
+  }
+
+  //// Display color depth
+  /// @constset: DisplayColorDepth
+  var colorDepth: UInt32 {
+    get {return _storage._colorDepth}
+    set {_uniqueStorage()._colorDepth = newValue}
+  }
+
+  //// Display dynamic range
+  /// @constset: DisplayDynamicRange
+  var dynamicRange: UInt32 {
+    get {return _storage._dynamicRange}
+    set {_uniqueStorage()._dynamicRange = newValue}
+  }
+
+  //// Display color profile
+  /// @constset: DisplayColorProfile
+  /// Values not in the predefined profiles represent custom color profiles defined by the user or monitor.
+  var colorProfile: String {
+    get {return _storage._colorProfile ?? String()}
+    set {_uniqueStorage()._colorProfile = newValue}
+  }
+  /// Returns true if `colorProfile` has been explicitly set.
+  var hasColorProfile: Bool {return _storage._colorProfile != nil}
+  /// Clears the value of `colorProfile`. Subsequent reads from it will return its default value.
+  mutating func clearColorProfile() {_uniqueStorage()._colorProfile = nil}
+
+  //// Physical size information of the display
+  //// This value MAY not be provided in some cases.
+  var physicalSizeInfo: Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo {
+    get {return _storage._physicalSizeInfo ?? Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo()}
+    set {_uniqueStorage()._physicalSizeInfo = newValue}
+  }
+  /// Returns true if `physicalSizeInfo` has been explicitly set.
+  var hasPhysicalSizeInfo: Bool {return _storage._physicalSizeInfo != nil}
+  /// Clears the value of `physicalSizeInfo`. Subsequent reads from it will return its default value.
+  mutating func clearPhysicalSizeInfo() {_uniqueStorage()._physicalSizeInfo = nil}
+
+  //// Display scale factor
+  //// Some GUI environments (especially X11) may use inverse scaling (e.g., 0.5x).
+  //// If this field is not set, Protobuf behavior will default it to 0.0.
+  //// Therefore, implementations MUST treat 0.0 as equivalent to 1.0 (no scaling).
+  //// It is RECOMMENDED to set this field explicitly whenever possible.
+  var scaleFactor: Double {
+    get {return _storage._scaleFactor}
+    set {_uniqueStorage()._scaleFactor = newValue}
+  }
+
+  //// Display rotation (degrees)
+  /// @constset: DisplayRotation
+  var rotation: UInt32 {
+    get {return _storage._rotation}
+    set {_uniqueStorage()._rotation = newValue}
+  }
+
+  //// Supported display specs
+  var supportedSpecs: [Sirius_Msgdef_V1_Channels_Projection_DisplaySpec] {
+    get {return _storage._supportedSpecs}
+    set {_uniqueStorage()._supportedSpecs = newValue}
+  }
+
+  //// Display thumbnail
+  //// This field is only provided when 'includeThumbnails' is set in the DisplayListRequest flags.
+  //// Even if the flag is set, this field MAY be empty depending on server conditions.
+  var thumbnail: Data {
+    get {return _storage._thumbnail ?? Data()}
+    set {_uniqueStorage()._thumbnail = newValue}
+  }
+  /// Returns true if `thumbnail` has been explicitly set.
+  var hasThumbnail: Bool {return _storage._thumbnail != nil}
+  /// Clears the value of `thumbnail`. Subsequent reads from it will return its default value.
+  mutating func clearThumbnail() {_uniqueStorage()._thumbnail = nil}
+
+  //// Additional metadata
+  //// All metadata keys are optional. Not all server implementations are guaranteed to support them,
+  //// and not all keys are always provided.
+  //// Implementation-specific metadata keys SHOULD follow the reverse domain name format.
+  //// (e.g., "com.contoso.superremote.virtual-display-purpose")
+  //// @key "related-display-id": If this display is mirroring another display,
+  ////       indicates the original display ID.
+  //// @key "connection-type": Display connection type
+  ////       (e.g., "HDMI", "DisplayPort", "USB-C", "Wireless")
+  var metadata: Dictionary<String,String> {
+    get {return _storage._metadata}
+    set {_uniqueStorage()._metadata = newValue}
+  }
+
+  var flags: UInt32 {
+    get {return _storage._flags}
+    set {_uniqueStorage()._flags = newValue}
+  }
+
+  //// Identifier carried by virtual displays created through the Projection channel.
+  var virtualDisplayIdentifier: Sirius_Msgdef_SRUUID {
+    get {return _storage._virtualDisplayIdentifier ?? Sirius_Msgdef_SRUUID()}
+    set {_uniqueStorage()._virtualDisplayIdentifier = newValue}
+  }
+  /// Returns true if `virtualDisplayIdentifier` has been explicitly set.
+  var hasVirtualDisplayIdentifier: Bool {return _storage._virtualDisplayIdentifier != nil}
+  /// Clears the value of `virtualDisplayIdentifier`. Subsequent reads from it will return its default value.
+  mutating func clearVirtualDisplayIdentifier() {_uniqueStorage()._virtualDisplayIdentifier = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
+}
+
+//// Requests a list of displays.
 /// @opcode: 0x8041
 struct Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -38,194 +285,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: Sendable {
   init() {}
 }
 
-struct Sirius_Msgdef_V1_Channels_Projection_DisplayState: Sendable {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  //// 디스플레이가 메인 디스플레이인지 여부
-  var isPrimary: Bool = false
-
-  //// 디스플레이가 현재 연결되어 있는지 여부
-  var isConnected: Bool = false
-
-  //// 디스플레이가 현재 활성화(켜져 있음) 상태인지 여부
-  var isActive: Bool = false
-
-  var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  init() {}
-}
-
-struct Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo: Sendable {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  //// 디스플레이의 물리적 크기 (밀리미터 단위)
-  var physicalSize: Sirius_Msgdef_V1_Channels_Projection_SRSize {
-    get {return _physicalSize ?? Sirius_Msgdef_V1_Channels_Projection_SRSize()}
-    set {_physicalSize = newValue}
-  }
-  /// Returns true if `physicalSize` has been explicitly set.
-  var hasPhysicalSize: Bool {return self._physicalSize != nil}
-  /// Clears the value of `physicalSize`. Subsequent reads from it will return its default value.
-  mutating func clearPhysicalSize() {self._physicalSize = nil}
-
-  //// 디스플레이의 픽셀 밀도 (DPI: Dots Per Inch)
-  var dpi: UInt32 = 0
-
-  var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  init() {}
-
-  fileprivate var _physicalSize: Sirius_Msgdef_V1_Channels_Projection_SRSize? = nil
-}
-
-struct Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: @unchecked Sendable {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  //// OS / DM에서 부여한 디스플레이 식별용 ID.
-  var displayID: UInt32 {
-    get {return _storage._displayID}
-    set {_uniqueStorage()._displayID = newValue}
-  }
-
-  //// 디스플레이 종류.
-  /// @constset: DisplayKind
-  var kind: UInt32 {
-    get {return _storage._kind}
-    set {_uniqueStorage()._kind = newValue}
-  }
-
-  //// 디스플레이 (모니터 장비)의 표시 이름.
-  //// @note 이 값은 서버 구현체에 따라 비어있을 수 있거나 표준적이지 않을 수 있습니다.
-  var displayName: String {
-    get {return _storage._displayName}
-    set {_uniqueStorage()._displayName = newValue}
-  }
-
-  //// 디스플레이 상태 정보
-  var state: Sirius_Msgdef_V1_Channels_Projection_DisplayState {
-    get {return _storage._state ?? Sirius_Msgdef_V1_Channels_Projection_DisplayState()}
-    set {_uniqueStorage()._state = newValue}
-  }
-  /// Returns true if `state` has been explicitly set.
-  var hasState: Bool {return _storage._state != nil}
-  /// Clears the value of `state`. Subsequent reads from it will return its default value.
-  mutating func clearState() {_uniqueStorage()._state = nil}
-
-  //// 디스플레이의 해상도 및 위치 정보
-  //// @property x: 전체 가상 화면 좌표계에서의 왼쪽 위 모서리 X 좌표
-  //// @property y: 전체 가상 화면 좌표계에서의 왼쪽 위 모서리 Y 좌표
-  //// @property width: 디스플레이의 픽셀 단위 너비
-  //// @property height: 디스플레이의 픽셀 단위 높이
-  var bounds: Sirius_Msgdef_V1_Channels_Projection_SRRect {
-    get {return _storage._bounds ?? Sirius_Msgdef_V1_Channels_Projection_SRRect()}
-    set {_uniqueStorage()._bounds = newValue}
-  }
-  /// Returns true if `bounds` has been explicitly set.
-  var hasBounds: Bool {return _storage._bounds != nil}
-  /// Clears the value of `bounds`. Subsequent reads from it will return its default value.
-  mutating func clearBounds() {_uniqueStorage()._bounds = nil}
-
-  //// 디스플레이의 주사율 (Hz)
-  //// 59.94, 23.976 등의 값이 있을 수 있으므로 float으로 표현한다.
-  ////
-  //// @note 서버 구현체나 플랫폼, 디스플레이 종류에 따라 이 값이 실제 디스플레이의 어빌리티와 다르거나 제공되지 않을 수 있습니다.
-  ////       (0이나, 음수, 혹은 매우 비정상적인 값이 올 수 있음)
-  var refreshRate: Float {
-    get {return _storage._refreshRate}
-    set {_uniqueStorage()._refreshRate = newValue}
-  }
-
-  //// 디스플레이의 색상 깊이
-  /// @constset: DisplayColorDepth
-  var colorDepth: UInt32 {
-    get {return _storage._colorDepth}
-    set {_uniqueStorage()._colorDepth = newValue}
-  }
-
-  //// 디스플레이의 다이나믹 레인지
-  /// @constset: DisplayDynamicRange
-  var dynamicRange: UInt32 {
-    get {return _storage._dynamicRange}
-    set {_uniqueStorage()._dynamicRange = newValue}
-  }
-
-  //// 디스플레이의 색상 프로파일
-  /// @constset: DisplayColorProfile
-  /// 'CUSTOM' 프로파일은 상기 사전 정의된 프로파일 외에, 사용자 / 모니터에서 정의한 별도의 색상 프로파일을 나타냅니다.
-  var colorProfile: String {
-    get {return _storage._colorProfile ?? String()}
-    set {_uniqueStorage()._colorProfile = newValue}
-  }
-  /// Returns true if `colorProfile` has been explicitly set.
-  var hasColorProfile: Bool {return _storage._colorProfile != nil}
-  /// Clears the value of `colorProfile`. Subsequent reads from it will return its default value.
-  mutating func clearColorProfile() {_uniqueStorage()._colorProfile = nil}
-
-  //// 디스플레이의 물리적 크기 정보
-  //// @note 이 값이 제공되지 않는 경우가 있을 수 있습니다.
-  var physicalSizeInfo: Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo {
-    get {return _storage._physicalSizeInfo ?? Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo()}
-    set {_uniqueStorage()._physicalSizeInfo = newValue}
-  }
-  /// Returns true if `physicalSizeInfo` has been explicitly set.
-  var hasPhysicalSizeInfo: Bool {return _storage._physicalSizeInfo != nil}
-  /// Clears the value of `physicalSizeInfo`. Subsequent reads from it will return its default value.
-  mutating func clearPhysicalSizeInfo() {_uniqueStorage()._physicalSizeInfo = nil}
-
-  //// 디스플레이의 스케일 팩터
-  //// NOTE: 일부 GUI 환경 (특히 X11)에서는 흑마법을 부려 역방향 스케일 (e.g. 0.5x - 1920x1080 디스플레이에 3840x2160 해상도를 우겨넣어 넓게 쓰는 꼼수)을 사용하는 케이스도 있습니다.
-  //// NOTE: 이 필드를 설정하지 않은 경우, Protobuf 특성에 의해 0.0이 기본값으로 오게 됩니다. 따라서, 각 구현체들은 0.0을 1.0과 같이 (즉, 스케일링이 없는 상태)로 간주해야 합니다.
-  ////       ... 그래도 가급적이면 이 필드도 설정해 주세요 ㅠ_ㅠ
-  //// EXAMPLES:
-  ////   - 뷰포트 1920x1080, 디스플레이 해상도 3840x2160인 경우 스케일 팩터는 2.0x입니다.
-  ////   - 뷰포트 1920x1080, 디스플레이 해상도 1920x1080인 경우 스케일 팩터는 1.0x입니다.
-  ////   - 뷰포트 3840x2160, 디스플레이 해상도 1920x1080인 경우 스케일 팩터는 0.5x입니다.
-  var scaleFactor: Float {
-    get {return _storage._scaleFactor}
-    set {_uniqueStorage()._scaleFactor = newValue}
-  }
-
-  //// 디스플레이 섬네일 
-  //// NOTE: - 이 필드는 DisplayListRequest 플래그에서 'includeThumbnails'가 설정된 경우에만 제공됩니다.
-  ////       - 해당 플래그가 설정되어 있어도 서버 상황에 따라 이 필드는 비어있을 수 있습니다.
-  var thumbnail: Data {
-    get {return _storage._thumbnail ?? Data()}
-    set {_uniqueStorage()._thumbnail = newValue}
-  }
-  /// Returns true if `thumbnail` has been explicitly set.
-  var hasThumbnail: Bool {return _storage._thumbnail != nil}
-  /// Clears the value of `thumbnail`. Subsequent reads from it will return its default value.
-  mutating func clearThumbnail() {_uniqueStorage()._thumbnail = nil}
-
-  //// 추가 메타데이터
-  //// @note **모든 메타데이터 키는 optional입니다**. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고, 모든 키가 항상 제공되는 것도 아닙니다.
-  //// @note 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오. (예: "com.contoso.superremote.virtual-display-purpose" 등)
-  //// @key "related-display-id": 이 디스플레이가 다른 디스플레이의 미러링을 수행하고 있는 경우, 그 원본 디스플레이 ID를 나타냅니다.
-  //// @key "connection-type": 디스플레이 연결 유형 (예: "HDMI", "DisplayPort", "USB-C", "Wireless" 등)
-  var metadata: Dictionary<String,String> {
-    get {return _storage._metadata}
-    set {_uniqueStorage()._metadata = newValue}
-  }
-
-  var flags: UInt32 {
-    get {return _storage._flags}
-    set {_uniqueStorage()._flags = newValue}
-  }
-
-  var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  init() {}
-
-  fileprivate var _storage = _StorageClass.defaultInstance
-}
-
-//// 디스플레이 목록에 대한 응답 메시지.
+//// Response to a display list request.
 /// @opcode: 0x8042
 struct Sirius_Msgdef_V1_Channels_Projection_DisplayListResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -241,7 +301,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayListResponse: Sendable {
   init() {}
 }
 
-//// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
+//// Subscribes to display change events from the server.
 /// @opcode: 0x8043
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -250,7 +310,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: Send
 
   var requestID: UInt64 = 0
 
-  //// 0x0000인 경우 모든 이벤트를 구독합니다.
+  //// When 0x0000, subscribes to all events.
   /// @optionset: DisplayChangeEventType
   var eventMask: UInt32 = 0
 
@@ -262,7 +322,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesRequest: Send
   init() {}
 }
 
-//// SubscribeDisplayChangesRequest에 대한 응답 메시지.
+//// Response to a SubscribeDisplayChangesRequest.
 /// @opcode: 0x8044
 struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -271,7 +331,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: Sen
 
   var requestID: UInt64 = 0
 
-  //// 구독 식별자.
+  //// Subscription identifier.
   var subscriptionID: Sirius_Msgdef_SRUUID {
     get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
@@ -288,7 +348,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_SubscribeDisplayChangesResponse: Sen
   fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
-//// 서버로부터 디스플레이 변경 이벤트를 구독 해제합니다.
+//// Unsubscribes from display change events from the server.
 /// @opcode: 0x8045
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -297,7 +357,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest: Se
 
   var requestID: UInt64 = 0
 
-  //// 구독 식별자.
+  //// Subscription identifier.
   var subscriptionID: Sirius_Msgdef_SRUUID {
     get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
@@ -314,7 +374,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesRequest: Se
   fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
-//// UnsubscribeDisplayChangesRequest에 대한 응답 메시지.
+//// Response to an UnsubscribeDisplayChangesRequest.
 /// @opcode: 0x8046
 struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -323,7 +383,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse: S
 
   var requestID: UInt64 = 0
 
-  //// 구독 식별자.
+  //// Subscription identifier.
   var subscriptionID: Sirius_Msgdef_SRUUID {
     get {return _subscriptionID ?? Sirius_Msgdef_SRUUID()}
     set {_subscriptionID = newValue}
@@ -333,7 +393,7 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse: S
   /// Clears the value of `subscriptionID`. Subsequent reads from it will return its default value.
   mutating func clearSubscriptionID() {self._subscriptionID = nil}
 
-  //// 구독 해제 성공 여부.
+  //// Whether the unsubscription was successful.
   var isSuccess: Bool = false
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -343,18 +403,18 @@ struct Sirius_Msgdef_V1_Channels_Projection_UnsubscribeDisplayChangesResponse: S
   fileprivate var _subscriptionID: Sirius_Msgdef_SRUUID? = nil
 }
 
-//// 디스플레이 변경 이벤트.
+//// Display change event.
 /// @opcode: 0x8047
 struct Sirius_Msgdef_V1_Channels_Projection_DisplayChangedEvent: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// 이벤트 유형 코드
+  //// Event type code
   /// @optionset: DisplayChangeEventType
   var eventType: UInt32 = 0
 
-  //// 변경된 디스플레이 정보
+  //// Information about the changed display
   var display: Sirius_Msgdef_V1_Channels_Projection_DisplayInfo {
     get {return _display ?? Sirius_Msgdef_V1_Channels_Projection_DisplayInfo()}
     set {_display = newValue}
@@ -375,9 +435,9 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayChangedEvent: Sendable {
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
-extension Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".DisplayListRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{2}\u{f}flags\0")
+extension Sirius_Msgdef_V1_Channels_Projection_DisplaySpec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".DisplaySpec"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}resolution\0\u{1}refreshRate\0\u{1}scaleFactor\0\u{2}\u{c}metadata\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -385,26 +445,40 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: SwiftProtobuf
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
-      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._resolution) }()
+      case 2: try { try decoder.decodeSingularDoubleField(value: &self.refreshRate) }()
+      case 3: try { try decoder.decodeSingularDoubleField(value: &self.scaleFactor) }()
+      case 15: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.metadata) }()
       default: break
       }
     }
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.requestID != 0 {
-      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._resolution {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    if self.refreshRate.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.refreshRate, fieldNumber: 2)
     }
-    if self.flags != 0 {
-      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
+    if self.scaleFactor.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.scaleFactor, fieldNumber: 3)
+    }
+    if !self.metadata.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.metadata, fieldNumber: 15)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest, rhs: Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest) -> Bool {
-    if lhs.requestID != rhs.requestID {return false}
-    if lhs.flags != rhs.flags {return false}
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_DisplaySpec, rhs: Sirius_Msgdef_V1_Channels_Projection_DisplaySpec) -> Bool {
+    if lhs._resolution != rhs._resolution {return false}
+    if lhs.refreshRate != rhs.refreshRate {return false}
+    if lhs.scaleFactor != rhs.scaleFactor {return false}
+    if lhs.metadata != rhs.metadata {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -491,7 +565,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo: SwiftPro
 
 extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".DisplayInfo"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayID\0\u{1}kind\0\u{1}displayName\0\u{1}state\0\u{1}bounds\0\u{1}refreshRate\0\u{1}colorDepth\0\u{1}dynamicRange\0\u{1}colorProfile\0\u{1}physicalSizeInfo\0\u{1}scaleFactor\0\u{2}\u{3}thumbnail\0\u{1}metadata\0\u{1}flags\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayID\0\u{1}kind\0\u{1}displayName\0\u{1}state\0\u{1}bounds\0\u{1}refreshRate\0\u{1}colorDepth\0\u{1}dynamicRange\0\u{1}colorProfile\0\u{1}physicalSizeInfo\0\u{1}scaleFactor\0\u{1}rotation\0\u{1}supportedSpecs\0\u{1}thumbnail\0\u{1}metadata\0\u{1}flags\0\u{1}virtualDisplayIdentifier\0")
 
   fileprivate class _StorageClass {
     var _displayID: UInt32 = 0
@@ -499,15 +573,18 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
     var _displayName: String = String()
     var _state: Sirius_Msgdef_V1_Channels_Projection_DisplayState? = nil
     var _bounds: Sirius_Msgdef_V1_Channels_Projection_SRRect? = nil
-    var _refreshRate: Float = 0
+    var _refreshRate: Double = 0
     var _colorDepth: UInt32 = 0
     var _dynamicRange: UInt32 = 0
     var _colorProfile: String? = nil
     var _physicalSizeInfo: Sirius_Msgdef_V1_Channels_Projection_DisplayPhysicalSizeInfo? = nil
-    var _scaleFactor: Float = 0
+    var _scaleFactor: Double = 0
+    var _rotation: UInt32 = 0
+    var _supportedSpecs: [Sirius_Msgdef_V1_Channels_Projection_DisplaySpec] = []
     var _thumbnail: Data? = nil
     var _metadata: Dictionary<String,String> = [:]
     var _flags: UInt32 = 0
+    var _virtualDisplayIdentifier: Sirius_Msgdef_SRUUID? = nil
 
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
@@ -529,9 +606,12 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
       _colorProfile = source._colorProfile
       _physicalSizeInfo = source._physicalSizeInfo
       _scaleFactor = source._scaleFactor
+      _rotation = source._rotation
+      _supportedSpecs = source._supportedSpecs
       _thumbnail = source._thumbnail
       _metadata = source._metadata
       _flags = source._flags
+      _virtualDisplayIdentifier = source._virtualDisplayIdentifier
     }
   }
 
@@ -555,15 +635,18 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         case 3: try { try decoder.decodeSingularStringField(value: &_storage._displayName) }()
         case 4: try { try decoder.decodeSingularMessageField(value: &_storage._state) }()
         case 5: try { try decoder.decodeSingularMessageField(value: &_storage._bounds) }()
-        case 6: try { try decoder.decodeSingularFloatField(value: &_storage._refreshRate) }()
+        case 6: try { try decoder.decodeSingularDoubleField(value: &_storage._refreshRate) }()
         case 7: try { try decoder.decodeSingularUInt32Field(value: &_storage._colorDepth) }()
         case 8: try { try decoder.decodeSingularUInt32Field(value: &_storage._dynamicRange) }()
         case 9: try { try decoder.decodeSingularStringField(value: &_storage._colorProfile) }()
         case 10: try { try decoder.decodeSingularMessageField(value: &_storage._physicalSizeInfo) }()
-        case 11: try { try decoder.decodeSingularFloatField(value: &_storage._scaleFactor) }()
+        case 11: try { try decoder.decodeSingularDoubleField(value: &_storage._scaleFactor) }()
+        case 12: try { try decoder.decodeSingularUInt32Field(value: &_storage._rotation) }()
+        case 13: try { try decoder.decodeRepeatedMessageField(value: &_storage._supportedSpecs) }()
         case 14: try { try decoder.decodeSingularBytesField(value: &_storage._thumbnail) }()
         case 15: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &_storage._metadata) }()
         case 16: try { try decoder.decodeSingularUInt32Field(value: &_storage._flags) }()
+        case 17: try { try decoder.decodeSingularMessageField(value: &_storage._virtualDisplayIdentifier) }()
         default: break
         }
       }
@@ -592,7 +675,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
       } }()
       if _storage._refreshRate.bitPattern != 0 {
-        try visitor.visitSingularFloatField(value: _storage._refreshRate, fieldNumber: 6)
+        try visitor.visitSingularDoubleField(value: _storage._refreshRate, fieldNumber: 6)
       }
       if _storage._colorDepth != 0 {
         try visitor.visitSingularUInt32Field(value: _storage._colorDepth, fieldNumber: 7)
@@ -607,7 +690,13 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
       } }()
       if _storage._scaleFactor.bitPattern != 0 {
-        try visitor.visitSingularFloatField(value: _storage._scaleFactor, fieldNumber: 11)
+        try visitor.visitSingularDoubleField(value: _storage._scaleFactor, fieldNumber: 11)
+      }
+      if _storage._rotation != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._rotation, fieldNumber: 12)
+      }
+      if !_storage._supportedSpecs.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._supportedSpecs, fieldNumber: 13)
       }
       try { if let v = _storage._thumbnail {
         try visitor.visitSingularBytesField(value: v, fieldNumber: 14)
@@ -618,6 +707,9 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
       if _storage._flags != 0 {
         try visitor.visitSingularUInt32Field(value: _storage._flags, fieldNumber: 16)
       }
+      try { if let v = _storage._virtualDisplayIdentifier {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 17)
+      } }()
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -638,13 +730,51 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayInfo: SwiftProtobuf.Messag
         if _storage._colorProfile != rhs_storage._colorProfile {return false}
         if _storage._physicalSizeInfo != rhs_storage._physicalSizeInfo {return false}
         if _storage._scaleFactor != rhs_storage._scaleFactor {return false}
+        if _storage._rotation != rhs_storage._rotation {return false}
+        if _storage._supportedSpecs != rhs_storage._supportedSpecs {return false}
         if _storage._thumbnail != rhs_storage._thumbnail {return false}
         if _storage._metadata != rhs_storage._metadata {return false}
         if _storage._flags != rhs_storage._flags {return false}
+        if _storage._virtualDisplayIdentifier != rhs_storage._virtualDisplayIdentifier {return false}
         return true
       }
       if !storagesAreEqual {return false}
     }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".DisplayListRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{2}\u{f}flags\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 16: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.flags != 0 {
+      try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 16)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest, rhs: Sirius_Msgdef_V1_Channels_Projection_DisplayListRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.flags != rhs.flags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

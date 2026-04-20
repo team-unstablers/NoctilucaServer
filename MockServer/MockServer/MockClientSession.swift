@@ -8,23 +8,23 @@
 import Foundation
 import SiriusKit
 
-protocol MockClientSessionDelegate: AnyObject {
+protocol MockClientSessionDelegate: AnyObject, Sendable {
     func mockClientSessionDidClose(_ session: MockClientSession)
 }
 
-class MockClientSession: Identifiable {
+actor MockClientSession: @preconcurrency Identifiable {
     private let logger = SiriusLogger(category: "MockClientSession", subsystem: "app.noctiluca.mockserver")
 
     private static let authMethodIdentifier = "app.noctiluca.server.auth.simple-password"
     private static let maxLoginAttempts = 3
 
-    var id: UUID { session.id }
+    nonisolated var id: UUID { session.id }
 
     let session: ClientSession
     let projectionSource: URL
 
-    var mainChannel: MainChannel!
-    weak var delegate: MockClientSessionDelegate?
+    private var mainChannel: MainChannel!
+    private weak var delegate: MockClientSessionDelegate?
 
     private var phase: Phase = .initial
 
@@ -47,8 +47,6 @@ class MockClientSession: Identifiable {
         self.session = session
         self.projectionSource = projectionSource
 
-        self.session.delegate = self
-
         // 고정 패스워드 "mock"의 bcrypt hash 미리 계산
         do {
             let passwordData = Data("mock".utf8)
@@ -57,11 +55,27 @@ class MockClientSession: Identifiable {
         } catch {
             fatalError("Failed to compute bcrypt hash for mock password: \(error)")
         }
+
+        self.session.delegate = self
+    }
+
+    func setDelegate(_ delegate: MockClientSessionDelegate?) {
+        self.delegate = delegate
     }
 
     func initialize() {
         guard phase == .initial else { return }
         startPhaseShiftAssertion(expect: .awaitingAuthentication, within: 5)
+    }
+
+    fileprivate func setMainChannel(_ mainChannel: MainChannel) {
+        self.mainChannel = mainChannel
+    }
+
+    fileprivate func startMainChannelEventLoop() {
+        self.eventLoopTask = Task {
+            await mainChannelEventLoop()
+        }
     }
 
     // MARK: - Main Channel Event Loop
@@ -157,25 +171,7 @@ class MockClientSession: Identifiable {
             return
         }
 
-        // sha512 + bcrypt 검증
-        /*
-        do {
-            let digest = try await Bcrypt.sha512Async(value: message.payload)
-            // let isValid = try await Bcrypt.verifyAsync(password: digest, hash: storedPasswordHash)
-
-            guard isValid else {
-                logger.warning("Authentication failed: password mismatch")
-                try await authFailure()
-                return
-            }
-        } catch {
-            logger.error("Authentication error: \(error)")
-            try await authFailure()
-            return
-        }
-         */
-
-        // 인증 성공
+        // 인증 성공 (sha512+bcrypt 검증은 mock에서 생략)
         phase = .ready
         session.shouldAcceptChannelCreation = true
 
@@ -221,15 +217,17 @@ class MockClientSession: Identifiable {
 
     private func startPhaseShiftAssertion(expect phase: Phase, within seconds: UInt64) {
         phaseShiftAssertionTask?.cancel()
-        phaseShiftAssertionTask = Task {
+        phaseShiftAssertionTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: .seconds(seconds))
             } catch {
                 return
             }
 
-            if self.phase != phase {
-                self.logger.error("Phase shift timeout: expected \(phase) within \(seconds)s, current: \(self.phase)")
+            guard let self else { return }
+            let currentPhase = await self.phase
+            if currentPhase != phase {
+                await self.logger.error("Phase shift timeout: expected \(phase) within \(seconds)s, current: \(currentPhase)")
                 await self.closeWithGoodbye(code: .protocolError, message: "Phase shift timeout")
             }
         }
@@ -254,7 +252,7 @@ class MockClientSession: Identifiable {
 
         notifyCloseIfNeeded()
 
-        // ProjectionChannel의 destroy
+        // ProjectionChannel destroy
         let channels = await session.channelManager.channels
         for channel in channels.values {
             if let projectionChannel = channel as? MockProjectionChannel {
@@ -276,16 +274,16 @@ class MockClientSession: Identifiable {
 }
 
 extension MockClientSession: ClientSessionDelegate {
-    func clientSessionDidCloseTransport(_ session: ClientSession) {
-        Task {
-            await close()
+    nonisolated func clientSessionDidCloseTransport(_ session: ClientSession) {
+        Task { [weak self] in
+            await self?.close()
         }
     }
 
-    func clientSessionDidCreateMainChannel(_ session: ClientSession, mainChannel: MainChannel) {
-        self.mainChannel = mainChannel
-        self.eventLoopTask = Task {
-            await mainChannelEventLoop()
+    nonisolated func clientSessionDidCreateMainChannel(_ session: ClientSession, mainChannel: MainChannel) {
+        Task { [weak self] in
+            await self?.setMainChannel(mainChannel)
+            await self?.startMainChannelEventLoop()
         }
     }
 }

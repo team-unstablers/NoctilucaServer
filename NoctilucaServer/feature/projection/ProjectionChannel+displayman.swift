@@ -19,7 +19,7 @@ extension ProjectionChannel {
         let displayLayoutManager = await DisplayLayoutManager.shared
         let layouts = displayLayoutManager.displayLayouts
 
-        let flags = DisplayListRequestFlags(rawValue: request.flags)
+        let flags = request.flags
         let includeThumbnails = flags.contains(.includeThumbnails)
 
         var displays: [DisplayInfo] = []
@@ -112,9 +112,12 @@ extension ProjectionChannel {
                 colorProfile: nil,
                 physicalSizeInfo: nil,
                 scaleFactor: 1.0,
+                rotation: .deg0,
+                supportedSpecs: [],
                 thumbnail: nil,
                 metadata: [:],
-                flags: 0
+                flags: 0,
+                virtualDisplayIdentifier: nil
             )
         } else {
             let displayID = event.displayID
@@ -153,7 +156,7 @@ extension ProjectionChannel {
         let bounds = SRRect(x: frame.origin.x, y: frame.origin.y, width: frame.width, height: frame.height)
 
         // 주사율
-        let refreshRate = getRefreshRate(displayID: displayID)
+        let refreshRate = Double(getRefreshRate(displayID: displayID))
 
         // 색상 깊이
         let colorDepth = getColorDepth(displayID: displayID)
@@ -190,6 +193,12 @@ extension ProjectionChannel {
             nil
         }
 
+        let layoutManager = await DisplayLayoutManager.shared
+        let supportedSpecs = await MainActor.run {
+            layoutManager.supportedSpecs(for: displayID).map { $0.toSiriusSpec() }
+        }
+        let virtualDisplayIdentifier = await self.state.virtualDisplayExternalID(forDisplayID: displayID)
+
         return DisplayInfo(
             displayID: displayID,
             kind: kind,
@@ -201,10 +210,13 @@ extension ProjectionChannel {
             dynamicRange: dynamicRange,
             colorProfile: colorProfile,
             physicalSizeInfo: physicalSizeInfo,
-            scaleFactor: Float(screen.scaleFactor),
+            scaleFactor: Double(screen.scaleFactor),
+            rotation: .deg0,
+            supportedSpecs: supportedSpecs,
             thumbnail: thumbnailData,
             metadata: metadata,
-            flags: 0
+            flags: 0,
+            virtualDisplayIdentifier: virtualDisplayIdentifier
         )
     }
 

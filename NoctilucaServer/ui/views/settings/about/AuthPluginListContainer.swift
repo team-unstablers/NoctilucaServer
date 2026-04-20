@@ -26,6 +26,7 @@ struct AuthPluginListContainer: View {
     }
     
     var body: some View {
+        /*
         VStack(alignment: .leading, spacing: 12) {
             EditableList(
                 items: .constant(plugins),
@@ -41,6 +42,7 @@ struct AuthPluginListContainer: View {
            let plugin = plugins.first(where: { $0.id == selected }) {
             AuthPluginDetailView(plugin: plugin)
         }
+         */
     }
 }
 

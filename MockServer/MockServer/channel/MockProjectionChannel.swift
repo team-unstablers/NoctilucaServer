@@ -8,56 +8,125 @@
 import Foundation
 import SiriusKit
 
+// MARK: - MockProjectionChannelState
+
+/// 채널 본체가 Sendable 이므로 가변 상태를 actor 로 격리한다.
+actor MockProjectionChannelState {
+    private(set) var dataChannels: [UUID: ProjectionDataChannel] = [:]
+    private(set) var videoSessions: [UUID: MockProjectionSession] = [:]
+    private(set) var audioSessions: [UUID: MockAudioProjectionSession] = [:]
+
+    func setDataChannel(_ channel: ProjectionDataChannel?, for identifier: UUID) {
+        if let channel {
+            dataChannels[identifier] = channel
+        } else {
+            dataChannels.removeValue(forKey: identifier)
+        }
+    }
+
+    func removeDataChannel(for identifier: UUID) -> ProjectionDataChannel? {
+        return dataChannels.removeValue(forKey: identifier)
+    }
+
+    func setVideoSession(_ session: MockProjectionSession?, for identifier: UUID) {
+        if let session {
+            videoSessions[identifier] = session
+        } else {
+            videoSessions.removeValue(forKey: identifier)
+        }
+    }
+
+    func removeVideoSession(for identifier: UUID) -> MockProjectionSession? {
+        return videoSessions.removeValue(forKey: identifier)
+    }
+
+    func setAudioSession(_ session: MockAudioProjectionSession?, for identifier: UUID) {
+        if let session {
+            audioSessions[identifier] = session
+        } else {
+            audioSessions.removeValue(forKey: identifier)
+        }
+    }
+
+    func removeAudioSession(for identifier: UUID) -> MockAudioProjectionSession? {
+        return audioSessions.removeValue(forKey: identifier)
+    }
+
+    func snapshotAndClear() -> (
+        dataChannels: [ProjectionDataChannel],
+        videoSessions: [MockProjectionSession],
+        audioSessions: [MockAudioProjectionSession]
+    ) {
+        let result = (
+            dataChannels: Array(dataChannels.values),
+            videoSessions: Array(videoSessions.values),
+            audioSessions: Array(audioSessions.values)
+        )
+        dataChannels.removeAll()
+        videoSessions.removeAll()
+        audioSessions.removeAll()
+        return result
+    }
+}
+
+// MARK: - MockProjectionChannel
+
 /// NoctilucaServer의 ProjectionChannel을 간소화한 Mock 구현.
 /// - H.265 비디오 고정, Opus 오디오 고정
 /// - CodecNegotiator, AutoQualityPlanner, DisplayLayoutManager 등 제거
-class MockProjectionChannel: Channel {
+final class MockProjectionChannel: Channel, ChannelEventConsumer {
     private let logger = SiriusLogger(category: "MockProjectionChannel", subsystem: "app.noctiluca.mockserver")
 
-    override var serviceClass: ServiceClass { .userInput }
+    let handle: ChannelHandle
+
+    private static let defaultServiceClass: ServiceClass = .userInput
 
     let projectionSource: URL
+    let state = MockProjectionChannelState()
 
-    // identifier -> session/channel tracking
-    private var dataChannels: [UUID: ProjectionDataChannel] = [:]
-    private var videoSessions: [UUID: MockProjectionSession] = [:]
-    private var audioSessions: [UUID: MockAudioProjectionSession] = [:]
+    nonisolated(unsafe) private var channelEventCompatBridge:
+        ChannelEventCompatBridge<MockProjectionChannel>!
 
-    init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection, projectionSource: URL) {
+    init(handle: ChannelHandle, projectionSource: URL) {
+        self.handle = handle
         self.projectionSource = projectionSource
-        super.init(using: streamHolder, identifier: identifier, direction: direction)
+        self.channelEventCompatBridge =
+            ChannelEventCompatBridge(consumer: self, handle: handle)
     }
 
-    required init(using streamHolder: StreamHolder, identifier: ChannelIdentifier, direction: ChannelDirection) {
-        fatalError("Use init(using:identifier:direction:projectionSource:) instead")
+    /// Channel 프로토콜 요구를 만족시키기 위한 init. MockServer에서는 사용하지 않는다.
+    convenience init(handle: ChannelHandle) {
+        fatalError("Use init(handle:projectionSource:) instead")
     }
 
     func destroy() async {
-        // 모든 비디오 세션 정지
-        for (_, session) in videoSessions {
+        let snapshot = await state.snapshotAndClear()
+
+        for session in snapshot.videoSessions {
             await session.stop()
         }
-        videoSessions.removeAll()
 
-        // 모든 오디오 세션 정지
-        for (_, session) in audioSessions {
+        for session in snapshot.audioSessions {
             await session.stop()
         }
-        audioSessions.removeAll()
 
-        // 모든 데이터 채널 닫기
-        for (_, channel) in dataChannels {
-            channel.projectionDelegate = nil
+        for channel in snapshot.dataChannels {
+            await channel.state.setDelegate(nil)
             do {
-                try await channel.close()
+                try await channel.handle.close()
             } catch {
                 logger.warning("Failed to close data channel during destroy: \(error)")
             }
         }
-        dataChannels.removeAll()
     }
 
-    override func handleFrame(frame: SiriusFrame) async throws {
+    // MARK: - ChannelEventConsumer
+
+    func handleChannelReady() async {
+        await handle.setServiceClass(Self.defaultServiceClass)
+    }
+
+    func handleFrame(frame: SiriusFrame) async throws {
         guard frame.isValid() else {
             throw ChannelError.invalidFrame
         }
@@ -94,7 +163,7 @@ class MockProjectionChannel: Channel {
         case .unsubscribeDisplayChangesRequest:
             // 구독 해제 — 더미 성공 응답
             let request = try UnsubscribeDisplayChangesRequest.fromProtobufBytes(frame.data)
-            try await send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
+            try await handle.send(opcode: .unsubscribeDisplayChangesResponse, message: UnsubscribeDisplayChangesResponse(
                 requestID: request.requestID,
                 subscriptionID: request.subscriptionID,
                 isSuccess: true
@@ -108,6 +177,14 @@ class MockProjectionChannel: Channel {
         default:
             logger.warning("Unhandled opcode in MockProjectionChannel: \(frame.opcode)")
         }
+    }
+
+    func handleError(error: any Error) async {
+        await destroy()
+    }
+
+    func handleStreamClose() async {
+        await destroy()
     }
 
     // MARK: - Video Projection
@@ -132,8 +209,8 @@ class MockProjectionChannel: Channel {
                 identifier: identifier
             ) as! ProjectionDataChannel
 
-            openedChannel.projectionDelegate = self
-            dataChannels[identifier] = openedChannel
+            await openedChannel.state.setDelegate(self)
+            await state.setDataChannel(openedChannel, for: identifier)
 
             let projectionSession = MockProjectionSession(
                 id: identifier,
@@ -141,12 +218,12 @@ class MockProjectionChannel: Channel {
                 sourceURL: projectionSource,
                 codec: codec
             )
-            videoSessions[identifier] = projectionSession
+            await state.setVideoSession(projectionSession, for: identifier)
 
             try await projectionSession.prepare()
             try await projectionSession.start()
 
-            try await send(opcode: .projectionSessionCreatedEvent, message: ProjectionSessionCreatedEvent(
+            try await handle.send(opcode: .projectionSessionCreatedEvent, message: ProjectionSessionCreatedEvent(
                 identifier: identifier,
                 source: request.viewport,
                 codec: codec
@@ -157,12 +234,12 @@ class MockProjectionChannel: Channel {
             logger.error("Failed to handle projection request \(identifier): \(error)")
 
             // 클린업
-            if let session = videoSessions.removeValue(forKey: identifier) {
+            if let session = await state.removeVideoSession(for: identifier) {
                 await session.stop()
             }
-            if let channel = dataChannels.removeValue(forKey: identifier) {
-                channel.projectionDelegate = nil
-                try? await channel.close()
+            if let channel = await state.removeDataChannel(for: identifier) {
+                await channel.state.setDelegate(nil)
+                try? await channel.handle.close()
             }
         }
     }
@@ -171,12 +248,12 @@ class MockProjectionChannel: Channel {
         let identifier = request.identifier
         logger.info("Stopping video projection session \(identifier)")
 
-        if let session = videoSessions.removeValue(forKey: identifier) {
+        if let session = await state.removeVideoSession(for: identifier) {
             await session.stop()
         }
-        if let channel = dataChannels.removeValue(forKey: identifier) {
-            channel.projectionDelegate = nil
-            try? await channel.close()
+        if let channel = await state.removeDataChannel(for: identifier) {
+            await channel.state.setDelegate(nil)
+            try? await channel.handle.close()
         }
     }
 
@@ -201,8 +278,8 @@ class MockProjectionChannel: Channel {
                 identifier: identifier
             ) as! ProjectionDataChannel
 
-            openedChannel.projectionDelegate = self
-            dataChannels[identifier] = openedChannel
+            await openedChannel.state.setDelegate(self)
+            await state.setDataChannel(openedChannel, for: identifier)
 
             let audioSession = MockAudioProjectionSession(
                 id: identifier,
@@ -210,12 +287,12 @@ class MockProjectionChannel: Channel {
                 sourceURL: projectionSource,
                 codec: codec
             )
-            audioSessions[identifier] = audioSession
+            await state.setAudioSession(audioSession, for: identifier)
 
             try await audioSession.prepare()
             try await audioSession.start()
 
-            try await send(opcode: .audioSessionCreatedEvent, message: AudioSessionCreatedEvent(
+            try await handle.send(opcode: .audioSessionCreatedEvent, message: AudioSessionCreatedEvent(
                 identifier: identifier,
                 source: request.source,
                 codec: codec
@@ -225,12 +302,12 @@ class MockProjectionChannel: Channel {
         } catch {
             logger.error("Failed to handle audio projection request \(identifier): \(error)")
 
-            if let session = audioSessions.removeValue(forKey: identifier) {
+            if let session = await state.removeAudioSession(for: identifier) {
                 await session.stop()
             }
-            if let channel = dataChannels.removeValue(forKey: identifier) {
-                channel.projectionDelegate = nil
-                try? await channel.close()
+            if let channel = await state.removeDataChannel(for: identifier) {
+                await channel.state.setDelegate(nil)
+                try? await channel.handle.close()
             }
         }
     }
@@ -239,12 +316,12 @@ class MockProjectionChannel: Channel {
         let identifier = request.identifier
         logger.info("Stopping audio projection session \(identifier)")
 
-        if let session = audioSessions.removeValue(forKey: identifier) {
+        if let session = await state.removeAudioSession(for: identifier) {
             await session.stop()
         }
-        if let channel = dataChannels.removeValue(forKey: identifier) {
-            channel.projectionDelegate = nil
-            try? await channel.close()
+        if let channel = await state.removeDataChannel(for: identifier) {
+            await channel.state.setDelegate(nil)
+            try? await channel.handle.close()
         }
     }
 
@@ -264,12 +341,15 @@ class MockProjectionChannel: Channel {
             colorProfile: .sRGB,
             physicalSizeInfo: nil,
             scaleFactor: 1.0,
+            rotation: .deg0,
+            supportedSpecs: [],
             thumbnail: nil,
             metadata: [:],
-            flags: 0
+            flags: 0,
+            virtualDisplayIdentifier: nil
         )
 
-        try await send(opcode: .displayListResponse, message: DisplayListResponse(
+        try await handle.send(opcode: .displayListResponse, message: DisplayListResponse(
             requestID: request.requestID,
             displays: [mockDisplay]
         ))
@@ -277,7 +357,7 @@ class MockProjectionChannel: Channel {
 
     /// 디스플레이 변경 구독 — 더미 구독 ID 반환 (실제 이벤트는 발생하지 않음)
     private func handleSubscribeDisplayChangesRequest(_ request: SubscribeDisplayChangesRequest) async throws {
-        try await send(opcode: .subscribeDisplayChangesResponse, message: SubscribeDisplayChangesResponse(
+        try await handle.send(opcode: .subscribeDisplayChangesResponse, message: SubscribeDisplayChangesResponse(
             requestID: request.requestID,
             subscriptionID: UUID()
         ))
@@ -292,29 +372,29 @@ extension MockProjectionChannel: ProjectionDataChannelDelegate {
             guard let self else { return }
             let identifier = channel.identifier
 
-            if let session = videoSessions.removeValue(forKey: identifier) {
+            if let session = await self.state.removeVideoSession(for: identifier) {
                 await session.stop()
             }
-            if let session = audioSessions.removeValue(forKey: identifier) {
+            if let session = await self.state.removeAudioSession(for: identifier) {
                 await session.stop()
             }
-            dataChannels.removeValue(forKey: identifier)
+            _ = await self.state.removeDataChannel(for: identifier)
         }
     }
 
     func projectionDataChannel(_ channel: ProjectionDataChannel, didEncounterError error: any Error) {
         Task { [weak self] in
             guard let self else { return }
-            logger.warning("ProjectionDataChannel \(channel.identifier) error: \(error)")
+            self.logger.warning("ProjectionDataChannel \(channel.identifier) error: \(error)")
 
             let identifier = channel.identifier
-            if let session = videoSessions.removeValue(forKey: identifier) {
+            if let session = await self.state.removeVideoSession(for: identifier) {
                 await session.stop()
             }
-            if let session = audioSessions.removeValue(forKey: identifier) {
+            if let session = await self.state.removeAudioSession(for: identifier) {
                 await session.stop()
             }
-            dataChannels.removeValue(forKey: identifier)
+            _ = await self.state.removeDataChannel(for: identifier)
         }
     }
 }

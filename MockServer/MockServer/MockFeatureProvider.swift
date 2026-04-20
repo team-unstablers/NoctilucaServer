@@ -8,7 +8,7 @@
 import Foundation
 import SiriusKit
 
-class MockFeatureProvider: FeatureProvider {
+final class MockFeatureProvider: FeatureProvider {
     let projectionSource: URL
 
     init(projectionSource: URL) {
@@ -23,26 +23,19 @@ class MockFeatureProvider: FeatureProvider {
             return false
         }
     }
-    
+
     func createChannel(
-        for feature: SiriusKitCore.SiriusFeature,
-        using streamHolder: SiriusKitCore.StreamHolder,
-        identifier: SiriusKitCore.ChannelIdentifier,
-        direction: SiriusKitCore.ChannelDirection,
+        for feature: SiriusFeature,
+        handle: ChannelHandle,
         args: [String]
-    ) async throws -> SiriusKitCore.ChannelCreationResult {
+    ) async throws -> ChannelCreationResult {
         switch feature {
         case .hidio:
-            return .accepted(MockHIDIOChannel(using: streamHolder, identifier: identifier, direction: direction))
+            return .accepted(MockHIDIOChannel(handle: handle))
         case .projection:
-            return .accepted(MockProjectionChannel(
-                using: streamHolder,
-                identifier: identifier,
-                direction: direction,
-                projectionSource: projectionSource
-            ))
+            return .accepted(MockProjectionChannel(handle: handle, projectionSource: projectionSource))
         case .projectionData:
-            return .accepted(ProjectionDataChannel(using: streamHolder, identifier: identifier, direction: direction))
+            return .accepted(ProjectionDataChannel(handle: handle))
         default:
             fatalError("Unsupported feature: \(feature)")
         }

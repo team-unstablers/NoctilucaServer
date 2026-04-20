@@ -72,3 +72,20 @@ public struct DisplayDynamicRange: RawRepresentable, Hashable, Equatable, Codabl
     /// 하이 다이나믹 레인지 (HDR)
     public static let hdr = DisplayDynamicRange(rawValue: 1)
 }
+
+public struct DisplayRotation: RawRepresentable, Hashable, Equatable, Codable, Sendable {
+    public let rawValue: UInt32
+
+    public init(rawValue: UInt32) {
+        self.rawValue = rawValue
+    }
+
+    /// 회전 없음 (가로)
+    public static let deg0 = DisplayRotation(rawValue: 0)
+    /// 시계 방향 90도 회전 (세로)
+    public static let deg90 = DisplayRotation(rawValue: 90)
+    /// 180도 회전 (가로, 뒤집힘)
+    public static let deg180 = DisplayRotation(rawValue: 180)
+    /// 시계 방향 270도 회전 (세로, 뒤집힘)
+    public static let deg270 = DisplayRotation(rawValue: 270)
+}

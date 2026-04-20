@@ -20,7 +20,7 @@ public enum NoctilucaPluginType: String, Sendable {
     case keyboardHack = "keyboard_hack"
 }
 
-public enum NoctilucaPluginExport {
+public enum NoctilucaPluginExport: Sendable {
     case auth(AuthPluginV1)
     case `extension`(NoctilucaServerExtensionV1)
     case keyboardHack(KeyboardHackPluginV1)

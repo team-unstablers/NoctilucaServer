@@ -1,7 +1,8 @@
 import MetalKit
 import CoreGraphics
-import Combine
+import Observation
 
+@MainActor
 class CursorRenderer: NSObject, MTKViewDelegate {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -29,10 +30,9 @@ class CursorRenderer: NSObject, MTKViewDelegate {
 
     private let textureLoader: MTKTextureLoader
 
-    // Combine 기반 직접 구독 (SwiftUI 뷰 업데이트 파이프라인 우회)
+    // Observation 기반 직접 구독 (SwiftUI 뷰 업데이트 파이프라인 우회)
     private weak var boundView: MTKView?
     private weak var observedState: RemoteSession.CursorState?
-    private var stateSubscription: AnyCancellable?
 
     // Quad Vertices (x, y, u, v) - (0,0) ~ (1,1) 범위의 사각형
     private let vertexData: [Float] = [
@@ -108,22 +108,26 @@ class CursorRenderer: NSObject, MTKViewDelegate {
         }
     }
 
-    // MARK: - Combine Binding (SwiftUI 우회)
+    // MARK: - Observation Binding (SwiftUI 우회)
 
-    /// CursorState를 Combine으로 직접 구독하여 SwiftUI 뷰 업데이트 파이프라인을 우회합니다.
+    /// CursorState를 `withObservationTracking` 기반으로 직접 구독하여
+    /// SwiftUI 뷰 업데이트 파이프라인을 우회합니다.
     func bind(to view: MTKView, cursorState: RemoteSession.CursorState, sourceSize: CGSize, targetDisplayID: Int) {
         self.boundView = view
         self.observedState = cursorState
 
-        stateSubscription?.cancel()
-        stateSubscription = cursorState.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.syncCursorState()
-            }
-
-        // 초기 동기화
+        // 초기 동기화 (observe 루프 개시 전에 sourceSize/targetDisplayID 상태를 셋업한다)
         updateCursorState(cursorState, sourceSize: sourceSize, targetDisplayID: targetDisplayID, in: view)
+
+        // CursorState의 @Observable 프로퍼티를 관찰하여 변경 시 redraw를 트리거한다.
+        // observe는 재귀적으로 재구독되며, observedState가 해제되면 자연 종료된다.
+        observeChanges { [weak self] in
+            guard let self, let state = self.observedState else { return }
+            _ = state.image
+            _ = state.displayID
+            _ = state.position
+            self.syncCursorState()
+        }
     }
 
     /// sourceSize/targetDisplayID 변경 시 호출 (SwiftUI updateNSView/updateUIView에서 사용)

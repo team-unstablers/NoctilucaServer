@@ -29,8 +29,10 @@ final class HIDIOUIKitMouse: HIDIOVirtualDevice {
     private var geometry: CGSize = .zero
 
     var scope: CursorPositionScope = .displayId(-1)
-    
-    var localIdentifier: String? { nil }
+
+    /// 인스턴스별 구분용 식별자.
+    /// 기본값 nil (싱글톤 defaultSubMouse 용도), sub-display scene이 자체 인스턴스를 만들 때는 "display-<id>" 등으로 설정.
+    var localIdentifier: String? = nil
 
     func connect(to controller: HIDIOController) {
         self.controller = controller

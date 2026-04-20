@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MainWindowNewConnectionPhaseContentView: View {
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
 
     @EnvironmentObject
@@ -204,7 +204,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
     let viewModel = SessionWindowViewModel()
 
     MainWindowNewConnectionPhaseContentView()
-        .environmentObject(viewModel)
+        .environment(viewModel)
         .environmentObject(viewModel.contactSheetCoordinator)
         .environmentObject(SettingsStore.shared)
         .frame(minWidth: 640, minHeight: 480)

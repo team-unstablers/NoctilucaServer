@@ -7,6 +7,9 @@
     "-10%" : {
 
     },
+    "(2x HiDPI)" : {
+
+    },
     "[%@]" : {
 
     },
@@ -22,12 +25,32 @@
     "%@ — " : {
 
     },
+    "%@ (#%u)" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (#%2$u)"
+          }
+        }
+      }
+    },
     "%@ ↑ %@ ↓" : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ ↑ %2$@ ↓"
+          }
+        }
+      }
+    },
+    "%@x%@@%@Hz" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@x%2$@@%3$@Hz"
           }
         }
       }
@@ -89,19 +112,43 @@
     "20Mbps" : {
 
     },
+    "24.0hz" : {
+
+    },
     "25%" : {
+
+    },
+    "29.97hz" : {
+
+    },
+    "30.0hz" : {
+
+    },
+    "48.0hz" : {
 
     },
     "50%" : {
 
     },
+    "59.94hz" : {
+
+    },
     "60 FPS" : {
+
+    },
+    "60.0hz" : {
 
     },
     "75%" : {
 
     },
     "100%" : {
+
+    },
+    "1366x768" : {
+
+    },
+    "1920x1080" : {
 
     },
     "about.appeal_button" : {
@@ -4512,6 +4559,12 @@
     "Display %lld" : {
 
     },
+    "e.g.) 1080" : {
+
+    },
+    "e.g.) 1920" : {
+
+    },
     "endpoint.connect_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -5353,6 +5406,9 @@
         }
       }
     },
+    "FIXME" : {
+
+    },
     "floating_palette.software_keyboard_toggle" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -5488,6 +5544,9 @@
 
     },
     "HIDIO" : {
+
+    },
+    "HiDPI (Retina) 켜기" : {
 
     },
     "Kill" : {
@@ -15721,6 +15780,28 @@
         }
       }
     },
+    "settings.projection.allow_sub_display_window.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 선택 시트에서 각 원격 디스플레이를 iPad의 별도 윈도우(UIWindowScene)로 분리할 수 있게 합니다.\niPad Pro에서 외부 디스플레이를 연결하여 다중 디스플레이처럼 사용하려는 경우에 유용합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.allow_sub_display_window.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 디스플레이를 별도 윈도우로 분리할 수 있게 하기"
+          }
+        }
+      }
+    },
     "settings.projection.audio_policy.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -16243,6 +16324,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "优先考虑最小化延迟。\n如果网络状况不佳，可能会频繁出现卡顿或丢帧。"
+          }
+        }
+      }
+    },
+    "settings.projection.multi_display.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "멀티 디스플레이"
           }
         }
       }
@@ -17309,6 +17401,42 @@
     "YUV 4:4:4" : {
 
     },
+    "가상 디스플레이 생성 실패" : {
+
+    },
+    "너비" : {
+
+    },
+    "높이" : {
+
+    },
+    "되돌리기" : {
+
+    },
+    "디스플레이 스펙" : {
+
+    },
+    "디스플레이를 선택하세요" : {
+
+    },
+    "또한, 여기서 생성한 가상 디스플레이는 원격 세션 종료 이후 자동으로 제거됩니다." : {
+
+    },
+    "리프레시 레이트" : {
+
+    },
+    "메인 디스플레이로 설정" : {
+
+    },
+    "새 가상 디스플레이" : {
+
+    },
+    "생성" : {
+
+    },
+    "서버 상황에 따라 지정한 디스플레이 스펙이 완전히 지켜지지 않을 수 있습니다." : {
+
+    },
     "세션을 선택하세요" : {
 
     },
@@ -17335,7 +17463,25 @@
         }
       }
     },
+    "이 기기에 맞춤" : {
+
+    },
+    "적용하기" : {
+
+    },
     "채널을 선택하세요" : {
+
+    },
+    "취소" : {
+
+    },
+    "해상도" : {
+
+    },
+    "확인" : {
+
+    },
+    "희망 해상도가 4K (3840 x 2160)를 초과합니다. 가상 디스플레이 생성에 실패할 수 있습니다." : {
 
     }
   },

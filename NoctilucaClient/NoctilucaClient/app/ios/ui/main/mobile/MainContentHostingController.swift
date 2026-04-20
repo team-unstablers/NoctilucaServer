@@ -21,9 +21,6 @@ final class MainContentHostingController: UIHostingController<AnyView> {
     private var addressBarHostingController: UIHostingController<AnyView>?
     private var proxyView: ToolbarGeometryProxyView?
 
-    private var phaseCancellable: AnyCancellable?
-    private var fullscreenCancellable: AnyCancellable?
-
     /// pointer lock 여부. RootViewController에서 설정됨
     var isPointerLocked: Bool = false {
         didSet {
@@ -48,7 +45,7 @@ final class MainContentHostingController: UIHostingController<AnyView> {
         self.settingsStore = settingsStore
 
         let contentView = UIKitMainWindow()
-            .environmentObject(viewModel)
+            .environment(viewModel)
             .environmentObject(viewModel.contactSheetCoordinator)
             .environmentObject(settingsStore)
 
@@ -137,25 +134,25 @@ final class MainContentHostingController: UIHostingController<AnyView> {
     // MARK: - Phase Observation
 
     private func observePhaseChanges() {
-        phaseCancellable = viewModel.$phase
-            .receive(on: RunLoop.main)
-            .sink { [weak self] phase in
-                self?.updateNavigationItems(phase: phase)
-            }
+        // viewModel이 @Observable로 전환되어 $phase publisher가 없어졌으므로
+        // observeChanges 헬퍼로 프로퍼티 변경을 추적한다.
+        observeChanges { [weak self] in
+            guard let self else { return }
+            self.updateNavigationItems(phase: self.viewModel.phase)
+        }
     }
 
     private func observeFullscreenState() {
-        fullscreenCancellable = viewModel.$isFullscreen
-            .receive(on: RunLoop.main)
-            .sink { [weak self] isFullscreen in
-                guard let parent = self?.parent as? RootViewController else {
-                    return
-                }
-                
-                // parent.navigationController?.isNavigationBarHidden = true
-                parent.navigationBar.isHidden = isFullscreen
-                self?.addressBarHostingController?.view.isHidden = isFullscreen
+        observeChanges { [weak self] in
+            guard let self else { return }
+            let isFullscreen = self.viewModel.isFullscreen
+            guard let parent = self.parent as? RootViewController else {
+                return
             }
+
+            parent.navigationBar.isHidden = isFullscreen
+            self.addressBarHostingController?.view.isHidden = isFullscreen
+        }
     }
 
     private func updateNavigationItems(phase: MainWindowPhase) {
@@ -232,7 +229,7 @@ final class MainContentHostingController: UIHostingController<AnyView> {
     }
 
     @objc private func switchDisplay() {
-        viewModel.shouldPresentDisplaySwitchSheet = true
+        viewModel.shouldPresentDisplaySwitchSheet.toggle()
     }
 
     @objc private func enterFullscreen() {

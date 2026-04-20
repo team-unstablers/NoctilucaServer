@@ -9985,6 +9985,50 @@
         }
       }
     },
+    "settings.projection.allow_modify_display_layout.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트의 더 나은 원격 데스크톱 경험을 위해 Noctiluca Server가 호스트의 디스플레이 레이아웃을 변경하는 것을 허용합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.allow_modify_display_layout.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 레이아웃 변경을 허용하기"
+          }
+        }
+      }
+    },
+    "settings.projection.allow_virtual_display.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트의 더 나은 원격 데스크톱 경험을 위해 Noctiluca Server가 호스트에 가상 디스플레이를 추가하는 것을 허용합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.allow_virtual_display.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가상 디스플레이 사용을 허용하기"
+          }
+        }
+      }
+    },
     "settings.projection.audio_codec_priority.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -13204,6 +13248,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "基本设置"
+          }
+        }
+      }
+    },
+    "settings.projection.display.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "여러 클라이언트가 동시 접속되어 있는 경우, 이 설정은 그 중 첫번째 클라이언트에게만 유효합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.display.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 설정"
           }
         }
       }
@@ -16457,7 +16523,7 @@
       }
     },
     "settings.projection.screen_recorder.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

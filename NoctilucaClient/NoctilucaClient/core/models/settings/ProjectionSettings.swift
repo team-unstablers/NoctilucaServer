@@ -101,6 +101,11 @@ extension AppSettings {
         /// CAS 선명도 (0.0 ~ 1.0)
         var casSharpness: Double = 0.5
 
+        /// iPadOS 에서 원격 디스플레이를 별도 창(UIWindowScene)으로 분리하는 기능의 허용 여부.
+        /// Stage Manager/외부 디스플레이 환경에서 유용하지만 실험적 기능이므로 기본 false.
+        /// macOS 에서는 이 값과 무관하게 항상 분리가 가능하다.
+        var allowSubDisplayWindow: Bool = false
+
         init() {}
 
         enum CodingKeys: String, CodingKey {
@@ -110,6 +115,7 @@ extension AppSettings {
             case rendererImplementation
             case casEnabled
             case casSharpness
+            case allowSubDisplayWindow
         }
 
         init(from decoder: any Decoder) throws {
@@ -125,6 +131,7 @@ extension AppSettings {
             rendererImplementation = container.decodeSafe(RendererImplementation.self, forKey: .rendererImplementation, default: .avSampleBufferDisplayLayer)
             casEnabled = container.decodeSafe(Bool.self, forKey: .casEnabled, default: false)
             casSharpness = container.decodeSafe(Double.self, forKey: .casSharpness, default: 0.5)
+            allowSubDisplayWindow = container.decodeSafe(Bool.self, forKey: .allowSubDisplayWindow, default: false)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -135,6 +142,7 @@ extension AppSettings {
             try container.encode(rendererImplementation, forKey: .rendererImplementation)
             try container.encode(casEnabled, forKey: .casEnabled)
             try container.encode(casSharpness, forKey: .casSharpness)
+            try container.encode(allowSubDisplayWindow, forKey: .allowSubDisplayWindow)
         }
     }
 }

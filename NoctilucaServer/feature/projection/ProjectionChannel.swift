@@ -100,6 +100,10 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
             let request = try UnsubscribeDisplayChangesRequest.fromProtobufBytes(frame.data)
             try await handleUnsubscribeDisplayChangesRequest(request)
 
+        case .displayTransactionRequest:
+            let request = try DisplayTransactionRequest.fromProtobufBytes(frame.data)
+            try await handleDisplayTransactionRequest(request)
+
         default:
             logger.warning("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
         }
@@ -116,6 +120,8 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
     // MARK: - Destroy / Cleanup
 
     func destroy() async {
+        let sessionID = clientSession?.id
+
         guard let snapshot = await state.beginDestroy() else {
             return
         }
@@ -142,6 +148,14 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
 
         snapshot.cursorSubscription?.destroy()
         snapshot.displaySubscription?.destroy()
+
+        let layoutManager = await DisplayLayoutManager.shared
+        for handle in snapshot.virtualDisplayHandles {
+            await layoutManager.destroyVirtualDisplay(handle)
+        }
+        if let sessionID {
+            await layoutManager.destroyAllVirtualDisplays(ownedBy: sessionID)
+        }
 
         await state.completeDestroy()
     }

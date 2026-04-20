@@ -7,14 +7,14 @@
 
 import Foundation
 import AVFoundation
-import CoreMedia
+@preconcurrency import CoreMedia
 import SiriusKit
 
 /// AVAssetReader 기반 오디오 파일 읽기. 파일 끝 도달 시 자동으로 처음부터 재시작(루프).
-class FileAudioReader {
+actor FileAudioReader {
     private let logger = SiriusLogger(category: "FileAudioReader", subsystem: "app.noctiluca.mockserver")
 
-    let url: URL
+    nonisolated let url: URL
 
     private(set) var sampleRate: Double = 48000.0
     private(set) var channelCount: UInt32 = 2

@@ -28,25 +28,29 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
-        if let activityType = options.userActivities.first?.activityType {
-            let sceneConfig = UISceneConfiguration(
-                name: nil,
-                sessionRole: connectingSceneSession.role
-            )
-            
-            sceneConfig.delegateClass = AboutAppWindowUISceneDelegate.self
-            
-            return sceneConfig
-        } else {
-            let sceneConfig = UISceneConfiguration(
-                name: nil,
-                sessionRole: connectingSceneSession.role
-            )
-            
-            sceneConfig.delegateClass = MobileUIMainSceneDelegate.self
-            
-            return sceneConfig
+        // userActivity.activityType 으로 어떤 역할의 scene 인지 식별한다.
+        // - "app.noctiluca.client.about"      → AboutAppWindowUISceneDelegate
+        // - "app.noctiluca.client.sub-display" → SubDisplayUISceneDelegate (iPadOS 멀티 디스플레이)
+        // - 그 외(nil 포함)                    → MobileUIMainSceneDelegate (메인 연결 창)
+        let activityType = options.userActivities.first?.activityType
+            ?? connectingSceneSession.stateRestorationActivity?.activityType
+
+        let delegateClass: AnyClass
+        switch activityType {
+        case "app.noctiluca.client.about":
+            delegateClass = AboutAppWindowUISceneDelegate.self
+        case SubDisplayCoordinator.activityType:
+            delegateClass = SubDisplayUISceneDelegate.self
+        default:
+            delegateClass = MobileUIMainSceneDelegate.self
         }
+
+        let sceneConfig = UISceneConfiguration(
+            name: nil,
+            sessionRole: connectingSceneSession.role
+        )
+        sceneConfig.delegateClass = delegateClass
+        return sceneConfig
     }
 }
 

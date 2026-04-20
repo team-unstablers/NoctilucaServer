@@ -70,6 +70,12 @@ fileprivate func displayReconfigurationCallback(
     }
 }
 
+enum DisplayLayoutManagerError: Error, Sendable {
+    case unknownError
+    case displaySpecNotCompatible
+    case displaySpecApplyFailure(CGError?)
+}
+
 /// 디스플레이 구성이 변경될 때 알림을 제공하는 모니터입니다.
 @MainActor
 final class DisplayLayoutManager: ObservableObject, CInteropHandle, Sendable {
@@ -83,9 +89,11 @@ final class DisplayLayoutManager: ObservableObject, CInteropHandle, Sendable {
     private(set) var intermediateGlobalFrame: CGRect = .zero
     
     let displayLayouts = ConcurrentDictionary<CGDirectDisplayID, NOCScreen>()
-    
+
     let displayChangeSubject = PassthroughSubject<DisplayChangeEvent, Never>()
     let displayLayoutChangeSubject = PassthroughSubject<[CGDirectDisplayID: NOCScreen], Never>()
+
+    let virtualDisplayManager = VirtualDisplayManager()
 
     @Published
     private(set) var monitoringState: DisplayLayoutManagerMonitoringState = .idle
@@ -169,13 +177,17 @@ final class DisplayLayoutManager: ObservableObject, CInteropHandle, Sendable {
     
     func stopMonitoring() {
         self.logger.debug("stopMonitoring(): removing display reconfiguration callback...")
-        
+
         let retval = CGDisplayRemoveReconfigurationCallback(displayReconfigurationCallback, self.asCInteropHandle)
-        
+
+        Task { [virtualDisplayManager] in
+            await virtualDisplayManager.shutdown()
+        }
+
         defer {
             self.monitoringState = .idle
         }
-        
+
         guard retval == .success else {
             self.logger.error("stopMonitoring(): failed to remove display reconfiguration callback: \(retval)")
             return

@@ -10,25 +10,24 @@ import SwiftUI
 import SiriusKitClient
 
 struct MainToolbarAddressBar: View {
-    @ObservedObject
-    var viewModel: SessionWindowViewModel
+    let viewModel: SessionWindowViewModel
 
     @ObservedObject
     var settingsStore: SettingsStore
-    
+
     private let focusBinding: FocusState<Bool>.Binding?
-    
+
     @FocusState
     private var internalFocus: Bool
-    
+
     var pingRTT: Double? {
         viewModel.pingRTT
     }
-    
+
     init(viewModel: SessionWindowViewModel,
          settingsStore: SettingsStore,
          focusBinding: FocusState<Bool>.Binding? = nil) {
-        self._viewModel = ObservedObject(wrappedValue: viewModel)
+        self.viewModel = viewModel
         self._settingsStore = ObservedObject(wrappedValue: settingsStore)
         self.focusBinding = focusBinding
     }
@@ -144,9 +143,8 @@ struct MainToolbarAddressBar: View {
 #if os(iOS)
 
 struct UIKitStyledMainToolbarAddressBar: View {
-    @ObservedObject
-    var viewModel: SessionWindowViewModel
-    
+    let viewModel: SessionWindowViewModel
+
     @EnvironmentObject
     private var settingsStore: SettingsStore
     

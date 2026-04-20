@@ -33,19 +33,16 @@ struct RemoteSessionProjectionView: View {
     
     @EnvironmentObject
     private var settingsStore: SettingsStore
-    
-    @ObservedObject
-    var remoteSession: RemoteSession
-    
+
+    let remoteSession: RemoteSession
+
     var client: NoctilucaClient {
         remoteSession.client
     }
-    
-    @ObservedObject
-    var projection: RemoteSession.Projection
-    
-    @ObservedObject
-    var hidio: RemoteSession.HIDIO
+
+    let projection: RemoteSession.Projection
+
+    let hidio: RemoteSession.HIDIO
     
     @Binding
     var sourceDescriptor: ProjectionSourceDescriptor
@@ -56,6 +53,15 @@ struct RemoteSessionProjectionView: View {
 
 #if os(macOS)
     let mouse: HIDIOAppKitPointer?
+#endif
+#if os(iOS)
+    /// Sub-display scene 에서 주입되는 per-scene 마우스. nil 이면 session.defaultSubMouse 로 폴백.
+    let mouse: HIDIOUIKitMouse?
+
+    /// syncMouseScope / body 에서 실제로 사용할 마우스를 일관되게 해석.
+    private var resolvedMouse: HIDIOUIKitMouse? {
+        mouse ?? (hidio.session.defaultSubMouse as? HIDIOUIKitMouse)
+    }
 #endif
 
     @State
@@ -74,7 +80,7 @@ struct RemoteSessionProjectionView: View {
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
     @StateObject private var zoomController = ProjectionZoomController()
     @StateObject private var keyboardObserver = KeyboardHeightObserver()
-    @EnvironmentObject private var windowViewModel: SessionWindowViewModel
+    @Environment(SessionWindowViewModel.self) private var windowViewModel: SessionWindowViewModel
 
     @State private var debugViewModel: RemoteSessionDebugViewModel?
 #endif
@@ -113,12 +119,14 @@ struct RemoteSessionProjectionView: View {
         hidio: RemoteSession.HIDIO,
         sourceDescriptor: Binding<ProjectionSourceDescriptor>,
         subscription: ProjectionSessionSubscription? = nil,
+        mouse: HIDIOUIKitMouse? = nil
     ) {
         self.remoteSession = remoteSession
         self.projection = projection
         self.hidio = hidio
         self._sourceDescriptor = sourceDescriptor
         self.subscription = subscription
+        self.mouse = mouse
     }
 #endif
 #if os(macOS)
@@ -166,7 +174,7 @@ struct RemoteSessionProjectionView: View {
         }
 #endif
 #if os(iOS)
-        if let mouse = hidio.session.defaultSubMouse as? HIDIOUIKitMouse {
+        if let mouse = resolvedMouse {
             mouse.scope = scope
         }
 #endif
@@ -235,7 +243,7 @@ struct RemoteSessionProjectionView: View {
                     }
 #endif
 #if os(iOS)
-                    if let mouse = hidio.session.defaultSubMouse as? HIDIOUIKitMouse {
+                    if let mouse = resolvedMouse {
                         HIDIOUIKitMouseView(
                             mouse: mouse,
                             mode: $settingsStore.settings.input.touchInputMode,
@@ -351,7 +359,7 @@ struct RemoteSessionProjectionView: View {
                     syncMouseScope()
                 }
 #if os(iOS)
-                .onReceive(projection.cursorState.$position) { newPosition in
+                .onChange(of: projection.cursorState.position) { _, newPosition in
                     let csSize = cursorSourceSize
                     guard csSize.width > 0, csSize.height > 0 else { return }
                     let normalized = CGPoint(

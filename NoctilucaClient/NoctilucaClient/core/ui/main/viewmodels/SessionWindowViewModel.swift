@@ -11,78 +11,77 @@ import Security
 
 import SwiftUI
 import Combine
+import Observation
 
 import SiriusKitClient
 
 @MainActor
-class SessionWindowViewModel: ObservableObject {
+@Observable
+final class SessionWindowViewModel {
 #if os(iOS)
+    @ObservationIgnored
     weak var rootViewController: RootViewController? = nil
 #endif
 #if os(macOS)
+    @ObservationIgnored
     weak var mainWindowController: AppKitMainWindowController? = nil
 #endif
-    
-    @Published
+
     var phase: MainWindowPhase = .newConnection
 
-    @Published
     var endpointURL: String = ""
 
-    @Published
     var errors: [NoctilucaClientError] = []
 
-    @Published
     var shouldDisplayErrorAlert: Bool = false
 
-    @Published
     var inputWarning: InputWarning? = nil
 
-    @Published
     private(set) var sessionSettings: SessionSettings? = nil
 
-    @Published
     private(set) var isInputLockActive: Bool = false
 
-    @Published
     var contactSheetCoordinator: ContactSheetCoordinator
 
-    @Published
     var shouldPresentDisplaySwitchSheet: Bool = false
 
-    /// macOS에서 디스플레이를 별도 창으로 분리하는 콜백.
-    /// AppKitMainWindowController가 SubDisplayWindowManager를 통해 주입한다.
+    /// 디스플레이를 별도 창(macOS) 또는 별도 UIScene(iPadOS)으로 분리하는 콜백.
+    /// - macOS: AppKitMainWindowController가 SubDisplayWindowManager를 통해 주입.
+    /// - iPadOS: MobileUIMainSceneDelegate가 SubDisplayCoordinator.spawn(...) 으로 주입.
+    @ObservationIgnored
     var onDetachDisplay: ((Int) async throws -> Void)?
 
 #if os(iOS)
-    @Published
     var isFullscreen: Bool = false
 
-    @Published
     var isFullscreenOverlayVisible: Bool = false
 
+    @ObservationIgnored
     private var autoHideTask: Task<Void, Never>?
 #endif
-    
+
+    @ObservationIgnored
     private var currentEndpoint: EndpointKind?
 
+    @ObservationIgnored
     private var settingsStore: SettingsStore?
+    @ObservationIgnored
     private var settingsCancellables: Set<AnyCancellable> = []
+    @ObservationIgnored
     private var sessionCancellables: Set<AnyCancellable> = []
+    /// observeChanges 기반 observation 루프의 취소 토큰. detachRemoteSession에서
+    /// 명시적으로 cancel하여 stale한 session 상태로 재호출되는 것을 방지한다.
+    @ObservationIgnored
+    private var sessionObservationHandles: [ObservationHandle] = []
 
-    @Published
     private(set) var degradationNotice: DegradationNotice? = nil
 
-    @Published
     private(set) var fileTransferProgress: Double? = nil
 
-    @Published
     private(set) var pingRTT: TimeInterval? = nil
 
-    @Published
     private(set) var securityState: AddressBarSecurityIndicatorState? = nil
 
-    @Published
     private(set) var remoteSession: RemoteSession? = nil
 
     private var client: NoctilucaClient? {
@@ -443,49 +442,57 @@ class SessionWindowViewModel: ObservableObject {
         remoteSession = session
         session.parent = self
 
+        RemoteSessionManager.shared.register(session, forId: session.id)
+
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
 
-        session.$phase
-            .receive(on: RunLoop.main)
-            .sink { [weak self] phase in
-                self?.handleClientPhaseChanged(phase)
-            }
-            .store(in: &sessionCancellables)
+        sessionObservationHandles.forEach { $0.cancel() }
+        sessionObservationHandles.removeAll()
 
+        // errorPublisher는 PassthroughSubject 기반이므로 Combine sink 유지.
         session.errorPublisher
             .sink { [weak self] error in
                 self?.handleClientError(error)
             }
             .store(in: &sessionCancellables)
 
-        session.$pingRTT
-            .receive(on: RunLoop.main)
-            .sink { [weak self] rtt in
-                self?.pingRTT = rtt
-            }
-            .store(in: &sessionCancellables)
+        // session의 @Observable 프로퍼티 관찰 — 프로퍼티별로 분리된 observe 블록을 등록한다.
+        // 반환된 handle은 detachRemoteSession에서 명시적으로 cancel하여 stale한 session
+        // 상태로 재호출되는 경로 (특히 phase = .ready → handleClientPhaseChanged → phase = .connected)
+        // 를 차단한다.
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.handleClientPhaseChanged(session.phase)
+        })
 
-        session.$fileTransferProgress
-            .receive(on: RunLoop.main)
-            .sink { [weak self] progress in
-                self?.fileTransferProgress = progress
-            }
-            .store(in: &sessionCancellables)
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.pingRTT = session.pingRTT
+        })
 
-        session.$projection
-            .compactMap { $0 }
-            .flatMap { $0.$degradationNotice }
-            .receive(on: RunLoop.main)
-            .sink { [weak self] notice in
-                self?.degradationNotice = notice
-            }
-            .store(in: &sessionCancellables)
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.fileTransferProgress = session.fileTransferProgress
+        })
+
+        // `session.projection` 자체 변경과 `projection.degradationNotice` 변경을 함께 관찰.
+        // nested access이지만 withObservationTracking이 접근한 모든 프로퍼티를 추적하므로
+        // 두 단계가 평탄화되어 어느 쪽이 바뀌어도 onChange가 발화된다.
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.degradationNotice = session.projection?.degradationNotice
+        })
     }
 
     private func detachRemoteSession() {
+        sessionObservationHandles.forEach { $0.cancel() }
+        sessionObservationHandles.removeAll()
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
+        if let session = remoteSession {
+            RemoteSessionManager.shared.unregister(session.id)
+        }
         remoteSession?.prepareForDetach()
         remoteSession = nil
         pingRTT = nil

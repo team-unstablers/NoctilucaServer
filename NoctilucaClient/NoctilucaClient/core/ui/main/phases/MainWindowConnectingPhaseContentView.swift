@@ -12,7 +12,7 @@ import AppKit
 #endif
 
 struct MainWindowConnectingPhaseContentView: View {
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
 
     @State
@@ -85,6 +85,6 @@ struct MainWindowConnectingPhaseContentView: View {
     let viewModel = SessionWindowViewModel()
 
     MainWindowConnectingPhaseContentView()
-        .environmentObject(viewModel)
+        .environment(viewModel)
         .frame(minWidth: 640, minHeight: 480)
 }

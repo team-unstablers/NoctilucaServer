@@ -10,9 +10,9 @@ import AppKit
 import SwiftUI
 
 struct MainWindowRootView: View {
-    @ObservedObject
+    @Bindable
     var viewModel: SessionWindowViewModel
-    
+
     @EnvironmentObject
     var contactSheetCoordinator: ContactSheetCoordinator
 
@@ -61,7 +61,7 @@ struct MainWindowRootView: View {
     var body: some View {
         MainWindowContentView()
             .frame(minWidth: 640, minHeight: 480)
-            .environmentObject(viewModel)
+            .environment(viewModel)
             .alert(isPresented: $viewModel.shouldDisplayErrorAlert) {
                 let error = viewModel.errors.last
 
