@@ -1,8 +1,18 @@
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 struct ProjectionSettingsTab: View {
     @EnvironmentObject
     private var settingsStore: SettingsStore
+
+#if os(iOS)
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+#endif
 
     var body: some View {
         Form {
@@ -115,6 +125,19 @@ struct ProjectionSettingsTab: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+#if os(iOS)
+            if isIPad {
+                Section {
+                    Toggle(isOn: $settingsStore.settings.projection.allowSubDisplayWindow) {
+                        Text(String(localized: "settings.projection.allow_sub_display_window.title", defaultValue: "원격 디스플레이를 별도 윈도우로 분리할 수 있게 하기"))
+                        Text(String(localized: "settings.projection.allow_sub_display_window.description", defaultValue: "디스플레이 선택 시트에서 각 원격 디스플레이를 iPad의 별도 윈도우(UIWindowScene)로 분리할 수 있게 합니다.\niPad Pro에서 외부 디스플레이를 연결하여 다중 디스플레이처럼 사용하려는 경우에 유용합니다."))
+                    }
+                } header: {
+                    Text(String(localized: "settings.projection.multi_display.header", defaultValue: "멀티 디스플레이"))
+                }
+            }
+#endif
 
         }
         .formStyle(.grouped)
