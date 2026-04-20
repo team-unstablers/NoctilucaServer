@@ -555,6 +555,20 @@ extension ProjectionChannel {
                 purpose: .appStream,
                 specs: [Self.appStreamVirtualDisplaySpec]
             )
+
+            // 가상 디스플레이는 macOS가 기본적으로 HiDPI(1920x1080@2x) 모드로 잡는 경우가 있어,
+            // 명시적으로 3840x2160@1x 모드로 전환한다.
+            do {
+                try await MainActor.run {
+                    try layoutManager.applySpec(
+                        to: handle.displayID,
+                        spec: Self.appStreamVirtualDisplaySpec
+                    )
+                }
+            } catch {
+                logger.warning("AppStream: failed to apply spec \(Self.appStreamVirtualDisplaySpec) to display #\(handle.displayID): \(error)")
+            }
+
             let bounds = CGDisplayBounds(handle.displayID)
             logger.info("AppStream virtual display acquired: displayID=\(handle.displayID) bounds=\(bounds)")
             return (handle, bounds.origin)
