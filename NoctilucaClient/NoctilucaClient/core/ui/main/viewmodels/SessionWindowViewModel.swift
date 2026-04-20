@@ -69,6 +69,10 @@ final class SessionWindowViewModel {
     private var settingsCancellables: Set<AnyCancellable> = []
     @ObservationIgnored
     private var sessionCancellables: Set<AnyCancellable> = []
+    /// observeChanges 기반 observation 루프의 취소 토큰. detachRemoteSession에서
+    /// 명시적으로 cancel하여 stale한 session 상태로 재호출되는 것을 방지한다.
+    @ObservationIgnored
+    private var sessionObservationHandles: [ObservationHandle] = []
 
     private(set) var degradationNotice: DegradationNotice? = nil
 
@@ -443,6 +447,9 @@ final class SessionWindowViewModel {
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
 
+        sessionObservationHandles.forEach { $0.cancel() }
+        sessionObservationHandles.removeAll()
+
         // errorPublisher는 PassthroughSubject 기반이므로 Combine sink 유지.
         session.errorPublisher
             .sink { [weak self] error in
@@ -451,32 +458,36 @@ final class SessionWindowViewModel {
             .store(in: &sessionCancellables)
 
         // session의 @Observable 프로퍼티 관찰 — 프로퍼티별로 분리된 observe 블록을 등록한다.
-        // session이 해제되면 apply가 조기 반환되어 onChange가 발화되지 않고 관찰 체인이 자연 종료된다.
-        observeChanges { [weak self, weak session] in
+        // 반환된 handle은 detachRemoteSession에서 명시적으로 cancel하여 stale한 session
+        // 상태로 재호출되는 경로 (특히 phase = .ready → handleClientPhaseChanged → phase = .connected)
+        // 를 차단한다.
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
             guard let self, let session else { return }
             self.handleClientPhaseChanged(session.phase)
-        }
+        })
 
-        observeChanges { [weak self, weak session] in
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
             guard let self, let session else { return }
             self.pingRTT = session.pingRTT
-        }
+        })
 
-        observeChanges { [weak self, weak session] in
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
             guard let self, let session else { return }
             self.fileTransferProgress = session.fileTransferProgress
-        }
+        })
 
         // `session.projection` 자체 변경과 `projection.degradationNotice` 변경을 함께 관찰.
         // nested access이지만 withObservationTracking이 접근한 모든 프로퍼티를 추적하므로
         // 두 단계가 평탄화되어 어느 쪽이 바뀌어도 onChange가 발화된다.
-        observeChanges { [weak self, weak session] in
+        sessionObservationHandles.append(observeChanges { [weak self, weak session] in
             guard let self, let session else { return }
             self.degradationNotice = session.projection?.degradationNotice
-        }
+        })
     }
 
     private func detachRemoteSession() {
+        sessionObservationHandles.forEach { $0.cancel() }
+        sessionObservationHandles.removeAll()
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
         if let session = remoteSession {
