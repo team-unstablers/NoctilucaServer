@@ -6,24 +6,24 @@
 //
 
 import Foundation
-import CoreMedia
+@preconcurrency import CoreMedia
 
 import SiriusKit
 
 /// 파일 기반 오디오 프로젝션 세션.
 /// FileAudioReader에서 샘플을 읽고 → OpusAudioEncoder로 인코딩 → ProjectionDataChannel로 전송.
-class MockAudioProjectionSession: Identifiable {
+actor MockAudioProjectionSession: @preconcurrency Identifiable {
     private let logger = SiriusLogger(category: "MockAudioProjectionSession", subsystem: "app.noctiluca.mockserver")
 
-    let id: UUID
-    let dataChannel: ProjectionDataChannel
-    let sourceURL: URL
-    let codec: AudioCodec
+    nonisolated let id: UUID
+    nonisolated let dataChannel: ProjectionDataChannel
+    nonisolated let sourceURL: URL
+    nonisolated let codec: AudioCodec
 
     private var reader: FileAudioReader?
     private var encoder: (any AudioEncoder)?
 
-    private let frameQueue = FrameQueue<EncodedAudioFrame>(capacity: 48)
+    nonisolated let frameQueue = FrameQueue<EncodedAudioFrame>(capacity: 48)
 
     private var readerLoopTask: Task<Void, Never>?
     private var encoderEventLoopTask: Task<Void, Error>?
@@ -57,18 +57,22 @@ class MockAudioProjectionSession: Identifiable {
         }
         try encoder.start()
 
+        let dataChannel = self.dataChannel
+        let frameQueue = self.frameQueue
+        let logger = self.logger
+        let sessionID = self.id
+
         // Encoder event loop: encoder -> frameQueue
-        self.encoderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self else { return }
+        self.encoderEventLoopTask = Task.detached(priority: .userInitiated) {
             for await event in encoder.events {
                 switch event {
                 case .frameEncoded(let encodedFrame):
-                    let didDrop = await self.frameQueue.enqueue(encodedFrame)
+                    let didDrop = await frameQueue.enqueue(encodedFrame)
                     if didDrop {
-                        self.logger.warning("Audio frame queue overflow in session \(self.id), dropping oldest frame")
+                        logger.warning("Audio frame queue overflow in session \(sessionID), dropping oldest frame")
                     }
                 case .errorOccurred(let error):
-                    self.logger.error("Audio encoder error: \(error)")
+                    logger.error("Audio encoder error: \(error)")
                     throw error
                 case .stopped:
                     return
@@ -80,9 +84,7 @@ class MockAudioProjectionSession: Identifiable {
         // Opus 인코더는 20ms(960 samples @ 48kHz) 단위로 프레임을 생산하지만,
         // AVFoundation이 가변 크기 청크를 반환하기 때문에 encoder가 여러 프레임을 한꺼번에
         // 생산할 수 있다. sender에서 프레임 간 간격을 두어 클라이언트 버퍼 오버플로우를 방지한다.
-        self.senderEventLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self else { return }
-
+        self.senderEventLoopTask = Task.detached(priority: .userInitiated) {
             let defaultFrameDuration = Duration.milliseconds(20)
             let idleResetThreshold = Duration.milliseconds(120)
 
@@ -93,7 +95,7 @@ class MockAudioProjectionSession: Identifiable {
                 let dequeueStart = ContinuousClock.now
                 let frame: EncodedAudioFrame
                 do {
-                    frame = try await self.frameQueue.next()
+                    frame = try await frameQueue.next()
                 } catch is CancellationError {
                     return
                 }
@@ -117,7 +119,7 @@ class MockAudioProjectionSession: Identifiable {
                     }
                 }
 
-                self.dataChannel.send(audioFrame: frame)
+                dataChannel.send(audioFrame: frame)
 
                 // 다음 전송 시간 갱신 (프레임 PTS 기반)
                 if let previousPTSUs = lastFramePTSUs,
@@ -140,11 +142,9 @@ class MockAudioProjectionSession: Identifiable {
 
         // Reader loop: reader -> encoder (절대 시간 기준 실시간 페이싱)
         guard let reader = self.reader else { return }
-        let sampleRate = reader.sampleRate
+        let sampleRate = await reader.sampleRate
 
-        self.readerLoopTask = Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self else { return }
-
+        self.readerLoopTask = Task.detached(priority: .userInitiated) {
             // 드리프트가 이 임계값을 초과하면 따라잡기(burst) 대신 타이밍 베이스라인을 리셋한다.
             // EOF 재시작이나 일시적인 인코딩 지연 등으로 인한 burst 현상을 방지.
             let maxDriftThreshold = Duration.milliseconds(150)
@@ -170,7 +170,7 @@ class MockAudioProjectionSession: Identifiable {
                     } else {
                         let drift = now - targetTime
                         if drift > maxDriftThreshold {
-                            self.logger.warning(
+                            logger.warning(
                                 "Audio pacing drift (\(drift)) exceeds threshold (\(maxDriftThreshold)), resetting timing baseline"
                             )
                             startTime = now
@@ -180,7 +180,7 @@ class MockAudioProjectionSession: Identifiable {
                 } catch is CancellationError {
                     return
                 } catch {
-                    self.logger.error("Audio reader loop error: \(error)")
+                    logger.error("Audio reader loop error: \(error)")
                     try? await Task.sleep(for: .milliseconds(100))
 
                     // 에러 복구 후 타이밍 베이스라인 리셋 (burst 방지)
@@ -195,7 +195,7 @@ class MockAudioProjectionSession: Identifiable {
 
     func stop() async {
         guard !isStopped else { return }
-        defer { isStopped = true }
+        isStopped = true
 
         readerLoopTask?.cancel()
         readerLoopTask = nil
@@ -209,16 +209,9 @@ class MockAudioProjectionSession: Identifiable {
         await frameQueue.clear()
         await frameQueue.cancelWaiter()
 
-        reader?.stop()
+        await reader?.stop()
         try? encoder?.stop()
 
         logger.info("MockAudioProjectionSession \(self.id) stopped")
-    }
-
-    deinit {
-        readerLoopTask?.cancel()
-        encoderEventLoopTask?.cancel()
-        senderEventLoopTask?.cancel()
-        try? encoder?.stop()
     }
 }
