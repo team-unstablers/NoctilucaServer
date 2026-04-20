@@ -423,6 +423,9 @@ extension ProjectionChannel {
     func cleanupAppStreamSession(_ session: ProjectionChannelState.AppStreamSessionInfo) async {
         await desktopContextManager.unsubscribeWindowEvents(id: session.windowSubscriptionId)
         await desktopContextManager.unsubscribeAppEvents(id: session.appTerminationSubscriptionId)
+        await MainActor.run {
+            AppMenuRegistry.shared.prune(pid: session.pid)
+        }
     }
 
     // MARK: - Helpers

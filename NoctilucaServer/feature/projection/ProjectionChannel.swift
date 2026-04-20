@@ -168,6 +168,23 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
             let request = try StopAppStreamRequest.fromProtobufBytes(frame.data)
             try await handleStopAppStreamRequest(request)
 
+        // MARK: Accessibility
+        case .getAccessibilityTreeRequest:
+            let request = try GetAccessibilityTreeRequest.fromProtobufBytes(frame.data)
+            try await handleGetAccessibilityTreeRequest(request)
+
+        case .subscribeAccessibilityTreeUpdatesRequest:
+            let request = try SubscribeAccessibilityTreeUpdatesRequest.fromProtobufBytes(frame.data)
+            try await handleSubscribeAccessibilityTreeUpdatesRequest(request)
+
+        case .unsubscribeAccessibilityTreeUpdatesRequest:
+            let request = try UnsubscribeAccessibilityTreeUpdatesRequest.fromProtobufBytes(frame.data)
+            try await handleUnsubscribeAccessibilityTreeUpdatesRequest(request)
+
+        case .dispatchActionRequest:
+            let request = try DispatchActionRequest.fromProtobufBytes(frame.data)
+            try await handleDispatchActionRequest(request)
+
         default:
             logger.warning("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
         }
@@ -216,6 +233,13 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
         if let appEventSubId = snapshot.appEventSubscriptionId {
             let desktopContextManager = await DesktopContextManager.shared
             _ = await desktopContextManager.unsubscribeAppEvents(id: appEventSubId)
+        }
+
+        if !snapshot.accessibilitySubscriptions.isEmpty {
+            let desktopContextManager = await DesktopContextManager.shared
+            for subscription in snapshot.accessibilitySubscriptions {
+                await desktopContextManager.unsubscribeMenuEvents(id: subscription.menuEventHandlerId)
+            }
         }
 
         if let appStreamSession = snapshot.appStreamSession {

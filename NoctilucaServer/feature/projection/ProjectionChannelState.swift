@@ -32,6 +32,17 @@ actor ProjectionChannelState {
         let appTerminationSubscriptionId: UUID
     }
 
+    struct AccessibilitySubscriptionInfo {
+        let subscriptionId: UUID
+        let pid: pid_t
+        let rootNodeId: UUID?
+        let eventMask: AccessibilityUpdateType
+        let maxDepth: UInt32
+        /// `DesktopContextManager.subscribeMenuEvents`가 반환한 메뉴 핸들러 UUID.
+        /// Unsubscribe 시 반드시 해제해야 한다.
+        let menuEventHandlerId: UUID
+    }
+
     struct DestroySnapshot {
         let videoSessions: [ProjectionSession]
         let audioSessions: [AudioProjectionSession]
@@ -40,6 +51,7 @@ actor ProjectionChannelState {
         let displaySubscription: DisplayEventSubscription?
         let appEventSubscriptionId: UUID?
         let appStreamSession: AppStreamSessionInfo?
+        let accessibilitySubscriptions: [AccessibilitySubscriptionInfo]
         let virtualDisplayHandles: [NOCVirtualDisplayHandle]
     }
 
@@ -73,6 +85,7 @@ actor ProjectionChannelState {
 
     private var appEventSubscriptionId: UUID?
     private var appStreamSession: AppStreamSessionInfo?
+    private var accessibilitySubscriptions: [UUID: AccessibilitySubscriptionInfo] = [:]
 
     /// 클라이언트가 보낸 wire UUID → 서버 VD handle 매핑.
     /// VirtualDisplayCreate 시 등록, VirtualDisplayDestroy 또는 채널 destroy 시 회수한다.
@@ -277,6 +290,26 @@ actor ProjectionChannelState {
         return session
     }
 
+    // MARK: - Accessibility Subscriptions
+
+    func addAccessibilitySubscription(_ info: AccessibilitySubscriptionInfo) -> Bool {
+        guard lifecycleState == .active else { return false }
+        accessibilitySubscriptions[info.subscriptionId] = info
+        return true
+    }
+
+    func removeAccessibilitySubscription(id: UUID) -> AccessibilitySubscriptionInfo? {
+        return accessibilitySubscriptions.removeValue(forKey: id)
+    }
+
+    func allAccessibilitySubscriptions() -> [AccessibilitySubscriptionInfo] {
+        return Array(accessibilitySubscriptions.values)
+    }
+
+    func accessibilitySubscriptions(forPid pid: pid_t) -> [AccessibilitySubscriptionInfo] {
+        return accessibilitySubscriptions.values.filter { $0.pid == pid }
+    }
+
     // MARK: - Destroy
 
     func beginDestroy() -> DestroySnapshot? {
@@ -294,6 +327,7 @@ actor ProjectionChannelState {
             displaySubscription: displaySubscription,
             appEventSubscriptionId: appEventSubscriptionId,
             appStreamSession: appStreamSession,
+            accessibilitySubscriptions: Array(accessibilitySubscriptions.values),
             virtualDisplayHandles: Array(virtualDisplayHandles.values)
         )
 
@@ -303,6 +337,7 @@ actor ProjectionChannelState {
         reservations.removeAll()
         sessionDisplayIDs.removeAll()
         virtualDisplayHandles.removeAll()
+        accessibilitySubscriptions.removeAll()
 
         cursorSubscription = nil
         displaySubscription = nil
