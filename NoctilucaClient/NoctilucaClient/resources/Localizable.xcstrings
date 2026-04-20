@@ -6254,6 +6254,39 @@
         }
       }
     },
+    "main.app_stream_picker.empty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "허용된 앱이 없습니다"
+          }
+        }
+      }
+    },
+    "main.app_stream_picker.failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "앱 목록을 불러오지 못했습니다"
+          }
+        }
+      }
+    },
+    "main.app_stream_picker.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "앱 선택"
+          }
+        }
+      }
+    },
     "main.connecting.message_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {

@@ -160,8 +160,23 @@ struct MainWindowRemoteSessionView: View {
         }
          */
 #if os(macOS)
-        .sheet(isPresented: $viewModel.isAppStreamAppSelectorPresented) {
-
+        .sessionOverlay(isPresented: $viewModel.isAppStreamAppSelectorPresented) {
+            AppStreamPickerSheet(
+                listLoader: {
+                    guard let session = viewModel.remoteSession else {
+                        return []
+                    }
+                    let response = try await session.client.projectionChannel.getApplicationList(
+                        flags: [.includeIcons]
+                    )
+                    return response.applications
+                },
+                actionHandler: { action in
+                    await self.dispatchAppStreamPickerAction(action)
+                }
+            )
+        } subcontent: {
+            EmptyView()
         }
 #endif
         /*
@@ -207,6 +222,17 @@ struct MainWindowRemoteSessionView: View {
             ])
         }
     }
+
+#if os(macOS)
+    @MainActor
+    func dispatchAppStreamPickerAction(_ action: AppStreamPickerAction) async {
+        switch action {
+        case .selectApp(let bundleId):
+            viewModel.isAppStreamAppSelectorPresented = false
+            viewModel.appStreamState = .active(bundleIdentifier: bundleId)
+        }
+    }
+#endif
 
     func decideTargetDisplayID() async throws {
         if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
