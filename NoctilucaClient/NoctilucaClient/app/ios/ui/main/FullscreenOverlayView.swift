@@ -10,7 +10,7 @@ import SwiftUI
 
 /// 전체 화면 모드에서 상단 엣지 스와이프 시 일시적으로 표시되는 오버레이 툴바
 struct FullscreenOverlayView: View {
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
 
     @EnvironmentObject

@@ -12,17 +12,14 @@ import SiriusKitClient
 struct MainWindowRemoteSessionView: View {
     static let logger = NoctilucaLogger(category: "MainWindowRemoteSessionView")
     
-    @EnvironmentObject
+    @Environment(SessionWindowViewModel.self)
     var viewModel: SessionWindowViewModel
-    
-    @ObservedObject
-    var remoteSession: RemoteSession
-    
-    @ObservedObject
-    var projection: RemoteSession.Projection
-    
-    @ObservedObject
-    var hidio: RemoteSession.HIDIO
+
+    let remoteSession: RemoteSession
+
+    let projection: RemoteSession.Projection
+
+    let hidio: RemoteSession.HIDIO
 
     @State
     var subscription: ProjectionSessionSubscription?
@@ -31,6 +28,9 @@ struct MainWindowRemoteSessionView: View {
     var sourceDescriptor: ProjectionSourceDescriptor = .displayID(-1)
 
     var body: some View {
+        // @Environment로 받은 viewModel을 Binding으로 사용하기 위해 @Bindable 지역 선언.
+        @Bindable var viewModel = viewModel
+
         VStack {
             if case .displayID(let displayID) = sourceDescriptor, displayID != -1 {
                 RemoteSessionProjectionView(

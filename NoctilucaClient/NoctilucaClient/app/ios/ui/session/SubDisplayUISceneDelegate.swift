@@ -97,7 +97,7 @@ final class SubDisplayUISceneDelegate: UIResponder, UIWindowSceneDelegate {
             mouse: mouse
         )
         .environmentObject(SettingsStore.shared)
-        .environmentObject(viewModel)
+        .environment(viewModel)
 
         let hostingController = UIHostingController(rootView: AnyView(rootView))
 

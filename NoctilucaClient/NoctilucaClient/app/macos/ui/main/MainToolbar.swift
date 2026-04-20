@@ -19,7 +19,6 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
     private weak var attachedWindow: NSWindow?
     private var focusDismissMonitor: Any?
     private var toolbar: NSToolbar?
-    private var phaseCancellable: AnyCancellable?
     private var addressBarHeight: CGFloat {
         max(32, addressBarView.fittingSize.height)
     }
@@ -45,11 +44,13 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         addressBarView.autoresizingMask = [.width]
         addressBarView.frame = NSRect(x: 0, y: 0, width: maxWidth, height: 32)
 
-        phaseCancellable = viewModel.$phase
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.updateToolbarItems()
-            }
+        // viewModel이 @Observable로 전환되어 $phase publisher가 없어졌으므로
+        // observeChanges 헬퍼로 프로퍼티 변경을 추적한다.
+        observeChanges { [weak self] in
+            guard let self else { return }
+            _ = self.viewModel.phase
+            self.updateToolbarItems()
+        }
     }
 
     @MainActor

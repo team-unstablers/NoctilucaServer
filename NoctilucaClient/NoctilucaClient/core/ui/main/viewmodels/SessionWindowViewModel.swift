@@ -11,79 +11,73 @@ import Security
 
 import SwiftUI
 import Combine
+import Observation
 
 import SiriusKitClient
 
 @MainActor
-class SessionWindowViewModel: ObservableObject {
+@Observable
+final class SessionWindowViewModel {
 #if os(iOS)
+    @ObservationIgnored
     weak var rootViewController: RootViewController? = nil
 #endif
 #if os(macOS)
+    @ObservationIgnored
     weak var mainWindowController: AppKitMainWindowController? = nil
 #endif
-    
-    @Published
+
     var phase: MainWindowPhase = .newConnection
 
-    @Published
     var endpointURL: String = ""
 
-    @Published
     var errors: [NoctilucaClientError] = []
 
-    @Published
     var shouldDisplayErrorAlert: Bool = false
 
-    @Published
     var inputWarning: InputWarning? = nil
 
-    @Published
     private(set) var sessionSettings: SessionSettings? = nil
 
-    @Published
     private(set) var isInputLockActive: Bool = false
 
-    @Published
     var contactSheetCoordinator: ContactSheetCoordinator
 
-    @Published
     var shouldPresentDisplaySwitchSheet: Bool = false
 
     /// 디스플레이를 별도 창(macOS) 또는 별도 UIScene(iPadOS)으로 분리하는 콜백.
     /// - macOS: AppKitMainWindowController가 SubDisplayWindowManager를 통해 주입.
     /// - iPadOS: MobileUIMainSceneDelegate가 SubDisplayCoordinator.spawn(...) 으로 주입.
+    @ObservationIgnored
     var onDetachDisplay: ((Int) async throws -> Void)?
 
 #if os(iOS)
-    @Published
     var isFullscreen: Bool = false
 
-    @Published
     var isFullscreenOverlayVisible: Bool = false
 
+    @ObservationIgnored
     private var autoHideTask: Task<Void, Never>?
 #endif
-    
+
+    @ObservationIgnored
     private var currentEndpoint: EndpointKind?
 
+    @ObservationIgnored
     private var settingsStore: SettingsStore?
+    @ObservationIgnored
     private var settingsCancellables: Set<AnyCancellable> = []
+    @ObservationIgnored
     private var sessionCancellables: Set<AnyCancellable> = []
 
-    @Published
     private(set) var degradationNotice: DegradationNotice? = nil
 
-    @Published
     private(set) var fileTransferProgress: Double? = nil
 
-    @Published
     private(set) var pingRTT: TimeInterval? = nil
 
-    @Published
     private(set) var securityState: AddressBarSecurityIndicatorState? = nil
 
-    @Published
     private(set) var remoteSession: RemoteSession? = nil
 
     private var client: NoctilucaClient? {
@@ -449,41 +443,37 @@ class SessionWindowViewModel: ObservableObject {
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
 
-        session.$phase
-            .receive(on: RunLoop.main)
-            .sink { [weak self] phase in
-                self?.handleClientPhaseChanged(phase)
-            }
-            .store(in: &sessionCancellables)
-
+        // errorPublisher는 PassthroughSubject 기반이므로 Combine sink 유지.
         session.errorPublisher
             .sink { [weak self] error in
                 self?.handleClientError(error)
             }
             .store(in: &sessionCancellables)
 
-        session.$pingRTT
-            .receive(on: RunLoop.main)
-            .sink { [weak self] rtt in
-                self?.pingRTT = rtt
-            }
-            .store(in: &sessionCancellables)
+        // session의 @Observable 프로퍼티 관찰 — 프로퍼티별로 분리된 observe 블록을 등록한다.
+        // session이 해제되면 apply가 조기 반환되어 onChange가 발화되지 않고 관찰 체인이 자연 종료된다.
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.handleClientPhaseChanged(session.phase)
+        }
 
-        session.$fileTransferProgress
-            .receive(on: RunLoop.main)
-            .sink { [weak self] progress in
-                self?.fileTransferProgress = progress
-            }
-            .store(in: &sessionCancellables)
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.pingRTT = session.pingRTT
+        }
 
-        session.$projection
-            .compactMap { $0 }
-            .flatMap { $0.$degradationNotice }
-            .receive(on: RunLoop.main)
-            .sink { [weak self] notice in
-                self?.degradationNotice = notice
-            }
-            .store(in: &sessionCancellables)
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.fileTransferProgress = session.fileTransferProgress
+        }
+
+        // `session.projection` 자체 변경과 `projection.degradationNotice` 변경을 함께 관찰.
+        // nested access이지만 withObservationTracking이 접근한 모든 프로퍼티를 추적하므로
+        // 두 단계가 평탄화되어 어느 쪽이 바뀌어도 onChange가 발화된다.
+        observeChanges { [weak self, weak session] in
+            guard let self, let session else { return }
+            self.degradationNotice = session.projection?.degradationNotice
+        }
     }
 
     private func detachRemoteSession() {

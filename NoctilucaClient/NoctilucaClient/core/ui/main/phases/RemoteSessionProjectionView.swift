@@ -33,19 +33,16 @@ struct RemoteSessionProjectionView: View {
     
     @EnvironmentObject
     private var settingsStore: SettingsStore
-    
-    @ObservedObject
-    var remoteSession: RemoteSession
-    
+
+    let remoteSession: RemoteSession
+
     var client: NoctilucaClient {
         remoteSession.client
     }
-    
-    @ObservedObject
-    var projection: RemoteSession.Projection
-    
-    @ObservedObject
-    var hidio: RemoteSession.HIDIO
+
+    let projection: RemoteSession.Projection
+
+    let hidio: RemoteSession.HIDIO
     
     @Binding
     var sourceDescriptor: ProjectionSourceDescriptor
@@ -83,7 +80,7 @@ struct RemoteSessionProjectionView: View {
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
     @StateObject private var zoomController = ProjectionZoomController()
     @StateObject private var keyboardObserver = KeyboardHeightObserver()
-    @EnvironmentObject private var windowViewModel: SessionWindowViewModel
+    @Environment(SessionWindowViewModel.self) private var windowViewModel: SessionWindowViewModel
 
     @State private var debugViewModel: RemoteSessionDebugViewModel?
 #endif
@@ -362,7 +359,7 @@ struct RemoteSessionProjectionView: View {
                     syncMouseScope()
                 }
 #if os(iOS)
-                .onReceive(projection.cursorState.$position) { newPosition in
+                .onChange(of: projection.cursorState.position) { _, newPosition in
                     let csSize = cursorSourceSize
                     guard csSize.width > 0, csSize.height > 0 else { return }
                     let normalized = CGPoint(

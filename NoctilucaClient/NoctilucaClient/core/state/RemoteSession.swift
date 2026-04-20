@@ -6,13 +6,17 @@
 //
 import Foundation
 import Combine
+import Observation
 import Security
 
 import SiriusKitClient
 
 @MainActor
-class RemoteSession: ObservableObject {
+@Observable
+final class RemoteSession {
+    @ObservationIgnored
     private let logger = NoctilucaLogger(category: "RemoteSession")
+    @ObservationIgnored
     private var eventSubscription: AnyCancellable? = nil
 
     // 프로세스 내에서 RemoteSession 인스턴스를 식별하기 위한 ID.
@@ -23,39 +27,33 @@ class RemoteSession: ObservableObject {
 
     private(set) var client: NoctilucaClient
 
-    @Published
     private(set) var phase: NoctilucaClientPhase = .initial
 
-    @Published
     private(set) var authChallenge: AuthChallenge? = nil
 
-    @Published
     var shouldPresentAuthChallengeSheet: Bool = false
 
-    @Published
     var shouldPresentIdentityValidationSheet: Bool = false
 
-    @Published
     private(set) var pendingServerIdentity: ServerIdentity? = nil
 
-    @Published
     private(set) var identityValidationExtraInfo: ServerIdentityValidationSheetViewExtraInfo = .none
 
-    @Published
     private(set) var pingRTT: TimeInterval? = nil
-    
-    @Published
-    private(set) var fileTransferProgress: Double? = nil
 
-    @Published
+    /// 파일 전송 진행률. `FileTransferProgressTracker`가 `@Observable`이므로
+    /// 아래 computed property를 읽는 뷰는 tracker의 `aggregatedProgress`까지 자동 tracking 된다.
+    var fileTransferProgress: Double? {
+        progressTracker.aggregatedProgress
+    }
+
     private(set) var projection: Projection? = nil
 
-    @Published
     private(set) var hidio: HIDIO? = nil
-    
-    private let progressTracker = FileTransferProgressTracker()
-    private var progressCancellable: AnyCancellable? = nil
 
+    private let progressTracker = FileTransferProgressTracker()
+
+    @ObservationIgnored
     private let errorEvents = PassthroughSubject<NoctilucaClientError, Never>()
 
     var errorPublisher: AnyPublisher<NoctilucaClientError, Never> {
@@ -78,10 +76,6 @@ class RemoteSession: ObservableObject {
             let tracker = progressTracker
             Task { await featureProvider.setProgressTracker(tracker) }
         }
-
-        // 트래커 → fileTransferProgress 바인딩
-        progressCancellable = progressTracker.$aggregatedProgress
-            .assign(to: \.fileTransferProgress, on: self)
 
         self.subscribeClientEvents()
     }
@@ -134,8 +128,6 @@ class RemoteSession: ObservableObject {
     /// ViewModel에서 세션을 분리할 때 호출. 이벤트 구독과 parent 참조를 정리한다.
     func prepareForDetach() {
         unsubscribeClientEvents()
-        progressCancellable?.cancel()
-        progressCancellable = nil
         progressTracker.reset()
         parent = nil
     }

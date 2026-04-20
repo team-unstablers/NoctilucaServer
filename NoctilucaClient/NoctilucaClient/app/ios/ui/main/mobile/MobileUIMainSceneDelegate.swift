@@ -19,10 +19,10 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
         return window?.rootViewController as? RootViewController
     }
 
-    /// mainWindowViewModel.$remoteSession 을 구독하여 attach 시점에 `onDetachDisplay` 를 주입하고
-    /// detach 시점에 SubDisplayCoordinator 를 통해 연관된 모든 sub-display scene 을 정리한다.
+    /// mainWindowViewModel.remoteSession 을 observeChanges 로 추적하여 attach 시점에
+    /// `onDetachDisplay` 를 주입하고 detach 시점에 SubDisplayCoordinator 를 통해
+    /// 연관된 모든 sub-display scene 을 정리한다.
     /// (macOS `AppKitMainWindowController.swift:67-84` 의 iOS 대응 구현.)
-    private var remoteSessionCancellable: AnyCancellable?
     private var lastAttachedSessionID: UUID?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -54,9 +54,6 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
-        remoteSessionCancellable?.cancel()
-        remoteSessionCancellable = nil
-
         // 이 메인 scene 에 귀속된 sub-display scene 들을 정리.
         if let sessionID = lastAttachedSessionID {
             SubDisplayCoordinator.shared.destroyAll(for: sessionID)
@@ -77,25 +74,26 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func bindRemoteSessionObservation() {
         guard let viewModel = rootViewController?.mainWindowViewModel else { return }
 
-        remoteSessionCancellable = viewModel.$remoteSession
-            .receive(on: RunLoop.main)
-            .sink { [weak self, weak viewModel] session in
-                guard let self, let viewModel else { return }
-                if let session {
-                    self.lastAttachedSessionID = session.id
-                    viewModel.onDetachDisplay = { [weak session] displayID in
-                        guard let session else { return }
-                        try await SubDisplayCoordinator.shared.spawn(sessionID: session.id, displayID: displayID)
-                    }
-                } else {
-                    // 이전 세션의 sub-display scene 들을 일괄 파기.
-                    if let previousSessionID = self.lastAttachedSessionID {
-                        SubDisplayCoordinator.shared.destroyAll(for: previousSessionID)
-                        self.lastAttachedSessionID = nil
-                    }
-                    viewModel.onDetachDisplay = nil
+        // viewModel이 @Observable로 전환되어 $remoteSession publisher가 없어졌으므로
+        // observeChanges 헬퍼로 프로퍼티 변경을 추적한다.
+        observeChanges { [weak self, weak viewModel] in
+            guard let self, let viewModel else { return }
+            let session = viewModel.remoteSession
+            if let session {
+                self.lastAttachedSessionID = session.id
+                viewModel.onDetachDisplay = { [weak session] displayID in
+                    guard let session else { return }
+                    try await SubDisplayCoordinator.shared.spawn(sessionID: session.id, displayID: displayID)
                 }
+            } else {
+                // 이전 세션의 sub-display scene 들을 일괄 파기.
+                if let previousSessionID = self.lastAttachedSessionID {
+                    SubDisplayCoordinator.shared.destroyAll(for: previousSessionID)
+                    self.lastAttachedSessionID = nil
+                }
+                viewModel.onDetachDisplay = nil
             }
+        }
     }
 }
 
