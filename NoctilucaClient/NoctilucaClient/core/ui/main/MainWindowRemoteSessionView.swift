@@ -101,8 +101,13 @@ struct MainWindowRemoteSessionView: View {
             if case .displayID(let currentActive) = sourceDescriptor {
                 let displayLayoutManager = projection.channel.displayLayoutManager
                 let displays = Array(displayLayoutManager.displayLayouts.values)
-                
-                DisplayLayoutRendererView(displays: displays)
+
+                DisplayLayoutModifierView(displays: displays) { operations, mainDisplayID in
+                    _ = try await remoteSession.client.projectionChannel.requestDisplayTransaction(
+                        operations: operations,
+                        mainDisplayID: mainDisplayID
+                    )
+                }
             }
         }
         /*
