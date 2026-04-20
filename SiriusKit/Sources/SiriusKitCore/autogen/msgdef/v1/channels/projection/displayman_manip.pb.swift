@@ -50,12 +50,23 @@ struct Sirius_Msgdef_V1_Channels_Projection_DisplayLayoutChange: Sendable {
   /// Clears the value of `rotation`. Subsequent reads from it will return its default value.
   mutating func clearRotation() {self._rotation = nil}
 
+  //// Desired display position.
+  var position: Sirius_Msgdef_V1_Channels_Projection_SRPoint {
+    get {return _position ?? Sirius_Msgdef_V1_Channels_Projection_SRPoint()}
+    set {_position = newValue}
+  }
+  /// Returns true if `position` has been explicitly set.
+  var hasPosition: Bool {return self._position != nil}
+  /// Clears the value of `position`. Subsequent reads from it will return its default value.
+  mutating func clearPosition() {self._position = nil}
+
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
 
   fileprivate var _spec: Sirius_Msgdef_V1_Channels_Projection_DisplaySpec? = nil
   fileprivate var _rotation: UInt32? = nil
+  fileprivate var _position: Sirius_Msgdef_V1_Channels_Projection_SRPoint? = nil
 }
 
 //// Enables or disables a display.
@@ -274,7 +285,7 @@ fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.projection"
 
 extension Sirius_Msgdef_V1_Channels_Projection_DisplayLayoutChange: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".DisplayLayoutChange"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayID\0\u{1}spec\0\u{1}rotation\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}displayID\0\u{1}spec\0\u{1}rotation\0\u{1}position\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -285,6 +296,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayLayoutChange: SwiftProtobu
       case 1: try { try decoder.decodeSingularUInt32Field(value: &self.displayID) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._spec) }()
       case 3: try { try decoder.decodeSingularUInt32Field(value: &self._rotation) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._position) }()
       default: break
       }
     }
@@ -304,6 +316,9 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayLayoutChange: SwiftProtobu
     try { if let v = self._rotation {
       try visitor.visitSingularUInt32Field(value: v, fieldNumber: 3)
     } }()
+    try { if let v = self._position {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -311,6 +326,7 @@ extension Sirius_Msgdef_V1_Channels_Projection_DisplayLayoutChange: SwiftProtobu
     if lhs.displayID != rhs.displayID {return false}
     if lhs._spec != rhs._spec {return false}
     if lhs._rotation != rhs._rotation {return false}
+    if lhs._position != rhs._position {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

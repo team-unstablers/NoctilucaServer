@@ -19,18 +19,21 @@ public struct DisplayLayoutChange: SiriusMessage {
     public let displayID: UInt32
     public let spec: DisplaySpec?
     public let rotation: DisplayRotation?
+    public let position: SRPoint?
 
 
-    public init(displayID: UInt32, spec: DisplaySpec?, rotation: DisplayRotation?) {
+    public init(displayID: UInt32, spec: DisplaySpec?, rotation: DisplayRotation?, position: SRPoint?) {
         self.displayID = displayID
         self.spec = spec
         self.rotation = rotation
+        self.position = position
     }
 
     init(from protobufMessage: ProtobufMessage) throws {
         self.displayID = protobufMessage.displayID
         self.spec = protobufMessage.hasSpec ? try DisplaySpec(from: protobufMessage.spec) : nil
         self.rotation = protobufMessage.hasRotation ? DisplayRotation(rawValue: protobufMessage.rotation) : nil
+        self.position = protobufMessage.hasPosition ? SRPoint(from: protobufMessage.position) : nil
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -42,6 +45,9 @@ public struct DisplayLayoutChange: SiriusMessage {
         }
         if let rotation = self.rotation {
             message.rotation = rotation.rawValue
+        }
+        if let position = self.position {
+            message.position = position.toProtobufMessage()
         }
 
         return message
