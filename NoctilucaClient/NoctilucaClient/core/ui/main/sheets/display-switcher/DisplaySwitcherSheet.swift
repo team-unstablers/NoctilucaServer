@@ -323,7 +323,9 @@ struct DisplaySwitcherSheet: View {
             print("선택된 디스플레이 ID: \(displayID)")
         }
     } subcontent: {
-        DisplayLayoutRendererView(displays: displays)
+        DisplayLayoutModifierView(displays: displays) { operations, mainDisplayID in
+            print("[Preview] applying operations: \(operations.count), mainDisplayID: \(String(describing: mainDisplayID))")
+        }
     }
     /*
     .popover(isPresented: $shouldPresentSheet) {
