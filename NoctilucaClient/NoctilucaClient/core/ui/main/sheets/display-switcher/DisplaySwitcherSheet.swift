@@ -83,13 +83,12 @@ struct DisplaySwitcherSheetAddVirtualDisplayItem: View {
     @Environment(\.dismiss)
     var dismiss
 
-    let action: (Int) -> Void
+    let action: () -> Void
 
     var body: some View {
         VStack {
             Button {
-                action(-1)
-                dismiss()
+                action()
             } label: {
                 VStack {
                     VStack {
@@ -112,6 +111,13 @@ struct DisplaySwitcherSheetAddVirtualDisplayItem: View {
     }
 }
 
+enum DisplaySwitcherAction: Sendable {
+    case switchDisplay(displayID: Int)
+    case createDetachedDisplay(displayID: Int)
+    case createVirtualDisplay(spec: VirtualDisplaySpec)
+    case destroyVirtualDisplay(identifier: UUID)
+}
+
 struct DisplaySwitcherSheet: View {
     @Environment(\.dismiss)
     var dismiss
@@ -119,8 +125,13 @@ struct DisplaySwitcherSheet: View {
     let displays: [DisplayInfo]
     let currentActive: Int?
 
-    let action: (Int) -> Void
-    var onDetach: ((Int) async throws -> Void)? = nil
+    let actionHandler: ((DisplaySwitcherAction) async throws -> Void)
+    
+    @State
+    var shouldPresentAddVirtualDisplaySheet: Bool = false
+    
+    @State
+    var actionHandlerTask: Task<Void, Never>? = nil
 
     var body: some View {
         VStack {
@@ -131,18 +142,56 @@ struct DisplaySwitcherSheet: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 32) {
                     ForEach(displays.sorted { $0.displayID < $1.displayID }, id: \.displayID) { display in
-                        DisplaySwitcherSheetItem(display: display, action: action, onDetach: onDetach)
+                        ZStack(alignment: .topTrailing) {
+                            DisplaySwitcherSheetItem(display: display) { displayID in
+                                self.invokeAction(action: .switchDisplay(displayID: displayID))
+                            } onDetach: { displayID in
+                                self.invokeAction(action: .createDetachedDisplay(displayID: displayID))
+                            }
+                            
+                            if let virtualDisplayIdentifier = display.virtualDisplayIdentifier {
+                                Button {
+                                    self.invokeAction(action: .destroyVirtualDisplay(identifier: virtualDisplayIdentifier))
+                                } label: {
+                                    Image(systemName: "x.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(.secondary)
+                                        .background(.white, in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .offset(x: 8, y: -8)
+                            }
+                        }
                     }
 
-                    DisplaySwitcherSheetAddVirtualDisplayItem(action: action)
+                    DisplaySwitcherSheetAddVirtualDisplayItem {
+                        shouldPresentAddVirtualDisplaySheet = true
+                    }
                 }
                 .padding()
             }
         }
         .padding()
+        .sheet(isPresented: $shouldPresentAddVirtualDisplaySheet) {
+            AddVirtualDisplaySheet { spec in
+                try await actionHandler(.createVirtualDisplay(spec: spec))
+            }
+                .environment(\.colorScheme, .light)
+        }
     }
 
-
+    func invokeAction(action: DisplaySwitcherAction) {
+        self.actionHandlerTask?.cancel()
+        
+        self.actionHandlerTask = Task {
+            do {
+                try await actionHandler(action)
+            } catch {
+                print(error)
+                // FIXME
+            }
+        }
+    }
 }
 
 #Preview {
@@ -163,9 +212,12 @@ struct DisplaySwitcherSheet: View {
             colorProfile: .displayP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
             scaleFactor: 1.0,
+            rotation: .deg0,
+            supportedSpecs: [],
             thumbnail: nil,
             metadata: [:],
-            flags: 0
+            flags: 0,
+            virtualDisplayIdentifier: nil
         ),
         .init(
             displayID: 2,
@@ -179,9 +231,12 @@ struct DisplaySwitcherSheet: View {
             colorProfile: .displayP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
             scaleFactor: 1.0,
+            rotation: .deg0,
+            supportedSpecs: [],
             thumbnail: nil,
             metadata: [:],
-            flags: 0
+            flags: 0,
+            virtualDisplayIdentifier: nil
         ),
         .init(
             displayID: 3,
@@ -195,9 +250,12 @@ struct DisplaySwitcherSheet: View {
             colorProfile: .displayP3,
             physicalSizeInfo: .init(physicalSize: .init(width: 344, height: 194), dpi: 163),
             scaleFactor: 1.0,
+            rotation: .deg0,
+            supportedSpecs: [],
             thumbnail: nil,
             metadata: [:],
-            flags: 0
+            flags: 0,
+            virtualDisplayIdentifier: UUID()
         ),
         /*
         .init(

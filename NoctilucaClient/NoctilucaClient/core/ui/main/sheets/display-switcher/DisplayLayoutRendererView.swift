@@ -28,31 +28,37 @@ struct DisplayLayoutRendererView: View {
     }
 
     var body: some View {
-        GeometryReader { geomProxy in
-            let viewport = entireViewport
-            let scale = min(
-                geomProxy.size.width / viewport.width,
-                geomProxy.size.height / viewport.height
-            )
-            let scaledSize = CGSize(
-                width: viewport.width * scale,
-                height: viewport.height * scale
-            )
-
-            ZStack(alignment: .topLeading) {
-                ForEach(sortedDisplays, id: \.displayID) { display in
-                    displayItemView(for: display, scale: scale)
+        RingoOSDialog(title: "Display Layout") {
+            VStack {
+                GeometryReader { geomProxy in
+                    let viewport = entireViewport
+                    let scale = min(
+                        geomProxy.size.width / viewport.width,
+                        geomProxy.size.height / viewport.height
+                    )
+                    let scaledSize = CGSize(
+                        width: viewport.width * scale,
+                        height: viewport.height * scale
+                    )
+                    
+                    ZStack(alignment: .topLeading) {
+                        ForEach(sortedDisplays, id: \.displayID) { display in
+                            displayItemView(for: display, scale: scale)
+                        }
+                        
+                        Text("[DEBUG] scaled: \(scaledSize)")
+                    }
+                    .frame(width: scaledSize.width, height: scaledSize.height)
+                    .position(
+                        x: geomProxy.frame(in: .local).midX,
+                        y: geomProxy.frame(in: .local).midY
+                    )
                 }
-
-                Text("[DEBUG] scaled: \(scaledSize)")
             }
-            .frame(width: scaledSize.width, height: scaledSize.height)
-            .position(
-                x: geomProxy.frame(in: .local).midX,
-                y: geomProxy.frame(in: .local).midY
-            )
+            .padding()
+            .background(.white)
         }
-        .frame(maxWidth: 480, maxHeight: 480)
+        .frame(maxWidth: 360, maxHeight: 360)
     }
 
     @ViewBuilder

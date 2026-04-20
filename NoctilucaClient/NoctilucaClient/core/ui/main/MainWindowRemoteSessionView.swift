@@ -74,27 +74,19 @@ struct MainWindowRemoteSessionView: View {
                 DisplaySwitcherSheet(
                     displays: displays,
                     currentActive: currentActive,
-                    action: { newSourceDisplayID in
-                        Task {
-                            do {
-                                try await self.updateProjectionTarget(newSourceDisplayID)
-                            } catch {
-                                Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
-                            }
-                        }
-                    },
-                    onDetach: viewModel.onDetachDisplay
-                )
-                    .task {
-                        // 시트 표시 시 thumbnail 포함 디스플레이 목록 재요청
-                        guard let response = try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails) else {
-                            return
-                        }
-
-                        for display in response.displays {
-                            await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
-                        }
+                ) { action in
+                    try await self.dispatchDisplaySwitcherAction(action)
+                }
+                .task {
+                    // 시트 표시 시 thumbnail 포함 디스플레이 목록 재요청
+                    guard let response = try? await remoteSession.client.projectionChannel.requestDisplayList(flags: .includeThumbnails) else {
+                        return
                     }
+                    
+                    for display in response.displays {
+                        await remoteSession.client.projectionChannel.displayLayoutManager.update(display)
+                    }
+                }
                 /*
                     .presentationDragIndicator(.visible)
                     .if(DeviceKind.current == .iPhone) {
@@ -163,6 +155,38 @@ struct MainWindowRemoteSessionView: View {
             }
         }
          */
+    }
+    
+    func dispatchDisplaySwitcherAction(_ action: DisplaySwitcherAction) async throws {
+        switch action {
+        case .switchDisplay(let displayID):
+            do {
+                try await self.updateProjectionTarget(displayID)
+            } catch {
+                Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
+            }
+        case .createDetachedDisplay(let displayID):
+            try await viewModel.onDetachDisplay?(displayID)
+        case .createVirtualDisplay(let spec):
+            let siriusSpec = DisplaySpec(
+                resolution: SRSize(width: Double(spec.width), height: Double(spec.height)),
+                refreshRate: spec.refreshRate,
+                scaleFactor: spec.isHiDPI ? 2.0 : 1.0,
+                metadata: [:]
+            )
+            _ = try await viewModel.remoteSession?.client.projectionChannel.requestDisplayTransaction(operations: [
+                .init(operation: .createVirtualDisplay(VirtualDisplayCreate(
+                    identifier: UUID(),
+                    desiredSpecs: [siriusSpec],
+                    purpose: "virtual-display",
+                    metadata: [:]
+                )))
+            ])
+        case .destroyVirtualDisplay(let identifier):
+            _ = try await viewModel.remoteSession?.client.projectionChannel.requestDisplayTransaction(operations: [
+                .init(operation: .destroyVirtualDisplay(VirtualDisplayDestroy(identifier: identifier)))
+            ])
+        }
     }
 
     func decideTargetDisplayID() async throws {
