@@ -28,6 +28,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindowController: AppKitSettingsWindowController?
     private var aboutAppWindowController: AppKitAboutAppWindowController?
 
+    /// AppStream에서 원격 메뉴로 스왑하기 전의 원본 메뉴. AppStream이 key resign 시 이 메뉴로 복구한다.
+    private(set) var originalMainMenu: NSMenu?
+
     static func main() {
         let app = NSApplication.shared
         
@@ -122,6 +125,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    /// AppStream이 활성화되었을 때 `NSApp.mainMenu`를 원격 앱 메뉴로 교체한다.
+    /// 원본 메뉴는 `originalMainMenu`에 보관하며, `restoreOriginalMainMenu()`로 복구할 수 있다.
+    func installRemoteMainMenu(_ menu: NSMenu) {
+        if originalMainMenu == nil {
+            originalMainMenu = NSApp.mainMenu
+        }
+        NSApp.mainMenu = menu
+    }
+
+    /// 원격 메뉴 스왑을 해제하고 원본으로 복귀한다.
+    func restoreOriginalMainMenu() {
+        guard let original = originalMainMenu else { return }
+        NSApp.mainMenu = original
+    }
+
     private func setupMainMenu() {
         let mainMenu = NSMenu()
         NSApp.mainMenu = mainMenu

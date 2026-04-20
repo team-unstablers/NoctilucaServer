@@ -31,6 +31,12 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     private var resizeDebounceTask: [UInt64: Task<Void, Never>] = [:]
     private var isHandlingRemoteFocusChange = false
 
+    // 원격 메뉴 스왑 관련 상태
+    private var menuBuilder: AppStreamMenuBuilder?
+    private var remoteMenu: NSMenu?
+    private var remoteMenuRootNodeId: UUID?
+    private var accessibilitySubscriptionId: UUID?
+
     init(remoteSession: RemoteSession) {
         self.remoteSession = remoteSession
         super.init()
@@ -66,6 +72,39 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         for windowInfo in sortedWindows {
             await spawnWindow(windowInfo)
         }
+
+        // 원격 앱 메뉴바 구독 및 로컬 NSMenu 트리 빌드
+        await setupRemoteMenu(projectionChannel: projectionChannel)
+    }
+
+    /// 원격 메뉴 초기 fetch + Subscribe push 구독.
+    /// 실패해도 AppStream 자체는 계속 동작하도록 throw하지 않는다.
+    private func setupRemoteMenu(projectionChannel: ProjectionChannel) async {
+        do {
+            let response = try await projectionChannel.getAccessibilityTree(nodeId: nil)
+            guard response.success, let root = response.rootNode else {
+                logger.warning("GetAccessibilityTree failed: \(response.errorMessage ?? "nil")")
+                return
+            }
+
+            let builder = AppStreamMenuBuilder(projectionChannel: projectionChannel)
+            self.menuBuilder = builder
+            self.remoteMenuRootNodeId = root.id
+            self.remoteMenu = builder.buildMenu(from: root)
+
+            let subResponse = try await projectionChannel.subscribeAccessibilityTreeUpdates(
+                nodeId: root.id,
+                eventMask: [],
+                maxDepth: 0
+            )
+            if subResponse.success {
+                self.accessibilitySubscriptionId = subResponse.subscriptionId
+            } else {
+                logger.warning("SubscribeAccessibilityTreeUpdates failed: \(subResponse.errorMessage ?? "nil")")
+            }
+        } catch {
+            logger.warning("Failed to setup remote menu: \(error)")
+        }
     }
 
     func stop() async {
@@ -74,6 +113,8 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         for windowID in windowIDs {
             destroyWindow(windowID: windowID, sendCloseToServer: false)
         }
+
+        await teardownRemoteMenu()
 
         if let streamId = self.streamId,
            let projectionChannel = remoteSession.projection?.channel {
@@ -90,8 +131,28 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             destroyWindow(windowID: windowID, sendCloseToServer: false)
         }
 
+        Task { [weak self] in
+            await self?.teardownRemoteMenu()
+        }
+
         self.streamId = nil
         self.closedWindowIDs.removeAll()
+    }
+
+    /// 원격 메뉴 구독 해제 + 로컬 메뉴 복구.
+    private func teardownRemoteMenu() async {
+        if let subId = accessibilitySubscriptionId,
+           let projectionChannel = remoteSession.projection?.channel {
+            _ = try? await projectionChannel.unsubscribeAccessibilityTreeUpdates(subscriptionId: subId)
+        }
+
+        (NSApp.delegate as? AppDelegate)?.restoreOriginalMainMenu()
+
+        self.menuBuilder?.reset()
+        self.menuBuilder = nil
+        self.remoteMenu = nil
+        self.remoteMenuRootNodeId = nil
+        self.accessibilitySubscriptionId = nil
     }
 
     // MARK: - Window Management
@@ -219,12 +280,48 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         }
     }
 
+    /// Accessibility tree update 이벤트 처리. 현재 구현은 루트 메뉴바 전체 재구성에 한정한다.
+    func handleAccessibilityTreeUpdateEvent(_ event: AccessibilityTreeUpdateEvent) {
+        guard let builder = menuBuilder else { return }
+        guard let currentRootId = remoteMenuRootNodeId else { return }
+
+        // 서버는 현재 childrenChanged(루트) 단일 이벤트로 메뉴 재스냅샷을 송신한다.
+        // nodeId가 루트와 일치하고 updatedNode가 있으면 전체 메뉴를 교체한다.
+        guard event.nodeId == currentRootId,
+              let updatedNode = event.updatedNode else {
+            // 일부 서브트리 업데이트는 캐시 무효화만 수행해 다음 open 시 재fetch되도록 한다.
+            builder.invalidate(nodeId: event.nodeId)
+            return
+        }
+
+        // 새 빌더로 교체 — 기존 NSMenu 인스턴스 객체는 버리고 새로 빌드 (가장 단순하고 안전)
+        builder.reset()
+        self.remoteMenuRootNodeId = updatedNode.id
+
+        let newBuilder = AppStreamMenuBuilder(
+            projectionChannel: (remoteSession.projection?.channel)!
+        )
+        self.menuBuilder = newBuilder
+        let newMenu = newBuilder.buildMenu(from: updatedNode)
+        self.remoteMenu = newMenu
+
+        // 현재 AppStreamWindow가 key이면 즉시 적용
+        if NSApp.keyWindow is AppStreamWindow {
+            (NSApp.delegate as? AppDelegate)?.installRemoteMainMenu(newMenu)
+        }
+    }
+
     // MARK: - NSWindowDelegate
 
     func windowDidBecomeKey(_ notification: Notification) {
         guard let window = notification.object as? AppStreamWindow else { return }
 
         remoteSession.hidio?.session.activateSession()
+
+        // 원격 메뉴 스왑
+        if let remoteMenu {
+            (NSApp.delegate as? AppDelegate)?.installRemoteMainMenu(remoteMenu)
+        }
 
         // 서버에서 온 포커스 변경이면 서버로 재전송하지 않음 (무한 루프 방지)
         guard !isHandlingRemoteFocusChange else { return }
@@ -241,6 +338,17 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     func windowDidResignKey(_ notification: Notification) {
         guard notification.object is AppStreamWindow else { return }
         remoteSession.hidio?.session.deactivateSession()
+
+        // 포커스가 다른 AppStreamWindow로 이동했는지 확인. 아니면 원본 메뉴로 복구.
+        // NSApp.keyWindow는 이 시점에는 아직 nil/이전 window일 수 있으므로 한 틱 뒤에 확인.
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self else { return }
+            let newKey = NSApp.keyWindow
+            if !(newKey is AppStreamWindow) {
+                (NSApp.delegate as? AppDelegate)?.restoreOriginalMainMenu()
+            }
+        }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {

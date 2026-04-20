@@ -262,8 +262,18 @@ extension RemoteSession {
                 guard let appStreamWindowManager = parent?.appStreamWindowManager else {
                     return
                 }
-                
+
                 appStreamWindowManager.handleAppStreamWindowEvent(appStreamEvent)
+#endif
+                break
+
+            case .accessibilityTreeUpdateEvent(let event):
+#if os(macOS)
+                guard let appStreamWindowManager = parent?.appStreamWindowManager else {
+                    return
+                }
+
+                appStreamWindowManager.handleAccessibilityTreeUpdateEvent(event)
 #endif
                 break
             }
