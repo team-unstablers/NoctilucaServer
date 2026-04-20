@@ -1,0 +1,214 @@
+//
+//  AppStreamMenuBuilder.swift
+//  NoctilucaClient
+//
+
+#if os(macOS)
+import Foundation
+import AppKit
+
+import SiriusKitClient
+
+/// 원격 앱의 `AccessibilityNode` 트리를 로컬 `NSMenu`로 변환한다.
+/// 서브메뉴는 사용자가 열 때 `NSMenuDelegate.menuNeedsUpdate`로 비동기 populate된다.
+@MainActor
+final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
+    let logger = NoctilucaLogger(category: "AppStreamMenuBuilder")
+
+    private let projectionChannel: ProjectionChannel
+
+    /// NSMenu → AccessibilityNode.id 역매핑
+    private var menuToNodeId: [ObjectIdentifier: UUID] = [:]
+
+    /// 이미 실제 자식으로 populate된 NSMenu 집합
+    private var populatedMenus: Set<ObjectIdentifier> = []
+
+    /// 현재 populate 진행 중인 NSMenu 집합 (중복 호출 방지)
+    private var populatingMenus: Set<ObjectIdentifier> = []
+
+    init(projectionChannel: ProjectionChannel) {
+        self.projectionChannel = projectionChannel
+        super.init()
+    }
+
+    // MARK: - Public
+
+    /// 루트 메뉴바 `AccessibilityNode`를 `NSMenu`로 변환한다.
+    /// 루트 노드 자체는 `NSMenu` 하나로 치환되고, 자식이 최상위 메뉴 아이템이 된다.
+    func buildMenu(from root: AccessibilityNode) -> NSMenu {
+        let menu = NSMenu(title: root.description)
+        menu.delegate = self
+        menuToNodeId[ObjectIdentifier(menu)] = root.id
+
+        // 루트는 eager로 이미 children이 채워져 있다고 가정
+        populatedMenus.insert(ObjectIdentifier(menu))
+        for child in root.children {
+            let item = buildMenuItem(from: child)
+            menu.addItem(item)
+        }
+
+        return menu
+    }
+
+    // MARK: - Item Construction
+
+    private func buildMenuItem(from node: AccessibilityNode) -> NSMenuItem {
+        // role = menuGroup (separator)인 경우
+        if node.role == .menuGroup {
+            return NSMenuItem.separator()
+        }
+
+        let title = node.description
+        let cmdChar = node.attributes["app.noctiluca.server.x-ax.cmdChar"] ?? ""
+        let keyEquivalent = cmdChar.lowercased()
+
+        let item = NSMenuItem(
+            title: title,
+            action: #selector(didActivateRemoteMenuItem(_:)),
+            keyEquivalent: keyEquivalent
+        )
+        item.target = self
+        item.representedObject = node.id
+        item.isEnabled = !node.hint.contains(.disabled)
+
+        // Modifier 매핑 (AXMenuItemCmdModifiers 비트 레이아웃)
+        if !keyEquivalent.isEmpty {
+            item.keyEquivalentModifierMask = Self.modifierFlags(
+                fromCmdModifiers: node.attributes["app.noctiluca.server.x-ax.cmdModifiers"]
+            )
+        }
+
+        // 자식이 있을 가능성이 있으면 submenu 부착 + delegate로 lazy populate
+        if node.role == .menu || !node.children.isEmpty {
+            let submenu = NSMenu(title: title)
+            submenu.delegate = self
+            menuToNodeId[ObjectIdentifier(submenu)] = node.id
+
+            if node.children.isEmpty {
+                // placeholder
+                submenu.addItem(Self.makeLoadingPlaceholder())
+            } else {
+                populatedMenus.insert(ObjectIdentifier(submenu))
+                for child in node.children {
+                    submenu.addItem(buildMenuItem(from: child))
+                }
+            }
+
+            item.submenu = submenu
+        }
+
+        return item
+    }
+
+    private static func makeLoadingPlaceholder() -> NSMenuItem {
+        let item = NSMenuItem(title: "Loading…", action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        return item
+    }
+
+    private static func makeFailurePlaceholder(reason: String) -> NSMenuItem {
+        let item = NSMenuItem(title: "Failed to load: \(reason)", action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        return item
+    }
+
+    /// AX `cmdModifiers` 비트 마스크를 `NSEvent.ModifierFlags`로 변환한다.
+    /// AX 관례상 `cmdChar`가 비어있지 않으면 Command가 암묵적으로 포함된다.
+    ///
+    /// AXMenuItemCmdModifiers 비트 레이아웃 (Apple Event macros 기반):
+    /// - bit 0: Shift  (0x01)
+    /// - bit 1: Option (0x02)
+    /// - bit 2: Control(0x04)
+    /// - bit 3: NoCommand (0x08) — 설정되면 Command 제외
+    private static func modifierFlags(fromCmdModifiers raw: String?) -> NSEvent.ModifierFlags {
+        guard let raw, let value = Int(raw) else {
+            return [.command]
+        }
+        var flags: NSEvent.ModifierFlags = []
+        if (value & 0x01) != 0 { flags.insert(.shift) }
+        if (value & 0x02) != 0 { flags.insert(.option) }
+        if (value & 0x04) != 0 { flags.insert(.control) }
+        if (value & 0x08) == 0 { flags.insert(.command) }
+        return flags
+    }
+
+    // MARK: - NSMenuDelegate
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        let key = ObjectIdentifier(menu)
+        guard !populatedMenus.contains(key) else { return }
+        guard !populatingMenus.contains(key) else { return }
+        guard let nodeId = menuToNodeId[key] else { return }
+
+        populatingMenus.insert(key)
+
+        Task { @MainActor [weak self, weak menu] in
+            guard let self = self, let menu = menu else { return }
+            defer { self.populatingMenus.remove(key) }
+
+            do {
+                let response = try await self.projectionChannel.getAccessibilityTree(nodeId: nodeId)
+                guard response.success, let node = response.rootNode else {
+                    self.replaceMenuItemsWithFailure(menu, reason: response.errorMessage ?? "unknown")
+                    return
+                }
+
+                menu.removeAllItems()
+                for child in node.children {
+                    menu.addItem(self.buildMenuItem(from: child))
+                }
+                self.populatedMenus.insert(key)
+            } catch {
+                self.logger.warning("Failed to fetch submenu \(nodeId): \(error)")
+                self.replaceMenuItemsWithFailure(menu, reason: String(describing: error))
+            }
+        }
+    }
+
+    private func replaceMenuItemsWithFailure(_ menu: NSMenu, reason: String) {
+        menu.removeAllItems()
+        menu.addItem(Self.makeFailurePlaceholder(reason: reason))
+    }
+
+    // MARK: - Invalidation
+
+    /// 특정 nodeId에 대응하는 NSMenu의 캐시를 무효화한다. 다음 open 시 재fetch된다.
+    func invalidate(nodeId: UUID) {
+        // nodeId → ObjectIdentifier는 다대일 관계가 아니지만, 역매핑이 없으므로 전체 스캔
+        for (oid, mappedId) in menuToNodeId where mappedId == nodeId {
+            populatedMenus.remove(oid)
+        }
+    }
+
+    /// 모든 캐시를 초기화한다. (예: AppStream 종료)
+    func reset() {
+        menuToNodeId.removeAll()
+        populatedMenus.removeAll()
+        populatingMenus.removeAll()
+    }
+
+    // MARK: - Action Selector
+
+    @objc private func didActivateRemoteMenuItem(_ sender: NSMenuItem) {
+        guard let nodeId = sender.representedObject as? UUID else {
+            logger.warning("Menu item activated but representedObject is not UUID")
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            do {
+                let response = try await self.projectionChannel.dispatchAction(
+                    targetNodeId: nodeId,
+                    actionType: .activate
+                )
+                if !response.success {
+                    self.logger.warning("DispatchAction failed: \(response.errorMessage ?? "nil")")
+                }
+            } catch {
+                self.logger.warning("DispatchAction error: \(error)")
+            }
+        }
+    }
+}
+#endif
