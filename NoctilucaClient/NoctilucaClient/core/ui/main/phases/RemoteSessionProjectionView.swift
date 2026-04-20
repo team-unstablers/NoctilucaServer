@@ -174,8 +174,8 @@ struct RemoteSessionProjectionView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height + 10)
 #endif
                     
-                    let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
-                    
+                    let rect = projectionRect(in: geometry.size)
+
                     if useCanvasRendering, let renderer = subscription?.canvasRenderer {
                         // Metal 캔버스 직접 렌더링 경로 (타일 코덱)
                         MetalProjectionView(renderer: renderer)
@@ -407,6 +407,15 @@ struct RemoteSessionProjectionView: View {
         } // geometryreader
     }
     
+    /// 실제 렌더링에 사용할 rect. AppStream(windowID) 소스는 컨테이너에 꽉 차도록 fill,
+    /// 디스플레이 소스는 aspect ratio 를 유지한 letterbox/pillarbox.
+    private func projectionRect(in size: CGSize) -> CGRect {
+        if case .windowID = sourceDescriptor {
+            return CGRect(origin: .zero, size: size)
+        }
+        return fittedProjectionRect(in: size, aspectRatio: projectionAspectRatio)
+    }
+
     private func fittedProjectionRect(in size: CGSize, aspectRatio: CGFloat) -> CGRect {
         guard size.width > 0, size.height > 0, aspectRatio > 0 else {
             return CGRect(origin: .zero, size: size)
