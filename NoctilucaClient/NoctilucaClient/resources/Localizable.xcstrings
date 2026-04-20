@@ -5406,6 +5406,9 @@
         }
       }
     },
+    "FIXME" : {
+
+    },
     "floating_palette.software_keyboard_toggle" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -15777,6 +15780,28 @@
         }
       }
     },
+    "settings.projection.allow_sub_display_window.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디스플레이 선택 시트에서 각 원격 디스플레이를 iPad의 별도 윈도우(UIWindowScene)로 분리할 수 있게 합니다.\niPad Pro에서 외부 디스플레이를 연결하여 다중 디스플레이처럼 사용하려는 경우에 유용합니다."
+          }
+        }
+      }
+    },
+    "settings.projection.allow_sub_display_window.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 디스플레이를 별도 윈도우로 분리할 수 있게 하기"
+          }
+        }
+      }
+    },
     "settings.projection.audio_policy.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -16299,6 +16324,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "优先考虑最小化延迟。\n如果网络状况不佳，可能会频繁出现卡顿或丢帧。"
+          }
+        }
+      }
+    },
+    "settings.projection.multi_display.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "멀티 디스플레이"
           }
         }
       }
@@ -17350,9 +17386,6 @@
     "Status" : {
 
     },
-    "test" : {
-
-    },
     "Unleashed Edition" : {
 
     },
@@ -17390,6 +17423,9 @@
 
     },
     "리프레시 레이트" : {
+
+    },
+    "메인 디스플레이로 설정" : {
 
     },
     "새 가상 디스플레이" : {
