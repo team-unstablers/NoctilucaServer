@@ -30,6 +30,8 @@ actor ProjectionChannelState {
         let flags: AppStreamFlags
         let windowSubscriptionId: UUID
         let appTerminationSubscriptionId: UUID
+        /// AppStream 전용 가상 디스플레이 핸들. `nil`이면 fallback(메인 디스플레이)으로 운영된다.
+        let virtualDisplayHandle: NOCVirtualDisplayHandle?
     }
 
     struct AccessibilitySubscriptionInfo {

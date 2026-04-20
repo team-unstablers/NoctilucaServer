@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import CoreGraphics
 import SiriusKit
 
 import AppKit
@@ -33,6 +34,60 @@ private class AppStreamWindowTracker: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         knownWindowIDs.remove(windowID)
+    }
+}
+
+/// AppStream 대상 윈도우를 가상 디스플레이 중심에 고정한다.
+///
+/// `setWindowFrame` 호출은 그 자체로 `.moved`/`.resized` 이벤트를 다시 유발하므로,
+/// 의도한 origin을 `expectedOrigins`에 기록해 두고 동일 origin이 들어오는 self-triggered
+/// 이벤트는 무시하여 무한 루프를 방지한다.
+private class AppStreamWindowAnchor: @unchecked Sendable {
+    private let lock = NSLock()
+    private var expectedOrigins: [UInt64: CGPoint] = [:]
+    let displayCenter: CGPoint
+
+    init(displayCenter: CGPoint) {
+        self.displayCenter = displayCenter
+    }
+
+    /// 윈도우 정보를 기반으로 center 정렬 frame을 계산하고 expected에 등록한다.
+    /// 호출측은 반환된 frame으로 `setWindowFrame`을 실행해야 한다.
+    func planAnchor(for window: WindowInfo) -> CGRect {
+        let bounds = window.bounds
+        let newOrigin = CGPoint(
+            x: displayCenter.x - bounds.width / 2,
+            y: displayCenter.y - bounds.height / 2
+        )
+        lock.lock()
+        defer { lock.unlock() }
+        expectedOrigins[window.windowID] = newOrigin
+        return CGRect(
+            x: newOrigin.x,
+            y: newOrigin.y,
+            width: bounds.width,
+            height: bounds.height
+        )
+    }
+
+    /// 들어온 이벤트가 우리 anchor 호출 결과로 발생한 self-triggered 이벤트인지 판정한다.
+    /// 일치하면 expected 엔트리를 소비하고 true를 반환한다 (재고정 스킵 지시).
+    func consumeIfSelfTriggered(windowId: UInt64, currentBounds: SRRect) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let expected = expectedOrigins[windowId] else { return false }
+        if abs(expected.x - currentBounds.x) < 0.5 &&
+           abs(expected.y - currentBounds.y) < 0.5 {
+            expectedOrigins.removeValue(forKey: windowId)
+            return true
+        }
+        return false
+    }
+
+    func remove(windowId: UInt64) {
+        lock.lock()
+        defer { lock.unlock() }
+        expectedOrigins.removeValue(forKey: windowId)
     }
 }
 
@@ -278,19 +333,23 @@ extension ProjectionChannel {
         let ignoreInvisible = request.flags.contains(.ignoreInvisibleWindows)
         let windowTracker = AppStreamWindowTracker()
 
+        // AppStream 전용 가상 디스플레이 확보 (실패 시 메인 디스플레이로 fallback).
+        let (virtualDisplayHandle, displayCenter) = await acquireAppStreamDisplay()
+        let windowAnchor = AppStreamWindowAnchor(displayCenter: displayCenter)
+
         // PID 기반 윈도우 이벤트 구독
         let windowSubscriptionId = await desktopContextManager.subscribeWindowEvents(
             eventMask: [.closed, .moved, .resized, .metadataChanged, .focused],
             filter: WindowFilter(expression: WindowFilterExpression(.pid(UInt64(pid)))),
             flags: []
-        ) { [weak self, streamId, ignoreInvisible, windowTracker] windowEvent in
-            print(windowEvent)
+        ) { [weak self, streamId, ignoreInvisible, windowTracker, windowAnchor] windowEvent in
             Task { [weak self] in
                 await self?.handleAppStreamWindowEvent(
                     streamId: streamId,
                     windowEvent: windowEvent,
                     ignoreInvisible: ignoreInvisible,
-                    windowTracker: windowTracker
+                    windowTracker: windowTracker,
+                    windowAnchor: windowAnchor
                 )
             }
         }
@@ -311,12 +370,17 @@ extension ProjectionChannel {
             pid: pid,
             flags: request.flags,
             windowSubscriptionId: windowSubscriptionId,
-            appTerminationSubscriptionId: appTerminationSubId
+            appTerminationSubscriptionId: appTerminationSubId,
+            virtualDisplayHandle: virtualDisplayHandle
         )
 
         guard await state.activateAppStreamSession(sessionInfo) else {
             await desktopContextManager.unsubscribeWindowEvents(id: windowSubscriptionId)
             await desktopContextManager.unsubscribeAppEvents(id: appTerminationSubId)
+            if let handle = virtualDisplayHandle {
+                let layoutManager = await DisplayLayoutManager.shared
+                await layoutManager.destroyVirtualDisplay(handle)
+            }
             try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
                 requestId: request.requestId, streamId: streamId, isSuccess: false, code: 6,
                 message: "Failed to activate AppStream session", initialWindows: []
@@ -328,9 +392,15 @@ extension ProjectionChannel {
             pid: pid,
             ignoreInvisible: ignoreInvisible
         )
-        print(initialWindows)
-        
+
         windowTracker.addInitialWindows(initialWindows)
+
+        // initialWindows를 즉시 가상 디스플레이 중심으로 이동시킨다.
+        await MainActor.run {
+            for window in initialWindows {
+                self.anchorWindowToCenter(window, using: windowAnchor)
+            }
+        }
 
         try await self.handle.send(opcode: .startAppStreamResponse, message: StartAppStreamResponse(
             requestId: request.requestId,
@@ -377,21 +447,52 @@ extension ProjectionChannel {
         streamId: UUID,
         windowEvent: WindowChangedEvent,
         ignoreInvisible: Bool,
-        windowTracker: AppStreamWindowTracker
+        windowTracker: AppStreamWindowTracker,
+        windowAnchor: AppStreamWindowAnchor
     ) async {
         let eventType: AppStreamWindowEventType
         let info: WindowInfo?
+        let isNewlyAppeared: Bool
 
         if windowEvent.eventType.contains(.closed) {
             eventType = .disappeared
             info = nil
+            isNewlyAppeared = false
             windowTracker.remove(windowEvent.windowID)
+            windowAnchor.remove(windowId: windowEvent.windowID)
         } else if windowTracker.trackAndCheckIfNew(windowEvent.windowID) {
             eventType = .appeared
             info = windowEvent.info
+            isNewlyAppeared = true
         } else {
             eventType = .updated
             info = windowEvent.info
+            isNewlyAppeared = false
+        }
+
+        // 윈도우 anchor 결정:
+        //  - 새 윈도우(appeared)는 무조건 center로 정렬
+        //  - moved/resized 이벤트가 들어왔고 self-triggered가 아니면 재고정
+        if let windowInfo = info {
+            let positionalChange = windowEvent.eventType.contains(.moved)
+                || windowEvent.eventType.contains(.resized)
+            let shouldAnchor: Bool
+            if isNewlyAppeared {
+                shouldAnchor = true
+            } else if positionalChange {
+                shouldAnchor = !windowAnchor.consumeIfSelfTriggered(
+                    windowId: windowEvent.windowID,
+                    currentBounds: windowInfo.bounds
+                )
+            } else {
+                shouldAnchor = false
+            }
+
+            if shouldAnchor {
+                await MainActor.run {
+                    self.anchorWindowToCenter(windowInfo, using: windowAnchor)
+                }
+            }
         }
 
         // ignoreInvisibleWindows 플래그 처리
@@ -425,6 +526,65 @@ extension ProjectionChannel {
         await desktopContextManager.unsubscribeAppEvents(id: session.appTerminationSubscriptionId)
         await MainActor.run {
             AppMenuRegistry.shared.prune(pid: session.pid)
+        }
+        if let handle = session.virtualDisplayHandle {
+            let layoutManager = await DisplayLayoutManager.shared
+            await layoutManager.destroyVirtualDisplay(handle)
+        }
+    }
+
+    // MARK: - Virtual Display & Window Anchoring
+
+    /// AppStream용 가상 디스플레이 사양: 3840x2160 @ 60Hz, 1x scale.
+    private static let appStreamVirtualDisplaySpec = NOCDisplaySpec(
+        resolution: CGSize(width: 3840, height: 2160),
+        refreshRate: 60,
+        scaleFactor: 1,
+        metadata: [:]
+    )
+
+    /// AppStream 전용 가상 디스플레이를 생성한다.
+    /// 실패 시 핸들 없이 메인 디스플레이의 중심 좌표를 반환한다.
+    private func acquireAppStreamDisplay() async -> (handle: NOCVirtualDisplayHandle?, center: CGPoint) {
+        guard let sessionID = clientSession?.id else {
+            logger.warning("AppStream: clientSession 없음. 메인 디스플레이로 fallback.")
+            return (nil, mainDisplayCenter())
+        }
+
+        let layoutManager = await DisplayLayoutManager.shared
+        do {
+            let handle = try await layoutManager.acquireVirtualDisplay(
+                ownedBy: sessionID,
+                purpose: .appStream,
+                specs: [Self.appStreamVirtualDisplaySpec]
+            )
+            let bounds = CGDisplayBounds(handle.displayID)
+            let center = CGPoint(x: bounds.midX, y: bounds.midY)
+            logger.info("AppStream virtual display acquired: displayID=\(handle.displayID) bounds=\(bounds)")
+            return (handle, center)
+        } catch {
+            logger.warning("AppStream virtual display spawn failed: \(error). Falling back to main display.")
+            return (nil, mainDisplayCenter())
+        }
+    }
+
+    private func mainDisplayCenter() -> CGPoint {
+        let bounds = CGDisplayBounds(CGMainDisplayID())
+        return CGPoint(x: bounds.midX, y: bounds.midY)
+    }
+
+    /// MainActor 컨텍스트에서 호출하여 윈도우를 가상 디스플레이 중심으로 이동시킨다.
+    @MainActor
+    fileprivate func anchorWindowToCenter(
+        _ window: WindowInfo,
+        using anchor: AppStreamWindowAnchor
+    ) {
+        let frame = anchor.planAnchor(for: window)
+        let windowID = WindowID(window.windowID)
+        do {
+            try desktopContextManager.setWindowFrame(id: windowID, frame: frame)
+        } catch {
+            logger.warning("Failed to anchor window \(windowID) to \(frame): \(error)")
         }
     }
 
