@@ -13,6 +13,11 @@ struct PendingAudioSessionRequest: Sendable {
     let timeoutTask: Task<Void, Never>
 }
 
+struct PendingDisplayTransaction: Sendable {
+    let continuation: CheckedContinuation<DisplayTransactionResponse, Error>
+    let timeoutTask: Task<Void, Never>
+}
+
 /// ProjectionChannel의 mutable state를 actor isolation으로 보호합니다.
 actor ProjectionChannelState {
     typealias PendingHandler = @Sendable (Result<any DecodableSiriusMessage, Error>) -> Void
@@ -23,6 +28,7 @@ actor ProjectionChannelState {
     private var pendingSessions: [UUID: PendingHandler] = [:]
     private var pendingRequests: [UInt64: PendingHandler] = [:]
     private var pendingAudioSessionRequests: [UUID: PendingAudioSessionRequest] = [:]
+    private var pendingDisplayTransactions: [UUID: PendingDisplayTransaction] = [:]
 
     private(set) var displayChangesSubscriptionID: UUID? = nil
 
@@ -181,6 +187,46 @@ actor ProjectionChannelState {
         for (_, pending) in pendingRequests {
             pending.timeoutTask.cancel()
             pending.continuation.resume(throwing: error)
+        }
+    }
+
+    // MARK: - Pending Display Transaction Operations
+
+    func registerPendingDisplayTransaction(_ id: UUID, request: PendingDisplayTransaction) {
+        pendingDisplayTransactions[id] = request
+    }
+
+    func hasPendingDisplayTransaction(_ id: UUID) -> Bool {
+        pendingDisplayTransactions[id] != nil
+    }
+
+    @discardableResult
+    func succeedPendingDisplayTransaction(_ id: UUID, response: DisplayTransactionResponse) -> Bool {
+        guard let pending = pendingDisplayTransactions.removeValue(forKey: id) else {
+            return false
+        }
+        pending.timeoutTask.cancel()
+        pending.continuation.resume(returning: response)
+        return true
+    }
+
+    @discardableResult
+    func failPendingDisplayTransaction(_ id: UUID, error: Error) -> Bool {
+        guard let pending = pendingDisplayTransactions.removeValue(forKey: id) else {
+            return false
+        }
+        pending.timeoutTask.cancel()
+        pending.continuation.resume(throwing: error)
+        return true
+    }
+
+    func cancelAllPendingDisplayTransactions(with error: Error = ProjectionChannelError.channelClosed) {
+        let pending = pendingDisplayTransactions
+        pendingDisplayTransactions.removeAll()
+
+        for (_, request) in pending {
+            request.timeoutTask.cancel()
+            request.continuation.resume(throwing: error)
         }
     }
 }

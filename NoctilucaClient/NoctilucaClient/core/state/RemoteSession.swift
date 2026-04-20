@@ -331,6 +331,8 @@ class RemoteSession: ObservableObject {
             return String(localized: "error.audio.channel_closed", defaultValue: "프로젝션 채널이 닫혀 오디오를 시작할 수 없습니다.")
         case .sessionCreationCancelled:
             return String(localized: "error.audio.session_creation_cancelled", defaultValue: "오디오 세션 생성이 취소되었습니다.")
+        default:
+            return projectionError.localizedDescription
         }
     }
 }
