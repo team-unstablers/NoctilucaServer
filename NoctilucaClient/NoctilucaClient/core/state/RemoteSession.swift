@@ -14,7 +14,11 @@ import SiriusKitClient
 class RemoteSession: ObservableObject {
     private let logger = NoctilucaLogger(category: "RemoteSession")
     private var eventSubscription: AnyCancellable? = nil
-    
+
+    // 프로세스 내에서 RemoteSession 인스턴스를 식별하기 위한 ID.
+    // RemoteSessionManager/SubDisplayCoordinator 등 외부 자원이 세션을 참조하는 데 사용된다.
+    let id: UUID = UUID()
+
     weak var parent: SessionWindowViewModel?
 
     private(set) var client: NoctilucaClient

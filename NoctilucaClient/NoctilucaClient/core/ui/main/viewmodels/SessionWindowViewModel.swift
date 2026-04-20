@@ -50,8 +50,9 @@ class SessionWindowViewModel: ObservableObject {
     @Published
     var shouldPresentDisplaySwitchSheet: Bool = false
 
-    /// macOS에서 디스플레이를 별도 창으로 분리하는 콜백.
-    /// AppKitMainWindowController가 SubDisplayWindowManager를 통해 주입한다.
+    /// 디스플레이를 별도 창(macOS) 또는 별도 UIScene(iPadOS)으로 분리하는 콜백.
+    /// - macOS: AppKitMainWindowController가 SubDisplayWindowManager를 통해 주입.
+    /// - iPadOS: MobileUIMainSceneDelegate가 SubDisplayCoordinator.spawn(...) 으로 주입.
     var onDetachDisplay: ((Int) async throws -> Void)?
 
 #if os(iOS)
@@ -443,6 +444,8 @@ class SessionWindowViewModel: ObservableObject {
         remoteSession = session
         session.parent = self
 
+        RemoteSessionManager.shared.register(session, forId: session.id)
+
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
 
@@ -486,6 +489,9 @@ class SessionWindowViewModel: ObservableObject {
     private func detachRemoteSession() {
         sessionCancellables.forEach { $0.cancel() }
         sessionCancellables.removeAll()
+        if let session = remoteSession {
+            RemoteSessionManager.shared.unregister(session.id)
+        }
         remoteSession?.prepareForDetach()
         remoteSession = nil
         pingRTT = nil
