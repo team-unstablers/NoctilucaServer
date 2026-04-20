@@ -11,6 +11,25 @@ import SiriusKitClient
 
 extension ProjectionChannel {
 
+    // MARK: Application List
+
+    /// 서버의 AppStream 허용 앱 목록을 조회한다. 서버는 단일 응답(`isLastPage = true`)으로
+    /// 모든 항목을 반환한다.
+    func getApplicationList(
+        flags: ApplicationListRequestFlags = [.includeIcons]
+    ) async throws -> ApplicationListResponse {
+        let requestID = nextRequestID()
+
+        return try await self.sendRequest(
+            requestID: requestID,
+            opcode: .applicationListRequest,
+            message: ApplicationListRequest(
+                requestId: requestID,
+                flags: flags
+            )
+        )
+    }
+
     // MARK: AppStream Lifecycle
 
     func startAppStream(

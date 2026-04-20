@@ -194,6 +194,10 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
 
         // MARK: - AppStream opcodes
 
+        case .applicationListResponse:
+            let response = try ApplicationListResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
         case .startAppStreamResponse:
             let response = try StartAppStreamResponse.fromProtobufBytes(frame.data)
             await self.dispatchResponse(requestID: response.requestId, message: response)
