@@ -40,22 +40,29 @@ struct SessionOverlayModifier<OverlayContent: View, OverlaySubContent: View>: Vi
     }
 
     func body(content: Content) -> some View {
-        content
-            .overlay {
-                if isPresented {
-                    ZStack(alignment: .bottom) {
-                        ZStack {
-                            Rectangle()
-                                .fill(.black.opacity(0.5))
-                            VStack {
-                                Spacer()
-                                overlaySubcontent?()
-                                Spacer()
-                            }
-                        }
-                        .onTapGesture {
+        ZStack {
+            content
+                .allowsHitTesting(!isPresented)
+
+            if isPresented {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .ignoresSafeArea(.all)
+                    .onTapGesture {
+                        withAnimation {
                             isPresented = false
                         }
+                    }
+                    .transition(.opacity)
+
+                ZStack(alignment: .bottom) {
+                    VStack {
+                        if let overlaySubcontent {
+                            Spacer()
+                            overlaySubcontent()
+                            Spacer()
+                        }
+
                         ZStack {
                             LinearGradient(stops: [
                                 .init(color: .black, location: 0.0),
@@ -68,9 +75,11 @@ struct SessionOverlayModifier<OverlayContent: View, OverlaySubContent: View>: Vi
                         }
                         .fixedSize(horizontal: false, vertical: true)
                     }
-                    .ignoresSafeArea(.all)
-                    .transition(.opacity.animation(.easeInOut))
                 }
+                .ignoresSafeArea(.all, edges: [.bottom])
+                .transition(.opacity)
             }
+        }
+        .animation(.easeInOut, value: isPresented)
     }
 }
