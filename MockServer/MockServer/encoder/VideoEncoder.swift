@@ -21,26 +21,26 @@ struct VideoEncoderConfiguration {
     }
 }
 
-struct EncodedFrame {
+struct EncodedFrame: Sendable {
     let header: FrameDataHeader
     let data: Data
     let formatDescription: CMFormatDescription?
 }
 
-enum VideoEncoderEvent {
+enum VideoEncoderEvent: Sendable {
     case parameterSetChanged(CodecParameterSetMessage)
     case frameEncoded(EncodedFrame)
     case frameSkipped
-    case errorOccurred(Error)
+    case errorOccurred(any Error)
     case stopped
 }
 
-protocol VideoEncoderDelegate: AnyObject {
+protocol VideoEncoderDelegate: AnyObject, Sendable {
     func videoEncoder(_ encoder: VideoEncoder, didEncode frame: EncodedFrame)
     func videoEncoder(_ encoder: VideoEncoder, didFailWith error: Error)
 }
 
-protocol VideoEncoder: AnyObject {
+protocol VideoEncoder: AnyObject, Sendable {
     var events: AsyncStream<VideoEncoderEvent> { get }
 
     func prepare(with configuration: VideoEncoderConfiguration) throws
