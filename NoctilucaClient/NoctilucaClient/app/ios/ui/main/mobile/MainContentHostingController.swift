@@ -232,7 +232,7 @@ final class MainContentHostingController: UIHostingController<AnyView> {
     }
 
     @objc private func switchDisplay() {
-        viewModel.shouldPresentDisplaySwitchSheet = true
+        viewModel.shouldPresentDisplaySwitchSheet.toggle()
     }
 
     @objc private func enterFullscreen() {

@@ -245,7 +245,7 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         case .nocAddSession:
             viewModel.contactSheetCoordinator.presentContactEditor(for: nil)
         case .nocSwitchDisplay:
-            viewModel.shouldPresentDisplaySwitchSheet = true
+            viewModel.shouldPresentDisplaySwitchSheet.toggle()
         case .nocEnableExclusiveInputMode:
             try? viewModel.remoteSession?.hidio?.session.switchMode(to: .exclusive, reason: .userInitiated)
         default:

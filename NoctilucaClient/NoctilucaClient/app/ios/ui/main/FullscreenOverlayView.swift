@@ -38,7 +38,7 @@ struct FullscreenOverlayView: View {
                 .frame(maxWidth: 400)
 
                 Button {
-                    viewModel.shouldPresentDisplaySwitchSheet = true
+                    viewModel.shouldPresentDisplaySwitchSheet.toggle()
                     viewModel.scheduleAutoHideOverlay()
                 } label: {
                     Image(systemName: "display.2")
