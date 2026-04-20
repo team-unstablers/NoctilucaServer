@@ -62,7 +62,7 @@ public actor ChannelManager {
             delegate?.channelManager(self, didRegisterChannel: channel, for: feature)
         }
 
-        channel.handle.asImpl.lifecycleDelegate = self
+        channel.handle.asImpl.setLifecycleDelegate(self)
 
         self.channels[channel.identifier] = channel
     }
@@ -103,10 +103,10 @@ public actor ChannelManager {
             )
             
             let mainChannel = MainChannel(handle: handle)
-            handle.lifecycleDelegate = self
-            
+            handle.setLifecycleDelegate(self)
+
             try await handle.activate()
-            
+
             self.mainChannel = mainChannel
 
             return
@@ -205,8 +205,8 @@ public actor ChannelManager {
             )
             
             let mainChannel = MainChannel(handle: handle)
-            handle.lifecycleDelegate = self
-            
+            handle.setLifecycleDelegate(self)
+
             try await handle.activate()
 
             self.mainChannel = mainChannel
@@ -296,9 +296,11 @@ public actor ChannelManager {
 
         for channel in channels {
             delegate?.channelManager(self, willUnregisterChannel: channel)
-            channel.handle.asImpl.lifecycleDelegate = nil
+            // 진행 중인 streamEventLoop이 channelDidClose 콜백을 쏘는 것을 선제 봉인.
+            // 단순 nil 대입은 detached event loop과의 데이터 레이스 + 중복 unregister를 유발함.
+            channel.handle.asImpl.suppressLifecycleNotifications()
         }
-        mainChannel?.handle.asImpl.lifecycleDelegate = nil
+        mainChannel?.handle.asImpl.suppressLifecycleNotifications()
 
         for channel in channels {
             do {
