@@ -10,7 +10,7 @@ import SiriusKit
 
 import SwiftMsQuic
 
-class MockServer {
+actor MockServer {
     private let logger = SiriusLogger(category: "MockServer", subsystem: "app.noctiluca.mockserver")
 
     let projectionSource: URL
@@ -45,9 +45,9 @@ class MockServer {
             .build()
 
         let server = try result.get()
-        server.delegate = self
+        await server.setDelegate(self)
         self.server = server
-        
+
         SwiftMsQuicAPI.open()
 
         try await server.setup()
@@ -65,14 +65,16 @@ class MockServer {
         signal(SIGPIPE, SIG_IGN)
 
         sigintSource.setEventHandler { [weak self] in
-            Task {
-                await self?.shutdown()
+            guard let strongSelf = self else { return }
+            Task { [strongSelf] in
+                await strongSelf.shutdown()
                 exit(1)
             }
         }
         sigtermSource.setEventHandler { [weak self] in
-            Task {
-                await self?.shutdown()
+            guard let strongSelf = self else { return }
+            Task { [strongSelf] in
+                await strongSelf.shutdown()
                 exit(1)
             }
         }
@@ -106,43 +108,72 @@ class MockServer {
         shutdownContinuation?.resume()
         shutdownContinuation = nil
     }
-}
 
-extension MockServer: SiriusServerDelegate {
-    func siriusServerDidStart(_ server: SiriusServer) {
-        logger.info("MockServer is now running on port \(self.port).")
-    }
+    // MARK: - Internal helpers (called from delegate hops)
 
-    func siriusServerDidStop(_ server: SiriusServer) {
-        logger.info("MockServer has stopped.")
-        shutdownContinuation?.resume()
-        shutdownContinuation = nil
-    }
-
-    func siriusServer(_ server: SiriusServer, didEncounterError error: any Error) {
-        logger.error("MockServer encountered an error: \(error)")
-    }
-
-    func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession) {
+    fileprivate func didAcceptSession(_ session: ClientSession) {
         let mockSession = MockClientSession(
             session: session,
             projectionSource: projectionSource
         )
-        mockSession.delegate = self
-        mockSession.initialize()
+        Task { [weak self] in
+            guard let self else { return }
+            await mockSession.setDelegate(self)
+            await mockSession.initialize()
+        }
 
         clients[session.id] = mockSession
         logger.info("Accepted client session: \(session.id)")
     }
 
-    func siriusServerDidFailToAcceptClientSession(_ server: SiriusServer, error: any Error) {
-        logger.error("Failed to accept client session: \(error)")
+    fileprivate func didCloseSession(_ id: UUID) {
+        clients[id] = nil
+        logger.info("Client session closed: \(id)")
+    }
+
+    fileprivate func didStop() {
+        shutdownContinuation?.resume()
+        shutdownContinuation = nil
+    }
+}
+
+extension MockServer: SiriusServerDelegate {
+    nonisolated func siriusServerDidStart(_ server: SiriusServer) {
+        Task { [weak self] in
+            await self?.logger.info("MockServer is now running.")
+        }
+    }
+
+    nonisolated func siriusServerDidStop(_ server: SiriusServer) {
+        Task { [weak self] in
+            await self?.didStop()
+        }
+    }
+
+    nonisolated func siriusServer(_ server: SiriusServer, didEncounterError error: any Error) {
+        Task { [weak self] in
+            await self?.logger.error("MockServer encountered an error: \(error)")
+        }
+    }
+
+    nonisolated func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession) {
+        Task { [weak self] in
+            await self?.didAcceptSession(session)
+        }
+    }
+
+    nonisolated func siriusServerDidFailToAcceptClientSession(_ server: SiriusServer, error: any Error) {
+        Task { [weak self] in
+            await self?.logger.error("Failed to accept client session: \(error)")
+        }
     }
 }
 
 extension MockServer: MockClientSessionDelegate {
-    func mockClientSessionDidClose(_ session: MockClientSession) {
-        clients[session.id] = nil
-        logger.info("Client session closed: \(session.id)")
+    nonisolated func mockClientSessionDidClose(_ session: MockClientSession) {
+        let id = session.id
+        Task { [weak self] in
+            await self?.didCloseSession(id)
+        }
     }
 }
