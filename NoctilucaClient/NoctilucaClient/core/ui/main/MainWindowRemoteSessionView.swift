@@ -201,11 +201,15 @@ struct MainWindowRemoteSessionView: View {
     }
     
     func updateProjectionTarget(_ displayID: Int) async throws {
-        let subscription = try await projection.subscribeProjectionSession(for: displayID)
+        let newSubscription = try await projection.subscribeProjectionSession(for: displayID)
 
-        await MainActor.run {
-            self.subscription = subscription
+        let previousSubscription = await MainActor.run { () -> ProjectionSessionSubscription? in
+            let previous = self.subscription
+            self.subscription = newSubscription
             self.sourceDescriptor = .displayID(displayID)
+            return previous
         }
+
+        previousSubscription?.invalidate()
     }
 }
