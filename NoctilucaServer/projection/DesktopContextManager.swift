@@ -537,8 +537,8 @@ final class AppSession {
             .debounce(for: delay, scheduler: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
-                // 새 스냅샷을 찍기 전에 기존 매핑을 정리 (stale UUID 누적 방지)
-                AppMenuRegistry.shared.prune(pid: self.pid)
+                // AppMenuRegistry가 CFEqual 기반으로 UUID를 재사용하므로 prune 없이 호출한다.
+                // 기존 UUID는 그대로 유효하여 in-flight DispatchAction 요청이 실패하지 않는다.
                 if let root = self.snapshotMenuBar(depth: 2) {
                     self.delegate?.appSession(self, didUpdateMenuBar: root)
                 }

@@ -57,11 +57,8 @@ extension ProjectionChannel {
             return
         }
 
-        // 새 스냅샷 전에 기존 매핑 정리 (stale UUID 누적 방지)
-        await MainActor.run {
-            AppMenuRegistry.shared.prune(pid: session.pid)
-        }
-
+        // CFEqual 기반 UUID 재사용 정책이므로 prune 없이 snapshot 호출.
+        // 같은 UI 요소는 같은 UUID를 반환해 이전 스냅샷의 UUID가 그대로 유효하게 유지된다.
         let rootNode = await MainActor.run { () -> AccessibilityNode? in
             guard let appSession = DesktopContextManager.shared.activeSessions[session.pid] else {
                 return nil
