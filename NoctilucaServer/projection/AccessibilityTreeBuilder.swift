@@ -89,7 +89,16 @@ struct AccessibilityTreeBuilder {
         let shouldRecurse = Self.shouldRecurseInto(role: mappedRole) && (maxDepth < 0 || depth < maxDepth)
         let children: [AccessibilityNode]
         if shouldRecurse {
-            children = readChildren(element).map { child in
+            // macOS AX 구조상 menuItem의 자식은 단일 AXMenu wrapper를 거쳐 실제 항목들이 존재한다.
+            // 트리가 불필요하게 중첩되지 않도록 wrapper를 투명하게 unwrap하여 wrapper의 children을
+            // 현재 menuItem의 직접 children으로 승격시킨다.
+            let rawChildren = readChildren(element)
+            let effectiveChildren = Self.unwrapMenuWrapper(
+                rawChildren: rawChildren,
+                parentRole: mappedRole,
+                reader: readChildren
+            )
+            children = effectiveChildren.map { child in
                 buildNode(element: child, depth: depth + 1, parentId: id)
             }
         } else {
@@ -142,6 +151,34 @@ struct AccessibilityTreeBuilder {
         default:
             return true
         }
+    }
+
+    /// menuItem의 자식이 정확히 하나의 AXMenu(wrapper)이면 wrapper의 children으로 대체한다.
+    /// parentRole이 menuItem이 아니거나(예: 메뉴바 루트) wrapper 패턴이 아니면 원본 그대로 반환.
+    ///
+    /// macOS AX 메뉴 계층:
+    ///   AXMenuBar (menu)
+    ///     └─ AXMenuBarItem (menuItem, title="File")
+    ///         └─ AXMenu (wrapper, title="")
+    ///             ├─ AXMenuItem "New"
+    ///             └─ AXMenuItem "Open"
+    /// 위 구조에서 wrapper AXMenu를 투명 처리하여 MenuBarItem이 직접 MenuItem들을 자식으로
+    /// 갖는 것처럼 트리를 평탄화한다.
+    private static func unwrapMenuWrapper(
+        rawChildren: [AXUIElement],
+        parentRole: AccessibilityNodeRole,
+        reader: (AXUIElement) -> [AXUIElement]
+    ) -> [AXUIElement] {
+        guard parentRole == .menuItem else { return rawChildren }
+        guard rawChildren.count == 1 else { return rawChildren }
+
+        var roleValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(rawChildren[0], kAXRoleAttribute as CFString, &roleValue) == .success,
+              let role = roleValue as? String,
+              role == "AXMenu" else {
+            return rawChildren
+        }
+        return reader(rawChildren[0])
     }
 
     // MARK: - AX Readers
