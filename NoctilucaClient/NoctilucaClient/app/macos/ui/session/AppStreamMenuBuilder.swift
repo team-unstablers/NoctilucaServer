@@ -195,6 +195,13 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
             return
         }
 
+        // 단축키(keyEquivalent)로 invoke된 경우는 HIDIO 경로가 이미 원격 앱에 키 이벤트를
+        // 전달하므로 DispatchAction을 보내면 이중 실행이 발생한다. 메뉴를 직접 클릭한
+        // 경우(leftMouseUp 등)에만 DispatchAction을 전송한다.
+        if let event = NSApp.currentEvent, event.type == .keyDown {
+            return
+        }
+
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             do {
