@@ -56,8 +56,14 @@ However, since it was originally written for use inside Noctiluca Server, correc
     
     mutating func run() throws {
         let specs: [NOCDisplaySpec] = try NOCDisplaySpec.parseList(specs)
+        // maxPixelsWide/High는 픽셀 단위 상한이므로 scaleFactor를 곱한 네이티브 해상도 기준으로 비교해야 한다.
+        // 그렇지 않으면 HiDPI 모드(예: 1280x720+2x → 2560x1440)가 상한을 초과해 WindowServer가 거부한다.
         guard let maximumResolutionSpec = specs
-            .sorted(by: { $0.resolution.width * $0.resolution.height > $1.resolution.width * $1.resolution.height })
+            .sorted(by: {
+                let lhs = $0.resolution.width * $0.scaleFactor * $0.resolution.height * $0.scaleFactor
+                let rhs = $1.resolution.width * $1.scaleFactor * $1.resolution.height * $1.scaleFactor
+                return lhs > rhs
+            })
             .first
         else {
             die("no valid display spec provided", code: 1)
@@ -87,8 +93,8 @@ However, since it was originally written for use inside Noctiluca Server, correc
         
         descriptor.sizeInMillimeters = CGSize(width: 597, height: 336)
 
-        descriptor.maxPixelsWide = UInt32(maximumResolutionSpec.resolution.width)
-        descriptor.maxPixelsHigh = UInt32(maximumResolutionSpec.resolution.height)
+        descriptor.maxPixelsWide = UInt32(maximumResolutionSpec.resolution.width * maximumResolutionSpec.scaleFactor)
+        descriptor.maxPixelsHigh = UInt32(maximumResolutionSpec.resolution.height * maximumResolutionSpec.scaleFactor)
         
         descriptor.whitePoint = CGPointMake(0.3127, 0.3290)
         descriptor.redPrimary = CGPointMake(0.64, 0.33)
