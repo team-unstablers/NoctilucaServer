@@ -94,8 +94,7 @@ extension DisplayLayoutManager {
     func applyLayout(layout: [CGDirectDisplayID: CGRect?], mainDisplayID: CGDirectDisplayID? = nil) throws {
         let mainDisplayID = mainDisplayID ?? CGMainDisplayID()
         
-        guard let mainConnectionID = CoreGraphicsPrivate.CGSMainConnectionID?(),
-              let SLSConfigureDisplayEnabled = SkyLightPrivate.SLSConfigureDisplayEnabled
+        guard let SLSConfigureDisplayEnabled = SkyLightPrivate.SLSConfigureDisplayEnabled
         else {
             logger.error("applyLayout: assertion failed, private API not available")
             throw DisplayLayoutManagerError.unknownError
@@ -123,11 +122,11 @@ extension DisplayLayoutManager {
                 let cgX = Int32(frame.origin.x - mainFrame.origin.x)
                 let cgY = Int32(frame.origin.y - mainFrame.origin.y)
                 
-                try? cgEval { SLSConfigureDisplayEnabled(mainConnectionID, displayID, true) }
+                // try? cgEval { SLSConfigureDisplayEnabled(configRef!, displayID, true) }
                 try cgEval { CGConfigureDisplayOrigin(configRef, displayID, cgX, cgY) }
             } else {
                 // disable display
-                try? cgEval { SLSConfigureDisplayEnabled(mainConnectionID, displayID, false) }
+                // try? cgEval { SLSConfigureDisplayEnabled(configRef!, displayID, false) }
             }
         }
 
