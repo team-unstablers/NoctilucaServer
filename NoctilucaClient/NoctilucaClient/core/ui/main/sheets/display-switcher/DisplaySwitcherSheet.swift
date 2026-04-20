@@ -39,18 +39,18 @@ struct DisplaySwitcherSheetItem: View {
             }
             .buttonStyle(.plain)
 
-            if let onDetach {
-                Button {
-                    Task {
-                        try? await onDetach(Int(display.displayID))
-                        dismiss()
-                    }
-                } label: {
-                    Label(String(localized: "main.display_switcher.open_in_new_window", defaultValue: "별도 창으로 열기"), systemImage: "macwindow.badge.plus")
-                        .font(.caption)
+#if os(macOS)
+            Button {
+                Task {
+                    try? await onDetach(Int(display.displayID))
+                    dismiss()
                 }
-                .buttonStyle(.plain)
+            } label: {
+                Label(String(localized: "main.display_switcher.open_in_new_window", defaultValue: "별도 창으로 열기"), systemImage: "macwindow.badge.plus")
+                    .font(.caption)
             }
+            .buttonStyle(.plain)
+#endif
         }
     }
 
@@ -155,7 +155,7 @@ struct DisplaySwitcherSheet: View {
                                 } label: {
                                     Image(systemName: "x.circle.fill")
                                         .font(.system(size: 16))
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.red)
                                         .background(.white, in: Circle())
                                 }
                                 .buttonStyle(.plain)
