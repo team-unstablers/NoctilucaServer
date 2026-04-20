@@ -20,9 +20,38 @@ struct DisplaySwitcherSheetItem: View {
     @Environment(\.dismiss)
     var dismiss
 
+    @EnvironmentObject
+    private var settingsStore: SettingsStore
+
     let display: DisplayInfo
     let action: (Int) -> Void
     var onDetach: ((Int) async throws -> Void)? = nil
+
+    /// 디스플레이 분리 버튼의 레이블 텍스트.
+    /// - macOS: "별도 창으로 열기" (AppKit NSWindow 기반)
+    /// - iOS/iPadOS: "서브 디스플레이로 열기" (UIWindowScene 기반 sub-display)
+    static var detachButtonTitle: String {
+#if os(iOS)
+        return String(localized: "main.display_switcher.open_as_sub_display", defaultValue: "서브 디스플레이로 열기")
+#else
+        return String(localized: "main.display_switcher.open_in_new_window", defaultValue: "별도 창으로 열기")
+#endif
+    }
+
+    /// 디스플레이 분리 버튼 노출 여부.
+    /// - macOS: 언제나 사용 가능.
+    /// - iPadOS: idiom == .pad 이고 `projection.allowSubDisplayWindow` 설정이 켜진 경우에만 노출 (실험적 기능 opt-in).
+    /// - 기타 (iPhone 등): 비활성.
+    private var isDetachAvailable: Bool {
+#if os(macOS)
+        return true
+#elseif os(iOS)
+        return UIDevice.current.userInterfaceIdiom == .pad
+            && settingsStore.settings.projection.allowSubDisplayWindow
+#else
+        return false
+#endif
+    }
 
     var body: some View {
         VStack {
@@ -39,18 +68,18 @@ struct DisplaySwitcherSheetItem: View {
             }
             .buttonStyle(.plain)
 
-#if os(macOS)
-            Button {
-                Task {
-                    try? await onDetach(Int(display.displayID))
-                    dismiss()
+            if let onDetach, isDetachAvailable {
+                Button {
+                    Task {
+                        try? await onDetach(Int(display.displayID))
+                        dismiss()
+                    }
+                } label: {
+                    Label(Self.detachButtonTitle, systemImage: "macwindow.badge.plus")
+                        .font(.caption)
                 }
-            } label: {
-                Label(String(localized: "main.display_switcher.open_in_new_window", defaultValue: "별도 창으로 열기"), systemImage: "macwindow.badge.plus")
-                    .font(.caption)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-#endif
         }
     }
 
@@ -327,6 +356,7 @@ struct DisplaySwitcherSheet: View {
             print("[Preview] applying operations: \(operations.count), mainDisplayID: \(String(describing: mainDisplayID))")
         }
     }
+    .environmentObject(SettingsStore.shared)
     /*
     .popover(isPresented: $shouldPresentSheet) {
     }
