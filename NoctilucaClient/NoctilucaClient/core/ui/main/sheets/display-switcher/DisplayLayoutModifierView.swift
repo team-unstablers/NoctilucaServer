@@ -24,6 +24,7 @@ struct DisplayLayoutModifierView: View {
 
     @State private var stagedOrigins: [DisplayID: CGPoint] = [:]
     @State private var stagedSpecs: [DisplayID: DisplaySpec] = [:]
+    @State private var stagedMainDisplayID: DisplayID?
     @State private var draggingID: DisplayID?
     @State private var dragStartOrigin: CGPoint?
     @State private var collidingIDs: Set<DisplayID> = []
@@ -37,8 +38,18 @@ struct DisplayLayoutModifierView: View {
     }
 
     private let snapThresholdScaled: CGFloat = 12
-
+    
     var body: some View {
+        ViewThatFits(in: [.horizontal, .vertical]) {
+            mainBody
+                .padding()
+            // FIXME: EmptyView() 걸면 ViewThatFits가 제대로 작동하지 않아서 어쩔 수 없이 투명한 Text로 대체
+            Text("FIXME")
+                .opacity(0.001)
+        }
+    }
+
+    private var mainBody: some View {
         HStack(spacing: 32) {
             RingoOSDialog(title: "Display Layout") {
                 VStack {
@@ -98,6 +109,11 @@ struct DisplayLayoutModifierView: View {
                                 }
                             }
                             .disabled(display.supportedSpecs.isEmpty)
+
+                            Toggle(isOn: mainDisplayBinding(for: display)) {
+                                Text("메인 디스플레이로 설정")
+                            }
+                            .disabled(effectiveMainDisplayID == display.displayID)
                         }
                         .padding()
                     } else {
@@ -176,11 +192,40 @@ struct DisplayLayoutModifierView: View {
 
     private var isDirty: Bool {
         if !stagedSpecs.isEmpty { return true }
+        if let staged = stagedMainDisplayID, staged != currentMainDisplayID { return true }
         for display in displays {
             guard let staged = stagedOrigins[display.displayID] else { return true }
             if staged.x != display.bounds.x || staged.y != display.bounds.y { return true }
         }
         return false
+    }
+
+    // MARK: - Main Display
+
+    private var currentMainDisplayID: DisplayID? {
+        displays.first { $0.state.isPrimary }?.displayID
+    }
+
+    /// staged된 메인이 있으면 그것, 없으면 현재 서버 상태의 메인.
+    private var effectiveMainDisplayID: DisplayID? {
+        stagedMainDisplayID ?? currentMainDisplayID
+    }
+
+    /// 디스플레이별 '메인으로 지정' 토글 binding.
+    /// OFF로 토글하는 동작은 무시한다 (메인은 항상 하나여야 하므로).
+    /// 사용자가 원래 메인 디스플레이의 토글을 다시 켜면 staged 변경이 취소된다.
+    private func mainDisplayBinding(for display: DisplayInfo) -> Binding<Bool> {
+        Binding(
+            get: { effectiveMainDisplayID == display.displayID },
+            set: { newValue in
+                guard newValue else { return }
+                if currentMainDisplayID == display.displayID {
+                    stagedMainDisplayID = nil
+                } else {
+                    stagedMainDisplayID = display.displayID
+                }
+            }
+        )
     }
 
     // MARK: - Spec Selection
@@ -427,6 +472,7 @@ struct DisplayLayoutModifierView: View {
         }
         stagedOrigins = next
         stagedSpecs.removeAll()
+        stagedMainDisplayID = nil
     }
 
     private func applyChanges() async {
@@ -447,12 +493,16 @@ struct DisplayLayoutModifierView: View {
             )
             operations.append(DisplayOperation(operation: .change(change)))
         }
-        guard !operations.isEmpty else { return }
+
+        let mainChanged = stagedMainDisplayID != nil && stagedMainDisplayID != currentMainDisplayID
+        let mainIDToSend: UInt32? = mainChanged ? stagedMainDisplayID : nil
+
+        guard !operations.isEmpty || mainChanged else { return }
 
         isApplying = true
         lastError = nil
         do {
-            try await onApply(operations, nil)
+            try await onApply(operations, mainIDToSend)
         } catch {
             lastError = String(describing: error)
         }
