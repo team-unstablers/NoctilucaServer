@@ -165,12 +165,14 @@ struct MainWindowRemoteSessionView: View {
     func dispatchDisplaySwitcherAction(_ action: DisplaySwitcherAction) async throws {
         switch action {
         case .switchDisplay(let displayID):
+            viewModel.shouldPresentDisplaySwitchSheet = false
             do {
                 try await self.updateProjectionTarget(displayID)
             } catch {
                 Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
             }
         case .createDetachedDisplay(let displayID):
+            viewModel.shouldPresentDisplaySwitchSheet = false
             try await viewModel.onDetachDisplay?(displayID)
         case .createVirtualDisplay(let spec):
             let siriusSpec = DisplaySpec(

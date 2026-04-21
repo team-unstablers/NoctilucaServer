@@ -17,9 +17,6 @@ import UIKit
 import SiriusKitClient
 
 struct DisplaySwitcherSheetItem: View {
-    @Environment(\.dismiss)
-    var dismiss
-
     @EnvironmentObject
     private var settingsStore: SettingsStore
 
@@ -46,7 +43,6 @@ struct DisplaySwitcherSheetItem: View {
         VStack {
             Button {
                 action(Int(display.displayID))
-                dismiss()
             } label: {
                 VStack {
                     displayThumbnailView(for: display)
@@ -61,7 +57,6 @@ struct DisplaySwitcherSheetItem: View {
                 Button {
                     Task {
                         try? await onDetach(Int(display.displayID))
-                        dismiss()
                     }
                 } label: {
                     Label(
@@ -101,9 +96,6 @@ struct DisplaySwitcherSheetItem: View {
 }
 
 struct DisplaySwitcherSheetAddVirtualDisplayItem: View {
-    @Environment(\.dismiss)
-    var dismiss
-
     let action: () -> Void
 
     var body: some View {
@@ -140,17 +132,14 @@ enum DisplaySwitcherAction: Sendable {
 }
 
 struct DisplaySwitcherSheet: View {
-    @Environment(\.dismiss)
-    var dismiss
-
     let displays: [DisplayInfo]
     let currentActive: Int?
 
     let actionHandler: ((DisplaySwitcherAction) async throws -> Void)
-    
+
     @State
     var shouldPresentAddVirtualDisplaySheet: Bool = false
-    
+
     @State
     var actionHandlerTask: Task<Void, Never>? = nil
 
@@ -340,8 +329,9 @@ struct DisplaySwitcherSheet: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(.red)
     .sessionOverlay(isPresented: $shouldPresentSheet) {
-        DisplaySwitcherSheet(displays: displays, currentActive: nil) { displayID in
-            print("선택된 디스플레이 ID: \(displayID)")
+        DisplaySwitcherSheet(displays: displays, currentActive: nil) { action in
+            print("선택된 액션: \(action)")
+            shouldPresentSheet = false
         }
     } subcontent: {
         DisplayLayoutModifierView(displays: displays) { operations, mainDisplayID in
