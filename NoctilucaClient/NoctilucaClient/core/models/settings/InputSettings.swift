@@ -121,6 +121,9 @@ extension AppSettings {
         var unlockKeySequence: KeySequence = KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
         var redirectionMethod: InputRedirectionMethod = .gameController
         var modifierKeyOverrides: ModifierKeyOverrides = .init()
+#if os(macOS)
+        var redirectKnownShortcuts: Bool = false
+#endif
 #if os(iOS)
         var enableGCMouse: Bool = true
 #endif
@@ -132,6 +135,10 @@ extension AppSettings {
         var invertVerticalScroll: Bool = false
         var invertHorizontalScroll: Bool = false
         var mouseScrollMultiplier: Double = 1.0
+#if os(macOS)
+        var mouseAccelerationMode: MouseAccelerationMode = .adaptive
+        var mouseAccelerationSensitivity: Double = -0.3
+#endif
 
         init() {}
 
@@ -140,6 +147,9 @@ extension AppSettings {
             case unlockKeySequence
             case redirectionMethod
             case modifierKeyOverrides
+#if os(macOS)
+            case redirectKnownShortcuts
+#endif
 #if os(iOS)
             case enableGCMouse
 #endif
@@ -151,6 +161,10 @@ extension AppSettings {
             case invertVerticalScroll
             case invertHorizontalScroll
             case mouseScrollMultiplier
+#if os(macOS)
+            case mouseAccelerationMode
+            case mouseAccelerationSensitivity
+#endif
         }
 
         init(from decoder: any Decoder) throws {
@@ -164,6 +178,9 @@ extension AppSettings {
             unlockKeySequence = container.decodeSafe(KeySequence.self, forKey: .unlockKeySequence, default: unlockKeySequence)
             redirectionMethod = container.decodeSafe(InputRedirectionMethod.self, forKey: .redirectionMethod, default: redirectionMethod)
             modifierKeyOverrides = container.decodeSafe(ModifierKeyOverrides.self, forKey: .modifierKeyOverrides, default: modifierKeyOverrides)
+#if os(macOS)
+            redirectKnownShortcuts = container.decodeSafe(Bool.self, forKey: .redirectKnownShortcuts, default: redirectKnownShortcuts)
+#endif
 #if os(iOS)
             enableGCMouse = container.decodeSafe(Bool.self, forKey: .enableGCMouse, default: enableGCMouse)
 #endif
@@ -175,6 +192,10 @@ extension AppSettings {
             invertVerticalScroll = container.decodeSafe(Bool.self, forKey: .invertVerticalScroll, default: invertVerticalScroll)
             invertHorizontalScroll = container.decodeSafe(Bool.self, forKey: .invertHorizontalScroll, default: invertHorizontalScroll)
             mouseScrollMultiplier = container.decodeSafe(Double.self, forKey: .mouseScrollMultiplier, default: mouseScrollMultiplier)
+#if os(macOS)
+            mouseAccelerationMode = container.decodeSafe(MouseAccelerationMode.self, forKey: .mouseAccelerationMode, default: mouseAccelerationMode)
+            mouseAccelerationSensitivity = container.decodeSafe(Double.self, forKey: .mouseAccelerationSensitivity, default: mouseAccelerationSensitivity)
+#endif
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -183,6 +204,9 @@ extension AppSettings {
             try container.encode(unlockKeySequence, forKey: .unlockKeySequence)
             try container.encode(redirectionMethod, forKey: .redirectionMethod)
             try container.encode(modifierKeyOverrides, forKey: .modifierKeyOverrides)
+#if os(macOS)
+            try container.encode(redirectKnownShortcuts, forKey: .redirectKnownShortcuts)
+#endif
 #if os(iOS)
             try container.encode(enableGCMouse, forKey: .enableGCMouse)
 #endif
@@ -194,6 +218,10 @@ extension AppSettings {
             try container.encode(invertVerticalScroll, forKey: .invertVerticalScroll)
             try container.encode(invertHorizontalScroll, forKey: .invertHorizontalScroll)
             try container.encode(mouseScrollMultiplier, forKey: .mouseScrollMultiplier)
+#if os(macOS)
+            try container.encode(mouseAccelerationMode, forKey: .mouseAccelerationMode)
+            try container.encode(mouseAccelerationSensitivity, forKey: .mouseAccelerationSensitivity)
+#endif
         }
     }
 }
