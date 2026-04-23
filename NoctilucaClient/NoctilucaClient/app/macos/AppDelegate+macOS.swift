@@ -7,6 +7,7 @@
 
 #if os(macOS)
 import AppKit
+import Combine
 
 import SiriusKitClient
 
@@ -27,6 +28,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var mainWindowControllers: [AppKitMainWindowController] = []
     private var settingsWindowController: AppKitSettingsWindowController?
     private var aboutAppWindowController: AppKitAboutAppWindowController?
+
+    private let menuShortcutRedirector = MenuShortcutRedirector()
+    private var settingsCancellable: AnyCancellable?
+    private var keyWindowObservers: [NSObjectProtocol] = []
 
     static func main() {
         let app = NSApplication.shared
@@ -54,8 +59,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         NSApp.setActivationPolicy(.regular)
         setupMainMenu()
-        
-        
+
+        if let mainMenu = NSApp.mainMenu {
+            menuShortcutRedirector.install(in: mainMenu)
+        }
+        subscribeShortcutRedirectionTriggers()
+
         openNewMainWindow(nil)
     }
     
@@ -91,12 +100,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = AppKitMainWindowController(settingsStore: settingsStore)
         controller.onClose = { [weak self] closedController in
             self?.mainWindowControllers.removeAll { $0 === closedController }
+            self?.reevaluateShortcutRedirection()
+        }
+        controller.onRemoteSessionChanged = { [weak self] in
+            self?.reevaluateShortcutRedirection()
         }
         mainWindowControllers.append(controller)
-        
+
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        reevaluateShortcutRedirection()
     }
     
     @objc
@@ -122,6 +137,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    private func subscribeShortcutRedirectionTriggers() {
+        settingsCancellable = settingsStore.$settings
+            .map { $0?.input.redirectKnownShortcuts ?? false }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.reevaluateShortcutRedirection()
+            }
+
+        let center = NotificationCenter.default
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification] {
+            let observer = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.reevaluateShortcutRedirection()
+                }
+            }
+            keyWindowObservers.append(observer)
+        }
+    }
+
+    private func reevaluateShortcutRedirection() {
+        let enabled = settingsStore.settings.input.redirectKnownShortcuts
+        let keyWindow = NSApp.keyWindow
+        let mainKeyActive = mainWindowControllers.contains { controller in
+            controller.window === keyWindow && controller.hasActiveRemoteSession
+        }
+        menuShortcutRedirector.setActive(enabled && mainKeyActive)
+    }
+
     private func setupMainMenu() {
         let mainMenu = NSMenu()
         NSApp.mainMenu = mainMenu

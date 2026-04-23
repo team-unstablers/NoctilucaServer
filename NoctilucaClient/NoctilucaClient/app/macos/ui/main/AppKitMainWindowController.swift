@@ -17,6 +17,11 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     private let viewModel: SessionWindowViewModel
     private let toolbarController: MainToolbar
     var onClose: ((AppKitMainWindowController) -> Void)?
+    var onRemoteSessionChanged: (() -> Void)?
+
+    var hasActiveRemoteSession: Bool {
+        viewModel.remoteSession != nil
+    }
 
     private weak var mainWindow: NSWindow?
     
@@ -81,6 +86,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
                 self.debugWindowController?.close()
                 self.debugWindowController = nil
             }
+            self.onRemoteSessionChanged?()
         }
 
         debugWindowCancellable = SettingsStore.shared.$settings
