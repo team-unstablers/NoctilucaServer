@@ -156,10 +156,8 @@ extension MockServer: SiriusServerDelegate {
         }
     }
 
-    nonisolated func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession) {
-        Task { [weak self] in
-            await self?.didAcceptSession(session)
-        }
+    nonisolated func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession) async {
+        await self.didAcceptSession(session)
     }
 
     nonisolated func siriusServerDidFailToAcceptClientSession(_ server: SiriusServer, error: any Error) {

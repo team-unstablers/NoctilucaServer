@@ -302,21 +302,33 @@ extension NoctilucaServer: SiriusServerDelegate {
         logger.error("NoctilucaServer encountered an error: \(error)")
     }
     
-    nonisolated func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) {
-        Task { @MainActor in
-            let session = NoctilucaClientSession(session: session, server: context)
-            await session.setDelegate(self)
-            await session.initialize()
-            
-            let maxConcurrentSessions = self.settings.general.maxConcurrentSessions
-            
-            guard self.clients.count < maxConcurrentSessions else {
-                logger.info("Maximum concurrent sessions exceeded (\(maxConcurrentSessions)), rejecting session")
-                Task { await session.closeWithGoodbye(code: .sessionAllocationFailed) }
-                return
+    nonisolated func siriusServerDidAcceptClientSession(_ server: SiriusKit.SiriusServer, session: SiriusKit.ClientSession) async {
+        // NoctilucaClientSession.init 내부에서 ClientSession.delegate가 동기적으로 세팅된다.
+        // SiriusServer.createClientSession은 이 delegate 메서드가 await 귀환한 뒤에 session.activate()를
+        // 호출하므로, 여기서 MainActor 경계로 진입해 NoctilucaClientSession 생성을 끝내야 한다.
+        // 그렇지 않으면 loopback 환경에서 activate() 내부 Task가 쏘는
+        // clientSessionDidCreateMainChannel 콜백이 delegate가 아직 nil인 상태에서 실행되어 소실되고,
+        // 메인 채널 이벤트 루프가 시작되지 않아 5초 뒤 phase shift assertion이 터진다.
+        await MainActor.run {
+            let clientSession = NoctilucaClientSession(session: session, server: self.context)
+
+            // 나머지 초기화/수용 체크는 delegate 리턴을 블로킹할 이유가 없으므로 백그라운드 Task로 분리한다.
+            // clientSession은 이 Task가 strong-capture하므로, ClientSession.delegate(weak)에서
+            // 해제되는 문제는 없다.
+            Task { @MainActor in
+                await clientSession.setDelegate(self)
+                await clientSession.initialize()
+
+                let maxConcurrentSessions = self.settings.general.maxConcurrentSessions
+
+                guard self.clients.count < maxConcurrentSessions else {
+                    self.logger.info("Maximum concurrent sessions exceeded (\(maxConcurrentSessions)), rejecting session")
+                    Task { await clientSession.closeWithGoodbye(code: .sessionAllocationFailed) }
+                    return
+                }
+
+                await self.addClientSession(clientSession)
             }
-            
-            await self.addClientSession(session)
         }
     }
     
