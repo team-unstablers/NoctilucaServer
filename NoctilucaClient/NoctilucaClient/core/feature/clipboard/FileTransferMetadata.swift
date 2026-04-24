@@ -47,6 +47,23 @@ struct DirectoryEntry: Codable {
     var isDirectory: Bool {
         contentType == FileTransferContentType.directory
     }
+
+    /// 원격에서 수신한 name이 안전한 단일 path component인지 검증한다.
+    /// 경로 분리자(`/`), `..`, 빈 문자열, `.` 은 거부한다.
+    /// 수신 측이 `parent.path + "/" + entry.name` 으로 재귀 경로를 만들기 전에
+    /// 반드시 호출되어야 한다.
+    var hasSafeName: Bool {
+        guard !name.isEmpty else { return false }
+        guard name != "." && name != ".." else { return false }
+        guard !name.contains("/") else { return false }
+        guard !name.contains("\0") else { return false }
+        // path component 로 해석했을 때 부모 경로가 나오지 않아야 한다.
+        if name.contains("..") {
+            let comps = name.split(separator: "/", omittingEmptySubsequences: false)
+            if comps.contains(where: { $0 == ".." }) { return false }
+        }
+        return true
+    }
 }
 
 // MARK: - FileTransferSnapshot

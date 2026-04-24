@@ -53,6 +53,11 @@ final class FileTransferCoordinator: NSObject, Sendable {
         let listing = try await requestDirectoryListing(metadata: metadata)
 
         for entry in listing {
+            guard entry.hasSafeName else {
+                logger.warning("Rejected directory entry with unsafe name: \(entry.name)")
+                continue
+            }
+
             let childMetadata = FileTransferMetadata(
                 name: entry.name,
                 path: metadata.path + "/" + entry.name,
@@ -137,6 +142,11 @@ final class FileTransferCoordinator: NSObject, Sendable {
 
         // 3. 각 항목 다운로드
         for entry in listing {
+            guard entry.hasSafeName else {
+                logger.warning("Rejected directory entry with unsafe name: \(entry.name)")
+                continue
+            }
+
             let childURL = destinationURL.appendingPathComponent(entry.name)
             let childMetadata = FileTransferMetadata(
                 name: entry.name,
