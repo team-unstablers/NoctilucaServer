@@ -272,7 +272,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter, @unchecked Sendable { // T
             fm.createFile(atPath: url.path, contents: nil)
             // sparse file: 디스크 블록을 할당하지 않고 파일 크기만 설정
             if metadata.size > 0 {
-                let fd = open(url.path, O_WRONLY)
+                let fd = open(url.path, O_WRONLY | O_NOFOLLOW | O_CLOEXEC)
                 if fd >= 0 {
                     ftruncate(fd, off_t(metadata.size))
                     close(fd)
