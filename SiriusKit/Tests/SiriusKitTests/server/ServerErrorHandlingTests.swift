@@ -21,6 +21,7 @@ struct ServerErrorHandlingTests {
 
         harness.rootTransport.simulateError(TransportLayerError.connectionFailed(error: nil))
 
+        await harness.waitUntil { harness.serverDelegate.lastError != nil }
         #expect(harness.serverDelegate.lastError != nil)
     }
 
@@ -29,7 +30,7 @@ struct ServerErrorHandlingTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         try await sessionHarness.openMainChannel()
 
         #expect(!sessionHarness.sessionDelegate.didCloseTransport)
@@ -37,6 +38,7 @@ struct ServerErrorHandlingTests {
         await sessionHarness.clientTransport.simulateClose()
 
         #expect(sessionHarness.sessionDelegate.didCloseTransport)
+        await harness.waitForSessionsEmpty()
         #expect(await harness.server.sessions.isEmpty)
     }
 
@@ -45,9 +47,9 @@ struct ServerErrorHandlingTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let session1 = harness.simulateClientConnection()
-        let session2 = harness.simulateClientConnection()
-        let session3 = harness.simulateClientConnection()
+        let session1 = await harness.simulateClientConnection()
+        let session2 = await harness.simulateClientConnection()
+        let session3 = await harness.simulateClientConnection()
 
         #expect(await harness.server.sessions.count == 3)
         #expect(harness.serverDelegate.acceptedSessions.count == 3)
@@ -65,6 +67,7 @@ struct ServerErrorHandlingTests {
 
         #expect(session1.sessionDelegate.didCloseTransport)
         #expect(!session2.sessionDelegate.didCloseTransport)
+        await harness.waitForSessionsCount(2)
         #expect(await harness.server.sessions.count == 2)
     }
 

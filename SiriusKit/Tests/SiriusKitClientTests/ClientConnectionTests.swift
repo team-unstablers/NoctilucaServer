@@ -44,6 +44,14 @@ struct ClientConnectionTests {
 
         await harness.client.shutdown()
 
+        // SiriusClient.shutdown()는 transport.disconnect()를 `Task.detached { ... }`로
+        // 분리 호출한다. 실제 호출이 반영될 때까지 짧게 대기한다.
+        let deadline = Date().addingTimeInterval(2)
+        while !harness.transport.disconnectCalled {
+            if Date() > deadline { break }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+
         #expect(harness.transport.disconnectCalled)
     }
 }

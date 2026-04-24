@@ -17,7 +17,7 @@ struct ServerHandshakeTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         let clientHelloFrame = try FrameBuilder.clientHelloFrame(
@@ -50,7 +50,7 @@ struct ServerHandshakeTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         let features = [
@@ -82,7 +82,7 @@ struct ServerHandshakeTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         try await mainChannel.sendServerNotice(ServerNotice(

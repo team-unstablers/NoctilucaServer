@@ -25,6 +25,7 @@ struct ServerLifecycleTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
+        await harness.waitUntil { harness.serverDelegate.didStart }
         #expect(harness.serverDelegate.didStart)
     }
 
@@ -35,6 +36,7 @@ struct ServerLifecycleTests {
         try await harness.shutdown()
 
         #expect(harness.rootTransport.shutdownCalled)
+        await harness.waitUntil { harness.serverDelegate.didStop }
         #expect(harness.serverDelegate.didStop)
     }
 }
