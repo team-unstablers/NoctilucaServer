@@ -489,7 +489,7 @@ struct DisplayLayoutModifierView: View {
                 displayID: d.displayID,
                 spec: stagedSpec,
                 rotation: nil,
-                position: positionChanged ? stagedOrigin.map { SRPoint(x: $0.x, y: $0.y) } : nil
+                origin: positionChanged ? stagedOrigin.map { SRPoint(x: $0.x, y: $0.y) } : nil
             )
             operations.append(DisplayOperation(operation: .change(change)))
         }

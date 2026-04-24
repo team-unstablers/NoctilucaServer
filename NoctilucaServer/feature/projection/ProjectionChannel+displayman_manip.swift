@@ -124,9 +124,9 @@ extension ProjectionChannel {
             // TODO: change.rotation 적용 (NOC 측 회전 인프라 부재)
         }
 
-        // ── Phase 3b: Layout/SetEnable/Position + mainDisplayID (단일 atomic apply)
-        let hasPositionChange = changes.contains { $0.position != nil }
-        if !setEnables.isEmpty || request.mainDisplayID != nil || hasPositionChange {
+        // ── Phase 3b: Layout/SetEnable/Origin + mainDisplayID (단일 atomic apply)
+        let hasOriginChange = changes.contains { $0.origin != nil }
+        if !setEnables.isEmpty || request.mainDisplayID != nil || hasOriginChange {
             do {
                 try await MainActor.run {
                     var layoutMap: [CGDirectDisplayID: CGRect?] = [:]
@@ -146,17 +146,17 @@ extension ProjectionChannel {
                         }
                     }
 
-                    // position 변경 반영: 기존 size는 유지하고 origin만 교체
+                    // origin 변경 반영: 기존 size는 유지하고 origin만 교체
                     for change in changes {
-                        guard let position = change.position else { continue }
+                        guard let origin = change.origin else { continue }
                         let id = CGDirectDisplayID(change.displayID)
                         if let existing = layoutMap[id], let frame = existing {
                             layoutMap[id] = CGRect(
-                                origin: CGPoint(x: position.x, y: position.y),
+                                origin: CGPoint(x: origin.x, y: origin.y),
                                 size: frame.size
                             )
                         }
-                        // 비활성화 상태(frame == nil)인 디스플레이에는 position 적용하지 않음
+                        // 비활성화 상태(frame == nil)인 디스플레이에는 origin 적용하지 않음
                     }
 
                     let mainID = request.mainDisplayID.map { CGDirectDisplayID($0) }
