@@ -62,6 +62,27 @@ extension ProjectionChannel {
             return
         }
 
+        for create in creates {
+            guard !create.desiredSpecs.isEmpty else {
+                try await sendDisplayTransactionResponse(transactionID: txID, isSuccess: false, reason: "virtual display \(create.identifier): desiredSpecs is empty")
+                return
+            }
+
+            for siriusSpec in create.desiredSpecs {
+                let spec = NOCDisplaySpec(from: siriusSpec)
+                do {
+                    try spec.validateForVirtualDisplay()
+                } catch {
+                    try await sendDisplayTransactionResponse(
+                        transactionID: txID,
+                        isSuccess: false,
+                        reason: "virtual display \(create.identifier): invalid spec '\(spec)': \(error)"
+                    )
+                    return
+                }
+            }
+        }
+
         let layoutManager = await DisplayLayoutManager.shared
         let knownDisplayIDs = await MainActor.run {
             Set(layoutManager.displayLayouts.snapshot().keys)

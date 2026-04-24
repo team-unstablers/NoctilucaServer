@@ -11,6 +11,8 @@
 		F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */ = {isa = PBXBuildFile; productRef = F61AB32D2F4146CF00BB69AF /* Gesu */; };
 		F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; };
 		F621CB052F8AC11900AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F621CB072F8AC11A00AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */; };
+		F621CB092F8AC11A00AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F621D2102F91FDA500AEF0FA /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F621D20F2F91FDA500AEF0FA /* ArgumentParser */; };
 		F621D22B2F93287B00AEF0FA /* nocvirtdisplay in CopyFiles */ = {isa = PBXBuildFile; fileRef = F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; };
@@ -167,6 +169,7 @@
 				F6CC83972F5B522800AA6DC2 /* libbcrypt.framework in Embed Frameworks */,
 				F6CC83982F5B522800AA6DC2 /* NoctilucaPluginKit.framework in Embed Frameworks */,
 				F6CC83992F5B522800AA6DC2 /* Gesu in Embed Frameworks */,
+				F621CB092F8AC11A00AEF0FA /* NoctilucaLibVPX in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -205,6 +208,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"projection/display-layout/NOCDisplaySpec.swift",
+				"projection/display-layout/NOCDisplaySpec+Validation.swift",
 			);
 			target = F621D2062F91FC4F00AEF0FA /* nocvirtdisplay */;
 		};
@@ -398,6 +402,7 @@
 				F6CC838E2F5B522800AA6DC2 /* NoctilucaPluginKit.framework in Frameworks */,
 				F6CC838F2F5B522800AA6DC2 /* AsyncAlgorithms in Frameworks */,
 				F6CC83902F5B522800AA6DC2 /* Alamofire in Frameworks */,
+				F621CB072F8AC11A00AEF0FA /* NoctilucaLibVPX in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -591,6 +596,7 @@
 				F6CC837B2F5B522800AA6DC2 /* Sparkle */,
 				F6CC837D2F5B522800AA6DC2 /* Alamofire */,
 				F6CC837F2F5B522800AA6DC2 /* Inject */,
+				F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */,
 			);
 			productName = NoctilucaServer;
 			productReference = F6CC839F2F5B522800AA6DC2 /* NoctilucaServerTestsHost.app */;
@@ -1431,6 +1437,10 @@
 			productName = Gesu;
 		};
 		F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NoctilucaLibVPX;
+		};
+		F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NoctilucaLibVPX;
 		};

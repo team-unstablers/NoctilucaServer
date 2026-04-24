@@ -37,6 +37,7 @@ EXIT CODES (RETVALS):
 - 1: Failed to initialize CGVirtualDisplay (descriptor rejected)
 - 2: Failed to apply display settings (applySettings returned false)
 - 3: Failed to acquire displayID (returned 0)
+- 4: Display spec rejected by guard policy (resolution/scale/refresh/aspect out of range)
 - 64: Argument parsing failure (ArgumentParser default)
 
 NOTE:
@@ -56,6 +57,17 @@ However, since it was originally written for use inside Noctiluca Server, correc
     
     mutating func run() throws {
         let specs: [NOCDisplaySpec] = try NOCDisplaySpec.parseList(specs)
+
+        // 가드 정책 검증. 서버에서도 동일 검증을 수행하지만, helper를 독립 실행하는 경우에도
+        // 이상 해상도(1x1, 262144x2 등)로 인해 WindowServer가 이상 상태에 빠지는 걸 막는다.
+        for spec in specs {
+            do {
+                try spec.validateForVirtualDisplay()
+            } catch {
+                die("spec '\(spec)' rejected: \(error)", code: 4)
+            }
+        }
+
         // maxPixelsWide/High는 픽셀 단위 상한이므로 scaleFactor를 곱한 네이티브 해상도 기준으로 비교해야 한다.
         // 그렇지 않으면 HiDPI 모드(예: 1280x720+2x → 2560x1440)가 상한을 초과해 WindowServer가 거부한다.
         guard let maximumResolutionSpec = specs
