@@ -22,6 +22,7 @@ enum NoctilucaClientError: LocalizedError {
     case remoteClosedConnection
     case authNegotiationFailed(authMethods: [ClientAuthMethod])
     case sessionClosedByServer(ClosureCode, String?)
+    case serverNoticeReceived(ServerNoticeCode, String?)
     case audioProjectionInitializationFailed(message: String)
     case connectionFailed(Error)
 
@@ -46,6 +47,8 @@ enum NoctilucaClientError: LocalizedError {
             return String(format: String(localized: "error.auth_negotiation_failed", defaultValue: "인증 방법 협상에 실패했습니다.\n서버에서 인증 방법으로 %@를 제시했지만, 현재 버전의 클라이언트에서는 이 중 아무것도 지원하지 않습니다."), joined)
         case .sessionClosedByServer(let code, let message):
             return Self.descriptionForClosureCode(code, message: message)
+        case .serverNoticeReceived(let code, let message):
+            return Self.descriptionForServerNoticeCode(code, message: message)
         case .audioProjectionInitializationFailed(let message):
             return String(format: String(localized: "error.audio_projection_init_failed", defaultValue: "오디오 프로젝션 초기화에 실패했습니다.\n%@"), message)
         case .connectionFailed(let error):
@@ -75,12 +78,36 @@ enum NoctilucaClientError: LocalizedError {
             base = String(localized: "error.closure.protocol_error", defaultValue: "프로토콜 오류로 인해 호스트가 연결을 종료했습니다.")
         case .internalServerError:
             base = String(localized: "error.closure.internal_server_error", defaultValue: "호스트 내부 오류로 인해 연결이 종료되었습니다.")
-        case .authenticationFailed:
-            base = String(localized: "error.closure.authentication_failed", defaultValue: "인증 실패로 인해 연결이 종료되었습니다.")
-        case .sessionAllocationFailed:
-            base = String(localized: "error.closure.session_allocation_failed", defaultValue: "서버의 세션 할당 실패로 인해 연결이 종료되었습니다.")
         default:
             base = String(format: String(localized: "error.closure.unknown_code", defaultValue: "호스트가 연결을 종료했습니다. (코드: %@)"), String(code.rawValue))
+        }
+        if let message, !message.isEmpty {
+            return "\(base)\n\(message)"
+        }
+        return base
+    }
+
+    private static func descriptionForServerNoticeCode(_ code: ServerNoticeCode, message: String?) -> String {
+        let base: String
+        switch code {
+        case .authenticationFailed:
+            base = String(localized: "error.notice.authentication_failed", defaultValue: "인증에 실패했습니다.")
+        case .sessionAllocationFailed:
+            base = String(localized: "error.notice.session_allocation_failed", defaultValue: "서버가 세션 시트를 할당할 수 없습니다. (자원 부족 또는 동시 세션 수 초과)")
+        case .timeout:
+            base = String(localized: "error.notice.timeout", defaultValue: "응답이 제한 시간 내에 오지 않았습니다.")
+        case .frameTooLarge:
+            base = String(localized: "error.notice.frame_too_large", defaultValue: "프로토콜 규격을 초과하는 크기의 프레임이 감지되었습니다.")
+        case .unsupportedOpcode:
+            base = String(localized: "error.notice.unsupported_opcode", defaultValue: "서버가 이해할 수 없는 메시지를 수신했습니다.")
+        case .unsupportedAuthMethod:
+            base = String(localized: "error.notice.unsupported_auth_method", defaultValue: "서버가 지원하지 않는 인증 방식입니다.")
+        case .nonceMismatch:
+            base = String(localized: "error.notice.nonce_mismatch", defaultValue: "인증 nonce가 일치하지 않습니다.")
+        case .internalServerError:
+            base = String(localized: "error.notice.internal_server_error", defaultValue: "서버 내부 오류가 발생했습니다.")
+        default:
+            base = String(format: String(localized: "error.notice.unknown_code", defaultValue: "서버가 알림을 보냈습니다. (코드: 0x%@)"), String(code.rawValue, radix: 16, uppercase: true))
         }
         if let message, !message.isEmpty {
             return "\(base)\n\(message)"
@@ -217,6 +244,10 @@ final class NoctilucaClient: ObservableObject, Sendable {
 
     private var eventLoopTask: Task<Void, Never>?
 
+    /// 서버로부터 FATAL `ServerNotice`를 수신한 경우, 곧이어 올 Goodbye와 함께 묶어 사용자에게
+    /// 더 의미있는 메시지를 노출하기 위해 임시 보관한다.
+    private var pendingFatalNotice: (code: ServerNoticeCode, message: String?)?
+
     init(_ session: SiriusClient) {
         self.session = session
         self.authenticator = ClientAuthenticator(registry: .shared)
@@ -306,12 +337,29 @@ final class NoctilucaClient: ObservableObject, Sendable {
                     try await self.handleAuthChallenge(consume message)
                 case .receivedAuthResponse(let message):
                     try await self.handleAuthResponse(consume message)
+                case .receivedServerNotice(let message):
+                    logger.info("Received ServerNotice: severity=\(message.severity.rawValue) code=0x\(String(message.code.rawValue, radix: 16, uppercase: true)) message=\(message.message)")
+                    if message.severity == .fatal {
+                        // FATAL notice 뒤에는 Goodbye가 이어지므로, 상세 사유는 여기서 보관해두고
+                        // receivedGoodbye 경로에서 합쳐서 UI로 노출한다.
+                        self.pendingFatalNotice = (code: message.code, message: message.message.isEmpty ? nil : message.message)
+                    }
                 case .receivedGoodbye(let message):
                     logger.info("Received Goodbye from server: code=\(message.code.rawValue), message=\(message.message ?? "(none)")")
+                    let pending = self.pendingFatalNotice
+                    self.pendingFatalNotice = nil
                     await MainActor.run {
-                        self.uiEvents.send(.errorOccurred(.sessionClosedByServer(message.code, message.message)))
+                        if let pending {
+                            self.uiEvents.send(.errorOccurred(.serverNoticeReceived(pending.code, pending.message ?? message.message)))
+                        } else {
+                            self.uiEvents.send(.errorOccurred(.sessionClosedByServer(message.code, message.message)))
+                        }
                     }
                     await self.close()
+                    return
+
+                case .streamError(let error):
+                    await self.handleStreamError(error)
                     return
 
                 case .receivedPong:
@@ -478,6 +526,26 @@ final class NoctilucaClient: ObservableObject, Sendable {
         }
 
         await self.close()
+    }
+
+    /// MainChannel 수신 경로에서 발생한 트랜스포트/디코더 오류를 처리한다.
+    ///
+    /// spec에 따라 클라이언트는 `ServerNotice`를 보내지 않고 `Goodbye(protocolError)`만 전송한 뒤
+    /// 연결을 종료한다. 그 외 오류는 panic으로 처리한다.
+    private func handleStreamError(_ error: any Error) async {
+        if case SiriusFrameDecoderError.frameTooLarge(let declaredLength, let limit) = error {
+            logger.warning("Frame size limit exceeded: declared=\(declaredLength) limit=\(limit)")
+            await MainActor.run {
+                self.uiEvents.send(.errorOccurred(.serverNoticeReceived(.frameTooLarge, "Declared payload length \(declaredLength) exceeds limit \(limit)")))
+            }
+            await self.closeWithGoodbye(
+                code: .protocolError,
+                message: "Declared payload length \(declaredLength) exceeds limit \(limit)"
+            )
+            return
+        }
+
+        await self.panic("Stream error: \(error.localizedDescription)")
     }
 
     func close() async {
