@@ -286,6 +286,15 @@ class PendingFileTransfer: NSObject, NSFilePresenter, @unchecked Sendable { // T
 
     private func createPlaceholder(at url: URL) {
         let fm = FileManager.default
+
+        // 보안: metadata.name이 경로 분리자/`..` 등을 포함하면 placeholder 생성을 거부한다.
+        // `appendingPathComponent`는 `..`를 리터럴로 포함시키므로 이를 막지 않으면
+        // url이 UUID 컨테이너/부모 디렉토리를 벗어날 수 있다.
+        guard metadata.name.isSafePathComponent else {
+            logger.error("Refused to create placeholder for unsafe metadata.name: \(metadata.name)")
+            return
+        }
+
         try? fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         if metadata.isDirectory {
