@@ -87,7 +87,7 @@ struct ServerHandshakeTests {
 
         try await mainChannel.sendServerNotice(ServerNotice(
             severity: .fatal,
-            code: 1,
+            code: ServerNoticeCode(rawValue: 1),
             message: "Unsupported protocol version",
             timestamp: 1234567890
         ))
@@ -99,7 +99,7 @@ struct ServerHandshakeTests {
             withOpcode: .serverNotice, as: ServerNotice.self
         )
         #expect(sentNotice?.severity == .fatal)
-        #expect(sentNotice?.code == 1)
+        #expect(sentNotice?.code == ServerNoticeCode(rawValue: 1))
         #expect(sentNotice?.message == "Unsupported protocol version")
         #expect(sentNotice?.timestamp == 1234567890)
     }

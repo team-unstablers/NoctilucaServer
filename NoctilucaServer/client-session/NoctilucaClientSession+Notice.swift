@@ -19,7 +19,7 @@ extension NoctilucaClientSession {
         
         let noticeMessage = ServerNotice(
             severity: severity,
-            code: code.rawValue,
+            code: code,
             message: message,
             timestamp: timestamp
         )

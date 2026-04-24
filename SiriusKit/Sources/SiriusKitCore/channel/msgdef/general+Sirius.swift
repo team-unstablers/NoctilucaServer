@@ -60,14 +60,14 @@ public struct ClosureCode: RawRepresentable, Equatable, Sendable {
 
 public struct ServerNotice: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_ServerNotice
-    
+
     public let severity: NoticeSeverity
-    public let code: UInt32
+    public let code: ServerNoticeCode
     public let message: String
     public let timestamp: UInt64
 
 
-    public init(severity: NoticeSeverity, code: UInt32, message: String, timestamp: UInt64) {
+    public init(severity: NoticeSeverity, code: ServerNoticeCode, message: String, timestamp: UInt64) {
         self.severity = severity
         self.code = code
         self.message = message
@@ -76,7 +76,7 @@ public struct ServerNotice: SiriusMessage {
 
     init(from protobufMessage: Sirius_Msgdef_ServerNotice) throws {
         self.severity = NoticeSeverity.fromProtobufEnum(protobufMessage.severity)
-        self.code = protobufMessage.code
+        self.code = ServerNoticeCode(rawValue: protobufMessage.code)
         self.message = protobufMessage.message
         self.timestamp = protobufMessage.timestamp
     }
@@ -85,7 +85,7 @@ public struct ServerNotice: SiriusMessage {
         var message = ProtobufMessage()
 
         message.severity = self.severity.toProtobufEnum()
-        message.code = self.code
+        message.code = self.code.rawValue
         message.message = self.message
         message.timestamp = self.timestamp
 

@@ -195,7 +195,7 @@ struct MainChannelTests {
 
         f.stream.injectFrame(try FrameBuilder.serverNoticeFrame(
             severity: .warning,
-            code: 42,
+            code: ServerNoticeCode(rawValue: 42),
             message: "hi",
             timestamp: 1234
         ))
@@ -205,7 +205,7 @@ struct MainChannelTests {
         }
 
         if case .receivedServerNotice(let notice) = event {
-            #expect(notice.code == 42)
+            #expect(notice.code == ServerNoticeCode(rawValue: 42))
             #expect(notice.message == "hi")
         } else {
             Issue.record("expected .receivedServerNotice, got \(String(describing: event))")
