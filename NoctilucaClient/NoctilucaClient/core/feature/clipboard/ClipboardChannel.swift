@@ -171,9 +171,10 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
     func serveFileTransferData(_ transferChannel: TransferChannel, name: String, path: URL, offset: Int64, length: Int64) {
         Task {
             let lastFileTransferSnapshot = await state.lastFileTransferSnapshot
-            // 보안 검증: 요청된 경로가 마지막 clipboard copy의 파일인지 확인
+            // 보안 검증: 요청된 경로가 마지막 clipboard copy의 파일인지 확인.
+            // 통과 시 정규화된 URL을 반환받아 이후 I/O에 그대로 사용한다 (TOCTOU 회피).
             guard let snapshot = lastFileTransferSnapshot,
-                  snapshot.validatePath(path.path) else {
+                  let safePath = snapshot.validatePath(path.path) else {
                 logger.warning("File transfer path validation failed: \(path.path)")
                 try? await transferChannel.handle.close()
                 return
@@ -182,17 +183,16 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
             let fm = FileManager.default
             var isDirectory: ObjCBool = false
 
-            guard fm.fileExists(atPath: path.path, isDirectory: &isDirectory) else {
-                logger.warning("File not found for transfer: \(path.path)")
+            guard fm.fileExists(atPath: safePath.path, isDirectory: &isDirectory) else {
+                logger.warning("File not found for transfer: \(safePath.path)")
                 try? await transferChannel.handle.close()
                 return
             }
 
-            // 보안 검증: 심볼릭 링크 해석 후 특수 파일(디바이스, 소켓 등) 거부
-            let resolvedPath = path.resolvingSymlinksInPath()
-            if let fileType = (try? fm.attributesOfItem(atPath: resolvedPath.path))?[.type] as? FileAttributeType,
+            // 특수 파일(디바이스, 소켓 등) 거부
+            if let fileType = (try? fm.attributesOfItem(atPath: safePath.path))?[.type] as? FileAttributeType,
                fileType != .typeRegular && fileType != .typeDirectory {
-                logger.warning("Rejected file transfer for special file: \(path.path) (resolved: \(resolvedPath.path), type: \(fileType))")
+                logger.warning("Rejected file transfer for special file: \(safePath.path) (type: \(fileType))")
                 try? await transferChannel.handle.close()
                 return
             }
@@ -200,7 +200,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
             do {
                 if isDirectory.boolValue {
                     let contents = try fm.contentsOfDirectory(
-                        at: path,
+                        at: safePath,
                         includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey]
                     )
 
@@ -226,10 +226,11 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
                     try await transferChannel.write(jsonData)
 
                 } else {
-                    let attrs = try fm.attributesOfItem(atPath: path.path)
+                    // 파일: 검증된 safePath 사용
+                    let attrs = try fm.attributesOfItem(atPath: safePath.path)
                     let fileSize = (attrs[.size] as? UInt64) ?? 0
                     let actualLength = length > 0 ? length : Int64(fileSize) - offset
-                    let mimeType = UTType(filenameExtension: path.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
+                    let mimeType = UTType(filenameExtension: safePath.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
 
                     try await transferChannel.sendStartNotification(TransferStartNotification(
                         name: name,
@@ -237,7 +238,7 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
                         contentType: mimeType,
                         description: "File transfer: \(name)"
                     ))
-                    try await transferChannel.writeFromFile(at: path, offset: offset, length: actualLength)
+                    try await transferChannel.writeFromFile(at: safePath, offset: offset, length: actualLength)
                 }
             } catch {
                 logger.error("Failed to serve file transfer: \(error)")

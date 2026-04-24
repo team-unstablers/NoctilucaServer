@@ -65,19 +65,31 @@ struct FileTransferSnapshot {
         entries[itemIndex]
     }
 
-    /// 요청된 경로가 이 스냅샷의 파일이거나 디렉토리의 하위 경로인지 검증 (보안)
-    func validatePath(_ path: String) -> Bool {
-        entries.values.contains { metadata in
-            if metadata.path == path {
-                return true
+    /// 요청된 경로가 이 스냅샷의 파일이거나 디렉토리의 하위 경로인지 검증하고,
+    /// 통과 시 정규화된 URL(심볼릭 링크 해석 + `..` 축약)을 반환합니다. 실패 시 nil.
+    ///
+    /// 호출자는 반환된 URL을 이후의 파일 I/O(`FileHandle`, `writeFromFile`, `fileExists` 등)에
+    /// 그대로 사용해야 합니다. 원본 입력 문자열을 재사용하면 TOCTOU / path traversal 우회가
+    /// 가능합니다.
+    func validatePath(_ path: String) -> URL? {
+        let requested = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+        let requestedPath = requested.path
+
+        for metadata in entries.values {
+            let root = URL(fileURLWithPath: metadata.path).standardizedFileURL.resolvingSymlinksInPath()
+            let rootPath = root.path
+
+            if requestedPath == rootPath {
+                return requested
             }
-            // 디렉토리인 경우, 하위 경로도 허용
             if metadata.isDirectory {
-                let dirPrefix = metadata.path.hasSuffix("/") ? metadata.path : metadata.path + "/"
-                return path.hasPrefix(dirPrefix)
+                let dirPrefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
+                if requestedPath.hasPrefix(dirPrefix) {
+                    return requested
+                }
             }
-            return false
         }
+        return nil
     }
 
     var isEmpty: Bool { entries.isEmpty }
