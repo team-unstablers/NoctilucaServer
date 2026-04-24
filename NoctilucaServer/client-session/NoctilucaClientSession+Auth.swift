@@ -124,7 +124,11 @@ extension NoctilucaClientSession {
             guard self.loginAttempts < server.settings.security.maxLoginAttempts else {
                 logger.warning("Maximum login attempts exceeded for session \(self.id). Closing connection.")
 
-                await self.closeWithGoodbye(code: .authenticationFailed, message: "Maximum login attempts exceeded")
+                await self.closeFatally(
+                    notice: .authenticationFailed,
+                    closure: .protocolError,
+                    message: "Maximum login attempts exceeded"
+                )
                 return
             }
             

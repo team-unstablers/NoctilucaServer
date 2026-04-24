@@ -323,7 +323,12 @@ extension NoctilucaServer: SiriusServerDelegate {
 
                 guard self.clients.count < maxConcurrentSessions else {
                     self.logger.info("Maximum concurrent sessions exceeded (\(maxConcurrentSessions)), rejecting session")
-                    Task { await clientSession.closeWithGoodbye(code: .sessionAllocationFailed) }
+                    Task {
+                        await clientSession.closeFatally(
+                            notice: .sessionAllocationFailed,
+                            closure: .internalServerError
+                        )
+                    }
                     return
                 }
 
