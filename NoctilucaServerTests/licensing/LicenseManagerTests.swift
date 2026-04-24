@@ -152,8 +152,8 @@ final class LicenseManagerTests: XCTestCase {
 
     // MARK: - Shared Fixtures
 
-    private static let keyPair = generateRSAKeyPair()
-    private static let publicKeyDER = exportDER(keyPair.publicKey)
+    nonisolated(unsafe) private static let keyPair = generateRSAKeyPair()
+    nonisolated(unsafe) private static let publicKeyDER = exportDER(keyPair.publicKey)
     private static let testHwid = "test-hwid-sha512-hash"
 
     /// 유효한 seat proof JWT를 생성한다.
