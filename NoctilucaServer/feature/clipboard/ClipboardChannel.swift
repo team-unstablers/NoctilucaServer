@@ -483,6 +483,11 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
             data += chunk
         }
 
+        if let transferError = channel.transferError {
+            logger.warning("Omitted data transfer failed (item=\(itemIndex), repr=\(reprIndex)): \(transferError)")
+            return nil
+        }
+
         return data.isEmpty ? nil : data
     }
 

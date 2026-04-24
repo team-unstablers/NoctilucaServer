@@ -116,6 +116,13 @@ final class FileTransferCoordinator: NSObject, Sendable {
             }
             try fileHandle.close()
 
+            // 전송 중 감지된 size overflow / EOF mismatch가 있으면 결과 파일을 폐기한다.
+            if let transferError = channel.transferError {
+                logger.error("Transfer failed, discarding temp file: \(transferError)")
+                try? fm.removeItem(at: tempURL)
+                throw transferError
+            }
+
             // destination 부모 디렉토리 확보 후 이동
             let parentDir = destinationURL.deletingLastPathComponent()
             if !fm.fileExists(atPath: parentDir.path) {
@@ -189,6 +196,11 @@ final class FileTransferCoordinator: NSObject, Sendable {
         var data = Data()
         for await chunk in dataStream {
             data += chunk
+        }
+
+        if let transferError = channel.transferError {
+            logger.error("Directory listing transfer failed: \(transferError)")
+            throw transferError
         }
 
         return try JSONDecoder().decode([DirectoryEntry].self, from: data)

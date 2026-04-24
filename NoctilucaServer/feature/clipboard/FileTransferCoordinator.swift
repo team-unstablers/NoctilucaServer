@@ -109,9 +109,16 @@ final class FileTransferCoordinator: NSObject, Sendable {
                 fileHandle.write(chunk)
             }
             try fileHandle.close()
-            
+
+            // 전송 중 감지된 size overflow / EOF mismatch가 있으면 결과 파일을 폐기한다.
+            if let transferError = channel.transferError {
+                logger.error("Transfer failed, discarding temp file: \(transferError)")
+                try? fm.removeItem(at: tempURL)
+                throw transferError
+            }
+
             let attr = try FileManager.default.attributesOfItem(atPath: tempURL.path())
-            
+
             if let size = attr[.size] as? UInt64,
                size != metadata.size {
                 logger.error("file size mismatch: expected \(metadata.size) but got \(size)")
@@ -190,6 +197,11 @@ final class FileTransferCoordinator: NSObject, Sendable {
         var data = Data()
         for await chunk in dataStream {
             data += chunk
+        }
+
+        if let transferError = channel.transferError {
+            logger.error("Directory listing transfer failed: \(transferError)")
+            throw transferError
         }
 
         return try JSONDecoder().decode([DirectoryEntry].self, from: data)

@@ -82,6 +82,24 @@ extension TransferChannelArgumentsSet {
     }
 }
 
+// MARK: - TransferChannelError
+
+enum TransferChannelError: Error, CustomStringConvertible {
+    /// 수신된 누적 바이트가 TransferStartNotification.totalSize를 초과함
+    case totalSizeExceeded(expected: UInt64, received: UInt64)
+    /// EOF 시점에 수신된 누적 바이트가 totalSize와 일치하지 않음
+    case totalSizeMismatch(expected: UInt64, received: UInt64)
+
+    var description: String {
+        switch self {
+        case .totalSizeExceeded(let expected, let received):
+            return "Received bytes (\(received)) exceeded declared totalSize (\(expected))"
+        case .totalSizeMismatch(let expected, let received):
+            return "Received bytes (\(received)) do not match declared totalSize (\(expected)) at EOF"
+        }
+    }
+}
+
 // MARK: - TransferState
 
 /// TransferChannel의 가변 상태를 보호하는 클래스 (Lock 기반 최적화)
@@ -99,6 +117,8 @@ final class TransferState: @unchecked Sendable {
 
     var maxSendBytesPerSecond: Int = 0
     var isCompleted: Bool = false
+    /// 수신 중 발생한 치명적 오류. 스트림 소비자가 완료 후 확인하여 결과를 폐기해야 한다.
+    var transferError: TransferChannelError? = nil
 
     func withLock<T>(_ body: (TransferState) throws -> T) rethrows -> T {
         lock.lock()
@@ -221,6 +241,12 @@ final class TransferChannel: Channel, ChannelEventConsumer {
         return state.withLock { $0.isCompleted }
     }
 
+    /// 수신 중 감지된 치명적 오류. dataStream 소비가 끝난 뒤 소비자가 확인해야 한다.
+    /// non-nil이면 수신된 데이터는 불완전/오염 상태이므로 결과 파일/버퍼를 폐기해야 한다.
+    var transferError: TransferChannelError? {
+        return state.withLock { $0.transferError }
+    }
+
     // MARK: - 수신 (handleFrame)
 
     func handleFrame(frame: SiriusFrame) async throws {
@@ -302,14 +328,27 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             }
         }
 
-        // 데이터를 AsyncStream으로 전달
+        // 데이터를 AsyncStream으로 전달. totalSize 초과 시 즉시 중단한다.
         let isEof = chunk.isEof
         let dataCount = chunk.data.count
 
-        state.withLock { state in
-            state.receivedTotalBytes += UInt64(dataCount)
+        let overflow: TransferChannelError? = state.withLock { state in
+            let newTotal = state.receivedTotalBytes + UInt64(dataCount)
+            if let declared = state.startNotification?.totalSize, declared > 0, newTotal > declared {
+                state.transferError = .totalSizeExceeded(expected: declared, received: newTotal)
+                state.dataContinuation?.finish()
+                return state.transferError
+            }
+            state.receivedTotalBytes = newTotal
             state.dataContinuation?.yield(chunk.data)
             state.expectedSequenceNumber += 1
+            return nil
+        }
+
+        if let error = overflow {
+            logger.error("\(error.description) - closing channel")
+            try? await handle.close()
+            return
         }
 
         // EOF 처리
@@ -321,18 +360,25 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
     private func handleTransferComplete() {
         let (notification, receivedBytes) = state.withLock { state -> (TransferStartNotification?, UInt64) in
-            state.dataContinuation?.finish()
             state.isCompleted = true
             return (state.startNotification, state.receivedTotalBytes)
         }
 
-        // totalSize 검증
+        // totalSize 검증. 불일치 시 transferError를 기록하여 소비자가 결과를 폐기하도록 한다.
+        // totalSize == 0 은 "알 수 없음"을 의미하며 크기 검증을 스킵한다.
         if let notification = notification, notification.totalSize > 0 {
             if receivedBytes != notification.totalSize {
-                logger.warning("Total size mismatch: expected \(notification.totalSize), received \(receivedBytes)")
+                state.withLock { state in
+                    state.transferError = .totalSizeMismatch(
+                        expected: notification.totalSize,
+                        received: receivedBytes
+                    )
+                }
+                logger.error("Total size mismatch at EOF: expected \(notification.totalSize), received \(receivedBytes)")
             }
         }
 
+        state.withLock { $0.dataContinuation?.finish() }
         logger.info("Transfer completed: received \(receivedBytes) bytes")
     }
 
