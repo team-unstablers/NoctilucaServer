@@ -124,7 +124,7 @@ class ServerRoleMsQuicStream: SiriusKitCore.Stream {
 
         for try await chunk in quicStream.receive {
             decoder.append(chunk)
-            while let frame = decoder.nextFrame() {
+            while let frame = try decoder.nextFrame() {
                 self.continuation.yield(with: .success(.frame(frame)))
             }
         }
