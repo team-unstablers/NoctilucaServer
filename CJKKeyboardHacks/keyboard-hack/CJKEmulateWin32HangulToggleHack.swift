@@ -5,14 +5,14 @@
 //  Created by Gyuhwan Park on 2/14/26.
 //
 
-import AppKit
+@preconcurrency import AppKit
 
 import Carbon
-@preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKit
 
 import Gesu
 
-final class CJKEmulateWin32HangulToggleHack: @preconcurrency KeyboardHackPluginV1 {
+final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
     static let id: String =
         "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle"
 
@@ -44,24 +44,24 @@ final class CJKEmulateWin32HangulToggleHack: @preconcurrency KeyboardHackPluginV
         .KEY_HANGEUL,
     ]
 
-    @MainActor
-    private var workaroundWindow: NSWindow
+    nonisolated(unsafe) private var workaroundWindow: NSWindow!
 
-    @MainActor
     required init() {
-        self.workaroundWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
-            styleMask: .borderless,
-            backing: .buffered,
-            defer: false
-        )
-        self.workaroundWindow.title = "CJKEmulateWin32HangulToggleHack Workaround Window"
-        self.workaroundWindow.animationBehavior = .none
-        self.workaroundWindow.alphaValue = 0
-        self.workaroundWindow.isOpaque = false
-        self.workaroundWindow.level = .floating
-        self.workaroundWindow.isReleasedWhenClosed = false
-        self.workaroundWindow.setFrame(NSRect(x: -100, y: -100, width: 1, height: 1), display: false)
+        DispatchQueue.main.sync {
+            self.workaroundWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
+                styleMask: .borderless,
+                backing: .buffered,
+                defer: false
+            )
+            self.workaroundWindow.title = "CJKEmulateWin32HangulToggleHack Workaround Window"
+            self.workaroundWindow.animationBehavior = .none
+            self.workaroundWindow.alphaValue = 0
+            self.workaroundWindow.isOpaque = false
+            self.workaroundWindow.level = .floating
+            self.workaroundWindow.isReleasedWhenClosed = false
+            self.workaroundWindow.setFrame(NSRect(x: -100, y: -100, width: 1, height: 1), display: false)
+        }
     }
 
     /// 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
