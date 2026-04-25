@@ -14,12 +14,11 @@ import UIKit
 #endif
 
 import SiriusKitClient
-import UniformTypeIdentifiers
 
 /// 수신 측에서 파일 다운로드를 조율하는 클래스.
-/// macOS에서는 NSFilePromiseProviderDelegate를 구현하여
-/// pasteboard의 file promise가 이행될 때 원격에서 파일을 다운로드한다.
-/// iOS에서는 NSItemProvider를 생성하여 파일 다운로드를 지원한다.
+/// macOS에서는 placeholder 파일 + NSFilePresenter를 통해
+/// pasteboard에서 해당 URL을 읽으려 할 때 원격에서 파일을 다운로드한다.
+/// iOS에서는 별도 extension(`+iOS`)에서 NSItemProvider 기반 사전 다운로드를 제공한다.
 final class FileTransferCoordinator: NSObject, Sendable {
     private let logger = NoctilucaLogger(category: "FileTransferCoordinator")
 
@@ -121,6 +120,13 @@ final class FileTransferCoordinator: NSObject, Sendable {
                 logger.error("Transfer failed, discarding temp file: \(transferError)")
                 try? fm.removeItem(at: tempURL)
                 throw transferError
+            }
+
+            let attr = try FileManager.default.attributesOfItem(atPath: tempURL.path())
+
+            if let size = attr[.size] as? UInt64,
+               size != metadata.size {
+                logger.error("file size mismatch: expected \(metadata.size) but got \(size)")
             }
 
             // destination 부모 디렉토리 확보 후 이동
@@ -407,97 +413,3 @@ class PendingFileTransfer: NSObject, NSFilePresenter, @unchecked Sendable { // T
         }
     }
 }
-
-// MARK: - macOS: NSFilePromiseProviderDelegate
-
-#if os(macOS)
-extension FileTransferCoordinator: NSFilePromiseProviderDelegate {
-    func filePromiseProvider(
-        _ filePromiseProvider: NSFilePromiseProvider,
-        fileNameForType fileType: String
-    ) -> String {
-        guard let metadata = filePromiseProvider.userInfo as? FileTransferMetadata else {
-            return "unknown"
-        }
-        return metadata.name
-    }
-
-    func filePromiseProvider(
-        _ filePromiseProvider: NSFilePromiseProvider,
-        writePromiseTo url: URL,
-        completionHandler: @escaping @Sendable ((any Error)?) -> Void
-    ) {
-        guard let metadata = filePromiseProvider.userInfo as? FileTransferMetadata else {
-            completionHandler(FileTransferError.fileNotFound(path: "unknown"))
-            return
-        }
-
-        Task {
-            do {
-                if metadata.isDirectory {
-                    try await self.downloadDirectory(metadata: metadata, to: url)
-                } else {
-                    try await self.downloadFile(metadata: metadata, to: url)
-                }
-                completionHandler(nil)
-            } catch {
-                self.logger.error("File promise fulfillment failed: \(error)")
-                completionHandler(error)
-            }
-        }
-    }
-
-    func operationQueue(for filePromiseProvider: NSFilePromiseProvider) -> OperationQueue {
-        return self.operationQueue
-    }
-}
-#endif
-
-// MARK: - iOS: 사전 다운로드 + NSItemProvider 생성
-
-#if os(iOS)
-extension FileTransferCoordinator {
-
-    /// 파일을 임시 디렉토리에 미리 다운로드하여 URL을 반환한다.
-    /// iOS에서는 낮은 우선순위로 실행되며, 동시 다운로드 수가 제한된다.
-    func predownloadFile(metadata: FileTransferMetadata) async throws -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-        let tempURL = tempDir.appendingPathComponent(metadata.name)
-
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-
-        if metadata.isDirectory {
-            try await downloadDirectory(metadata: metadata, to: tempURL)
-        } else {
-            try await downloadFile(metadata: metadata, to: tempURL)
-        }
-
-        return tempURL
-    }
-
-    /// 이미 다운로드된 파일 URL을 감싸는 NSItemProvider를 생성한다.
-    func createItemProvider(for metadata: FileTransferMetadata, fileURL: URL) -> NSItemProvider {
-        let itemProvider = NSItemProvider()
-        itemProvider.suggestedName = metadata.name
-
-        let utType: UTType
-        if metadata.isDirectory {
-            utType = .directory
-        } else {
-            utType = UTType(mimeType: metadata.contentType) ?? .data
-        }
-
-        itemProvider.registerFileRepresentation(
-            for: utType,
-            visibility: .all,
-            openInPlace: false
-        ) { completion in
-            completion(fileURL, false, nil)
-            return Progress()
-        }
-
-        return itemProvider
-    }
-}
-#endif

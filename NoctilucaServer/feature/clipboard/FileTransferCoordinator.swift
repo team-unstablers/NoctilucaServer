@@ -10,11 +10,10 @@ import Foundation
 import Cocoa
 
 import SiriusKit
-import UniformTypeIdentifiers
 
 /// 수신 측에서 파일 다운로드를 조율하는 클래스.
-/// macOS에서는 NSFilePromiseProviderDelegate를 구현하여
-/// pasteboard의 file promise가 이행될 때 원격에서 파일을 다운로드한다.
+/// macOS에서는 placeholder 파일 + NSFilePresenter를 통해
+/// pasteboard에서 해당 URL을 읽으려 할 때 원격에서 파일을 다운로드한다.
 final class FileTransferCoordinator: NSObject, Sendable {
     private let logger = NoctilucaLogger(category: "FileTransferCoordinator")
 
@@ -76,7 +75,7 @@ final class FileTransferCoordinator: NSObject, Sendable {
     // MARK: - Download
 
     /// 단일 파일을 다운로드하여 destinationURL에 저장합니다.
-    func downloadFile(metadata: FileTransferMetadata, to destinationURL: URL) async throws {
+    func downloadFile(metadata: FileTransferMetadata, to destinationURL: URL, progress: Progress? = nil) async throws {
         guard let session = clipboardChannel?.clientSession else {
             throw FileTransferError.sessionUnavailable
         }
@@ -107,6 +106,7 @@ final class FileTransferCoordinator: NSObject, Sendable {
         do {
             for await chunk in dataStream {
                 fileHandle.write(chunk)
+                progress?.completedUnitCount += Int64(chunk.count)
             }
             try fileHandle.close()
 
