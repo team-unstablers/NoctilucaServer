@@ -178,7 +178,9 @@ class ClipboardManager {
                let urlString = String(data: urlData, encoding: .utf8),
                let url = URL(string: urlString),
                url.isFileURL,
-               let metadata = FileTransferMetadata.from(fileURL: url) {
+               let metadataPrivate = FileTransferMetadataPrivate.from(fileURL: url) {
+
+                let metadata = metadataPrivate.metadata
 
                 let jsonData = try! JSONEncoder().encode(metadata)
                 let representation = ClipboardData(
@@ -188,7 +190,7 @@ class ClipboardManager {
                     flags: []
                 )
                 items.append(ClipboardItem(representations: [representation]))
-                fileTransferData.store(itemIndex: itemIndex, metadata: metadata)
+                fileTransferData.store(itemIndex: itemIndex, metadata: metadataPrivate)
                 itemIndex += 1
                 continue
             }

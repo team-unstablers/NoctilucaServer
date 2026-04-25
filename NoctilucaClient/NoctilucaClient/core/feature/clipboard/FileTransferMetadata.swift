@@ -42,7 +42,7 @@ extension String {
 struct FileTransferMetadata: Codable {
     /// 파일/디렉토리 이름 (예: "test.mp3")
     let name: String
-    /// 원본 파일 시스템 경로 (예: "/Users/foo/test.mp3")
+    /// Sirius 프로토콜로 노출하기 위한 가상 경로 (예: "/noctiluca/clipboard/file/(UUID4)")
     let path: String
     /// 파일 크기 (바이트). 디렉토리의 경우 0
     let size: UInt64
@@ -52,6 +52,13 @@ struct FileTransferMetadata: Codable {
     var isDirectory: Bool {
         contentType == FileTransferContentType.directory
     }
+}
+
+struct FileTransferMetadataPrivate {
+    let metadata: FileTransferMetadata
+
+    let virtualPath: String
+    let realPath: String
 }
 
 // MARK: - DirectoryEntry
@@ -78,40 +85,63 @@ struct DirectoryEntry: Codable {
 /// ClipboardDataSnapshot과 유사하지만, Data 대신 파일 메타데이터를 저장한다.
 /// 보안 검증(요청된 경로가 실제 복사된 파일인지 확인)에도 사용된다.
 struct FileTransferSnapshot {
-    private var entries: [Int: FileTransferMetadata] = [:]
+    private var entries: [Int: FileTransferMetadataPrivate] = [:]
 
-    mutating func store(itemIndex: Int, metadata: FileTransferMetadata) {
+    mutating func store(itemIndex: Int, metadata: FileTransferMetadataPrivate) {
         entries[itemIndex] = metadata
     }
 
-    func get(itemIndex: Int) -> FileTransferMetadata? {
+    func get(itemIndex: Int) -> FileTransferMetadataPrivate? {
         entries[itemIndex]
     }
 
-    /// 요청된 경로가 이 스냅샷의 파일이거나 디렉토리의 하위 경로인지 검증하고,
-    /// 통과 시 정규화된 URL(심볼릭 링크 해석 + `..` 축약)을 반환합니다. 실패 시 nil.
+    /// 요청된 가상 경로가 이 스냅샷의 파일/디렉토리이거나 그 디렉토리의 하위 가상 경로인지
+    /// 검증하고, 통과 시 매핑된 실제 파일의 정규화된 URL(심볼릭 링크 해석 + `..` 축약)을 반환합니다.
+    /// 실패 시 nil.
     ///
     /// 호출자는 반환된 URL을 이후의 파일 I/O(`FileHandle`, `writeFromFile`, `fileExists` 등)에
     /// 그대로 사용해야 합니다. 원본 입력 문자열을 재사용하면 TOCTOU / path traversal 우회가
     /// 가능합니다.
     func validatePath(_ path: String) -> URL? {
-        let requested = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
-        let requestedPath = requested.path
+        for entry in entries.values {
+            let virtualPath = entry.virtualPath
+            let realRoot = URL(fileURLWithPath: entry.realPath)
+                .standardizedFileURL
+                .resolvingSymlinksInPath()
 
-        for metadata in entries.values {
-            let root = URL(fileURLWithPath: metadata.path).standardizedFileURL.resolvingSymlinksInPath()
-            let rootPath = root.path
-
-            if requestedPath == rootPath {
-                return requested
+            // 1) 가상 경로 정확 일치 → root의 실제 경로 반환
+            if path == virtualPath {
+                return realRoot
             }
-            if metadata.isDirectory {
-                let dirPrefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
-                if requestedPath.hasPrefix(dirPrefix) {
-                    return requested
-                }
+
+            // 2) 디렉토리 entry의 하위 가상 경로 → 상대 경로를 실제 경로에 결합
+            guard entry.metadata.isDirectory else { continue }
+
+            let prefix = virtualPath.hasSuffix("/") ? virtualPath : virtualPath + "/"
+            guard path.hasPrefix(prefix) else { continue }
+
+            let relative = String(path.dropFirst(prefix.count))
+            let components = relative.split(separator: "/", omittingEmptySubsequences: false)
+                .map(String.init)
+
+            // 각 컴포넌트가 안전한 단일 path component인지 확인
+            // (빈 문자열, `.`, `..`, null byte, 추가 `/` 거부)
+            guard !components.isEmpty,
+                  components.allSatisfy({ $0.isSafePathComponent }) else {
+                continue
+            }
+
+            let candidate = components.reduce(realRoot) { $0.appendingPathComponent($1) }
+            let resolved = candidate.standardizedFileURL.resolvingSymlinksInPath()
+
+            // 정규화 후에도 root 디렉토리 안에 있는지 재확인 (심볼릭 링크/`..` 우회 방지)
+            let rootPath = realRoot.path
+            let rootPathWithSlash = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
+            if resolved.path == rootPath || resolved.path.hasPrefix(rootPathWithSlash) {
+                return resolved
             }
         }
+
         return nil
     }
 
@@ -148,9 +178,9 @@ enum FileTransferError: Error, CustomStringConvertible {
 
 // MARK: - FileTransferMetadata Utilities
 
-extension FileTransferMetadata {
-    /// 파일 URL에서 FileTransferMetadata를 생성합니다.
-    static func from(fileURL url: URL) -> FileTransferMetadata? {
+extension FileTransferMetadataPrivate {
+    /// 파일 URL에서 FileTransferMetadataPrivate를 생성합니다.
+    static func from(fileURL url: URL) -> FileTransferMetadataPrivate? {
         let fm = FileManager.default
         let filePath = url.path
         var isDirectory: ObjCBool = false
@@ -158,6 +188,8 @@ extension FileTransferMetadata {
         guard fm.fileExists(atPath: filePath, isDirectory: &isDirectory) else {
             return nil
         }
+
+        let virtualPath = "/noctiluca/clipboard/file/\(UUID().uuidString)"
 
         let fileSize: UInt64
         let mimeType: String
@@ -171,11 +203,17 @@ extension FileTransferMetadata {
             mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
         }
 
-        return FileTransferMetadata(
+        let metadata = FileTransferMetadata(
             name: url.lastPathComponent,
-            path: filePath,
+            path: virtualPath,
             size: fileSize,
             contentType: mimeType
+        )
+
+        return FileTransferMetadataPrivate(
+            metadata: metadata,
+            virtualPath: virtualPath,
+            realPath: filePath
         )
     }
 }
