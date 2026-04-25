@@ -128,7 +128,7 @@ struct FileTransferSnapshot {
             // (빈 문자열, `.`, `..`, null byte, 추가 `/` 거부)
             guard !components.isEmpty,
                   components.allSatisfy({ $0.isSafePathComponent }) else {
-                return nil
+                continue
             }
 
             let candidate = components.reduce(realRoot) { $0.appendingPathComponent($1) }
@@ -140,7 +140,6 @@ struct FileTransferSnapshot {
             if resolved.path == rootPath || resolved.path.hasPrefix(rootPathWithSlash) {
                 return resolved
             }
-            return nil
         }
 
         return nil
