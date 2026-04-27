@@ -230,11 +230,19 @@
 
 ### 🗑️ 제거 (Removals)
 
-- [ ] **타일링 이미지 코덱 제거**: MJPG / ZRLE / WebP — #281
-  - 서버 인코더 제거
-  - 클라이언트 디코더 제거 (Client / ClientQt)
-  - 코덱 협상 로직에서 제외
-  - 문서 / 웹사이트 feature table 갱신 필요
+- [~] **타일링 이미지 코덱 제거**: MJPG / ZRLE / WebP — #281 (Server / Client 완료, ClientQt + 의존성 정리는 형아 직접)
+  - [x] 서버 인코더 제거 (`MJPGVideoEncoder` / `ZRLEVideoEncoder` / `WebPVideoEncoder` / `NoctilucaJPEGCompressor.{c,h}` / `traditional/` 디렉토리 + UI sheet 3종)
+  - [x] 클라이언트 (Swift) 디코더 제거 (`MJPGVideoDecoder` / `ZRLEVideoDecoder` / `WebPVideoDecoder`, `traditional/` + `compositor/` 디렉토리 전체, `ProjectionCanvasRenderer` / `MetalProjectionView` 함께 제거)
+  - [x] `CodecSpecification` 정적 프리셋 / dispatch / negotiation 분기 제거 (Server / Client 양쪽)
+  - [x] `AutoQualityPlanner` 의 `isImageCodec` 분기 제거 + 관련 테스트 정리
+  - [x] `AppSettings.Projection` sanitizer 추가 (이전 버전 settings.json 의 zrle/mjpg/webp 항목 silently 필터링)
+  - [x] SiriusKit `CodecFourCC` / `CodecOption` (`compressionLevel` / `tileSize` / `quantizeLevel`) 에 deprecation 주석 추가 (`@available(*, deprecated)` 어노테이션 격상은 보류)
+  - [ ] ClientQt 디코더 제거 (`decoder/mjpg/`, `decoder/zrle/`, `VideoDecoderImplementation.hpp`, `VideoDecoderCapabilities.cpp`, `CMakeLists.txt`) — 형아 직접
+  - [ ] `frameworks/` 의존성 정리 (`WebP/WebPDecoder/SharpYuv/libturbojpeg.xcframework` 삭제, `Package.swift` / pbxproj 정리) — 형아 직접
+  - [ ] mdproto Spec (`projection_codec.mdproto.md`) 의 deprecated 코멘트 — `team-unstablers/SiriusProtocol` 별도 PR
+  - [ ] `noctiluca-website` 코덱 표 갱신 (별도 레포)
+  - [ ] `CLAUDE.md` Recent Notes 의 WebP/ZRLE 관련 항목 갱신
+  - [ ] `docs/changelogs/server/0.9.10.md` 작성
 
 ### 📄 문서 / 웹사이트 (Docs / Website)
 

@@ -53,7 +53,7 @@ swiftlint lint --config .swiftlint.yml
 - `NoctilucaPluginKit/` - 플러그인 번들 계약/메타데이터 스펙
 - `SamplePluginBundle/` - 샘플 플러그인 번들
 - `Gesu/` - Private API 호출용 Swift 매크로 라이브러리 (`@PrivateLibrary`, `#PrivateFunction`)
-- `frameworks/` - 외부 xcframework 의존성 (WebP, SharpYuv, libturbojpeg)
+- `frameworks/` - 외부 xcframework 의존성 (VPX, VPXDecoder)
 - `libbcrypt/` - bcrypt 라이브러리 (PAM 인증용)
 - `NoctilucaServerTests/` - 서버 테스트
 - `docs/`, `distutil/`, `pam.d/` 등 유틸리티
@@ -65,7 +65,7 @@ swiftlint lint --config .swiftlint.yml
 - Network.framework (QUIC)
 - SwiftProtobuf 3 (Sirius msgdef)
 - ScreenCaptureKit + AVFoundation (AVCaptureSession, AVAudioEngine)
-- VideoToolbox (H.264/H.265/WebP encode/decode)
+- VideoToolbox (H.264/H.265 encode/decode), libvpx (VP8 encode/decode)
 - AudioToolbox / AVAudioConverter (Opus/G.711 encode/decode)
 - CoreGraphics / CoreMedia
 - Security.framework / Keychain
@@ -86,9 +86,9 @@ swiftlint lint --config .swiftlint.yml
 
 ## 3) Projection (Video/Audio)
 - **비디오**:
-  - 서버: ScreenCaptureKit/AVCaptureSession 캡처 → VideoToolbox/WebP 인코딩 → ProjectionDataChannel 전송
-  - 클라이언트: ProjectionDataChannel 수신 → VTDecompressionSession/ZRLE 디코딩 → AVSampleBufferDisplayLayer 렌더링
-  - 지원 코덱: H.264, H.265(HEVC), WebP
+  - 서버: ScreenCaptureKit/AVCaptureSession 캡처 → VideoToolbox(H.264/H.265) / libvpx(VP8) 인코딩 → ProjectionDataChannel 전송
+  - 클라이언트: ProjectionDataChannel 수신 → VTDecompressionSession / libvpx 디코딩 → MetalVideoRenderer (또는 AVSampleBufferDisplayLayer fallback) 렌더링
+  - 지원 코덱: H.264, H.265(HEVC), VP8 (0.9.10 부터. MJPG/ZRLE/WebP 는 0.9.10 에서 제거)
 - **오디오**:
   - 서버: ScreenCaptureKit 오디오 캡처 → Opus/G.711 인코딩 → ProjectionDataChannel 전송
   - 클라이언트: ProjectionDataChannel 수신 → AudioDecoder 디코딩 → AVAudioEngine 재생
@@ -137,8 +137,7 @@ Microsoft RDP의 RemoteApp에서 영감을 받은 기능으로, 원격 Mac의 �
   - 서버: `AudioEncoder` 프로토콜 및 `OpusAudioEncoder`, `PCMAudioEncoder` 구현
   - 클라이언트: `AudioProjectionSession`, `AudioDecoder` 구현
   - 코덱: Opus, G.711 mu-law/A-law 지원
-- **WebP 타일 비디오 인코더 구현** (서버): libwebp Advanced API 기반
-- **ZRLE 디코더 추가** (클라이언트): RLE + Zstd 압축 방식
+- **타일링 이미지 코덱 (MJPG / ZRLE / WebP) 제거** (0.9.10): 서버 인코더 / 클라이언트 디코더 / 타일 합성 인프라 (`TileCompositor`, `MetalTileCompositor`, `CPUTileCompositor`, `ProjectionCanvasRenderer`, `MetalProjectionView`) 모두 제거. SiriusKit `CodecFourCC` 의 zrle/mjpg/webp 정의는 wire identifier 보존을 위해 deprecated 주석으로 유지. 대체 코덱은 VP8.
 - **NoctilucaClient 디렉토리 리팩토링** (2026-02-01): `core`, `app`, `resources` 분리
 - `CodecOptionsParser.parse(optionsString:)`가 이제 `[CodecOptionKey: CodecOptionValue]` 대신 `CodecOptions`(mandatory/optional, `!required` 지원)을 반환합니다.
 - CodecOption/CodecOptionsParser 정의가 `SiriusKit/channel/msgdef/v1/channels/projection`로 이동했고, 클라이언트에서도 사용할 수 있도록 `public`으로 노출되었습니다.
