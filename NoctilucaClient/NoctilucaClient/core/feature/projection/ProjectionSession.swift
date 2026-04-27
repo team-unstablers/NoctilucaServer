@@ -48,9 +48,8 @@ enum ProjectionSessionEvent: Sendable {
     /// 서버로부터 DegradationNotice를 수신하였습니다.
     case degradationNoticeReceived(DegradationNotice)
 
-    /// 코덱 구성이 변경되었습니다 (디코더 교체, 렌더링 경로 변경 등).
-    /// `isTiledCodec`이 true이면 Metal 캔버스 직접 렌더링을 사용해야 합니다.
-    case codecConfigured(isTiledCodec: Bool)
+    /// 코덱 구성이 변경되었습니다 (디코더 교체).
+    case codecConfigured
 }
 
 /// 프로젝션 세션 (클라이언트).
@@ -59,7 +58,7 @@ enum ProjectionSessionEvent: Sendable {
 ///
 /// 이 타입은 `actor` 로 승격되어 있으며, custom executor 로
 /// `DispatchSerialQueue` (`serialQueue`) 를 사용한다. 이 queue 는 동시에
-/// VT/ZRLE/MJPG/WebP 비디오 디코더의 `callbackQueue` 로 주입되므로,
+/// VT/VPX 비디오 디코더의 `callbackQueue` 로 주입되므로,
 /// 디코더 delegate 콜백이 actor executor 와 동일한 컨텍스트에서 실행되고
 /// `assumeIsolated { me in ... }` 로 hop 없이 actor-isolated 상태에 접근할 수 있다.
 ///
@@ -128,7 +127,6 @@ actor ProjectionSession: Identifiable {
     // MARK: - Actor-isolated mutable state
 
     private(set) var decoder: (any VideoDecoder)?
-    private var tileCompositor: TileCompositor?
     private var performanceReporter: ProjectionPerformanceReporter?
 
     private var jitterBuffer: VideoJitterBuffer?
@@ -140,7 +138,6 @@ actor ProjectionSession: Identifiable {
     // 렌더러 등록 dict — 전부 actor-isolated 로 격리.
     private var displayLayers: [ObjectIdentifier: AVSampleBufferDisplayLayer] = [:]
     private var metalVideoRenderers: [ObjectIdentifier: MetalVideoRenderer] = [:]
-    private var canvasRenderers: [ObjectIdentifier: ProjectionCanvasRenderer] = [:]
 
     /// 데이터 채널 이벤트 consume 루프.
     private var dataChannelConsumerTask: Task<Void, Never>?
@@ -149,11 +146,7 @@ actor ProjectionSession: Identifiable {
         guard let decoder else { return "N/A" }
         switch decoder {
         case let vtDecoder as VTVideoDecoder: return vtDecoder.decoderTypeName
-        case is ZRLEVideoDecoder: return "ZRLE"
-#if !targetEnvironment(simulator)
-        case is WebPVideoDecoder: return "WebP"
-#endif
-        case is MJPGVideoDecoder: return "MJPG"
+        case is VPXVideoDecoder: return "VP8"
         default: return "Unknown"
         }
     }
@@ -283,9 +276,6 @@ actor ProjectionSession: Identifiable {
                     h264ParameterSets: message.parameterSets.map { $0.data }
                 )
 
-            case .zrle:
-                return
-
             default:
                 return
             }
@@ -402,30 +392,6 @@ actor ProjectionSession: Identifiable {
         }
     }
 
-    func registerCanvasRenderer(_ renderer: ProjectionCanvasRenderer) {
-        canvasRenderers[ObjectIdentifier(renderer)] = renderer
-        // 이미 캔버스가 있으면 즉시 연결
-        if let canvasCompositor = tileCompositor as? CanvasTileCompositor {
-            renderer.canvasTexture = canvasCompositor.canvasTexture
-        }
-    }
-
-    func unregisterCanvasRenderer(_ renderer: ProjectionCanvasRenderer) {
-        canvasRenderers.removeValue(forKey: ObjectIdentifier(renderer))
-    }
-
-    private func notifyAllCanvasRenderers() {
-        for renderer in canvasRenderers.values {
-            renderer.setNeedsDisplay()
-        }
-    }
-
-    private func updateCanvasTextureForAllRenderers(_ texture: MTLTexture?) {
-        for renderer in canvasRenderers.values {
-            renderer.canvasTexture = texture
-        }
-    }
-
     // MARK: - Prepare / Reconfigure
 
     func prepare(codec: Codec) async throws {
@@ -437,45 +403,8 @@ actor ProjectionSession: Identifiable {
 
         // 기존 디코더 정리 (새 디코더로 교체 전)
         try? decoder?.stop()
-        tileCompositor?.invalidate()
-        tileCompositor = nil
 
         switch codec.fourCC {
-        case .zrle:
-            let zrleDecoder = ZRLEVideoDecoder(
-                workerQueue: DispatchQueue(label: "app.noctiluca.client.projection.session.decoder.zrle.worker", qos: .userInitiated),
-                callbackQueue: serialQueue
-            )
-            zrleDecoder.delegate = self
-            zrleDecoder.tileDelegate = self
-            decoder = zrleDecoder
-            tileCompositor = createTileCompositor(frameSize: size.cgSize)
-            formatDescription = nil
-
-        case .mjpg:
-            let mjpgDecoder = MJPGVideoDecoder(
-                workerQueue: DispatchQueue(label: "app.noctiluca.client.projection.session.decoder.mjpg.worker", qos: .userInitiated),
-                callbackQueue: serialQueue
-            )
-            mjpgDecoder.delegate = self
-            mjpgDecoder.tileDelegate = self
-            decoder = mjpgDecoder
-            tileCompositor = createTileCompositor(frameSize: size.cgSize)
-            formatDescription = nil
-
-#if !targetEnvironment(simulator)
-        case .webp:
-            let webpDecoder = WebPVideoDecoder(
-                workerQueue: DispatchQueue(label: "app.noctiluca.client.projection.session.decoder.webp.worker", qos: .userInitiated),
-                callbackQueue: serialQueue
-            )
-            webpDecoder.delegate = self
-            webpDecoder.tileDelegate = self
-            decoder = webpDecoder
-            tileCompositor = createTileCompositor(frameSize: size.cgSize)
-            formatDescription = nil
-#endif
-
         case .vp80:
             let vpxDecoder = VPXVideoDecoder(
                 workerQueue: DispatchQueue(label: "app.noctiluca.client.projection.session.decoder.vpx.worker", qos: .userInitiated),
@@ -483,7 +412,6 @@ actor ProjectionSession: Identifiable {
             )
             vpxDecoder.delegate = self
             decoder = vpxDecoder
-            tileCompositor = nil
             formatDescription = nil
 
         default:
@@ -493,21 +421,16 @@ actor ProjectionSession: Identifiable {
             )
             vtDecoder.delegate = self
             decoder = vtDecoder
-            tileCompositor = nil
         }
         try decoder?.prepare(with: .init(codec: codec))
 
-        let isTiled = tileCompositor != nil
-
-        // VT 코덱인 경우 Metal 비디오 렌더러에 코덱 메타데이터 전달
-        if !isTiled {
-            for renderer in metalVideoRenderers.values {
-                renderer.updateCodecMetadata(codec: codec)
-            }
+        // Metal 비디오 렌더러에 코덱 메타데이터 전달
+        for renderer in metalVideoRenderers.values {
+            renderer.updateCodecMetadata(codec: codec)
         }
 
         updateDebugSnapshot()
-        continuation.yield(.codecConfigured(isTiledCodec: isTiled))
+        continuation.yield(.codecConfigured)
     }
 
     /// 서버로부터 코덱/해상도 변경 통지를 받았을 때 디코더를 재구성합니다.
@@ -566,18 +489,6 @@ actor ProjectionSession: Identifiable {
         try? await self.dataChannel.handle.close()
     }
 
-    // MARK: - Helpers
-
-    private func createTileCompositor(frameSize: CGSize) -> TileCompositor {
-        // Metal 가능하면 MetalTileCompositor 사용, 실패 시 CPU fallback
-        if let metalCompositor = try? MetalTileCompositor(frameSize: frameSize) {
-            logger.info("Using MetalTileCompositor for tile composition")
-            return metalCompositor
-        } else {
-            logger.info("Metal not available, using CPUTileCompositor")
-            return CPUTileCompositor(frameSize: frameSize)
-        }
-    }
 }
 
 // MARK: - VideoDecoderDelegate
@@ -637,71 +548,6 @@ extension ProjectionSession {
                 logger.error("Failed to create CMSampleBuffer: \(error.localizedDescription)")
                 performanceReporter?.recordDroppedFrame()
             }
-        }
-    }
-}
-
-// MARK: - TiledVideoDecoderDelegate
-
-extension ProjectionSession: TiledVideoDecoderDelegate {
-    nonisolated func tiledVideoDecoder(_ decoder: any VideoDecoder, didDecode frame: DecodedTileFrame) {
-        self.assumeIsolated { me in
-            me.onDecoded(tile: frame)
-        }
-    }
-}
-
-extension ProjectionSession {
-    fileprivate func onDecoded(tile frame: DecodedTileFrame) {
-        guard let compositor = tileCompositor else {
-            logger.error("Tile compositor not available for tile frame")
-            performanceReporter?.recordDroppedFrame()
-            return
-        }
-
-        do {
-            if size == .zero {
-                setSize(frame.frameSize)
-            }
-
-            // Metal 캔버스 직접 렌더링 경로:
-            // CanvasTileCompositor 인 경우 캔버스만 업데이트하고
-            // 등록된 MetalProjectionView 에 다시 그리기를 요청한다.
-            if let canvasCompositor = compositor as? CanvasTileCompositor {
-                try canvasCompositor.compositeToCanvas(frame)
-                performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
-
-                // 캔버스 텍스처가 변경되었을 수 있음 (리사이즈)
-                updateCanvasTextureForAllRenderers(canvasCompositor.canvasTexture)
-                notifyAllCanvasRenderers()
-                return
-            }
-
-            // Legacy 경로: CVPixelBuffer → CMSampleBuffer → AVSampleBufferDisplayLayer
-            let pixelBuffer = try compositor.composite(frame)
-            performanceReporter?.recordDecodedFrame(decodeTimeMs: frame.decodeTimeMs)
-
-            if let jitterBuffer {
-                jitterBuffer.enqueue(pixelBuffer: pixelBuffer, remotePTS: frame.pts.seconds)
-            } else {
-                let now = mach_absolute_time()
-                let presentationTime = CMTimeMake(value: Int64(now), timescale: 1_000_000_000)
-
-                let sampleBuffer = try CMSampleBuffer(
-                    imageBuffer: pixelBuffer,
-                    formatDescription: CMFormatDescription(imageBuffer: pixelBuffer),
-                    sampleTiming: CMSampleTimingInfo(
-                        duration: CMTime.invalid,
-                        presentationTimeStamp: presentationTime,
-                        decodeTimeStamp: CMTime.invalid
-                    )
-                )
-                enqueueToAllDisplayLayers(sampleBuffer)
-            }
-        } catch {
-            logger.error("Tile composition failed: \(error.localizedDescription)")
-            continuation.yield(.errorOccurred(error, fatal: false))
-            performanceReporter?.recordDroppedFrame()
         }
     }
 }
