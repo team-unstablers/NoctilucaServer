@@ -7,13 +7,25 @@
 
 import Foundation
 
+import SiriusKit
+
 extension AppSettings {
     struct Projection: Category {
+        /// 0.9.10 에서 reference 구현이 제거된 타일링 이미지 코덱 fourCC 목록.
+        /// wire identifier 자체는 SiriusKit 차원에서 reserved 로 보존되므로
+        /// 디코딩은 성공하지만, 더 이상 negotiable 하지 않으므로 settings 로딩 시점에
+        /// silently 필터링한다.
+        private static let deprecatedTilingFourCCs: Set<UInt32> = [
+            CodecFourCC.zrle.rawValue,
+            CodecFourCC.mjpg.rawValue,
+            CodecFourCC.webp.rawValue,
+        ]
+
         static func defaultCodecSpecifications() -> [CodecSpecification] {
             if SystemCapability.isVirtualMachine {
                 return [.vp8]
             }
-            
+
             return [.hevc, .h264, .vp8]
         }
         
@@ -61,7 +73,21 @@ extension AppSettings {
 
             codecNegotiationPolicy = container.decodeSafe(CodecNegotiationPolicy.self, forKey: .codecNegotiationPolicy, default: codecNegotiationPolicy)
             codecSpecifications = container.decodeSafe([CodecSpecification].self, forKey: .codecSpecifications, default: codecSpecifications)
-            
+
+            // 0.9.10 — 이전 버전 settings.json 에 deprecated 타일링 코덱이 포함된 경우 silently 필터링.
+            let originalCount = codecSpecifications.count
+            codecSpecifications.removeAll { Self.deprecatedTilingFourCCs.contains($0.fourCC.rawValue) }
+            if codecSpecifications.count != originalCount {
+                /*
+                NoctilucaLogger(category: "AppSettings").info(
+                    "Filtered \(originalCount - codecSpecifications.count) deprecated tiling codec(s) from settings.json (zrle/mjpg/webp removed in 0.9.10)"
+                )
+                 */
+                if codecSpecifications.isEmpty {
+                    codecSpecifications = Self.defaultCodecSpecifications()
+                }
+            }
+
             isAudioProjectionEnabled = container.decodeSafe(Bool.self, forKey: .isAudioProjectionEnabled, default: isAudioProjectionEnabled)
             audioCodecSpecifications = container.decodeSafe([AudioCodecSpecification].self, forKey: .audioCodecSpecifications, default: audioCodecSpecifications)
         }
