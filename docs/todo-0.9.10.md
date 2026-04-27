@@ -5,7 +5,8 @@
 >
 > - **작성 시작**: 2026-04-23
 > - **담당**: 치즈군
-> - **상태**: 수집 중 (collecting)
+> - **상태**: 이슈 발행 완료 (tracking) — GitHub `0.9.10` 마일스톤 참조
+> - **관련 마일스톤**: [0.9.10](https://github.com/team-unstablers/NoctilucaServer/milestone/2)
 
 ---
 
@@ -29,6 +30,7 @@
 - [x] **디스플레이 레이아웃 설정 가능** (서버)
 - [x] **디스플레이 해상도 설정 가능** (서버)
 - [x] **메인 디스플레이 설정 가능** (서버)
+- [x] **가상 디스플레이 spec 가드 로직** (서버) — 커밋 `671157a` (2026-04-25)
 
 ---
 
@@ -97,20 +99,21 @@
 - [x] VP8 인코더 (서버)
 - [x] VP8 디코더 (Client / ClientQt)
 - [x] 디스플레이 레이아웃 / 해상도 / 메인 디스플레이 설정 (서버)
-- [ ] **가상 디스플레이 — 가드 로직 완성** (현재 불완전)
-  - [ ] 오류 가드 로직 추가 (실패 케이스 처리)
-  - [ ] 최소/최대 해상도 제한 (macOS 현재 한계: 3840×2160)
-  - [ ] 이상 해상도 거부 (예: 1×1, 262144×2 등 생성 가능 → 차단)
-- [ ] **가상 디스플레이 UI 완성 (macOS)** — Noctiluca Server 앱
-- [ ] **iPad: 보조 디스플레이 별도 창 분리** (실험적, 공지에 포함)
+- [x] **가상 디스플레이 — 가드 로직 완성** — #255 ✅ **2026-04-25 resolved**
+  - [x] 오류 가드 로직 추가 (실패 케이스 처리) — nocvirtdisplay 단독 실행 시 exit code 4 추가
+  - [x] 최소/최대 해상도 제한 (320×240 ~ 3840×2160 native px)
+  - [x] 이상 해상도 거부 (scaleFactor 1x/2x, refreshRate 0~120Hz, aspect ratio 1:4~4:1)
+  - 적용 커밋: `671157a` (`NOCDisplaySpec+Validation.swift` + 서버/헬퍼 양쪽 검증 + 테스트)
+- [ ] **가상 디스플레이 UI 완성 (macOS)** — Noctiluca Server 앱 — #256
+- [ ] **iPad: 보조 디스플레이 별도 창 분리** (실험적, 공지에 포함) — #257
   - [ ] **iPad Pro 실기 테스트** — 남자친구 iPad 빌려서 검증 필요
 
 ### 🐛 버그 픽스 (Bug Fixes)
 
 - [x] 서버 사이드 HIDIO 데이터 레이스 (MsQuic Unbuffered)
-- [ ] **프로젝션 중 디스플레이 연결 끊김 시 자동 전환** (Client / ClientQt 둘 다) — 현재 미동작
-- [ ] **CJK 플러그인 재활성화** — Swift 6 이행 중 비활성화됨, 복구 필요
-- [ ] **NoctilucaServer: 체험판 → 정식 라이선스 전환 시 struggle** (보고받음)
+- [ ] **프로젝션 중 디스플레이 연결 끊김 시 자동 전환** (Client / ClientQt 둘 다) — 현재 미동작 — #258
+- [x] ~~**CJK 플러그인 재활성화**~~ — 커밋 `8800693` 에서 복구됨
+- [ ] **NoctilucaServer: 체험판 → 정식 라이선스 전환 시 struggle** (보고받음) — #259
 
 ### 🔒 보안 (Security) — 0.9.10에 Shipping
 
@@ -120,69 +123,89 @@
 
 #### 🔴 CRITICAL (즉시)
 
-- [ ] **[2.1] `FileTransferSnapshot.validatePath` Path Traversal 수정**
+- [x] **[2.1] `FileTransferSnapshot.validatePath` Path Traversal 수정** — #260 ✅ **2026-04-25 resolved**
   - 현: `String.hasPrefix` 기반, 정규화 없음 → `../` 로 호스트 임의 파일 탈취 가능
   - 조치: `URL.standardizedFileURL.resolvingSymlinksInPath()` / `realpath(3)` 기반 정규화 포함관계 판정으로 전면 재작성
   - Qt: `std::filesystem::weakly_canonical` 로 심볼릭 링크까지 정규화 강화
   - 검증된 경로를 그대로 `writeFromFile` / `FileHandle`에 전달 (TOCTOU 회피)
-- [ ] **[2.2] protobuf 메시지에 크기/개수 상한 도입**
+  - 적용 커밋: `0ce651d` (정규화 기반 재작성), `b8cf281` (entry 매칭 검증 실패 시 `continue`로 다음 entry 검사 — 3.3 follow-up과 동일 fix)
+- [ ] **[2.2] protobuf 메시지에 크기/개수 상한 도입** — #261 (부분 진행 중)
   - 현: `ClipboardData.data`, `TransferDataChunk.data`, `ClipboardEvent.items` 모두 상한 없음 → 메모리/디스크 DoS
   - 조치:
-    - SiriusKit 레벨 프레임 최대 길이 상수 (예: 16 MiB), `SiriusFrameStreamDecoder`에서 초과 프레임 드랍
-    - `TransferChannel`에 `maxInFlightBytes` / `maxTotalBytes` 상한 추가, `totalSize` 초과 수신 시 즉시 close
-    - `ClipboardEvent.items`, `ClipboardItem.representations` 개수 상한 (예: 16/16)
-    - `ClipboardData.data` 본문 상한 + 초과 시 반드시 `omitted` + TransferChannel 경유 강제
-    - `resolveOmittedData` 누적 버퍼 상한
-- [ ] **[3.3] `FileTransferMetadata.path` 절대 경로 노출 제거 → opaque token 방식**
+    - [x] SiriusKit 레벨 프레임 최대 길이 상수 (16 MiB), `SiriusFrameStreamDecoder`에서 초과 프레임 `frameTooLarge` throw — 커밋 `687f9ce`
+    - [x] fatal close 시퀀스(ServerNotice → Goodbye → close) 인프라 — 커밋 `edf2d3a` `d7d72eb` `3213fea` `076f4eb`
+      - `ServerNotice.code`를 `ServerNoticeCode` 타입으로 변경, 인증/세션 실패도 ServerNoticeCode 경로로 통합
+      - 서버: `closeFatally(notice:closure:message:)` 헬퍼 + panic/phase timeout/auth fail/session alloc fail 경로 전환
+      - 클라이언트: fatal ServerNotice 수신 시 pendingFatalNotice 보관 + 이어지는 Goodbye와 합쳐 노출, frameTooLarge 감지 시 Goodbye(protocolError) 발신 후 종료
+    - [ ] `TransferChannel`에 `maxInFlightBytes` / `maxTotalBytes` 상한 추가 (현재는 #264로 `totalSize` 초과 수신 시 종료까지만 처리됨)
+    - [ ] `ClipboardEvent.items`, `ClipboardItem.representations` 개수 상한 (예: 16/16)
+    - [ ] `ClipboardData.data` 본문 상한 + 초과 시 반드시 `omitted` + TransferChannel 경유 강제
+    - [ ] `resolveOmittedData` 누적 버퍼 상한
+- [x] **[3.3] `FileTransferMetadata.path` 절대 경로 노출 제거 → opaque token 방식** — #262 ✅ **2026-04-25 resolved**
   - 현: `/Users/alice/Desktop/...` 같은 호스트 절대 경로가 클라이언트에 노출
   - 조치: 서버가 내부 테이블에 `token → real path` 매핑 보관, 와이어에는 `token`, `displayName`, `size`, `contentType` 만 송신
   - 부가 효과: 2.1 (Path Traversal) 도 동시에 완화
+  - **채택된 디자인 — "Spec=자유, Reference Impl=safe by default"**:
+    - Sirius spec 자체는 변경 없음 (`path` string 필드의 의미를 구현체 자율로 둠 — 향후 권고 톤 한 줄 spec 문서에 추가 예정)
+    - Noctiluca reference 구현은 wire에 가상 경로(`/noctiluca/clipboard/file/(UUID4)`) 만 노출
+    - `FileTransferMetadata` (Codable, wire-safe) ↔ `FileTransferMetadataPrivate` (서버 내부 전용, 실경로 보유) 두 struct 분리. 컴파일러가 realPath의 wire 노출 강제 차단
+    - `validatePath`가 가상 경로 → realPath 매핑 + 각 component sanitize + 정규화 후 root prefix 재확인의 3중 검증
+    - **위협 모델 분리**: 클립보드 경유는 가상 경로(implicit consent), 향후 Explorer/Transfer 모드는 raw path expose default OFF + 명시적 활성화(SFTP 모델, explicit consent)
+  - 🟡 follow-up:
+    - [x] `validatePath` 내 `return nil` → `continue` 수정 (entry 단위 검증 정확성) — 커밋 `b8cf281`
+    - [x] 클라이언트 측(`NoctilucaClient/.../FileTransferMetadata.swift`) 동기 변경 — 커밋 `a0e846c`
+    - [ ] `virtualPath` computed property로 (drift 방지)
+    - [ ] `realRoot`를 String 대신 정규화된 URL로 캐싱 (효율 + 명확성)
+    - [ ] `TokenKind` enum (`clipboardSnapshot` / `persistentMount`) 도입은 Explorer 모드 도입 시점에 같이 정리
 
 #### 🟠 HIGH (단기)
 
-- [ ] **[3.1] `TransferDataChunk.crc32 == 0` 이면 검증 스킵 문제**
+- [ ] **[3.1] `TransferDataChunk.crc32 == 0` 이면 검증 스킵 문제** — #263
   - 조치 A: `crc32`를 required로 격상 (빈 데이터일 때만 0 허용)
   - 조치 B: CRC32가 불필요하다 판단되면 메시지에서 제거 + "QUIC이 무결성 보장" 문서화
-- [ ] **[3.2] `TransferStartNotification.totalSize` 미강제**
+- [x] **[3.2] `TransferStartNotification.totalSize` 미강제** — #264 ✅ **2026-04-25 resolved**
   - 현: 불일치 시 로그만 남기고 채널 유지 → 디스크 고갈/기만 가능
   - 조치: `receivedTotalBytes > totalSize` 즉시 에러 종료, `isEOF && receivedTotalBytes != totalSize` 시 결과 파일 폐기
   - `totalSize == 0` 의 의미 ("알 수 없음" vs "0바이트") spec 명확화, 별도 상한 적용
+  - 적용 커밋: `5818f35` (totalSize 강제 및 결과 폐기 경로 추가)
 
 #### 🟡 MEDIUM (단기~중기)
 
-- [ ] **[4.1] `DirectoryEntry.name` 검증 추가**
+- [x] **[4.1] `DirectoryEntry.name` 검증 추가** — #265 ✅ **2026-04-25 resolved**
   - `name.contains("/") || name.contains("..") || name.isEmpty` 거부
   - Qt: `std::filesystem::path(name).has_parent_path()` 검증
-- [ ] **[4.2] 자동 맞구독 시 사용자 동의 UX**
+  - 적용 커밋: `ef5f19f` (원격 주도 경로 주입 방지)
+- [ ] **[4.2] 자동 맞구독 시 사용자 동의 UX** — #266
   - 서버가 `syncDirection == bidirectional / remoteToLocal` 일 때 자동 `SubscribeClipboardRequest` 송신 중
   - 조치: 명시적 사용자 설정 또는 세션 수락 시 확인 UI, Qt 클라이언트도 동일 정책
   - `requestId` monotonic 카운터로 발급 (현재는 `1` 고정)
-- [ ] **[4.3] `serveTransferData` 세션/토큰 기반 격리**
+- [ ] **[4.3] `serveTransferData` 세션/토큰 기반 격리** — #267
   - 인증된 상대방이 `lastSentSnapshot`의 임의 (item, repr) 인덱스 접근 가능
   - 조치: 세션·채널 단위로 스냅샷 격리 + opaque token 사용 (3.3과 동일 해법)
-- [ ] **[4.4] `PendingFileTransfer.createPlaceholder`에 `O_NOFOLLOW` 추가**
-  - `open(url.path, O_WRONLY | O_NOFOLLOW | O_CLOEXEC)` 로 수정
-  - 안전 강화: `openat(dirfd, name, O_WRONLY | O_NOFOLLOW | O_CREAT | O_EXCL)` + name sanitize
-  - `metadata.name` path separator / `..` 엄격 금지
-- [ ] **[4.5] Qt Windows `ClipboardFileDataObject` relative path 검증**
+- [x] **[4.4] `PendingFileTransfer.createPlaceholder`에 `O_NOFOLLOW` 추가** — #268 ✅ **2026-04-25 resolved**
+  - [x] `open(url.path, O_WRONLY | O_NOFOLLOW | O_CLOEXEC)` 로 수정 — 커밋 `12f004a`
+  - [x] `metadata.name` path separator / `..` 엄격 금지 (`String.isSafePathComponent` 헬퍼 + `DirectoryEntry.hasSafeName` / `createPlaceholder` 양쪽 재사용) — 커밋 `aa85cf0`
+  - 🟡 follow-up (필요 시): `openat(dirfd, name, O_WRONLY | O_NOFOLLOW | O_CREAT | O_EXCL)` 으로 더 강화 가능
+- [ ] **[4.5] Qt Windows `ClipboardFileDataObject` relative path 검증** — #269
   - `std::filesystem::path(name).filename() == name` 확인, 아니면 drop
   - Explorer drop 총 파일 수/크기 상한 도입
 
 #### 🟢 LOW / 방어-in-depth (중기)
 
-- [ ] **[5.1] MIME 허용 목록 + pasteboard slot 주입 방지**
+- [ ] **[5.1] MIME 허용 목록 + pasteboard slot 주입 방지** — #270
   - `application/x-...` wrap의 허용 목록 기반 매핑으로 좁힘
   - macOS 수신 측 `setWithFileTransfer`에 `allowFile` 정책 적용
-- [ ] **[5.2] `GetClipboardRequest` rate limit + 스냅샷 관리**
+- [ ] **[5.2] `GetClipboardRequest` rate limit + 스냅샷 관리** — #271
   - 예: 500ms당 1회 제한
   - `ClipboardEvent` 송신과 동일하게 `lastSentSnapshot` 업데이트
-- [ ] **[5.4] `TransferChannel` 동시 open 상한** (`AppSettings.Transfer.maxActiveTransfers`)
-- [ ] **[5.5] Linux FUSE bridge mount permission 확인** (`user_only` 기본)
-- [ ] **[6.5] `ChannelAccepts` 단계에서 정책 게이트** — `TransferSettings.allow*` / `ClipboardSettings.allowFile` 를 `createIfAccepts`에서 먼저 체크
+- [ ] **[5.4] `TransferChannel` 동시 open 상한** (`AppSettings.Transfer.maxActiveTransfers`) — #272
+- [ ] **[5.5] Linux FUSE bridge mount permission 확인** (`user_only` 기본) — #273
+- [x] **[6.5] `ChannelAccepts` 단계에서 정책 게이트** — `TransferSettings.allow*` / `ClipboardSettings.allowFile` 를 `createIfAccepts`에서 먼저 체크 — #274 ✅ **2026-04-25 resolved**
+  - 적용 커밋: `76858c9` (TransferChannel accepts 단계에서 clipboard 정책 게이트)
 
 #### 📝 문서화
 
-- [ ] **AGENTS.md / SPEC에 불변식 명문화**
+- [ ] **AGENTS.md / SPEC에 불변식 명문화** — #275
   - `TransferDataChunk.crc32` 의미
   - `totalSize` 의미 및 "알 수 없음" 케이스
   - 최대 크기, 동시 채널 수 상한
@@ -190,7 +213,7 @@
 
 #### ✅ 테스트 (CLAUDE.md Testing Philosophy 준수)
 
-- [ ] ClipboardChannel / TransferChannel **명세 기반 테스트** 작성
+- [ ] ClipboardChannel / TransferChannel **명세 기반 테스트** 작성 — #276
   - 경로 검증
   - 크기/개수 한계
   - CRC 처리
@@ -200,14 +223,14 @@
 
 > Discord 공지의 "Windows / Linux (Qt) client usability improvements" 실체
 
-- [ ] **ClientQt: 디스플레이 레이아웃 설정 UI** (현재 부재)
-- [ ] **ClientQt: 디스플레이 해상도 설정 UI** (현재 부재)
-- [ ] **ClientQt: 가상 디스플레이 생성 UI** (현재 불완전)
-- [ ] **ClientQt: 코덱 폴백 로직 강화** (현재 부실)
+- [ ] **ClientQt: 디스플레이 레이아웃 설정 UI** (현재 부재) — #277
+- [ ] **ClientQt: 디스플레이 해상도 설정 UI** (현재 부재) — #278
+- [ ] **ClientQt: 가상 디스플레이 생성 UI** (현재 불완전) — #279
+- [ ] **ClientQt: 코덱 폴백 로직 강화** (현재 부실) — #280
 
 ### 🗑️ 제거 (Removals)
 
-- [ ] **타일링 이미지 코덱 제거**: MJPG / ZRLE / WebP
+- [ ] **타일링 이미지 코덱 제거**: MJPG / ZRLE / WebP — #281
   - 서버 인코더 제거
   - 클라이언트 디코더 제거 (Client / ClientQt)
   - 코덱 협상 로직에서 제외
@@ -250,6 +273,10 @@
   → 오류 가드 + 최소/최대 해상도 제한 (현 macOS 3840×2160) + 이상 해상도 (1×1, 262144×2 등) 거부. 기능 섹션 참조.
 - [x] ~~클립보드 파일 전송 — 0.9.10 포함 vs 별도 핫픽스?~~
   → **0.9.10에 함께 shipping**. 보안 섹션 참조.
+- [x] ~~[3.3] opaque token — Sirius spec 차원에서 강제할지 vs 구현체 권고로 둘지?~~ (2026-04-25)
+  → **"Spec=자유, Reference Impl=safe by default"** 패턴 채택. Sirius spec은 `path` 의미를 구현체 자율로 두고(향후 권고 톤 한 줄 추가 예정), Noctiluca reference 구현은 가상 경로만 wire에 노출. 보안 섹션 #262 참조.
+- [x] ~~클립보드 경유 vs Explorer/Transfer 모드의 path 노출 정책~~ (2026-04-25)
+  → **위협 모델 분리**: 클립보드 = implicit consent → 가상 경로. Explorer/Transfer = explicit consent → raw path expose default OFF + 첫 활성화 시 SFTP 비유로 사용자 고지. 토글 축도 분리(`clipboard.allowFile` ≠ `transfer.allowExplorer`).
 
 ---
 
