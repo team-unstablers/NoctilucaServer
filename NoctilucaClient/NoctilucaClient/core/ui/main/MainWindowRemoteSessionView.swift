@@ -27,6 +27,18 @@ struct MainWindowRemoteSessionView: View {
     @State
     var sourceDescriptor: ProjectionSourceDescriptor = .displayID(-1)
 
+    /// 진행 중인 backoff 재시도 task. `updateProjectionTarget` 호출 시 cancel 된다.
+    @State
+    private var retryTask: Task<Void, Never>?
+
+    /// 현재 sourceDescriptor 가 디스플레이를 가리키는 경우의 displayID. -1 (= 미선택) 은 nil.
+    private var currentDisplayID: Int? {
+        if case .displayID(let id) = sourceDescriptor, id != -1 {
+            return id
+        }
+        return nil
+    }
+
     var body: some View {
         // @Environment로 받은 viewModel을 Binding으로 사용하기 위해 @Bindable 지역 선언.
         @Bindable var viewModel = viewModel
@@ -150,16 +162,19 @@ struct MainWindowRemoteSessionView: View {
             }
         }
          */
-        /*
-         // TODO: 어떤 세션에 대한 에러인지 구분이 안되니까, 다른 디스플레이로 전환했을 때 그냥 꺼짐
-        .onReceive(projection.$sessionError) { error in
-            if error != nil {
-                // 세션이 서버에 의해 종료되었으므로 기존 subscription을 정리
-                subscription?.invalidate()
-                subscription = nil
+        .onChange(of: currentDisplayID.flatMap { projection.sessionErrors[$0] }) { _, error in
+            // sessionErrors 는 displayID 키 dict 이므로 현재 보고 있는 디스플레이의 에러만 관찰한다.
+            guard let error, let displayID = currentDisplayID else { return }
+            handleProjectionError(error, displayID: displayID)
+        }
+        .onChange(of: projection.channel.displayLayoutManager.displayLayouts.count) { oldCount, newCount in
+            // 모든 디스플레이가 사라졌다가 새로 connect 되면 자동으로 subscribe.
+            // (DisplayInfo 가 Equatable 이 아니라 dict 자체를 onChange 할 수 없으므로 count 로 감시)
+            guard currentDisplayID == nil, oldCount == 0, newCount > 0 else { return }
+            Task {
+                try? await self.decideTargetDisplayID()
             }
         }
-         */
     }
     
     func dispatchDisplaySwitcherAction(_ action: DisplaySwitcherAction) async throws {
@@ -203,6 +218,19 @@ struct MainWindowRemoteSessionView: View {
     }
     
     func updateProjectionTarget(_ displayID: Int) async throws {
+        // 이전 displayID 의 진행 중인 retry 와 stale 한 에러 상태를 정리한다.
+        // (Q4 답변: currentProjectionTarget 변경 시 retry 즉시 cancel)
+        let previousDisplayID = await MainActor.run { () -> Int? in
+            retryTask?.cancel()
+            retryTask = nil
+            return currentDisplayID
+        }
+        if let previousDisplayID, previousDisplayID != displayID {
+            projection.clearSessionError(for: previousDisplayID)
+        }
+        // 이행 대상 displayID 의 stale 에러도 클리어 (수동 재시도 케이스 포함)
+        projection.clearSessionError(for: displayID)
+
         let newSubscription = try await projection.subscribeProjectionSession(for: displayID)
 
         let previousSubscription = await MainActor.run { () -> ProjectionSessionSubscription? in
@@ -213,5 +241,75 @@ struct MainWindowRemoteSessionView: View {
         }
 
         previousSubscription?.invalidate()
+    }
+
+    // MARK: - Projection error handling
+
+    /// `sessionErrors[currentDisplayID]` 가 채워졌을 때의 정책 분기.
+    ///
+    /// - 디스플레이가 사라진 경우: primary 디스플레이로 fallback (없으면 placeholder 대기)
+    /// - 비재시도 reason (e.g. `clientRequested`): 노출만, 추가 시도 없음
+    /// - 재시도 가능 reason: 1s/2s/4s × 3회 backoff retry. 실패 시 sessionError 가 그대로 남음
+    @MainActor
+    private func handleProjectionError(_ error: RemoteSession.ProjectionSessionFailureInfo, displayID: Int) {
+        Self.logger.warning("Projection error on display \(displayID): reason=\(error.reason.rawValue), message=\(error.message ?? "(nil)")")
+
+        // 어떤 분기로 가든 기존 subscription 은 무효
+        subscription?.invalidate()
+        subscription = nil
+
+        let layoutManager = projection.channel.displayLayoutManager
+
+        // 디스플레이 자체가 사라졌으면 즉시 fallback
+        if layoutManager.displayLayouts[displayID] == nil {
+            Task { await fallbackToPrimaryOrWait() }
+            return
+        }
+
+        // 비재시도 reason 은 노출만 (사용자 수동 재시도 대기)
+        guard error.reason.isRetryable else {
+            return
+        }
+
+        // backoff 재시도
+        retryTask?.cancel()
+        retryTask = Task { @MainActor in
+            do {
+                let newSubscription = try await projection.subscribeWithBackoff(for: displayID)
+                // retry 도중 사용자가 다른 디스플레이로 이동했을 가능성 대비
+                guard currentDisplayID == displayID else {
+                    newSubscription.invalidate()
+                    return
+                }
+                let previous = self.subscription
+                self.subscription = newSubscription
+                previous?.invalidate()
+            } catch is CancellationError {
+                // 사용자 전환 등으로 정상 cancel
+            } catch ProjectionRetryError.displayDisappeared {
+                await fallbackToPrimaryOrWait()
+            } catch {
+                Self.logger.error("Projection retry failed permanently for display \(displayID): \(error.localizedDescription)")
+                // sessionErrors[displayID] 는 그대로 남아 사용자에게 노출됨
+            }
+        }
+    }
+
+    /// primary 디스플레이로 전환을 시도하고, primary 가 없으면 placeholder UI 로 돌아가
+    /// 디스플레이가 다시 connect 될 때까지 대기한다.
+    @MainActor
+    private func fallbackToPrimaryOrWait() async {
+        let layoutManager = projection.channel.displayLayoutManager
+        if let primary = layoutManager.primaryDisplayID, primary != currentDisplayID {
+            do {
+                try await updateProjectionTarget(primary)
+            } catch {
+                Self.logger.error("Failed to fall back to primary display \(primary): \(error.localizedDescription)")
+                sourceDescriptor = .displayID(-1)
+            }
+        } else {
+            // primary 도 없는 상태 → placeholder 로 돌아가서 displayLayouts 변화를 기다림
+            sourceDescriptor = .displayID(-1)
+        }
     }
 }

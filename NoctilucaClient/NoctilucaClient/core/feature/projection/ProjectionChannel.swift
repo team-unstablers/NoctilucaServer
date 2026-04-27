@@ -44,7 +44,10 @@ enum ProjectionChannelEvent: Sendable {
     /// 화면 프로젝션 세션이 생성되었습니다.
     case sessionCreated(ProjectionSession)
     /// 화면 프로젝션 세션이 종료되었습니다.
-    case sessionDestroyed(UUID, reason: VideoSessionEndReason, message: String?)
+    ///
+    /// `displayID` 는 세션이 `EntireDisplayProjectionSource` 로 만들어진 경우에만 유효하다.
+    /// `SingleWindowProjectionSource` 등 displayID 가 의미 없는 케이스에서는 nil 이 들어온다.
+    case sessionDestroyed(UUID, displayID: Int?, reason: VideoSessionEndReason, message: String?)
 
     /// 오디오 프로젝션 세션이 생성되었습니다.
     case audioSessionCreated(AudioProjectionSession)

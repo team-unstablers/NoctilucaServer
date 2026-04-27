@@ -251,13 +251,16 @@ extension ProjectionChannel {
             return
         }
 
+        // ProjectionSession.displayID 는 nonisolated let 이라 actor hop 없이 접근 가능
+        let displayID = session.displayID
+
         do {
             try await session.stop(sendStopRequest: false)
         } catch {
             logger.error("Failed to stop projection session \(identifier): \(error)")
         }
 
-        continuation.yield(.sessionDestroyed(identifier, reason: event.reason, message: event.message))
+        continuation.yield(.sessionDestroyed(identifier, displayID: displayID, reason: event.reason, message: event.message))
     }
 
     func handleProjectionSessionChangedEvent(_ event: ProjectionSessionChangedEvent) async {
