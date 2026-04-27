@@ -371,12 +371,6 @@ actor ProjectionSession: Identifiable {
         try? self.encoder.stop()
 
         switch codec.fourCC {
-        case .zrle:
-            encoder = ZRLEVideoEncoder()
-        case .mjpg:
-            encoder = MJPGVideoEncoder()
-        case .webp:
-            encoder = WebPVideoEncoder()
         case .vp80:
             encoder = VPXVideoEncoder()
         default:

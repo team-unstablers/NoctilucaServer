@@ -201,8 +201,8 @@ final class VPXVideoEncoder: VideoEncoder, @unchecked Sendable {
         //      the stream buffer for many milliseconds before anyone
         //      picks them up.
         //
-        // Dispatching the heavy work asynchronously mirrors what
-        // WebPVideoEncoder does for the same reason.
+        // Dispatching the heavy work asynchronously decouples libvpx's
+        // synchronous encode call from the upstream capture queue.
         workerQueue.async { [self] in
             // Re-check inside the worker queue. stop() may have flipped
             // `isStarted` to false between the caller's check and the
