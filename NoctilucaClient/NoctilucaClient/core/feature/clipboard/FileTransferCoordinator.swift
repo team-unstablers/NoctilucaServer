@@ -297,7 +297,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter, @unchecked Sendable { // T
         // `appendingPathComponent`는 `..`를 리터럴로 포함시키므로 이를 막지 않으면
         // url이 UUID 컨테이너/부모 디렉토리를 벗어날 수 있다.
         guard metadata.name.isSafePathComponent else {
-            logger.error("Refused to create placeholder for unsafe metadata.name: \(metadata.name)")
+            logger.error("Refused to create placeholder for unsafe metadata.name: \(self.metadata.name)")
             return
         }
 
