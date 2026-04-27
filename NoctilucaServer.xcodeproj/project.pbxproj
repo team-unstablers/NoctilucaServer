@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		F60021EE2F9B491800AFD3CF /* CJKKeyboardHacks.nocbundle in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F606EFE42F9CC0E700B8E05C /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = F606EFE32F9CC0E700B8E05C /* Sentry */; };
 		F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */ = {isa = PBXBuildFile; productRef = F61AB32D2F4146CF00BB69AF /* Gesu */; };
 		F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; };
 		F621CB052F8AC11900AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -399,6 +400,7 @@
 				F6CC838B2F5B522800AA6DC2 /* libzstd in Frameworks */,
 				F6CC838C2F5B522800AA6DC2 /* libbcrypt.framework in Frameworks */,
 				F6CC838D2F5B522800AA6DC2 /* Sparkle in Frameworks */,
+				F606EFE42F9CC0E700B8E05C /* Sentry in Frameworks */,
 				F6CC838E2F5B522800AA6DC2 /* NoctilucaPluginKit.framework in Frameworks */,
 				F6CC838F2F5B522800AA6DC2 /* AsyncAlgorithms in Frameworks */,
 				F6CC83902F5B522800AA6DC2 /* Alamofire in Frameworks */,
@@ -597,6 +599,7 @@
 				F6CC837D2F5B522800AA6DC2 /* Alamofire */,
 				F6CC837F2F5B522800AA6DC2 /* Inject */,
 				F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */,
+				F606EFE32F9CC0E700B8E05C /* Sentry */,
 			);
 			productName = NoctilucaServer;
 			productReference = F6CC839F2F5B522800AA6DC2 /* NoctilucaServerTestsHost.app */;
@@ -1432,6 +1435,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F606EFE32F9CC0E700B8E05C /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
+		};
 		F61AB32D2F4146CF00BB69AF /* Gesu */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Gesu;
