@@ -66,11 +66,20 @@ public extension CodecFourCC {
     static let vp80 = CodecFourCC("V", "P", "8", "0")
 
     /// ZRLE (Zlib Run-Length Encoding), RLE + Zstd
+    ///
+    /// Deprecated since Noctiluca 0.9.10 — reference encoder/decoder removed.
+    /// FourCC identifier is reserved for wire-level interoperability with older peers.
     static let zrle = CodecFourCC("Z", "R", "L", "E")
 
     /// Motion JPEG
+    ///
+    /// Deprecated since Noctiluca 0.9.10 — reference encoder/decoder removed.
+    /// FourCC identifier is reserved for wire-level interoperability with older peers.
     static let mjpg = CodecFourCC("M", "J", "P", "G")
-    
+
     /// WebP
+    ///
+    /// Deprecated since Noctiluca 0.9.10 — reference encoder/decoder removed.
+    /// FourCC identifier is reserved for wire-level interoperability with older peers.
     static let webp = CodecFourCC("W", "E", "B", "P")
 }

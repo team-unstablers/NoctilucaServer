@@ -49,13 +49,22 @@ public struct CodecOptionKey: RawRepresentable, Codable, Hashable, Equatable, Se
     public static let displayDensity = Self(rawValue: "display-density")
     
     /// 압축 레벨을 설정합니다. (ZRLE / MJPG 전용)
+    ///
+    /// Deprecated since Noctiluca 0.9.10 — ZRLE/MJPG/WebP 코덱이 제거되어 사용처가 없습니다.
+    /// 향후 새 코덱이 동일 의미로 재사용할 수 있도록 키 정의는 유지합니다.
     public static let compressionLevel = Self(rawValue: "compression-level")
-    
+
     /// 타일 사이즈를 설정합니다. (ZRLE / MJPG 전용)
+    ///
+    /// Deprecated since Noctiluca 0.9.10 — ZRLE/MJPG/WebP 코덱이 제거되어 사용처가 없습니다.
+    /// 향후 새 코덱이 동일 의미로 재사용할 수 있도록 키 정의는 유지합니다.
     public static let tileSize = Self(rawValue: "tile-size")
 
     /// 양자화 레벨을 설정합니다. (ZRLE 전용, 그라데이션 압축률 향상용)
     /// @typedef { '0' | '1' | '2' | '3' }
+    ///
+    /// Deprecated since Noctiluca 0.9.10 — ZRLE 코덱이 제거되어 사용처가 없습니다.
+    /// 향후 새 코덱이 동일 의미로 재사용할 수 있도록 키 정의는 유지합니다.
     public static let quantizeLevel = Self(rawValue: "quantize-level")
 }
 
