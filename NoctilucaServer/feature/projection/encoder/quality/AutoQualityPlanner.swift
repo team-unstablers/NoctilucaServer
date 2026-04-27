@@ -22,6 +22,8 @@ extension AutoQualityPreset {
             return h264Preset(resolution: resolution, frameRate: frameRate)
         case .hvc1: // H.265 (HEVC)
             return hevcPreset(resolution: resolution, frameRate: frameRate)
+        case .vp80: // VP8 (libvpx)
+            return vp8Preset(resolution: resolution, frameRate: frameRate)
         default:
             return h264Preset(resolution: resolution, frameRate: frameRate)
         }
@@ -88,6 +90,61 @@ extension AutoQualityPreset {
         )
     }
     
+    static func vp8Preset(resolution: CGSize, frameRate: Float) -> AutoQualityPreset {
+        let pixelCount = Int(resolution.width * resolution.height)
+        let scale = calculateFpsScale(frameRate)
+
+        // VP8 (libvpx) is roughly equivalent to H.264 baseline; against the VT
+        // H.264 main/high profile we lose ~25–50% efficiency — most painfully
+        // in the 1080p~2K office-content range. 4K is software-encoded and
+        // already heavy, so we don't push the ratio there.
+        //
+        // Ratios vs h264Preset:
+        //   ~720p   : 1.3x  (저해상도는 H.264와 거의 동등)
+        //   1080p~2K: 1.5x  (사무용 핵심 구간 — VP8이 가장 손해 보는 구간)
+        //   4K+     : 1.3x  (libvpx software 인코딩 부담 + 절대값이 이미 큼)
+
+        let target: Double
+        let maxRate: Double
+
+        switch pixelCount {
+        case 0..<CodecResolutionLevel.sd480p.pixelCount:
+            // ~480p
+            target = 650
+            maxRate = 1_300
+
+        case CodecResolutionLevel.sd480p.pixelCount..<CodecResolutionLevel.hd720p.pixelCount:
+            // 480p ~ 720p
+            target = 1_950
+            maxRate = 3_900
+
+        case CodecResolutionLevel.hd720p.pixelCount..<CodecResolutionLevel.hd1080p.pixelCount:
+            // 720p ~ 1080p (핵심 구간)
+            target = 6_000
+            maxRate = 12_000
+
+        case CodecResolutionLevel.hd1080p.pixelCount..<CodecResolutionLevel.hd2k.pixelCount:
+            // 1080p ~ 2K
+            target = 12_000
+            maxRate = 21_000
+
+        case CodecResolutionLevel.hd2k.pixelCount..<CodecResolutionLevel.hd4k.pixelCount:
+            // 2K ~ 4K
+            target = 15_600
+            maxRate = 26_000
+
+        default:
+            // 4K 이상
+            target = 23_400
+            maxRate = 39_000
+        }
+
+        return AutoQualityPreset(
+            targetBitrateKbps: Int(target * scale),
+            maxBitrateKbps: Int(maxRate * scale)
+        )
+    }
+
     static func hevcPreset(resolution: CGSize, frameRate: Float) -> AutoQualityPreset {
         let pixelCount = Int(resolution.width * resolution.height)
         let scale = calculateFpsScale(frameRate)

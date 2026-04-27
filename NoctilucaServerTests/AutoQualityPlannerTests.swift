@@ -78,11 +78,62 @@ final class AutoQualityPlannerTests: XCTestCase {
         let fps: Float = 60
         let h264 = AutoQualityPreset.preset(for: .avc1, resolution: resolution, frameRate: fps)
 
-        for codec in [CodecFourCC.vp80, .mjpg, .webp, .zrle] {
+        for codec in [CodecFourCC.mjpg, .webp, .zrle] {
             let preset = AutoQualityPreset.preset(for: codec, resolution: resolution, frameRate: fps)
             XCTAssertEqual(preset.targetBitrateKbps, h264.targetBitrateKbps,
                            "Unknown codec \(codec.stringRepresentation) should fall back to H.264 preset")
             XCTAssertEqual(preset.maxBitrateKbps, h264.maxBitrateKbps)
+        }
+    }
+
+    func testPresetVP8ReturnsBandSpecificValues() {
+        // VP8은 H.264 대비 압축 효율이 떨어져 band별로 1.3~1.5배의 비트레이트가
+        // 필요하다 — 사무용 핵심 구간(1080p~2K)은 1.5배, 양 끝(저해상도/4K)은 1.3배.
+        // Band 1: [0, sd480p)
+        XCTAssertEqual(
+            AutoQualityPreset.preset(for: .vp80, resolution: CGSize(width: 320, height: 240), frameRate: 60).targetBitrateKbps,
+            650)
+        // Band 2: [sd480p, hd720p)
+        XCTAssertEqual(
+            AutoQualityPreset.preset(for: .vp80, resolution: CGSize(width: 1024, height: 768), frameRate: 60).targetBitrateKbps,
+            1_950)
+        // Band 3: [hd720p, hd1080p)
+        XCTAssertEqual(
+            AutoQualityPreset.preset(for: .vp80, resolution: CGSize(width: 1600, height: 1200), frameRate: 60).targetBitrateKbps,
+            6_000)
+        // Band 4: [hd1080p, hd2k)
+        XCTAssertEqual(
+            AutoQualityPreset.preset(for: .vp80, resolution: CGSize(width: 2048, height: 1536), frameRate: 60).targetBitrateKbps,
+            12_000)
+        // Band 5: [hd2k, hd4k)
+        XCTAssertEqual(
+            AutoQualityPreset.preset(for: .vp80, resolution: CGSize(width: 3200, height: 2400), frameRate: 60).targetBitrateKbps,
+            15_600)
+        // Band 6: [hd4k, ∞)
+        XCTAssertEqual(
+            AutoQualityPreset.preset(for: .vp80, resolution: CGSize(width: 4096, height: 3072), frameRate: 60).targetBitrateKbps,
+            23_400)
+    }
+
+    func testPresetVP8IsAtLeastH264ForSameResolution() {
+        // VP8은 동일 해상도에서 H.264보다 항상 비트레이트가 같거나 높아야 한다
+        // (libvpx의 압축 효율이 VT H.264보다 낮음 — 화질을 맞추려면 더 많은 비트가 필요).
+        let fps: Float = 60
+        let resolutions: [CGSize] = [
+            CGSize(width: 320, height: 240),
+            CGSize(width: 854, height: 480),
+            CGSize(width: 1280, height: 720),
+            CGSize(width: 1920, height: 1080),
+            CGSize(width: 2560, height: 1440),
+            CGSize(width: 3840, height: 2160)
+        ]
+        for res in resolutions {
+            let h264 = AutoQualityPreset.preset(for: .avc1, resolution: res, frameRate: fps)
+            let vp8 = AutoQualityPreset.preset(for: .vp80, resolution: res, frameRate: fps)
+            XCTAssertGreaterThanOrEqual(vp8.targetBitrateKbps, h264.targetBitrateKbps,
+                                        "VP8 target should be ≥ H.264 target at \(res)")
+            XCTAssertGreaterThanOrEqual(vp8.maxBitrateKbps, h264.maxBitrateKbps,
+                                        "VP8 max should be ≥ H.264 max at \(res)")
         }
     }
 
