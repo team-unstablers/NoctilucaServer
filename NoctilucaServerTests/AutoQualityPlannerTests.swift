@@ -78,7 +78,14 @@ final class AutoQualityPlannerTests: XCTestCase {
         let fps: Float = 60
         let h264 = AutoQualityPreset.preset(for: .avc1, resolution: resolution, frameRate: fps)
 
-        for codec in [CodecFourCC.mjpg, .webp, .zrle] {
+        // 0.9.10에서 제거된 코덱 (zrle/mjpg/webp) 및 임의 unknown FourCC.
+        // negotiation 단계에서 reject 되어야 하지만, 우회 경로로 들어오더라도
+        // preset 결정은 안전하게 H.264 로 fallback 되어야 한다 (회귀 방지).
+        let unknownCodecs: [CodecFourCC] = [
+            .mjpg, .webp, .zrle,
+            CodecFourCC("X", "X", "X", "X"),
+        ]
+        for codec in unknownCodecs {
             let preset = AutoQualityPreset.preset(for: codec, resolution: resolution, frameRate: fps)
             XCTAssertEqual(preset.targetBitrateKbps, h264.targetBitrateKbps,
                            "Unknown codec \(codec.stringRepresentation) should fall back to H.264 preset")
@@ -443,43 +450,19 @@ final class AutoQualityPlannerTests: XCTestCase {
         XCTAssertTrue(hasQuality, "balanced 전략의 degradation step에는 .lowerQuality가 포함되어야 함")
     }
 
-    func testImageCodecDegradationIncludesQuantization() async throws {
-        let planner = await makePlanner(codec: .mjpg, strategy: .balanced)
-        await planner.feed(queuePressure: 1.0)
+    func testCodecDegradationExcludesQuantization() async throws {
+        // 0.9.10 에서 image codec (mjpg/zrle/webp) 가 제거되면서
+        // .increaseQuantization 분기는 더 이상 plan 되지 않는다. 회귀 방지.
+        for codec: CodecFourCC in [.avc1, .hvc1, .vp80] {
+            let planner = await makePlanner(codec: codec, strategy: .balanced)
+            await forceAllStepsActivated(planner, maxTicks: 32)
 
-        let degradations = await planner.plannedDegradations()
-        let hasQuantization = degradations.contains {
-            if case .increaseQuantization = $0 { return true }; return false
-        }
-        XCTAssertTrue(hasQuantization, "이미지 코덱(.mjpg)의 degradation step에는 .increaseQuantization이 포함되어야 함")
-    }
-
-    func testVTCodecDegradationExcludesQuantization() async throws {
-        let planner = await makePlanner(codec: .avc1, strategy: .balanced)
-        await forceAllStepsActivated(planner, maxTicks: 32)
-
-        let degradations = await planner.plannedDegradations()
-        let hasQuantization = degradations.contains {
-            if case .increaseQuantization = $0 { return true }; return false
-        }
-        XCTAssertFalse(hasQuantization,
-                       "VT 코덱(.avc1)의 degradation step에는 .increaseQuantization이 포함되지 않아야 함")
-    }
-
-    func testImageCodecBalancedContainsMultipleQuantizationLevels() async throws {
-        let planner = await makePlanner(codec: .webp, strategy: .balanced)
-        await forceAllStepsActivated(planner, maxTicks: 32)
-
-        let degradations = await planner.plannedDegradations()
-        let levels = degradations.compactMap { degradation -> Int? in
-            if case .increaseQuantization(let level) = degradation { return level }
-            return nil
-        }
-        XCTAssertGreaterThanOrEqual(levels.count, 2,
-                                    "이미지 코덱 balanced 전략은 여러 quantization 레벨을 포함해야 함")
-        // 최고 레벨이 최소 2 이상이어야 함 (명세상 balanced는 1, 2, 3의 3단계를 포함)
-        if let maxLevel = levels.max() {
-            XCTAssertGreaterThanOrEqual(maxLevel, 2)
+            let degradations = await planner.plannedDegradations()
+            let hasQuantization = degradations.contains {
+                if case .increaseQuantization = $0 { return true }; return false
+            }
+            XCTAssertFalse(hasQuantization,
+                           "코덱 \(codec.stringRepresentation) 의 degradation step 에는 .increaseQuantization 이 포함되지 않아야 함")
         }
     }
 

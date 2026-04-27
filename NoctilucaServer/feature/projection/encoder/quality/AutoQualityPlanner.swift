@@ -419,31 +419,13 @@ private extension AutoQualityPlanner {
         let fps90d = QualityDegradation.lowerFrameRate(to: fps90)
         let fps75d = QualityDegradation.lowerFrameRate(to: fps75)
 
-        let quant1 = QualityDegradation.increaseQuantization(level: 1)
-        let quant2 = QualityDegradation.increaseQuantization(level: 2)
-        let quant3 = QualityDegradation.increaseQuantization(level: 3)
-
-        let isImageCodec = (codec == .mjpg || codec == .webp || codec == .zrle)
-
-        if isImageCodec {
-            switch strategy {
-            case .balanced:
-                return [quant1, q85, res85, fps90d, quant2, q70, res70, fps75d, quant3]
-            case .performanceFirst:
-                return [quant1, q85, quant2, res85, q70, quant3, res70, res50, fps90d, fps75d]
-            case .qualityFirst:
-                return [fps90d, fps75d, quant1, q85, res85, quant2, q70, res70]
-            }
-        } else {
-            // VT 코덱 (H.264/H.265) — 기존 유지
-            switch strategy {
-            case .balanced:
-                return [q85, res85, fps90d, q70, res70, fps75d]
-            case .performanceFirst:
-                return [q85, res85, q70, res70, res50, fps90d, fps75d]
-            case .qualityFirst:
-                return [fps90d, fps75d, q85, res85, q70, res70]
-            }
+        switch strategy {
+        case .balanced:
+            return [q85, res85, fps90d, q70, res70, fps75d]
+        case .performanceFirst:
+            return [q85, res85, q70, res70, res50, fps90d, fps75d]
+        case .qualityFirst:
+            return [fps90d, fps75d, q85, res85, q70, res70]
         }
     }
     
