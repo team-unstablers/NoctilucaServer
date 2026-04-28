@@ -117,7 +117,7 @@ private func getInterfaceAddresses(orderedBy interfaceNames: [String]) -> [IPAdd
 public class AddressMonitor: ObservableObject {
     public static let shared = AddressMonitor()
 
-    private let logger = Logger(subsystem: "SiriusKitCore", category: "AddressMonitor")
+    nonisolated private let logger = Logger(subsystem: "SiriusKitCore", category: "AddressMonitor")
 
     @Published
     private(set) public var currentAddresses: [IPAddress] = []
@@ -146,7 +146,7 @@ public class AddressMonitor: ObservableObject {
             let orderedInterfaceNames = path.availableInterfaces.map { $0.name }
             let addresses = getInterfaceAddresses(orderedBy: orderedInterfaceNames)
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.currentAddresses = addresses
             }
         }

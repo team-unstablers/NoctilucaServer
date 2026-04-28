@@ -33,7 +33,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     nonisolated let id: ClientRoleTransportIdentifier = ClientRoleTransportIdentifier()
     nonisolated(unsafe) weak var delegate: ClientRoleTransportDelegate?
 
-    private let logger = SiriusLogger(category: "ClientRoleMsQuicTransport")
+    nonisolated private let logger = SiriusLogger(category: "ClientRoleMsQuicTransport")
 
     internal let endpoint: SREndpoint
 
