@@ -4,7 +4,28 @@
     "" : {
 
     },
+    "-1.0" : {
+
+    },
+    "-10%" : {
+
+    },
+    "(2x HiDPI)" : {
+
+    },
+    "[%@]" : {
+
+    },
+    "**[Codec]**" : {
+
+    },
+    "**[Performance]**" : {
+
+    },
     "%@" : {
+
+    },
+    "%@ — " : {
 
     },
     "%@ (#%u)" : {
@@ -16,9 +37,6 @@
           }
         }
       }
-    },
-    "%@ — " : {
-
     },
     "%@ ↑ %@ ↓" : {
       "localizations" : {
@@ -43,13 +61,13 @@
     "%ufps" : {
 
     },
-    "(2x HiDPI)" : {
+    "© 2026 team unstablers Inc. All rights reserved." : {
 
     },
-    "**[Codec]**" : {
+    "→" : {
 
     },
-    "**[Performance]**" : {
+    "⇪ (Caps Lock)" : {
 
     },
     "+1.0" : {
@@ -58,19 +76,28 @@
     "+10%" : {
 
     },
-    "-1.0" : {
+    "|" : {
 
     },
-    "-10%" : {
+    "⌃ (Control)" : {
+
+    },
+    "⌘ (Command)" : {
+
+    },
+    "⌥ (Option)" : {
+
+    },
+    "⎋ (Escape)" : {
 
     },
     "0" : {
 
     },
-    "0%" : {
+    "0.5x" : {
 
     },
-    "0.5x" : {
+    "0%" : {
 
     },
     "1" : {
@@ -79,19 +106,13 @@
     "1.5x" : {
 
     },
-    "100%" : {
-
-    },
-    "1366x768" : {
-
-    },
-    "1920x1080" : {
-
-    },
     "1Mbps" : {
 
     },
     "2.0x" : {
+
+    },
+    "4K" : {
 
     },
     "20Mbps" : {
@@ -112,9 +133,6 @@
     "48.0hz" : {
 
     },
-    "4K" : {
-
-    },
     "50%" : {
 
     },
@@ -130,172 +148,43 @@
     "75%" : {
 
     },
-    "App Store" : {
+    "100%" : {
 
     },
-    "Audio" : {
+    "1366x768" : {
 
     },
-    "Channels" : {
+    "1920x1080" : {
 
     },
-    "Channels (%lld)" : {
-
-    },
-    "Cocoa Event Tap" : {
-
-    },
-    "Copyright © 2026 team unstablers Inc. All rights reserved." : {
-
-    },
-    "Data rate: %@" : {
-
-    },
-    "Debug" : {
-
-    },
-    "Decode: %u ms (avg)" : {
-
-    },
-    "Decoder: %@" : {
-
-    },
-    "Display %lld" : {
-
-    },
-    "FIXME" : {
-
-    },
-    "FPS: %u (dropped: %u)" : {
+    "about.appeal_button" : {
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FPS: %1$u (dropped: %2$u)"
+            "value" : "Appeal…"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FPS: %1$u (dropped: %2$u)"
+            "value" : "訴え…"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "FPS: %1$u (dropped: %2$u)"
+            "value" : "호소문…"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FPS: %1$u (dropped: %2$u)"
+            "value" : "呼吁书…"
           }
         }
       }
-    },
-    "Frame rate: %@ fps" : {
-
-    },
-    "GameController.framework" : {
-
-    },
-    "HDR (High Dynamic Range)" : {
-
-    },
-    "HIDIO" : {
-
-    },
-    "HiDPI (Retina) 켜기" : {
-
-    },
-    "Kill" : {
-
-    },
-    "Main Profile" : {
-
-    },
-    "Navigator" : {
-
-    },
-    "Noctiluca " : {
-
-    },
-    "Options:" : {
-
-    },
-    "Ping: %@ ms" : {
-
-    },
-    "Pressed Keys (%lld)" : {
-
-    },
-    "Progress: %lld%%" : {
-
-    },
-    "Projection" : {
-
-    },
-    "ProjectionData" : {
-
-    },
-    "Resolution: %lld x %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resolution: %1$lld x %2$lld"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解像度: %1$lld x %2$lld"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Resolution: %1$lld x %2$lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "分辨率: %1$lld x %2$lld"
-          }
-        }
-      }
-    },
-    "SDR (Standard Dynamic Range)" : {
-
-    },
-    "Selected Channel" : {
-
-    },
-    "Selected Session" : {
-
-    },
-    "Status" : {
-
-    },
-    "Unleashed Edition" : {
-
-    },
-    "Video" : {
-
-    },
-    "Video Sessions (%lld)" : {
-
-    },
-    "YUV 4:2:0" : {
-
-    },
-    "YUV 4:4:4" : {
-
-    },
-    "[%@]" : {
-
     },
     "about.appeal.body" : {
       "extractionState" : "extracted_with_value",
@@ -380,35 +269,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "呼吁书"
-          }
-        }
-      }
-    },
-    "about.appeal_button" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appeal…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "訴え…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "호소문…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "呼吁书…"
           }
         }
       }
@@ -877,7 +737,13 @@
         }
       }
     },
+    "App Store" : {
+
+    },
     "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle" : {
+
+    },
+    "Audio" : {
 
     },
     "auth.certificate.chain" : {
@@ -1866,35 +1732,6 @@
         }
       }
     },
-    "auth.identity.fingerprint_mismatch.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server Certificate Fingerprint Mismatch!"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバー証明書のフィンガープリントが一致しません！"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서버 인증서 지문이 일치하지 않습니다!"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "服务器证书指纹不一致！"
-          }
-        }
-      }
-    },
     "auth.identity.fingerprint_mismatch_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1920,6 +1757,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "`%@` 出示了证书，但证书指纹与上次连接时不同。"
+          }
+        }
+      }
+    },
+    "auth.identity.fingerprint_mismatch.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Certificate Fingerprint Mismatch!"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバー証明書のフィンガープリントが一致しません！"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 인증서 지문이 일치하지 않습니다!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器证书指纹不一致！"
           }
         }
       }
@@ -2939,35 +2805,6 @@
         }
       }
     },
-    "auth.identity.untrusted.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cannot verify server certificate."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーの証明書を検証できません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서버의 인증서를 검증할 수 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法验证服务器证书。"
-          }
-        }
-      }
-    },
     "auth.identity.untrusted_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -2993,6 +2830,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "`%@` 出示了证书，但系统信任存储库判定该证书不可信。"
+          }
+        }
+      }
+    },
+    "auth.identity.untrusted.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot verify server certificate."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーの証明書を検証できません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버의 인증서를 검증할 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法验证服务器证书。"
           }
         }
       }
@@ -3141,6 +3007,15 @@
           }
         }
       }
+    },
+    "Channels" : {
+
+    },
+    "Channels (%lld)" : {
+
+    },
+    "Cocoa Event Tap" : {
+
     },
     "codec-spec.color_format.auto" : {
       "extractionState" : "extracted_with_value",
@@ -3490,35 +3365,6 @@
         }
       }
     },
-    "codec.resolution.hd1080p" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1080p (Full HD)"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1080p (Full HD級)"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "1080p (Full HD급)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1080p (Full HD 级)"
-          }
-        }
-      }
-    },
     "codec.resolution.hd2k" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -3602,6 +3448,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "720p (HD 级)"
+          }
+        }
+      }
+    },
+    "codec.resolution.hd1080p" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD級)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1080p (Full HD급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD 级)"
           }
         }
       }
@@ -4824,6 +4699,21 @@
         }
       }
     },
+    "Copyright © 2026 team unstablers Inc. All rights reserved." : {
+
+    },
+    "Data rate: %@" : {
+
+    },
+    "Debug" : {
+
+    },
+    "Decode: %u ms (avg)" : {
+
+    },
+    "Decoder: %@" : {
+
+    },
     "description" : {
       "localizations" : {
         "en" : {
@@ -4834,10 +4724,7 @@
         }
       }
     },
-    "e.g.) 1080" : {
-
-    },
-    "e.g.) 1920" : {
+    "Display %lld" : {
 
     },
     "endpoint.connect_format" : {
@@ -5010,6 +4897,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "会话已结束"
+          }
+        }
+      }
+    },
+    "error.audio_projection_init_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to initialize audio projection.\n%@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオプロジェクションの初期化に失敗しました。\n%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션 초기화에 실패했습니다.\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音频投影初始化失败。\n%@"
           }
         }
       }
@@ -5242,35 +5158,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到请求的音频源。"
-          }
-        }
-      }
-    },
-    "error.audio_projection_init_failed" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to initialize audio projection.\n%@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "オーディオプロジェクションの初期化に失敗しました。\n%@"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "오디오 프로젝션 초기화에 실패했습니다.\n%@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音频投影初始化失败。\n%@"
           }
         }
       }
@@ -5942,6 +5829,9 @@
         }
       }
     },
+    "FIXME" : {
+
+    },
     "floating_palette.software_keyboard_toggle" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6039,6 +5929,55 @@
         }
       }
     },
+    "FPS: %u (dropped: %u)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FPS: %1$u (dropped: %2$u)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FPS: %1$u (dropped: %2$u)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "FPS: %1$u (dropped: %2$u)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FPS: %1$u (dropped: %2$u)"
+          }
+        }
+      }
+    },
+    "Frame rate: %@ fps" : {
+
+    },
+    "GameController.framework" : {
+
+    },
+    "HDR (High Dynamic Range)" : {
+
+    },
+    "HIDIO" : {
+
+    },
+    "HiDPI (Retina) 켜기" : {
+
+    },
+    "Kill" : {
+
+    },
+    "Main Profile" : {
+
+    },
     "main.address_bar.candidate.connect_format" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6122,6 +6061,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "— 联系人中已注册的计算机"
+          }
+        }
+      }
+    },
+    "main.address_bar.degradation.adjustment_prefix" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjustments: "
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調整事項: "
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "조정 사항: "
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调整："
           }
         }
       }
@@ -6238,35 +6206,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "降低分辨率"
-          }
-        }
-      }
-    },
-    "main.address_bar.degradation.adjustment_prefix" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adjustments: "
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "調整事項: "
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "조정 사항: "
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "调整："
           }
         }
       }
@@ -8533,6 +8472,12 @@
         }
       }
     },
+    "Navigator" : {
+
+    },
+    "Noctiluca " : {
+
+    },
     "notification.background_session_active.message" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -8591,6 +8536,12 @@
         }
       }
     },
+    "Options:" : {
+
+    },
+    "Ping: %@ ms" : {
+
+    },
     "ping: %@ms" : {
       "localizations" : {
         "en" : {
@@ -8600,6 +8551,18 @@
           }
         }
       }
+    },
+    "Pressed Keys (%lld)" : {
+
+    },
+    "Progress: %lld%%" : {
+
+    },
+    "Projection" : {
+
+    },
+    "ProjectionData" : {
+
     },
     "quality.desc.bad" : {
       "extractionState" : "extracted_with_value",
@@ -8890,6 +8853,43 @@
           }
         }
       }
+    },
+    "Resolution: %lld x %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resolution: %1$lld x %2$lld"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解像度: %1$lld x %2$lld"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resolution: %1$lld x %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分辨率: %1$lld x %2$lld"
+          }
+        }
+      }
+    },
+    "SDR (Standard Dynamic Range)" : {
+
+    },
+    "Selected Channel" : {
+
+    },
+    "Selected Session" : {
+
     },
     "session-settings.delete_contact.message" : {
       "extractionState" : "extracted_with_value",
@@ -9355,35 +9355,6 @@
         }
       }
     },
-    "session-settings.projection.audio.enable" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable Audio Projection"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "オーディオプロジェクション有効化"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "오디오 프로젝션 활성화"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用音频投影"
-          }
-        }
-      }
-    },
     "session-settings.projection.audio_codec_list.add.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -9728,6 +9699,673 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "音频编解码器优先级设置"
+          }
+        }
+      }
+    },
+    "session-settings.projection.audio.enable" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Audio Projection"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオプロジェクション有効化"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션 활성화"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用音频投影"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.add.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the codec type to add."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加するコーデックの種類を選択してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "추가할 코덱 유형을 선택하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择要添加的编解码器类型。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.add.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Codec"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コーデック選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 선택"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择编解码器"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set the priority of codecs to be used by the server. During negotiation with the client, codecs with higher priority are attempted first."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーで使用するコーデックの優先順位を設定します。クライアントとのネゴシエーション時、優先順位が高いコーデックから試行します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置服务器要使用的编解码器的优先级。与客户端协商时，会从高优先级编解码器开始尝试。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.empty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(No codecs configured)\nClick the Add button to register codecs."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(構成されたコーデックがありません)\n追加ボタンを押してコーデックを登録してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(没有配置编解码器)\n请点击添加按钮注册编解码器。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.h264.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The most widely used video codec. Provides high compatibility."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最も広く使用されているビデオコーデックです。高い互換性を提供します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最广泛使用的视频编解码器。提供高兼容性。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.h264.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced Video Coding (H.264)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced Video Coding (H.264)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced Video Coding (H.264)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高级视频编码 (H.264)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.hevc.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A modern video codec providing higher compression efficiency than H.264."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "H.264より高い圧縮効率を提供する最新のビデオコーデックです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "H.264보다 더 높은 압축 효율을 제공하는 최신 비디오 코덱입니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供比 H.264 更高压缩效率的最新视频编解码器。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.hevc.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High Efficiency Video Coding (H.265)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High Efficiency Video Coding (H.265)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "High Efficiency Video Coding (H.265)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高效视频编码 (H.265)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.mjpg.description" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A video codec used in traditional remote desktop environments.\nSuitable for displaying frequently changing content in virtual machine environments."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "従来の遠隔デスクトップ環境で使用されるビデオコーデックです。\n仮想マシン環境で画面変更が頻繁なコンテンツを表示する必要がある場合に適しています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用于传统远程桌面环境的视频编解码器。\n适合在虚拟机环境下显示画面变化频繁的内容。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.mjpg.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motion JPEG"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motion JPEG"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Motion JPEG"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motion JPEG"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.webp.description" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use tiled WebP.\nBetter compression than MJPG but uses more resources.\nSuitable for displaying frequently changing content in virtual machine environments."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイリングされたWebPを使用します。\nMJPGより圧縮効率が良いですがリソースをより多く使用します。\n仮想マシン環境で画面変更が頻繁なコンテンツを表示する必要がある場合に適しています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일링된 WebP를 사용합니다.\nMJPG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用平铺 WebP。\n压缩效率比 MJPG 好，但消耗更多资源。\n适合在虚拟机环境下显示画面变化频繁的内容。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.webp.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiled WebP"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiled WebP"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tiled WebP"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiled WebP"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.zrle.description" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A bitmap-based video codec used in traditional remote desktop environments.\nSuitable for displaying text-heavy content with few screen changes in virtual machine environments."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "従来の遠隔デスクトップ環境で使用されるビットマップベースのビデオコーデックです。\n仮想マシン環境で画面変更が少ないテキスト中心のコンテンツを表示する必要がある場合に適しています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 기반 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用于传统远程桌面环境的基于位图的视频编解码器。\n适合在虚拟机环境下显示画面变化较少的文本内容。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.template.zrle.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RLE + Zstd"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RLE + Zstd"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "RLE + Zstd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RLE + Zstd"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_list.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Priority"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コーデック優先順位設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 우선순위 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编解码器优先级设置"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Setup Mode"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コーデック設定モード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 설정 모드"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编解码器设置模式"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select codec setup mode."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コーデック設定モードを選択します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 설정 모드를 선택합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择编解码器设置模式。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.manual" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual (Advanced)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直接設定 (詳細)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "직접 설정 (고급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动设置 (高级)"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.manual_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manually configure codec requirements."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ユーザーが直接コーデック要求事項を設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사용자가 직접 코덱 요구사항을 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用户直接设置编解码器要求。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.recommended" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Recommended Settings **(Recommended)**"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "推奨設定を使用 **(推奨)**"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "권장 설정 사용 **(권장)**"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用推荐设置 **(推荐)**"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_mode.recommended_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use codec settings predefined by Noctiluca Navigator."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca Navigatorで事前に定義されたコーデック設定を使用します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Navigator에서 미리 정의된 코덱 설정을 사용합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Noctiluca Navigator 中预定义的编解码器设置。"
+          }
+        }
+      }
+    },
+    "session-settings.projection.codec_settings" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codec Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コーデック設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "코덱 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编解码器设置"
           }
         }
       }
@@ -11298,6 +11936,35 @@
         }
       }
     },
+    "session-settings.projection.codec.profile.hevc_main_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Main Profile.\nProvides adequate compatibility and compression for most devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mainプロファイルを使用します。\nほとんどのデバイスで適切な互換性と圧縮率を提供します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Main Profile。\n在大多数设备上提供适当的兼容性和压缩率。"
+          }
+        }
+      }
+    },
     "session-settings.projection.codec.profile.hevc_main10" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -11352,35 +12019,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用 Main10 Profile。\n支持 10-bit 色彩，提供更丰富的颜色。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec.profile.hevc_main_desc" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use Main Profile.\nProvides adequate compatibility and compression for most devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mainプロファイルを使用します。\nほとんどのデバイスで適切な互換性と圧縮率を提供します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 Main Profile。\n在大多数设备上提供适当的兼容性和压缩率。"
           }
         }
       }
@@ -11762,644 +12400,6 @@
         }
       }
     },
-    "session-settings.projection.codec_list.add.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select the codec type to add."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "追加するコーデックの種類を選択してください。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "추가할 코덱 유형을 선택하세요."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请选择要添加的编解码器类型。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.add.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select Codec"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コーデック選択"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "코덱 선택"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择编解码器"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set the priority of codecs to be used by the server. During negotiation with the client, codecs with higher priority are attempted first."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーで使用するコーデックの優先順位を設定します。クライアントとのネゴシエーション時、優先順位が高いコーデックから試行します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서버에서 사용할 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置服务器要使用的编解码器的优先级。与客户端协商时，会从高优先级编解码器开始尝试。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.empty" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "(No codecs configured)\nClick the Add button to register codecs."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "(構成されたコーデックがありません)\n追加ボタンを押してコーデックを登録してください。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "(구성된 코덱이 없습니다)\n추가 버튼을 눌러 코덱을 등록하세요."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "(没有配置编解码器)\n请点击添加按钮注册编解码器。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.h264.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The most widely used video codec. Provides high compatibility."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最も広く使用されているビデオコーデックです。高い互換性を提供します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "가장 널리 사용되는 비디오 코덱입니다. 높은 호환성을 제공합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最广泛使用的视频编解码器。提供高兼容性。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.h264.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Advanced Video Coding (H.264)"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Advanced Video Coding (H.264)"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Advanced Video Coding (H.264)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "高级视频编码 (H.264)"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.hevc.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A modern video codec providing higher compression efficiency than H.264."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "H.264より高い圧縮効率を提供する最新のビデオコーデックです。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "H.264보다 더 높은 압축 효율을 제공하는 최신 비디오 코덱입니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供比 H.264 更高压缩效率的最新视频编解码器。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.hevc.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "High Efficiency Video Coding (H.265)"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "High Efficiency Video Coding (H.265)"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "High Efficiency Video Coding (H.265)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "高效视频编码 (H.265)"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.mjpg.description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A video codec used in traditional remote desktop environments.\nSuitable for displaying frequently changing content in virtual machine environments."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "従来の遠隔デスクトップ環境で使用されるビデオコーデックです。\n仮想マシン環境で画面変更が頻繁なコンテンツを表示する必要がある場合に適しています。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用于传统远程桌面环境的视频编解码器。\n适合在虚拟机环境下显示画面变化频繁的内容。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.mjpg.title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Motion JPEG"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Motion JPEG"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Motion JPEG"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Motion JPEG"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.webp.description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use tiled WebP.\nBetter compression than MJPG but uses more resources.\nSuitable for displaying frequently changing content in virtual machine environments."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タイリングされたWebPを使用します。\nMJPGより圧縮効率が良いですがリソースをより多く使用します。\n仮想マシン環境で画面変更が頻繁なコンテンツを表示する必要がある場合に適しています。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "타일링된 WebP를 사용합니다.\nMJPG보다 압축 효율이 좋지만 리소스를 더 많이 사용합니다.\n가상 머신 환경에서 화면 변경이 잦은 컨텐츠를 표시해야 하는 경우 적합합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用平铺 WebP。\n压缩效率比 MJPG 好，但消耗更多资源。\n适合在虚拟机环境下显示画面变化频繁的内容。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.webp.title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiled WebP"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiled WebP"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Tiled WebP"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiled WebP"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.zrle.description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A bitmap-based video codec used in traditional remote desktop environments.\nSuitable for displaying text-heavy content with few screen changes in virtual machine environments."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "従来の遠隔デスクトップ環境で使用されるビットマップベースのビデオコーデックです。\n仮想マシン環境で画面変更が少ないテキスト中心のコンテンツを表示する必要がある場合に適しています。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "전통적인 원격 데스크톱 환경에서 사용되는 비트맵 기반 비디오 코덱입니다.\n가상 머신 환경에서 화면 변경이 적은 텍스트 위주의 컨텐츠를 표시해야 하는 경우 적합합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用于传统远程桌面环境的基于位图的视频编解码器。\n适合在虚拟机环境下显示画面变化较少的文本内容。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.template.zrle.title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RLE + Zstd"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RLE + Zstd"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "RLE + Zstd"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RLE + Zstd"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_list.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Codec Priority"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コーデック優先順位設定"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "코덱 우선순위 설정"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编解码器优先级设置"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_mode" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Codec Setup Mode"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コーデック設定モード"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "코덱 설정 모드"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编解码器设置模式"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_mode.manual" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manual (Advanced)"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接設定 (詳細)"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "직접 설정 (고급)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "手动设置 (高级)"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_mode.manual_desc" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manually configure codec requirements."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ユーザーが直接コーデック要求事項を設定します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "사용자가 직접 코덱 요구사항을 설정합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用户直接设置编解码器要求。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_mode.recommended" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use Recommended Settings **(Recommended)**"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "推奨設定を使用 **(推奨)**"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "권장 설정 사용 **(권장)**"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用推荐设置 **(推荐)**"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_mode.recommended_desc" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use codec settings predefined by Noctiluca Navigator."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noctiluca Navigatorで事前に定義されたコーデック設定を使用します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Noctiluca Navigator에서 미리 정의된 코덱 설정을 사용합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 Noctiluca Navigator 中预定义的编解码器设置。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_mode_desc" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select codec setup mode."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コーデック設定モードを選択します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "코덱 설정 모드를 선택합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择编解码器设置模式。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.codec_settings" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Codec Settings"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コーデック設定"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "코덱 설정"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编解码器设置"
-          }
-        }
-      }
-    },
     "session-settings.projection.negotiation" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -12425,6 +12425,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "编解码器协商策略"
+          }
+        }
+      }
+    },
+    "session-settings.projection.negotiation_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set codec negotiation policy with server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーとのコーデックネゴシエーションポリシーを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버와의 코덱 협상 정책을 설정합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置与服务器的编解码器协商策略。"
           }
         }
       }
@@ -12541,35 +12570,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "将用户指定的所有编解码器相关要求标记为非必须。\n虽然可以灵活协商，但要求可能不会全部得到满足。"
-          }
-        }
-      }
-    },
-    "session-settings.projection.negotiation_desc" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set codec negotiation policy with server."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーとのコーデックネゴシエーションポリシーを設定します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서버와의 코덱 협상 정책을 설정합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置与服务器的编解码器协商策略。"
           }
         }
       }
@@ -13299,6 +13299,35 @@
         }
       }
     },
+    "session-settings.security.protocol_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure how the Sirius protocol behaves."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siriusプロトコルの動作方式を構成します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sirius 프로토콜의 동작 방식을 구성합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置 Sirius 协议的行为方式。"
+          }
+        }
+      }
+    },
     "session-settings.security.protocol.disable_version" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -13469,35 +13498,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "开发用设置：丽 (Urara) 模式"
-          }
-        }
-      }
-    },
-    "session-settings.security.protocol_desc" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure how the Sirius protocol behaves."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Siriusプロトコルの動作方式を構成します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Sirius 프로토콜의 동작 방식을 구성합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配置 Sirius 协议的行为方式。"
           }
         }
       }
@@ -15184,64 +15184,6 @@
         }
       }
     },
-    "settings.input.keyboard.header" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keyboard Input Settings"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キーボード入力設定"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "키보드 입력 설정"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "键盘输入设置"
-          }
-        }
-      }
-    },
-    "settings.input.keyboard.header.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure settings related to keyboard input."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キーボード入力に関連する設定を構成します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "키보드 입력과 관련된 설정을 구성합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配置键盘输入相关的设置。"
-          }
-        }
-      }
-    },
     "settings.input.keyboard_redirection.method.cocoa_event_tap.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -15383,6 +15325,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入重定向方法"
+          }
+        }
+      }
+    },
+    "settings.input.keyboard.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keyboard Input Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーボード入力設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드 입력 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "键盘输入设置"
+          }
+        }
+      }
+    },
+    "settings.input.keyboard.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure settings related to keyboard input."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーボード入力に関連する設定を構成します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "키보드 입력과 관련된 설정을 구성합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置键盘输入相关的设置。"
           }
         }
       }
@@ -15557,296 +15557,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Option (⌥) 键"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.footer.touch" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Note:\n- Touch mode moves to the tapped location and clicks.\n- Dragging is handled directly as click+drag with one finger."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "参考:\n- タッチモードはタップ時にその位置へ移動してからクリックします。\n- ドラッグは一本指ですぐにクリック+ドラッグとして処理されます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "참고:\n- 터치 모드는 탭 시 해당 위치로 이동 후 클릭합니다.\n- 드래그는 한 손가락으로 바로 클릭+드래그로 처리됩니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意：\n- 触摸模式下，轻点时会先移动到该位置再点击。\n- 拖动操作为单指直接点击+拖动。"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.footer.trackpad" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Note:\n- Trackpad mode moves the cursor using relative coordinates.\n- Dragging is performed via long press or two-finger gestures."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "参考:\n- トラックパッドモードは相対座標でカーソルを移動します。\n- ドラッグは長押しまたは2本指の組み合わせで実行されます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "참고:\n- 트랙패드 모드는 상대 좌표로 커서를 이동합니다.\n- 드래그는 긴 누름 또는 두 손가락 조합으로 실행됩니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意：\n- 触控板模式以相对坐标移动光标。\n- 拖动通过长按或双指组合执行。"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.header" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mouse Input Settings"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マウス入力設定"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "마우스 입력 설정"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鼠标输入设置"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.header.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure settings related to mouse input."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マウス入力に関連する設定を構成します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "마우스 입력과 관련된 설정을 구성합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配置鼠标输入相关的设置。"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.invert_buttons.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swap the left and right buttons of a 2-button mouse.\nThis can be helpful for left-handed users."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2ボタンマウスの左右ボタンの位置を反転して使用します。\n左利きのユーザーに役立つ場合があります。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "2-버튼 마우스의 좌우 버튼 위치를 반전하여 사용합니다.\n왼손을 주로 사용하는 사용자에게 도움이 될 수 있습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反转双键鼠标的左右按键位置。\n这可能对惯用左手的用户有帮助。"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.invert_buttons.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swap Mouse Buttons"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マウス左右ボタンを反転する"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "마우스 좌우 버튼을 반전하기"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反转鼠标左右键"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.invert_horizontal_scroll.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invert horizontal scrolling direction."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "横スクロール時に左右方向を反転させます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "가로 스크롤 시 좌우 방향을 반전시킵니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "水平滚动时反转左右方向。"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.invert_horizontal_scroll.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invert Horizontal↔ Scroll"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "横↔スクロール方向を反転する"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "가로↔ 스크롤 방향을 반전하기"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反转水平↔滚动方向"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.invert_vertical_scroll.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invert vertical scrolling direction."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "縦スクロール時に上下方向を反転させます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "세로 스크롤 시 상하 방향을 반전시킵니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "垂直滚动时反转上下方向。"
-          }
-        }
-      }
-    },
-    "settings.input.mouse.invert_vertical_scroll.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invert Vertical↕ Scroll"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "縦↕スクロール方向を反転する"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "세로↕ 스크롤 방향을 반전하기"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反转垂直↕滚动方向"
           }
         }
       }
@@ -16514,6 +16224,296 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "触控板模式"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.footer.touch" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note:\n- Touch mode moves to the tapped location and clicks.\n- Dragging is handled directly as click+drag with one finger."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "参考:\n- タッチモードはタップ時にその位置へ移動してからクリックします。\n- ドラッグは一本指ですぐにクリック+ドラッグとして処理されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "참고:\n- 터치 모드는 탭 시 해당 위치로 이동 후 클릭합니다.\n- 드래그는 한 손가락으로 바로 클릭+드래그로 처리됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意：\n- 触摸模式下，轻点时会先移动到该位置再点击。\n- 拖动操作为单指直接点击+拖动。"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.footer.trackpad" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note:\n- Trackpad mode moves the cursor using relative coordinates.\n- Dragging is performed via long press or two-finger gestures."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "参考:\n- トラックパッドモードは相対座標でカーソルを移動します。\n- ドラッグは長押しまたは2本指の組み合わせで実行されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "참고:\n- 트랙패드 모드는 상대 좌표로 커서를 이동합니다.\n- 드래그는 긴 누름 또는 두 손가락 조합으로 실행됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意：\n- 触控板模式以相对坐标移动光标。\n- 拖动通过长按或双指组合执行。"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mouse Input Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マウス入力設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 입력 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鼠标输入设置"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure settings related to mouse input."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マウス入力に関連する設定を構成します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 입력과 관련된 설정을 구성합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置鼠标输入相关的设置。"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_buttons.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap the left and right buttons of a 2-button mouse.\nThis can be helpful for left-handed users."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2ボタンマウスの左右ボタンの位置を反転して使用します。\n左利きのユーザーに役立つ場合があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "2-버튼 마우스의 좌우 버튼 위치를 반전하여 사용합니다.\n왼손을 주로 사용하는 사용자에게 도움이 될 수 있습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反转双键鼠标的左右按键位置。\n这可能对惯用左手的用户有帮助。"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_buttons.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap Mouse Buttons"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マウス左右ボタンを反転する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 좌우 버튼을 반전하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反转鼠标左右键"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_horizontal_scroll.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert horizontal scrolling direction."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横スクロール時に左右方向を反転させます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가로 스크롤 시 좌우 방향을 반전시킵니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "水平滚动时反转左右方向。"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_horizontal_scroll.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert Horizontal↔ Scroll"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横↔スクロール方向を反転する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가로↔ 스크롤 방향을 반전하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反转水平↔滚动方向"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_vertical_scroll.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert vertical scrolling direction."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縦スクロール時に上下方向を反転させます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세로 스크롤 시 상하 방향을 반전시킵니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "垂直滚动时反转上下方向。"
+          }
+        }
+      }
+    },
+    "settings.input.mouse.invert_vertical_scroll.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invert Vertical↕ Scroll"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縦↕スクロール方向を反転する"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세로↕ 스크롤 방향을 반전하기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反转垂直↕滚动方向"
           }
         }
       }
@@ -17417,6 +17417,64 @@
         }
       }
     },
+    "settings.projection.jitter_buffer_preset.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust the balance between jitter buffer latency and stability."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ジッターバッファの遅延時間と安定性の間のバランスを調整します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지터 버퍼의 지연 시간과 안정성 사이의 균형을 조절합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调节抖动缓冲的延迟与稳定性之间的平衡。"
+          }
+        }
+      }
+    },
+    "settings.projection.jitter_buffer_preset.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jitter Buffer Preset"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ジッターバッファプリセット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "지터 버퍼 프리셋"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "抖动缓冲预设"
+          }
+        }
+      }
+    },
     "settings.projection.jitter_buffer.low_latency" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -17587,64 +17645,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "优先考虑最小化延迟。\n如果网络状况不佳，可能会频繁出现卡顿或丢帧。"
-          }
-        }
-      }
-    },
-    "settings.projection.jitter_buffer_preset.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adjust the balance between jitter buffer latency and stability."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ジッターバッファの遅延時間と安定性の間のバランスを調整します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "지터 버퍼의 지연 시간과 안정성 사이의 균형을 조절합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "调节抖动缓冲的延迟与稳定性之间的平衡。"
-          }
-        }
-      }
-    },
-    "settings.projection.jitter_buffer_preset.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jitter Buffer Preset"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ジッターバッファプリセット"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "지터 버퍼 프리셋"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "抖动缓冲预设"
           }
         }
       }
@@ -18722,28 +18722,22 @@
         }
       }
     },
-    "|" : {
+    "Status" : {
 
     },
-    "© 2026 team unstablers Inc. All rights reserved." : {
+    "Unleashed Edition" : {
 
     },
-    "→" : {
+    "Video" : {
 
     },
-    "⇪ (Caps Lock)" : {
+    "Video Sessions (%lld)" : {
 
     },
-    "⌃ (Control)" : {
+    "YUV 4:2:0" : {
 
     },
-    "⌘ (Command)" : {
-
-    },
-    "⌥ (Option)" : {
-
-    },
-    "⎋ (Escape)" : {
+    "YUV 4:4:4" : {
 
     },
     "너비" : {
@@ -18783,7 +18777,7 @@
     },
     "확인" : {
 
-  }
+    }
   },
   "version" : "1.1"
 }
