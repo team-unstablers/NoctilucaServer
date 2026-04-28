@@ -40,9 +40,10 @@ final class HIDIOAppKitPointer: HIDIOVirtualDevice {
 
     /// Parameters:
     /// - point: 절대 좌표, 뷰포트의 좌측 상단이 (0.0, 00), 우측 하단이 (1.0, 1.0)인 좌표계.
+    ///   값이 [0, 1] 범위를 벗어날 수 있으며, 이는 인접 디스플레이로의 cross-display 드래그를
+    ///   서버 측 clampToNearestScreen 으로 라우팅하기 위함이다.
     func moveAbsolute(to point: CGPoint) {
-        let clamped = clampNormalized(point)
-        controller?.moveMouseAbsolutePercentage(to: clamped, on: scope)
+        controller?.moveMouseAbsolutePercentage(to: point, on: scope)
     }
 
     func buttonDown(_ button: MouseButtonType) {
