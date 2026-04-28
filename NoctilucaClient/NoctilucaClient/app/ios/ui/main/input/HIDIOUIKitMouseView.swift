@@ -252,6 +252,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     private var isChordedDragging: Bool = false
     private var isScrolling: Bool = false
+    
+    private var isMouseDragging: Bool = false
 
     // Content rect & zoom state for coordinate mapping
     private var contentRect: CGRect = .zero
@@ -501,6 +503,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         if touch.type == .indirectPointer {
             let location = locationInContentRect(touch.location(in: self), clamp: false)
             pointer.moveAbsolute(to: location)
+            
+            isMouseDragging = true
             return
         }
 
@@ -535,7 +539,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
 
         if touch.type == .indirectPointer {
-            let location = locationInContentRect(touch.location(in: self), clamp: false)
+            let location = locationInContentRect(touch.previousLocation(in: self), clamp: false)
             pointer.moveAbsolute(to: location)
 
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
@@ -543,6 +547,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             } else {
                 pointer.buttonUp(.left)
             }
+            
+            isMouseDragging = false
             return
         }
 
@@ -580,6 +586,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             } else {
                 pointer.buttonUp(.left)
             }
+            
+            isMouseDragging = false
             return
         }
 
@@ -790,6 +798,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
     
     @objc private func handleMouseMove(_ recognizer: UIHoverGestureRecognizer) {
+        guard !isMouseDragging else {
+            return
+        }
+        
         switch recognizer.state {
         case .changed:
             let location = locationInContentRect(recognizer.location(in: self))
