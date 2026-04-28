@@ -110,11 +110,11 @@ struct AddVirtualDisplaySheet: View {
 #endif
 
     @ViewBuilder
-    private func numericTextField(_ value: Binding<Int>, placeholder: String) -> some View {
+    private func numericTextField(_ value: Binding<Int>) -> some View {
         let field = TextField(value: value, format: .number) {
-            Text(placeholder)
+            
         }
-        .multilineTextAlignment(.trailing)
+            .multilineTextAlignment(.trailing)
 #if os(iOS)
         field.keyboardType(.numberPad)
 #else
@@ -127,7 +127,7 @@ struct AddVirtualDisplaySheet: View {
         Form {
             Section {
                 LabeledContent("너비") {
-                    numericTextField($width, placeholder: "e.g.) 1920")
+                    numericTextField($width)
                 }
                 .onChange(of: width) { _, _ in
                     if !isHiDPICapable {
@@ -135,7 +135,7 @@ struct AddVirtualDisplaySheet: View {
                     }
                 }
                 LabeledContent("높이") {
-                    numericTextField($height, placeholder: "e.g.) 1080")
+                    numericTextField($height)
                 }
                 .onChange(of: height) { _, _ in
                     if !isHiDPICapable {
