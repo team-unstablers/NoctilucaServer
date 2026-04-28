@@ -513,6 +513,17 @@ final class NoctilucaClient: ObservableObject, Sendable {
         await self.close()
     }
 
+    /// 원격 피어가 보낸 메시지가 spec 위반으로 판단되어 더 이상 세션을 유지할 수 없을 때 호출한다.
+    ///
+    /// 클라이언트는 spec 상 ServerNotice 를 보낼 수 없으므로, 사용자에게 표시할 사유는
+    /// `uiEvents` 로 넘기고 `Goodbye(protocolError)` 만 wire 로 전송한다.
+    func remoteFault(notice: ServerNoticeCode, reason: String) async {
+        await MainActor.run {
+            self.uiEvents.send(.errorOccurred(.serverNoticeReceived(notice, reason)))
+        }
+        await self.closeWithGoodbye(code: .protocolError, message: reason)
+    }
+
     /// Goodbye 메시지를 전송하고 연결을 종료한다.
     func closeWithGoodbye(code: ClosureCode = .successful, message: String? = nil) async {
         guard self.phase != .closed else { return }
