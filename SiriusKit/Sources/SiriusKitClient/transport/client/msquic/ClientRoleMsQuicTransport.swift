@@ -244,7 +244,6 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
             .dropFirst()
             .map { $0.compactMap { $0.asString() } }
             .removeDuplicates()
-            .receive(on: DispatchQueue.global())
             .sink { [weak self] addresses in
                 guard let self = self else { return }
                 self.logger.debug("Network addresses changed: \(addresses)")
