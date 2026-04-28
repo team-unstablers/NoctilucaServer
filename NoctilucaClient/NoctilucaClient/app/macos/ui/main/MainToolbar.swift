@@ -182,7 +182,14 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
                 .nocSettings,
                 .nocAddSession
             ]
-        case .connecting, .connected:
+        case .connecting:
+            return [
+                .nocStopSession,
+                .flexibleSpace,
+                .nocAddressBar,
+                .flexibleSpace
+            ]
+        case .connected:
             return [
                 .nocStopSession,
                 .flexibleSpace,
