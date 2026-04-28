@@ -154,6 +154,15 @@ extension RemoteSession {
         @ObservationIgnored
         private(set) var projectionSessionReferences: [UUID: ManagedAtomic<Int>] = [:]
 
+        /// 진행 중인 `subscribeProjectionSession(for:)` 호출의 in-flight `createSession` Task.
+        ///
+        /// 같은 displayID 에 대해 두 번째 호출이 들어왔을 때, 이미 진행 중인 createSession 이
+        /// 있으면 그 결과를 await 하여 같은 `ProjectionSession` 을 공유한다. 이 dict 가 없으면
+        /// `await createSession(...)` 에서 MainActor reentrancy 로 동시 두 호출이 모두 createSession
+        /// 을 부르면서 같은 displayID 에 대해 세션이 두 개 만들어지는 race 가 발생한다.
+        @ObservationIgnored
+        private var pendingSubscribeTasks: [Int: Task<ProjectionSession, Error>] = [:]
+
         private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
 
         /// 현재 활성화된 DegradationNotice. nil이면 notice를 받지 않았거나 회복된 상태.
@@ -401,44 +410,53 @@ extension RemoteSession {
         // 디스플레이가 2대 이상이면 하드웨어 인코더가 터질텐데 어떻게 할려고???
         @MainActor
         func subscribeProjectionSession(for displayID: Int) async throws -> ProjectionSessionSubscription {
-            if let sessionKey = projectionSessions.first(where: { $0.value.displayID == displayID })?.key {
+            if let session = projectionSessions.first(where: { $0.value.displayID == displayID })?.value {
                 // 이미 해당 디스플레이에 대한 프로젝션 세션이 존재함
                 logger.info("Projection session for displayID \(displayID) already exists.")
-                guard let referenceCounter = projectionSessionReferences[sessionKey] else {
-                    // ASSERTION: 레퍼런스 카운터는 반드시 존재해야만 한다
-                    fatalError("ASSERTION FAILED: reference counter for existing projection session is missing.")
-                }
-
-                guard let session = projectionSessions[sessionKey] else {
-                    fatalError("ASSERTION FAILED: projection session for key \(sessionKey) is missing.")
-                }
-
-                // += 1
-                referenceCounter.wrappingIncrement(ordering: .relaxed)
-
-                let ticket = SessionReferenceTicket(id: UUID()) {
-                    referenceCounter.wrappingDecrement(ordering: .releasing)
-
-                    Task {
-                        await self.handleSessionReferenceDecrement(for: sessionKey)
-                    }
-                }
-
-                return ProjectionSessionSubscription(session: session, ticket: ticket, rendererImplementation: SettingsStore.shared.settings.projection.rendererImplementation)
+                return makeSubscription(for: session)
             }
 
-            guard let session = try await parent?.client.projectionChannel.createSession(
-                for: displayID,
-                projectionSettings: parent?.client.sessionSettings?.projection
-            ) else {
-                throw ProjectionChannelError.channelClosed
+            // 같은 displayID 에 대해 createSession 이 이미 진행 중이면, 그 Task 의 결과를 공유한다.
+            // (같은 turn 내 호출은 dict 조회가 동기적으로 이루어지므로 race 가 없다.)
+            if let inflight = pendingSubscribeTasks[displayID] {
+                logger.info("Projection session for displayID \(displayID) is in-flight; awaiting shared task.")
+                let session = try await inflight.value
+                return makeSubscription(for: session)
             }
 
+            // 새 createSession Task 를 등록한다. Task 안에서 dict 정리까지 책임진다.
+            let task = Task<ProjectionSession, Error> { [weak self] in
+                guard let self else { throw ProjectionChannelError.channelClosed }
+
+                defer { self.pendingSubscribeTasks.removeValue(forKey: displayID) }
+
+                guard let session = try await self.parent?.client.projectionChannel.createSession(
+                    for: displayID,
+                    projectionSettings: self.parent?.client.sessionSettings?.projection
+                ) else {
+                    throw ProjectionChannelError.channelClosed
+                }
+
+                // 레퍼런스 카운터 초기화 (subscription 발급은 호출자가 makeSubscription 에서 처리)
+                self.projectionSessionReferences[session.id] = ManagedAtomic<Int>(0)
+                return session
+            }
+            pendingSubscribeTasks[displayID] = task
+
+            let session = try await task.value
+            return makeSubscription(for: session)
+        }
+
+        /// 주어진 `ProjectionSession` 에 대해 reference count 를 1 증가시키고 새 ticket 으로
+        /// `ProjectionSessionSubscription` 을 발급한다. 호출자는 항상 MainActor 에 있어야 한다.
+        @MainActor
+        private func makeSubscription(for session: ProjectionSession) -> ProjectionSessionSubscription {
             let sessionID = session.id
+            guard let referenceCounter = projectionSessionReferences[sessionID] else {
+                fatalError("ASSERTION FAILED: reference counter for projection session \(sessionID) is missing.")
+            }
 
-            // 레퍼런스 카운터 초기화
-            let referenceCounter = ManagedAtomic<Int>(1)
-            projectionSessionReferences[sessionID] = referenceCounter
+            referenceCounter.wrappingIncrement(ordering: .relaxed)
 
             let ticket = SessionReferenceTicket(id: UUID()) {
                 referenceCounter.wrappingDecrement(ordering: .releasing)
