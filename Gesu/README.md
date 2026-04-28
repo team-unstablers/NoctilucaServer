@@ -1,53 +1,66 @@
 # Gesu (ゲス)
 
-**Gesu**(ゲス, 下種)는 '비열한 놈', '천박한 사람'을 뜻하는 일본어 속어에서 따온 이름으로, Mach-O 오브젝트(프레임워크, 라이브러리)를 동적으로 로드하고 숨겨진 Private API를 간편하게 호출할 수 있도록 도와주는 Swift 매크로 라이브러리입니다.
+**Gesu** (ゲス, 下種, "scoundrel") is a Swift macro library that dynamically loads
+Mach-O objects (frameworks, libraries) and lets you call hidden Private APIs with
+minimal ceremony. The name is taken from a Japanese slang word for a base or vulgar
+person — fitting for a tool that pokes around where Apple would rather you didn't.
 
-`dlopen(3)` 및 `dlsym(3)`을 사용하는 지루한 보일러플레이트 코드를 Swift 6.0 매크로 시스템을 통해 획기적으로 줄여주며, C 언어 컨벤션으로 작성된 비공개 함수들을 마치 Swift 메서드처럼 정의하고 사용할 수 있게 해줍니다.
+It eliminates the tedious `dlopen(3)` / `dlsym(3)` boilerplate via the Swift 6.0
+macro system, letting you declare C-convention private functions as if they were
+ordinary Swift methods.
 
-## ✨ 주요 기능
+A C++20 counterpart is available at
+[NoctilucaClientQt/gesu](../NoctilucaClientQt/gesu) — same idea, implemented with
+class templates and a small macro instead of compile-time code generation.
 
-- **@PrivateLibrary**: 특정 경로의 라이브러리/프레임워크를 로드(`dlopen`)하고 관리하는 래퍼 클래스를 생성합니다.
-- **#PrivateFunction**: 심볼 이름과 함수 시그니처를 입력받아, `dlsym`으로 심볼을 찾아 타입 안전하게 캐스팅된 Swift 클로저로 노출합니다.
+## ✨ Features
 
-## 📦 설치 (Installation)
+- **@PrivateLibrary**: Generates a wrapper class that loads (`dlopen`) and manages
+  a library/framework at the given path.
+- **#PrivateFunction**: Takes a symbol name and function signature, looks up the
+  symbol via `dlsym`, and exposes it as a type-safely cast Swift closure.
 
-Swift Package Manager를 통해 프로젝트에 추가할 수 있습니다. `Package.swift`의 `dependencies`에 다음을 추가하세요.
+## 📦 Installation
+
+Add Gesu to your project via Swift Package Manager. Add the following to the
+`dependencies` section of your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/unstabler/Gesu.git", from: "1.0.0"), // URL은 실제 저장소 주소로 변경 필요
+    .package(url: "https://github.com/unstabler/Gesu.git", from: "1.0.0"), // replace with the actual repository URL
 ]
 ```
 
-## 🚀 사용법 (Usage)
+## 🚀 Usage
 
-### 1. Private 라이브러리 정의
+### 1. Declaring a private library
 
-`@PrivateLibrary` 매크로를 사용하여 로드할 프레임워크나 라이브러리의 경로를 지정합니다.
+Use the `@PrivateLibrary` macro to specify the path to the framework or library
+you want to load.
 
 ```swift
 import Gesu
 import CoreGraphics
 
-// CoreGraphics의 Private API를 사용하기 위한 래퍼 정의
+// Wrapper for accessing CoreGraphics Private APIs
 @PrivateLibrary(path: "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
 class CGPrivate {
-    // 여기에 함수 정의가 들어갑니다.
+    // Function declarations go here.
 }
 ```
 
-### 2. 함수 매핑 (#PrivateFunction)
+### 2. Mapping functions (`#PrivateFunction`)
 
-`#PrivateFunction` 매크로를 사용하여 C 함수 시그니처를 Swift 타입으로 매핑합니다.
+Use the `#PrivateFunction` macro to map a C function signature to Swift types.
 
-- **name**: 바인딩할 심볼 이름 (String)
-- **args**: 인자 타입들의 튜플 (`@convention(c)` 호환 타입)
-- **ret**: 반환 타입
+- **name**: the symbol name to bind (String)
+- **args**: a tuple of argument types (must be `@convention(c)`-compatible)
+- **ret**: the return type
 
 ```swift
 @PrivateLibrary(path: "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
 class CGPrivate {
-    // C 함수 원형: CGError CGSNewConnection(void *attr, int *outConnectionID);
+    // Original C signature: CGError CGSNewConnection(void *attr, int *outConnectionID);
     #PrivateFunction(
         "CGSNewConnection",
         args: (
@@ -56,8 +69,8 @@ class CGPrivate {
         ),
         ret: CGError.self
     )
-    
-    // C 함수 원형: int _CGSDefaultConnection(void);
+
+    // Original C signature: int _CGSDefaultConnection(void);
     #PrivateFunction(
         "_CGSDefaultConnection",
         args: (),
@@ -66,42 +79,49 @@ class CGPrivate {
 }
 ```
 
-### 3. 라이브러리 로드 및 호출
+### 3. Loading the library and calling functions
 
-사용하기 전에 `open()`을 호출하여 라이브러리를 로드해야 합니다. 그 후 정의된 정적 프로퍼티를 통해 함수를 호출할 수 있습니다.
+Call `open()` to load the library before using any of its functions. Symbols are
+exposed as static properties on the wrapper class.
 
 ```swift
 do {
-    // 1. 라이브러리 로드 (dlopen)
+    // 1. Load the library (dlopen)
     try CGPrivate.open()
-    
-    // 2. 함수 호출
-    // 심볼 로드 실패 가능성이 있으므로 Optional로 반환됩니다.
-    
-    // 인자가 없는 함수 호출
+
+    // 2. Call functions.
+    // Symbols may fail to resolve, so they are returned as Optionals.
+
+    // No-argument call
     if let defaultConnID = CGPrivate._CGSDefaultConnection?() {
         print("Default Connection ID: \(defaultConnID)")
     }
-    
-    // 인자가 있는 함수 호출
+
+    // Call with arguments
     var connectionID: Int = 0
     let result = CGPrivate.CGSNewConnection?(nil, &connectionID)
-    
+
     if result == .success {
         print("New Connection Created: \(connectionID)")
     }
-    
+
 } catch {
-    print("라이브러리 로드 실패: \(error)")
+    print("Failed to load library: \(error)")
 }
 ```
 
-## ⚠️ 주의사항
+## ⚠️ Caveats
 
-- **App Store 심사 거부**: 이 라이브러리는 Apple의 **Private API**를 호출하기 위한 도구입니다. 이를 사용하여 배포된 앱은 App Store 심사를 통과하지 못할 가능성이 매우 높습니다. 디버깅, 연구, 또는 사내 배포용으로만 사용하십시오.
-- **안전성**: `unsafeBitCast`를 사용하여 함수 포인터를 변환합니다. `#PrivateFunction`에 정의한 인자/반환 타입이 실제 바이너리의 심볼과 일치하지 않을 경우, 런타임 시 **메모리 오염이나 크래시**가 발생할 수 있습니다.
-- **샌드박스**: macOS 샌드박스 환경에서는 특정 시스템 경로의 라이브러리를 로드하거나, 로드된 Private API가 권한 문제로 동작하지 않을 수 있습니다.
+- **App Store rejection**: This library exists to call Apple's **Private APIs**.
+  Apps that ship with Gesu are very likely to fail App Store review. Use it for
+  debugging, research, or in-house distribution only.
+- **Safety**: Function pointers are converted via `unsafeBitCast`. If the argument
+  or return types declared in `#PrivateFunction` do not match the actual symbol in
+  the binary, you will get **memory corruption or crashes** at runtime.
+- **Sandbox**: Under the macOS sandbox, certain system-path libraries may fail to
+  load, or loaded Private APIs may not function correctly due to entitlement
+  restrictions.
 
-## 📝 라이선스
+## 📝 License
 
 MIT License
