@@ -118,7 +118,10 @@ extension AppSettings {
 
     struct Input: Category {
         var enableExclusiveMode: Bool = true
-        var unlockKeySequence: KeySequence = KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
+        /// 독점 모드 ↔ 공유 모드를 토글하는 단축키.
+        /// 호환성: 0.9.x 이전 빌드에서는 `unlockKeySequence` 라는 이름으로 직렬화되었으며,
+        /// decode 시 구 키도 fallback 으로 처리한다.
+        var toggleExclusiveModeKeySequence: KeySequence = KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
         var redirectionMethod: InputRedirectionMethod = .gameController
         var modifierKeyOverrides: ModifierKeyOverrides = .init()
 #if os(macOS)
@@ -144,6 +147,8 @@ extension AppSettings {
 
         enum CodingKeys: String, CodingKey {
             case enableExclusiveMode
+            case toggleExclusiveModeKeySequence
+            /// 0.9.x 이전 직렬화 호환용. decode 전용으로만 사용한다.
             case unlockKeySequence
             case redirectionMethod
             case modifierKeyOverrides
@@ -175,7 +180,20 @@ extension AppSettings {
             }
             
             enableExclusiveMode = container.decodeSafe(Bool.self, forKey: .enableExclusiveMode, default: true)
-            unlockKeySequence = container.decodeSafe(KeySequence.self, forKey: .unlockKeySequence, default: unlockKeySequence)
+            // 새 키가 있으면 그것을 사용하고, 없으면 0.9.x 이전 구 키 (`unlockKeySequence`) 를 fallback 으로 읽는다.
+            if container.contains(.toggleExclusiveModeKeySequence) {
+                toggleExclusiveModeKeySequence = container.decodeSafe(
+                    KeySequence.self,
+                    forKey: .toggleExclusiveModeKeySequence,
+                    default: toggleExclusiveModeKeySequence
+                )
+            } else {
+                toggleExclusiveModeKeySequence = container.decodeSafe(
+                    KeySequence.self,
+                    forKey: .unlockKeySequence,
+                    default: toggleExclusiveModeKeySequence
+                )
+            }
             redirectionMethod = container.decodeSafe(InputRedirectionMethod.self, forKey: .redirectionMethod, default: redirectionMethod)
             modifierKeyOverrides = container.decodeSafe(ModifierKeyOverrides.self, forKey: .modifierKeyOverrides, default: modifierKeyOverrides)
 #if os(macOS)
@@ -201,7 +219,7 @@ extension AppSettings {
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(enableExclusiveMode, forKey: .enableExclusiveMode)
-            try container.encode(unlockKeySequence, forKey: .unlockKeySequence)
+            try container.encode(toggleExclusiveModeKeySequence, forKey: .toggleExclusiveModeKeySequence)
             try container.encode(redirectionMethod, forKey: .redirectionMethod)
             try container.encode(modifierKeyOverrides, forKey: .modifierKeyOverrides)
 #if os(macOS)

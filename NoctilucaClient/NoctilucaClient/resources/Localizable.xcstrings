@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "-1.0" : {
+
+    },
     "-10%" : {
 
     },
@@ -65,6 +68,9 @@
 
     },
     "⇪ (Caps Lock)" : {
+
+    },
+    "+1.0" : {
 
     },
     "+10%" : {
@@ -2908,7 +2914,7 @@
       }
     },
     "codec-spec.compression_level" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5088,7 +5094,7 @@
       }
     },
     "error.closure.authentication_failed" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5175,7 +5181,7 @@
       }
     },
     "error.closure.session_allocation_failed" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5315,6 +5321,105 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尝试了无效的阶段转换。"
+          }
+        }
+      }
+    },
+    "error.notice.authentication_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증에 실패했습니다."
+          }
+        }
+      }
+    },
+    "error.notice.frame_too_large" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "프로토콜 규격을 초과하는 크기의 프레임이 감지되었습니다."
+          }
+        }
+      }
+    },
+    "error.notice.internal_server_error" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버 내부 오류가 발생했습니다."
+          }
+        }
+      }
+    },
+    "error.notice.nonce_mismatch" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 nonce가 일치하지 않습니다."
+          }
+        }
+      }
+    },
+    "error.notice.session_allocation_failed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 세션 시트를 할당할 수 없습니다. (자원 부족 또는 동시 세션 수 초과)"
+          }
+        }
+      }
+    },
+    "error.notice.timeout" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "응답이 제한 시간 내에 오지 않았습니다."
+          }
+        }
+      }
+    },
+    "error.notice.unknown_code" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 알림을 보냈습니다. (코드: 0x%@)"
+          }
+        }
+      }
+    },
+    "error.notice.unsupported_auth_method" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 지원하지 않는 인증 방식입니다."
+          }
+        }
+      }
+    },
+    "error.notice.unsupported_opcode" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 이해할 수 없는 메시지를 수신했습니다."
           }
         }
       }
@@ -14076,60 +14181,60 @@
         }
       }
     },
-    "settings.input.exclusive_mode.unlock_shortcut.description" : {
+    "settings.input.exclusive_mode.toggle_shortcut.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set shortcut to unlock exclusive mode when keyboard/mouse are locked."
+            "value" : "Set the shortcut to toggle between exclusive and shared mode.\nThe trigger key of the shortcut is not forwarded to the remote host."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "キーボード/マウスがロックされた状態で排他モードを解除するショートカットキーを設定します。"
+            "value" : "排他モードと共有モードを切り替えるショートカットキーを設定します。\nショートカットのトリガーキーはリモートホストに送信されません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "키보드 / 마우스가 잠긴 상태에서 독점 모드를 해제하는 단축키를 설정합니다."
+            "value" : "독점 모드와 공유 모드를 토글하는 단축키를 설정합니다.\n단축키의 트리거 키는 원격 호스트로 전달되지 않습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置在键盘/鼠标锁定时解除独占模式的快捷键。"
+            "value" : "设置用于在独占模式与共享模式之间切换的快捷键。\n该快捷键的触发键不会发送到远程主机。"
           }
         }
       }
     },
-    "settings.input.exclusive_mode.unlock_shortcut.title" : {
+    "settings.input.exclusive_mode.toggle_shortcut.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Exclusive Mode Unlock Shortcut"
+            "value" : "Exclusive Mode Toggle Shortcut"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "排他モード解除ショートカット"
+            "value" : "排他モード切替ショートカット"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "독점 모드 해제 단축키"
+            "value" : "독점 모드 토글 단축키"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "解除独占模式快捷键"
+            "value" : "切换独占模式快捷键"
           }
         }
       }
@@ -14681,6 +14786,105 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Option (⌥) 键"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.header" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마우스 가속 (독점 모드)"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.header.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "독점 모드에서만 적용되는 마우스 델타 가속도 설정입니다. 일반(공유) 모드에서는 OS 포인터 가속이 그대로 사용됩니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.mode.adaptive" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "적응형"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.mode.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "독점 모드에서 수신한 원본 델타에 가속도 곡선을 적용합니다.\n- **끄기**: 원본 델타 그대로 전송\n- **고정 배수**: 감도에 따른 고정 배수 적용 (×0.25~×4.0)\n- **적응형**: 이동 속도에 따라 가변 배수 적용 (×1.0~×3.5)"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.mode.flat" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "고정 배수"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.mode.off" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "끄기"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.mode.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "가속도 모드"
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.sensitivity.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "-1.0(느리게)부터 1.0(빠르게)까지 설정할 수 있습니다. 0.0이 기본 배수입니다."
+          }
+        }
+      }
+    },
+    "settings.input.mouse_acceleration.sensitivity.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "감도"
           }
         }
       }
@@ -15377,6 +15581,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "反转垂直↕滚动方向"
+          }
+        }
+      }
+    },
+    "settings.input.redirect_known_shortcuts.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "⌘W, ⌘Q등의 알려진 단축키를 원격 호스트로 리디렉션 하기 위해 노력합니다.\n일부 단축키는 리디렉션이 불가능하므로 독점 모드를 사용해 주세요."
+          }
+        }
+      }
+    },
+    "settings.input.redirect_known_shortcuts.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일부 알려진 단축키를 리디렉션하기"
           }
         }
       }

@@ -58,7 +58,9 @@ extension RemoteSession {
                 self.applyMouseInputSettings()
                 self.sendKeyboardSetupIfNeeded()
                 try? self.session.startSession()
-                self.installEscapeHook()
+#if os(macOS)
+                self.installModeToggleHook()
+#endif
             }
         }
 
@@ -107,24 +109,38 @@ extension RemoteSession {
             controller.applyMouseInputSettings(input)
         }
 
-        private func installEscapeHook() {
-            let escapeSequence = SettingsStore.shared.settings.input.unlockKeySequence
-            let hook = HIDIOKeystrokeHook(condition: escapeSequence) { [weak self] in
+#if os(macOS)
+        private static let modeToggleHookIdentifier = HIDIOKeystrokeHookIdentifier(
+            rawValue: "app.noctiluca.navigator.hidio.mode-toggle-hook"
+        )
+
+        /// 독점 ↔ 공유 모드를 토글하는 단축키 훅. macOS 에서만 의미가 있다.
+        /// (iOS / iPadOS 에서는 `HIDIOSessionMode.exclusive` 를 사용할 수 없다.)
+        private func installModeToggleHook() {
+            let toggleSequence = SettingsStore.shared.settings.input.toggleExclusiveModeKeySequence
+            let hook = HIDIOKeystrokeHook(
+                condition: toggleSequence,
+                swallowsTriggerKey: true
+            ) { [weak self] in
                 Task { @MainActor in
-                    try? self?.session.switchMode(to: .shared, reason: .userInitiated)
+                    guard let self else { return }
+                    let target: HIDIOSessionMode =
+                        (self.session.mode == .exclusive) ? .shared : .exclusive
+                    try? self.session.switchMode(to: target, reason: .userInitiated)
                 }
             }
 
-            controller.installHook(hook, for: .init(rawValue: "app.noctiluca.navigator.hidio.escape-hook"))
+            controller.installHook(hook, for: Self.modeToggleHookIdentifier)
         }
+#endif
 
         @MainActor
         deinit {
             let controller = self.controller
             let session: HIDIOSession? = self.session
-            controller.removeHook(
-                for: HIDIOKeystrokeHookIdentifier(rawValue: "app.noctiluca.navigator.hidio.escape-hook")
-            )
+#if os(macOS)
+            controller.removeHook(for: Self.modeToggleHookIdentifier)
+#endif
             session?.stopSession()
         }
     }

@@ -34,11 +34,11 @@ struct InputSettingsTab: View {
                 }
                 
                 if settingsStore.settings.input.enableExclusiveMode {
-                    SettingsEntry(title: String(localized: "settings.input.exclusive_mode.unlock_shortcut.title", defaultValue: "독점 모드 해제 단축키"), subtitle: String(localized: "settings.input.exclusive_mode.unlock_shortcut.description", defaultValue: "키보드 / 마우스가 잠긴 상태에서 독점 모드를 해제하는 단축키를 설정합니다.")) {
+                    SettingsEntry(title: String(localized: "settings.input.exclusive_mode.toggle_shortcut.title", defaultValue: "독점 모드 토글 단축키"), subtitle: String(localized: "settings.input.exclusive_mode.toggle_shortcut.description", defaultValue: "독점 모드와 공유 모드를 토글하는 단축키를 설정합니다.\n단축키의 트리거 키는 원격 호스트로 전달되지 않습니다.")) {
                         HStack {
-                            KeySequenceLabel(keySequence: settingsStore.settings.input.unlockKeySequence)
+                            KeySequenceLabel(keySequence: settingsStore.settings.input.toggleExclusiveModeKeySequence)
                             KeySequenceCapturer(
-                                keySequence: $settingsStore.settings.input.unlockKeySequence,
+                                keySequence: $settingsStore.settings.input.toggleExclusiveModeKeySequence,
                                 policy: .none,
                                 default: KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
                             ) {
