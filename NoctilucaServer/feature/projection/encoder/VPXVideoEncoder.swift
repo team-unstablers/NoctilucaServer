@@ -308,7 +308,7 @@ final class VPXVideoEncoder: VideoEncoder, @unchecked Sendable {
         guard bitrateKbps > 0 else { return false }
         
         var success = false
-        
+
         workerQueue.sync {
             self.maxBitrateKbps = bitrateKbps
             guard let ctx = self.encoderCtx else {
@@ -318,7 +318,7 @@ final class VPXVideoEncoder: VideoEncoder, @unchecked Sendable {
             }
             
             self.applyMaxBitrate(Int(max(bitrateKbps, 1)), to: &self.encoderCfg)
-            
+
             let status = vpx_codec_enc_config_set(ctx, &self.encoderCfg)
             if status != VPX_CODEC_OK {
                 self.logger.error("vpx_codec_enc_config_set failed status=\(status.rawValue)")
@@ -416,11 +416,9 @@ private extension VPXVideoEncoder {
         
         let maxBufferSize = vtCompatMaxDuration * 1000
         // videoToolboxDataRateLimits = [bytesPerSecond, 1.0]
-        /*
-        cfg.rc_buf_sz = UInt32(maxBufferSize)
-        cfg.rc_buf_initial_sz = UInt32(maxBufferSize * 0.5)
-        cfg.rc_buf_optimal_sz = UInt32(maxBufferSize)
-         */
+        cfg.rc_buf_sz = UInt32(1500)
+        cfg.rc_buf_initial_sz = UInt32(1000)
+        cfg.rc_buf_optimal_sz = UInt32(1000)
         
         // Match VTVideoEncoder's ~4-second keyframe interval. `kf_max_dist`
         // counts input frames, not ticks, so this stays expressed in frames.
@@ -567,7 +565,8 @@ private extension VPXVideoEncoder {
             targetBitrateKbps = defaultTargetBitrateKbps
             maxBitrateKbps = defaultMaxBitrateKbps
             cfg.rc_end_usage = VPX_VBR
-            
+            cfg.rc_max_quantizer = 45
+
             self.applyTargetBitrate(defaultTargetBitrateKbps, to: &cfg)
             self.applyMaxBitrate(defaultMaxBitrateKbps, to: &cfg)
         }
