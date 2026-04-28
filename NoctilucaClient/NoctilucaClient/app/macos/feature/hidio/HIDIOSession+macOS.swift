@@ -124,7 +124,11 @@ extension HIDIOSession {
             if let mouse = currentMouse {
                 controller.disconnect(mouse.identifierString)
             }
-            controller.resetKeyPressState()
+            // 모드 전환 시에는 host 로 keyUp 이벤트를 emit 하지 않는다.
+            // 토글 단축키의 modifier (예: Alt) 는 사용자가 실제로 떼는 시점에
+            // 새 입력 디바이스를 통해 자연스럽게 host 로 전달되어야 하므로,
+            // internal state 만 비운다.
+            controller.resetKeyPressState(emittingKeyUpEvents: false)
 
             self.currentKeyboard = nil
             self.currentMouse = nil

@@ -27,8 +27,13 @@ final class HIDIOKeystrokeHook: Sendable {
     let condition: KeySequence
     let action: ActionFn
 
-    init(condition: KeySequence, action: @escaping ActionFn) {
+    /// 훅이 발동했을 때 condition.key (트리거 키) 의 down/up 이벤트를 host 로
+    /// 전달하지 않고 삼킬지 여부. modifier 키는 건드리지 않는다.
+    let swallowsTriggerKey: Bool
+
+    init(condition: KeySequence, swallowsTriggerKey: Bool = false, action: @escaping ActionFn) {
         self.condition = condition
+        self.swallowsTriggerKey = swallowsTriggerKey
         self.action = action
     }
 
