@@ -48,6 +48,13 @@ public struct ServerNoticeCode: RawRepresentable, Equatable, Hashable, Sendable 
 
     // - MARK: CLIENT FAULT (0x4000 ~ 0x4FFF)
 
+    /// 일반적인 프로토콜 위반(스펙 불변식 위반, 한도 초과 등)에 사용됩니다.
+    ///
+    /// 보다 구체적인 코드(`unsupportedOpcode`, `frameTooLarge` 등)가 적용 가능하다면 그것을 우선합니다.
+    /// 예: `ClipboardEvent.items` / `ClipboardItem.representations` 의 hard threshold 초과,
+    ///    `TransferDataChunk` 의 누적 크기 초과 등 Pattern A 의 hard fail 경로.
+    public static let protocolViolation = ServerNoticeCode(rawValue: 0x4000)
+
     /// 서버가 미래 버전의 Sirius 프로토콜에 추가되었거나, 아직 지원하지 않는 유형의 메시지를 받았을 때 사용됩니다.
     public static let unsupportedOpcode = ServerNoticeCode(rawValue: 0x4005)
 
