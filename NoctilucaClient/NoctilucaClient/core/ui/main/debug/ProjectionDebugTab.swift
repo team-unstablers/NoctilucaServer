@@ -98,7 +98,7 @@ struct ProjectionDebugTab: View {
             }
             .padding(8)
         } else {
-            Text("세션을 선택하세요")
+            Text(String(localized: "main.debug.projection.empty", defaultValue: "세션을 선택하세요"))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 80)
         }

@@ -89,7 +89,7 @@ struct AddVirtualDisplaySheet: View {
         HStack {
             let mainScreen = UIScreen.main
 
-            Button("이 기기에 맞춤") {
+            Button(String(localized: "main.display_switcher.add_virtual.fit_to_device", defaultValue: "이 기기에 맞춤")) {
                 let mainSize = mainScreen.bounds.size
                 width = Int(mainSize.width)
                 height = Int(mainSize.height)
@@ -143,7 +143,7 @@ struct AddVirtualDisplaySheet: View {
                     }
                 }
 
-                Picker("리프레시 레이트", selection: $refreshRate) {
+                Picker(String(localized: "main.display_switcher.add_virtual.refresh_rate", defaultValue: "리프레시 레이트"), selection: $refreshRate) {
                     Text("60.0hz").tag(60.0)
                     Text("30.0hz").tag(30.0)
                     Divider()
@@ -159,7 +159,7 @@ struct AddVirtualDisplaySheet: View {
                 }
                 .disabled(!isHiDPICapable)
             } header: {
-                Text("디스플레이 스펙")
+                Text(String(localized: "main.display_switcher.add_virtual.spec_section", defaultValue: "디스플레이 스펙"))
             } footer: {
                 specFormFooter
             }
@@ -172,11 +172,11 @@ struct AddVirtualDisplaySheet: View {
     private var specFormFooter: some View {
         if isSafeResolution {
             VStack(alignment: .leading) {
-                Text("서버 상황에 따라 지정한 디스플레이 스펙이 완전히 지켜지지 않을 수 있습니다.")
-                Text("또한, 여기서 생성한 가상 디스플레이는 원격 세션 종료 이후 자동으로 제거됩니다.")
+                Text(String(localized: "main.display_switcher.add_virtual.footer.note", defaultValue: "서버 상황에 따라 지정한 디스플레이 스펙이 완전히 지켜지지 않을 수 있습니다."))
+                Text(String(localized: "main.display_switcher.add_virtual.footer.cleanup_note", defaultValue: "또한, 여기서 생성한 가상 디스플레이는 원격 세션 종료 이후 자동으로 제거됩니다."))
             }
         } else {
-            Text("희망 해상도가 4K (3840 x 2160)를 초과합니다. 가상 디스플레이 생성에 실패할 수 있습니다.")
+            Text(String(localized: "main.display_switcher.add_virtual.footer.over_4k_warning", defaultValue: "희망 해상도가 4K (3840 x 2160)를 초과합니다. 가상 디스플레이 생성에 실패할 수 있습니다."))
                 .bold()
                 .foregroundStyle(.red)
         }
@@ -223,7 +223,7 @@ struct AddVirtualDisplaySheet: View {
                 specForm
             }
             .padding()
-            .navigationTitle("새 가상 디스플레이")
+            .navigationTitle(String(localized: "main.display_switcher.add_virtual.title", defaultValue: "새 가상 디스플레이"))
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
@@ -231,7 +231,7 @@ struct AddVirtualDisplaySheet: View {
                 sheetToolbar
             }
             .alert(
-                "가상 디스플레이 생성 실패",
+                String(localized: "main.display_switcher.add_virtual.error.title", defaultValue: "가상 디스플레이 생성 실패"),
                 isPresented: isErrorAlertPresented,
                 presenting: submissionErrorMessage
             ) { _ in

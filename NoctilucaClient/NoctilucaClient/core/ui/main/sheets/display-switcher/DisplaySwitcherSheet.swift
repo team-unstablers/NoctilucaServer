@@ -114,7 +114,7 @@ struct DisplaySwitcherSheetAddVirtualDisplayItem: View {
                     .frame(width: 160, height: 120)
                     .background(.white.opacity(0.8))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
-                    Text("새 가상 디스플레이")
+                    Text(String(localized: "main.display_switcher.add_virtual.title", defaultValue: "새 가상 디스플레이"))
                         .lineLimit(1)
                 }
                 .frame(width: 160)
