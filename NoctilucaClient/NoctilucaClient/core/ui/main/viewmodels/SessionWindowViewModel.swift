@@ -56,6 +56,11 @@ final class SessionWindowViewModel {
 
     var isFullscreenOverlayVisible: Bool = false
 
+    /// 이 ViewModel 이 호스트된 UIScene 이 background 상태인지 여부.
+    /// MobileUIMainSceneDelegate 의 sceneDidEnterBackground / sceneWillEnterForeground 에서 update 한다.
+    /// AppStateHolder.shared (앱 전체 수준) 와 별개로 multi-window 환경에서 scene 단위 추적이 필요한 경우 사용.
+    var isSceneInBackground: Bool = false
+
     @ObservationIgnored
     private var autoHideTask: Task<Void, Never>?
 #endif

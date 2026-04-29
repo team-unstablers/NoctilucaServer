@@ -63,8 +63,17 @@ struct MainWindowRemoteSessionView: View {
             }
         }
         #if os(iOS)
-        .onReceive(AppStateHolder.shared.$state) { appState in
-            if appState == .foreground {
+        .onChange(of: viewModel.isSceneInBackground) { _, isBackground in
+            // multi-window 환경에서 한 scene 만 background 인 케이스도 정확히 처리하기 위해
+            // AppStateHolder.shared (앱 전체) 가 아닌 scene 단위 isSceneInBackground 를 관찰한다.
+            if isBackground {
+                // background 진입: 진행 중인 backoff retry 와 subscription 을 모두 정리.
+                retryTask?.cancel()
+                retryTask = nil
+                subscription?.invalidate()
+                subscription = nil
+            } else {
+                // foreground 복귀: subscription 이 비었고 sourceDescriptor 가 유효한 displayID 면 재구독.
                 if subscription == nil,
                    case .displayID(let displayID) = sourceDescriptor,
                    displayID != -1 {
@@ -72,9 +81,6 @@ struct MainWindowRemoteSessionView: View {
                         try? await self.updateProjectionTarget(displayID)
                     }
                 }
-            } else {
-                subscription?.invalidate()
-                subscription = nil
             }
         }
         #endif
@@ -231,6 +237,21 @@ struct MainWindowRemoteSessionView: View {
         // 이행 대상 displayID 의 stale 에러도 클리어 (수동 재시도 케이스 포함)
         projection.clearSessionError(for: displayID)
 
+        #if os(iOS)
+        // scene 이 background 라면 sourceDescriptor 만 갱신하고 프로젝션 시작은 차단한다.
+        // foreground 복귀 시 onChange(isSceneInBackground=false) 핸들러가 이 함수를 다시 호출한다.
+        if viewModel.isSceneInBackground {
+            let previousSubscription = await MainActor.run { () -> ProjectionSessionSubscription? in
+                let previous = self.subscription
+                self.subscription = nil
+                self.sourceDescriptor = .displayID(displayID)
+                return previous
+            }
+            previousSubscription?.invalidate()
+            return
+        }
+        #endif
+
         let newSubscription = try await projection.subscribeProjectionSession(for: displayID)
 
         let previousSubscription = await MainActor.run { () -> ProjectionSessionSubscription? in
@@ -270,6 +291,16 @@ struct MainWindowRemoteSessionView: View {
         guard error.reason.isRetryable else {
             return
         }
+
+        #if os(iOS)
+        // scene 이 background 라면 retry 를 발동하지 않는다. sessionErrors[displayID] 는 그대로 남아
+        // foreground 복귀 시 onChange(isSceneInBackground=false) → updateProjectionTarget 가 stale error
+        // 를 클리어하면서 자연스럽게 재구독된다.
+        if viewModel.isSceneInBackground {
+            Self.logger.info("Skipping backoff retry for display \(displayID) because scene is in background")
+            return
+        }
+        #endif
 
         // backoff 재시도
         retryTask?.cancel()
