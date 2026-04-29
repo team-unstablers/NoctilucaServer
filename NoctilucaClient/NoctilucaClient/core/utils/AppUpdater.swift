@@ -11,7 +11,7 @@ import Foundation
 
 import Sparkle
 
-class AppUpdater: NSObject {
+final class AppUpdater: NSObject, @unchecked Sendable {
     static let shared = AppUpdater()
     
     private let logger = NoctilucaLogger(category: "AppUpdater")
