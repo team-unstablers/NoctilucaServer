@@ -80,14 +80,14 @@ actor PAMAuthPlugin: BuiltInAuthPluginV1 {
         }
     }
     
-    internal func isEntryAllowed(_ entry: PasswdEntry) -> Bool {
-        if let groupName = Passwd.__getgrgid_gr_name(entry.gid),
+    internal func isEntryAllowed(_ entry: PasswdEntry) throws -> Bool {
+        if let groupName = try Passwd.__getgrgid_gr_name(entry.gid),
            self.allowedGroups.contains(groupName)
         {
             return true
         }
-        
-        
+
+
         return self.allowedUsers.contains(entry.username)
     }
     
@@ -105,9 +105,16 @@ actor PAMAuthPlugin: BuiltInAuthPluginV1 {
         var password = PAMAuthPayload.password(from: payload)
         defer { password.zeroize() }
 
-        guard let passwd = Passwd.__getpwnam(username),
-              self.isEntryAllowed(passwd)
-        else {
+        let passwd: PasswdEntry
+        do {
+            guard let entry = try Passwd.__getpwnam(username),
+                  try self.isEntryAllowed(entry)
+            else {
+                return .failure(.authenticationFailed(nil))
+            }
+            passwd = entry
+        } catch {
+            logger.error("authenticate(): Passwd lookup failed for user '\(username)': \(error)")
             return .failure(.authenticationFailed(nil))
         }
 
