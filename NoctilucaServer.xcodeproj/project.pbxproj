@@ -15,7 +15,7 @@
 		F621CB072F8AC11A00AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */; };
 		F621CB092F8AC11A00AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F621D2102F91FDA500AEF0FA /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F621D20F2F91FDA500AEF0FA /* ArgumentParser */; };
-		F621D22B2F93287B00AEF0FA /* nocvirtdisplay in CopyFiles */ = {isa = PBXBuildFile; fileRef = F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F621D22B2F93287B00AEF0FA /* nocvirtdisplay in Copy Files */ = {isa = PBXBuildFile; fileRef = F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F624FD752EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; };
 		F624FD762EE2A8E1007A68B3 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD862EE2B2E6007A68B3 /* libpam.tbd */; };
@@ -61,12 +61,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		F659BDF62EF3C1730010A18E /* PBXContainerItemProxy */ = {
+		F61137D82FA330D3008ED9BB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F66965032ECF26770032EF4E /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = F669650A2ECF26770032EF4E;
-			remoteInfo = NoctilucaServer;
+			remoteGlobalIDString = F6CC836F2F5B522800AA6DC2;
+			remoteInfo = NoctilucaServerTestsHost;
 		};
 		F6CC7D3E2F51904400AA6DC2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -74,13 +74,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = F61AB3172F41274E00BB69AF;
 			remoteInfo = CJKKeyboardHacks;
-		};
-		F6CC84612F5B52CC00AA6DC2 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F66965032ECF26770032EF4E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F6CC836F2F5B522800AA6DC2;
-			remoteInfo = NoctilucaServerTestsHost;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -94,14 +87,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
-		F621D22A2F93286B00AEF0FA /* CopyFiles */ = {
+		F621D22A2F93286B00AEF0FA /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				F621D22B2F93287B00AEF0FA /* nocvirtdisplay in CopyFiles */,
+				F621D22B2F93287B00AEF0FA /* nocvirtdisplay in Copy Files */,
 			);
+			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F66965392ECF27110032EF4E /* Embed Frameworks */ = {
@@ -507,8 +501,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				F659BDF72EF3C1730010A18E /* PBXTargetDependency */,
-				F6CC84622F5B52CC00AA6DC2 /* PBXTargetDependency */,
+				F61137D92FA330D3008ED9BB /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F659BDF32EF3C1730010A18E /* NoctilucaServerTests */,
@@ -530,7 +523,7 @@
 				F66965092ECF26770032EF4E /* Resources */,
 				F66965392ECF27110032EF4E /* Embed Frameworks */,
 				F6CC7D3C2F51903500AA6DC2 /* Embed PlugIns */,
-				F621D22A2F93286B00AEF0FA /* CopyFiles */,
+				F621D22A2F93286B00AEF0FA /* Copy Files */,
 			);
 			buildRules = (
 			);
@@ -731,20 +724,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		F659BDF72EF3C1730010A18E /* PBXTargetDependency */ = {
+		F61137D92FA330D3008ED9BB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = F669650A2ECF26770032EF4E /* NoctilucaServer */;
-			targetProxy = F659BDF62EF3C1730010A18E /* PBXContainerItemProxy */;
+			target = F6CC836F2F5B522800AA6DC2 /* NoctilucaServerTestsHost */;
+			targetProxy = F61137D82FA330D3008ED9BB /* PBXContainerItemProxy */;
 		};
 		F6CC7D3F2F51904400AA6DC2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */;
 			targetProxy = F6CC7D3E2F51904400AA6DC2 /* PBXContainerItemProxy */;
-		};
-		F6CC84622F5B52CC00AA6DC2 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F6CC836F2F5B522800AA6DC2 /* NoctilucaServerTestsHost */;
-			targetProxy = F6CC84612F5B52CC00AA6DC2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
