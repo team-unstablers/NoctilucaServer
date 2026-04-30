@@ -207,10 +207,15 @@ extension NoctilucaClientSession {
                 "result": "FAILED",
                 "reason": "AUTHENTICATION_FAILED"
             ])
-            
+
             logger.error("Authentication failed: \(error.localizedDescription)")
+
+            // SECURITY/UX: spec-violation-policy 3-1 "Reason 필수화"
+            //              인증 실패 사유를 클라이언트에게 ServerNotice 로 전달한다.
+            //              (NCH-002 S-2)
+            try? await self.notice(.error, code: .authenticationFailed)
             try await __failure()
-            
+
             return
         }
     }
