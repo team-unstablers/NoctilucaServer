@@ -99,6 +99,14 @@ actor SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
             return .failure(.unsupportedMethod)
         }
 
+        // SECURITY: 본 플러그인은 payload 를 UTF-8 텍스트 password 로 가정한다.
+        //          NUL byte 포함 시 bcrypt_sha512 의 strlen() 기반 truncation 으로
+        //          서로 다른 password 가 동일 hash 로 매핑되는 무결성 결함이 발생한다.
+        //          (NCH-002 F-1 / S-204)
+        guard !payload.contains(0) else {
+            return .failure(.invalidPayload)
+        }
+
         do {
             var payloadCopy = copy payload
             defer { payloadCopy.zeroize() }
