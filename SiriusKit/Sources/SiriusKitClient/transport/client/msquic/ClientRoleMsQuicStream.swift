@@ -47,8 +47,10 @@ class ClientRoleMsQuicStream: SiriusKitCore.Stream {
             return
         }
 
-        // Graceful shutdown
-        await quicStream.shutdown(flags: .abort)
+        // Abrupt shutdown 의도. `.immediate` 를 함께 지정해야 swift-msquic 의
+        // wrapper await 가 peer ACK 를 기다리지 않고 즉시 풀립니다. 미지정 시
+        // 상대방 응답 지연이 disconnect 전체를 hang 시킬 수 있습니다.
+        await quicStream.shutdown(flags: [.abort, .immediate])
         await finalize(event: .closed)
     }
 
