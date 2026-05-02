@@ -64,8 +64,17 @@ struct Bcrypt {
     }
     
     static func sha512(value: borrowing Data) throws -> Data {
+        // SECURITY: bcrypt_sha512() 는 입력 길이를 strlen(in) 으로 측정하므로
+        //          payload 에 NUL byte 가 포함되면 silently truncate 된다.
+        //          서로 다른 payload 가 동일한 SHA-512 digest 로 매핑되는
+        //          알고리즘 무결성 결함이 발생하므로 입력 단계에서 차단한다.
+        //          (NCH-002 F-1 / S-204)
+        guard !value.contains(0) else {
+            throw BcryptError.invalidInput
+        }
+
         var hash = Data(count: Int(BCRYPT_512BITS_BASE64_SIZE))
-        
+
         let retval = value.withUnsafeBytes { valueBytes in
             hash.withUnsafeMutableBytes { hashBytes in
                 let valuePtr = valueBytes.bindMemory(to: UInt8.self).baseAddress!

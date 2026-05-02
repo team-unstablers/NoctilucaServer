@@ -60,6 +60,10 @@ final class HIDIOController {
     private(set) var keyPressState = KeyPressState()
     private(set) var keystrokeHooks: [HIDIOKeystrokeHookIdentifier: HIDIOKeystrokeHook] = [:]
 
+    /// 트리거 키 차단 훅이 발동되어 host 로 전달하지 않고 삼킨 keyDown 들의 집합.
+    /// 이후 들어오는 keyUp 은 down/up 짝맞춤을 위해 함께 삼킨다.
+    private var blockedKeyDowns: Set<LinuxKeycode> = []
+
     /// 키 상태 변경 시 현재 눌린 키 집합을 방출합니다. (디버그 뷰 용도)
     let keyStateDidChange = PassthroughSubject<Set<LinuxKeycode>, Never>()
 
@@ -156,12 +160,23 @@ final class HIDIOController {
         }
     }
 
-    func resetKeyPressState() {
-        let pressedKeys = Array(keyPressState.pressedKeys)
-        for key in pressedKeys {
-            keyUp(keyCode: key)
+    /// 현재 눌린 키 상태를 모두 초기화합니다.
+    ///
+    /// - Parameter emittingKeyUpEvents: `true` (기본값) 이면 눌려있던 모든 키에
+    ///   대해 host 로 keyUp 이벤트를 전송한다 — 세션 종료 / 윈도우 비활성화 등에서
+    ///   host 측 키 stuck 을 방지하기 위함. `false` 이면 host 로 keyUp 을 전송
+    ///   하지 않고 internal state 만 비운다 — 모드 전환처럼, 사용자가 실제로
+    ///   modifier 키를 떼는 시점에 새 입력 디바이스를 통해 자연스럽게 keyUp 이
+    ///   전달되는 것을 기대하는 경우에 사용.
+    func resetKeyPressState(emittingKeyUpEvents: Bool = true) {
+        if emittingKeyUpEvents {
+            let pressedKeys = Array(keyPressState.pressedKeys)
+            for key in pressedKeys {
+                keyUp(keyCode: key)
+            }
         }
         keyPressState.reset()
+        blockedKeyDowns.removeAll()
     }
 
     func sendKeyboardSetup(hacks: [KeyboardHack]) {
@@ -175,8 +190,15 @@ final class HIDIOController {
 
     func keyDown(keyCode: LinuxKeycode) {
         self.keyPressState.keyDown(keyCode)
-        self.evaluateHooks()
+        let swallowedTriggerKeys = self.evaluateHooks()
         self.keyStateDidChange.send(keyPressState.pressedKeys)
+
+        if swallowedTriggerKeys.contains(keyCode) {
+            // 트리거 키 down 은 host 로 전달하지 않고 삼킨다.
+            // 이후 들어오는 keyUp 도 짝맞춤을 위해 함께 삼킨다.
+            blockedKeyDowns.insert(keyCode)
+            return
+        }
 
         let event = KeyboardEvent(
             eventType: .keyDown,
@@ -194,6 +216,11 @@ final class HIDIOController {
     func keyUp(keyCode: LinuxKeycode) {
         self.keyPressState.keyUp(keyCode)
         self.keyStateDidChange.send(keyPressState.pressedKeys)
+
+        if blockedKeyDowns.remove(keyCode) != nil {
+            // 동일 키의 down 을 차단했으므로 host 의 down/up 짝맞춤을 위해 up 도 차단.
+            return
+        }
 
         let event = KeyboardEvent(
             eventType: .keyUp,
@@ -320,13 +347,21 @@ extension HIDIOController {
         self.keystrokeHooks.removeValue(forKey: identifier)
     }
 
-    private func evaluateHooks() {
+    /// 현재 눌린 키 상태를 기준으로 등록된 훅들을 평가한다.
+    /// 훅 액션이 호출되며, `swallowsTriggerKey == true` 인 발동 훅들의
+    /// `condition.key` 집합을 반환한다 — 이 키들은 host 로 전달되지 않는다.
+    @discardableResult
+    private func evaluateHooks() -> Set<LinuxKeycode> {
         let state = self.keyPressState
+        var swallowedTriggerKeys: Set<LinuxKeycode> = []
 
-        for hook in self.keystrokeHooks.values {
-            if hook.evaluate(state) {
-                hook.action()
+        for hook in self.keystrokeHooks.values where hook.evaluate(state) {
+            hook.action()
+            if hook.swallowsTriggerKey {
+                swallowedTriggerKeys.insert(hook.condition.key)
             }
         }
+
+        return swallowedTriggerKeys
     }
 }

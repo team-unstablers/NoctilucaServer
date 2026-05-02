@@ -68,6 +68,12 @@ actor ProjectionSession: Identifiable {
     private var originalFrameRate: Float = 30.0
     private var currentAppliedFrameRate: Float? = nil
 
+    /// 디스플레이 native 기준 해상도 (lowerResolution degradation 미적용 상태).
+    /// displayLayout 변경 시에만 갱신된다.
+    private var baselineSize: CGSize? = nil
+    /// 현재 적용된 lowerResolution 누적 scale (1.0 = 디스플레이 원본).
+    private var currentResolutionScale: Float = 1.0
+
     private var screenLockCancellable: AnyCancellable?
     private var displayChangeCancellable: AnyCancellable?
     private var windowResizeSubscriptionId: UUID?
@@ -81,6 +87,10 @@ actor ProjectionSession: Identifiable {
     private var maxBitrate = 0
 
     private var isReconfiguring = false
+    /// reconfigureForResolutionChange 진입을 직렬화하기 위한 별도 flag.
+    /// reconfigureRecorder의 isReconfiguring과 분리되어야 — reconfigureForResolutionChange 내부에서
+    /// reconfigureRecorder를 호출하므로 같은 flag를 공유하면 nested 호출이 막힌다.
+    private var isReconfiguringResolution = false
     private var isStopped = false
 
     init(id: UUID, dataChannel: ProjectionDataChannel, preferredRecorderType: ScreenRecorderType) async {
@@ -163,7 +173,7 @@ actor ProjectionSession: Identifiable {
     }
 
     private func handleDisplayLayoutChange(_ layouts: [CGDirectDisplayID: NOCScreen]) async {
-        guard !isStopped, !isReconfiguring else { return }
+        guard !isStopped, !isReconfiguring, !isReconfiguringResolution else { return }
         guard let displayID = recorderArgs?.source.monitoredDisplayID else { return }
 
         guard let newScreen = layouts[displayID] else {
@@ -174,26 +184,28 @@ actor ProjectionSession: Identifiable {
         }
 
         // displayDensity 옵션에 따라 비교 기준을 포인트/픽셀로 결정
-        let newSize: CGSize
+        let newBaseline: CGSize
         if let currentCodec = self.codec,
            currentCodec.option(.displayDensity) == .kDisplayDensityBest {
-            newSize = newScreen.displayResolution
+            newBaseline = newScreen.displayResolution
         } else {
-            newSize = newScreen.frame.size
+            newBaseline = newScreen.frame.size
         }
 
-        guard let currentCodec = self.codec,
-              let currentSize = currentCodec.size?.cgSize,
-              currentSize != newSize else {
+        guard let currentBaseline = self.baselineSize, currentBaseline != newBaseline else {
             return
         }
 
-        logger.info("Display resolution changed: \(currentSize) -> \(newSize) for projection session \(self.id)")
-        await reconfigureForResolutionChange(newSize: newSize)
+        self.baselineSize = newBaseline
+        let effectiveSize = Self.applyResolutionScale(newBaseline, scale: currentResolutionScale)
+
+        logger.info("Display baseline changed: \(currentBaseline) -> \(newBaseline), scale=\(self.currentResolutionScale), effective=\(effectiveSize) for projection session \(self.id)")
+        // 디스플레이 자체가 바뀌었으므로 quality planner는 새 해상도 기준으로 재생성한다.
+        await reconfigureForResolutionChange(newSize: effectiveSize, preserveQualityPlanner: false)
     }
 
     private func handleWindowSizeChange(_ event: WindowChangedEvent) async {
-        guard !isStopped, !isReconfiguring else { return }
+        guard !isStopped, !isReconfiguring, !isReconfiguringResolution else { return }
         guard let windowInfo = event.info else { return }
 
         let newSize = CGSize(
@@ -213,11 +225,27 @@ actor ProjectionSession: Identifiable {
         }
 
         logger.info("Window size changed: \(currentSize) -> \(newSize) for projection session \(self.id)")
-        await reconfigureForResolutionChange(newSize: newSize)
+        // 윈도우 리사이즈는 같은 윈도우이므로 quality planner 누적 상태를 그대로 유지한다.
+        await reconfigureForResolutionChange(newSize: newSize, preserveQualityPlanner: true)
     }
 
-    private func reconfigureForResolutionChange(newSize: CGSize) async {
-        guard !isStopped, let currentCodec = self.codec, let request = self.originalRequest else { return }
+    /// scale을 baseline 해상도에 곱한 뒤 인코더 친화적인 4의 배수로 정렬한다.
+    /// 너무 작은 값으로 줄어드는 것을 방지하기 위해 최소 4픽셀 가드를 둔다.
+    nonisolated static func applyResolutionScale(_ size: CGSize, scale: Float) -> CGSize {
+        let s = CGFloat(max(0.05, min(1.0, scale)))
+        let rawW = size.width * s
+        let rawH = size.height * s
+        let alignedW = max(4.0, (rawW / 4.0).rounded(.down) * 4.0)
+        let alignedH = max(4.0, (rawH / 4.0).rounded(.down) * 4.0)
+        return CGSize(width: alignedW, height: alignedH)
+    }
+
+    private func reconfigureForResolutionChange(newSize: CGSize, preserveQualityPlanner: Bool) async {
+        guard !isStopped, !isReconfiguringResolution else { return }
+        guard let currentCodec = self.codec, let request = self.originalRequest else { return }
+
+        isReconfiguringResolution = true
+        defer { isReconfiguringResolution = false }
 
         // codec에 새 해상도 반영
         let updatedCodec = Codec(
@@ -230,14 +258,14 @@ actor ProjectionSession: Identifiable {
 
         do {
             // prepare()가 encoder + event loop task를 모두 재생성
-            try await self.prepare(request, codec: updatedCodec)
+            try await self.prepare(request, codec: updatedCodec, preserveQualityPlanner: preserveQualityPlanner)
             // recorder도 새 해상도로 재구성
             await reconfigureRecorder()
 
             try self.encoder.start()
 
             sessionDelegate?.projectionSession(self, didChangeResolution: updatedCodec)
-            logger.info("Successfully reconfigured for resolution change to \(newSize)")
+            logger.info("Successfully reconfigured for resolution change to \(newSize) (preserveQualityPlanner=\(preserveQualityPlanner))")
         } catch {
             logger.error("Failed to reconfigure for resolution change: \(error)")
             sessionDelegate?.projectionSession(self, didFailWithError: error)
@@ -319,7 +347,12 @@ actor ProjectionSession: Identifiable {
         await applyQualityPlan()
     }
 
-    func prepare(_ request: ProjectionRequest, codec: Codec) async throws {
+    /// - Parameters:
+    ///   - preserveQualityPlanner: `true`이면 기존 `qualityPlanner`를 그대로 유지하고
+    ///     새 encoder에 현재 누적된 multiplier/bitrate/fps만 다시 적용한다. lowerResolution
+    ///     degradation 경로에서 multiplier/degradationIndex가 reset되어 oscillation이 발생하는
+    ///     것을 막기 위해 사용한다. `false`(default)이면 기존 동작 — codec 기준으로 새 planner 생성.
+    func prepare(_ request: ProjectionRequest, codec: Codec, preserveQualityPlanner: Bool = false) async throws {
         guard let recorderSource = request.viewport.toScreenRecorderSource() else {
             throw ProjectionSessionError.invalidSource
         }
@@ -337,6 +370,13 @@ actor ProjectionSession: Identifiable {
         self.originalRequest = request
 
         self.codec = codec
+
+        // baseline은 첫 prepare 시에만 설정 — reconfigureForResolutionChange가 prepare를
+        // 다시 호출할 때 codec.size는 이미 effective size이므로 baseline을 덮어써선 안 된다.
+        if self.baselineSize == nil {
+            self.baselineSize = codec.size?.cgSize
+            self.currentResolutionScale = 1.0
+        }
 
         // 디스플레이 해상도 변경 구독 (최초 prepare 시에만 설정)
         if displayChangeCancellable == nil {
@@ -374,12 +414,6 @@ actor ProjectionSession: Identifiable {
         try? self.encoder.stop()
 
         switch codec.fourCC {
-        case .zrle:
-            encoder = ZRLEVideoEncoder()
-        case .mjpg:
-            encoder = MJPGVideoEncoder()
-        case .webp:
-            encoder = WebPVideoEncoder()
         case .vp80:
             encoder = VPXVideoEncoder()
         default:
@@ -392,32 +426,49 @@ actor ProjectionSession: Identifiable {
         ))
 
         let frameRate = codec.frameRate ?? 60.0
-        self.originalFrameRate = frameRate
-        self.currentAppliedFrameRate = nil
-        self.lastSentDegradationNotice = nil
-        self.recentEncodingFailure = false
-        frameDropController.configure(frameRate: frameRate)
+
+        if !preserveQualityPlanner {
+            self.originalFrameRate = frameRate
+            self.currentAppliedFrameRate = nil
+            self.lastSentDegradationNotice = nil
+            self.recentEncodingFailure = false
+            frameDropController.configure(frameRate: frameRate)
+        }
 
         if case .auto(_) = codec.quality {
-            let (qualityPlanner, plannerFrameRate) = await Self.makeQualityPlanner(codec: codec)
-            self.qualityPlanner = qualityPlanner
-            self.originalFrameRate = plannerFrameRate
-            frameDropController.configure(frameRate: plannerFrameRate)
+            if preserveQualityPlanner, let existingPlanner = self.qualityPlanner {
+                // lowerResolution change 경로 — 기존 planner 유지하고 새 encoder에 현재 누적 상태만 재적용.
+                // baseline 기준 preset과 multiplier 누적이 그대로 유지되어 점진 회복 일관성을 보장한다.
+                self.targetBitrate = await existingPlanner.targetBitrateKbps()
+                self.maxBitrate = await existingPlanner.maxBitrateKbps()
+                _ = self.encoder.updateTargetBitrate(self.targetBitrate)
+                _ = self.encoder.updateMaxBitrate(bitrateKbps: self.maxBitrate)
+                if let fps = self.currentAppliedFrameRate {
+                    _ = self.encoder.updateExpectedFrameRate(fps)
+                }
+            } else {
+                let (qualityPlanner, plannerFrameRate) = await Self.makeQualityPlanner(codec: codec)
+                self.qualityPlanner = qualityPlanner
+                self.originalFrameRate = plannerFrameRate
+                frameDropController.configure(frameRate: plannerFrameRate)
 
-            if let autoPlanner = qualityPlanner as? AutoQualityPlanner {
-                await autoPlanner.setOnQualityAdjustmentHandler { [weak self] event in
-                    Task { [weak self] in
-                        await self?.handleQualityAdjustment(event, planner: autoPlanner)
+                if let autoPlanner = qualityPlanner as? AutoQualityPlanner {
+                    await autoPlanner.setOnQualityAdjustmentHandler { [weak self] event in
+                        Task { [weak self] in
+                            await self?.handleQualityAdjustment(event, planner: autoPlanner)
+                        }
                     }
                 }
-            }
 
-            if let planner = self.qualityPlanner {
-                _ = await self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
-                _ = await self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
+                if let planner = self.qualityPlanner {
+                    _ = await self.encoder.updateTargetBitrate(planner.targetBitrateKbps())
+                    _ = await self.encoder.updateMaxBitrate(bitrateKbps: planner.maxBitrateKbps())
+                }
             }
         } else {
-            self.qualityPlanner = nil
+            if !preserveQualityPlanner {
+                self.qualityPlanner = nil
+            }
         }
 
 
@@ -616,13 +667,14 @@ private extension ProjectionSession {
 
         // degradation 적용
         let degradations = await planner.plannedDegradations()
-        applyDegradations(degradations)
+        await applyDegradations(degradations)
     }
 
-    func applyDegradations(_ degradations: [QualityDegradation]) {
+    func applyDegradations(_ degradations: [QualityDegradation]) async {
         var qualityFactor: Float = 1.0
         var maxQuantizeLevel: Int = 0
         var targetFrameRate: Float? = nil
+        var minResolutionScale: Float? = nil
 
         for degradation in degradations {
             switch degradation {
@@ -632,8 +684,8 @@ private extension ProjectionSession {
                 maxQuantizeLevel = max(maxQuantizeLevel, level)
             case .lowerFrameRate(let fps):
                 targetFrameRate = min(targetFrameRate ?? fps, fps)
-            case .lowerResolution:
-                break // 아직 미구현
+            case .lowerResolution(let scale):
+                minResolutionScale = min(minResolutionScale ?? scale, scale)
             }
         }
 
@@ -642,6 +694,35 @@ private extension ProjectionSession {
 
         let effectiveFps = targetFrameRate ?? originalFrameRate
         applyFrameRateChange(effectiveFps)
+
+        let effectiveScale = minResolutionScale ?? 1.0
+        await applyResolutionScaleChange(effectiveScale)
+    }
+
+    /// lowerResolution degradation 결과를 baseline 해상도에 적용한다.
+    /// 누적 scale이 의미 있는 수준으로 변하면 SCStream + encoder를 effective size로
+    /// reconfigure 한다. VTCompressionSession은 해상도 변경 시 재생성이 강제되며,
+    /// 첫 키프레임과 함께 SPS/PPS가 자동 재전송된다 (`compressionSession.didSet`).
+    /// 클라이언트는 `ProjectionSessionChangedEvent`(reason=resolutionChanged)를 받아
+    /// 디코더를 재구성한다.
+    private func applyResolutionScaleChange(_ newScale: Float) async {
+        guard !isStopped, !isReconfiguring, !isReconfiguringResolution else { return }
+        guard let baseline = baselineSize else { return }
+
+        // 1% 미만 차이는 무시 — 재구성 비용 대비 의미 없는 스케일 변동을 흡수한다.
+        if abs(newScale - currentResolutionScale) < 0.01 { return }
+
+        let oldEffective = Self.applyResolutionScale(baseline, scale: currentResolutionScale)
+        let newEffective = Self.applyResolutionScale(baseline, scale: newScale)
+
+        currentResolutionScale = newScale
+
+        guard oldEffective != newEffective else { return }
+
+        logger.info("Applying resolution scale change: scale=\(newScale), baseline=\(baseline), effective=\(oldEffective) -> \(newEffective)")
+        // lowerResolution degradation 경로 — qualityPlanner는 보존해 multiplier/degradationIndex가 reset되지 않게 한다.
+        // 그렇지 않으면 "해상도 낮춰서 bitrate 회복" 효과가 planner reset으로 무효화되어 oscillation 발생.
+        await reconfigureForResolutionChange(newSize: newEffective, preserveQualityPlanner: true)
     }
 
     func handleQualityAdjustment(_ event: QualityAdjustmentEvent, planner: AutoQualityPlanner) async {

@@ -249,13 +249,16 @@ extension ProjectionChannel {
             return
         }
 
+        // ProjectionSession.sourceDescriptor 는 nonisolated let 이라 actor hop 없이 접근 가능
+        let source = session.sourceDescriptor
+
         do {
             try await session.stop(sendStopRequest: false)
         } catch {
             logger.error("Failed to stop projection session \(identifier): \(error)")
         }
 
-        continuation.yield(.sessionDestroyed(identifier, reason: event.reason, message: event.message))
+        continuation.yield(.sessionDestroyed(identifier, source: source, reason: event.reason, message: event.message))
     }
 
     func handleProjectionSessionChangedEvent(_ event: ProjectionSessionChangedEvent) async {

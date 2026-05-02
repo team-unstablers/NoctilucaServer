@@ -42,18 +42,6 @@ struct CodecSpecificationListContainer: View {
             editSheet: { specification, onComplete in
                 Group {
                     switch specification.fourCC {
-                    case .zrle:
-                        RLECodecSpecificationSheet(specification: specification) { newSpecification in
-                            onComplete(newSpecification)
-                        }
-                    case .mjpg:
-                        MJPGCodecSpecificationSheet(specification: specification) { newSpecification in
-                            onComplete(newSpecification)
-                        }
-                    case .webp:
-                        WebPCodecSpecificationSheet(specification: specification) { newSpecification in
-                            onComplete(newSpecification)
-                        }
                     case .vp80:
                         VP8CodecSpecificationSheet(specification: specification) { newSpecification in
                             onComplete(newSpecification)

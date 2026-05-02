@@ -72,7 +72,7 @@ struct HandshakeTests {
 
         let noticeFrame = try FrameBuilder.serverNoticeFrame(
             severity: .fatal,
-            code: 1,
+            code: ServerNoticeCode(rawValue: 1),
             message: "Protocol error"
         )
 
@@ -93,7 +93,7 @@ struct HandshakeTests {
         }
 
         #expect(notice.severity == .fatal)
-        #expect(notice.code == 1)
+        #expect(notice.code == ServerNoticeCode(rawValue: 1))
         #expect(notice.message == "Protocol error")
     }
 

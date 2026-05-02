@@ -17,7 +17,7 @@ struct ServerAuthTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         // 1. AuthChallenge 전송
@@ -71,7 +71,7 @@ struct ServerAuthTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         let sessionID = UUID()
@@ -91,7 +91,7 @@ struct ServerAuthTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         // 1. ClientHello 수신

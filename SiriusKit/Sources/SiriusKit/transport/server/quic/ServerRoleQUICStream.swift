@@ -110,7 +110,14 @@ class ServerRoleQUICStream: SiriusKitCore.Stream {
 
             let opcode = rawHeader.subdata(in: 0..<2).withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
             let length = rawHeader.subdata(in: 2..<6).withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-            
+
+            guard Int(length) <= SiriusFrameStreamDecoder.maxPayloadSize else {
+                throw SiriusFrameDecoderError.frameTooLarge(
+                    declaredLength: length,
+                    limit: SiriusFrameStreamDecoder.maxPayloadSize
+                )
+            }
+
             // TODO: fragmented read
             let payload = (length > 0) ?
                 try (await self.read(minSize: Int(length), maxSize: Int(length))).get() :

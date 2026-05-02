@@ -147,7 +147,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
     @objc
     @MainActor
     func showLicensingWindow(_ sender: Any?) {
-        if licensingWindowController == nil {
+        // 닫혀있던 상태에서 다시 호출되면 새 컨트롤러로 교체 — 마지막 페이지/입력 상태가
+        // 남아 있다가 (예: 체험판 인증 phase) 다음 등록 시 재현되는 문제 방지.
+        if licensingWindowController?.window?.isVisible != true {
             licensingWindowController = LicensingWindowController()
         }
 

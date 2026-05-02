@@ -10,11 +10,10 @@ import Foundation
 import Cocoa
 
 import SiriusKit
-import UniformTypeIdentifiers
 
 /// 수신 측에서 파일 다운로드를 조율하는 클래스.
-/// macOS에서는 NSFilePromiseProviderDelegate를 구현하여
-/// pasteboard의 file promise가 이행될 때 원격에서 파일을 다운로드한다.
+/// macOS에서는 placeholder 파일 + NSFilePresenter를 통해
+/// pasteboard에서 해당 URL을 읽으려 할 때 원격에서 파일을 다운로드한다.
 final class FileTransferCoordinator: NSObject, Sendable {
     private let logger = NoctilucaLogger(category: "FileTransferCoordinator")
 
@@ -48,6 +47,11 @@ final class FileTransferCoordinator: NSObject, Sendable {
         let listing = try await requestDirectoryListing(metadata: metadata)
 
         for entry in listing {
+            guard entry.hasSafeName else {
+                logger.warning("Rejected directory entry with unsafe name: \(entry.name)")
+                continue
+            }
+
             let childMetadata = FileTransferMetadata(
                 name: entry.name,
                 path: metadata.path + "/" + entry.name,
@@ -71,7 +75,7 @@ final class FileTransferCoordinator: NSObject, Sendable {
     // MARK: - Download
 
     /// 단일 파일을 다운로드하여 destinationURL에 저장합니다.
-    func downloadFile(metadata: FileTransferMetadata, to destinationURL: URL) async throws {
+    func downloadFile(metadata: FileTransferMetadata, to destinationURL: URL, progress: Progress? = nil) async throws {
         guard let session = clipboardChannel?.clientSession else {
             throw FileTransferError.sessionUnavailable
         }
@@ -102,11 +106,19 @@ final class FileTransferCoordinator: NSObject, Sendable {
         do {
             for await chunk in dataStream {
                 fileHandle.write(chunk)
+                progress?.completedUnitCount += Int64(chunk.count)
             }
             try fileHandle.close()
-            
+
+            // 전송 중 감지된 size overflow / EOF mismatch가 있으면 결과 파일을 폐기한다.
+            if let transferError = channel.transferError {
+                logger.error("Transfer failed, discarding temp file: \(transferError)")
+                try? fm.removeItem(at: tempURL)
+                throw transferError
+            }
+
             let attr = try FileManager.default.attributesOfItem(atPath: tempURL.path())
-            
+
             if let size = attr[.size] as? UInt64,
                size != metadata.size {
                 logger.error("file size mismatch: expected \(metadata.size) but got \(size)")
@@ -138,6 +150,11 @@ final class FileTransferCoordinator: NSObject, Sendable {
 
         // 3. 각 항목 다운로드
         for entry in listing {
+            guard entry.hasSafeName else {
+                logger.warning("Rejected directory entry with unsafe name: \(entry.name)")
+                continue
+            }
+
             let childURL = destinationURL.appendingPathComponent(entry.name)
             let childMetadata = FileTransferMetadata(
                 name: entry.name,
@@ -180,6 +197,11 @@ final class FileTransferCoordinator: NSObject, Sendable {
         var data = Data()
         for await chunk in dataStream {
             data += chunk
+        }
+
+        if let transferError = channel.transferError {
+            logger.error("Directory listing transfer failed: \(transferError)")
+            throw transferError
         }
 
         return try JSONDecoder().decode([DirectoryEntry].self, from: data)
@@ -265,6 +287,15 @@ class PendingFileTransfer: NSObject, NSFilePresenter, @unchecked Sendable { // T
 
     private func createPlaceholder(at url: URL) {
         let fm = FileManager.default
+
+        // 보안: metadata.name이 경로 분리자/`..` 등을 포함하면 placeholder 생성을 거부한다.
+        // `appendingPathComponent`는 `..`를 리터럴로 포함시키므로 이를 막지 않으면
+        // url이 UUID 컨테이너/부모 디렉토리를 벗어날 수 있다.
+        guard metadata.name.isSafePathComponent else {
+            logger.error("Refused to create placeholder for unsafe metadata.name: \(self.metadata.name)")
+            return
+        }
+
         try? fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         if metadata.isDirectory {
@@ -273,7 +304,7 @@ class PendingFileTransfer: NSObject, NSFilePresenter, @unchecked Sendable { // T
             fm.createFile(atPath: url.path, contents: nil)
             // sparse file: 디스크 블록을 할당하지 않고 파일 크기만 설정
             if metadata.size > 0 {
-                let fd = open(url.path, O_WRONLY)
+                let fd = open(url.path, O_WRONLY | O_NOFOLLOW | O_CLOEXEC)
                 if fd >= 0 {
                     ftruncate(fd, off_t(metadata.size))
                     close(fd)

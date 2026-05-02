@@ -102,7 +102,7 @@ struct DisplayLayoutModifierView: View {
                             Text("\(display.displayName) (#\(display.displayID))")
                                 .bold()
                                 .multilineTextAlignment(.leading)
-                            Text("해상도")
+                            Text(String(localized: "main.display_switcher.layout.spec.resolution", defaultValue: "해상도"))
                             Picker("", selection: specBinding(for: display)) {
                                 ForEach(Array(display.supportedSpecs.enumerated()), id: \.offset) { index, spec in
                                     Text(specLabel(spec)).tag(Int?.some(index))
@@ -111,13 +111,13 @@ struct DisplayLayoutModifierView: View {
                             .disabled(display.supportedSpecs.isEmpty)
 
                             Toggle(isOn: mainDisplayBinding(for: display)) {
-                                Text("메인 디스플레이로 설정")
+                                Text(String(localized: "main.display_switcher.layout.spec.set_as_main", defaultValue: "메인 디스플레이로 설정"))
                             }
                             .disabled(effectiveMainDisplayID == display.displayID)
                         }
                         .padding()
                     } else {
-                        Text("디스플레이를 선택하세요")
+                        Text(String(localized: "main.display_switcher.layout.empty", defaultValue: "디스플레이를 선택하세요"))
                             .foregroundStyle(.secondary)
                             .padding()
                     }
@@ -142,7 +142,7 @@ struct DisplayLayoutModifierView: View {
             }
 
             HStack {
-                Button("되돌리기") {
+                Button(String(localized: "main.display_switcher.layout.action.revert", defaultValue: "되돌리기")) {
                     resetStagedOrigins()
                     collidingIDs.removeAll()
                     lastError = nil
@@ -157,7 +157,7 @@ struct DisplayLayoutModifierView: View {
                     if isApplying {
                         ProgressView().controlSize(.small)
                     } else {
-                        Text("적용하기")
+                        Text(String(localized: "main.display_switcher.layout.action.apply", defaultValue: "적용하기"))
                     }
                 }
                 .disabled(!isDirty || isApplying || !collidingIDs.isEmpty)
@@ -489,7 +489,7 @@ struct DisplayLayoutModifierView: View {
                 displayID: d.displayID,
                 spec: stagedSpec,
                 rotation: nil,
-                position: positionChanged ? stagedOrigin.map { SRPoint(x: $0.x, y: $0.y) } : nil
+                origin: positionChanged ? stagedOrigin.map { SRPoint(x: $0.x, y: $0.y) } : nil
             )
             operations.append(DisplayOperation(operation: .change(change)))
         }

@@ -252,6 +252,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
     private var isChordedDragging: Bool = false
     private var isScrolling: Bool = false
+    
+    private var isMouseDragging: Bool = false
 
     // Content rect & zoom state for coordinate mapping
     private var contentRect: CGRect = .zero
@@ -347,19 +349,25 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         onFreeDragEnded = nil
     }
 
-    /// 화면 터치 좌표 → 콘텐츠 로컬 좌표 변환 (줌 역변환 + 클램핑)
+    /// 화면 터치 좌표 → 콘텐츠 로컬 좌표 변환 (줌 역변환 + 선택적 클램핑)
     ///
     /// video view의 변환 체인:
     ///   .offset(zoomOffset) → .frame(rect) → .position(rect.mid) → .scaleEffect(zoomScale)
     /// 역변환:
     ///   contentLocal = (screenPoint - rect.mid) / scale + rect.size/2 - zoomOffset
-    private func locationInContentRect(_ screenPoint: CGPoint) -> CGPoint {
+    ///
+    /// - Parameter clamp: contentRect 범위로 클램프할지 여부. 하드웨어 마우스 드래그 등
+    ///   인접 디스플레이로의 cross-display 라우팅이 필요한 경로에서는 `false`로 호출한다.
+    private func locationInContentRect(_ screenPoint: CGPoint, clamp: Bool = true) -> CGPoint {
         let cx = (screenPoint.x - contentRect.midX) / zoomScale + contentRect.width / 2 - zoomOffset.width
         let cy = (screenPoint.y - contentRect.midY) / zoomScale + contentRect.height / 2 - zoomOffset.height
-        return CGPoint(
-            x: min(max(cx, 0), contentRect.width),
-            y: min(max(cy, 0), contentRect.height)
-        )
+        if clamp {
+            return CGPoint(
+                x: min(max(cx, 0), contentRect.width),
+                y: min(max(cy, 0), contentRect.height)
+            )
+        }
+        return CGPoint(x: cx, y: cy)
     }
 
     private func setupRecognizers() {
@@ -453,7 +461,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
 
         // Hardware mouse: handle regardless of input mode or zoom mode
         if touch.type == .indirectPointer {
-            let location = locationInContentRect(touch.location(in: self))
+            let location = locationInContentRect(touch.location(in: self), clamp: false)
             pointer.moveAbsolute(to: location)
 
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
@@ -493,8 +501,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
 
         if touch.type == .indirectPointer {
-            let location = locationInContentRect(touch.location(in: self))
+            let location = locationInContentRect(touch.location(in: self), clamp: false)
             pointer.moveAbsolute(to: location)
+            
+            isMouseDragging = true
             return
         }
 
@@ -529,7 +539,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
 
         if touch.type == .indirectPointer {
-            let location = locationInContentRect(touch.location(in: self))
+            let location = locationInContentRect(touch.previousLocation(in: self), clamp: false)
             pointer.moveAbsolute(to: location)
 
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
@@ -537,6 +547,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             } else {
                 pointer.buttonUp(.left)
             }
+            
+            isMouseDragging = false
             return
         }
 
@@ -566,7 +578,7 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
         }
 
         if touch.type == .indirectPointer {
-            let location = locationInContentRect(touch.location(in: self))
+            let location = locationInContentRect(touch.location(in: self), clamp: false)
             pointer.moveAbsolute(to: location)
 
             if touch.gestureRecognizers?.contains(mouseRightClickRecognizer) == true {
@@ -574,6 +586,8 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
             } else {
                 pointer.buttonUp(.left)
             }
+            
+            isMouseDragging = false
             return
         }
 
@@ -784,6 +798,10 @@ private final class MouseInputCaptureView: UIView, UIGestureRecognizerDelegate {
     }
     
     @objc private func handleMouseMove(_ recognizer: UIHoverGestureRecognizer) {
+        guard !isMouseDragging else {
+            return
+        }
+        
         switch recognizer.state {
         case .changed:
             let location = locationInContentRect(recognizer.location(in: self))

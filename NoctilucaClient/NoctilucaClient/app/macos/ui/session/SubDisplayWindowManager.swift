@@ -13,12 +13,11 @@ import AppKit
 class SubDisplayWindowManager: NSObject, NSWindowDelegate {
     let remoteSession: RemoteSession
 
-    struct WindowState {
-        let window: SubDisplayWindow
-        let subscription: ProjectionSessionSubscription
-    }
-
-    private(set) var windows: [Int: WindowState] = [:]
+    /// `SubDisplayWindow` 의 `ProjectionSessionSubscription` 은 contentView 의 SwiftUI
+    /// wrapper (`SubDisplayWindowProjectionRoot`) 가 `@State` 로 보유한다. wrapper 는 backoff
+    /// 재시도 성공 시 subscription 을 새 인스턴스로 교체할 수 있어야 하므로, 이 manager 는
+    /// subscription 의 ownership 을 갖지 않는다.
+    private(set) var windows: [Int: SubDisplayWindow] = [:]
 
     init(remoteSession: RemoteSession) {
         self.remoteSession = remoteSession
@@ -27,25 +26,32 @@ class SubDisplayWindowManager: NSObject, NSWindowDelegate {
 
     func spawn(for displayID: Int) async throws {
         if let existing = windows[displayID] {
-            existing.window.makeKeyAndOrderFront(nil)
+            existing.makeKeyAndOrderFront(nil)
             return
         }
 
         guard let projection = remoteSession.projection else { return }
 
         let subscription = try await projection.subscribeProjectionSession(for: .displayID(displayID))
-        let window = SubDisplayWindow(displayID: displayID, remoteSession: remoteSession, subscription: subscription)
+        let window = SubDisplayWindow(
+            displayID: displayID,
+            remoteSession: remoteSession,
+            subscription: subscription,
+            onLost: { [weak self] in
+                self?.destroy(for: displayID)
+            }
+        )
         window.delegate = self
 
-        windows[displayID] = WindowState(window: window, subscription: subscription)
+        windows[displayID] = window
         window.makeKeyAndOrderFront(nil)
     }
 
     func destroy(for displayID: Int) {
         // 딕셔너리에서 먼저 제거하여 windowWillClose → destroy 재귀 호출 방지
-        guard let state = windows.removeValue(forKey: displayID) else { return }
-        state.subscription.invalidate()
-        state.window.close()
+        guard let window = windows.removeValue(forKey: displayID) else { return }
+        // subscription invalidate 는 wrapper 의 onDisappear 가 처리한다.
+        window.close()
     }
 
     func destroyAll() {

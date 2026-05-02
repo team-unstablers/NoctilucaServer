@@ -240,10 +240,10 @@ private struct AuthMethodSelectionSheet: View {
                 fatalError("Unhandled PAM allow mode: \(pamAllowMode)")
             }
         case .simplePassword:
-            let hash = try! Bcrypt.hash(
-                password: try! Bcrypt.sha512(value: simplePasswordValue.data(using: .utf8)!)
+            let hash = try Bcrypt.hash(
+                password: try Bcrypt.sha512(value: simplePasswordValue.data(using: .utf8)!)
             )
-            
+
             return AuthEntry(method: .simplePassword, identifier: "bcrypt+sha512", data: hash)
         case .sshKey:
             let keyString = sshPublicKey.trimmingCharacters(in: .whitespacesAndNewlines)

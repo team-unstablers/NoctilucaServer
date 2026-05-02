@@ -29,6 +29,25 @@ extension AudioSessionEndReason {
     }
 }
 
+extension VideoSessionEndReason {
+    var isRetryable: Bool {
+        switch self {
+        case .clientRequested:
+            return false
+        default:
+            return true
+        }
+    }
+}
+
+/// 비디오 세션 자동 재시도 시 발생할 수 있는 오류.
+enum ProjectionRetryError: Error {
+    /// 재시도 시점에 디스플레이가 사라져서 더 이상 시도할 의미가 없음.
+    case displayDisappeared
+    /// 모든 backoff 시도가 실패함.
+    case exhausted
+}
+
 extension RemoteSession {
     typealias CursorHash = UInt64
     
@@ -63,13 +82,13 @@ extension RemoteSession {
     }
     
     /// 프로젝션 세션 종료 정보 (auto-restart 실패 시 UI에 전달)
-    struct ProjectionSessionFailureInfo {
+    struct ProjectionSessionFailureInfo: Equatable {
         let reason: VideoSessionEndReason
         let message: String?
     }
 
     /// 오디오 세션 종료 정보
-    struct AudioSessionFailureInfo {
+    struct AudioSessionFailureInfo: Equatable {
         let reason: AudioSessionEndReason
         let message: String?
     }
@@ -135,13 +154,26 @@ extension RemoteSession {
         @ObservationIgnored
         private(set) var projectionSessionReferences: [UUID: ManagedAtomic<Int>] = [:]
 
+        /// 진행 중인 `subscribeProjectionSession(for:)` 호출의 in-flight `createSession` Task.
+        ///
+        /// 같은 source 에 대해 두 번째 호출이 들어왔을 때, 이미 진행 중인 createSession 이
+        /// 있으면 그 결과를 await 하여 같은 `ProjectionSession` 을 공유한다. 이 dict 가 없으면
+        /// `await createSession(...)` 에서 MainActor reentrancy 로 동시 두 호출이 모두 createSession
+        /// 을 부르면서 같은 source 에 대해 세션이 두 개 만들어지는 race 가 발생한다.
+        @ObservationIgnored
+        private var pendingSubscribeTasks: [ProjectionSourceDescriptor: Task<ProjectionSession, Error>] = [:]
+
         private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
 
         /// 현재 활성화된 DegradationNotice. nil이면 notice를 받지 않았거나 회복된 상태.
         private(set) var degradationNotice: DegradationNotice? = nil
 
-        /// 프로젝션 세션 오류 정보. auto-restart 실패 시 설정됨.
-        private(set) var sessionError: ProjectionSessionFailureInfo? = nil
+        /// 프로젝션 소스 단위 세션 오류 정보.
+        ///
+        /// 멀티 디스플레이 / AppStream 환경에서 각 소스의 세션이 독립적으로 종료될 수 있으므로
+        /// `ProjectionSourceDescriptor` 를 키로 하는 dict 로 관리한다. View 측은 자신이 보고 있는
+        /// 소스의 항목을 `onChange` 로 관찰하여 fallback / 재시도 정책을 결정한다.
+        private(set) var sessionErrors: [ProjectionSourceDescriptor: ProjectionSessionFailureInfo] = [:]
 
         /// 오디오 세션 오류 정보.
         private(set) var audioSessionError: AudioSessionFailureInfo? = nil
@@ -196,15 +228,16 @@ extension RemoteSession {
             case .sessionCreated(let session):
                 self.projectionSessions.updateValue(session, forKey: session.dataChannel.identifier)
                 self.subscribeSessionEvents(session)
-                self.sessionError = nil
-            case .sessionDestroyed(let sessionID, let reason, let message):
+                // 새 세션이 만들어졌다는 것은 해당 소스가 다시 정상화되었다는 의미이므로 에러 클리어.
+                self.sessionErrors.removeValue(forKey: session.sourceDescriptor)
+            case .sessionDestroyed(let sessionID, let source, let reason, let message):
                 self.projectionSessions.removeValue(forKey: sessionID)
                 self.projectionSessionReferences.removeValue(forKey: sessionID)
                 self.unsubscribeSessionEvents(sessionID)
                 if projectionSessions.isEmpty {
                     self.degradationNotice = nil
                 }
-                self.notifySessionFailure(reason: reason, message: message)
+                self.notifySessionFailure(source: source, reason: reason, message: message)
 
             case .audioSessionCreated(let audioSession):
                 let dataChannelID = audioSession.dataChannel.identifier
@@ -397,44 +430,53 @@ extension RemoteSession {
         // 디스플레이가 2대 이상이면 하드웨어 인코더가 터질텐데 어떻게 할려고???
         @MainActor
         func subscribeProjectionSession(for source: ProjectionSourceDescriptor) async throws -> ProjectionSessionSubscription {
-            if let sessionKey = projectionSessions.first(where: { $0.value.sourceDescriptor == source })?.key {
+            if let session = projectionSessions.first(where: { $0.value.sourceDescriptor == source })?.value {
                 // 이미 해당 소스에 대한 프로젝션 세션이 존재함
                 logger.info("Projection session for \(source.debugDescription) already exists.")
-                guard let referenceCounter = projectionSessionReferences[sessionKey] else {
-                    // ASSERTION: 레퍼런스 카운터는 반드시 존재해야만 한다
-                    fatalError("ASSERTION FAILED: reference counter for existing projection session is missing.")
-                }
-
-                guard let session = projectionSessions[sessionKey] else {
-                    fatalError("ASSERTION FAILED: projection session for key \(sessionKey) is missing.")
-                }
-
-                // += 1
-                referenceCounter.wrappingIncrement(ordering: .relaxed)
-
-                let ticket = SessionReferenceTicket(id: UUID()) {
-                    referenceCounter.wrappingDecrement(ordering: .releasing)
-
-                    Task {
-                        await self.handleSessionReferenceDecrement(for: sessionKey)
-                    }
-                }
-
-                return ProjectionSessionSubscription(session: session, ticket: ticket, rendererImplementation: SettingsStore.shared.settings.projection.rendererImplementation)
+                return makeSubscription(for: session)
             }
 
-            guard let session = try await parent?.client.projectionChannel.createSession(
-                for: source,
-                projectionSettings: parent?.client.sessionSettings?.projection
-            ) else {
-                throw ProjectionChannelError.channelClosed
+            // 같은 source 에 대해 createSession 이 이미 진행 중이면, 그 Task 의 결과를 공유한다.
+            // (같은 turn 내 호출은 dict 조회가 동기적으로 이루어지므로 race 가 없다.)
+            if let inflight = pendingSubscribeTasks[source] {
+                logger.info("Projection session for \(source.debugDescription) is in-flight; awaiting shared task.")
+                let session = try await inflight.value
+                return makeSubscription(for: session)
             }
 
+            // 새 createSession Task 를 등록한다. Task 안에서 dict 정리까지 책임진다.
+            let task = Task<ProjectionSession, Error> { [weak self] in
+                guard let self else { throw ProjectionChannelError.channelClosed }
+
+                defer { self.pendingSubscribeTasks.removeValue(forKey: source) }
+
+                guard let session = try await self.parent?.client.projectionChannel.createSession(
+                    for: source,
+                    projectionSettings: self.parent?.client.sessionSettings?.projection
+                ) else {
+                    throw ProjectionChannelError.channelClosed
+                }
+
+                // 레퍼런스 카운터 초기화 (subscription 발급은 호출자가 makeSubscription 에서 처리)
+                self.projectionSessionReferences[session.id] = ManagedAtomic<Int>(0)
+                return session
+            }
+            pendingSubscribeTasks[source] = task
+
+            let session = try await task.value
+            return makeSubscription(for: session)
+        }
+
+        /// 주어진 `ProjectionSession` 에 대해 reference count 를 1 증가시키고 새 ticket 으로
+        /// `ProjectionSessionSubscription` 을 발급한다. 호출자는 항상 MainActor 에 있어야 한다.
+        @MainActor
+        private func makeSubscription(for session: ProjectionSession) -> ProjectionSessionSubscription {
             let sessionID = session.id
+            guard let referenceCounter = projectionSessionReferences[sessionID] else {
+                fatalError("ASSERTION FAILED: reference counter for projection session \(sessionID) is missing.")
+            }
 
-            // 레퍼런스 카운터 초기화
-            let referenceCounter = ManagedAtomic<Int>(1)
-            projectionSessionReferences[sessionID] = referenceCounter
+            referenceCounter.wrappingIncrement(ordering: .relaxed)
 
             let ticket = SessionReferenceTicket(id: UUID()) {
                 referenceCounter.wrappingDecrement(ordering: .releasing)
@@ -486,9 +528,67 @@ extension RemoteSession {
             }
         }
 
-        private func notifySessionFailure(reason: VideoSessionEndReason, message: String?) {
-            self.sessionError = ProjectionSessionFailureInfo(reason: reason, message: message)
-            logger.error("Projection session failure: reason=\(reason.rawValue), message=\(message ?? "(nil)")")
+        private func notifySessionFailure(source: ProjectionSourceDescriptor?, reason: VideoSessionEndReason, message: String?) {
+            guard let source else {
+                logger.warning("Projection session failure with no source descriptor: reason=\(reason.rawValue), message=\(message ?? "(nil)")")
+                return
+            }
+            self.sessionErrors[source] = ProjectionSessionFailureInfo(reason: reason, message: message)
+            logger.error("Projection session failure: source=\(source.debugDescription), reason=\(reason.rawValue), message=\(message ?? "(nil)")")
+        }
+
+        /// 사용자 / View 측이 명시적으로 에러 상태를 클리어할 때 호출합니다.
+        /// (예: 수동 재시도 트리거, 다른 소스로 전환)
+        func clearSessionError(for source: ProjectionSourceDescriptor) {
+            sessionErrors.removeValue(forKey: source)
+        }
+
+        // MARK: - Auto-retry (Video)
+
+        /// 비디오 세션 backoff 재시도 스케줄 (오디오 자동 재시작과 동일).
+        private static let videoRetryBackoffSchedule: [TimeInterval] = [1, 2, 4]
+
+        /// 1s / 2s / 4s backoff 로 최대 3회 `subscribeProjectionSession(for:)` 을 재시도합니다.
+        ///
+        /// - 매 시도 직전에 `displayLayoutManager.displayLayouts[displayID]` 의 존재 여부를
+        ///   확인하여 디스플레이가 이미 사라졌으면 `ProjectionRetryError.displayDisappeared` 를
+        ///   throw 하고 즉시 종료합니다.
+        /// - 한 번이라도 성공하면 `sessionErrors[displayID]` 를 클리어하고 새 subscription 을
+        ///   반환합니다.
+        /// - 모든 시도가 실패하면 마지막 오류를 throw 합니다.
+        ///
+        /// 호출자는 `Task` 로 감싸 보유하다가 `currentProjectionTarget` 변경 시 cancel 하여
+        /// 진행 중인 retry 를 중단할 수 있습니다.
+        @MainActor
+        func subscribeWithBackoff(for displayID: Int) async throws -> ProjectionSessionSubscription {
+            var lastError: Error?
+            let schedule = Self.videoRetryBackoffSchedule
+            for (i, backoff) in schedule.enumerated() {
+                logger.info("Video session retry: display=\(displayID), attempt=\(i + 1)/\(schedule.count), backoff=\(backoff)s")
+
+                try? await Task.sleep(for: .seconds(backoff))
+                try Task.checkCancellation()
+
+                // 시점에 따라 디스플레이가 사라졌을 수 있으므로 매번 재확인
+                guard channel.displayLayoutManager.displayLayouts[displayID] != nil else {
+                    logger.info("Video session retry aborted: display \(displayID) is no longer available")
+                    throw ProjectionRetryError.displayDisappeared
+                }
+
+                do {
+                    let subscription = try await subscribeProjectionSession(for: .displayID(displayID))
+                    sessionErrors.removeValue(forKey: .displayID(displayID))
+                    logger.info("Video session retry succeeded for display \(displayID) (attempt \(i + 1))")
+                    return subscription
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    logger.warning("Video session retry attempt \(i + 1) failed for display \(displayID): \(error.localizedDescription)")
+                    lastError = error
+                }
+            }
+            logger.error("Video session retry exhausted for display \(displayID)")
+            throw lastError ?? ProjectionRetryError.exhausted
         }
 
         /// auto-restart 재시도 상태를 초기화하고 진행 중인 재시도를 취소합니다.

@@ -17,7 +17,7 @@ struct ServerHandshakeTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         let clientHelloFrame = try FrameBuilder.clientHelloFrame(
@@ -50,7 +50,7 @@ struct ServerHandshakeTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         let features = [
@@ -82,12 +82,12 @@ struct ServerHandshakeTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (mainChannel, stream) = try await sessionHarness.openMainChannel()
 
         try await mainChannel.sendServerNotice(ServerNotice(
             severity: .fatal,
-            code: 1,
+            code: ServerNoticeCode(rawValue: 1),
             message: "Unsupported protocol version",
             timestamp: 1234567890
         ))
@@ -99,7 +99,7 @@ struct ServerHandshakeTests {
             withOpcode: .serverNotice, as: ServerNotice.self
         )
         #expect(sentNotice?.severity == .fatal)
-        #expect(sentNotice?.code == 1)
+        #expect(sentNotice?.code == ServerNoticeCode(rawValue: 1))
         #expect(sentNotice?.message == "Unsupported protocol version")
         #expect(sentNotice?.timestamp == 1234567890)
     }

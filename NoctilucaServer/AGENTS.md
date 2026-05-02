@@ -251,7 +251,15 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 ## Recent Notes
 
-- **WebP 타일 비디오 인코더 구현 완료**:
+- **타일링 이미지 코덱 (MJPG / ZRLE / WebP) 제거** (0.9.10):
+  - `MJPGVideoEncoder` / `ZRLEVideoEncoder` / `WebPVideoEncoder` 및 `jpeg/` / `traditional/` 디렉토리 전체 제거
+  - `ProjectionSession` 의 `switch fourCC` 에서 vp80 / VTVideoEncoder default 만 남김
+  - `CodecSpecification` 정적 프리셋 (`.zrle` / `.webp` / `.mjpg`) 및 displayTitle deprecated case 제거
+  - `AutoQualityPlanner` 의 `isImageCodec` 분기 + image-codec 전용 quantization step 제거
+  - `AppSettings.Projection` 에 sanitizer 추가 (이전 버전 settings.json 의 deprecated fourCC silently 필터링)
+  - 의존성 정리 예정: `WebP.xcframework` / `SharpYuv.xcframework` / `libturbojpeg.xcframework` 삭제
+  - SiriusKit `CodecFourCC` 의 zrle/mjpg/webp 정의는 wire identifier 보존을 위해 deprecated 주석으로 유지
+- **WebP 타일 비디오 인코더 구현 완료** (Deprecated since 0.9.10):
   - `WebPVideoEncoder.swift` 구현 (libwebp Advanced API 사용)
   - `WebPConfig` + `WebPPicture` + `WebPMemoryWriter` 기반 인코딩
   - `config.method = 0` (fastest) 하드코딩으로 실시간 인코딩 최적화

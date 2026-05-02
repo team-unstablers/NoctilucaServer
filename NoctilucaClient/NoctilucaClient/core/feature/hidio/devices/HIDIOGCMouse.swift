@@ -10,6 +10,7 @@ import Foundation
 import Combine
 import GameController
 import Atomics
+import QuartzCore
 
 #if os(macOS)
 import Cocoa
@@ -73,6 +74,10 @@ final class HIDIOGCMouse: HIDIOVirtualDevice {
     private static let recenterIntervalNanoseconds: UInt64 = 8_000_000
     nonisolated private let shouldRecenterCursor = ManagedAtomic<Bool>(false)
     private var recenterTask: Task<Void, Never>?
+
+    private var accelerationProfile: MouseAccelerationProfile = OffAccelerationProfile()
+    private var accelerationRemainderDx: Double = 0
+    private var accelerationRemainderDy: Double = 0
 #endif
 
     init() {
@@ -163,13 +168,35 @@ final class HIDIOGCMouse: HIDIOVirtualDevice {
             // 문서상 isolation 보장이 없으므로 Task { @MainActor } 로 명시 진입한다.
             mouseInput.mouseMovedHandler = { [weak self] mouse, deltaX, deltaY in
                 Task { @MainActor [weak self] in
-                    guard let controller = self?.controller else {
+                    guard let self, let controller = self.controller else {
                         return
                     }
 
+#if os(macOS)
+                    // GCMouse는 +Y가 위쪽, Sirius는 +Y가 아래쪽 → 세로 부호 반전
+                    let timestampUs = UInt64(CACurrentMediaTime() * 1_000_000)
+                    let accelerated = self.accelerationProfile.accelerate(
+                        dx: Double(deltaX),
+                        dy: Double(-deltaY),
+                        timestampUs: timestampUs
+                    )
+
+                    let totalDx = accelerated.dx + self.accelerationRemainderDx
+                    let totalDy = accelerated.dy + self.accelerationRemainderDy
+                    let outDx = totalDx.rounded()
+                    let outDy = totalDy.rounded()
+                    self.accelerationRemainderDx = totalDx - outDx
+                    self.accelerationRemainderDy = totalDy - outDy
+
+                    if outDx != 0 || outDy != 0 {
+                        controller.moveMouseRelative(to: CGPoint(x: outDx, y: outDy))
+                    }
+#else
                     let delta = CGPoint(x: CGFloat(deltaX), y: CGFloat(-deltaY))
                     controller.moveMouseRelative(to: delta)
-                    self?.requestCursorRecenter()
+#endif
+
+                    self.requestCursorRecenter()
                 }
             }
 
@@ -239,6 +266,16 @@ final class HIDIOGCMouse: HIDIOVirtualDevice {
         self.startRecenterLoopIfNeeded()
 #endif
     }
+
+#if os(macOS)
+    /// Exclusive mode 진입/설정 변경 시 호출.
+    /// 프로파일을 교체하고 서브픽셀 누적 상태를 초기화합니다.
+    func setAccelerationProfile(mode: MouseAccelerationMode, sensitivity: Double) {
+        self.accelerationProfile = MouseAccelerationProfileFactory.make(mode: mode, sensitivity: sensitivity)
+        self.accelerationRemainderDx = 0
+        self.accelerationRemainderDy = 0
+    }
+#endif
 
     func disconnect() {
         self.controller = nil

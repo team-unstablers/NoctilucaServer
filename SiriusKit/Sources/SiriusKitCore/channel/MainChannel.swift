@@ -21,6 +21,10 @@ public enum MainChannelEvent: Sendable {
 
     case receivedPing
     case receivedPong
+
+    /// 하위 스트림에서 치명적 오류가 발생했음을 알립니다.
+    /// 대표적으로 `SiriusFrameDecoderError.frameTooLarge`가 여기로 전달됩니다.
+    case streamError(any Error)
 }
 
 public final class MainChannel: Channel, ChannelEventConsumer {
@@ -97,7 +101,8 @@ public final class MainChannel: Channel, ChannelEventConsumer {
     }
     
     public func handleError(error: any Error) async {
-        
+        self.continuation.yield(.streamError(error))
+        self.continuation.finish()
     }
 
     public func handleStreamClose() async {

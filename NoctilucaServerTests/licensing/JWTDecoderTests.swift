@@ -71,8 +71,8 @@ final class JWTDecoderTests: XCTestCase {
 
     // MARK: - Shared Fixtures
 
-    private static let keyPair = generateRSAKeyPair()
-    private static let publicKeyDER = exportDER(keyPair.publicKey)
+    nonisolated(unsafe) private static let keyPair = generateRSAKeyPair()
+    nonisolated(unsafe) private static let publicKeyDER = exportDER(keyPair.publicKey)
 
     private func makeDecoder() throws -> JWTDecoder {
         try JWTDecoder(Self.publicKeyDER)

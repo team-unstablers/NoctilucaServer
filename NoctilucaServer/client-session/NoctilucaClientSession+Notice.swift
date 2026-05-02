@@ -19,7 +19,7 @@ extension NoctilucaClientSession {
         
         let noticeMessage = ServerNotice(
             severity: severity,
-            code: code.rawValue,
+            code: code,
             message: message,
             timestamp: timestamp
         )
@@ -38,7 +38,7 @@ extension ServerNoticeCode {
         switch self {
         case .jackpot:
             return "Congratulations! You've hit the JACKPOT! Enjoy your special reward! XDD"
-            
+
         case .unsupportedOpcode:
             return "The server received a message with an unsupported operation code."
         case .unsupportedAuthMethod:
@@ -46,10 +46,16 @@ extension ServerNoticeCode {
         case .nonceMismatch:
             return "The nonce provided by the client does not match the expected value."
         case .timeout:
-            return "The client did not respond within the expected time frame."
+            return "The peer did not respond within the expected time frame."
+        case .authenticationFailed:
+            return "Authentication failed."
+        case .frameTooLarge:
+            return "The payload length of an incoming frame exceeds the protocol-defined limit."
         case .internalServerError:
             return "An unexpected error occurred on the server."
-            
+        case .sessionAllocationFailed:
+            return "The server could not allocate a session seat (resource exhausted or max concurrent sessions reached)."
+
         default:
             return "An unspecified server notice has been issued."
         }

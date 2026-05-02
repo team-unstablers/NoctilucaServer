@@ -1,0 +1,320 @@
+# Noctiluca Server 0.9.10 — TODO
+
+> 이 문서는 0.9.10 릴리즈를 위한 작업 목록을 수집/정리하는 살아있는 문서입니다.
+> 사장님의 브레인 덤프를 유실 없이 받아두고, 가능한 것부터 카테고리로 분류합니다.
+>
+> - **작성 시작**: 2026-04-23
+> - **담당**: 치즈군
+> - **상태**: 이슈 발행 완료 (tracking) — GitHub `0.9.10` 마일스톤 참조
+> - **관련 마일스톤**: [0.9.10](https://github.com/team-unstablers/NoctilucaServer/milestone/2)
+
+---
+
+## 🎯 릴리즈 테마 (Discord 공지 기준)
+
+- **메인 테마**: 안정성 향상 (Stability) — Swift 6 이행 + data race 근절
+- **코덱 정책 변화**: 타일링 이미지 코덱 (MJPG / ZRLE / WebP) **제거**, 대체로 VP8 도입 (대역폭 효율)
+- **신규 기능**: VP8 코덱, 디스플레이 레이아웃/해상도 변경, 가상 디스플레이, iPad에서 보조 디스플레이 별도 창 분리 (실험적)
+- **Qt 클라이언트**: 사용성 개선
+
+---
+
+## ✅ 이미 완료된 것 (Done)
+
+- [x] **Swift 6 이행** (Noctiluca + SiriusKit)
+- [x] **MsQuic Unbuffered 설정**
+- [x] **서버 사이드 HIDIO 데이터 레이스 해결** (MsQuic Unbuffered 전환 덕분으로 추정)
+- [x] **VP8 인코더** (서버, libvpx 기반)
+- [x] **VP8 디코더** (NoctilucaClient)
+- [x] **VP8 디코더** (NoctilucaClientQt)
+- [x] **디스플레이 레이아웃 설정 가능** (서버)
+- [x] **디스플레이 해상도 설정 가능** (서버)
+- [x] **메인 디스플레이 설정 가능** (서버)
+- [x] **가상 디스플레이 spec 가드 로직** (서버) — 커밋 `671157a` (2026-04-25)
+
+---
+
+## 🧠 Raw Brain Dump (분류 전)
+
+> 떠오르는 대로 여기에 찍어둡니다. 문법/순서/중복 신경 쓰지 않음.
+
+### 2026-04-23 — Turn 1 (Discord 공지 + chain of thought)
+
+**Discord 공지 요약**:
+- Swift 6 이행 중 (業報 드립)
+- 0.9.10 포커스: 안정성 (data race 근절)
+- Qt 클라이언트 사용성 개선
+- 타일링 이미지 코덱 (MJPG/ZRLE/WebP) 제거 예정 → VP8로 대체
+- VP8 추가 (특히 macOS on VM — UTM 등에 유용)
+- 디스플레이 레이아웃/해상도 변경 가능
+- 가상 디스플레이 생성 가능 (세션 종료 시 자동 정리)
+- iPad에서 개별 디스플레이 스폰/디태치 제한 실험적으로 해제
+
+**Chain of thought 덤프 (원문)**:
+- Swift 6 이행? 했어.
+- MsQuic Unbuffered 설정? 했어.
+  - 이로 인한 서버 사이드 HIDIO쪽 데이터 레이스? 해결한 것 같아.
+- VP8 인코더? 했어.
+- VP8 디코더? 했어.
+- VP8 디코더 (NoctilucaClientQt)? 했어.
+- 디스플레이 레이아웃? 설정 가능해.
+- 디스플레이 해상도? 설정 가능해.
+- 메인 디스플레이로 설정? 가능해.
+- 가상 디스플레이? 가능하긴 하지만 가드 로직이 완전하지 않아.
+- 가상 디스플레이의 UI가 완전하지 않아 (macOS)
+- NoctilucaClientQt: 디스플레이 레이아웃 / 해상도 등 설정이 불가능해, 왜냐하면 UI가 부재해.
+- NoctilucaClientQt: 가상 디스플레이 생성이 불가능해. UI가 완전하지 않아.
+- 맞아, Swift 6 이행하면서 CJK 플러그인을 비활성화 했는데, 다시 활성화 해야만 해.
+- NoctilucaClientQt: 코덱 폴백 로직이 너무 부실해.
+- NoctilucaClient / NoctilucaClientQt: 디스플레이를 프로젝션 중 해당 디스플레이 연결이 끊기면 다른 디스플레이로 자동 전환해야 하는데 그렇지 않고 있어.
+- 클립보드를 통한 파일 전송 채널에 패스 트래버설 등의 다수 취약점을 Claude로부터 보고받았어.
+
+### 2026-04-23 — Turn 2 (미정 해소 + 신규)
+
+**가드 로직 (가상 디스플레이)**:
+- 오류 가드 로직 없음
+- 최소/최대 해상도 제한 없음 (현 macOS에서는 3840x2160까지가 한계)
+- 1x1, 262144x2 같은 이상한 해상도도 생성 가능 (막아야 함)
+
+**iPad 보조 디스플레이 분리**:
+- iPad Pro에서 테스트가 안 됨 (남자친구 아이패드 빌려야 함)
+
+**클립보드 파일 전송 취약점**:
+- 0.9.10에 같이 shipping 할 예정
+- see `docs/clipboard-transfer-security-report.md`
+
+**신규**:
+- App Store 상점 페이지의 기본 언어를 영문으로 — 현재 비-미국 사용자에게 한국어 설명문이 표시됨
+
+### 2026-04-23 — Turn 3 (보고받은 버그)
+
+- NoctilucaServer: 체험판 → 정식 라이선스로 전환할 때 struggle이 있음
+
+---
+
+## 📋 분류된 작업
+
+### 🆕 기능 (Features)
+
+- [x] VP8 인코더 (서버)
+- [x] VP8 디코더 (Client / ClientQt)
+- [x] 디스플레이 레이아웃 / 해상도 / 메인 디스플레이 설정 (서버)
+- [x] **가상 디스플레이 — 가드 로직 완성** — #255 ✅ **2026-04-25 resolved**
+  - [x] 오류 가드 로직 추가 (실패 케이스 처리) — nocvirtdisplay 단독 실행 시 exit code 4 추가
+  - [x] 최소/최대 해상도 제한 (320×240 ~ 3840×2160 native px)
+  - [x] 이상 해상도 거부 (scaleFactor 1x/2x, refreshRate 0~120Hz, aspect ratio 1:4~4:1)
+  - 적용 커밋: `671157a` (`NOCDisplaySpec+Validation.swift` + 서버/헬퍼 양쪽 검증 + 테스트)
+- [~] ~~**가상 디스플레이 UI 완성 (macOS)** — Noctiluca Server 앱~~ — #256 ❌ **2026-04-29 won't fix**
+  - 04-23 raw brain dump의 `(macOS)`가 NoctilucaClient(macOS)를 가리키는 것이었고, 분류 시점에 Server로 잘못 매핑됨
+  - 클라이언트 측 가상 디스플레이 생성/관리 UI는 macOS / iOS / Qt 모두 구현 완료
+  - 서버 측에는 가상 디스플레이 *생성* UI 불필요. 세션 종료 시 자동 정리는 이미 동작 중
+- [x] **iPad: 보조 디스플레이 별도 창 분리** (실험적, 공지에 포함) — #257 ✅ **2026-04-29 resolved**
+  - opt-in 설정(experimental flag)로 출시. 기본 off, iPadOS Settings에서 명시적 활성화
+  - 적용 커밋: `6ab4598` (macOS 서브 디스플레이 별도 창 분리 기능 구현), `7e24d67` (iOS 전체 화면 모드), `570e038` (iOS DetachedOverlay UIKit 윈도우 기반 재구현), `6b88b1d` (iPadOS sub-display 분리 opt-in 설정), `b84f6b9` (iPadOS 분리 버튼 노출 조건)
+
+### 🐛 버그 픽스 (Bug Fixes)
+
+- [x] 서버 사이드 HIDIO 데이터 레이스 (MsQuic Unbuffered)
+- [x] **프로젝션 중 디스플레이 연결 끊김 시 자동 전환 (Client / Swift)** — #258 ✅ **2026-04-29 resolved**
+  - 적용 커밋: `d34b964` (client/projection: 디스플레이 disconnection 시 자동 복구 로직 도입)
+  - `sessionErrors[displayID]` dict, `subscribeWithBackoff` (1s/2s/4s × 3회), MainWindow primary fallback, SubDisplayWindow @State subscription 교체
+  - 실기 검증 완료 (2026-04-29)
+- [ ] **프로젝션 중 디스플레이 연결 끊김 시 자동 전환 (ClientQt)** — #282 (#258 follow-up)
+- [x] ~~**CJK 플러그인 재활성화**~~ — 커밋 `8800693` 에서 복구됨
+- [x] **NoctilucaServer: 체험판 → 정식 라이선스 전환 시 struggle** (보고받음) — #259 ✅ **2026-04-29 resolved**
+  - 적용 커밋: `e09b830` (라이선스 윈도우 재오픈 시 마지막 페이지가 그대로 남는 문제 수정)
+
+### 🔒 보안 (Security) — 0.9.10에 Shipping
+
+> **근거 문서**: [`docs/clipboard-transfer-security-report.md`](./clipboard-transfer-security-report.md) (2026-04-10 감사 리포트)
+> **결정**: 0.9.10에 함께 shipping (핫픽스 분리 X).
+> **적용 범위**: Server (Swift) / Client (Swift) / ClientQt (C++) 공통 — 세 타겟 모두에 반영 필요.
+
+#### 🔴 CRITICAL (즉시)
+
+- [x] **[2.1] `FileTransferSnapshot.validatePath` Path Traversal 수정** — #260 ✅ **2026-04-25 resolved**
+  - 현: `String.hasPrefix` 기반, 정규화 없음 → `../` 로 호스트 임의 파일 탈취 가능
+  - 조치: `URL.standardizedFileURL.resolvingSymlinksInPath()` / `realpath(3)` 기반 정규화 포함관계 판정으로 전면 재작성
+  - Qt: `std::filesystem::weakly_canonical` 로 심볼릭 링크까지 정규화 강화
+  - 검증된 경로를 그대로 `writeFromFile` / `FileHandle`에 전달 (TOCTOU 회피)
+  - 적용 커밋: `0ce651d` (정규화 기반 재작성), `b8cf281` (entry 매칭 검증 실패 시 `continue`로 다음 entry 검사 — 3.3 follow-up과 동일 fix)
+- [x] **[2.2] protobuf 메시지에 크기/개수 상한 도입** — #261 ✅ **2026-04-29 resolved**
+  - 현: `ClipboardData.data`, `TransferDataChunk.data`, `ClipboardEvent.items` 모두 상한 없음 → 메모리/디스크 DoS
+  - 적용 내역:
+    - [x] SiriusKit 레벨 프레임 최대 길이 상수 (16 MiB), `SiriusFrameStreamDecoder`에서 초과 프레임 `frameTooLarge` throw — 커밋 `687f9ce`
+    - [x] fatal close 시퀀스(ServerNotice → Goodbye → close) 인프라 — 커밋 `edf2d3a` `d7d72eb` `3213fea` `076f4eb`
+      - `ServerNotice.code`를 `ServerNoticeCode` 타입으로 변경, 인증/세션 실패도 ServerNoticeCode 경로로 통합
+      - 서버: `closeFatally(notice:closure:message:)` 헬퍼 + panic/phase timeout/auth fail/session alloc fail 경로 전환
+      - 클라이언트: fatal ServerNotice 수신 시 pendingFatalNotice 보관 + 이어지는 Goodbye와 합쳐 노출, frameTooLarge 감지 시 Goodbye(protocolError) 발신 후 종료
+    - [x] `ClipboardEvent.items` (1024) / `ClipboardItem.representations` (32) 개수 상한 — Pattern A 3-tier (spec / 1.5x warn / 32x hard). spec 초과는 truncate (warn 까지는 warn 로그, 그 위는 error 로그), hard 초과는 fatal close. 적용 범위: Server / Client (Swift). _(2026-04-29 작업, commit pending)_
+    - [x] `ClipboardData.data` 인라인 본문 128 KiB 상한 — Pattern B per-rep isolation. 1.5x (192 KiB) 까지는 sender 버그 forgiveness 로 accept (warn 로그), 초과 시 해당 representation 만 drop (error 로그, 같은 item 의 다른 reps / 다른 items 는 정상 처리). omitted 경로는 TransferChannel 로 별도 처리. 적용 범위: Server / Client (Swift). _(2026-04-29 작업, commit pending)_
+    - [x] `ServerNoticeCode.protocolViolation = 0x4000` 신설 — `SiriusKit/Sources/SiriusKitCore/channel/ServerNoticeCode.swift` + `NoctilucaClientQt/dependencies/libsirius/msgdef/SiriusProtocol/general.mdproto.md`. hard threshold 위반 등 일반 프로토콜 위반에 사용. _(2026-04-29 작업, commit pending)_
+    - [x] `NoctilucaClient.remoteFault(notice:reason:)` 헬퍼 추가 — 클라이언트가 spec 위반 감지 시 `uiEvents` (사용자 표시) + `closeWithGoodbye(.protocolError)` (wire) 시퀀스를 트리거. _(2026-04-29 작업, commit pending)_
+    - 관련 정책: `CLAUDE.md` `<spec-violation-policy>` 섹션 (2026-04-29 추가). Pattern A (3-tier 임계값) + Pattern B (per-item isolation) + Pattern C (spec strict / enforcement lenient) 조합 적용.
+  - 🟡 follow-up (별도 진행):
+    - [ ] `TransferChannel` 에 `maxInFlightBytes` / `maxTotalBytes` 상한 추가 (#264 로 `totalSize` 초과 수신 시 종료까지만 처리됨)
+    - [ ] `resolveOmittedData` 누적 버퍼 상한 (위 `maxInFlightBytes` 결정 후 자연스럽게 정의됨)
+    - [ ] ClientQt 동일 enforcement 이식 — libsirius `ServerNoticeCode::ProtocolViolation` 추가 + Qt 측 receiver 적용
+- [x] **[3.3] `FileTransferMetadata.path` 절대 경로 노출 제거 → opaque token 방식** — #262 ✅ **2026-04-25 resolved**
+  - 현: `/Users/alice/Desktop/...` 같은 호스트 절대 경로가 클라이언트에 노출
+  - 조치: 서버가 내부 테이블에 `token → real path` 매핑 보관, 와이어에는 `token`, `displayName`, `size`, `contentType` 만 송신
+  - 부가 효과: 2.1 (Path Traversal) 도 동시에 완화
+  - **채택된 디자인 — "Spec=자유, Reference Impl=safe by default"**:
+    - Sirius spec 자체는 변경 없음 (`path` string 필드의 의미를 구현체 자율로 둠 — 향후 권고 톤 한 줄 spec 문서에 추가 예정)
+    - Noctiluca reference 구현은 wire에 가상 경로(`/noctiluca/clipboard/file/(UUID4)`) 만 노출
+    - `FileTransferMetadata` (Codable, wire-safe) ↔ `FileTransferMetadataPrivate` (서버 내부 전용, 실경로 보유) 두 struct 분리. 컴파일러가 realPath의 wire 노출 강제 차단
+    - `validatePath`가 가상 경로 → realPath 매핑 + 각 component sanitize + 정규화 후 root prefix 재확인의 3중 검증
+    - **위협 모델 분리**: 클립보드 경유는 가상 경로(implicit consent), 향후 Explorer/Transfer 모드는 raw path expose default OFF + 명시적 활성화(SFTP 모델, explicit consent)
+  - 🟡 follow-up:
+    - [x] `validatePath` 내 `return nil` → `continue` 수정 (entry 단위 검증 정확성) — 커밋 `b8cf281`
+    - [x] 클라이언트 측(`NoctilucaClient/.../FileTransferMetadata.swift`) 동기 변경 — 커밋 `a0e846c`
+    - [ ] `virtualPath` computed property로 (drift 방지)
+    - [ ] `realRoot`를 String 대신 정규화된 URL로 캐싱 (효율 + 명확성)
+    - [ ] `TokenKind` enum (`clipboardSnapshot` / `persistentMount`) 도입은 Explorer 모드 도입 시점에 같이 정리
+
+#### 🟠 HIGH (단기)
+
+- [ ] **[3.1] `TransferDataChunk.crc32 == 0` 이면 검증 스킵 문제** — #263
+  - 조치 A: `crc32`를 required로 격상 (빈 데이터일 때만 0 허용)
+  - 조치 B: CRC32가 불필요하다 판단되면 메시지에서 제거 + "QUIC이 무결성 보장" 문서화
+- [x] **[3.2] `TransferStartNotification.totalSize` 미강제** — #264 ✅ **2026-04-25 resolved**
+  - 현: 불일치 시 로그만 남기고 채널 유지 → 디스크 고갈/기만 가능
+  - 조치: `receivedTotalBytes > totalSize` 즉시 에러 종료, `isEOF && receivedTotalBytes != totalSize` 시 결과 파일 폐기
+  - `totalSize == 0` 의 의미 ("알 수 없음" vs "0바이트") spec 명확화, 별도 상한 적용
+  - 적용 커밋: `5818f35` (totalSize 강제 및 결과 폐기 경로 추가)
+
+#### 🟡 MEDIUM (단기~중기)
+
+- [x] **[4.1] `DirectoryEntry.name` 검증 추가** — #265 ✅ **2026-04-25 resolved**
+  - `name.contains("/") || name.contains("..") || name.isEmpty` 거부
+  - Qt: `std::filesystem::path(name).has_parent_path()` 검증
+  - 적용 커밋: `ef5f19f` (원격 주도 경로 주입 방지)
+- [ ] **[4.2] 자동 맞구독 시 사용자 동의 UX** — #266
+  - 서버가 `syncDirection == bidirectional / remoteToLocal` 일 때 자동 `SubscribeClipboardRequest` 송신 중
+  - 조치: 명시적 사용자 설정 또는 세션 수락 시 확인 UI, Qt 클라이언트도 동일 정책
+  - `requestId` monotonic 카운터로 발급 (현재는 `1` 고정)
+- [ ] **[4.3] `serveTransferData` 세션/토큰 기반 격리** — #267
+  - 인증된 상대방이 `lastSentSnapshot`의 임의 (item, repr) 인덱스 접근 가능
+  - 조치: 세션·채널 단위로 스냅샷 격리 + opaque token 사용 (3.3과 동일 해법)
+- [x] **[4.4] `PendingFileTransfer.createPlaceholder`에 `O_NOFOLLOW` 추가** — #268 ✅ **2026-04-25 resolved**
+  - [x] `open(url.path, O_WRONLY | O_NOFOLLOW | O_CLOEXEC)` 로 수정 — 커밋 `12f004a`
+  - [x] `metadata.name` path separator / `..` 엄격 금지 (`String.isSafePathComponent` 헬퍼 + `DirectoryEntry.hasSafeName` / `createPlaceholder` 양쪽 재사용) — 커밋 `aa85cf0`
+  - 🟡 follow-up (필요 시): `openat(dirfd, name, O_WRONLY | O_NOFOLLOW | O_CREAT | O_EXCL)` 으로 더 강화 가능
+- [ ] **[4.5] Qt Windows `ClipboardFileDataObject` relative path 검증** — #269
+  - `std::filesystem::path(name).filename() == name` 확인, 아니면 drop
+  - Explorer drop 총 파일 수/크기 상한 도입
+
+#### 🟢 LOW / 방어-in-depth (중기)
+
+- [ ] **[5.1] MIME 허용 목록 + pasteboard slot 주입 방지** — #270
+  - `application/x-...` wrap의 허용 목록 기반 매핑으로 좁힘
+  - macOS 수신 측 `setWithFileTransfer`에 `allowFile` 정책 적용
+- [ ] **[5.2] `GetClipboardRequest` rate limit + 스냅샷 관리** — #271
+  - 예: 500ms당 1회 제한
+  - `ClipboardEvent` 송신과 동일하게 `lastSentSnapshot` 업데이트
+- [ ] **[5.4] `TransferChannel` 동시 open 상한** (`AppSettings.Transfer.maxActiveTransfers`) — #272
+- [ ] **[5.5] Linux FUSE bridge mount permission 확인** (`user_only` 기본) — #273
+- [x] **[6.5] `ChannelAccepts` 단계에서 정책 게이트** — `TransferSettings.allow*` / `ClipboardSettings.allowFile` 를 `createIfAccepts`에서 먼저 체크 — #274 ✅ **2026-04-25 resolved**
+  - 적용 커밋: `76858c9` (TransferChannel accepts 단계에서 clipboard 정책 게이트)
+
+#### 📝 문서화
+
+- [ ] **AGENTS.md / SPEC에 불변식 명문화** — #275
+  - `TransferDataChunk.crc32` 의미
+  - `totalSize` 의미 및 "알 수 없음" 케이스
+  - 최대 크기, 동시 채널 수 상한
+  - 모든 타겟(Swift/Qt)이 동일하게 강제할 수 있도록
+
+#### ✅ 테스트 (CLAUDE.md Testing Philosophy 준수)
+
+- [ ] ClipboardChannel / TransferChannel **명세 기반 테스트** 작성 — #276
+  - 경로 검증
+  - 크기/개수 한계
+  - CRC 처리
+  - 재귀 디렉터리
+
+### 🔧 개선 (Improvements) — Qt 클라이언트
+
+> Discord 공지의 "Windows / Linux (Qt) client usability improvements" 실체
+
+- [x] **ClientQt: 디스플레이 레이아웃 설정 UI** — #277 ✅ **2026-04-28 resolved**
+  - 적용 커밋: `2e42ee6` (DisplayLayoutModifierDialog / DisplayArrangementCanvas 추가), `d7cdec7` (`applyDisplayLayout` 트랜잭션 메소드), `a66bb69` (MainWindow 와이어링), `2c1ee67` (DisplaySwitcherPopup의 레이아웃 편집 버튼 활성화), `b084085` / `02d5a97` (i18n + 빌드 등록)
+- [x] **ClientQt: 디스플레이 해상도 설정 UI** — #278 ✅ **2026-04-28 resolved**
+  - `DisplayLayoutModifierDialog` 가 배치 / 해상도(`resolutionCombo`) / 메인 디스플레이를 통합 편집하므로 #277과 동일 커밋군에서 해소됨
+- [x] **ClientQt: 가상 디스플레이 생성 UI** — #279 ✅ **2026-04-28 resolved**
+  - 적용 커밋: `3e60a9e` (AddVirtualDisplayDialog / AspectRatioPreview 추가), `7118cce` (`DisplayTransactionRequest` 라우팅 + `createVirtualDisplay` 노출), `b9c3236` (DisplaySwitcherCard / DisplaySwitcherPopup), `9e6223d` (AddressBarToolbar 디스플레이 전환 버튼), `e0152e8` / `86f52e6` (사이드바 → 어드레스바 팝오버 교체), `5b01076` / `a5f2c98` (빌드 등록 + i18n)
+- [ ] **ClientQt: 코덱 폴백 로직 강화** (현재 부실) — #280
+
+### 🗑️ 제거 (Removals)
+
+- [~] **타일링 이미지 코덱 제거**: MJPG / ZRLE / WebP — #281 (Server / Client 완료, ClientQt + 의존성 정리는 형아 직접)
+  - [x] 서버 인코더 제거 (`MJPGVideoEncoder` / `ZRLEVideoEncoder` / `WebPVideoEncoder` / `NoctilucaJPEGCompressor.{c,h}` / `traditional/` 디렉토리 + UI sheet 3종)
+  - [x] 클라이언트 (Swift) 디코더 제거 (`MJPGVideoDecoder` / `ZRLEVideoDecoder` / `WebPVideoDecoder`, `traditional/` + `compositor/` 디렉토리 전체, `ProjectionCanvasRenderer` / `MetalProjectionView` 함께 제거)
+  - [x] `CodecSpecification` 정적 프리셋 / dispatch / negotiation 분기 제거 (Server / Client 양쪽)
+  - [x] `AutoQualityPlanner` 의 `isImageCodec` 분기 제거 + 관련 테스트 정리
+  - [x] `AppSettings.Projection` sanitizer 추가 (이전 버전 settings.json 의 zrle/mjpg/webp 항목 silently 필터링)
+  - [x] SiriusKit `CodecFourCC` / `CodecOption` (`compressionLevel` / `tileSize` / `quantizeLevel`) 에 deprecation 주석 추가 (`@available(*, deprecated)` 어노테이션 격상은 보류)
+  - [ ] ClientQt 디코더 제거 (`decoder/mjpg/`, `decoder/zrle/`, `VideoDecoderImplementation.hpp`, `VideoDecoderCapabilities.cpp`, `CMakeLists.txt`) — 형아 직접
+  - [ ] `frameworks/` 의존성 정리 (`WebP/WebPDecoder/SharpYuv/libturbojpeg.xcframework` 삭제, `Package.swift` / pbxproj 정리) — 형아 직접
+  - [ ] mdproto Spec (`projection_codec.mdproto.md`) 의 deprecated 코멘트 — `team-unstablers/SiriusProtocol` 별도 PR
+  - [ ] `noctiluca-website` 코덱 표 갱신 (별도 레포)
+  - [ ] `CLAUDE.md` Recent Notes 의 WebP/ZRLE 관련 항목 갱신
+  - [ ] `docs/changelogs/server/0.9.10.md` 작성
+
+### 📄 문서 / 웹사이트 (Docs / Website)
+
+- [ ] `noctiluca-website`: 코덱 표 갱신 (타일링 제거, VP8 추가)
+- [ ] `noctiluca-website`: 가상 디스플레이 / 디스플레이 레이아웃 변경 기능 소개 섹션
+- [ ] `CLAUDE.md` 제품 정보 섹션 갱신 (코덱 표)
+- [ ] 공식 changelog 문서화
+
+### 🌐 스토어 / 배포 (Store & Distribution)
+
+- [ ] **App Store 상점 페이지 기본 언어를 영문으로 변경**
+  - 현: 비-미국 사용자에게 한국어 설명문이 표시되는 문제
+  - App Store Connect에서 primary localization 영문으로 전환 + 필요 시 한국어를 secondary로
+  - ⚠️ **텍스트만 수정하는 게 아님 — 스크린샷도 전부 재제작 필요**
+    - 현 스크린샷은 한국어 locale 기준 (UI 텍스트가 한국어)
+    - 플랫폼마다 스크린샷 세트가 제각각: Server(macOS), Navigator(macOS / iOS / iPadOS)
+    - 각 플랫폼 요구 해상도·aspect ratio 맞게 영문 locale로 재캡처
+    - 실제 볼륨은 퀵윈 아님 — 반나절~하루 단위 작업
+
+### 🚀 릴리즈 준비 (Release Prep)
+
+- [ ] Changelog 작성 (`docs/changelogs/server/0.9.10.md`)
+- [ ] Changelog 작성 (`docs/changelogs/navigator/0.9.10.md` — 필요 시)
+- [ ] 버전 번호 bump
+- [ ] 빌드 / 서명 / 배포 파이프라인 확인
+- [ ] Discord 릴리즈 공지 (이미 "예고" 공지는 나감)
+
+### ❓ 미정 / 논의 필요 (Undecided)
+
+- _현재 미정 사항 없음_
+
+### ✅ 해소된 미정 사항 (Resolved)
+
+- [x] ~~iPad 보조 디스플레이 분리 — 실험 플래그로 출시할지, 기본 on 으로 갈지?~~ (2026-04-29)
+  → **opt-in 설정(experimental flag)** 채택. 기본 off, iPadOS Settings에서 명시적 활성화. #257 참조.
+
+- [x] ~~가상 디스플레이 "가드 로직" 구체 범위~~
+  → 오류 가드 + 최소/최대 해상도 제한 (현 macOS 3840×2160) + 이상 해상도 (1×1, 262144×2 등) 거부. 기능 섹션 참조.
+- [x] ~~클립보드 파일 전송 — 0.9.10 포함 vs 별도 핫픽스?~~
+  → **0.9.10에 함께 shipping**. 보안 섹션 참조.
+- [x] ~~[3.3] opaque token — Sirius spec 차원에서 강제할지 vs 구현체 권고로 둘지?~~ (2026-04-25)
+  → **"Spec=자유, Reference Impl=safe by default"** 패턴 채택. Sirius spec은 `path` 의미를 구현체 자율로 두고(향후 권고 톤 한 줄 추가 예정), Noctiluca reference 구현은 가상 경로만 wire에 노출. 보안 섹션 #262 참조.
+- [x] ~~클립보드 경유 vs Explorer/Transfer 모드의 path 노출 정책~~ (2026-04-25)
+  → **위협 모델 분리**: 클립보드 = implicit consent → 가상 경로. Explorer/Transfer = explicit consent → raw path expose default OFF + 첫 활성화 시 SFTP 비유로 사용자 고지. 토글 축도 분리(`clipboard.allowFile` ≠ `transfer.allowExplorer`).
+
+---
+
+## 📌 참고
+
+- 이전 릴리즈 changelog: `docs/changelogs/server/`
+- 관련 진행 중 문서:
+  - `docs/TODO_DESKTOPCONTEXTMANAGER_DEBOUNCING.md`
+  - `docs/audio-projection-opusenc.md`
+  - `docs/clipboard-transfer-security-report.md` ← **0.9.10 보안 작업 근거**
+  - `docs/virtual-display-plan.md` ← **가상 디스플레이 설계**
+  - `docs/HIDPI_PROJECTION_REPORT.md`
+  - `docs/swift6-channel-migration-rules.md`
+  - `docs/swift6-siriuskit-tests-buildfix.md`

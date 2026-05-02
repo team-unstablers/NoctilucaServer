@@ -69,7 +69,7 @@ enum FrameBuilder {
 
     static func serverNoticeFrame(
         severity: NoticeSeverity = .fatal,
-        code: UInt32 = 0,
+        code: ServerNoticeCode = ServerNoticeCode(rawValue: 0),
         message: String = "",
         timestamp: UInt64 = 0
     ) throws -> SiriusFrame {

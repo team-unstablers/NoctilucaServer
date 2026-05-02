@@ -53,6 +53,22 @@ class MobileUIMainSceneDelegate: UIResponder, UIWindowSceneDelegate {
         hidioSession.deactivateSession()
     }
 
+    /// scene 단위 background 진입.
+    /// AppStateHolder.shared (앱 전체) 와 별개로 multi-window 환경에서 한 scene 만 background 인 케이스를 잡기 위해
+    /// SessionWindowViewModel.isSceneInBackground 를 갱신한다. MainWindowRemoteSessionView 가 이 값을 관찰하여
+    /// 비디오 프로젝션 시작/재시도를 차단한다.
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        Task { @MainActor [weak self] in
+            self?.rootViewController?.mainWindowViewModel?.isSceneInBackground = true
+        }
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        Task { @MainActor [weak self] in
+            self?.rootViewController?.mainWindowViewModel?.isSceneInBackground = false
+        }
+    }
+
     func sceneDidDisconnect(_ scene: UIScene) {
         // 이 메인 scene 에 귀속된 sub-display scene 들을 정리.
         if let sessionID = lastAttachedSessionID {

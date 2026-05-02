@@ -149,6 +149,9 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
                     return
                 case .receivedPing:
                     try await self.mainChannel.sendPong()
+                case .streamError(let error):
+                    await self.handleStreamError(error)
+                    return
                 default:
                     // ignore other events
                     break
@@ -164,6 +167,24 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
 
         // 메인 채널 이벤트 루프 종료 시 정리
         await self.close()
+    }
+
+    /// MainChannel 수신 경로에서 발생한 트랜스포트/디코더 오류를 처리한다.
+    ///
+    /// spec에 따라 `frameTooLarge`의 경우 `ServerNotice(frameTooLarge) → Goodbye(protocolError)` 시퀀스를
+    /// 전송한 뒤 연결을 종료한다. 그 외 오류는 panic으로 처리한다.
+    private func handleStreamError(_ error: any Error) async {
+        if case SiriusFrameDecoderError.frameTooLarge(let declaredLength, let limit) = error {
+            logger.warning("Frame size limit exceeded: declared=\(declaredLength) limit=\(limit)")
+            await self.closeFatally(
+                notice: .frameTooLarge,
+                closure: .protocolError,
+                message: "Declared payload length \(declaredLength) exceeds limit \(limit)"
+            )
+            return
+        }
+
+        await self.panic("Stream error: \(error)")
     }
     
     @inline(__always) // 이게 효과가 있을지?
@@ -224,7 +245,11 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
                     "current": self.phase.description
                 ])
 
-                await self.closeWithGoodbye(code: .protocolError, message: "Phase shift timeout")
+                await self.closeFatally(
+                    notice: .timeout,
+                    closure: .protocolError,
+                    message: "Phase shift timeout"
+                )
             }
         }
     }
@@ -241,7 +266,11 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
         logger.fatal("panic(): \(reason)")
         logger.fatal("panic(): dropping the client session \(self.id)")
 
-        await self.closeWithGoodbye(code: .protocolError, message: reason)
+        await self.closeFatally(
+            notice: .internalServerError,
+            closure: .internalServerError,
+            message: reason
+        )
     }
     
     /// Goodbye 메시지를 전송하고 연결을 종료한다.
@@ -257,6 +286,29 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
         }
 
         await self.close()
+    }
+
+    /// Fatal한 오류로 세션을 종료할 때 사용한다.
+    ///
+    /// Sirius 프로토콜은 서버가 fatal 조건을 만나면 다음 3-step 시퀀스를 엄격히 따를 것을 요구한다:
+    ///   1. `ServerNotice(severity = FATAL, code = <notice>)` 전송
+    ///   2. `Goodbye(code = <closure>)` 전송
+    ///   3. 트랜스포트 연결 종료
+    ///
+    /// 이 헬퍼는 위 3단계를 한 번에 수행한다. 자세한 내용은 SiriusProtocol `general.mdproto.md`의
+    /// `ServerNotice` IMPLEMENTATION NOTES를 참조하라.
+    func closeFatally(notice: ServerNoticeCode, closure: ClosureCode, message: String? = nil) async {
+        guard self.phase != .closed else { return }
+
+        do {
+            try await self.mainChannel?.sendServerNotice(
+                self.noticeMessage(.fatal, code: notice, message: message)
+            )
+        } catch {
+            logger.warning("closeFatally(): failed to send ServerNotice: \(error)")
+        }
+
+        await self.closeWithGoodbye(code: closure, message: message)
     }
 
     func close() async {

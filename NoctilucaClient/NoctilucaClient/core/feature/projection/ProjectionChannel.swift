@@ -44,7 +44,10 @@ enum ProjectionChannelEvent: Sendable {
     /// 화면 프로젝션 세션이 생성되었습니다.
     case sessionCreated(ProjectionSession)
     /// 화면 프로젝션 세션이 종료되었습니다.
-    case sessionDestroyed(UUID, reason: VideoSessionEndReason, message: String?)
+    ///
+    /// `source` 는 종료된 세션의 소스 식별자입니다. 이벤트 송신측에서 sourceDescriptor 를
+    /// 확보하지 못한 경우 (예: state 정합성 깨진 케이스) nil 일 수 있다.
+    case sessionDestroyed(UUID, source: ProjectionSourceDescriptor?, reason: VideoSessionEndReason, message: String?)
 
     /// 오디오 프로젝션 세션이 생성되었습니다.
     case audioSessionCreated(AudioProjectionSession)

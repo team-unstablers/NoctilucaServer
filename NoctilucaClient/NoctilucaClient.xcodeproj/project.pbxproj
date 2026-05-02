@@ -19,17 +19,13 @@
 		F64AF1762F6C77F400C0EDD8 /* OPEN_SOURCE_LICENSE.client in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16C2F6C77BA00C0EDD8 /* OPEN_SOURCE_LICENSE.client */; };
 		F64AF1772F6C781100C0EDD8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16E2F6C77CE00C0EDD8 /* LICENSE */; };
 		F64AF1782F6C781100C0EDD8 /* LICENSE.en in Resources */ = {isa = PBXBuildFile; fileRef = F64AF16F2F6C77CE00C0EDD8 /* LICENSE.en */; };
-		F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
-		F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */; };
-		F6682AC92F43F8930042F213 /* libturbojpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; };
 		F6682ACA2F43F8930042F213 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC02F43F8930042F213 /* libzstd */; };
 		F6682ACB2F43F8930042F213 /* SiriusKitClient in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC22F43F8930042F213 /* SiriusKitClient */; };
 		F6682ACC2F43F8930042F213 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F6682ABE2F43F8930042F213 /* AsyncAlgorithms */; };
 		F6682ACD2F43F8930042F213 /* Xuanxue in Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC32F43F8930042F213 /* Xuanxue */; };
 		F6682AD02F43F8930042F213 /* NoctilucaWebPDecoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC52F43F8930042F213 /* NoctilucaWebPDecoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F6682AD12F43F8930042F213 /* Xuanxue in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC32F43F8930042F213 /* Xuanxue */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		F6682AD22F43F8930042F213 /* libturbojpeg.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6561F182F08B7910090BCB3 /* libturbojpeg.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6682AD32F43F8930042F213 /* SiriusKitClient in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6682AC22F43F8930042F213 /* SiriusKitClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFEE2F3A23C8004383CF /* SiriusKitClient in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7C2F306B6C0024513A /* SiriusKitClient */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF12F3A34C8004383CF /* NoctilucaWebPDecoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF02F3A34C8004383CF /* NoctilucaWebPDecoder */; };
@@ -59,7 +55,6 @@
 			files = (
 				F6682AD02F43F8930042F213 /* NoctilucaWebPDecoder in Embed Frameworks */,
 				F6682AD12F43F8930042F213 /* Xuanxue in Embed Frameworks */,
-				F6682AD22F43F8930042F213 /* libturbojpeg.xcframework in Embed Frameworks */,
 				F621CB0E2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder in Embed Frameworks */,
 				F6682AD32F43F8930042F213 /* SiriusKitClient in Embed Frameworks */,
 			);
@@ -74,7 +69,6 @@
 			files = (
 				F686CFF22F3A34C8004383CF /* NoctilucaWebPDecoder in Embed Frameworks */,
 				F686CFF62F3A47A4004383CF /* Xuanxue in Embed Frameworks */,
-				F6561F1A2F08B7910090BCB3 /* libturbojpeg.xcframework in Embed Frameworks */,
 				F621CB0B2F8AE97700AEF0FA /* NoctilucaLibVPXDecoder in Embed Frameworks */,
 				F686CFEE2F3A23C8004383CF /* SiriusKitClient in Embed Frameworks */,
 			);
@@ -148,7 +142,6 @@
 			files = (
 				F64AF1642F6C5D8300C0EDD8 /* Sparkle in Frameworks */,
 				F6682AC82F43F8930042F213 /* NoctilucaWebPDecoder in Frameworks */,
-				F6682AC92F43F8930042F213 /* libturbojpeg.xcframework in Frameworks */,
 				F621CB0D2F8AE97F00AEF0FA /* NoctilucaLibVPXDecoder in Frameworks */,
 				F6682ACA2F43F8930042F213 /* libzstd in Frameworks */,
 				F6682ACB2F43F8930042F213 /* SiriusKitClient in Frameworks */,
@@ -162,7 +155,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F686CFF12F3A34C8004383CF /* NoctilucaWebPDecoder in Frameworks */,
-				F6561F192F08B7910090BCB3 /* libturbojpeg.xcframework in Frameworks */,
 				F627116D2F08626200E8A3D7 /* libzstd in Frameworks */,
 				F621CB0A2F8AE97700AEF0FA /* NoctilucaLibVPXDecoder in Frameworks */,
 				F6F98E7D2F306B6C0024513A /* SiriusKitClient in Frameworks */,
@@ -461,7 +453,7 @@
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -489,7 +481,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.9;
+				MARKETING_VERSION = 0.9.10;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client.unleashed;
 				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
@@ -522,7 +514,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = XHA76UVA95;
 				ENABLE_APP_SANDBOX = NO;
@@ -551,7 +543,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.9;
+				MARKETING_VERSION = 0.9.10;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client.unleashed;
 				PRODUCT_NAME = "Noctiluca Navigator";
@@ -707,7 +699,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -740,7 +732,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.9;
+				MARKETING_VERSION = 0.9.11;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client;
 				PRODUCT_NAME = "Noctiluca Navigator";
 				REGISTER_APP_GROUPS = YES;
@@ -765,7 +757,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -798,7 +790,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.9;
+				MARKETING_VERSION = 0.9.11;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.client;
 				PRODUCT_NAME = "Noctiluca Navigator";

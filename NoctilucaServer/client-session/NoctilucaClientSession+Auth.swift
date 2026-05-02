@@ -124,7 +124,11 @@ extension NoctilucaClientSession {
             guard self.loginAttempts < server.settings.security.maxLoginAttempts else {
                 logger.warning("Maximum login attempts exceeded for session \(self.id). Closing connection.")
 
-                await self.closeWithGoodbye(code: .authenticationFailed, message: "Maximum login attempts exceeded")
+                await self.closeFatally(
+                    notice: .authenticationFailed,
+                    closure: .protocolError,
+                    message: "Maximum login attempts exceeded"
+                )
                 return
             }
             
@@ -203,10 +207,15 @@ extension NoctilucaClientSession {
                 "result": "FAILED",
                 "reason": "AUTHENTICATION_FAILED"
             ])
-            
+
             logger.error("Authentication failed: \(error.localizedDescription)")
+
+            // SECURITY/UX: spec-violation-policy 3-1 "Reason 필수화"
+            //              인증 실패 사유를 클라이언트에게 ServerNotice 로 전달한다.
+            //              (NCH-002 S-2)
+            try? await self.notice(.error, code: .authenticationFailed)
             try await __failure()
-            
+
             return
         }
     }

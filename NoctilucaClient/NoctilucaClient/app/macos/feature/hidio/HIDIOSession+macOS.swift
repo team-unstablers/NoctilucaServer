@@ -8,6 +8,7 @@
 #if os(macOS)
 import Foundation
 import AppKit
+import Combine
 
 import SiriusKitClient
 
@@ -36,12 +37,20 @@ extension HIDIOSession {
         var currentKeyboard: HIDIOVirtualDevice?
         var currentMouse: HIDIOVirtualDevice?
 
+        @MainActor
+        private var settingsCancellables: Set<AnyCancellable> = []
+
+        @MainActor
+        private var didSubscribeSettings: Bool = false
+
         required init(_ session: HIDIOSession) {
             self._session = session
         }
-        
+
         @MainActor
         func startSession() throws -> HIDIOSessionMode {
+            subscribeToMouseAccelerationChangesIfNeeded()
+
             // 기본은 shared mode.
             try switchMode(to: .shared, reason: .userInitiated)
 
@@ -115,7 +124,11 @@ extension HIDIOSession {
             if let mouse = currentMouse {
                 controller.disconnect(mouse.identifierString)
             }
-            controller.resetKeyPressState()
+            // 모드 전환 시에는 host 로 keyUp 이벤트를 emit 하지 않는다.
+            // 토글 단축키의 modifier (예: Alt) 는 사용자가 실제로 떼는 시점에
+            // 새 입력 디바이스를 통해 자연스럽게 host 로 전달되어야 하므로,
+            // internal state 만 비운다.
+            controller.resetKeyPressState(emittingKeyUpEvents: false)
 
             self.currentKeyboard = nil
             self.currentMouse = nil
@@ -142,6 +155,11 @@ extension HIDIOSession {
                     // 2. exclusive mode에서는 relative 마우스를 연결한다
                     if let mouse = HIDIOGCMouse.shared() {
                         mouse.window = session.window
+                        let input = SettingsStore.shared.settings.input
+                        mouse.setAccelerationProfile(
+                            mode: input.mouseAccelerationMode,
+                            sensitivity: input.mouseAccelerationSensitivity
+                        )
                         self.currentMouse = mouse
                         controller.connect(mouse)
                     } else {
@@ -163,17 +181,56 @@ extension HIDIOSession {
         func switchableModes() -> Set<HIDIOSessionMode> {
             var switchableModes: Set<HIDIOSessionMode> = []
             let currentMode = session.mode
-            
+
             if currentMode != .shared {
                 switchableModes.insert(.shared)
             }
-            
+
             if TCCUtil.shared.isAccessGranted(for: .accessibility),
                currentMode != .exclusive {
                 switchableModes.insert(.exclusive)
             }
-            
+
             return switchableModes
+        }
+
+        private struct MouseAccelerationSettingsSnapshot: Equatable {
+            let mode: MouseAccelerationMode
+            let sensitivity: Double
+        }
+
+        @MainActor
+        private func subscribeToMouseAccelerationChangesIfNeeded() {
+            guard !didSubscribeSettings else { return }
+            didSubscribeSettings = true
+
+            let publisher = SettingsStore.shared.$settings
+                .compactMap { (settings: AppSettings?) -> MouseAccelerationSettingsSnapshot? in
+                    guard let settings else { return nil }
+                    return MouseAccelerationSettingsSnapshot(
+                        mode: settings.input.mouseAccelerationMode,
+                        sensitivity: settings.input.mouseAccelerationSensitivity
+                    )
+                }
+                .removeDuplicates()
+
+            publisher
+                .sink { [weak self] snapshot in
+                    Task { @MainActor [weak self] in
+                        self?.applyMouseAccelerationIfNeeded(snapshot)
+                    }
+                }
+                .store(in: &settingsCancellables)
+        }
+
+        @MainActor
+        private func applyMouseAccelerationIfNeeded(_ snapshot: MouseAccelerationSettingsSnapshot) {
+            guard session.mode == .exclusive,
+                  let mouse = currentMouse as? HIDIOGCMouse
+            else {
+                return
+            }
+            mouse.setAccelerationProfile(mode: snapshot.mode, sensitivity: snapshot.sensitivity)
         }
     }
 }

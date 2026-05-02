@@ -7,12 +7,22 @@
 
 import Foundation
 
+/// 프레임 디코더에서 발생할 수 있는 오류.
+public enum SiriusFrameDecoderError: Error, Equatable, Sendable {
+    /// 선언된 페이로드 길이가 프로토콜의 최대 프레임 크기 상한을 초과했습니다.
+    /// spec: general introduction의 "FRAME SIZE LIMIT" 섹션 참조.
+    case frameTooLarge(declaredLength: UInt32, limit: Int)
+}
+
 /// Incremental Sirius frame decoder for stream-based transports.
 ///
 /// Frame format:
 /// [opcode: 2 bytes BE] [length: 4 bytes BE] [payload: length bytes]
 package struct SiriusFrameStreamDecoder {
     private static let headerSize: Int = 6
+
+    /// 프로토콜이 정한 최대 프레임 페이로드 크기 (16 MiB).
+    public static let maxPayloadSize: Int = 16 * 1024 * 1024
 
     private var storage: Data
     private var readOffset: Int
@@ -45,7 +55,7 @@ package struct SiriusFrameStreamDecoder {
         self.storage.append(chunk)
     }
 
-    package mutating func nextFrame() -> SiriusFrame? {
+    package mutating func nextFrame() throws -> SiriusFrame? {
         let available = self.storage.count - self.readOffset
         guard available >= Self.headerSize else {
             return nil
@@ -62,6 +72,13 @@ package struct SiriusFrameStreamDecoder {
             | UInt32(self.storage[headerStart + 5])
 
         let payloadLength = Int(length)
+        guard payloadLength <= Self.maxPayloadSize else {
+            throw SiriusFrameDecoderError.frameTooLarge(
+                declaredLength: length,
+                limit: Self.maxPayloadSize
+            )
+        }
+
         let frameSize = Self.headerSize + payloadLength
         guard available >= frameSize else {
             return nil

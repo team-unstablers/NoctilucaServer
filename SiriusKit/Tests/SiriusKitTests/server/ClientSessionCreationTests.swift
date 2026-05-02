@@ -17,7 +17,7 @@ struct ClientSessionCreationTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        harness.simulateClientConnection()
+        await harness.simulateClientConnection()
 
         #expect(await harness.server.sessions.count == 1)
     }
@@ -27,7 +27,7 @@ struct ClientSessionCreationTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        harness.simulateClientConnection()
+        await harness.simulateClientConnection()
 
         #expect(harness.serverDelegate.acceptedSessions.count == 1)
     }
@@ -37,7 +37,7 @@ struct ClientSessionCreationTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
 
         #expect(sessionHarness.session.remoteEndpoint?.address.description == "127.0.0.1")
     }
@@ -47,13 +47,14 @@ struct ClientSessionCreationTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
 
         #expect(!sessionHarness.clientTransport.disconnectCalled)
 
         await sessionHarness.session.close()
 
         #expect(sessionHarness.clientTransport.disconnectCalled)
+        await harness.waitForSessionsEmpty()
         #expect(await harness.server.sessions.isEmpty)
     }
 
@@ -62,7 +63,7 @@ struct ClientSessionCreationTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         let (_, stream) = try await sessionHarness.openMainChannel()
 
         await sessionHarness.session.close()

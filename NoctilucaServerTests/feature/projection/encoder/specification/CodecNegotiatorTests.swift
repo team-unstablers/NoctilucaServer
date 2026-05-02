@@ -208,6 +208,8 @@ final class BalancedCodecNegotiatorTests: XCTestCase {
     func testNegotiateReturnsNilWhenNoMatch() {
         let negotiator = BalancedCodecNegotiator(specifications: [.hevc])
 
+        // 0.9.10 에서 제거된 fourCC (zrle) 또는 임의 unknown fourCC 가 와이어로
+        // 들어와도 negotiator 는 panic 없이 nil 을 반환해야 한다.
         let clientCodec = Codec(
             fourCC: .zrle,
             frameRate: nil,
@@ -218,7 +220,7 @@ final class BalancedCodecNegotiatorTests: XCTestCase {
 
         let result = negotiator.negotiate(with: [clientCodec])
 
-        XCTAssertNil(result, "FourCC도 다르면 nil을 반환해야 함")
+        XCTAssertNil(result, "deprecated/unknown fourCC 만 들어오면 negotiator 는 nil 을 반환해야 함")
     }
 
     func testNegotiateMergesClientOptionalOptions() {

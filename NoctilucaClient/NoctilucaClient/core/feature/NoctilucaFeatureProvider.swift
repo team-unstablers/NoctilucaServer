@@ -80,6 +80,20 @@ final class NoctilucaFeatureProvider: FeatureProvider {
             return .accepted(ProjectionDataChannel(handle: handle))
 
         case .transfer:
+            // 정책 게이트: remote(서버)가 TransferChannel을 열려고 할 때, 채널 자체를
+            // 만들기 전에 세션의 clipboard 설정(enabled / allowFile)을 먼저 확인하여
+            // 공격 표면을 줄인다.
+            if handle.direction == .remote,
+               let argsSet = TransferChannelArgumentsSet.parse(from: args) {
+                let clipSettings = await state.getClipboardChannel()?.clipboardSettings
+                guard clipSettings?.enabled == true else {
+                    return .rejected(code: -1, reason: "Clipboard is disabled by policy")
+                }
+                if argsSet.purpose == .fileTransfer && clipSettings?.allowFile != true {
+                    return .rejected(code: -1, reason: "File transfer is disabled by policy")
+                }
+            }
+
             let result = try await TransferChannel.createIfAccepts(
                 handle: handle,
                 args: args

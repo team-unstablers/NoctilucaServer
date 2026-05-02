@@ -17,7 +17,7 @@ struct ServerChannelTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         try await sessionHarness.openMainChannel()
 
         sessionHarness.session.shouldAcceptChannelCreation = true
@@ -52,7 +52,7 @@ struct ServerChannelTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         try await sessionHarness.openMainChannel()
 
         // shouldAcceptChannelCreation 기본값은 false
@@ -72,7 +72,7 @@ struct ServerChannelTests {
         harness.featureProvider.supportedFeatures = [.hidio, .projection]
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         try await sessionHarness.openMainChannel()
 
         sessionHarness.session.shouldAcceptChannelCreation = true
@@ -100,7 +100,7 @@ struct ServerChannelTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         try await sessionHarness.openMainChannel()
 
         let channelStream = MockStream()
@@ -135,7 +135,7 @@ struct ServerChannelTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection(channelOpenTimeout: 0.2)
+        let sessionHarness = await harness.simulateClientConnection(channelOpenTimeout: 0.2)
         try await sessionHarness.openMainChannel()
 
         // 응답 없는 스트림

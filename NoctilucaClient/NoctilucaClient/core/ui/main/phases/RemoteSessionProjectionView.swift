@@ -58,9 +58,6 @@ struct RemoteSessionProjectionView: View {
     @State
     private var lastPerformanceReport: ProjectionPerformanceReport?
 
-    @State
-    private var useCanvasRendering: Bool = false
-
 #if os(iOS)
     @State private var shouldPresentKeyboard: Bool = false
     @StateObject private var uiKitKeyboard = HIDIOUIKitKeyboard()
@@ -176,16 +173,8 @@ struct RemoteSessionProjectionView: View {
                     
                     let rect = projectionRect(in: geometry.size)
 
-                    if useCanvasRendering, let renderer = subscription?.canvasRenderer {
-                        // Metal 캔버스 직접 렌더링 경로 (타일 코덱)
-                        MetalProjectionView(renderer: renderer)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .offset(currentOffset)
-                            .frame(width: rect.width, height: rect.height)
-                            .position(x: rect.midX, y: rect.midY)
-                            .scaleEffect(currentScale)
-                    } else if let renderer = subscription?.metalVideoRenderer {
-                        // Metal 비디오 렌더러 경로 (VT 코덱)
+                    if let renderer = subscription?.metalVideoRenderer {
+                        // Metal 비디오 렌더러 경로 (VT/VP8 코덱)
                         MetalVideoView(renderer: renderer)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .offset(currentOffset)
@@ -370,9 +359,8 @@ struct RemoteSessionProjectionView: View {
                                     }
                                 case .performanceReportEmitted(let report):
                                     lastPerformanceReport = report
-                                case .codecConfigured(let isTiledCodec):
-                                    subscription?.updateRenderingPath(isTiledCodec: isTiledCodec)
-                                    useCanvasRendering = isTiledCodec
+                                case .codecConfigured:
+                                    break
                                 case .errorOccurred(let error, let fatal):
                                     if fatal {
                                         Self.logger.error("Fatal projection error: \(error.localizedDescription)")

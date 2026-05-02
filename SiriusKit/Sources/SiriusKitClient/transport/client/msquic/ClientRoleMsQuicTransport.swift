@@ -33,7 +33,7 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
     nonisolated let id: ClientRoleTransportIdentifier = ClientRoleTransportIdentifier()
     nonisolated(unsafe) weak var delegate: ClientRoleTransportDelegate?
 
-    private let logger = SiriusLogger(category: "ClientRoleMsQuicTransport")
+    nonisolated private let logger = SiriusLogger(category: "ClientRoleMsQuicTransport")
 
     internal let endpoint: SREndpoint
 
@@ -244,7 +244,6 @@ actor ClientRoleMsQuicTransport: ClientRoleTransport {
             .dropFirst()
             .map { $0.compactMap { $0.asString() } }
             .removeDuplicates()
-            .receive(on: DispatchQueue.global())
             .sink { [weak self] addresses in
                 guard let self = self else { return }
                 self.logger.debug("Network addresses changed: \(addresses)")

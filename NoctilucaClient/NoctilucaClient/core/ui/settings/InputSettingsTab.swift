@@ -34,11 +34,11 @@ struct InputSettingsTab: View {
                 }
                 
                 if settingsStore.settings.input.enableExclusiveMode {
-                    SettingsEntry(title: String(localized: "settings.input.exclusive_mode.unlock_shortcut.title", defaultValue: "독점 모드 해제 단축키"), subtitle: String(localized: "settings.input.exclusive_mode.unlock_shortcut.description", defaultValue: "키보드 / 마우스가 잠긴 상태에서 독점 모드를 해제하는 단축키를 설정합니다.")) {
+                    SettingsEntry(title: String(localized: "settings.input.exclusive_mode.toggle_shortcut.title", defaultValue: "독점 모드 토글 단축키"), subtitle: String(localized: "settings.input.exclusive_mode.toggle_shortcut.description", defaultValue: "독점 모드와 공유 모드를 토글하는 단축키를 설정합니다.\n단축키의 트리거 키는 원격 호스트로 전달되지 않습니다.")) {
                         HStack {
-                            KeySequenceLabel(keySequence: settingsStore.settings.input.unlockKeySequence)
+                            KeySequenceLabel(keySequence: settingsStore.settings.input.toggleExclusiveModeKeySequence)
                             KeySequenceCapturer(
-                                keySequence: $settingsStore.settings.input.unlockKeySequence,
+                                keySequence: $settingsStore.settings.input.toggleExclusiveModeKeySequence,
                                 policy: .none,
                                 default: KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
                             ) {
@@ -46,6 +46,11 @@ struct InputSettingsTab: View {
                             }
                         }
                     }
+                }
+
+                Toggle(isOn: $settingsStore.settings.input.redirectKnownShortcuts) {
+                    Text(markdown: String(localized: "settings.input.redirect_known_shortcuts.title", defaultValue: "일부 알려진 단축키를 리디렉션하기"))
+                    Text(markdown: String(localized: "settings.input.redirect_known_shortcuts.description", defaultValue: "⌘W, ⌘Q등의 알려진 단축키를 원격 호스트로 리디렉션 하기 위해 노력합니다.\n일부 단축키는 리디렉션이 불가능하므로 독점 모드를 사용해 주세요."))
                 }
             } header: {
                 Text(markdown: String(localized: "settings.input.header", defaultValue: "입력 설정"))
@@ -144,6 +149,44 @@ struct InputSettingsTab: View {
                 Text(markdown: String(localized: "settings.input.advanced.header.description", defaultValue: "입력 관련 고급 설정을 구성합니다."))
             }
             
+#if os(macOS)
+            Section {
+                Picker(selection: $settingsStore.settings.input.mouseAccelerationMode) {
+                    Text(String(localized: "settings.input.mouse_acceleration.mode.off", defaultValue: "끄기"))
+                        .tag(MouseAccelerationMode.off)
+                    Text(String(localized: "settings.input.mouse_acceleration.mode.flat", defaultValue: "고정 배수"))
+                        .tag(MouseAccelerationMode.flat)
+                    Text(String(localized: "settings.input.mouse_acceleration.mode.adaptive", defaultValue: "적응형"))
+                        .tag(MouseAccelerationMode.adaptive)
+                } label: {
+                    Text(markdown: String(localized: "settings.input.mouse_acceleration.mode.title", defaultValue: "가속도 모드"))
+                    Text(markdown: String(localized: "settings.input.mouse_acceleration.mode.description", defaultValue: "독점 모드에서 수신한 원본 델타에 가속도 곡선을 적용합니다.\n- **끄기**: 원본 델타 그대로 전송\n- **고정 배수**: 감도에 따른 고정 배수 적용 (×0.25~×4.0)\n- **적응형**: 이동 속도에 따라 가변 배수 적용 (×1.0~×3.5)"))
+                }
+
+                if settingsStore.settings.input.mouseAccelerationMode != .off {
+                    SettingsEntry(
+                        title: String(localized: "settings.input.mouse_acceleration.sensitivity.title", defaultValue: "감도"),
+                        subtitle: String(localized: "settings.input.mouse_acceleration.sensitivity.description", defaultValue: "-1.0(느리게)부터 1.0(빠르게)까지 설정할 수 있습니다. 0.0이 기본 배수입니다.")
+                    ) {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Slider(value: $settingsStore.settings.input.mouseAccelerationSensitivity, in: -1.0...1.0, step: 0.05) {
+                            } minimumValueLabel: {
+                                Text("-1.0")
+                            } maximumValueLabel: {
+                                Text("+1.0")
+                            }
+                            Text(String(format: "%.2f", settingsStore.settings.input.mouseAccelerationSensitivity))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text(markdown: String(localized: "settings.input.mouse_acceleration.header", defaultValue: "마우스 가속 (독점 모드)"))
+                Text(markdown: String(localized: "settings.input.mouse_acceleration.header.description", defaultValue: "독점 모드에서만 적용되는 마우스 델타 가속도 설정입니다. 일반(공유) 모드에서는 OS 포인터 가속이 그대로 사용됩니다."))
+            }
+#endif
+
             Section {
                 SettingsEntry(title: String(localized: "settings.input.troubleshoot.reset.title", defaultValue: "도와주세요, 잘못 건드렸더니 망가졌어요"), subtitle: String(localized: "settings.input.troubleshoot.reset.description", defaultValue: "이 버튼을 누르면 입력 관련 설정이 초기화됩니다.")) {
                     Button(String(localized: "settings.input.troubleshoot.reset.button", defaultValue: "입력 관련 설정 초기화")) {

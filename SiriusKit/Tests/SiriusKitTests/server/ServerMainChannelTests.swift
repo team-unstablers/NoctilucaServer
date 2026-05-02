@@ -17,7 +17,7 @@ struct ServerMainChannelTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
 
         let mainChannelBefore = await sessionHarness.session.channelManager.mainChannel
         #expect(mainChannelBefore == nil)
@@ -33,7 +33,7 @@ struct ServerMainChannelTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
 
         #expect(sessionHarness.sessionDelegate.mainChannel == nil)
 
@@ -47,7 +47,7 @@ struct ServerMainChannelTests {
         let harness = ServerTestHarness()
         try await harness.startup()
 
-        let sessionHarness = harness.simulateClientConnection()
+        let sessionHarness = await harness.simulateClientConnection()
         try await sessionHarness.openMainChannel()
 
         // shouldAcceptChannelCreation 기본값은 false

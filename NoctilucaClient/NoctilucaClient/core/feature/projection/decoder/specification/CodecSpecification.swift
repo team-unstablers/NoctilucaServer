@@ -136,28 +136,6 @@ extension CodecSpecification {
         .option(.dynamicRange, .kDynamicRangeSDR)
         .option(.colorRange, .kColorRangeLimited)
         .option(.displayDensity, .kDisplayDensityAuto)
-    
-    static let zrle = CodecSpecification(fourCC: .zrle)
-        .option(.colorFormat, .kColorFormatRGB565)
-        .option(.compressionLevel, .init(rawValue: "3"))
-        .option(.tileSize, .kTileSize256x256)
-        .option(.quantizeLevel, .kQuantizeLevel4)
-        .also { $0.frameRate = 10 }
-    
-    static let webp = CodecSpecification(fourCC: .webp)
-        .option(.colorFormat, .kColorFormatYUV444)
-        .option(.compressionLevel, .init(rawValue: "65"))
-        .option(.tileSize, .kTileSize128x128)
-        .option(.quantizeLevel, .kQuantizeLevel2)
-        .also { $0.frameRate = 15 }
- 
-    
-    static let mjpg = CodecSpecification(fourCC: .mjpg)
-        .option(.colorFormat, .kColorFormatYUV420)
-        .option(.tileSize, .kTileSize128x128)
-        .option(.compressionLevel, .init(rawValue: "25"))
-        .option(.quantizeLevel, .kQuantizeLevel2)
-        .also { $0.frameRate = 15 }
 }
 
 extension CodecSpecification {
@@ -169,14 +147,7 @@ extension CodecSpecification {
             return "High Efficiency Video Coding (H.265)"
         case .vp80:
             return "VP8"
-        case .zrle:
-            return "Run-Length Encoding (RLE) + Zstd (Deprecated)"
-        case .mjpg:
-            return "Motion JPEG (Deprecated)"
-        case .webp:
-            return "WebP (Deprecated)"
 
-            
         default:
             return "Unknown Codec (\(fourCC.stringRepresentation))"
         }
@@ -239,12 +210,7 @@ extension CodecSpecification {
     }
 
     var description: String {
-        switch self.fourCC {
-        case .zrle, .mjpg:
-            return String(localized: "codec-spec.compression_level", defaultValue: "압축 레벨 \(self.option(.compressionLevel)?.rawValue ?? "1")")
-        default:
-            return commonDescription
-        }
+        return commonDescription
     }
 }
 

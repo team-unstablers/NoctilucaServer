@@ -76,7 +76,7 @@ struct ChannelsDebugTab: View {
             }
             .padding(8)
         } else {
-            Text("채널을 선택하세요")
+            Text(String(localized: "main.debug.channels.empty", defaultValue: "채널을 선택하세요"))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 80)
         }

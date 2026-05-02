@@ -7,10 +7,9 @@
 
 import Foundation
 
-@preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKit
 
-@MainActor
-public final class CJKKeyboardHacksBundle: @preconcurrency NoctilucaPluginBundle {
+public final class CJKKeyboardHacksBundle: NoctilucaPluginBundle {
     public static let id = "app.noctiluca.server.bundles.CJKKeyboardHacks"
     public static let pluginKitVersion: NoctilucaPluginKitVersion = .v1
     

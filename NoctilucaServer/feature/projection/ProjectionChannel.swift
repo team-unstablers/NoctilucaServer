@@ -63,11 +63,29 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
 
         case .stopProjectionRequest:
             let stopRequest = try StopProjectionRequest.fromProtobufBytes(frame.data)
+            let identifier = stopRequest.identifier
             let targets = await state.terminateByControlMessage(
-                identifier: stopRequest.identifier,
+                identifier: identifier,
                 kind: .video
             )
             await cleanupTerminationTargets(targets, closeDataChannel: true)
+
+            // 클라이언트 요청에 의한 정상 종료임을 명시적으로 알림.
+            // 이 신호가 없으면 dataChannel close race 로 handleProjectionDataChannelTermination
+            // 경로를 타게 되어 reason=.unknown 이 보내지고, 클라이언트가 자동 재시도(backoff)를
+            // 발동하는 회귀가 발생함. cleanupTerminationTargets 가 setDelegate(nil) 을 먼저 수행
+            // 하므로 후속 close 콜백에 의한 EndedEvent 중복 송신은 차단된다.
+            if targets.videoSession != nil || targets.dataChannel != nil {
+                do {
+                    try await handle.send(opcode: .projectionSessionEndedEvent, message: ProjectionSessionEndedEvent(
+                        identifier: identifier,
+                        reason: VideoSessionEndReason.clientRequested,
+                        message: nil
+                    ))
+                } catch {
+                    logger.warning("Failed to send ProjectionSessionEndedEvent for session \(identifier) after client stop request: \(error)")
+                }
+            }
 
         case .projectionPerformanceReport:
             let report = try ProjectionPerformanceReport.fromProtobufBytes(frame.data)

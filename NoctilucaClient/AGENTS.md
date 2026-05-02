@@ -105,7 +105,13 @@ macOS/iOS에서 실행되며, Sirius 프로토콜(SiriusKitClient)을 통해 원
 
 - **2026-02-01**: RemoteApp 지원 준비를 위해 **디렉토리 구조 리팩토링**을 수행했습니다. (`core`, `app`, `resources` 분리)
 - **오디오 프로젝션 기능 구현 완료**: `AudioProjectionSession`, `AudioDecoder` 등
-- **ZRLE 디코더 추가**: `ZRLEVideoDecoder` (RLE + Zstd)
+- **타일링 이미지 디코더 제거** (0.9.10):
+  - `MJPGVideoDecoder` / `ZRLEVideoDecoder` / `WebPVideoDecoder` 삭제
+  - `decoder/traditional/` (RLE 헬퍼) / `decoder/compositor/` (TileCompositor + Metal/CPU 구현) 디렉토리 통째로 삭제
+  - `ProjectionCanvasRenderer` / `MetalProjectionView` 도 타일 합성 경로 전용이라 함께 삭제
+  - `ProjectionSession` 의 `switch fourCC` 에서 vp80 / VTVideoDecoder default 만 남김
+  - `ProjectionSessionSubscription` 의 `canvasRenderer` / `updateRenderingPath(isTiledCodec:)` API 제거 — 단일 렌더링 경로 (MetalVideoRenderer or AVSampleBufferDisplayLayer fallback) 로 단순화
+- **ZRLE 디코더 추가** (Deprecated since 0.9.10): `ZRLEVideoDecoder` (RLE + Zstd) — 0.9.10에서 제거됨
 - **종료 시퀀스 정리**: `NoctilucaClient.close()`는 task 취소 후 `mainChannel` 참조를 명시적으로 해제하고, `SiriusClient.shutdown()`은 transport disconnect 전에 채널 teardown을 수행합니다. 접속 중 종료 시 MsQuic retain chain을 끊기 위한 변경입니다.
 
 </section>

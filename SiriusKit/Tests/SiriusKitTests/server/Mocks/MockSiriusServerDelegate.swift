@@ -25,7 +25,7 @@ final class MockSiriusServerDelegate: SiriusServerDelegate, @unchecked Sendable 
         lastError = error
     }
 
-    func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession) {
+    func siriusServerDidAcceptClientSession(_ server: SiriusServer, session: ClientSession) async {
         acceptedSessions.append(session)
     }
 
