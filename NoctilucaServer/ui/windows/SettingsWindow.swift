@@ -15,6 +15,7 @@ struct SettingsWindow: View {
         case appStream
         case security
         case transfer
+        case fileAccess
         case misc
         case plugins
         case about
@@ -44,6 +45,8 @@ struct SettingsWindow: View {
                     .tag(SettingsTab.security)
                 Label(String(localized: "settings.tab.transfer", defaultValue: "데이터 전송"), systemImage: "arrow.up.arrow.down")
                     .tag(SettingsTab.transfer)
+                Label(String(localized: "settings.tab.file_access", defaultValue: "파일 시스템 마운트"), systemImage: "externaldrive.badge.plus")
+                    .tag(SettingsTab.fileAccess)
                 Label(String(localized: "settings.tab.misc", defaultValue: "기타"), systemImage: "ellipsis.circle")
                     .tag(SettingsTab.misc)
                 Label(String(localized: "settings.tab.plugins", defaultValue: "플러그인"), systemImage: "puzzlepiece.extension")
@@ -63,6 +66,8 @@ struct SettingsWindow: View {
                 SecuritySettingsTab(settings: $settingsStore.settings)
             case .transfer:
                 TransferSettingsTab(settings: $settingsStore.settings)
+            case .fileAccess:
+                FileAccessSettingsTab(settings: $settingsStore.settings)
             case .misc:
                 MiscSettingsTab(settings: $settingsStore.settings)
             case .plugins:

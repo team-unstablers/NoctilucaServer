@@ -29,8 +29,6 @@
 		F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */ = {isa = PBXBuildFile; fileRef = F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */; };
 		F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BA2FA818B300F3D400 /* NanoNFS */; };
 		F64F79BD2FA818BD00F3D400 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BC2FA818BD00F3D400 /* ArgumentParser */; };
-		F6FCAB004F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB002F0000000000FCAB /* NocFSAccessXPC */; };
-		F6FCAB005F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB003F0000000000FCAB /* NocFSAccessXPC */; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
 		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -62,6 +60,8 @@
 		F6CC83982F5B522800AA6DC2 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6CC83992F5B522800AA6DC2 /* Gesu in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6CC83742F5B522800AA6DC2 /* Gesu */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; };
+		F6FCAB004F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB002F0000000000FCAB /* NocFSAccessXPC */; };
+		F6FCAB005F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB003F0000000000FCAB /* NocFSAccessXPC */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1595,16 +1595,6 @@
 			package = F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
 		};
-		F6FCAB002F0000000000FCAB /* NocFSAccessXPC */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
-			productName = NocFSAccessXPC;
-		};
-		F6FCAB003F0000000000FCAB /* NocFSAccessXPC */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
-			productName = NocFSAccessXPC;
-		};
 		F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NoctilucaWebPEncoder;
@@ -1683,6 +1673,16 @@
 		F6F98E7A2F306B5D0024513A /* SiriusKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SiriusKit;
+		};
+		F6FCAB002F0000000000FCAB /* NocFSAccessXPC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
+			productName = NocFSAccessXPC;
+		};
+		F6FCAB003F0000000000FCAB /* NocFSAccessXPC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
+			productName = NocFSAccessXPC;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

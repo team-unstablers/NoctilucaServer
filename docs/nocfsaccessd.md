@@ -55,13 +55,19 @@ Sirius 프로토콜의 fsaccess 채널들은 본질적으로 호스트 앱 안�
 
 # 2. 컴포넌트와 책임 분담
 
+본 표는 **host (consuming peer)** 측 책임만 정리합니다. host 는 navigator 가 노출하는
+파일을 자기 머신의 Finder 에 NFS 로 띄우려는 *요청자* 입니다. navigator (exposing peer)
+측 책임 — 노출 entries 등록, consent UX, POSIX wrapper / FileSystemErrorCode 매핑
+— 은 NoctilucaClient 의 fsaccess 모듈 (`FSAccessChannel` /
+`FSAccessMountChannel` / `FSAccessConsentBroker` / `FSAccessPathValidator` /
+`FSAccessErrorMapper`) 이 담당하며 본 문서의 범위 밖입니다.
+
 | 책임 | 담당 |
 |---|---|
-| Sirius `fsaccess` control channel 처리 (List / Mount / Unmount) | **호스트 앱** |
-| Sirius `fsaccess_mount` data channel 처리 (Open / Read / Write / ReadDir / ...) | **호스트 앱** |
-| 사용자 consent UX (mount approval prompt) | **호스트 앱** |
-| 노출할 entries 결정 / 정책 enforcement (allow list, 경로 검증) | **호스트 앱** |
-| Sirius 인증 (AuthRequest / AuthResponse) 및 username 추출 | **호스트 앱** |
+| Sirius `fsaccess` control channel **발신** (List / Mount / Unmount 요청 송신, 응답 수신) | **호스트 앱** |
+| Sirius `fsaccess_mount` data channel **발신** (Open / Read / Write / ReadDir / ... 요청 송신) | **호스트 앱** |
+| 어떤 navigator connection 의 어떤 entry 를 자동 마운트할지 결정 (allowedConnections / Mount 트리거 정책) | **호스트 앱** |
+| Sirius 인증 (AuthChallenge / AuthRequest / AuthResponse) 및 username 추출 | **호스트 앱** |
 | NFS 서버 운영 (nanonfs 인스턴스, file handle 발급, 가상 디렉토리 트리) | **nocfsaccessd** |
 | ~/NoctilucaFS 마운트 / 언마운트 (NetFS API 호출) | **호스트 앱** |
 | Stale mount cleanup (startup probe) | **호스트 앱** |
@@ -377,20 +383,36 @@ add/remove가 발생할 수 있으나, 이는 NFS의 일반적인 동시 수정 
   `addConnection` 호출. username 출처는 `AuthRequest` 의 method/payload에서 호스트 앱이
   추출하며, 추출 불가 시 `unknown` fallback.
 
-## 8.2. Mount approval prompt (호스트 앱 책임)
+## 8.2. Mount 트리거 / 어떤 entry 를 마운트할지 (호스트 앱 책임)
 
-- navigator가 `FileSystemMountRequest` 를 보내면 호스트 앱이 macOS UI에서 prompt를 띄움
-  (Allow / Deny / Allow always for X seconds 같은 변형 가능).
-- prompt UX는 호스트 앱의 SwiftUI 컴포넌트가 책임지며, 데몬은 관여하지 않습니다.
-- 결정 결과에 따라 `FileSystemMountResponse(success=true|false, code=consentDenied?)` 가
-  navigator로 전송되고, 성공 시에만 데몬의 `addMountSession` 이 호출됩니다.
+- 호스트는 *요청자* 입니다. List 응답으로 받은 `FileSystemEntry[]` 중 어느 항목에 대해
+  `FileSystemMountRequest` 를 발신할지 결정합니다.
+- 정책은 호스트 앱의 Settings UI ("File System Access" 탭) 에서 connection 단위로 관리:
+  - `alwaysAllow` (또는 read-only): connect 직후 List → 모든 entry 자동 Mount.
+  - `alwaysAsk`: List 응답을 받으면 macOS notification / 메뉴바 알림으로 사용자에게
+    선택지를 제시한 뒤 Mount 발신.
+  - `deny`: 해당 connection 에 대해서는 List / Mount 발신 자체를 안 함 (fsaccess feature
+    가 ServerHello.supportedFeatures 에서 빠져나가지는 않음 — 채널을 열지 않을 뿐).
+- consent prompt — *"이 navigator 의 폴더 X 에 접근해도 되겠습니까?"* — 는 navigator 측
+  책임 (`FSAccessConsentBroker`) 이며 host 는 prompt 를 띄우지 않습니다. host 측 동의는
+  Settings 정책으로만 표현합니다.
+- `FileSystemMountResponse(success=false, code=consentDenied)` 를 받으면 host 는 해당
+  entry 를 다시 시도하지 않고 (다음 connect 까지) 사용자에게 알림으로 알립니다.
 
-## 8.3. 노출 entries 출처 (호스트 앱 책임)
+## 8.3. 노출 entries 의 출처
 
-- 호스트 앱의 설정 UI ("File System Access" 탭) 에서 사용자가 명시적으로 노출할 폴더를
-  선언합니다 (예: "내 문서" → `~/Documents`).
-- 설정에서 선언되지 않은 경로는 어떤 navigator도 마운트할 수 없습니다.
-- `FileSystemListResponse.entries` 는 이 설정 목록을 그대로 반영합니다.
+- 호스트는 *노출 측이 아닙니다*. 어떤 폴더를 노출할지 결정하는 것은 navigator
+  (exposing peer) 의 책임입니다. NoctilucaClient 의 `SessionSettings.fsAllowedEntries`
+  + `FSAccessChannel` 의 `findExposedEntry` 가 이 역할을 합니다.
+- 따라서 host 측 Settings 의 "File System Access" 탭에는 *노출할 폴더* 항목이 없습니다.
+  host 측 Settings 가 다루는 것은 다음 정책 뿐입니다:
+  - **mount point 위치** (기본 `~/NoctilucaFS`)
+  - **fsaccess feature on/off**
+  - **allowedConnections** (어떤 connection username / fingerprint 에 대해 어떤
+    consentPolicy 를 적용할지)
+- `FileSystemListResponse.entries` 는 navigator 가 채워서 host 에 보내는 *응답* 입니다.
+  host 는 이 entries 를 그대로 가상 트리의 2단계 namespace 후보로 보유하며, §8.2 의
+  정책에 따라 실제 Mount 를 트리거합니다.
 
 ---
 
