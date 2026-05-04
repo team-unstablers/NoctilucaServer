@@ -272,9 +272,7 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
   - Settings UI: `FileAccessSettingsTab` (mount point / 기본 consent policy /
     feature toggle).
   - 미완성: NoctilucaClientSession 자동 wiring (인증 완료 후 자동 List/Mount),
-    streaming read/write. `nocfsaccessd` 의 Copy Files 빌드 페이즈 추가는
-    swift-nio C 모듈 indexing 충돌로 보류 — 외부 스크립트나 ShellScript phase
-    로 처리 예정.
+    streaming read/write.
 - **타일링 이미지 코덱 (MJPG / ZRLE / WebP) 제거** (0.9.10):
   - `MJPGVideoEncoder` / `ZRLEVideoEncoder` / `WebPVideoEncoder` 및 `jpeg/` / `traditional/` 디렉토리 전체 제거
   - `ProjectionSession` 의 `switch fourCC` 에서 vp80 / VTVideoEncoder default 만 남김

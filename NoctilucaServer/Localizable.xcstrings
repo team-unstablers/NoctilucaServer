@@ -4,6 +4,12 @@
     "" : {
 
     },
+    "·" : {
+
+    },
+    "(%@)" : {
+
+    },
     "%@" : {
 
     },
@@ -66,74 +72,52 @@
     "%lld" : {
 
     },
-    "(%@)" : {
-
-    },
     "1Mbps" : {
-
-    },
-    "20Mbps" : {
-
-    },
-    "256kbps" : {
-
-    },
-    "32kbps" : {
 
     },
     "4K" : {
 
     },
+    "20Mbps" : {
+
+    },
+    "32kbps" : {
+
+    },
     "60 FPS" : {
 
     },
-    "Apache License 2.0" : {
+    "256kbps" : {
 
     },
-    "BSD 3-Clause License" : {
-
-    },
-    "Copyright © 2026 team unstablers Inc. All rights reserved." : {
-
-    },
-    "Creative Commons Zero v1.0 Universal" : {
-
-    },
-    "GNU General Public License v3.0" : {
-
-    },
-    "GNU Lesser General Public License v3.0" : {
-
-    },
-    "HIDIO" : {
-
-    },
-    "Hello, world!" : {
-
-    },
-    "MIT License" : {
-
-    },
-    "Noctiluca " : {
-
-    },
-    "OK" : {
-
-    },
-    "OSStatus: %d" : {
-
-    },
-    "Opus" : {
-
-    },
-    "Projection" : {
-
-    },
-    "ProjectionData" : {
-
-    },
-    "Server" : {
-
+    "about.appeal_button" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appeal…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訴え…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호소문…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "呼吁书…"
+          }
+        }
+      }
     },
     "about.appeal.body" : {
       "extractionState" : "extracted_with_value",
@@ -218,35 +202,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "呼吁书"
-          }
-        }
-      }
-    },
-    "about.appeal_button" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appeal…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "訴え…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "호소문…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "呼吁书…"
           }
         }
       }
@@ -482,6 +437,12 @@
           }
         }
       }
+    },
+    "Apache License 2.0" : {
+
+    },
+    "BSD 3-Clause License" : {
+
     },
     "builtin-bundles.auth.NoctilucaCoreAuth.description" : {
       "comment" : "Noctiluca의 기본 인증 플러그인 번들입니다.",
@@ -1074,6 +1035,9 @@
         }
       }
     },
+    "Copyright © 2026 team unstablers Inc. All rights reserved." : {
+
+    },
     "core.plugin.PluginBundleRegistryError.duplicateBundle(id: %@)" : {
       "comment" : "플러그인 번들이 중복 등록되었습니다.",
       "localizations" : {
@@ -1392,6 +1356,21 @@
           }
         }
       }
+    },
+    "Creative Commons Zero v1.0 Universal" : {
+
+    },
+    "GNU General Public License v3.0" : {
+
+    },
+    "GNU Lesser General Public License v3.0" : {
+
+    },
+    "Hello, world!" : {
+
+    },
+    "HIDIO" : {
+
     },
     "licensing.install.back" : {
       "extractionState" : "extracted_with_value",
@@ -3423,6 +3402,12 @@
         }
       }
     },
+    "MIT License" : {
+
+    },
+    "Noctiluca " : {
+
+    },
     "notificaiton.plugin_bundle_rejected_by_security_policy.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4206,6 +4191,9 @@
         }
       }
     },
+    "OK" : {
+
+    },
     "onboarding.completion.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4293,6 +4281,35 @@
         }
       }
     },
+    "onboarding.configuration.password_confirm.placeholder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm Password"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パスワード確認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "비밀번호 확인"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确认密码"
+          }
+        }
+      }
+    },
     "onboarding.configuration.password.description" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4376,35 +4393,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "连接密码"
-          }
-        }
-      }
-    },
-    "onboarding.configuration.password_confirm.placeholder" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confirm Password"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "パスワード確認"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "비밀번호 확인"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确认密码"
           }
         }
       }
@@ -5279,6 +5267,12 @@
         }
       }
     },
+    "Opus" : {
+
+    },
+    "OSStatus: %d" : {
+
+    },
     "plugins.auth.NullAuthPlugin.description" : {
       "comment" : "Provides 'NULL' authentication that always succeeds.",
       "localizations" : {
@@ -5395,64 +5389,6 @@
         }
       }
     },
-    "plugins.auth.SSHAuthPlugin.description" : {
-      "comment" : "Provides SSH public key authentication.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provides SSH key-based authentication.\n\nThis plugin is based on the 'Xuanxue' Swift module written by team unstablers Inc.\nThe source code for Xuanxue can be found at https://github.com/team-unstablers/Xuanxue."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SSHキーベースの認証を提供します。\n\nこのプラグインは team unstablers Inc. が作成した 'Xuanxue' Swiftモジュールに基づいています。\nXuanxueのソースコードは https://github.com/team-unstablers/Xuanxue で確認できます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "SSH 키 기반의 인증을 제공합니다.\n\n이 플러그인은 team unstablers Inc.가 작성한 'Xuanxue' Swift 모듈을 기반으로 합니다.\nXuanxue의 소스 코드는 https://github.com/team-unstablers/Xuanxue 에서 확인하실 수 있습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供基于 SSH 密钥的认证。\n\n此插件基于 team unstablers Inc. 编写的 'Xuanxue' Swift 模块。\nXuanxue 的源代码可以在 https://github.com/team-unstablers/Xuanxue 查看。"
-          }
-        }
-      }
-    },
-    "plugins.auth.SSHAuthPlugin.name" : {
-      "comment" : "SSHAuthPlugin",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SSH Auth Plugin"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SSH認証プラグイン"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "SSH 인증 플러그인"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SSH 认证插件"
-          }
-        }
-      }
-    },
     "plugins.auth.SimplePasswordAuthPlugin.description" : {
       "comment" : "Provides password-only authentication using SHA-512 + Bcrypt.\nThis plugin is based on libbcrypt written by Ricardo Garcia (@rg3).\n@rg3's libbcrypt is distributed under the CC0-1.0 license, and the forked version by team unstablers Inc. for Noctiluca Server development can be found at https://github.com/team-unstablers/libbcrypt .",
       "localizations" : {
@@ -5511,34 +5447,66 @@
         }
       }
     },
-    "projection.codec.resolution_level.hd1080p" : {
-      "extractionState" : "extracted_with_value",
+    "plugins.auth.SSHAuthPlugin.description" : {
+      "comment" : "Provides SSH public key authentication.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1080p (Full HD)"
+            "value" : "Provides SSH key-based authentication.\n\nThis plugin is based on the 'Xuanxue' Swift module written by team unstablers Inc.\nThe source code for Xuanxue can be found at https://github.com/team-unstablers/Xuanxue."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1080p （フルHDクラス）"
+            "value" : "SSHキーベースの認証を提供します。\n\nこのプラグインは team unstablers Inc. が作成した 'Xuanxue' Swiftモジュールに基づいています。\nXuanxueのソースコードは https://github.com/team-unstablers/Xuanxue で確認できます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "1080p (Full HD급)"
+            "value" : "SSH 키 기반의 인증을 제공합니다.\n\n이 플러그인은 team unstablers Inc.가 작성한 'Xuanxue' Swift 모듈을 기반으로 합니다.\nXuanxue의 소스 코드는 https://github.com/team-unstablers/Xuanxue 에서 확인하실 수 있습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1080p (Full HD 级别)"
+            "value" : "提供基于 SSH 密钥的认证。\n\n此插件基于 team unstablers Inc. 编写的 'Xuanxue' Swift 模块。\nXuanxue 的源代码可以在 https://github.com/team-unstablers/Xuanxue 查看。"
           }
         }
       }
+    },
+    "plugins.auth.SSHAuthPlugin.name" : {
+      "comment" : "SSHAuthPlugin",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH Auth Plugin"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH認証プラグイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SSH 인증 플러그인"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH 认证插件"
+          }
+        }
+      }
+    },
+    "Projection" : {
+
     },
     "projection.codec.resolution_level.hd2k" : {
       "extractionState" : "extracted_with_value",
@@ -5623,6 +5591,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "720p (HD 级别)"
+          }
+        }
+      }
+    },
+    "projection.codec.resolution_level.hd1080p" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p （フルHDクラス）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1080p (Full HD급)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p (Full HD 级别)"
           }
         }
       }
@@ -5887,6 +5884,12 @@
           }
         }
       }
+    },
+    "ProjectionData" : {
+
+    },
+    "Server" : {
+
     },
     "server.error.invalid_license" : {
       "extractionState" : "extracted_with_value",
@@ -6497,151 +6500,6 @@
         }
       }
     },
-    "settings.about.license.button.purchase" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Purchase Noctiluca Server…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noctiluca Serverを購入する…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Noctiluca Server 구매하기…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "购买 Noctiluca Server…"
-          }
-        }
-      }
-    },
-    "settings.about.license.button.register_new" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Register New License"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新しいライセンスを登録"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "새 라이선스 등록"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注册新许可证"
-          }
-        }
-      }
-    },
-    "settings.about.license.button.remove" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove License"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ライセンス登録を解除"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "라이선스 등록 해제"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除许可证注册"
-          }
-        }
-      }
-    },
-    "settings.about.license.no" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "いいえ"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "아니오"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "否"
-          }
-        }
-      }
-    },
-    "settings.about.license.title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Valid License"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "有効なライセンス"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "유효한 라이선스"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "有效许可证"
-          }
-        }
-      }
-    },
     "settings.about.license_status.expired" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -6841,6 +6699,151 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "是"
+          }
+        }
+      }
+    },
+    "settings.about.license.button.purchase" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase Noctiluca Server…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noctiluca Serverを購入する…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Noctiluca Server 구매하기…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "购买 Noctiluca Server…"
+          }
+        }
+      }
+    },
+    "settings.about.license.button.register_new" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Register New License"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいライセンスを登録"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "새 라이선스 등록"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注册新许可证"
+          }
+        }
+      }
+    },
+    "settings.about.license.button.remove" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove License"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ライセンス登録を解除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "라이선스 등록 해제"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除许可证注册"
+          }
+        }
+      }
+    },
+    "settings.about.license.no" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いいえ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아니오"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "否"
+          }
+        }
+      }
+    },
+    "settings.about.license.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid License"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有効なライセンス"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "유효한 라이선스"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有效许可证"
           }
         }
       }
@@ -7398,6 +7401,171 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "AppStream (실험 단계)"
+          }
+        }
+      }
+    },
+    "settings.file_access.consent.always_allow" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전부 자동 마운트 (읽기/쓰기)"
+          }
+        }
+      }
+    },
+    "settings.file_access.consent.always_allow_read_only" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "전부 자동 마운트 (읽기 전용)"
+          }
+        }
+      }
+    },
+    "settings.file_access.consent.always_ask" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "매번 묻기"
+          }
+        }
+      }
+    },
+    "settings.file_access.consent.deny" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "거부 (control channel 자체를 안 엶)"
+          }
+        }
+      }
+    },
+    "settings.file_access.consent.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "navigator 가 List 응답으로 알려준 entries 를 어떻게 처리할지의 기본값입니다. 개별 connection 별 예외 정책 (allowedConnections) 은 향후 추가 예정입니다."
+          }
+        }
+      }
+    },
+    "settings.file_access.consent.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "기본 마운트 정책"
+          }
+        }
+      }
+    },
+    "settings.file_access.enabled.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 옵션을 켜면 connect 해 온 클라이언트(navigator)가 노출하는 폴더를 호스트 머신의 Finder에 NFS 마운트 형태로 띄울 수 있게 됩니다. 자기 파일을 *내보내는* 기능이 아니라, 원격에서 받은 파일을 *받아서 마운트* 하는 기능입니다."
+          }
+        }
+      }
+    },
+    "settings.file_access.enabled.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 파일 시스템 마운트 사용하기"
+          }
+        }
+      }
+    },
+    "settings.file_access.mount_point.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 파일이 보일 호스트 머신의 디렉토리. 비어있는 디렉토리이거나 존재하지 않는 경로여야 합니다. 변경하면 다음 서버 시작 시 적용됩니다."
+          }
+        }
+      }
+    },
+    "settings.file_access.mount_point.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마운트 위치"
+          }
+        }
+      }
+    },
+    "settings.file_access.section_consent.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "어떤 navigator entry 를 자동 마운트할지의 호스트 측 정책. **navigator 측의 사용자 동의 prompt 와는 별개** 입니다 — navigator 측 prompt 는 navigator 사용자가 자기 파일을 누구에게 보여줄지 결정하는 것이고, 본 정책은 host 사용자가 받은 entries 를 자기 머신에 마운트할지 결정하는 것입니다."
+          }
+        }
+      }
+    },
+    "settings.file_access.section_consent.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mount 트리거 정책"
+          }
+        }
+      }
+    },
+    "settings.file_access.section_general.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 파일 시스템 마운트 (fsaccess) 의 호스트 측 정책을 설정합니다."
+          }
+        }
+      }
+    },
+    "settings.file_access.section_general.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "일반"
+          }
+        }
+      }
+    },
+    "settings.file_access.section_mount.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "마운트 위치"
           }
         }
       }
@@ -9171,267 +9339,6 @@
         }
       }
     },
-    "settings.plugins.detail.developer" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Developer"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開発者"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "개발자"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开发者"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.license" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "License"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ライセンス"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "라이선스"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "许可证"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.show_info" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show Info…"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "情報を表示…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "정보 보기…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看信息…"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.signature" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signature Info"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "署名情報"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서명 정보"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "签名信息"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.signature.adhoc" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ad-hoc Signature"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ad-hoc署名"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Ad-hoc 서명"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ad-hoc 签名"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.signature.builtin" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Built-in Plugin"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内蔵プラグイン"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "내장 플러그인"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内置插件"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.signature.invalid" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signature verification failed (OSStatus: %d)"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "署名検証失敗 （OSStatus: %d）"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서명 검증 실패 (OSStatus: %d)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "签名验证失败 (OSStatus: %d)"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.signature.unsigned" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Signature"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "署名なし"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서명 없음"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无签名"
-          }
-        }
-      }
-    },
-    "settings.plugins.detail.version" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "バージョン"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "버전"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
-          }
-        }
-      }
-    },
     "settings.plugins.detail_sheet.export.id" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -10099,6 +10006,267 @@
         }
       }
     },
+    "settings.plugins.detail.developer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開発者"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "개발자"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开发者"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.license" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "License"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ライセンス"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "라이선스"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "许可证"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.show_info" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Info…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "情報を表示…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "정보 보기…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看信息…"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signature Info"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "署名情報"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 정보"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "签名信息"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.adhoc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad-hoc Signature"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad-hoc署名"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ad-hoc 서명"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad-hoc 签名"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.builtin" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in Plugin"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内蔵プラグイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "내장 플러그인"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内置插件"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.invalid" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signature verification failed (OSStatus: %d)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "署名検証失敗 （OSStatus: %d）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 검증 실패 (OSStatus: %d)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "签名验证失败 (OSStatus: %d)"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.signature.unsigned" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Signature"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "署名なし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서명 없음"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无签名"
+          }
+        }
+      }
+    },
+    "settings.plugins.detail.version" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バージョン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "버전"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
+          }
+        }
+      }
+    },
     "settings.plugins.external_location.open_in_finder" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -10621,31 +10789,60 @@
         }
       }
     },
-    "settings.projection.audio.enable" : {
+    "settings.projection.audio_codec_priority.description" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable Audio Projection"
+            "value" : "Sets the priority of audio codecs to be used by the server. During negotiation with the client, codecs with higher priority are attempted first."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "オーディオプロジェクションを有効化"
+            "value" : "サーバーで使用するオーディオコーデックの優先順位を設定します。クライアントとのネゴシエーション時、優先順位の高いコーデックから試行します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "오디오 프로젝션 활성화"
+            "value" : "서버에서 사용할 오디오 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "启用音频投屏"
+            "value" : "设置服务器使用的音频编解码器优先级。与客户端协商时，将优先尝试优先级高的编解码器。"
+          }
+        }
+      }
+    },
+    "settings.projection.audio_codec_priority.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio Codec Priority Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオコーデック優先順位設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 코덱 우선순위 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音频编解码器优先级设置"
           }
         }
       }
@@ -10766,64 +10963,6 @@
         }
       }
     },
-    "settings.projection.audio_codec_priority.description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sets the priority of audio codecs to be used by the server. During negotiation with the client, codecs with higher priority are attempted first."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーで使用するオーディオコーデックの優先順位を設定します。クライアントとのネゴシエーション時、優先順位の高いコーデックから試行します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "서버에서 사용할 오디오 코덱의 우선순위를 설정합니다. 클라이언트와의 협상 시, 우선순위가 높은 코덱부터 시도합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置服务器使用的音频编解码器优先级。与客户端协商时，将优先尝试优先级高的编解码器。"
-          }
-        }
-      }
-    },
-    "settings.projection.audio_codec_priority.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Audio Codec Priority Settings"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "オーディオコーデック優先順位設定"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "오디오 코덱 우선순위 설정"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音频编解码器优先级设置"
-          }
-        }
-      }
-    },
     "settings.projection.audio_encoder.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -10849,6 +10988,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "音频编码器设置"
+          }
+        }
+      }
+    },
+    "settings.projection.audio.enable" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Audio Projection"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーディオプロジェクションを有効化"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "오디오 프로젝션 활성화"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用音频投屏"
           }
         }
       }
@@ -12854,6 +13022,35 @@
         }
       }
     },
+    "settings.projection.codec_sheet.profile.hevc_main_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses Main Profile.\nProvides appropriate compatibility and compression for most devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mainプロファイルを使用します。\nほとんどのデバイスで適切な互換性と圧縮率を提供します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Main Profile。\n在大多数设备上提供适当的兼容性和压缩率。"
+          }
+        }
+      }
+    },
     "settings.projection.codec_sheet.profile.hevc_main10" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -12908,35 +13105,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用 Main10 Profile。\n支持 10-bit 颜色，提供更丰富的色彩。"
-          }
-        }
-      }
-    },
-    "settings.projection.codec_sheet.profile.hevc_main_description" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uses Main Profile.\nProvides appropriate compatibility and compression for most devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mainプロファイルを使用します。\nほとんどのデバイスで適切な互換性と圧縮率を提供します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Main Profile을 사용합니다.\n대부분의 기기에서 적절한 호환성과 압축률을 제공합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 Main Profile。\n在大多数设备上提供适当的兼容性和压缩率。"
           }
         }
       }
@@ -15319,6 +15487,64 @@
         }
       }
     },
+    "settings.projection.mjpg_sheet.tile_size.64x64" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "64x64"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "64x64"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "64x64"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "64x64"
+          }
+        }
+      }
+    },
+    "settings.projection.mjpg_sheet.tile_size.64x64_description" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses 64x64 as tile size.\nSuitable for low resolution or infrequent screen changes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイルサイズとして 64x64 を使用します。\n解像度が低い場合や、画面変化が少ない場合に適しています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일 크기로 64x64를 사용합니다.\n해상도가 낮거나, 화면 변화가 적은 경우에 적합합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 64x64 的瓦片大小。\n适用于分辨率较低或画面变化较少的情况。"
+          }
+        }
+      }
+    },
     "settings.projection.mjpg_sheet.tile_size.128x128" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -15431,64 +15657,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用 256x256 的瓦片大小。\n适用于分辨率较高或画面变化较多的情况。"
-          }
-        }
-      }
-    },
-    "settings.projection.mjpg_sheet.tile_size.64x64" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "64x64"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "64x64"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "64x64"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "64x64"
-          }
-        }
-      }
-    },
-    "settings.projection.mjpg_sheet.tile_size.64x64_description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uses 64x64 as tile size.\nSuitable for low resolution or infrequent screen changes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タイルサイズとして 64x64 を使用します。\n解像度が低い場合や、画面変化が少ない場合に適しています。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "타일 크기로 64x64를 사용합니다.\n해상도가 낮거나, 화면 변화가 적은 경우에 적합합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 64x64 的瓦片大小。\n适用于分辨率较低或画面变化较少的情况。"
           }
         }
       }
@@ -18567,6 +18735,64 @@
         }
       }
     },
+    "settings.projection.webp_sheet.tile_size.64x64" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "64x64"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "64x64"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "64x64"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "64x64"
+          }
+        }
+      }
+    },
+    "settings.projection.webp_sheet.tile_size.64x64_description" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses 64x64 as tile size.\nSuitable for low resolution or infrequent screen changes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイルサイズとして 64x64 を使用します。\n解像度が低い場合や、画面変化が少ない場合に適しています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "타일 크기로 64x64를 사용합니다.\n해상도가 낮거나, 화면 변화가 적은 경우에 적합합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 64x64 的瓦片大小。\n适用于分辨率较低或画面变化较少的情况。"
+          }
+        }
+      }
+    },
     "settings.projection.webp_sheet.tile_size.128x128" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -18679,64 +18905,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用 256x256 的瓦片大小。\n适用于分辨率较高或画面变化较多的情况。"
-          }
-        }
-      }
-    },
-    "settings.projection.webp_sheet.tile_size.64x64" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "64x64"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "64x64"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "64x64"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "64x64"
-          }
-        }
-      }
-    },
-    "settings.projection.webp_sheet.tile_size.64x64_description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uses 64x64 as tile size.\nSuitable for low resolution or infrequent screen changes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タイルサイズとして 64x64 を使用します。\n解像度が低い場合や、画面変化が少ない場合に適しています。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "타일 크기로 64x64를 사용합니다.\n해상도가 낮거나, 화면 변화가 적은 경우에 적합합니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 64x64 的瓦片大小。\n适用于分辨率较低或画面变化较少的情况。"
           }
         }
       }
@@ -20278,35 +20446,6 @@
         }
       }
     },
-    "settings.security.certificate.close" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閉じる"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "닫기"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭"
-          }
-        }
-      }
-    },
     "settings.security.certificate_picker.informative_text" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -20361,6 +20500,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请选择服务器使用的证书。"
+          }
+        }
+      }
+    },
+    "settings.security.certificate.close" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "닫기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
           }
         }
       }
@@ -21329,6 +21497,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "AppStream"
+          }
+        }
+      }
+    },
+    "settings.tab.file_access" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 시스템 마운트"
           }
         }
       }
@@ -22405,10 +22584,7 @@
           }
         }
       }
-    },
-    "·" : {
-
-  }
+    }
   },
   "version" : "1.1"
 }
