@@ -39,6 +39,9 @@ class NoctilucaClientManager: ObservableObject {
 
         client.noctilucaFeatureProvider = featureProvider
         client.sessionSettings = settings
+        // FeatureProvider 가 NoctilucaClient 에 도달할 수 있도록 weak ref 주입.
+        // (FSAccessChannel / TransferChannel 라우팅에서 sessionSettings / RemoteSession 접근에 사용)
+        await featureProvider.setNoctilucaClient(client)
         
         guard !clients.keys.contains(client.id) else {
             self.logger.warning("Client with ID \(client.id.uuidString) already exists. Skipping adding new client.")

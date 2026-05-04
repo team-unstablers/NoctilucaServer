@@ -60,6 +60,28 @@ final class RemoteSession {
     weak var appStreamWindowManager: AppStreamWindowManager? = nil
 #endif
 
+    // MARK: - fsaccess state
+
+    /// 활성 fsaccess control channel. 한 connection 당 1 개로 제한된다.
+    @ObservationIgnored
+    weak var fsAccessChannel: FSAccessChannel?
+
+    /// 활성 mount session 들. sessionId → session.
+    @ObservationIgnored
+    var fsAccessMountSessions: [UUID: FSAccessMountSession] = [:]
+
+    /// Stream R/W 의 outgoing/incoming TransferChannel 라우팅용. transferId → route.
+    @ObservationIgnored
+    var fsAccessStreamRoutes: [UUID: FSAccessStreamRoute] = [:]
+
+    /// 현재 표시 중인 mount consent 요청. UI 바인딩용.
+    var activeFSAccessConsentRequest: FSAccessConsentRequest? = nil
+
+    @ObservationIgnored
+    private var pendingFSAccessConsents: [(FSAccessConsentRequest, CheckedContinuation<FSAccessConsentDecision, Never>)] = []
+    @ObservationIgnored
+    private var activeFSAccessConsentContinuation: CheckedContinuation<FSAccessConsentDecision, Never>?
+
     var errorPublisher: AnyPublisher<NoctilucaClientError, Never> {
         errorEvents.eraseToAnyPublisher()
     }
@@ -80,6 +102,10 @@ final class RemoteSession {
             let tracker = progressTracker
             Task { await featureProvider.setProgressTracker(tracker) }
         }
+
+        // fsaccess: 채널이 RemoteSession 의 lifecycle/consent 상태에 도달할 수 있도록 weak 참조 + broker 등록.
+        client.fsAccessRemoteSession = self
+        client.fsAccessConsentBroker = self
 
         self.subscribeClientEvents()
     }
@@ -301,6 +327,110 @@ final class RemoteSession {
         self.errorEvents.send(.audioProjectionInitializationFailed(message: message))
     }
 
+    // MARK: - fsaccess channel lifecycle
+
+    /// 단일 인스턴스 강제. 이미 활성 channel 이 있으면 false 를 반환하여 caller 가 reject 하도록.
+    func registerFSAccessChannel(_ channel: FSAccessChannel) -> Bool {
+        if fsAccessChannel != nil {
+            return false
+        }
+        fsAccessChannel = channel
+        return true
+    }
+
+    func unregisterFSAccessChannel(_ channel: FSAccessChannel) {
+        if fsAccessChannel === channel {
+            fsAccessChannel = nil
+        }
+        // 부수적으로 mount session 들도 정리한다 (cascade close 의 끝).
+        let snapshot = fsAccessMountSessions
+        fsAccessMountSessions.removeAll()
+        for session in snapshot.values {
+            session.setMountChannel(nil)
+        }
+        // 진행 중인 stream route 도 정리.
+        fsAccessStreamRoutes.removeAll()
+        // 진행 중인 consent 도 deny 로 닫는다.
+        if let cont = activeFSAccessConsentContinuation {
+            activeFSAccessConsentContinuation = nil
+            activeFSAccessConsentRequest = nil
+            cont.resume(returning: .deny)
+        }
+        for (_, cont) in pendingFSAccessConsents {
+            cont.resume(returning: .deny)
+        }
+        pendingFSAccessConsents.removeAll()
+    }
+
+    func addFSAccessMountSession(_ session: FSAccessMountSession) {
+        fsAccessMountSessions[session.id] = session
+    }
+
+    func removeFSAccessMountSession(sessionId: UUID) {
+        if let session = fsAccessMountSessions.removeValue(forKey: sessionId) {
+            session.setMountChannel(nil)
+        }
+        // 해당 session 에 묶인 stream routes 도 정리.
+        let toRemove = fsAccessStreamRoutes.filter { $0.value.mountSessionId == sessionId }.map(\.key)
+        for transferId in toRemove {
+            fsAccessStreamRoutes.removeValue(forKey: transferId)
+        }
+    }
+
+    func fsAccessMountSession(forId sessionId: UUID) -> FSAccessMountSession? {
+        return fsAccessMountSessions[sessionId]
+    }
+
+    // MARK: - fsaccess stream routes
+
+    func addFSAccessStreamRoute(_ route: FSAccessStreamRoute) {
+        fsAccessStreamRoutes[route.transferId] = route
+    }
+
+    func removeFSAccessStreamRoute(transferId: UUID) {
+        fsAccessStreamRoutes.removeValue(forKey: transferId)
+    }
+
+    func fsAccessStreamRoute(forTransferId transferId: UUID) -> FSAccessStreamRoute? {
+        return fsAccessStreamRoutes[transferId]
+    }
+
+    func abortFSAccessStreamRoutes(forMountSession sessionId: UUID) {
+        let toRemove = fsAccessStreamRoutes.filter { $0.value.mountSessionId == sessionId }.map(\.key)
+        for transferId in toRemove {
+            fsAccessStreamRoutes.removeValue(forKey: transferId)
+        }
+    }
+
+    // MARK: - fsaccess mount consent UI
+
+    /// UI 가 사용자 결정을 보고할 때 호출. 현재 active continuation 을 깨운다.
+    func resolveFSAccessConsent(_ decision: FSAccessConsentDecision) {
+        guard let cont = activeFSAccessConsentContinuation else {
+            logger.warning("resolveFSAccessConsent called with no active continuation")
+            return
+        }
+        activeFSAccessConsentContinuation = nil
+        activeFSAccessConsentRequest = nil
+        cont.resume(returning: decision)
+        presentNextFSAccessConsentIfNeeded()
+    }
+
+    private func presentNextFSAccessConsentIfNeeded() {
+        guard activeFSAccessConsentRequest == nil else { return }
+        guard !pendingFSAccessConsents.isEmpty else { return }
+        let (request, cont) = pendingFSAccessConsents.removeFirst()
+        activeFSAccessConsentRequest = request
+        activeFSAccessConsentContinuation = cont
+    }
+
+    fileprivate func enqueueFSAccessConsent(_ request: FSAccessConsentRequest) async -> FSAccessConsentDecision {
+        return await withCheckedContinuation { (cont: CheckedContinuation<FSAccessConsentDecision, Never>) in
+            pendingFSAccessConsents.append((request, cont))
+            presentNextFSAccessConsentIfNeeded()
+        }
+    }
+
     private func makeAudioProjectionErrorMessage(from error: Error) -> String {
         guard let projectionError = error as? ProjectionChannelError else {
             return error.localizedDescription
@@ -336,5 +466,14 @@ final class RemoteSession {
         default:
             return projectionError.localizedDescription
         }
+    }
+}
+
+// MARK: - FSAccessConsentBroker
+
+extension RemoteSession: FSAccessConsentBroker {
+    @MainActor
+    func requestConsent(_ request: FSAccessConsentRequest) async -> FSAccessConsentDecision {
+        return await enqueueFSAccessConsent(request)
     }
 }
