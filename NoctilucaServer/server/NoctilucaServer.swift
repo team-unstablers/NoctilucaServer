@@ -175,6 +175,14 @@ final class NoctilucaServer: ObservableObject {
         subscribeToAuthEntryChanges()
 
         ScreenCaptureKitWorkaroundDummyWindow.windowManager.startup()
+
+        // fsaccess feature: settings.fileAccess.enabled 일 때만 nocfsaccessd 데몬을 띄우고
+        // ~/NoctilucaFS 를 NFS 로 마운트한다. nocfsaccessd 가 NoctilucaServer.app 번들 안에
+        // 들어 있어야 동작 (Copy Files build phase 에서 처리).
+        await NocFSAccessDaemonHost.shared.startupIfEnabled(
+            enabled: settings.fileAccess.enabled,
+            mountPointPath: settings.fileAccess.mountPointPath
+        )
     }
 
     private func subscribeToAuthEntryChanges() {
@@ -253,6 +261,9 @@ final class NoctilucaServer: ObservableObject {
     }
     
     func shutdown() async throws {
+        // fsaccess feature 가 켜져 있었다면 unmount + 데몬 종료를 server shutdown 보다 먼저.
+        await NocFSAccessDaemonHost.shared.shutdownAndUnmount()
+
         guard case .running(let server) = state else {
             return
         }

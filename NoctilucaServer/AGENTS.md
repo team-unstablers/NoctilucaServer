@@ -251,6 +251,30 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 ## Recent Notes
 
+- **fsaccess (consuming peer) + nocfsaccessd 데몬 구현** (2026-05-05):
+  - 서버 = consuming peer 시나리오. navigator 가 노출하는 파일을 호스트 머신의
+    Finder 에 NFS 마운트로 띄움. fsaccess control / fsaccess_mount channel
+    둘 다 host 가 *발신* 측 (`handle.direction == .local`).
+  - `feature/fsaccess/` — 서버 측 channel handler 인프라 (`FSAccessChannel` /
+    `FSAccessMountChannel` + actor 기반 응답 매칭 / pathMap).
+  - `feature/fsaccess/daemon/` — `NocFSAccessDaemonHost` (NSXPCListener +
+    Process spawn), `NocFSAccessHostXPCExport` (16개 NFS callback dispatch),
+    `MountPointSupervisor` (~/NoctilucaFS startup probe), `NetFSMountController`
+    (`mount_nfs` / `umount` 호출 wrapper).
+  - `nocfsaccessd/` (별도 타깃) — NanoNFS 기반 NFSv4 서버 데몬. main.swift,
+    `NocFSAccessDaemonImpl`, `NoctilucaNFSServer`, `VirtualTree`,
+    `HandleTable`, `DaemonLogger`. 가상 트리의 root / 1단계 connection /
+    2단계 mount session / `_README.txt` 까지 데몬 자체 응답, 그 안의 실 파일은
+    XPC 로 호스트에 위임.
+  - `NocFSAccessXPC` (top-level SwiftPM) — host ↔ daemon IPC 인터페이스 정의.
+    `NocFSAccessDaemonProtocol` / `NocFSAccessHostProtocol` ObjC 프로토콜과
+    `NSSecureCoding`-conformant DTO 5종.
+  - Settings UI: `FileAccessSettingsTab` (mount point / 기본 consent policy /
+    feature toggle).
+  - 미완성: NoctilucaClientSession 자동 wiring (인증 완료 후 자동 List/Mount),
+    streaming read/write, NetFS.framework 직접 호출. `nocfsaccessd` 의 Copy
+    Files 빌드 페이즈 추가는 swift-nio C 모듈 indexing 충돌로 보류 — 외부
+    스크립트나 ShellScript phase 로 처리 예정.
 - **타일링 이미지 코덱 (MJPG / ZRLE / WebP) 제거** (0.9.10):
   - `MJPGVideoEncoder` / `ZRLEVideoEncoder` / `WebPVideoEncoder` 및 `jpeg/` / `traditional/` 디렉토리 전체 제거
   - `ProjectionSession` 의 `switch fourCC` 에서 vp80 / VTVideoEncoder default 만 남김

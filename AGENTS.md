@@ -129,6 +129,29 @@ Microsoft RDP의 RemoteApp에서 영감을 받은 기능으로, 원격 Mac의 �
 
 ## Recent Notes
 
+- **fsaccess (consuming peer) + nocfsaccessd 데몬 추가** (2026-05-05):
+  - 서버 = consuming peer 시나리오. navigator(클라이언트) 가 노출하는 파일을 호스트
+    머신의 Finder 에 NFS 마운트로 띄움. fsaccess control / fsaccess_mount channel
+    둘 다 host 가 *발신* 측이며, 클라이언트는 이미 exposing peer 로 구현 완료.
+  - 신규 top-level SwiftPM 패키지 `NocFSAccessXPC` — host ↔ daemon IPC 인터페이스
+    (`NocFSAccessDaemonProtocol` / `NocFSAccessHostProtocol`) 와
+    `NSSecureCoding`-conformant DTO 정의. SiriusKit 과 분리되어 데몬은 Sirius
+    msgdef 에 의존하지 않음.
+  - 신규 타깃 `nocfsaccessd` (NanoNFS 기반 NFSv4 서버 데몬). 가상 트리의
+    1단계 connection (`NNNN-username`) / 2단계 mount session 디렉토리 + 정적
+    `_README.txt` 까지 데몬 자체에서 응답. mount session 안의 실 파일은
+    reverse-XPC 로 host 에 위임.
+  - host 앱: `NoctilucaServer/feature/fsaccess/` 와 그 하위 `daemon/`. 13개
+    fsaccess_mount send 메서드 + 16개 NFS callback dispatch + spawn / NetFS
+    mount lifecycle. `NoctilucaServer.initialize` / `shutdown` 에 wiring.
+  - Settings: `AppSettings.FileAccess` (enabled / mountPointPath /
+    defaultConsentPolicy) + `FileAccessSettingsTab`.
+  - 미완성: NoctilucaClientSession 자동 trigger (인증 완료 후 자동 List/Mount),
+    streaming read/write 경로, NetFS.framework 직접 호출. `nocfsaccessd`
+    바이너리의 Copy Files 빌드 페이즈 추가는 swift-nio C 모듈 indexing 충돌로
+    보류 (별도 처리).
+  - `docs/nocfsaccessd.md` §2 / §8.2 / §8.3 정정: 본 시나리오에서 host 는
+    consuming peer 라는 일관성을 docs 에 반영.
 - **AppStream (Experimental) 윈도우 스트리밍 구현** (서버/클라이언트):
   - 서버: appman 메시지 핸들링, 윈도우 이벤트 구독, allowedApps 보안 정책
   - 클라이언트 (macOS): `AppStreamWindowManager` + `AppStreamWindow`로 원격 윈도우별 네이티브 윈도우 생성

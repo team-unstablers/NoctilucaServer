@@ -101,9 +101,58 @@ actor NocFSAccessDaemonHost {
     /// `daemonReady` 응답을 기다리는 continuation.
     private var readyContinuation: CheckedContinuation<UInt16, Error>?
 
+    /// `~/NoctilucaFS` 의 마운트 포인트 URL. ``startupIfEnabled`` 시 결정되고
+    /// shutdown 시 unmount 에 사용된다.
+    private(set) var mountPointURL: URL?
+
     init() {}
 
     // MARK: - Public lifecycle
+
+    /// fsaccess feature 가 enabled 면 데몬 startup + mount point probe +
+    /// NetFS 마운트까지 수행. disabled 또는 마운트 포인트가 non-empty 면 noop.
+    func startupIfEnabled(enabled: Bool, mountPointPath: String) async {
+        guard enabled else {
+            logger.info("startupIfEnabled: fsaccess feature is disabled — skipping daemon spawn.")
+            return
+        }
+        let mountPoint = MountPointSupervisor.resolveMountPath(mountPointPath)
+        do {
+            let probe = try MountPointSupervisor.probe(mountPoint: mountPoint)
+            switch probe {
+            case .ready:
+                self.mountPointURL = mountPoint
+            case .nonEmpty(let url, let entries):
+                logger.warning("startupIfEnabled: mount point \(url.path) is not empty (\(entries.count) entries) — refusing to mount and disabling fsaccess for this run.")
+                return
+            }
+        } catch {
+            logger.error("startupIfEnabled: mount point probe failed: \(error.localizedDescription) — fsaccess disabled.")
+            return
+        }
+        do {
+            let port = try await self.startup()
+            try await NetFSMountController.mount(port: port, mountPoint: mountPoint)
+            logger.info("startupIfEnabled: NFS mount established at \(mountPoint.path) (port=\(port)).")
+        } catch {
+            logger.error("startupIfEnabled: failed: \(error.localizedDescription) — fsaccess disabled for this run.")
+            await self.shutdown()
+        }
+    }
+
+    /// startupIfEnabled 의 inverse — unmount 후 데몬 shutdown.
+    func shutdownAndUnmount() async {
+        if let mountPoint = mountPointURL {
+            do {
+                try await NetFSMountController.unmount(mountPoint: mountPoint)
+            } catch {
+                logger.warning("shutdownAndUnmount: unmount failed: \(error.localizedDescription)")
+            }
+        }
+        await self.shutdown()
+        mountPointURL = nil
+    }
+
 
     /// 데몬을 띄우고 NFS listener 가 OS 할당 port 를 알릴 때까지 대기한다.
     /// 이미 spawn 된 상태면 기존 port 를 즉시 반환한다.
