@@ -31,8 +31,11 @@ channel 을 발신하고, 받은 응답을 ``nocfsaccessd`` 데몬에 reverse-XP
   NSObject 구현. 16개 NFS callback 을 13개 fsaccess_mount message 로 환원.
 - `daemon/MountPointSupervisor.swift` — `~/NoctilucaFS` startup probe (mkdir /
   forced umount / non-empty 거절).
-- `daemon/NetFSMountController.swift` — `mount_nfs` / `umount` CLI 호출 wrapper.
-  추후 NetFS.framework 의 `NetFSMountURLAsync` 직접 호출로 대체 예정.
+- `daemon/NetFSMountController.swift` — `NetFS.framework` 의
+  `NetFSMountURLAsync` 직접 호출로 user-level NFS 마운트. unmount 는 BSD
+  `unmount(2, MNT_FORCE)` (NetFS 자체에는 unmount 진입점이 없음).
+  `kNetFSAllowLoopbackKey = true` / `kNetFSMountAtMountDirKey = true` /
+  `kNetFSSoftMountKey = true` / `kNAUIOptionNoUI` 옵션 사용.
 
 # Channel direction
 
@@ -97,8 +100,6 @@ CLAUDE.md `<spec-violation-policy>` 의 분류에 따른 host 측 처리:
   자동 시작 + connectionLabel 발급 + List/Mount 자동 트리거. 현재는 채널 핸들러
   / FeatureProvider 등록까지만 되어 있고, host 가 채널을 *발신* 하는 트리거는
   외부 수단으로 호출해야 함.
-- **NetFS.framework 직접 호출**: 현재는 `mount_nfs` / `umount` CLI 호출.
-  `NetFSMountURLAsync` 로 마이그레이션.
 - **ServerNoticeCode 보강**: `quotaExceeded` 케이스 신설.
 - **streaming read/write**: `FileSystemRequestStreamRead` /
   `FileSystemRequestStreamWrite` 미구현 (현재는 단순 read/write 만).

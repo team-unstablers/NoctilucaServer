@@ -29,6 +29,7 @@
 		F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */ = {isa = PBXBuildFile; fileRef = F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */; };
 		F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BA2FA818B300F3D400 /* NanoNFS */; };
 		F64F79BD2FA818BD00F3D400 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BC2FA818BD00F3D400 /* ArgumentParser */; };
+		F64FAF892FA95BA700F3D400 /* NetFS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F64FAF882FA95BA700F3D400 /* NetFS.framework */; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
 		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -207,6 +208,7 @@
 		F6379D3D2EE7D554004BC795 /* libbcrypt.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = libbcrypt.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */ = {isa = PBXFileReference; lastKnownFileType = text; path = OPEN_SOURCE_LICENSE.server; sourceTree = "<group>"; };
 		F64F79B32FA818A900F3D400 /* nocfsaccessd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = nocfsaccessd; sourceTree = BUILT_PRODUCTS_DIR; };
+		F64FAF882FA95BA700F3D400 /* NetFS.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetFS.framework; path = System/Library/Frameworks/NetFS.framework; sourceTree = SDKROOT; };
 		F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
 		F659BDF22EF3C1730010A18E /* NoctilucaServerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaServerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669650B2ECF26770032EF4E /* NoctilucaServer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoctilucaServer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -401,6 +403,7 @@
 				F627113F2F084EC200E8A3D7 /* libz.1.tbd in Frameworks */,
 				F64AEF892F6670F300C0EDD8 /* Sentry in Frameworks */,
 				F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */,
+				F64FAF892FA95BA700F3D400 /* NetFS.framework in Frameworks */,
 				F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */,
 				F62689452F1E50F60030D59B /* Gesu in Frameworks */,
 				F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */,
@@ -469,6 +472,7 @@
 		F66965352ECF27110032EF4E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F64FAF882FA95BA700F3D400 /* NetFS.framework */,
 				F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */,
 				F627113E2F084EBB00E8A3D7 /* libz.1.tbd */,
 				F6379D3D2EE7D554004BC795 /* libbcrypt.framework */,

@@ -147,9 +147,8 @@ Microsoft RDP의 RemoteApp에서 영감을 받은 기능으로, 원격 Mac의 �
   - Settings: `AppSettings.FileAccess` (enabled / mountPointPath /
     defaultConsentPolicy) + `FileAccessSettingsTab`.
   - 미완성: NoctilucaClientSession 자동 trigger (인증 완료 후 자동 List/Mount),
-    streaming read/write 경로, NetFS.framework 직접 호출. `nocfsaccessd`
-    바이너리의 Copy Files 빌드 페이즈 추가는 swift-nio C 모듈 indexing 충돌로
-    보류 (별도 처리).
+    streaming read/write 경로. `nocfsaccessd` 바이너리의 Copy Files 빌드
+    페이즈 추가는 swift-nio C 모듈 indexing 충돌로 보류 (별도 처리).
   - `docs/nocfsaccessd.md` §2 / §8.2 / §8.3 정정: 본 시나리오에서 host 는
     consuming peer 라는 일관성을 docs 에 반영.
 - **AppStream (Experimental) 윈도우 스트리밍 구현** (서버/클라이언트):
