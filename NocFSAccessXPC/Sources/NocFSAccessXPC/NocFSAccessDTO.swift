@@ -5,7 +5,7 @@ import Foundation
 /// Push payload for ``NocFSAccessDaemonProtocol/addMountSession(descriptor:reply:)``.
 @objc(NocFSMountSessionDescriptor)
 @objcMembers
-public final class NocFSMountSessionDescriptor: NSObject, NSSecureCoding {
+public final class NocFSMountSessionDescriptor: NSObject, NSSecureCoding, @unchecked Sendable {
     public static var supportsSecureCoding: Bool { true }
 
     /// 1st-level namespace this mount session belongs to (e.g. `0001-cheesekun`).
@@ -66,7 +66,7 @@ public final class NocFSMountSessionDescriptor: NSObject, NSSecureCoding {
 /// is lossy — `nseconds` is always set to 0.
 @objc(NocFSFileStat)
 @objcMembers
-public final class NocFSFileStat: NSObject, NSSecureCoding {
+public final class NocFSFileStat: NSObject, NSSecureCoding, @unchecked Sendable {
     public static var supportsSecureCoding: Bool { true }
 
     /// ``NocFSObjectType`` raw value.
@@ -144,7 +144,7 @@ public final class NocFSFileStat: NSObject, NSSecureCoding {
 /// Optional fields for `setattr`. Nil-valued fields are not modified.
 @objc(NocFSAttributesPatch)
 @objcMembers
-public final class NocFSAttributesPatch: NSObject, NSSecureCoding {
+public final class NocFSAttributesPatch: NSObject, NSSecureCoding, @unchecked Sendable {
     public static var supportsSecureCoding: Bool { true }
 
     /// New POSIX mode bits, or nil to leave unchanged.
@@ -196,7 +196,7 @@ public final class NocFSAttributesPatch: NSObject, NSSecureCoding {
 /// extensions MAY add timestamps.
 @objc(NocFSAttributesInit)
 @objcMembers
-public final class NocFSAttributesInit: NSObject, NSSecureCoding {
+public final class NocFSAttributesInit: NSObject, NSSecureCoding, @unchecked Sendable {
     public static var supportsSecureCoding: Bool { true }
 
     public let mode: UInt32
@@ -226,7 +226,7 @@ public final class NocFSAttributesInit: NSObject, NSSecureCoding {
 /// the next continuation MUST pass back.
 @objc(NocFSDirEntry)
 @objcMembers
-public final class NocFSDirEntry: NSObject, NSSecureCoding {
+public final class NocFSDirEntry: NSObject, NSSecureCoding, @unchecked Sendable {
     public static var supportsSecureCoding: Bool { true }
 
     public let name: String

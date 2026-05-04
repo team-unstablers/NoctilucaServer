@@ -50,6 +50,69 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     /// 응답 매칭. requestId → continuation.
     let pending = PendingMountReplies()
 
+    /// requestId 발급기 (channel 단위 monotonic).
+    let requestIds = RequestIdGenerator()
+
+    /// host-side fsaccess_mount handleId ↔ navigator-side path 매핑. mount root
+    /// 는 sentinel (`0`) 으로 표현한다.
+    let pathMap = MountSessionPathMap()
+
+    actor RequestIdGenerator {
+        private var next: UInt64 = 1
+        func issue() -> UInt64 {
+            let v = next
+            next &+= 1
+            if next == 0 { next = 1 }
+            return v
+        }
+    }
+
+    actor MountSessionPathMap {
+        /// mount root 의 sentinel host-side handleId.
+        static let rootSentinel: UInt64 = 0
+
+        struct Record: Sendable {
+            var path: String
+            /// fsaccess_mount.OPEN 응답에서 받은 navigator-side handleId. 아직
+            /// open 안 된 entry (lookup 만 된 상태) 면 nil.
+            var navigatorHandleId: UInt64?
+        }
+
+        private var records: [UInt64: Record] = [:]
+        private var nextId: UInt64 = 1
+
+        func issue(path: String, navigatorHandleId: UInt64? = nil) -> UInt64 {
+            let id = nextId
+            nextId &+= 1
+            if nextId == 0 || nextId == Self.rootSentinel { nextId = 1 }
+            records[id] = Record(path: path, navigatorHandleId: navigatorHandleId)
+            return id
+        }
+
+        func attachNavigatorHandle(hostId: UInt64, navigatorId: UInt64) {
+            guard hostId != Self.rootSentinel else { return }
+            records[hostId]?.navigatorHandleId = navigatorId
+        }
+
+        func record(forHostHandleId id: UInt64) -> Record? {
+            if id == Self.rootSentinel {
+                return Record(path: "", navigatorHandleId: nil)
+            }
+            return records[id]
+        }
+
+        func path(forHostHandleId id: UInt64) -> String {
+            if id == Self.rootSentinel { return "" }
+            return records[id]?.path ?? ""
+        }
+
+        @discardableResult
+        func unregister(_ id: UInt64) -> Record? {
+            guard id != Self.rootSentinel else { return nil }
+            return records.removeValue(forKey: id)
+        }
+    }
+
     actor PendingMountReplies {
         private var conts: [UInt64: CheckedContinuation<FSAccessMountReply, Error>] = [:]
 
@@ -167,5 +230,136 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func teardown() async {
         await FSAccessRequestRouter.shared.unregister(sessionId: self.sessionId)
         await pending.failAll(FSAccessChannelError.channelClosed)
+    }
+
+    // MARK: - Send helpers
+
+    private func sendAndAwait(opcode: MessageOpcode,
+                              message: any DecodableSiriusMessage,
+                              requestId: UInt64) async throws -> FSAccessMountReply {
+        return try await withCheckedThrowingContinuation { (cont: CheckedContinuation<FSAccessMountReply, Error>) in
+            Task {
+                await pending.register(id: requestId, cont)
+                do {
+                    try await handle.send(opcode: opcode, message: message)
+                } catch {
+                    await pending.resolve(id: requestId, error: error)
+                }
+            }
+        }
+    }
+
+    // MARK: - Public API (Stage F: Sirius ↔ XPC bridge 가 호출)
+
+    func sendOpen(path: String,
+                  accessMode: AccessMode,
+                  createDisposition: CreateDisposition,
+                  flags: OpenFlags,
+                  mode: UInt32) async throws -> FileSystemOpenResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemOpenRequest(
+            requestId: id, path: path,
+            accessMode: accessMode, createDisposition: createDisposition,
+            flags: flags, mode: mode
+        )
+        let reply = try await sendAndAwait(opcode: .fileSystemOpenRequest, message: req, requestId: id)
+        guard case .open(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendClose(handleId: UInt64) async throws -> FileSystemCloseResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemCloseRequest(requestId: id, handleId: handleId)
+        let reply = try await sendAndAwait(opcode: .fileSystemCloseRequest, message: req, requestId: id)
+        guard case .close(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendRead(handleId: UInt64, offset: UInt64, length: UInt32) async throws -> FileSystemReadResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemReadRequest(requestId: id, handleId: handleId, offset: offset, length: length)
+        let reply = try await sendAndAwait(opcode: .fileSystemReadRequest, message: req, requestId: id)
+        guard case .read(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendWrite(handleId: UInt64, offset: UInt64, data: Data) async throws -> FileSystemWriteResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemWriteRequest(requestId: id, handleId: handleId, offset: offset, data: data)
+        let reply = try await sendAndAwait(opcode: .fileSystemWriteRequest, message: req, requestId: id)
+        guard case .write(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendFlush(handleId: UInt64) async throws -> FileSystemFlushResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemFlushRequest(requestId: id, handleId: handleId)
+        let reply = try await sendAndAwait(opcode: .fileSystemFlushRequest, message: req, requestId: id)
+        guard case .flush(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendStat(path: String, followSymlinks: Bool) async throws -> FileSystemStatResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemStatRequest(requestId: id, path: path, followSymlinks: followSymlinks)
+        let reply = try await sendAndAwait(opcode: .fileSystemStatRequest, message: req, requestId: id)
+        guard case .stat(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendFStat(handleId: UInt64) async throws -> FileSystemFStatResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemFStatRequest(requestId: id, handleId: handleId)
+        let reply = try await sendAndAwait(opcode: .fileSystemFStatRequest, message: req, requestId: id)
+        guard case .fstat(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendReadDir(handleId: UInt64, maxEntries: UInt32) async throws -> FileSystemReadDirResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemReadDirRequest(requestId: id, handleId: handleId, maxEntries: maxEntries)
+        let reply = try await sendAndAwait(opcode: .fileSystemReadDirRequest, message: req, requestId: id)
+        guard case .readdir(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendMkdir(path: String, mode: UInt32) async throws -> FileSystemMkdirResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemMkdirRequest(requestId: id, path: path, mode: mode)
+        let reply = try await sendAndAwait(opcode: .fileSystemMkdirRequest, message: req, requestId: id)
+        guard case .mkdir(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendRmdir(path: String) async throws -> FileSystemRmdirResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemRmdirRequest(requestId: id, path: path)
+        let reply = try await sendAndAwait(opcode: .fileSystemRmdirRequest, message: req, requestId: id)
+        guard case .rmdir(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendUnlink(path: String) async throws -> FileSystemUnlinkResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemUnlinkRequest(requestId: id, path: path)
+        let reply = try await sendAndAwait(opcode: .fileSystemUnlinkRequest, message: req, requestId: id)
+        guard case .unlink(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendRename(oldPath: String, newPath: String) async throws -> FileSystemRenameResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemRenameRequest(requestId: id, oldPath: oldPath, newPath: newPath)
+        let reply = try await sendAndAwait(opcode: .fileSystemRenameRequest, message: req, requestId: id)
+        guard case .rename(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    func sendFTruncate(handleId: UInt64, length: UInt64) async throws -> FileSystemFTruncateResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemFTruncateRequest(requestId: id, handleId: handleId, length: length)
+        let reply = try await sendAndAwait(opcode: .fileSystemFTruncateRequest, message: req, requestId: id)
+        guard case .ftruncate(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
     }
 }
