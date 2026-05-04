@@ -29,6 +29,8 @@
 		F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */ = {isa = PBXBuildFile; fileRef = F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */; };
 		F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BA2FA818B300F3D400 /* NanoNFS */; };
 		F64F79BD2FA818BD00F3D400 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BC2FA818BD00F3D400 /* ArgumentParser */; };
+		F6FCAB004F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB002F0000000000FCAB /* NocFSAccessXPC */; };
+		F6FCAB005F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB003F0000000000FCAB /* NocFSAccessXPC */; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
 		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -375,6 +377,7 @@
 			files = (
 				F64F79BD2FA818BD00F3D400 /* ArgumentParser in Frameworks */,
 				F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */,
+				F6FCAB005F0000000000FCAB /* NocFSAccessXPC in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -390,6 +393,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6FCAB004F0000000000FCAB /* NocFSAccessXPC in Frameworks */,
 				F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */,
 				F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */,
 				F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */,
@@ -546,6 +550,7 @@
 			packageProductDependencies = (
 				F64F79BA2FA818B300F3D400 /* NanoNFS */,
 				F64F79BC2FA818BD00F3D400 /* ArgumentParser */,
+				F6FCAB003F0000000000FCAB /* NocFSAccessXPC */,
 			);
 			productName = nocfsaccessd;
 			productReference = F64F79B32FA818A900F3D400 /* nocfsaccessd */;
@@ -611,6 +616,7 @@
 				F6CC836B2F5B33FC00AA6DC2 /* Inject */,
 				F64AEF882F6670F300C0EDD8 /* Sentry */,
 				F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */,
+				F6FCAB002F0000000000FCAB /* NocFSAccessXPC */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -705,6 +711,7 @@
 				F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */,
+				F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669650C2ECF26770032EF4E /* Products */;
@@ -1420,6 +1427,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../nanonfs;
 		};
+		F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = NocFSAccessXPC;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1583,6 +1594,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
+		};
+		F6FCAB002F0000000000FCAB /* NocFSAccessXPC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
+			productName = NocFSAccessXPC;
+		};
+		F6FCAB003F0000000000FCAB /* NocFSAccessXPC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
+			productName = NocFSAccessXPC;
 		};
 		F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */ = {
 			isa = XCSwiftPackageProductDependency;
