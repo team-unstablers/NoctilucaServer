@@ -40,6 +40,56 @@ struct TransferSessionSettingsTab: View {
             }
 
             Section {
+                SettingsPicker(selection: $sessionSettings.transfer.fsAccessPolicy) {
+                    SettingsPickerItem(value: SessionSettings.FSAccessPolicy.alwaysAllow) {
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_allow", defaultValue: "항상 허용 **(위험!)**"))
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_allow_desc", defaultValue: "확인 없이 모든 파일 시스템 접근 요청을 허용합니다. 신뢰할 수 있는 환경에서만 사용하세요."))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    SettingsPickerItem(value: SessionSettings.FSAccessPolicy.alwaysAllowReadOnly) {
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_allow_ro", defaultValue: "항상 읽기 전용으로 허용"))
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_allow_ro_desc", defaultValue: "모든 접근 요청을 읽기 전용으로 강제하여 허용합니다. 아래 목록의 권한이 '읽기/쓰기'여도 읽기 전용으로 다운그레이드됩니다."))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    SettingsPickerItem(value: SessionSettings.FSAccessPolicy.alwaysAsk) {
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_ask", defaultValue: "항상 묻기 **(권장)**"))
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_ask_desc", defaultValue: "서버에서 접근 요청이 있을 때마다 사용자에게 확인을 받습니다."))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    SettingsPickerItem(value: SessionSettings.FSAccessPolicy.deny) {
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.deny", defaultValue: "거부하기"))
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.deny_desc", defaultValue: "모든 파일 시스템 접근 요청을 거부합니다."))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                } label: {
+                    Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.title", defaultValue: "파일 시스템 액세스 허용하기"))
+                    Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.description", defaultValue: "서버가 이 기기의 파일 시스템에 접근하려 할 때의 정책을 설정합니다."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+#if os(macOS)
+                if sessionSettings.transfer.fsAccessPolicy != .deny {
+                    FSAllowedEntriesListContainer(entries: $sessionSettings.transfer.fsAllowedEntries)
+                }
+#endif
+            } header: {
+                Text(markdown: String(localized: "session-settings.transfer.fs_access.section_title", defaultValue: "파일 시스템 액세스"))
+                Text(markdown: String(localized: "session-settings.transfer.fs_access.section_description", defaultValue: "원격 호스트에서 이 기기의 파일/디렉토리에 접근할 수 있도록 노출할 항목을 설정합니다."))
+            } footer: {
+#if os(iOS)
+                Text(markdown: String(localized: "session-settings.transfer.fs_access.ios_unsupported", defaultValue: "iOS에서는 파일 시스템 진입점을 직접 노출할 수 없으며, 정책 설정만 적용됩니다."))
+#endif
+            }
+
+            Section {
                 Toggle(isOn: $sessionSettings.transfer.enableCompression) {
                     Text(markdown: String(localized: "session-settings.transfer.channel.compression.title", defaultValue: "가능한 경우 압축 사용하기"))
                     Text(markdown: String(localized: "session-settings.transfer.channel.compression.description", defaultValue: "Zstd 압축을 사용할지 여부를 설정합니다.\n데이터 전송량이 줄어들 수 있지만, 컴퓨팅 자원 사용량이 늘어날 수 있습니다."))

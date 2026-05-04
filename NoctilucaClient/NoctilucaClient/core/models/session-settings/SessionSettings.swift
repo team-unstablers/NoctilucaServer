@@ -273,10 +273,18 @@ extension SessionSettings {
         /// Zstd 압축 사용 여부
         var enableCompression: Bool = false
 
+        /// 파일 시스템 액세스 정책
+        var fsAccessPolicy: FSAccessPolicy = .alwaysAsk
+
+        /// 서버에 노출할 파일 시스템 진입점 목록 (macOS 전용)
+        var fsAllowedEntries: [FSAllowedEntry] = []
+
         init() {}
 
         enum CodingKeys: String, CodingKey {
             case enableCompression
+            case fsAccessPolicy
+            case fsAllowedEntries
         }
 
         init(from decoder: any Decoder) throws {
@@ -287,6 +295,45 @@ extension SessionSettings {
             }
 
             enableCompression = container.decodeSafe(Bool.self, forKey: .enableCompression, default: enableCompression)
+            fsAccessPolicy = container.decodeSafe(FSAccessPolicy.self, forKey: .fsAccessPolicy, default: fsAccessPolicy)
+            fsAllowedEntries = container.decodeSafe([FSAllowedEntry].self, forKey: .fsAllowedEntries, default: fsAllowedEntries)
+        }
+    }
+
+    enum FSAccessPolicy: String, Codable, Sendable, Hashable, CaseIterable {
+        /// 항상 허용 (위험!)
+        case alwaysAllow
+        /// 항상 읽기 전용으로 허용
+        case alwaysAllowReadOnly
+        /// 항상 사용자에게 묻기
+        case alwaysAsk
+        /// 거부
+        case deny
+    }
+
+    enum FSAccessACL: String, Codable, Sendable, Hashable, CaseIterable {
+        case readOnly = "read-only"
+        case readWrite = "read-write"
+    }
+
+    struct FSAllowedEntry: Codable, Sendable, Hashable, Identifiable {
+        /// 안정적인 식별자 (UI 선택/편집용)
+        var id: UUID
+
+        /// 서버에서 표시될 이름 (vpath)
+        var name: String
+
+        /// 클라이언트 호스트의 실제 경로
+        var path: String
+
+        /// 이 진입점에 대한 접근 권한
+        var acl: FSAccessACL
+
+        init(id: UUID = UUID(), name: String, path: String, acl: FSAccessACL = .readOnly) {
+            self.id = id
+            self.name = name
+            self.path = path
+            self.acl = acl
         }
     }
 }
