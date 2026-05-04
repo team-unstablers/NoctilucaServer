@@ -150,9 +150,27 @@ Sirius 프로토콜의 fsaccess 채널들은 본질적으로 호스트 앱 안�
 ## 4.2. NSXPCInterface 메서드 표면
 
 XPC 인터페이스는 **NSXPCInterface (ObjC 프로토콜)** 로 정의합니다.
-인자/리턴 중 Sirius msgdef 메시지에 해당하는 것은 SwiftProtobuf wire-format으로 직렬화된
-`NSData` 로 주고받습니다 — 데몬과 호스트 앱이 동일한 SiriusKitCore에 의존하므로 양쪽 모두
-parse 가능합니다.
+
+인자/리턴 중 단순 스칼라(`UInt64`, `String`, `Data` 등) 가 아닌 복합 payload는 별도 shared
+모듈 **`NocFSAccessXPC`** 가 정의하는 **`NSSecureCoding`-conformant `@objc` 클래스**로
+주고받습니다. NSXPC가 자동으로 직렬화/역직렬화하므로 메서드 시그니처는 `...Data:` 같은
+`NSData` 래핑 없이 타입을 그대로 노출합니다.
+
+> **데몬은 SiriusKitCore에 의존하지 않습니다.** 데몬의 Noctiluca-side 의존은
+> `NocFSAccessXPC` 단 한 개로 한정되며, Sirius msgdef ↔ XPC DTO 변환은 호스트 앱이
+> 단독 책임집니다. 이로써 섹션 2의 *"데몬은 Sirius 프로토콜을 모른다"* 원칙이 컴파일러
+> 수준에서 강제됩니다.
+>
+> 비용은 Sirius msgdef와 XPC DTO 두 스키마를 동기화 유지해야 한다는 점이지만, 양쪽
+> 모두 본인이 관리하는 코드라 drift 위험은 관리 가능한 수준이라고 보고 받아들입니다.
+
+`NocFSAccessXPC` 가 노출하는 주요 DTO (구체 필드는 구현 시점에 확정):
+
+- `NocFSMountSessionDescriptor` — `(connectionLabel, mountSessionId, displayName, grantedAccess, ...)`
+- `NocFSFileStat` — `getattr` / `setattr` / `open` 응답에서 사용
+- `NocFSAttributesPatch` — `setattr` 입력
+- `NocFSAttributesInit` — `create` 입력
+- `NocFSDirEntry` — `readdir` 응답 항목
 
 요약된 메서드 목록 (세부 시그니처는 구현 시점에 확정):
 
@@ -161,7 +179,7 @@ parse 가능합니다.
 | 메서드 | 의도 |
 |---|---|
 | `daemonReady(replyPort:reply:)` | 핸드셰이크. 데몬이 nanonfs를 listen 상태로 만든 직후 host가 호출하고, 데몬이 실제 NFS port를 리턴. |
-| `addMountSession(sessionDescriptorData:reply:)` | 가상 트리 root 아래에 새 mount session entry를 추가. payload는 `(connectionLabel, mountSessionId, displayName, grantedAccess, ...)` 직렬화. |
+| `addMountSession(descriptor:reply:)` | 가상 트리 root 아래에 새 mount session entry를 추가. `descriptor: NocFSMountSessionDescriptor` 가 `(connectionLabel, mountSessionId, displayName, grantedAccess, ...)` 를 담음. |
 | `removeMountSession(mountSessionId:reply:)` | 마운트 세션 제거. 데몬은 관련 file handle을 모두 invalidate. |
 | `addConnection(connectionLabel:displayName:reply:)` | 가상 트리 1단계 namespace 항목 추가 (예: `0001-cheesekun`). |
 | `removeConnection(connectionLabel:reply:)` | 1단계 namespace 항목 제거 (해당 connection의 모든 mount session도 cascade로 제거). |
@@ -177,7 +195,7 @@ parse 가능합니다.
 | `lookup(mountSessionId:parentHandleId:name:reply:)` | `lookup(parent:name:)` |
 | `lookupParent(mountSessionId:handleId:reply:)` | `lookupParent(of:)` |
 | `getattr(mountSessionId:handleId:reply:)` | `getattr(handle:)` / `fStat` |
-| `setattr(mountSessionId:handleId:patchData:reply:)` | `setattr(handle:stateid:patch:)` |
+| `setattr(mountSessionId:handleId:patch:reply:)` | `setattr(handle:stateid:patch:)` (patch: `NocFSAttributesPatch`) |
 | `access(mountSessionId:handleId:mask:reply:)` | `access(handle:mask:)` |
 | `readdir(mountSessionId:handleId:cookie:cookieVerifier:maxEntries:reply:)` | `readdir(handle:cookie:...)` |
 | `readlink(mountSessionId:handleId:reply:)` | `readlink(handle:)` |
@@ -186,7 +204,7 @@ parse 가능합니다.
 | `read(mountSessionId:handleId:offset:length:reply:)` | `read(handle:stateid:offset:count:)` |
 | `write(mountSessionId:handleId:offset:data:stability:reply:)` | `write(handle:stateid:offset:stability:data:)` |
 | `commit(mountSessionId:handleId:offset:length:reply:)` | `commit(handle:offset:count:)` |
-| `create(mountSessionId:parentHandleId:name:type:attrsData:reply:)` | `create(parent:name:type:attrs:)` |
+| `create(mountSessionId:parentHandleId:name:type:attrs:reply:)` | `create(parent:name:type:attrs:)` (attrs: `NocFSAttributesInit`) |
 | `remove(mountSessionId:parentHandleId:name:reply:)` | `remove(parent:name:)` |
 | `rename(mountSessionId:srcParentHandleId:srcName:dstParentHandleId:dstName:reply:)` | `rename(...)` |
 | `link(mountSessionId:targetHandleId:parentHandleId:name:reply:)` | `link(...)` |
@@ -378,13 +396,14 @@ add/remove가 발생할 수 있으나, 이는 NFS의 일반적인 동시 수정 
 
 # 9. 로깅
 
-- **OSLog**, subsystem: `pl.unstabler.noctiluca.fsaccessd`.
-- SiriusKitCore의 OSLog 기반 Logger를 그대로 재사용합니다 (데몬이 SiriusKitCore에 의존).
+- **`os.Logger`** 직접 사용. subsystem: `pl.unstabler.noctiluca.fsaccessd`.
+- 데몬이 SiriusKitCore에 의존하지 않으므로 SiriusKit의 Logger 인프라는 사용하지 않습니다.
 - 권장 categories: `lifecycle` / `xpc` / `nfs` / `mount` / `vtree`.
 - Console.app 또는 `log show --predicate 'subsystem == "pl.unstabler.noctiluca.fsaccessd"'`
   로 추출 가능.
-- 호스트 앱이 같은 SiriusKit Logger 인프라를 쓰므로, fsaccess 관련 흐름은 두 프로세스의
-  로그를 시간순 cross-analysis 할 수 있습니다.
+- 호스트 앱은 자체 subsystem (`pl.unstabler.noctiluca.server` 등) 을 쓰므로 두 프로세스의
+  로그를 함께 보려면 `subsystem BEGINSWITH "pl.unstabler.noctiluca"` predicate를 사용하거나
+  Console.app에서 timestamp 기준 cross-analysis 합니다.
 
 ---
 
@@ -432,9 +451,17 @@ NFSv4 client (NFS4ERR_*)
 | `ioError` | `.io` | `NFS4ERR_IO` |
 | 기타 / 매핑 불가 | `.serverFault` | `NFS4ERR_SERVERFAULT` |
 
-호스트 앱이 fsaccess_mount 응답에서 `success=false` + `ErrorInfo(code=...)` 를 받으면 위 표
-역방향으로 데몬의 XPC reply에 NSError를 채워 돌려줍니다. 데몬은 그것을 보고 적절한
-`NFSError` 를 `throw` 합니다 — nanonfs가 알아서 NFS4ERR로 wire에 인코딩합니다.
+**XPC reply의 NSError 형식**:
+
+- `domain`: `NocFSAccessXPCErrorDomain` (또는 `NSPOSIXErrorDomain` — 구현 시점에 확정).
+- `code`: POSIX errno (`ENOENT`, `EACCES`, `ENOTDIR`, ...).
+- `userInfo[NSLocalizedDescriptionKey]`: 디버깅용 사람-읽기 메시지 (선택).
+
+호스트 앱이 fsaccess_mount 응답에서 `success=false` + `ErrorInfo(code=...)` 를 받으면
+위 표의 `FileSystemErrorCode` → POSIX errno 매핑 (호스트 앱 내부 테이블) 을 거쳐 NSError를
+데몬의 XPC reply에 채워 돌려줍니다. 데몬은 errno만 보고 적절한 `NFSError` 를 `throw`
+합니다 — `FileSystemErrorCode` enum은 데몬 코드에 존재하지 않습니다. nanonfs가 알아서
+NFS4ERR로 wire에 인코딩합니다.
 
 `FileStat.mtimeMs` / `atimeMs` / `btimeMs` 는 ms 단위, nanonfs `NFSTime` 은
 sec + nsec 단위입니다. 변환 시 ns 정밀도는 항상 0으로 채웁니다 (lossy).
@@ -464,7 +491,7 @@ sec + nsec 단위입니다. 변환 시 ns 정밀도는 항상 0으로 채웁니�
 | Xcode target | NoctilucaServer.xcodeproj 안의 Command Line Tool target `nocfsaccessd` |
 | Binary 위치 | `Server.app/Contents/MacOS/nocfsaccessd` |
 | Spawn 시 조회 | `Bundle.main.url(forAuxiliaryExecutable: "nocfsaccessd")` |
-| 의존성 | SiriusKitCore (전체), nanonfs (Swift Package), Foundation, OSLog, Network |
+| 의존성 | `NocFSAccessXPC` (shared XPC types), nanonfs (Swift Package), Foundation, OSLog, Network |
 | Swift Concurrency | strict |
 | 대상 플랫폼 | macOS 14+ (nanonfs와 동일) |
 | 라이프사이클 | host app spawn → host app teardown |
