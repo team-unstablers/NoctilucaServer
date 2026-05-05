@@ -1,42 +1,38 @@
 //
 //  HandleTable.swift
-//  nocfsaccessd
+//  NoctilucaServer
 //
-//  NFSv4 file handle ↔ daemon-internal entry id ↔ host-side fsaccess_mount
-//  handleId 매핑. 데몬은 NFSFileHandle 의 opaque blob 안에 자체 식별자를 인코딩
-//  해서 NFS client 에 보내고, 클라이언트가 같은 blob 을 돌려 보내면 매핑에서
-//  실 식별자를 복원한다.
+//  NFSv4 file handle ↔ host-side entry id ↔ navigator-side fsaccess_mount
+//  handleId 매핑.
 //
-//  본 stage 의 구현은 *최소한* 의 in-memory 매핑이며, 실제 NFS 콜백 dispatch
-//  로직 (host XPC 위임 등) 은 NoctilucaNFSServer 가 본 actor 를 통해 사용한다.
+//  같은 가상 entry (connection / mount session / host file path) 에 대해서는
+//  *항상 같은 entry id* 를 재사용한다. NFSv4 client 가 fh 를 cache 하므로
+//  매번 다른 fh 를 주면 client 가 ESTALE 로 환원해 file 접근이 fail 한다.
 //
 
 import Foundation
 
-/// NFSFileHandle 의 opaque blob 안에 인코딩되는 daemon-internal 식별자 종류.
 enum HandleEntryKind: UInt8, Sendable {
     case root = 0
     case readme = 1
     case connection = 2
     case mountSession = 3
-    /// mount session 안의 hostHandleId 가 묶인 실 파일/디렉토리 entry.
+    /// mount session 안의 navigator-side fsaccess_mount entry.
     case hostFile = 4
 }
 
 struct HandleEntry: Sendable {
     let kind: HandleEntryKind
-    /// kind 가 `.connection` / `.mountSession` / `.hostFile` 일 때만 의미 있음.
     let connectionLabel: String?
     let mountSessionId: UUID?
-    /// kind 가 `.hostFile` 일 때만 의미 있음 (host 측 handleId).
-    let hostHandleId: UInt64?
-    /// `.hostFile` 일 때, host 측 fsaccess_mount root 기준의 normalized path.
-    let path: String?
+    let hostFileId: UInt64?
 }
 
 actor HandleTable {
-    /// daemon-internal opaque entry id (UInt64) → entry.
     private var entries: [UInt64: HandleEntry] = [:]
+    /// 가상 entry 의 stable lookup key → entryId. 같은 (connection / mount
+    /// session / hostFile path) 는 같은 entryId 를 재사용한다.
+    private var byKey: [String: UInt64] = [:]
     private var nextId: UInt64 = 16  // 0..15 reserved
 
     static let rootEntryId: UInt64 = 1
@@ -44,27 +40,44 @@ actor HandleTable {
 
     init() {
         entries[Self.rootEntryId] = HandleEntry(
-            kind: .root, connectionLabel: nil, mountSessionId: nil, hostHandleId: nil, path: nil
+            kind: .root, connectionLabel: nil, mountSessionId: nil, hostFileId: nil
         )
         entries[Self.readmeEntryId] = HandleEntry(
-            kind: .readme, connectionLabel: nil, mountSessionId: nil, hostHandleId: nil, path: nil
+            kind: .readme, connectionLabel: nil, mountSessionId: nil, hostFileId: nil
         )
     }
 
-    /// 새 id 를 발급해서 entry 를 등록.
-    func issue(_ entry: HandleEntry) -> UInt64 {
+    // MARK: - Stable id issuance
+
+    /// `key` 로 등록된 entry id 가 있으면 그걸 리턴. 없으면 새 id 를 발급해 등록.
+    func issueIfAbsent(_ entry: HandleEntry, key: String) -> UInt64 {
+        if let existing = byKey[key] { return existing }
         let id = nextId
         nextId &+= 1
         if nextId == 0 { nextId = 16 }
         entries[id] = entry
+        byKey[key] = id
         return id
     }
+
+    static func keyForConnection(_ label: String) -> String {
+        return "conn:\(label)"
+    }
+
+    static func keyForMountSession(_ id: UUID) -> String {
+        return "mount:\(id.uuidString)"
+    }
+
+    static func keyForHostFile(mountSessionId: UUID, path: String) -> String {
+        return "host:\(mountSessionId.uuidString):\(path)"
+    }
+
+    // MARK: - Lookup
 
     func get(_ id: UInt64) -> HandleEntry? {
         return entries[id]
     }
 
-    /// `mountSessionId` 에 속한 모든 entry 를 invalidate. mount session 제거 시 호출.
     @discardableResult
     func invalidateAll(mountSession: UUID) -> Int {
         var removed = 0
@@ -72,10 +85,11 @@ actor HandleTable {
             entries.removeValue(forKey: id)
             removed += 1
         }
+        // byKey 에서도 cascade 정리.
+        byKey = byKey.filter { entry in entries[entry.value] != nil }
         return removed
     }
 
-    /// `connectionLabel` 에 속한 모든 entry 를 invalidate.
     @discardableResult
     func invalidateAll(connection label: String) -> Int {
         var removed = 0
@@ -83,18 +97,17 @@ actor HandleTable {
             entries.removeValue(forKey: id)
             removed += 1
         }
+        byKey = byKey.filter { entry in entries[entry.value] != nil }
         return removed
     }
 
-    // MARK: - NFSFileHandle bytes <-> entry id
+    // MARK: - NFSFileHandle codec
 
-    /// daemon-internal entry id 를 NFSFileHandle.bytes 의 8-byte BE 로 인코딩.
     static func encode(_ id: UInt64) -> Data {
         var be = id.bigEndian
         return withUnsafeBytes(of: &be) { Data($0) }
     }
 
-    /// NFSFileHandle.bytes 가 8-byte BE 면 daemon-internal entry id 로 디코딩.
     static func decode(_ data: Data) -> UInt64? {
         guard data.count == 8 else { return nil }
         var be: UInt64 = 0

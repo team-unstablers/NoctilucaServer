@@ -1,16 +1,13 @@
 //
 //  VirtualTree.swift
-//  nocfsaccessd
+//  NoctilucaServer
 //
-//  Sirius connection / mount session 의 가상 디렉토리 트리. 모든 갱신은 호스트
-//  앱의 push event (addConnection / removeConnection / addMountSession /
-//  removeMountSession) 로만 일어나며, 데몬은 polling 하지 않는다.
+//  Sirius connection / mount session 의 가상 디렉토리 트리. 모든 갱신은
+//  ``FSAccessChannel`` / ``NoctilucaClientSession`` 의 push 로만 일어나며,
+//  NFS callback 측에서는 read-only.
 //
 
 import Foundation
-import OSLog
-
-import NocFSAccessXPC
 
 /// 1단계 namespace 의 entry. `0001-cheesekun` 형식의 connectionLabel 을 갖는다.
 struct VirtualConnectionRecord: Sendable {
@@ -19,8 +16,7 @@ struct VirtualConnectionRecord: Sendable {
     var mountSessions: [UUID: VirtualMountSessionRecord] = [:]
 }
 
-/// 2단계 namespace 의 entry. `addMountSession` 으로 들어오는 descriptor 를 그대로
-/// 보관.
+/// 2단계 namespace 의 entry.
 struct VirtualMountSessionRecord: Sendable {
     let id: UUID
     let connectionLabel: String
@@ -35,7 +31,6 @@ actor VirtualTree {
 
     func addConnection(label: String, displayName: String) {
         if connections[label] != nil {
-            DaemonLogger.vtree.warning("addConnection: label \(label, privacy: .public) already exists; replacing displayName.")
             connections[label]?.displayName = displayName
             return
         }
@@ -49,24 +44,20 @@ actor VirtualTree {
         return Array(record.mountSessions.keys)
     }
 
-    func addMountSession(_ descriptor: NocFSMountSessionDescriptor) -> Bool {
-        guard var connection = connections[descriptor.connectionLabel] else {
-            DaemonLogger.vtree.error("addMountSession: connectionLabel \(descriptor.connectionLabel, privacy: .public) not found.")
-            return false
-        }
-        guard let sessionId = UUID(uuidString: descriptor.mountSessionId) else {
-            DaemonLogger.vtree.error("addMountSession: mountSessionId not a UUID: \(descriptor.mountSessionId, privacy: .public)")
-            return false
-        }
-        let displayName = sanitizedAndDeduped(descriptor.displayName, in: descriptor.connectionLabel)
+    func addMountSession(connectionLabel: String,
+                         mountSessionId: UUID,
+                         displayName: String,
+                         grantedAccess: UInt32) -> Bool {
+        guard var connection = connections[connectionLabel] else { return false }
+        let safeDisplayName = sanitizedAndDeduped(displayName, in: connectionLabel)
         let record = VirtualMountSessionRecord(
-            id: sessionId,
-            connectionLabel: descriptor.connectionLabel,
-            displayName: displayName,
-            grantedAccess: descriptor.grantedAccess
+            id: mountSessionId,
+            connectionLabel: connectionLabel,
+            displayName: safeDisplayName,
+            grantedAccess: grantedAccess
         )
-        connection.mountSessions[sessionId] = record
-        connections[descriptor.connectionLabel] = connection
+        connection.mountSessions[mountSessionId] = record
+        connections[connectionLabel] = connection
         return true
     }
 
@@ -99,14 +90,11 @@ actor VirtualTree {
 
     // MARK: - Helpers
 
-    /// `/` / NUL → `_` 치환 + 같은 connection 안에서 displayName 중복 시 ` (2)`, ` (3)` suffix.
     private func sanitizedAndDeduped(_ raw: String, in connectionLabel: String) -> String {
         var sanitized = raw
         sanitized = sanitized.replacingOccurrences(of: "/", with: "_")
         sanitized = sanitized.replacingOccurrences(of: "\u{0000}", with: "_")
         if sanitized.isEmpty { sanitized = "(unnamed)" }
-
-        // 같은 connection 안의 기존 displayName 들과 충돌하면 suffix.
         guard let connection = connections[connectionLabel] else { return sanitized }
         let existingNames = Set(connection.mountSessions.values.map { $0.displayName })
         if !existingNames.contains(sanitized) {

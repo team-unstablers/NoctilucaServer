@@ -28,9 +28,7 @@
 		F64AEF892F6670F300C0EDD8 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = F64AEF882F6670F300C0EDD8 /* Sentry */; };
 		F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */ = {isa = PBXBuildFile; fileRef = F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */; };
 		F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BA2FA818B300F3D400 /* NanoNFS */; };
-		F64F79BD2FA818BD00F3D400 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BC2FA818BD00F3D400 /* ArgumentParser */; };
 		F64FAF892FA95BA700F3D400 /* NetFS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F64FAF882FA95BA700F3D400 /* NetFS.framework */; };
-		F64FAF8A2FA95C9100F3D400 /* nocfsaccessd in Copy Files */ = {isa = PBXBuildFile; fileRef = F64F79B32FA818A900F3D400 /* nocfsaccessd */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
 		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -62,8 +60,6 @@
 		F6CC83982F5B522800AA6DC2 /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6CC83992F5B522800AA6DC2 /* Gesu in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6CC83742F5B522800AA6DC2 /* Gesu */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; };
-		F6FCAB004F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB002F0000000000FCAB /* NocFSAccessXPC */; };
-		F6FCAB005F0000000000FCAB /* NocFSAccessXPC in Frameworks */ = {isa = PBXBuildFile; productRef = F6FCAB003F0000000000FCAB /* NocFSAccessXPC */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,13 +69,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = F6CC836F2F5B522800AA6DC2;
 			remoteInfo = NoctilucaServerTestsHost;
-		};
-		F6630DCE2FA95D7E0000981D /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F66965032ECF26770032EF4E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F64F79B22FA818A900F3D400;
-			remoteInfo = nocfsaccessd;
 		};
 		F6630DD02FA95D7E0000981D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -113,29 +102,9 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				F64FAF8A2FA95C9100F3D400 /* nocfsaccessd in Copy Files */,
 				F621D22B2F93287B00AEF0FA /* nocvirtdisplay in Copy Files */,
 			);
 			name = "Copy Files";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F64F79B12FA818A900F3D400 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-		F64F79C12FA81A7C00F3D400 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-			);
-			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F66965392ECF27110032EF4E /* Embed Frameworks */ = {
@@ -223,7 +192,6 @@
 		F627113E2F084EBB00E8A3D7 /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
 		F6379D3D2EE7D554004BC795 /* libbcrypt.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = libbcrypt.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */ = {isa = PBXFileReference; lastKnownFileType = text; path = OPEN_SOURCE_LICENSE.server; sourceTree = "<group>"; };
-		F64F79B32FA818A900F3D400 /* nocfsaccessd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = nocfsaccessd; sourceTree = BUILT_PRODUCTS_DIR; };
 		F64FAF882FA95BA700F3D400 /* NetFS.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetFS.framework; path = System/Library/Frameworks/NetFS.framework; sourceTree = SDKROOT; };
 		F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
 		F659BDF22EF3C1730010A18E /* NoctilucaServerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaServerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -350,11 +318,6 @@
 			path = distutil;
 			sourceTree = "<group>";
 		};
-		F64F79B42FA818A900F3D400 /* nocfsaccessd */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = nocfsaccessd;
-			sourceTree = "<group>";
-		};
 		F659BDF32EF3C1730010A18E /* NoctilucaServerTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = NoctilucaServerTests;
@@ -389,16 +352,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F64F79B02FA818A900F3D400 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F64F79BD2FA818BD00F3D400 /* ArgumentParser in Frameworks */,
-				F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */,
-				F6FCAB005F0000000000FCAB /* NocFSAccessXPC in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F659BDEF2EF3C1730010A18E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -411,7 +364,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F6FCAB004F0000000000FCAB /* NocFSAccessXPC in Frameworks */,
+				F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */,
 				F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */,
 				F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */,
 				F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */,
@@ -466,7 +419,6 @@
 				F669650D2ECF26770032EF4E /* NoctilucaServer */,
 				F659BDF32EF3C1730010A18E /* NoctilucaServerTests */,
 				F621D2082F91FC4F00AEF0FA /* nocvirtdisplay */,
-				F64F79B42FA818A900F3D400 /* nocfsaccessd */,
 				F66965352ECF27110032EF4E /* Frameworks */,
 				F669650C2ECF26770032EF4E /* Products */,
 			);
@@ -480,7 +432,6 @@
 				F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */,
 				F6CC839F2F5B522800AA6DC2 /* NoctilucaServerTestsHost.app */,
 				F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */,
-				F64F79B32FA818A900F3D400 /* nocfsaccessd */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -550,32 +501,6 @@
 			productReference = F621D2072F91FC4F00AEF0FA /* nocvirtdisplay */;
 			productType = "com.apple.product-type.tool";
 		};
-		F64F79B22FA818A900F3D400 /* nocfsaccessd */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F64F79B72FA818A900F3D400 /* Build configuration list for PBXNativeTarget "nocfsaccessd" */;
-			buildPhases = (
-				F64F79AF2FA818A900F3D400 /* Sources */,
-				F64F79B02FA818A900F3D400 /* Frameworks */,
-				F64F79B12FA818A900F3D400 /* CopyFiles */,
-				F64F79C12FA81A7C00F3D400 /* Embed Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				F64F79B42FA818A900F3D400 /* nocfsaccessd */,
-			);
-			name = nocfsaccessd;
-			packageProductDependencies = (
-				F64F79BA2FA818B300F3D400 /* NanoNFS */,
-				F64F79BC2FA818BD00F3D400 /* ArgumentParser */,
-				F6FCAB003F0000000000FCAB /* NocFSAccessXPC */,
-			);
-			productName = nocfsaccessd;
-			productReference = F64F79B32FA818A900F3D400 /* nocfsaccessd */;
-			productType = "com.apple.product-type.tool";
-		};
 		F659BDF12EF3C1730010A18E /* NoctilucaServerTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F659BDFA2EF3C1730010A18E /* Build configuration list for PBXNativeTarget "NoctilucaServerTests" */;
@@ -638,7 +563,7 @@
 				F6CC836B2F5B33FC00AA6DC2 /* Inject */,
 				F64AEF882F6670F300C0EDD8 /* Sentry */,
 				F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */,
-				F6FCAB002F0000000000FCAB /* NocFSAccessXPC */,
+				F64F79BA2FA818B300F3D400 /* NanoNFS */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -698,9 +623,6 @@
 						CreatedOnToolsVersion = 26.2;
 						LastSwiftMigration = 2620;
 					};
-					F64F79B22FA818A900F3D400 = {
-						CreatedOnToolsVersion = 26.2;
-					};
 					F659BDF12EF3C1730010A18E = {
 						CreatedOnToolsVersion = 26.1;
 						TestTargetID = F6CC836F2F5B522800AA6DC2;
@@ -733,7 +655,6 @@
 				F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */,
-				F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669650C2ECF26770032EF4E /* Products */;
@@ -745,7 +666,6 @@
 				F61AB3172F41274E00BB69AF /* CJKKeyboardHacks */,
 				F6CC836F2F5B522800AA6DC2 /* NoctilucaServerTestsHost */,
 				F621D2062F91FC4F00AEF0FA /* nocvirtdisplay */,
-				F64F79B22FA818A900F3D400 /* nocfsaccessd */,
 			);
 		};
 /* End PBXProject section */
@@ -797,13 +717,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F64F79AF2FA818A900F3D400 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F659BDEE2EF3C1730010A18E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -832,11 +745,6 @@
 			isa = PBXTargetDependency;
 			target = F6CC836F2F5B522800AA6DC2 /* NoctilucaServerTestsHost */;
 			targetProxy = F61137D82FA330D3008ED9BB /* PBXContainerItemProxy */;
-		};
-		F6630DCF2FA95D7E0000981D /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F64F79B22FA818A900F3D400 /* nocfsaccessd */;
-			targetProxy = F6630DCE2FA95D7E0000981D /* PBXContainerItemProxy */;
 		};
 		F6630DD12FA95D7E0000981D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -933,36 +841,6 @@
 				SKIP_INSTALL = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "nocvirtdisplay/nocvirtdisplay-Bridging-Header.h";
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
-		F64F79B82FA818A900F3D400 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = XHA76UVA95;
-				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		F64F79B92FA818A900F3D400 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = XHA76UVA95;
-				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -1407,15 +1285,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F64F79B72FA818A900F3D400 /* Build configuration list for PBXNativeTarget "nocfsaccessd" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F64F79B82FA818A900F3D400 /* Debug */,
-				F64F79B92FA818A900F3D400 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		F659BDFA2EF3C1730010A18E /* Build configuration list for PBXNativeTarget "NoctilucaServerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1458,10 +1327,6 @@
 		F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../nanonfs;
-		};
-		F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = NocFSAccessXPC;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1622,11 +1487,6 @@
 			package = F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */;
 			productName = NanoNFS;
 		};
-		F64F79BC2FA818BD00F3D400 /* ArgumentParser */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
-			productName = ArgumentParser;
-		};
 		F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NoctilucaWebPEncoder;
@@ -1705,16 +1565,6 @@
 		F6F98E7A2F306B5D0024513A /* SiriusKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SiriusKit;
-		};
-		F6FCAB002F0000000000FCAB /* NocFSAccessXPC */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
-			productName = NocFSAccessXPC;
-		};
-		F6FCAB003F0000000000FCAB /* NocFSAccessXPC */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F6FCAB001F0000000000FCAB /* XCLocalSwiftPackageReference "NocFSAccessXPC" */;
-			productName = NocFSAccessXPC;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

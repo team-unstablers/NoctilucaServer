@@ -193,12 +193,16 @@ extension NoctilucaClientSession {
             // 인증에 성공했으므로 추가 채널을 만들 수 있도록 허용한다
             session.shouldAcceptChannelCreation = true
             try self.shiftPhase(to: .ready)
-            
+
             try await self.mainChannel.sendAuthResponse(AuthResponse(sessionID: self.id))
-            
+
             Task { @MainActor in
                 await AppNotification.newConnection(endpoint: remoteAddress).post()
             }
+
+            // fsaccess (consuming peer) 자동 시작 — settings.fileAccess.enabled 일 때만.
+            // 실패해도 인증/세션 자체는 그대로 유지되고 fsaccess 만 비활성된다.
+            await self.setupFSAccessIfEnabled(uid: uid)
             return
             
         case .failure(let error):

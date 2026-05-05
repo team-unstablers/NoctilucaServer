@@ -20,9 +20,6 @@
       location = "group:SiriusKit">
    </FileRef>
    <FileRef
-      location = "group:NocFSAccessXPC">
-   </FileRef>
-   <FileRef
       location = "group:SamplePluginBundle/SamplePluginBundle.xcodeproj">
    </FileRef>
    <FileRef

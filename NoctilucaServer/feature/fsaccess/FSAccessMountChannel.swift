@@ -14,8 +14,6 @@ import Foundation
 
 import SiriusKit
 
-import NocFSAccessXPC
-
 // MARK: - Reply unification
 
 /// fsaccess_mount 의 모든 응답을 enum 으로 unification 해서 단일 typed
@@ -80,13 +78,23 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
         private var records: [UInt64: Record] = [:]
         private var nextId: UInt64 = 1
+        /// path → hostId 역방향 매핑. 같은 path 에 대해 같은 hostId 재사용
+        /// (NFS client 가 fh 를 cache 하므로 fh 가 stable 해야 ESTALE 회피).
+        private var idByPath: [String: UInt64] = [:]
 
         func issue(path: String, navigatorHandleId: UInt64? = nil) -> UInt64 {
             let id = nextId
             nextId &+= 1
             if nextId == 0 || nextId == Self.rootSentinel { nextId = 1 }
             records[id] = Record(path: path, navigatorHandleId: navigatorHandleId)
+            idByPath[path] = id
             return id
+        }
+
+        /// 같은 path 가 이미 등록됐으면 기존 hostId 재사용. 없으면 새로 발급.
+        func issueIfAbsent(path: String) -> UInt64 {
+            if let existing = idByPath[path] { return existing }
+            return issue(path: path)
         }
 
         func attachNavigatorHandle(hostId: UInt64, navigatorId: UInt64) {
@@ -106,10 +114,22 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             return records[id]?.path ?? ""
         }
 
+        /// host file 의 record 를 보존하면서 navigator-side handleId 만 떼어낸다.
+        /// close 후 같은 fh 를 재 OPEN 할 때 같은 hostId 가 유지되어야 NFS
+        /// client cache 가 깨지지 않는다.
+        func detachNavigatorHandle(hostId: UInt64) {
+            guard hostId != Self.rootSentinel else { return }
+            records[hostId]?.navigatorHandleId = nil
+        }
+
         @discardableResult
         func unregister(_ id: UInt64) -> Record? {
             guard id != Self.rootSentinel else { return nil }
-            return records.removeValue(forKey: id)
+            let removed = records.removeValue(forKey: id)
+            if let path = removed?.path {
+                idByPath.removeValue(forKey: path)
+            }
+            return removed
         }
     }
 

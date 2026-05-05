@@ -106,7 +106,13 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
     private var didNotifyClose: Bool = false
     
     private var userActivityAssertion: UserActivityAssertion?
-    
+
+    /// fsaccess (consuming peer) wiring — 인증 완료 후 발급된 1단계 connection
+    /// label. nil 이면 fsaccess feature 가 비활성이거나 setup 이 실패했음.
+    var fsAccessConnectionLabel: String?
+    /// 인증 완료 후 host 가 발신한 fsaccess control channel.
+    weak var fsAccessChannel: FSAccessChannel?
+
     init(session: ClientSession, server: ServerContext) {
         self.session = session
         self.server = server
@@ -324,6 +330,10 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
 
         self.phase = .closed
         self.notifyCloseIfNeeded()
+
+        // fsaccess: 데몬 측 가상 트리에서 본 connection / mount session 들을 cascade 정리.
+        // host 측 channel 들은 channelManager teardown 에서 자연스럽게 close 된다.
+        await self.cleanupFSAccess()
 
         let channels = await self.session.channelManager.channels
         for channel in channels.values {

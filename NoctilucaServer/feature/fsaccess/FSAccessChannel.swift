@@ -10,8 +10,6 @@ import Foundation
 
 import SiriusKit
 
-import NocFSAccessXPC
-
 // MARK: - Limits (host 발신 측)
 
 private enum FSAccessControlLimits {
