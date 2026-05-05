@@ -51,6 +51,12 @@ actor NoctilucaNFSServer: NFSServer {
     private static let dirMode: UInt32 = 0o755 | UInt32(S_IFDIR)
     private static let fileMode: UInt32 = 0o444 | UInt32(S_IFREG)
 
+    /// 가상 디렉토리 / `_README.txt` 의 stable timestamp.
+    /// 매 getattr 호출마다 `NFSTime.now()` 를 주면 NFSv4 client 가 디렉토리가
+    /// 매번 변했다고 판단해 readdir cache 를 무효화한다 — 결과적으로 mount session
+    /// 안의 파일 목록이 사라졌다 생겼다 깜빡인다. 부팅 시각에 한 번 stamp.
+    private static let bootTime: NFSTime = NFSTime.now()
+
     private func decodeHandle(_ fh: NFSFileHandle) async throws -> (id: UInt64, entry: HandleEntry) {
         guard let id = HandleTable.decode(fh.bytes) else {
             logger.error("decodeHandle: bad fh — bytes=\(fh.bytes.count) hex=\(fh.bytes.map { String(format: "%02x", $0) }.joined())")
@@ -64,24 +70,24 @@ actor NoctilucaNFSServer: NFSServer {
     }
 
     private func directoryStat(fileid: UInt64) -> NFSStat {
-        let now = NFSTime.now()
+        let stamp = Self.bootTime
         return NFSStat(
             type: .directory, mode: Self.dirMode, nlink: 2,
             uid: UInt32(getuid()), gid: UInt32(getgid()),
             size: 0, used: 0, fileid: fileid,
-            atime: now, mtime: now, ctime: now
+            atime: stamp, mtime: stamp, ctime: stamp
         )
     }
 
     private func readmeStat() -> NFSStat {
-        let now = NFSTime.now()
+        let stamp = Self.bootTime
         let body = Self.readmeBody.data(using: .utf8) ?? Data()
         return NFSStat(
             type: .regularFile, mode: Self.fileMode, nlink: 1,
             uid: UInt32(getuid()), gid: UInt32(getgid()),
             size: UInt64(body.count), used: UInt64(body.count),
             fileid: HandleTable.readmeEntryId,
-            atime: now, mtime: now, ctime: now
+            atime: stamp, mtime: stamp, ctime: stamp
         )
     }
 
@@ -627,12 +633,31 @@ actor NoctilucaNFSServer: NFSServer {
         if read && write { accessMode = .readWrite }
         else if write { accessMode = .write }
         else { accessMode = .read }
+        // RFC 7530 §16.16 NFSCreateMode → fsaccess_mount CreateDisposition.
+        //   .open                  → openExisting (NOCREATE)
+        //   .create(attrs)         → openOrCreate (UNCHECKED4 / GUARDED4 — nanonfs
+        //                            는 두 mode 를 합쳐서 .create 로 줌. GUARDED4 의
+        //                            "이미 존재하면 EXIST" 의미는 보존되지 않음.)
+        //   .createExclusive       → createNew    (EXCLUSIVE4)
+        let disposition: CreateDisposition
+        let createMode: UInt32
+        switch create {
+        case .open:
+            disposition = .openExisting
+            createMode = 0
+        case .create(let attrs):
+            disposition = .openOrCreate
+            createMode = attrs.mode ?? 0o644
+        case .createExclusive:
+            disposition = .createNew
+            createMode = 0o644
+        }
         let response = try await channel.sendOpen(
             path: childPath, accessMode: accessMode,
-            createDisposition: .openExisting, flags: [], mode: 0o644
+            createDisposition: disposition, flags: [], mode: createMode
         )
         guard response.success else {
-            logger.error("open: navigator returned success=false for path=\(childPath): \(response.error?.message ?? "<no info>")")
+            logger.error("open: navigator returned success=false for path=\(childPath) disposition=\(String(describing: disposition)): \(response.error?.message ?? "<no info>")")
             throw Self.nfsError(from: response.error)
         }
         let hostId = await channel.pathMap.issueIfAbsent(path: childPath)
