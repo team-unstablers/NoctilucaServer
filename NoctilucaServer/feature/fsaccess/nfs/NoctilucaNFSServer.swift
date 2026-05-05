@@ -51,11 +51,8 @@ actor NoctilucaNFSServer: NFSServer {
     private static let dirMode: UInt32 = 0o755 | UInt32(S_IFDIR)
     private static let fileMode: UInt32 = 0o444 | UInt32(S_IFREG)
 
-    /// 가상 디렉토리 / `_README.txt` 의 stable timestamp.
-    /// 매 getattr 호출마다 `NFSTime.now()` 를 주면 NFSv4 client 가 디렉토리가
-    /// 매번 변했다고 판단해 readdir cache 를 무효화한다 — 결과적으로 mount session
-    /// 안의 파일 목록이 사라졌다 생겼다 깜빡인다. 부팅 시각에 한 번 stamp.
-    private static let bootTime: NFSTime = NFSTime.now()
+    /// `_README.txt` 의 timestamp. README 본문은 변하지 않으므로 부팅시 stamp.
+    private static let readmeTime: NFSTime = NFSTime.now()
 
     private func decodeHandle(_ fh: NFSFileHandle) async throws -> (id: UInt64, entry: HandleEntry) {
         guard let id = HandleTable.decode(fh.bytes) else {
@@ -69,18 +66,17 @@ actor NoctilucaNFSServer: NFSServer {
         return (id, entry)
     }
 
-    private func directoryStat(fileid: UInt64) -> NFSStat {
-        let stamp = Self.bootTime
+    private func directoryStat(fileid: UInt64, mtime: NFSTime) -> NFSStat {
         return NFSStat(
             type: .directory, mode: Self.dirMode, nlink: 2,
             uid: UInt32(getuid()), gid: UInt32(getgid()),
             size: 0, used: 0, fileid: fileid,
-            atime: stamp, mtime: stamp, ctime: stamp
+            atime: mtime, mtime: mtime, ctime: mtime
         )
     }
 
     private func readmeStat() -> NFSStat {
-        let stamp = Self.bootTime
+        let stamp = Self.readmeTime
         let body = Self.readmeBody.data(using: .utf8) ?? Data()
         return NFSStat(
             type: .regularFile, mode: Self.fileMode, nlink: 1,
@@ -193,13 +189,36 @@ actor NoctilucaNFSServer: NFSServer {
         let (id, entry) = try await decodeHandle(handle)
         logger.debug("getattr: id=\(id) kind=\(String(describing: entry.kind))")
         switch entry.kind {
-        case .root, .connection, .mountSession:
-            return directoryStat(fileid: id)
+        case .root:
+            let mtime = await virtualTree.rootMtime
+            return directoryStat(fileid: id, mtime: mtime)
+        case .connection:
+            guard let label = entry.connectionLabel else { throw NFSError.badHandle }
+            let mtime = (await virtualTree.connectionMtime(label: label)) ?? .now()
+            return directoryStat(fileid: id, mtime: mtime)
+        case .mountSession:
+            return try await getattrMountSession(handleEntry: entry, fileid: id)
         case .readme:
             return readmeStat()
         case .hostFile:
             return try await getattrHostFile(handleEntry: entry, fileid: id)
         }
+    }
+
+    /// mountSession 의 getattr 은 navigator 측 root dir (`/`) 의 stat 결과를 그대로
+    /// 사용한다. NFSv4 client 가 이 mtime 을 보고 자식 readdir 을 invalidate
+    /// 할지 결정하기 때문에, navigator-side 실제 변경이 그대로 반영되어야 한다.
+    /// stat 호출 실패 시에는 virtualTree 의 fallback mtime 사용.
+    private func getattrMountSession(handleEntry: HandleEntry, fileid: UInt64) async throws -> NFSStat {
+        guard let mountSessionId = handleEntry.mountSessionId else { throw NFSError.badHandle }
+        let channel = try await channel(for: mountSessionId)
+        let response = try await channel.sendStat(path: "/", followSymlinks: true)
+        if response.success, let stat = response.stat {
+            // navigator-side mountSession root 의 type 은 항상 directory.
+            return Self.makeNFSStat(from: stat, fileid: fileid)
+        }
+        let fallback = (await virtualTree.mountSessionMtime(id: mountSessionId)) ?? .now()
+        return directoryStat(fileid: fileid, mtime: fallback)
     }
 
     private func getattrHostFile(handleEntry: HandleEntry, fileid: UInt64) async throws -> NFSStat {
@@ -433,7 +452,7 @@ actor NoctilucaNFSServer: NFSServer {
             )
             entries.append(NFSDirEntry(
                 fileid: entryId, name: connection.connectionLabel,
-                attrs: directoryStat(fileid: entryId)
+                attrs: directoryStat(fileid: entryId, mtime: connection.mtime)
             ))
             nextCookie = positional
         }
@@ -462,9 +481,12 @@ actor NoctilucaNFSServer: NFSServer {
             let entryId = await handleTable.issueIfAbsent(
                 mountEntry, key: HandleTable.keyForMountSession(session.id)
             )
+            // readdir 의 entry attrs 는 virtualTree 가 보유한 등록 시점 mtime 사용.
+            // mountSession 안의 진짜 navigator-side mtime 은 client 가 그 dir 안에
+            // 진입할 때 GETATTR 로 다시 받는다 (getattrMountSession).
             entries.append(NFSDirEntry(
                 fileid: entryId, name: session.displayName,
-                attrs: directoryStat(fileid: entryId)
+                attrs: directoryStat(fileid: entryId, mtime: session.mtime)
             ))
             nextCookie = positional
         }
