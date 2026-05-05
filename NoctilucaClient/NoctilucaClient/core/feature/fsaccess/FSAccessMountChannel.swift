@@ -30,6 +30,12 @@ private enum FSAccessMountLimits {
     static let handlesHard = 8192
 }
 
+/// `FileSystemLockRequest.length` / `FileSystemUnlockRequest.length` /
+/// `FileSystemTestLockRequest.length` 의 sentinel 값. mdproto 의
+/// `LOCK SEMANTICS` 부록은 이 값을 "from offset to the maximum possible end of
+/// file" 로 정의하며, host syscall 계층에서는 POSIX `l_len = 0` 으로 변환한다.
+private let kFSAccessLockLengthSentinel: UInt64 = 0xFFFF_FFFF_FFFF_FFFF
+
 // MARK: - FSAccessMountChannel
 
 final class FSAccessMountChannel: Channel, ChannelEventConsumer {
@@ -167,6 +173,15 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         case .fileSystemRequestStreamWriteRequest:
             let req = try FileSystemRequestStreamWriteRequest.fromProtobufBytes(frame.data)
             try await handleStreamWrite(req)
+        case .fileSystemLockRequest:
+            let req = try FileSystemLockRequest.fromProtobufBytes(frame.data)
+            try await handleLock(req)
+        case .fileSystemUnlockRequest:
+            let req = try FileSystemUnlockRequest.fromProtobufBytes(frame.data)
+            try await handleUnlock(req)
+        case .fileSystemTestLockRequest:
+            let req = try FileSystemTestLockRequest.fromProtobufBytes(frame.data)
+            try await handleTestLock(req)
         default:
             logger.warning("Received unknown opcode: \(frame.opcode)")
         }
@@ -766,6 +781,179 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             requestId: request.requestId, success: true, error: nil))
     }
 
+    // MARK: - Byte-range locking
+
+    private func handleLock(_ request: FileSystemLockRequest) async throws {
+#if os(macOS)
+        guard let h = await state.get(request.handleId), let fd = h.fileDescriptor else {
+            try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+                code: .invalidHandle, message: "Handle \(request.handleId) is not an open file.")
+            return
+        }
+        if request.length == 0 {
+            try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+                code: .invalidArgument, message: "FileSystemLockRequest.length=0 is invalid (use the 0xFFFFFFFFFFFFFFFF sentinel for whole-file).")
+            return
+        }
+        // accessMode validation per mdproto: shared 는 read 가능, exclusive 는 write 가능 핸들에서만.
+        let posixType: Int16
+        switch request.type {
+        case .shared:
+            if h.accessMode == .write {
+                try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+                    code: .permissionDenied, message: "Shared lock requires read or readWrite access mode.")
+                return
+            }
+            posixType = Int16(F_RDLCK)
+        case .exclusive:
+            if h.accessMode == .read {
+                try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+                    code: .permissionDenied, message: "Exclusive lock requires write or readWrite access mode.")
+                return
+            }
+            posixType = Int16(F_WRLCK)
+        default:
+            try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+                code: .invalidArgument, message: "Unknown LockType \(request.type.rawValue).")
+            return
+        }
+
+        var fl = flock()
+        fl.l_type = posixType
+        fl.l_whence = Int16(SEEK_SET)
+        fl.l_start = off_t(request.offset)
+        fl.l_len = request.length == kFSAccessLockLengthSentinel ? 0 : off_t(request.length)
+        fl.l_pid = 0
+
+        let result = Darwin.fcntl(fd, F_SETLK, &fl)
+        if result != 0 {
+            let err = errno
+            if err == EAGAIN || err == EACCES {
+                try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+                    code: .wouldBlock, message: "A conflicting lock already exists on the requested byte range.")
+                return
+            }
+            try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+                code: FSAccessErrorMapper.mapErrno(err), message: "fcntl(F_SETLK) failed.")
+            return
+        }
+        try await handle.send(opcode: .fileSystemLockResponse, message: FileSystemLockResponse(
+            requestId: request.requestId, success: true, error: nil))
+#else
+        try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
+            code: .notSupported, message: "Byte-range locking is not supported on this platform.")
+#endif
+    }
+
+    private func handleUnlock(_ request: FileSystemUnlockRequest) async throws {
+#if os(macOS)
+        guard let h = await state.get(request.handleId), let fd = h.fileDescriptor else {
+            try await sendError(opcode: .fileSystemUnlockResponse, requestId: request.requestId,
+                code: .invalidHandle, message: "Handle \(request.handleId) is not an open file.")
+            return
+        }
+        if request.length == 0 {
+            try await sendError(opcode: .fileSystemUnlockResponse, requestId: request.requestId,
+                code: .invalidArgument, message: "FileSystemUnlockRequest.length=0 is invalid (use the 0xFFFFFFFFFFFFFFFF sentinel for whole-file).")
+            return
+        }
+        _ = h  // silence unused
+
+        var fl = flock()
+        fl.l_type = Int16(F_UNLCK)
+        fl.l_whence = Int16(SEEK_SET)
+        fl.l_start = off_t(request.offset)
+        fl.l_len = request.length == kFSAccessLockLengthSentinel ? 0 : off_t(request.length)
+        fl.l_pid = 0
+
+        // mdproto: not-held 범위 unlock 도 success 로 보고 (POSIX 와 일치).
+        let result = Darwin.fcntl(fd, F_SETLK, &fl)
+        if result != 0 {
+            try await sendError(opcode: .fileSystemUnlockResponse, requestId: request.requestId,
+                code: FSAccessErrorMapper.mapErrno(errno), message: "fcntl(F_UNLCK) failed.")
+            return
+        }
+        try await handle.send(opcode: .fileSystemUnlockResponse, message: FileSystemUnlockResponse(
+            requestId: request.requestId, success: true, error: nil))
+#else
+        try await sendError(opcode: .fileSystemUnlockResponse, requestId: request.requestId,
+            code: .notSupported, message: "Byte-range locking is not supported on this platform.")
+#endif
+    }
+
+    private func handleTestLock(_ request: FileSystemTestLockRequest) async throws {
+#if os(macOS)
+        guard let h = await state.get(request.handleId), let fd = h.fileDescriptor else {
+            try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
+                code: .invalidHandle, message: "Handle \(request.handleId) is not an open file.")
+            return
+        }
+        if request.length == 0 {
+            try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
+                code: .invalidArgument, message: "FileSystemTestLockRequest.length=0 is invalid (use the 0xFFFFFFFFFFFFFFFF sentinel for whole-file).")
+            return
+        }
+
+        let posixType: Int16
+        switch request.type {
+        case .shared:
+            if h.accessMode == .write {
+                try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
+                    code: .permissionDenied, message: "Shared lock requires read or readWrite access mode.")
+                return
+            }
+            posixType = Int16(F_RDLCK)
+        case .exclusive:
+            if h.accessMode == .read {
+                try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
+                    code: .permissionDenied, message: "Exclusive lock requires write or readWrite access mode.")
+                return
+            }
+            posixType = Int16(F_WRLCK)
+        default:
+            try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
+                code: .invalidArgument, message: "Unknown LockType \(request.type.rawValue).")
+            return
+        }
+
+        var fl = flock()
+        fl.l_type = posixType
+        fl.l_whence = Int16(SEEK_SET)
+        fl.l_start = off_t(request.offset)
+        fl.l_len = request.length == kFSAccessLockLengthSentinel ? 0 : off_t(request.length)
+        fl.l_pid = 0
+
+        let result = Darwin.fcntl(fd, F_GETLK, &fl)
+        if result != 0 {
+            try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
+                code: FSAccessErrorMapper.mapErrno(errno), message: "fcntl(F_GETLK) failed.")
+            return
+        }
+
+        // F_GETLK: l_type 이 F_UNLCK 면 충돌 없음.
+        if fl.l_type == Int16(F_UNLCK) {
+            try await handle.send(opcode: .fileSystemTestLockResponse, message: FileSystemTestLockResponse(
+                requestId: request.requestId, success: true, canAcquire: true,
+                conflictingType: .shared, conflictingOffset: 0, conflictingLength: 0,
+                error: nil))
+            return
+        }
+
+        let conflictingType: LockType = fl.l_type == Int16(F_WRLCK) ? .exclusive : .shared
+        // POSIX l_len == 0 → sentinel.
+        let conflictingLength: UInt64 = fl.l_len == 0 ? kFSAccessLockLengthSentinel : UInt64(fl.l_len)
+        try await handle.send(opcode: .fileSystemTestLockResponse, message: FileSystemTestLockResponse(
+            requestId: request.requestId, success: true, canAcquire: false,
+            conflictingType: conflictingType,
+            conflictingOffset: UInt64(fl.l_start),
+            conflictingLength: conflictingLength,
+            error: nil))
+#else
+        try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
+            code: .notSupported, message: "Byte-range locking is not supported on this platform.")
+#endif
+    }
+
     // MARK: - Stream Read / Write
 
     private func handleStreamRead(_ request: FileSystemRequestStreamReadRequest) async throws {
@@ -934,6 +1122,17 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         case .fileSystemRequestStreamWriteResponse:
             try await handle.send(opcode: opcode, message: FileSystemRequestStreamWriteResponse(
                 requestId: requestId, success: false, transferId: UUID(), error: info))
+        case .fileSystemLockResponse:
+            try await handle.send(opcode: opcode, message: FileSystemLockResponse(
+                requestId: requestId, success: false, error: info))
+        case .fileSystemUnlockResponse:
+            try await handle.send(opcode: opcode, message: FileSystemUnlockResponse(
+                requestId: requestId, success: false, error: info))
+        case .fileSystemTestLockResponse:
+            try await handle.send(opcode: opcode, message: FileSystemTestLockResponse(
+                requestId: requestId, success: false, canAcquire: false,
+                conflictingType: .shared, conflictingOffset: 0, conflictingLength: 0,
+                error: info))
         default:
             logger.warning("sendError: unhandled response opcode \(opcode) — message: \(message)")
         }

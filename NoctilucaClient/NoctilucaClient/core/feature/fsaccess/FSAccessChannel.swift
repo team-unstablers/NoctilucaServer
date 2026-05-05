@@ -26,6 +26,18 @@ private enum FSAccessControlLimits {
     static let reasonHard = 8 * 1024
 }
 
+/// 이 빌드(=exposing peer)가 host OS 수준의 byte-range lock 을 안정적으로
+/// 지원하는지 광고하는 capability flag. macOS 는 `fcntl(F_SETLK)` / OFD 로 진짜
+/// lock 이 잡히지만, iOS 는 sandbox / 프록시 파일시스템 특성상 신뢰할 수 없으므로
+/// false. 이 값은 `FileSystemMountResponse.supportsLocks` 로 그대로 전달되며,
+/// `fsaccess_mount.mdproto.md` 의 LOCK SEMANTICS 부록에 명시된 capability
+/// negotiation 계약을 따른다.
+#if os(macOS)
+private let kFSAccessHostSupportsLocks = true
+#else
+private let kFSAccessHostSupportsLocks = false
+#endif
+
 // MARK: - FSAccessChannel
 
 final class FSAccessChannel: Channel, ChannelEventConsumer {
@@ -234,10 +246,11 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
                 success: true,
                 sessionId: session.id,
                 grantedAccess: grantedAccess,
-                error: nil
+                error: nil,
+                supportsLocks: kFSAccessHostSupportsLocks
             ))
 
-            logger.info("Mount granted: session=\(session.id) entry=\(entry.name) access=\(grantedAccess.rawValue)")
+            logger.info("Mount granted: session=\(session.id) entry=\(entry.name) access=\(grantedAccess.rawValue) supportsLocks=\(kFSAccessHostSupportsLocks)")
         }
     }
 
@@ -247,7 +260,8 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
             success: false,
             sessionId: UUID(),
             grantedAccess: .read,
-            error: FSAccessErrorMapper.errorInfo(code, message: message)
+            error: FSAccessErrorMapper.errorInfo(code, message: message),
+            supportsLocks: false
         ))
     }
 
