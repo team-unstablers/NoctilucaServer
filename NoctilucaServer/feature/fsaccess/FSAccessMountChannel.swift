@@ -32,6 +32,9 @@ enum FSAccessMountReply: Sendable {
     case unlink(FileSystemUnlinkResponse)
     case rename(FileSystemRenameResponse)
     case ftruncate(FileSystemFTruncateResponse)
+    case lock(FileSystemLockResponse)
+    case unlock(FileSystemUnlockResponse)
+    case testLock(FileSystemTestLockResponse)
 }
 
 // MARK: - FSAccessMountChannel
@@ -44,6 +47,12 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
     /// 본 mount channel 이 묶여있는 세션 id (`FileSystemMountResponse.sessionId`).
     let sessionId: UUID
+
+    /// `FileSystemMountResponse.supportsLocks` capability. NFS LOCK / LOCKT /
+    /// LOCKU callback 의 wire dispatch 여부를 결정한다 — true 면 wire 로
+    /// 보내고, false 면 host 측에서 fake success 로 시뮬레이션. mount channel
+    /// 생성 직후 control channel 측에서 1회 set 하며 그 이후로는 read-only.
+    nonisolated(unsafe) var supportsLocks: Bool = false
 
     /// 응답 매칭. requestId → continuation.
     let pending = PendingMountReplies()
@@ -231,6 +240,15 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         case .fileSystemFTruncateResponse:
             let r = try FileSystemFTruncateResponse.fromProtobufBytes(frame.data)
             await pending.resolve(id: r.requestId, .ftruncate(r))
+        case .fileSystemLockResponse:
+            let r = try FileSystemLockResponse.fromProtobufBytes(frame.data)
+            await pending.resolve(id: r.requestId, .lock(r))
+        case .fileSystemUnlockResponse:
+            let r = try FileSystemUnlockResponse.fromProtobufBytes(frame.data)
+            await pending.resolve(id: r.requestId, .unlock(r))
+        case .fileSystemTestLockResponse:
+            let r = try FileSystemTestLockResponse.fromProtobufBytes(frame.data)
+            await pending.resolve(id: r.requestId, .testLock(r))
 
         default:
             logger.warning("Received unexpected opcode on host-side fsaccess_mount channel: \(frame.opcode)")
@@ -380,6 +398,37 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         let req = FileSystemFTruncateRequest(requestId: id, handleId: handleId, length: length)
         let reply = try await sendAndAwait(opcode: .fileSystemFTruncateRequest, message: req, requestId: id)
         guard case .ftruncate(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    // MARK: - Byte-range locking
+
+    /// 비-블로킹 try-lock. mdproto LOCK SEMANTICS 부록 참고.
+    /// `length == 0xFFFFFFFFFFFFFFFF` 는 "from offset to EOF" sentinel.
+    func sendLock(handleId: UInt64, type: LockType, offset: UInt64, length: UInt64) async throws -> FileSystemLockResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemLockRequest(requestId: id, handleId: handleId, type: type, offset: offset, length: length)
+        let reply = try await sendAndAwait(opcode: .fileSystemLockRequest, message: req, requestId: id)
+        guard case .lock(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    /// `length == 0xFFFFFFFFFFFFFFFF` 는 "from offset to EOF" sentinel.
+    /// not-held 범위 unlock 도 success 로 보고됨 (POSIX 와 일치).
+    func sendUnlock(handleId: UInt64, offset: UInt64, length: UInt64) async throws -> FileSystemUnlockResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemUnlockRequest(requestId: id, handleId: handleId, offset: offset, length: length)
+        let reply = try await sendAndAwait(opcode: .fileSystemUnlockRequest, message: req, requestId: id)
+        guard case .unlock(let response) = reply else { throw FSAccessChannelError.responseMismatch }
+        return response
+    }
+
+    /// POSIX `fcntl(F_GETLK)` 등가물. 결과는 advisory.
+    func sendTestLock(handleId: UInt64, type: LockType, offset: UInt64, length: UInt64) async throws -> FileSystemTestLockResponse {
+        let id = await requestIds.issue()
+        let req = FileSystemTestLockRequest(requestId: id, handleId: handleId, type: type, offset: offset, length: length)
+        let reply = try await sendAndAwait(opcode: .fileSystemTestLockRequest, message: req, requestId: id)
+        guard case .testLock(let response) = reply else { throw FSAccessChannelError.responseMismatch }
         return response
     }
 }

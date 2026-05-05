@@ -143,19 +143,23 @@ extension NoctilucaClientSession {
                 identifier: ChannelIdentifier(),
                 args: FSAccessMountChannelArgs.encode(sessionId: mountResponse.sessionId)
             )
-            guard mountChannel is FSAccessMountChannel else {
+            guard let fsMountChannel = mountChannel as? FSAccessMountChannel else {
                 Self.fsAccessLogger.error("fsaccess: opened mount channel is not FSAccessMountChannel")
                 await NocFSAccessHost.shared.removeMountSession(mountResponse.sessionId)
                 return
             }
+            // capability flag 를 mount channel 자체에 저장 — NFS lock callback
+            // dispatch 에서 supportsLocks 분기 판단에 사용.
+            fsMountChannel.supportsLocks = mountResponse.supportsLocks
             let record = FSAccessMountSessionRecord(
                 id: mountResponse.sessionId,
                 connectionLabel: connectionLabel,
                 entry: entry,
-                grantedAccess: mountResponse.grantedAccess
+                grantedAccess: mountResponse.grantedAccess,
+                supportsLocks: mountResponse.supportsLocks
             )
             await channel.state.addMountSession(record)
-            Self.fsAccessLogger.info("fsaccess: auto-mounted '\(entry.name)' (session=\(mountResponse.sessionId.uuidString) granted=\(mountResponse.grantedAccess.rawValue))")
+            Self.fsAccessLogger.info("fsaccess: auto-mounted '\(entry.name)' (session=\(mountResponse.sessionId.uuidString) granted=\(mountResponse.grantedAccess.rawValue) supportsLocks=\(mountResponse.supportsLocks))")
         } catch {
             Self.fsAccessLogger.error("fsaccess: openChannel(.fileSystemAccessMount) failed for '\(entry.name)': \(error)")
             await NocFSAccessHost.shared.removeMountSession(mountResponse.sessionId)

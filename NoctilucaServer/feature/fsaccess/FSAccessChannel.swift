@@ -214,7 +214,8 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
                         success: false,
                         sessionId: UUID(),
                         grantedAccess: .read,
-                        error: ErrorInfo(code: .internal, message: "send failed: \(error)", platformCode: nil, platformName: nil)
+                        error: ErrorInfo(code: .internal, message: "send failed: \(error)", platformCode: nil, platformName: nil),
+                        supportsLocks: false
                     ))
                 }
             }
