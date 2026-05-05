@@ -828,21 +828,121 @@ actor NoctilucaNFSServer: NFSServer {
         return 0
     }
 
-    // MARK: - Locking — fake success.
+    // MARK: - Locking
     //
-    // NFSv4 LOCK 을 NFS4ERR_NOTSUPP 로 환원하면 QuickTime 같은 까다로운 client
-    // 가 read 시작도 못 한다 (mpv 는 lock 안 잡아서 OK). 실제 byte-range lock
-    // 이 navigator 측 fd 에 적용되지 않더라도 client 입장에서 lock 잡힌 것처럼
-    // 응답해 주면 read 가 진행된다. stateid 는 client 가 보낸 값 + seqid 증가
-    // 로 echo (RFC 7530 §8.1.5).
+    // NFSv4 LOCK / LOCKT / LOCKU 를 mount session 의 supportsLocks capability
+    // 에 따라 두 가지 경로로 분기한다.
+    //
+    // - `supportsLocks == false` (예: iOS navigator): NFS4ERR_NOTSUPP 로 환원하면
+    //   QuickTime 같은 까다로운 client 가 read 시작도 못 하므로, 종전대로
+    //   '잡힌 척' 응답 (fake success / lockTest=granted / unlock=success).
+    // - `supportsLocks == true` (예: macOS navigator): fsaccess_mount channel
+    //   로 dispatch 해서 navigator host OS 의 byte-range lock 으로 매핑한다.
+    //
+    // stateid 는 RFC 7530 §8.1.5 에 따라 echo + seqid 증가.
+
+    private static func lockType(from nfs: NFSLockType) -> LockType {
+        switch nfs {
+        case .readShared, .readSharedBlocking: return .shared
+        case .writeExclusive, .writeExclusiveBlocking: return .exclusive
+        }
+    }
+
+    /// fsaccess `LockType` → NFS `NFSLockType` (LOCKT denied 응답에서 사용).
+    /// 차단 variant 정보는 wire 에 없으므로 non-blocking 으로 환원한다.
+    private static func nfsLockType(from fsa: LockType) -> NFSLockType {
+        return fsa == .exclusive ? .writeExclusive : .readShared
+    }
+
+    /// hostFile entry 에서 (channel, navigatorHandleId, supportsLocks) 추출.
+    /// stale 한 record 등은 badHandle 로 매핑.
+    /// `supportsLocks` 는 navigator 의 capability 광고와 host 측의 useFakeLocks
+    /// 정책을 함께 반영한 effective 값. useFakeLocks=true 면 강제 false 로 다운
+    /// 그레이드되어 lock callback 이 fake success 로 떨어진다.
+    private func resolveLockTarget(_ handle: NFSFileHandle) async throws -> (FSAccessMountChannel, UInt64, Bool) {
+        let (_, entry) = try await decodeHandle(handle)
+        guard entry.kind == .hostFile,
+              let mountSessionId = entry.mountSessionId,
+              let hostFileId = entry.hostFileId else {
+            throw NFSError.badHandle
+        }
+        let channel = try await channel(for: mountSessionId)
+        guard let navHandle = await channel.pathMap.record(forHostHandleId: hostFileId)?.navigatorHandleId else {
+            throw NFSError.badHandle
+        }
+        let useFakeLocks = await NocFSAccessHost.shared.useFakeLocks
+        let effectiveSupportsLocks = channel.supportsLocks && !useFakeLocks
+        return (channel, navHandle, effectiveSupportsLocks)
+    }
 
     func lock(handle: NFSFileHandle, type: NFSLockType, range: NFSLockRange, owner: NFSLockOwner, reclaim: Bool, stateid: NFSStateID) async throws -> NFSStateID {
+        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle)
+        if !supportsLocks {
+            return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
+        }
+        let response = try await channel.sendLock(
+            handleId: navHandle,
+            type: Self.lockType(from: type),
+            offset: range.offset,
+            length: range.length
+        )
+        if !response.success {
+            // navigator 가 supportsLocks=true 라고 광고했음에도 notSupported 를
+            // 반환한 비정상 케이스: 안전하게 fake success 로 fallback (client
+            // 가 read 시작도 못 하는 사태 회피).
+            if response.error?.code == .notSupported {
+                logger.warning("fsaccess: navigator advertised supportsLocks=true but returned notSupported on Lock — falling back to fake success")
+                return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
+            }
+            if response.error?.code == .wouldBlock {
+                throw NFSError.lockDenied(conflict: range, type: type, owner: owner)
+            }
+            throw Self.nfsError(from: response.error)
+        }
         return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
     }
+
     func lockTest(handle: NFSFileHandle, type: NFSLockType, range: NFSLockRange, owner: NFSLockOwner) async throws -> NFSLockTestResult {
-        return NFSLockTestResult(outcome: .granted)
+        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle)
+        if !supportsLocks {
+            return NFSLockTestResult(outcome: .granted)
+        }
+        let response = try await channel.sendTestLock(
+            handleId: navHandle,
+            type: Self.lockType(from: type),
+            offset: range.offset,
+            length: range.length
+        )
+        if !response.success {
+            if response.error?.code == .notSupported {
+                return NFSLockTestResult(outcome: .granted)
+            }
+            throw Self.nfsError(from: response.error)
+        }
+        if response.canAcquire {
+            return NFSLockTestResult(outcome: .granted)
+        }
+        let conflictRange = NFSLockRange(offset: response.conflictingOffset, length: response.conflictingLength)
+        let conflictType = Self.nfsLockType(from: response.conflictingType)
+        return NFSLockTestResult(outcome: .denied(conflict: conflictRange, type: conflictType, owner: owner))
     }
+
     func unlock(handle: NFSFileHandle, range: NFSLockRange, stateid: NFSStateID) async throws -> NFSStateID {
+        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle)
+        if !supportsLocks {
+            return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
+        }
+        let response = try await channel.sendUnlock(
+            handleId: navHandle,
+            offset: range.offset,
+            length: range.length
+        )
+        if !response.success {
+            if response.error?.code == .notSupported {
+                return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
+            }
+            throw Self.nfsError(from: response.error)
+        }
         return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
     }
 
