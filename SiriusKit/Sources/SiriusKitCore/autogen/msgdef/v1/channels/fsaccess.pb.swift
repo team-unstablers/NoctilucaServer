@@ -223,6 +223,9 @@ struct Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: Sendable {
   /// Clears the value of `error`. Subsequent reads from it will return its default value.
   mutating func clearError() {self._error = nil}
 
+  //// Whether the exposing peer supports byte-range locking on this mount session. When false, all three lock operations on the corresponding `fsaccess_mount` channel (`FileSystemLockRequest`, `FileSystemUnlockRequest`, `FileSystemTestLockRequest`) MUST fail with `notSupported`, and the consuming peer SHOULD avoid sending them. See the `LOCK SEMANTICS` appendix of `fsaccess_mount.mdproto.md` for the full capability-negotiation contract.
+  var supportsLocks: Bool = false
+
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
@@ -530,7 +533,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountRequest: SwiftProtob
 
 extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".FileSystemMountResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}sessionId\0\u{1}grantedAccess\0\u{1}error\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}sessionId\0\u{1}grantedAccess\0\u{1}error\0\u{1}supportsLocks\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -543,6 +546,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProto
       case 3: try { try decoder.decodeSingularMessageField(value: &self._sessionID) }()
       case 4: try { try decoder.decodeSingularUInt32Field(value: &self.grantedAccess) }()
       case 5: try { try decoder.decodeSingularMessageField(value: &self._error) }()
+      case 6: try { try decoder.decodeSingularBoolField(value: &self.supportsLocks) }()
       default: break
       }
     }
@@ -568,6 +572,9 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProto
     try { if let v = self._error {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
     } }()
+    if self.supportsLocks != false {
+      try visitor.visitSingularBoolField(value: self.supportsLocks, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -577,6 +584,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProto
     if lhs._sessionID != rhs._sessionID {return false}
     if lhs.grantedAccess != rhs.grantedAccess {return false}
     if lhs._error != rhs._error {return false}
+    if lhs.supportsLocks != rhs.supportsLocks {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

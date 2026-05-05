@@ -888,6 +888,177 @@ struct Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemRequestStreamWriteRespo
   fileprivate var _error: Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo? = nil
 }
 
+//// Acquires a byte-range advisory lock on an open file handle. The operation is strictly non-blocking: if any conflicting lock currently exists on overlapping bytes, the request MUST fail immediately with `wouldBlock`.
+/// @opcode: 0x80C1
+struct Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  var handleID: UInt64 = 0
+
+  //// Type of lock to acquire.
+  /// @constset: LockType
+  var type: UInt32 = 0
+
+  //// Absolute offset within the file at which the locked range begins.
+  var offset: UInt64 = 0
+
+  //// Length of the locked range in bytes. The sentinel value `0xFFFFFFFFFFFFFFFF` means "from `offset` to the maximum possible end of file" (whole-file lock when `offset = 0`). A value of zero is invalid and MUST fail with `invalidArgument`.
+  var length: UInt64 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// Response to a FileSystemLockRequest.
+/// @opcode: 0x80C2
+struct Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  var success: Bool = false
+
+  //// Populated when `success` is false. Common codes include `wouldBlock` (a conflicting lock exists), `notSupported` (the mount session reports `supportsLocks = false`), `invalidHandle`, `invalidArgument` (re-lock on an identical range, `length = 0`, etc.), and `permissionDenied` (the requested lock type exceeds the handle's `accessMode`).
+  var error: Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo {
+    get {return _error ?? Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo()}
+    set {_error = newValue}
+  }
+  /// Returns true if `error` has been explicitly set.
+  var hasError: Bool {return self._error != nil}
+  /// Clears the value of `error`. Subsequent reads from it will return its default value.
+  mutating func clearError() {self._error = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _error: Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo? = nil
+}
+
+//// Releases byte-range locks held on an open file handle.
+/// @opcode: 0x80C3
+struct Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  var handleID: UInt64 = 0
+
+  //// Absolute offset within the file at which the unlock range begins.
+  var offset: UInt64 = 0
+
+  //// Length of the unlock range in bytes. The sentinel value `0xFFFFFFFFFFFFFFFF` means "from `offset` to the maximum possible end of file". A value of zero is invalid and MUST fail with `invalidArgument`.
+  var length: UInt64 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// Response to a FileSystemUnlockRequest.
+/// @opcode: 0x80C4
+struct Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  var success: Bool = false
+
+  //// Populated when `success` is false. Common codes include `notSupported` (the mount session reports `supportsLocks = false`), `invalidHandle`, and `invalidArgument` (`length = 0`).
+  var error: Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo {
+    get {return _error ?? Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo()}
+    set {_error = newValue}
+  }
+  /// Returns true if `error` has been explicitly set.
+  var hasError: Bool {return self._error != nil}
+  /// Clears the value of `error`. Subsequent reads from it will return its default value.
+  mutating func clearError() {self._error = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _error: Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo? = nil
+}
+
+//// Probes whether a byte-range lock could be acquired without actually acquiring it. Equivalent in intent to POSIX `fcntl(F_GETLK)`.
+/// @opcode: 0x80C5
+struct Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  var handleID: UInt64 = 0
+
+  //// Type of lock that would be attempted.
+  /// @constset: LockType
+  var type: UInt32 = 0
+
+  //// Absolute offset within the file at which the candidate range begins.
+  var offset: UInt64 = 0
+
+  //// Length of the candidate range in bytes. The sentinel value `0xFFFFFFFFFFFFFFFF` means "from `offset` to the maximum possible end of file". A value of zero is invalid and MUST fail with `invalidArgument`.
+  var length: UInt64 = 0
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// Response to a FileSystemTestLockRequest.
+/// @opcode: 0x80C6
+struct Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  var requestID: UInt64 = 0
+
+  var success: Bool = false
+
+  //// True when a `FileSystemLockRequest` with the same `type`, `offset`, and `length` would be expected to succeed at the moment of the test. Valid only when `success` is true.
+  var canAcquire: Bool = false
+
+  //// Type of an existing lock that would conflict with the requested acquisition. Populated only when `success` is true and `canAcquire` is false.
+  /// @constset: LockType
+  var conflictingType: UInt32 = 0
+
+  //// Absolute offset of an existing conflicting lock. Populated only when `success` is true and `canAcquire` is false. The reported range MAY be wider than the requested range when a single existing lock spans more bytes than were probed.
+  var conflictingOffset: UInt64 = 0
+
+  //// Length of an existing conflicting lock. Populated only when `success` is true and `canAcquire` is false. Uses the same sentinel encoding as `FileSystemLockRequest.length`.
+  var conflictingLength: UInt64 = 0
+
+  //// Populated when `success` is false. Common codes include `notSupported` (the mount session reports `supportsLocks = false`), `invalidHandle`, and `invalidArgument` (`length = 0`).
+  var error: Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo {
+    get {return _error ?? Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo()}
+    set {_error = newValue}
+  }
+  /// Returns true if `error` has been explicitly set.
+  var hasError: Bool {return self._error != nil}
+  /// Clears the value of `error`. Subsequent reads from it will return its default value.
+  mutating func clearError() {self._error = nil}
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+
+  fileprivate var _error: Sirius_Msgdef_V1_Channels_Fsaccess_ErrorInfo? = nil
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "sirius.msgdef.v1.channels.fsaccess_mount"
@@ -2324,6 +2495,303 @@ extension Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemRequestStreamWriteRe
     if lhs.requestID != rhs.requestID {return false}
     if lhs.success != rhs.success {return false}
     if lhs._transferID != rhs._transferID {return false}
+    if lhs._error != rhs._error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".FileSystemLockRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}handleId\0\u{1}type\0\u{1}offset\0\u{1}length\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.handleID) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.type) }()
+      case 4: try { try decoder.decodeSingularUInt64Field(value: &self.offset) }()
+      case 5: try { try decoder.decodeSingularUInt64Field(value: &self.length) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.handleID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.handleID, fieldNumber: 2)
+    }
+    if self.type != 0 {
+      try visitor.visitSingularUInt32Field(value: self.type, fieldNumber: 3)
+    }
+    if self.offset != 0 {
+      try visitor.visitSingularUInt64Field(value: self.offset, fieldNumber: 4)
+    }
+    if self.length != 0 {
+      try visitor.visitSingularUInt64Field(value: self.length, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockRequest, rhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.handleID != rhs.handleID {return false}
+    if lhs.type != rhs.type {return false}
+    if lhs.offset != rhs.offset {return false}
+    if lhs.length != rhs.length {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".FileSystemLockResponse"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}error\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.success) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._error) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.success != false {
+      try visitor.visitSingularBoolField(value: self.success, fieldNumber: 2)
+    }
+    try { if let v = self._error {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockResponse, rhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockResponse) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.success != rhs.success {return false}
+    if lhs._error != rhs._error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".FileSystemUnlockRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}handleId\0\u{1}offset\0\u{1}length\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.handleID) }()
+      case 3: try { try decoder.decodeSingularUInt64Field(value: &self.offset) }()
+      case 4: try { try decoder.decodeSingularUInt64Field(value: &self.length) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.handleID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.handleID, fieldNumber: 2)
+    }
+    if self.offset != 0 {
+      try visitor.visitSingularUInt64Field(value: self.offset, fieldNumber: 3)
+    }
+    if self.length != 0 {
+      try visitor.visitSingularUInt64Field(value: self.length, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockRequest, rhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.handleID != rhs.handleID {return false}
+    if lhs.offset != rhs.offset {return false}
+    if lhs.length != rhs.length {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".FileSystemUnlockResponse"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}error\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.success) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._error) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.success != false {
+      try visitor.visitSingularBoolField(value: self.success, fieldNumber: 2)
+    }
+    try { if let v = self._error {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockResponse, rhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockResponse) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.success != rhs.success {return false}
+    if lhs._error != rhs._error {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".FileSystemTestLockRequest"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}handleId\0\u{1}type\0\u{1}offset\0\u{1}length\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularUInt64Field(value: &self.handleID) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.type) }()
+      case 4: try { try decoder.decodeSingularUInt64Field(value: &self.offset) }()
+      case 5: try { try decoder.decodeSingularUInt64Field(value: &self.length) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.handleID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.handleID, fieldNumber: 2)
+    }
+    if self.type != 0 {
+      try visitor.visitSingularUInt32Field(value: self.type, fieldNumber: 3)
+    }
+    if self.offset != 0 {
+      try visitor.visitSingularUInt64Field(value: self.offset, fieldNumber: 4)
+    }
+    if self.length != 0 {
+      try visitor.visitSingularUInt64Field(value: self.length, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockRequest, rhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockRequest) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.handleID != rhs.handleID {return false}
+    if lhs.type != rhs.type {return false}
+    if lhs.offset != rhs.offset {return false}
+    if lhs.length != rhs.length {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".FileSystemTestLockResponse"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}canAcquire\0\u{1}conflictingType\0\u{1}conflictingOffset\0\u{1}conflictingLength\0\u{1}error\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.requestID) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.success) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.canAcquire) }()
+      case 4: try { try decoder.decodeSingularUInt32Field(value: &self.conflictingType) }()
+      case 5: try { try decoder.decodeSingularUInt64Field(value: &self.conflictingOffset) }()
+      case 6: try { try decoder.decodeSingularUInt64Field(value: &self.conflictingLength) }()
+      case 7: try { try decoder.decodeSingularMessageField(value: &self._error) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.requestID != 0 {
+      try visitor.visitSingularUInt64Field(value: self.requestID, fieldNumber: 1)
+    }
+    if self.success != false {
+      try visitor.visitSingularBoolField(value: self.success, fieldNumber: 2)
+    }
+    if self.canAcquire != false {
+      try visitor.visitSingularBoolField(value: self.canAcquire, fieldNumber: 3)
+    }
+    if self.conflictingType != 0 {
+      try visitor.visitSingularUInt32Field(value: self.conflictingType, fieldNumber: 4)
+    }
+    if self.conflictingOffset != 0 {
+      try visitor.visitSingularUInt64Field(value: self.conflictingOffset, fieldNumber: 5)
+    }
+    if self.conflictingLength != 0 {
+      try visitor.visitSingularUInt64Field(value: self.conflictingLength, fieldNumber: 6)
+    }
+    try { if let v = self._error {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockResponse, rhs: Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockResponse) -> Bool {
+    if lhs.requestID != rhs.requestID {return false}
+    if lhs.success != rhs.success {return false}
+    if lhs.canAcquire != rhs.canAcquire {return false}
+    if lhs.conflictingType != rhs.conflictingType {return false}
+    if lhs.conflictingOffset != rhs.conflictingOffset {return false}
+    if lhs.conflictingLength != rhs.conflictingLength {return false}
     if lhs._error != rhs._error {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

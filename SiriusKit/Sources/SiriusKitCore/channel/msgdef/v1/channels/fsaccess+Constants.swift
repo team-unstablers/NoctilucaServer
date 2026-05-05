@@ -101,6 +101,8 @@ public struct FileSystemErrorCode: RawRepresentable, Hashable, Equatable, Codabl
     public static let busy = FileSystemErrorCode(rawValue: 80)
     /// Handle refers to an entry that no longer exists or has been replaced. (POSIX: ESTALE)
     public static let staleHandle = FileSystemErrorCode(rawValue: 81)
+    /// A non-blocking operation could not complete because it would have blocked. Used by `FileSystemLockRequest` when a conflicting lock already exists on the requested byte range. (POSIX: EAGAIN / EWOULDBLOCK)
+    public static let wouldBlock = FileSystemErrorCode(rawValue: 82)
 
     // I/O
 

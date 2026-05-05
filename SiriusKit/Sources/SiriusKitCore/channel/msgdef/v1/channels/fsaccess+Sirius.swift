@@ -205,19 +205,22 @@ public struct FileSystemMountResponse: SiriusMessage {
     public let sessionId: UUID
     public let grantedAccess: AccessMode
     public let error: ErrorInfo?
+    public let supportsLocks: Bool
 
     public init(
         requestId: UInt64,
         success: Bool,
         sessionId: UUID,
         grantedAccess: AccessMode,
-        error: ErrorInfo?
+        error: ErrorInfo?,
+        supportsLocks: Bool
     ) {
         self.requestId = requestId
         self.success = success
         self.sessionId = sessionId
         self.grantedAccess = grantedAccess
         self.error = error
+        self.supportsLocks = supportsLocks
     }
 
     init(from protobuf: ProtobufMessage) throws {
@@ -226,6 +229,7 @@ public struct FileSystemMountResponse: SiriusMessage {
         self.sessionId = UUID(msgdef: protobuf.sessionID)
         self.grantedAccess = AccessMode(rawValue: protobuf.grantedAccess)
         self.error = protobuf.hasError ? try ErrorInfo(from: protobuf.error) : nil
+        self.supportsLocks = protobuf.supportsLocks
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -238,6 +242,7 @@ public struct FileSystemMountResponse: SiriusMessage {
         if let val = self.error {
             message.error = val.toProtobufMessage()
         }
+        message.supportsLocks = supportsLocks
 
         return message
     }

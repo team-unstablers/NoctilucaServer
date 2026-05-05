@@ -44,3 +44,16 @@ public struct FileType: RawRepresentable, Hashable, Equatable, Codable, Sendable
     /// Other type (block device, character device, FIFO, socket, etc.).
     public static let other = FileType(rawValue: 99)
 }
+
+public struct LockType: RawRepresentable, Hashable, Equatable, Codable, Sendable {
+    public let rawValue: UInt32
+
+    public init(rawValue: UInt32) {
+        self.rawValue = rawValue
+    }
+
+    /// Shared (read) lock. Multiple shared locks MAY coexist on overlapping ranges across different handles, but no exclusive lock MAY coexist with a shared lock on overlapping ranges. (POSIX: F_RDLCK)
+    public static let shared = LockType(rawValue: 0)
+    /// Exclusive (write) lock. Only one exclusive lock MAY exist on a given range, and it MUST NOT coexist with any other lock (shared or exclusive) on overlapping ranges. (POSIX: F_WRLCK)
+    public static let exclusive = LockType(rawValue: 1)
+}

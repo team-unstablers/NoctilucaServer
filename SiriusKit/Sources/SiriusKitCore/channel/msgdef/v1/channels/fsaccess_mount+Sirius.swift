@@ -39,6 +39,12 @@ public extension MessageOpcode {
     static let fileSystemRequestStreamReadResponse: MessageOpcode = MessageOpcode(rawValue: 0x80A2)
     static let fileSystemRequestStreamWriteRequest: MessageOpcode = MessageOpcode(rawValue: 0x80A3)
     static let fileSystemRequestStreamWriteResponse: MessageOpcode = MessageOpcode(rawValue: 0x80A4)
+    static let fileSystemLockRequest: MessageOpcode = MessageOpcode(rawValue: 0x80C1)
+    static let fileSystemLockResponse: MessageOpcode = MessageOpcode(rawValue: 0x80C2)
+    static let fileSystemUnlockRequest: MessageOpcode = MessageOpcode(rawValue: 0x80C3)
+    static let fileSystemUnlockResponse: MessageOpcode = MessageOpcode(rawValue: 0x80C4)
+    static let fileSystemTestLockRequest: MessageOpcode = MessageOpcode(rawValue: 0x80C5)
+    static let fileSystemTestLockResponse: MessageOpcode = MessageOpcode(rawValue: 0x80C6)
 }
 
 public struct FileStat: SiriusMessage {
@@ -1140,6 +1146,236 @@ public struct FileSystemRequestStreamWriteResponse: SiriusMessage {
         message.requestID = requestId
         message.success = success
         message.transferID = transferId.asMsgDef()
+        if let val = self.error {
+            message.error = val.toProtobufMessage()
+        }
+
+        return message
+    }
+}
+
+public struct FileSystemLockRequest: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockRequest
+
+    public let requestId: UInt64
+    public let handleId: UInt64
+    public let type: LockType
+    public let offset: UInt64
+    public let length: UInt64
+
+    public init(requestId: UInt64, handleId: UInt64, type: LockType, offset: UInt64, length: UInt64) {
+        self.requestId = requestId
+        self.handleId = handleId
+        self.type = type
+        self.offset = offset
+        self.length = length
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.requestId = protobuf.requestID
+        self.handleId = protobuf.handleID
+        self.type = LockType(rawValue: protobuf.type)
+        self.offset = protobuf.offset
+        self.length = protobuf.length
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.requestID = requestId
+        message.handleID = handleId
+        message.type = type.rawValue
+        message.offset = offset
+        message.length = length
+
+        return message
+    }
+}
+
+public struct FileSystemLockResponse: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemLockResponse
+
+    public let requestId: UInt64
+    public let success: Bool
+    public let error: ErrorInfo?
+
+    public init(requestId: UInt64, success: Bool, error: ErrorInfo?) {
+        self.requestId = requestId
+        self.success = success
+        self.error = error
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.requestId = protobuf.requestID
+        self.success = protobuf.success
+        self.error = protobuf.hasError ? try ErrorInfo(from: protobuf.error) : nil
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.requestID = requestId
+        message.success = success
+        if let val = self.error {
+            message.error = val.toProtobufMessage()
+        }
+
+        return message
+    }
+}
+
+public struct FileSystemUnlockRequest: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockRequest
+
+    public let requestId: UInt64
+    public let handleId: UInt64
+    public let offset: UInt64
+    public let length: UInt64
+
+    public init(requestId: UInt64, handleId: UInt64, offset: UInt64, length: UInt64) {
+        self.requestId = requestId
+        self.handleId = handleId
+        self.offset = offset
+        self.length = length
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.requestId = protobuf.requestID
+        self.handleId = protobuf.handleID
+        self.offset = protobuf.offset
+        self.length = protobuf.length
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.requestID = requestId
+        message.handleID = handleId
+        message.offset = offset
+        message.length = length
+
+        return message
+    }
+}
+
+public struct FileSystemUnlockResponse: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemUnlockResponse
+
+    public let requestId: UInt64
+    public let success: Bool
+    public let error: ErrorInfo?
+
+    public init(requestId: UInt64, success: Bool, error: ErrorInfo?) {
+        self.requestId = requestId
+        self.success = success
+        self.error = error
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.requestId = protobuf.requestID
+        self.success = protobuf.success
+        self.error = protobuf.hasError ? try ErrorInfo(from: protobuf.error) : nil
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.requestID = requestId
+        message.success = success
+        if let val = self.error {
+            message.error = val.toProtobufMessage()
+        }
+
+        return message
+    }
+}
+
+public struct FileSystemTestLockRequest: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockRequest
+
+    public let requestId: UInt64
+    public let handleId: UInt64
+    public let type: LockType
+    public let offset: UInt64
+    public let length: UInt64
+
+    public init(requestId: UInt64, handleId: UInt64, type: LockType, offset: UInt64, length: UInt64) {
+        self.requestId = requestId
+        self.handleId = handleId
+        self.type = type
+        self.offset = offset
+        self.length = length
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.requestId = protobuf.requestID
+        self.handleId = protobuf.handleID
+        self.type = LockType(rawValue: protobuf.type)
+        self.offset = protobuf.offset
+        self.length = protobuf.length
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.requestID = requestId
+        message.handleID = handleId
+        message.type = type.rawValue
+        message.offset = offset
+        message.length = length
+
+        return message
+    }
+}
+
+public struct FileSystemTestLockResponse: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_FsaccessMount_FileSystemTestLockResponse
+
+    public let requestId: UInt64
+    public let success: Bool
+    public let canAcquire: Bool
+    public let conflictingType: LockType
+    public let conflictingOffset: UInt64
+    public let conflictingLength: UInt64
+    public let error: ErrorInfo?
+
+    public init(
+        requestId: UInt64,
+        success: Bool,
+        canAcquire: Bool,
+        conflictingType: LockType,
+        conflictingOffset: UInt64,
+        conflictingLength: UInt64,
+        error: ErrorInfo?
+    ) {
+        self.requestId = requestId
+        self.success = success
+        self.canAcquire = canAcquire
+        self.conflictingType = conflictingType
+        self.conflictingOffset = conflictingOffset
+        self.conflictingLength = conflictingLength
+        self.error = error
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.requestId = protobuf.requestID
+        self.success = protobuf.success
+        self.canAcquire = protobuf.canAcquire
+        self.conflictingType = LockType(rawValue: protobuf.conflictingType)
+        self.conflictingOffset = protobuf.conflictingOffset
+        self.conflictingLength = protobuf.conflictingLength
+        self.error = protobuf.hasError ? try ErrorInfo(from: protobuf.error) : nil
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.requestID = requestId
+        message.success = success
+        message.canAcquire = canAcquire
+        message.conflictingType = conflictingType.rawValue
+        message.conflictingOffset = conflictingOffset
+        message.conflictingLength = conflictingLength
         if let val = self.error {
             message.error = val.toProtobufMessage()
         }
