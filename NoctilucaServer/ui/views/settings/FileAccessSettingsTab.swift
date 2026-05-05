@@ -3,6 +3,7 @@
 //  NoctilucaServer
 //
 
+import AppKit
 import SwiftUI
 import Inject
 
@@ -15,100 +16,307 @@ struct FileAccessSettingsTab: View {
     @Binding
     var settings: AppSettings
 
+    /// `enabled` 토글이 변경되어 사용자 confirm 을 기다리는 중이면 그 목표 값.
+    /// nil 이면 alert 미표시.
+    @State
+    private var pendingEnabledChange: Bool?
+
+    /// "다시 마운트하기" 진행 중 표시 (이중 클릭 방지용).
+    @State
+    private var isRemounting: Bool = false
+
     var body: some View {
         Form {
             Section {
-                Toggle(isOn: $settings.fileAccess.enabled) {
+                Toggle(isOn: enabledBinding) {
                     Text(markdown: String(
                         localized: "settings.file_access.enabled.title",
-                        defaultValue: "원격 파일 시스템 마운트 사용하기"
+                        defaultValue: "파일 시스템 액세스 사용하기"
                     ))
                     Text(markdown: String(
                         localized: "settings.file_access.enabled.description",
-                        defaultValue: "이 옵션을 켜면 connect 해 온 클라이언트(navigator)가 노출하는 폴더를 호스트 머신의 Finder에 NFS 마운트 형태로 띄울 수 있게 됩니다. 자기 파일을 *내보내는* 기능이 아니라, 원격에서 받은 파일을 *받아서 마운트* 하는 기능입니다."
+                        defaultValue: "클라이언트의 파일 시스템에 액세스하는 `fsaccess` 채널을 켭니다.\n이 기능을 켜면 원격 클라이언트가 가지고 있는 파일을 이 Mac에서 열고, 직접 수정할 수 있습니다."
                     ))
                 }
             } header: {
                 Text(markdown: String(
                     localized: "settings.file_access.section_general.title",
-                    defaultValue: "일반"
+                    defaultValue: "파일 시스템 액세스"
                 ))
                 Text(markdown: String(
                     localized: "settings.file_access.section_general.description",
-                    defaultValue: "원격 파일 시스템 마운트 (fsaccess) 의 호스트 측 정책을 설정합니다."
+                    defaultValue: "`fsaccess` 채널에 대한 정책을 설정합니다."
+                ))
+            } footer: {
+                Text(markdown: String(
+                    localized: "settings.file_access.section_general.footer",
+                    defaultValue: "**참고**\n- 이 기능을 켜면 `noctiluca-fsaccess.localhost`라는 **NFS 서버 마운트**가 Finder에 표시됩니다.\n- 이 기능을 켠 채로 Noctiluca Server를 강제 종료하면 **Finder의 응답이 일시적으로 멈출 수 있습니다**."
                 ))
             }
 
-            Section {
-                TextField(
-                    text: $settings.fileAccess.mountPointPath,
-                    prompt: Text(verbatim: "~/NoctilucaFS")
-                ) {
+            if settings.fileAccess.enabled {
+                Section {
+                    SettingsEntry(
+                        title: String(
+                            localized: "settings.file_access.mount_point.title",
+                            defaultValue: "마운트포인트"
+                        ),
+                        subtitle: String(
+                            localized: "settings.file_access.mount_point.description",
+                            defaultValue: "클라이언트의 원격 파일이 표시될 디렉토리입니다."
+                        )
+                    ) {
+                        VStack(alignment: .trailing) {
+                            Text(settings.fileAccess.mountPointPath)
+
+                            HStack {
+                                Button {
+                                    settings.fileAccess.mountPointPath
+                                        = AppSettings.FileAccess.defaultMountPointPath
+                                } label: {
+                                    Text(String(
+                                        localized: "settings.file_access.mount_point.reset",
+                                        defaultValue: "기본값으로 복원하기"
+                                    ))
+                                }
+                                .disabled(
+                                    settings.fileAccess.mountPointPath
+                                        == AppSettings.FileAccess.defaultMountPointPath
+                                )
+
+                                Button {
+                                    chooseMountPoint()
+                                } label: {
+                                    Text(String(
+                                        localized: "settings.file_access.mount_point.change",
+                                        defaultValue: "변경…"
+                                    ))
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsEntry(
+                        title: String(
+                            localized: "settings.file_access.mount_point.actions.title",
+                            defaultValue: "마운트포인트 관련 동작"
+                        ),
+                        subtitle: String(
+                            localized: "settings.file_access.mount_point.actions.subtitle",
+                            defaultValue: "파일 시스템 액세스 기능이 제대로 동작하지 않을 때 조치를 취할 수 있습니다."
+                        )
+                    ) {
+                        Button {
+                            Task { await remount() }
+                        } label: {
+                            Text(String(
+                                localized: "settings.file_access.mount_point.remount",
+                                defaultValue: "다시 마운트하기"
+                            ))
+                        }
+                        .disabled(isRemounting)
+                    }
+                } header: {
                     Text(markdown: String(
-                        localized: "settings.file_access.mount_point.title",
-                        defaultValue: "마운트 위치"
-                    ))
-                    Text(markdown: String(
-                        localized: "settings.file_access.mount_point.description",
-                        defaultValue: "원격 파일이 보일 호스트 머신의 디렉토리. 비어있는 디렉토리이거나 존재하지 않는 경로여야 합니다. 변경하면 다음 서버 시작 시 적용됩니다."
+                        localized: "settings.file_access.section_mount.title",
+                        defaultValue: "마운트포인트"
                     ))
                 }
-                .disabled(!settings.fileAccess.enabled)
-            } header: {
-                Text(markdown: String(
-                    localized: "settings.file_access.section_mount.title",
-                    defaultValue: "마운트 위치"
-                ))
-            }
 
-            Section {
-                Picker(selection: $settings.fileAccess.defaultConsentPolicy) {
-                    Text(String(
-                        localized: "settings.file_access.consent.always_ask",
-                        defaultValue: "매번 묻기"
-                    ))
-                    .tag(HostFSAccessConsentPolicy.alwaysAsk)
+                Section {
+                    // 일단 constant로 두고, 수동 마운트 UI는 나중에 작업한다
+                    Toggle(isOn: .constant(true)) {
+                        Text(String(
+                            localized: "settings.file_access.policy.auto_mount.title",
+                            defaultValue: "모든 엔트리를 자동으로 마운트"
+                        ))
+                        Text(String(
+                            localized: "settings.file_access.policy.auto_mount.description",
+                            defaultValue: "클라이언트가 노출한 모든 엔트리를 자동으로 마운트합니다.\n클라이언트의 설정에 따라 접속 시마다 확인 다이얼로그가 연속해서 표시되는 경우가 있습니다."
+                        ))
+                    }
+                    .disabled(true)
 
-                    Text(String(
-                        localized: "settings.file_access.consent.always_allow",
-                        defaultValue: "전부 자동 마운트 (읽기/쓰기)"
-                    ))
-                    .tag(HostFSAccessConsentPolicy.alwaysAllow)
+                    Toggle(isOn: $settings.fileAccess.alwaysReadOnly) {
+                        Text(String(
+                            localized: "settings.file_access.policy.read_only.title",
+                            defaultValue: "항상 읽기 전용으로 마운트"
+                        ))
+                        Text(String(
+                            localized: "settings.file_access.policy.read_only.description",
+                            defaultValue: "클라이언트 측의 쓰기 허용 여부와 상관 없이 항상 읽기 전용으로 마운트합니다."
+                        ))
+                    }
 
-                    Text(String(
-                        localized: "settings.file_access.consent.always_allow_read_only",
-                        defaultValue: "전부 자동 마운트 (읽기 전용)"
-                    ))
-                    .tag(HostFSAccessConsentPolicy.alwaysAllowReadOnly)
-
-                    Text(String(
-                        localized: "settings.file_access.consent.deny",
-                        defaultValue: "거부 (control channel 자체를 안 엶)"
-                    ))
-                    .tag(HostFSAccessConsentPolicy.deny)
-                } label: {
+                    // 현재 상태가 그러니까 뭐.. ㅠ_ㅠ
+                    Toggle(isOn: .constant(true)) {
+                        Text(String(
+                            localized: "settings.file_access.policy.fake_lock.title",
+                            defaultValue: "'가짜' 파일 잠금을 대신 제공하기 **(위험)**"
+                        ))
+                        Text(String(
+                            localized: "settings.file_access.policy.fake_lock.description",
+                            defaultValue: "파일을 실제로 잠궈달라고 클라이언트에게 요청하는 대신, 파일을 잠그는 척만 합니다.\n**App이 파일에 대한 exclusive access를 필수로 요구하는 경우, 프로그램이 오작동할 가능성이 높아집니다.**"
+                        ))
+                    }
+                    .disabled(true)
+                } header: {
                     Text(markdown: String(
-                        localized: "settings.file_access.consent.title",
-                        defaultValue: "기본 마운트 정책"
+                        localized: "settings.file_access.section_policy.title",
+                        defaultValue: "정책"
                     ))
                     Text(markdown: String(
-                        localized: "settings.file_access.consent.description",
-                        defaultValue: "navigator 가 List 응답으로 알려준 entries 를 어떻게 처리할지의 기본값입니다. 개별 connection 별 예외 정책 (allowedConnections) 은 향후 추가 예정입니다."
+                        localized: "settings.file_access.section_policy.description",
+                        defaultValue: "파일 시스템 액세스 기능의 상세 동작에 대한 정책을 설정합니다."
                     ))
                 }
-                .disabled(!settings.fileAccess.enabled)
-            } header: {
-                Text(markdown: String(
-                    localized: "settings.file_access.section_consent.title",
-                    defaultValue: "Mount 트리거 정책"
-                ))
-                Text(markdown: String(
-                    localized: "settings.file_access.section_consent.description",
-                    defaultValue: "어떤 navigator entry 를 자동 마운트할지의 호스트 측 정책. **navigator 측의 사용자 동의 prompt 와는 별개** 입니다 — navigator 측 prompt 는 navigator 사용자가 자기 파일을 누구에게 보여줄지 결정하는 것이고, 본 정책은 host 사용자가 받은 entries 를 자기 머신에 마운트할지 결정하는 것입니다."
-                ))
             }
         }
         .formStyle(.grouped)
+        .alert(
+            enabledAlertTitle,
+            isPresented: enabledAlertPresented,
+            presenting: pendingEnabledChange,
+            actions: { target in
+                Button(role: .cancel) {
+                    pendingEnabledChange = nil
+                } label: {
+                    Text(String(
+                        localized: "settings.file_access.enabled.alert.cancel",
+                        defaultValue: "취소"
+                    ))
+                }
+
+                Button(role: target ? nil : .destructive) {
+                    applyEnabledChange(to: target)
+                    pendingEnabledChange = nil
+                } label: {
+                    Text(target
+                         ? String(
+                            localized: "settings.file_access.enabled.alert.confirm.on",
+                            defaultValue: "켜기")
+                         : String(
+                            localized: "settings.file_access.enabled.alert.confirm.off",
+                            defaultValue: "끄기"))
+                }
+            },
+            message: { target in
+                Text(target
+                     ? String(
+                        localized: "settings.file_access.enabled.alert.message.on",
+                        defaultValue: "이 기능을 켜면 NFS 마운트가 \(settings.fileAccess.mountPointPath) 에 생성되고, Finder 에 표시됩니다.")
+                     : String(
+                        localized: "settings.file_access.enabled.alert.message.off",
+                        defaultValue: "이 기능을 끄면 마운트가 즉시 해제됩니다. 현재 진행 중인 파일 작업이 있다면 중단될 수 있습니다."))
+            }
+        )
         .enableInjection()
+    }
+
+    // MARK: - Enabled toggle
+
+    /// `Toggle` 에 직접 `$settings.fileAccess.enabled` 를 연결하면 사용자 confirm
+    /// 전에 값이 바뀌어 버리므로, `pendingEnabledChange` 를 거치도록 가짜 binding 사용.
+    private var enabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.fileAccess.enabled },
+            set: { newValue in
+                guard newValue != settings.fileAccess.enabled else { return }
+                pendingEnabledChange = newValue
+            }
+        )
+    }
+
+    private var enabledAlertPresented: Binding<Bool> {
+        Binding(
+            get: { pendingEnabledChange != nil },
+            set: { presented in
+                if !presented { pendingEnabledChange = nil }
+            }
+        )
+    }
+
+    private var enabledAlertTitle: String {
+        switch pendingEnabledChange {
+        case true:
+            return String(
+                localized: "settings.file_access.enabled.alert.title.on",
+                defaultValue: "파일 시스템 액세스를 켤까요?"
+            )
+        case false:
+            return String(
+                localized: "settings.file_access.enabled.alert.title.off",
+                defaultValue: "파일 시스템 액세스를 끌까요?"
+            )
+        case nil:
+            return ""
+        }
+    }
+
+    private func applyEnabledChange(to target: Bool) {
+        settings.fileAccess.enabled = target
+
+        // settings 의 autosave 가 끝나기 전이라도 사용자에게는 즉시 반영되어야 자연스럽다.
+        // host actor 자체가 동시 호출 직렬화를 하므로 여기서 await 시도하지 않고 발사.
+        let mountPointPath = settings.fileAccess.mountPointPath
+        Task {
+            if target {
+                await NocFSAccessHost.shared.startupIfEnabled(
+                    enabled: true,
+                    mountPointPath: mountPointPath
+                )
+            } else {
+                await NocFSAccessHost.shared.shutdownAndUnmount()
+            }
+        }
+    }
+
+    // MARK: - Mount point picker
+
+    private func chooseMountPoint() {
+        let panel = NSOpenPanel()
+        panel.title = String(
+            localized: "settings.file_access.mount_point.panel_title",
+            defaultValue: "마운트포인트로 사용할 디렉토리 선택"
+        )
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = URL(
+            fileURLWithPath: (settings.fileAccess.mountPointPath as NSString).expandingTildeInPath,
+            isDirectory: true
+        )
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        settings.fileAccess.mountPointPath = Self.shortenedHomePath(of: url)
+    }
+
+    /// 사용자 home 하위 경로면 `~/...` 형태로, 아니면 절대 경로 그대로 반환.
+    private static func shortenedHomePath(of url: URL) -> String {
+        let absolute = url.path
+        let home = NSHomeDirectory()
+        if absolute == home {
+            return "~"
+        }
+        if absolute.hasPrefix(home + "/") {
+            return "~" + absolute.dropFirst(home.count)
+        }
+        return absolute
+    }
+
+    // MARK: - Remount
+
+    private func remount() async {
+        guard !isRemounting else { return }
+        isRemounting = true
+        defer { isRemounting = false }
+
+        let mountPointPath = settings.fileAccess.mountPointPath
+        await NocFSAccessHost.shared.shutdownAndUnmount()
+        await NocFSAccessHost.shared.startupIfEnabled(
+            enabled: settings.fileAccess.enabled,
+            mountPointPath: mountPointPath
+        )
     }
 }
