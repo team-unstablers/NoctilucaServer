@@ -3,14 +3,14 @@
 //  NoctilucaServer
 //
 //  fsaccess (consuming peer) 의 per-session 자동 wiring. 인증 완료 직후 호출되며,
-//  settings.fileAccess.enabled / NFS 리스너 ready 상태 / 사용자 정책
-//  (defaultConsentPolicy) 에 따라:
+//  settings.fileAccess.enabled / NFS 리스너 ready 상태에 따라:
 //
 //  1. NocFSAccessHost.shared.issueConnectionLabel + addConnection
 //  2. fsaccess control channel 직접 open (handle.direction == .local)
 //  3. List 요청 발신 → 응답 entries 보관
-//  4. (alwaysAllow / alwaysAllowReadOnly 일 때) 모든 entry 자동 Mount + 해당
-//     fsaccess_mount channel open + addMountSession
+//  4. 모든 entry 자동 Mount + 해당 fsaccess_mount channel open + addMountSession.
+//     access mode 는 settings.fileAccess.alwaysReadOnly 에 따라 read-only 또는
+//     read-write 로 결정.
 //
 //  세션 종료 시 ``cleanupFSAccess`` 가 NocFSAccessHost.shared.removeConnection
 //  으로 가상 트리에서 cascade 정리한다.
@@ -59,7 +59,7 @@ extension NoctilucaClientSession {
 
             await self.bootstrapFSAccessMounts(
                 channel: fsAccessChannel,
-                policy: settings.fileAccess.defaultConsentPolicy,
+                alwaysReadOnly: settings.fileAccess.alwaysReadOnly,
                 connectionLabel: connectionLabel
             )
         } catch {
@@ -79,7 +79,7 @@ extension NoctilucaClientSession {
     // MARK: - Auto-mount
 
     private func bootstrapFSAccessMounts(channel: FSAccessChannel,
-                                         policy: HostFSAccessConsentPolicy,
+                                         alwaysReadOnly: Bool,
                                          connectionLabel: String) async {
         let listResponse: FileSystemListResponse
         do {
@@ -94,19 +94,14 @@ extension NoctilucaClientSession {
         }
         await channel.state.setEntries(listResponse.entries)
 
-        guard policy == .alwaysAllow || policy == .alwaysAllowReadOnly else {
-            Self.fsAccessLogger.info("fsaccess: defaultConsentPolicy=\(policy.rawValue) — entries 받았지만 자동 마운트는 안 함.")
-            return
-        }
-        let access: AccessMode = (policy == .alwaysAllowReadOnly) ? .read : .readWrite
+        let access: AccessMode = alwaysReadOnly ? .read : .readWrite
 
         for entry in listResponse.entries {
             await self.autoMountEntry(
                 channel: channel,
                 connectionLabel: connectionLabel,
                 entry: entry,
-                requestedAccess: access,
-                policy: policy
+                requestedAccess: access
             )
         }
     }
@@ -114,14 +109,13 @@ extension NoctilucaClientSession {
     private func autoMountEntry(channel: FSAccessChannel,
                                 connectionLabel: String,
                                 entry: FileSystemEntry,
-                                requestedAccess: AccessMode,
-                                policy: HostFSAccessConsentPolicy) async {
+                                requestedAccess: AccessMode) async {
         let mountResponse: FileSystemMountResponse
         do {
             mountResponse = try await channel.requestMount(
                 entryId: entry.id,
                 requestedAccess: requestedAccess,
-                reason: "host auto-mount (policy=\(policy.rawValue))"
+                reason: "host auto-mount (access=\(requestedAccess))"
             )
         } catch {
             Self.fsAccessLogger.error("fsaccess: auto-mount throw for '\(entry.name)': \(error)")

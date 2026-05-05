@@ -25,23 +25,27 @@ enum HostFSAccessConsentPolicy: String, Codable, Sendable, CaseIterable, Hashabl
 extension AppSettings {
     /// File System Access (fsaccess) 기능의 호스트 측 정책.
     struct FileAccess: Category {
+        /// 기본 마운트 포인트 경로. UI 의 "기본값으로 복원하기" 가 이 값을 사용합니다.
+        static let defaultMountPointPath: String = "~/NoctilucaFS"
+
         /// fsaccess feature 활성화 여부. `false` 면 ServerHello.supportedFeatures 에서
         /// fsaccess UUID 가 빠지고, nocfsaccessd 데몬도 spawn 되지 않습니다.
         var enabled: Bool = false
 
         /// nocfsaccessd 의 가상 NFS 트리를 호스트 머신의 어디에 마운트할지.
         /// 기본값은 `~/NoctilucaFS`. 절대 경로 또는 `~/` 로 시작하는 경로 권장.
-        var mountPointPath: String = "~/NoctilucaFS"
+        var mountPointPath: String = FileAccess.defaultMountPointPath
 
-        /// allowedConnections 에 매칭되지 않는 navigator connection 에 적용할 기본 정책.
-        var defaultConsentPolicy: HostFSAccessConsentPolicy = .alwaysAsk
+        /// 자동 마운트 시 access mode. `true` 면 클라이언트 측의 쓰기 허용 여부와
+        /// 무관하게 read-only 로 마운트합니다.
+        var alwaysReadOnly: Bool = false
 
         init() {}
 
         enum CodingKeys: String, CodingKey {
             case enabled
             case mountPointPath
-            case defaultConsentPolicy
+            case alwaysReadOnly
         }
 
         init(from decoder: any Decoder) throws {
@@ -55,10 +59,8 @@ extension AppSettings {
             mountPointPath = container.decodeSafe(
                 String.self, forKey: .mountPointPath, default: mountPointPath
             )
-            defaultConsentPolicy = container.decodeSafe(
-                HostFSAccessConsentPolicy.self,
-                forKey: .defaultConsentPolicy,
-                default: defaultConsentPolicy
+            alwaysReadOnly = container.decodeSafe(
+                Bool.self, forKey: .alwaysReadOnly, default: alwaysReadOnly
             )
         }
 
@@ -67,7 +69,7 @@ extension AppSettings {
 
             try container.encode(enabled, forKey: .enabled)
             try container.encode(mountPointPath, forKey: .mountPointPath)
-            try container.encode(defaultConsentPolicy, forKey: .defaultConsentPolicy)
+            try container.encode(alwaysReadOnly, forKey: .alwaysReadOnly)
         }
     }
 }
