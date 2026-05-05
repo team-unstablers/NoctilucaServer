@@ -42,6 +42,11 @@ actor NocFSAccessHost {
     /// 마운트 포인트 URL (`startupIfEnabled` 시 결정).
     private(set) var mountPointURL: URL?
 
+    /// `AppSettings.FileAccess.useFakeLocks` 의 캐시. `true` 면 NFS LOCK / LOCKT
+    /// / LOCKU callback 이 navigator 의 `supportsLocks` 광고를 무시하고 fake
+    /// success 로 응답한다. `NoctilucaNFSServer` 가 cross-actor read 로 참조.
+    private(set) var useFakeLocks: Bool = false
+
     /// 1단계 connection namespace 의 monotonic counter (docs §5.1.1).
     private var nextConnectionNumber: Int = 1
 
@@ -57,7 +62,8 @@ actor NocFSAccessHost {
 
     /// fsaccess feature 가 enabled 면 NFS listener 시작 + mount point 준비 +
     /// NetFS 마운트까지 수행. disabled 면 noop.
-    func startupIfEnabled(enabled: Bool, mountPointPath: String) async {
+    func startupIfEnabled(enabled: Bool, mountPointPath: String, useFakeLocks: Bool = false) async {
+        self.useFakeLocks = useFakeLocks
         guard enabled else {
             logger.info("startupIfEnabled: fsaccess feature is disabled — skipping NFS listener.")
             return
@@ -78,6 +84,15 @@ actor NocFSAccessHost {
         } catch {
             logger.error("startupIfEnabled: failed: \(error.localizedDescription) — fsaccess disabled for this run.")
             // await self.stopListener()
+        }
+    }
+
+    /// 사용자가 설정 토글로 `useFakeLocks` 를 변경했을 때 즉시 반영. 이미 활성화된
+    /// mount session 의 다음 NFS LOCK / LOCKT / LOCKU 부터 새 정책이 적용된다.
+    func setUseFakeLocks(_ value: Bool) {
+        if useFakeLocks != value {
+            logger.info("setUseFakeLocks: \(self.useFakeLocks) → \(value)")
+            useFakeLocks = value
         }
     }
 

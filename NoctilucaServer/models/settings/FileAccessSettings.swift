@@ -40,12 +40,20 @@ extension AppSettings {
         /// 무관하게 read-only 로 마운트합니다.
         var alwaysReadOnly: Bool = false
 
+        /// `true` 면 navigator 가 `supportsLocks=true` 로 광고했더라도 host 측에서
+        /// 강제로 false 로 다운그레이드해서 NFS LOCK / LOCKT / LOCKU callback 을
+        /// 모두 fake success 로 응답합니다. exclusive access 를 강하게 요구하는
+        /// 애플리케이션과 함께 사용할 때 오작동을 유발할 수 있어 기본값은 false
+        /// (=navigator 광고 그대로 존중).
+        var useFakeLocks: Bool = false
+
         init() {}
 
         enum CodingKeys: String, CodingKey {
             case enabled
             case mountPointPath
             case alwaysReadOnly
+            case useFakeLocks
         }
 
         init(from decoder: any Decoder) throws {
@@ -62,6 +70,9 @@ extension AppSettings {
             alwaysReadOnly = container.decodeSafe(
                 Bool.self, forKey: .alwaysReadOnly, default: alwaysReadOnly
             )
+            useFakeLocks = container.decodeSafe(
+                Bool.self, forKey: .useFakeLocks, default: useFakeLocks
+            )
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -70,6 +81,7 @@ extension AppSettings {
             try container.encode(enabled, forKey: .enabled)
             try container.encode(mountPointPath, forKey: .mountPointPath)
             try container.encode(alwaysReadOnly, forKey: .alwaysReadOnly)
+            try container.encode(useFakeLocks, forKey: .useFakeLocks)
         }
     }
 }

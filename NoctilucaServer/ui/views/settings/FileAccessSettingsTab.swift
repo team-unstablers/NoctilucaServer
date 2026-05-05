@@ -126,11 +126,11 @@ struct FileAccessSettingsTab: View {
                 Section {
                     // 일단 constant로 두고, 수동 마운트 UI는 나중에 작업한다
                     Toggle(isOn: .constant(true)) {
-                        Text(String(
+                        Text(markdown: String(
                             localized: "settings.file_access.policy.auto_mount.title",
                             defaultValue: "모든 엔트리를 자동으로 마운트"
                         ))
-                        Text(String(
+                        Text(markdown: String(
                             localized: "settings.file_access.policy.auto_mount.description",
                             defaultValue: "클라이언트가 노출한 모든 엔트리를 자동으로 마운트합니다.\n클라이언트의 설정에 따라 접속 시마다 확인 다이얼로그가 연속해서 표시되는 경우가 있습니다."
                         ))
@@ -138,28 +138,29 @@ struct FileAccessSettingsTab: View {
                     .disabled(true)
 
                     Toggle(isOn: $settings.fileAccess.alwaysReadOnly) {
-                        Text(String(
+                        Text(markdown: String(
                             localized: "settings.file_access.policy.read_only.title",
                             defaultValue: "항상 읽기 전용으로 마운트"
                         ))
-                        Text(String(
+                        Text(markdown: String(
                             localized: "settings.file_access.policy.read_only.description",
                             defaultValue: "클라이언트 측의 쓰기 허용 여부와 상관 없이 항상 읽기 전용으로 마운트합니다."
                         ))
                     }
 
-                    // 현재 상태가 그러니까 뭐.. ㅠ_ㅠ
-                    Toggle(isOn: .constant(true)) {
-                        Text(String(
+                    Toggle(isOn: $settings.fileAccess.useFakeLocks) {
+                        Text(markdown: String(
                             localized: "settings.file_access.policy.fake_lock.title",
                             defaultValue: "'가짜' 파일 잠금을 대신 제공하기 **(위험)**"
                         ))
-                        Text(String(
+                        Text(markdown: String(
                             localized: "settings.file_access.policy.fake_lock.description",
-                            defaultValue: "파일을 실제로 잠궈달라고 클라이언트에게 요청하는 대신, 파일을 잠그는 척만 합니다.\n**App이 파일에 대한 exclusive access를 필수로 요구하는 경우, 프로그램이 오작동할 가능성이 높아집니다.**"
+                            defaultValue: "파일을 실제로 잠궈달라고 클라이언트에게 요청하는 대신, 파일을 잠그는 척만 합니다.\n**exclusive access를 필수로 요구하는 App을 가동한 상태에서 동시 액세스가 일어나면 데이터가 파손될 위험이 있습니다!**"
                         ))
                     }
-                    .disabled(true)
+                    .onChange(of: settings.fileAccess.useFakeLocks) { _, newValue in
+                        Task { await NocFSAccessHost.shared.setUseFakeLocks(newValue) }
+                    }
                 } header: {
                     Text(markdown: String(
                         localized: "settings.file_access.section_policy.title",
@@ -259,11 +260,13 @@ struct FileAccessSettingsTab: View {
         // settings 의 autosave 가 끝나기 전이라도 사용자에게는 즉시 반영되어야 자연스럽다.
         // host actor 자체가 동시 호출 직렬화를 하므로 여기서 await 시도하지 않고 발사.
         let mountPointPath = settings.fileAccess.mountPointPath
+        let useFakeLocks = settings.fileAccess.useFakeLocks
         Task {
             if target {
                 await NocFSAccessHost.shared.startupIfEnabled(
                     enabled: true,
-                    mountPointPath: mountPointPath
+                    mountPointPath: mountPointPath,
+                    useFakeLocks: useFakeLocks
                 )
             } else {
                 await NocFSAccessHost.shared.shutdownAndUnmount()
@@ -313,10 +316,12 @@ struct FileAccessSettingsTab: View {
         defer { isRemounting = false }
 
         let mountPointPath = settings.fileAccess.mountPointPath
+        let useFakeLocks = settings.fileAccess.useFakeLocks
         await NocFSAccessHost.shared.shutdownAndUnmount()
         await NocFSAccessHost.shared.startupIfEnabled(
             enabled: settings.fileAccess.enabled,
-            mountPointPath: mountPointPath
+            mountPointPath: mountPointPath,
+            useFakeLocks: useFakeLocks
         )
     }
 }

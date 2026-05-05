@@ -180,7 +180,8 @@ final class NoctilucaServer: ObservableObject {
         // 직접 nanonfs NFSv4 listener 를 띄우고 ~/NoctilucaFS 를 NFS 로 마운트.
         await NocFSAccessHost.shared.startupIfEnabled(
             enabled: settings.fileAccess.enabled,
-            mountPointPath: settings.fileAccess.mountPointPath
+            mountPointPath: settings.fileAccess.mountPointPath,
+            useFakeLocks: settings.fileAccess.useFakeLocks
         )
     }
 
