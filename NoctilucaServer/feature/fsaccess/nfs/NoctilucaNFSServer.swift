@@ -187,7 +187,6 @@ actor NoctilucaNFSServer: NFSServer {
 
     func getattr(handle: NFSFileHandle) async throws -> NFSStat {
         let (id, entry) = try await decodeHandle(handle)
-        logger.debug("getattr: id=\(id) kind=\(String(describing: entry.kind))")
         switch entry.kind {
         case .root:
             let mtime = await virtualTree.rootMtime
@@ -770,7 +769,7 @@ actor NoctilucaNFSServer: NFSServer {
 
     func read(handle: NFSFileHandle, stateid: NFSStateID, offset: UInt64, count: Int) async throws -> NFSReadResult {
         let (id, entry) = try await decodeHandle(handle)
-        logger.info("read: enter id=\(id) kind=\(String(describing: entry.kind)) offset=\(offset) count=\(count)")
+        // logger.info("read: enter id=\(id) kind=\(String(describing: entry.kind)) offset=\(offset) count=\(count)")
         if entry.kind == .readme {
             let body = Self.readmeBody.data(using: .utf8) ?? Data()
             if offset >= UInt64(body.count) { return NFSReadResult(data: Data(), eof: true) }
