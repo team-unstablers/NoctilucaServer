@@ -430,7 +430,9 @@ actor NoctilucaNFSServer: NFSServer {
         if await virtualTree.shouldShowReadme(), cookie < 1 {
             entries.append(NFSDirEntry(
                 fileid: HandleTable.readmeEntryId,
-                name: "_README.txt", attrs: readmeStat()
+                name: "_README.txt",
+                attrs: readmeStat(),
+                fileHandle: NFSFileHandle(HandleTable.encode(HandleTable.readmeEntryId))
             ))
             nextCookie = 1
         }
@@ -450,9 +452,13 @@ actor NoctilucaNFSServer: NFSServer {
             let entryId = await handleTable.issueIfAbsent(
                 connEntry, key: HandleTable.keyForConnection(connection.connectionLabel)
             )
+            // entry 별 fh 도 함께 응답. nanonfs 가 attrRequest 의 FATTR4_FILEHANDLE
+            // 에 대해 entry.fileHandle ?? parentFh 사용 — Finder 가 mismatch 로
+            // entry 를 drop 하지 않게 하려면 반드시 entry-specific fh 가 필요.
             entries.append(NFSDirEntry(
                 fileid: entryId, name: connection.connectionLabel,
-                attrs: directoryStat(fileid: entryId, mtime: connection.mtime)
+                attrs: directoryStat(fileid: entryId, mtime: connection.mtime),
+                fileHandle: NFSFileHandle(HandleTable.encode(entryId))
             ))
             nextCookie = positional
         }
@@ -488,7 +494,8 @@ actor NoctilucaNFSServer: NFSServer {
             // 진입할 때 GETATTR 로 다시 받는다 (getattrMountSession).
             entries.append(NFSDirEntry(
                 fileid: entryId, name: session.displayName,
-                attrs: directoryStat(fileid: entryId, mtime: session.mtime)
+                attrs: directoryStat(fileid: entryId, mtime: session.mtime),
+                fileHandle: NFSFileHandle(HandleTable.encode(entryId))
             ))
             nextCookie = positional
         }
@@ -533,14 +540,27 @@ actor NoctilucaNFSServer: NFSServer {
                 mtimeMs: 0, atimeMs: 0, btimeMs: 0,
                 attributes: [], symlinkTarget: nil, metadata: [:]
             )
-            // fileid 는 path 기반 stable id. 매 readdir 마다 fileid 가 바뀌면
-            // NFSv4 client 가 같은 file 로 식별하지 못해 cache 가 깨진다.
+            // fileid / fh 모두 HandleTable 의 entryId 와 통일. lookup 결과 fh 와
+            // readdir 응답 fh 가 같아야 NFSv4 client (Finder) 가 readdir attr
+            // mask 의 FATTR4_FILEHANDLE 로 받은 fh 를 후속 GETATTR 등에서 그대로
+            // 쓸 때 동일 entry 로 식별한다.
             let childPath = joinPath(parent: parentPath, name: dirEntry.name)
-            let stableId = await channel.pathMap.issueIfAbsent(path: childPath)
+            let hostFileId = await channel.pathMap.issueIfAbsent(path: childPath)
+            let hostFileEntry = HandleEntry(
+                kind: .hostFile,
+                connectionLabel: connectionLabel,
+                mountSessionId: mountSessionId,
+                hostFileId: hostFileId
+            )
+            let entryId = await handleTable.issueIfAbsent(
+                hostFileEntry,
+                key: HandleTable.keyForHostFile(mountSessionId: mountSessionId, path: childPath)
+            )
             let positionalCookie = cookie + UInt64(i + 1)
             entries.append(NFSDirEntry(
-                fileid: stableId, name: dirEntry.name,
-                attrs: Self.makeNFSStat(from: stat, fileid: stableId)
+                fileid: entryId, name: dirEntry.name,
+                attrs: Self.makeNFSStat(from: stat, fileid: entryId),
+                fileHandle: NFSFileHandle(HandleTable.encode(entryId))
             ))
             _ = positionalCookie  // cookie 는 NFSDirList.nextCookie 에서만 사용.
         }
