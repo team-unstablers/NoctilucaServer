@@ -317,7 +317,18 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
     private func currentExposedEntries() async -> [SessionSettings.FSAllowedEntry] {
         guard let noctiluca = await noctilucaClient() else { return [] }
         let settings = await MainActor.run { noctiluca.sessionSettings }
-        return settings?.transfer.fsAllowedEntries ?? []
+        guard let settings else { return [] }
+
+#if os(iOS)
+        // iOS 는 sandbox 제약상 임의 경로를 노출할 수 없으므로,
+        // 앱 컨테이너 Documents/fsaccess 한 개만 단일 entry 로 노출한다.
+        if let entry = FSAccessIOSDocumentsProvider.currentEntry(settings: settings) {
+            return [entry]
+        }
+        return []
+#else
+        return settings.transfer.fsAllowedEntries
+#endif
     }
 
     private func findExposedEntry(byId id: UUID) async -> SessionSettings.FSAllowedEntry? {

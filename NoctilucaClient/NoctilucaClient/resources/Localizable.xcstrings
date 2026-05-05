@@ -14823,6 +14823,61 @@
         }
       }
     },
+    "session-settings.transfer.fs_access.ios.acl.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 호스트가 이 폴더에 대해 가지는 권한을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.acl.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 호스트의 권한"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.expose_documents.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**파일** 앱의 `Noctiluca Navigator/fsaccess/` 폴더를 원격 호스트에 노출합니다. 사용자는 해당 폴더에 파일을 직접 넣고 뺄 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.expose_documents.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 기기의 파일 노출하기"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.section_footer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**파일** 앱에서 *Noctiluca Navigator* 위치를 통해 `fsaccess/` 폴더에 접근할 수 있습니다. 노출하지 않을 파일은 다른 폴더에 보관하세요."
+          }
+        }
+      }
+    },
     "session-settings.transfer.fs_access.policy.always_allow" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {

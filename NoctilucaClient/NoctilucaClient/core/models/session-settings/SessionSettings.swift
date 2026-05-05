@@ -279,12 +279,20 @@ extension SessionSettings {
         /// 서버에 노출할 파일 시스템 진입점 목록 (macOS 전용)
         var fsAllowedEntries: [FSAllowedEntry] = []
 
+        /// iOS 전용: 앱 컨테이너의 `Documents/fsaccess` 디렉토리를 단일 진입점으로 노출할지 여부
+        var fsExposeIOSDocuments: Bool = false
+
+        /// iOS 전용: `fsExposeIOSDocuments` 가 true 일 때 적용되는 ACL
+        var fsIOSDocumentsACL: FSAccessACL = .readOnly
+
         init() {}
 
         enum CodingKeys: String, CodingKey {
             case enableCompression
             case fsAccessPolicy
             case fsAllowedEntries
+            case fsExposeIOSDocuments
+            case fsIOSDocumentsACL
         }
 
         init(from decoder: any Decoder) throws {
@@ -297,6 +305,8 @@ extension SessionSettings {
             enableCompression = container.decodeSafe(Bool.self, forKey: .enableCompression, default: enableCompression)
             fsAccessPolicy = container.decodeSafe(FSAccessPolicy.self, forKey: .fsAccessPolicy, default: fsAccessPolicy)
             fsAllowedEntries = container.decodeSafe([FSAllowedEntry].self, forKey: .fsAllowedEntries, default: fsAllowedEntries)
+            fsExposeIOSDocuments = container.decodeSafe(Bool.self, forKey: .fsExposeIOSDocuments, default: fsExposeIOSDocuments)
+            fsIOSDocumentsACL = container.decodeSafe(FSAccessACL.self, forKey: .fsIOSDocumentsACL, default: fsIOSDocumentsACL)
         }
     }
 

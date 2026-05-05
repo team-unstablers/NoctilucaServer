@@ -23,7 +23,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         AppNotification.initialize()
         AddressMonitor.shared.start()
-        
+
+        // Files.app 'On My iPhone/Noctiluca Navigator' 위치 노출용 부트스트랩.
+        // Documents 가 비어 있으면 location 자체가 표시되지 않으므로 fsaccess 디렉토리와 안내 README 를 보장한다.
+        FSAccessIOSDocumentsProvider.bootstrap()
+
         return true
     }
     

@@ -79,13 +79,37 @@ struct TransferSessionSettingsTab: View {
                 if sessionSettings.transfer.fsAccessPolicy != .deny {
                     FSAllowedEntriesListContainer(entries: $sessionSettings.transfer.fsAllowedEntries)
                 }
+#elseif os(iOS)
+                if sessionSettings.transfer.fsAccessPolicy != .deny {
+                    Toggle(isOn: $sessionSettings.transfer.fsExposeIOSDocuments) {
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.ios.expose_documents.title", defaultValue: "이 기기의 파일 노출하기"))
+                        Text(markdown: String(localized: "session-settings.transfer.fs_access.ios.expose_documents.description", defaultValue: "**파일** 앱의 `Noctiluca Navigator/fsaccess/` 폴더를 원격 호스트에 노출합니다. 사용자는 해당 폴더에 파일을 직접 넣고 뺄 수 있습니다."))
+                    }
+
+                    if sessionSettings.transfer.fsExposeIOSDocuments {
+                        SettingsPicker(selection: $sessionSettings.transfer.fsIOSDocumentsACL) {
+                            SettingsPickerItem(value: SessionSettings.FSAccessACL.readOnly) {
+                                Text(markdown: String(localized: "session-settings.transfer.fs_access.acl.read_only", defaultValue: "읽기 전용"))
+                            }
+
+                            SettingsPickerItem(value: SessionSettings.FSAccessACL.readWrite) {
+                                Text(markdown: String(localized: "session-settings.transfer.fs_access.acl.read_write", defaultValue: "읽기/쓰기"))
+                            }
+                        } label: {
+                            Text(markdown: String(localized: "session-settings.transfer.fs_access.ios.acl.title", defaultValue: "원격 호스트의 권한"))
+                            Text(markdown: String(localized: "session-settings.transfer.fs_access.ios.acl.description", defaultValue: "원격 호스트가 이 폴더에 대해 가지는 권한을 설정합니다."))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
 #endif
             } header: {
                 Text(markdown: String(localized: "session-settings.transfer.fs_access.section_title", defaultValue: "파일 시스템 액세스"))
                 Text(markdown: String(localized: "session-settings.transfer.fs_access.section_description", defaultValue: "원격 호스트에서 이 기기의 파일/디렉토리에 접근할 수 있도록 노출할 항목을 설정합니다."))
             } footer: {
 #if os(iOS)
-                Text(markdown: String(localized: "session-settings.transfer.fs_access.ios_unsupported", defaultValue: "iOS에서는 파일 시스템 진입점을 직접 노출할 수 없으며, 정책 설정만 적용됩니다."))
+                Text(markdown: String(localized: "session-settings.transfer.fs_access.ios.section_footer", defaultValue: "**파일** 앱에서 *Noctiluca Navigator* 위치를 통해 `fsaccess/` 폴더에 접근할 수 있습니다. 노출하지 않을 파일은 다른 폴더에 보관하세요."))
 #endif
             }
 
