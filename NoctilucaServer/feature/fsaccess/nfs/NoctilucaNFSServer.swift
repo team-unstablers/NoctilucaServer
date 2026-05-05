@@ -467,6 +467,8 @@ actor NoctilucaNFSServer: NFSServer {
             throw NFSError.stale
         }
         let sessions = Array(connection.mountSessions.values).sorted { $0.displayName < $1.displayName }
+        let nameList = sessions.map { $0.displayName }.joined(separator: ",")
+        logger.info("readdirConnection: label=\(label) sessionCount=\(sessions.count) names=[\(nameList)]")
         var entries: [NFSDirEntry] = []
         var nextCookie: UInt64 = cookie
         for (i, session) in sessions.enumerated() {

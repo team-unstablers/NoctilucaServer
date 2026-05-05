@@ -127,6 +127,7 @@ actor NocFSAccessHost {
                          mountSessionId: UUID,
                          displayName: String,
                          grantedAccess: UInt32) async -> Bool {
+        logger.info("addMountSession: label=\(connectionLabel) sessionId=\(mountSessionId.uuidString) displayName='\(displayName)' grantedAccess=\(grantedAccess)")
         return await virtualTree.addMountSession(
             connectionLabel: connectionLabel,
             mountSessionId: mountSessionId,
