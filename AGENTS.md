@@ -129,6 +129,25 @@ Microsoft RDP의 RemoteApp에서 영감을 받은 기능으로, 원격 Mac의 �
 
 ## Recent Notes
 
+- **fsaccess byte-range lock (SiriusProtocol 5894e33)** (2026-05-06):
+  - mdproto: `wouldBlock=82` 에러코드, `FileSystemMountResponse.supportsLocks`
+    capability flag, `LockType` constset (shared/exclusive), 6개 새 메시지
+    (`FileSystemLock(Request|Response)` / `Unlock` / `TestLock`, opcode
+    0x80C1~0x80C6).
+  - SiriusKit msgdef 동기화 완료 (autogen 2 + channel/msgdef 5 파일).
+  - exposing peer (NoctilucaClient): macOS 는 `fcntl(F_SETLK)` / `F_GETLK` 로
+    OS-level byte-range lock, iOS 는 supportsLocks=false 광고 + 모든 lock op 에
+    `notSupported` 응답.
+  - consuming peer (NoctilucaServer): `FSAccessMountChannel` 에 sendLock /
+    sendUnlock / sendTestLock helper + `FSAccessMountReply.lock|unlock|testLock`,
+    mount channel 자체에 `supportsLocks` 1회-set 필드 보관.
+  - NFS callback dispatch: `NoctilucaNFSServer.lock / lockTest / unlock` 이
+    mount session 의 supportsLocks 에 따라 분기 — true 면 wire 로, false 면
+    종전대로 fake success (QuickTime 류 까다로운 NFS client 호환). wire 응답이
+    `wouldBlock` 이면 `NFSError.lockDenied` (NFS4ERR_DENIED) 로 변환, navigator
+    가 supportsLocks=true 광고했음에도 `notSupported` 를 반환하면 fake success
+    로 fallback (warn 로그).
+  - share reservation (OPEN deny mode) 매핑은 이번 작업 범위 밖.
 - **fsaccess (consuming peer) + nocfsaccessd 데몬 추가** (2026-05-05):
   - 서버 = consuming peer 시나리오. navigator(클라이언트) 가 노출하는 파일을 호스트
     머신의 Finder 에 NFS 마운트로 띄움. fsaccess control / fsaccess_mount channel

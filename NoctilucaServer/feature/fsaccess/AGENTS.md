@@ -12,10 +12,14 @@ fsaccess_mount channel 호출로 dispatch 한다. navigator (NoctilucaClient) �
 - `FSAccessChannel.swift` — control channel (`handle.direction == .local`).
   List / Mount / Unmount 요청을 발신하고 응답을 typed continuation 으로 매칭.
 - `FSAccessMountChannel.swift` — data channel. mount session 별 1 인스턴스.
-  13개 fsaccess_mount message 발신 + `FSAccessMountReply` enum 으로 응답 unification.
+  16개 fsaccess_mount message 발신 (lock / unlock / testLock 포함) +
+  `FSAccessMountReply` enum 으로 응답 unification.
   내부에 `MountSessionPathMap` (host-side handleId → path / navigator handle 매핑) 보관.
+  추가로 `supportsLocks: Bool` 필드를 들고 있으며 — control channel 측에서
+  `FileSystemMountResponse.supportsLocks` 를 1회 set, 이후 read-only.
+  NFS LOCK / LOCKT / LOCKU callback 의 wire dispatch 분기에 사용.
 - `FSAccessConsumingState.swift` — control channel 의 inner state. List 응답 entries,
-  mount session record, requestId 발급기.
+  mount session record (`supportsLocks` 포함), requestId 발급기.
 - `FSAccessRequestRouter.swift` — process-wide actor. mountSessionId → 활성
   ``FSAccessMountChannel`` 매핑. ``NoctilucaNFSServer`` 가 NFS callback 처리 시 사용.
 - `FSAccessChannelStartArgs.swift` — fsaccess_mount channel start args[0] 의 sessionId
@@ -28,7 +32,10 @@ fsaccess_mount channel 호출로 dispatch 한다. navigator (NoctilucaClient) �
 - `daemon/NetFSMountController.swift` — `NetFS.framework` 의
   `NetFSMountURLAsync` 직접 호출. unmount 는 BSD `unmount(MNT_FORCE)`.
 - `nfs/NoctilucaNFSServer.swift` — `NFSServer` 채택 actor. 21개 callback 을
-  fsaccess_mount channel 호출로 dispatch.
+  fsaccess_mount channel 호출로 dispatch. LOCK / LOCKT / LOCKU 는 mount session
+  의 `supportsLocks` 에 따라 분기 — true 면 wire 로 (`sendLock` /
+  `sendTestLock` / `sendUnlock`), false 면 종전대로 fake success 응답
+  (QuickTime 류의 까다로운 NFS client 호환).
 - `nfs/VirtualTree.swift` — 1단계 connection / 2단계 mount session 가상 트리 actor.
 - `nfs/HandleTable.swift` — `NFSFileHandle.bytes` 인/디코드 + entry kind 보관.
 
@@ -57,6 +64,8 @@ CLAUDE.md `<spec-violation-policy>` 의 분류에 따른 host 측 처리:
 | 미정의 opcode 응답 | warn-and-recover | warn 로그 + drop |
 | FileSystemMountResponse 가 unknown requestId | warn-and-recover | warn 로그 + drop |
 | navigator 응답이 success=false + ErrorInfo | 정상 (정상 에러 흐름) | NFSError 로 변환 |
+| Lock 응답이 `wouldBlock` | 정상 (lock 경합) | `NFSError.lockDenied` 로 변환 (NFS4ERR_DENIED) |
+| `supportsLocks=true` 광고했으나 Lock 응답이 `notSupported` | warn-and-recover | warn 로그 + fake success fallback |
 
 # 미완성 / 향후 작업
 

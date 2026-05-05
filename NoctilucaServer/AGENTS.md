@@ -251,6 +251,17 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 ## Recent Notes
 
+- **fsaccess byte-range lock 구현 (SiriusProtocol 5894e33)** (2026-05-06):
+  - `FSAccessMountChannel`: sendLock / sendUnlock / sendTestLock helper +
+    `FSAccessMountReply` 에 lock / unlock / testLock case 추가. mount channel
+    자체에 `supportsLocks: Bool` (1회-set, 이후 read-only) 필드.
+  - `FSAccessMountSessionRecord` 에 supportsLocks 보관, control channel 에서
+    `FileSystemMountResponse.supportsLocks` 받자마자 mount channel 에 set.
+  - `NoctilucaNFSServer.lock / lockTest / unlock` 이 mount session 의
+    supportsLocks 에 따라 분기 — true 면 wire 로 dispatch, false 면 종전대로
+    fake success (QuickTime 류 까다로운 NFS client 호환). `wouldBlock` 응답은
+    `NFSError.lockDenied` (NFS4ERR_DENIED) 로 변환. share reservation (OPEN
+    deny mode) 은 이번 범위 밖.
 - **fsaccess (consuming peer) + nocfsaccessd 데몬 구현** (2026-05-05):
   - 서버 = consuming peer 시나리오. navigator 가 노출하는 파일을 호스트 머신의
     Finder 에 NFS 마운트로 띄움. fsaccess control / fsaccess_mount channel
