@@ -55,8 +55,8 @@ actor NocFSAccessHost {
 
     // MARK: - Public lifecycle
 
-    /// fsaccess feature 가 enabled 면 NFS listener 시작 + mount point probe +
-    /// NetFS 마운트까지 수행. disabled 또는 마운트 포인트가 non-empty 면 noop.
+    /// fsaccess feature 가 enabled 면 NFS listener 시작 + mount point 준비 +
+    /// NetFS 마운트까지 수행. disabled 면 noop.
     func startupIfEnabled(enabled: Bool, mountPointPath: String) async {
         guard enabled else {
             logger.info("startupIfEnabled: fsaccess feature is disabled — skipping NFS listener.")
@@ -64,21 +64,16 @@ actor NocFSAccessHost {
         }
         let mountPoint = MountPointSupervisor.resolveMountPath(mountPointPath)
         do {
-            let probe = try MountPointSupervisor.probe(mountPoint: mountPoint)
-            switch probe {
-            case .ready:
-                self.mountPointURL = mountPoint
-            case .nonEmpty(let url, let entries):
-                logger.warning("startupIfEnabled: mount point \(url.path) is not empty (\(entries.count) entries) — refusing to mount and disabling fsaccess for this run.")
-                return
-            }
+            try MountPointSupervisor.prepare(mountPoint: mountPoint)
+            self.mountPointURL = mountPoint
         } catch {
-            logger.error("startupIfEnabled: mount point probe failed: \(error.localizedDescription) — fsaccess disabled.")
+            logger.error("startupIfEnabled: mount point preparation failed: \(error.localizedDescription) — fsaccess disabled.")
             return
         }
         do {
             let port = try await self.startListener()
             try await NetFSMountController.mount(port: port, mountPoint: mountPoint)
+            FSAccessSignalGuard.setActiveMountPath(mountPoint.path)
             logger.info("startupIfEnabled: NFS mount established at \(mountPoint.path) (port=\(port)).")
         } catch {
             logger.error("startupIfEnabled: failed: \(error.localizedDescription) — fsaccess disabled for this run.")
@@ -94,6 +89,7 @@ actor NocFSAccessHost {
             } catch {
                 logger.warning("shutdownAndUnmount: unmount failed: \(error.localizedDescription)")
             }
+            FSAccessSignalGuard.setActiveMountPath(nil)
         }
         await self.stopListener()
         mountPointURL = nil
