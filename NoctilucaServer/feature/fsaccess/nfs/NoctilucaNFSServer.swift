@@ -421,9 +421,19 @@ actor NoctilucaNFSServer: NFSServer {
             let positional = UInt64(i + 2)
             if positional <= cookie { continue }
             if entries.count >= maxEntries { break }
+            // fileid 는 lookup 결과의 entryId 와 동일해야 NFSv4 client cache 가
+            // 정합. positional cookie 를 fileid 로 쓰면 Finder 의 LOOKUPP 검증
+            // 시 fileid mismatch 로 directory tree 가 cycle 처럼 보인다.
+            let connEntry = HandleEntry(
+                kind: .connection, connectionLabel: connection.connectionLabel,
+                mountSessionId: nil, hostFileId: nil
+            )
+            let entryId = await handleTable.issueIfAbsent(
+                connEntry, key: HandleTable.keyForConnection(connection.connectionLabel)
+            )
             entries.append(NFSDirEntry(
-                fileid: positional, name: connection.connectionLabel,
-                attrs: directoryStat(fileid: positional)
+                fileid: entryId, name: connection.connectionLabel,
+                attrs: directoryStat(fileid: entryId)
             ))
             nextCookie = positional
         }
@@ -444,9 +454,17 @@ actor NoctilucaNFSServer: NFSServer {
             let positional = UInt64(i + 1)
             if positional <= cookie { continue }
             if entries.count >= maxEntries { break }
+            // fileid 통일 — readdirRoot 와 같은 이유.
+            let mountEntry = HandleEntry(
+                kind: .mountSession, connectionLabel: label,
+                mountSessionId: session.id, hostFileId: nil
+            )
+            let entryId = await handleTable.issueIfAbsent(
+                mountEntry, key: HandleTable.keyForMountSession(session.id)
+            )
             entries.append(NFSDirEntry(
-                fileid: positional, name: session.displayName,
-                attrs: directoryStat(fileid: positional)
+                fileid: entryId, name: session.displayName,
+                attrs: directoryStat(fileid: entryId)
             ))
             nextCookie = positional
         }
