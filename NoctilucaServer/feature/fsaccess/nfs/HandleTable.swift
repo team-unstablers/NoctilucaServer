@@ -19,6 +19,10 @@ enum HandleEntryKind: UInt8, Sendable {
     case mountSession = 3
     /// mount session 안의 navigator-side fsaccess_mount entry.
     case hostFile = 4
+    /// 가상 트리 root 의 `.metadata_never_index` sentinel. macOS Spotlight 가
+    /// 이 파일 존재만 보고 그 볼륨 전체 인덱싱을 skip — Finder/Spotlight 의
+    /// GETATTR 폭주를 줄이기 위한 dot file. readdir 에는 노출 안 함.
+    case metadataNeverIndex = 5
 }
 
 struct HandleEntry: Sendable {
@@ -37,6 +41,7 @@ actor HandleTable {
 
     static let rootEntryId: UInt64 = 1
     static let readmeEntryId: UInt64 = 2
+    static let metadataNeverIndexEntryId: UInt64 = 3
 
     init() {
         entries[Self.rootEntryId] = HandleEntry(
@@ -44,6 +49,9 @@ actor HandleTable {
         )
         entries[Self.readmeEntryId] = HandleEntry(
             kind: .readme, connectionLabel: nil, mountSessionId: nil, hostFileId: nil
+        )
+        entries[Self.metadataNeverIndexEntryId] = HandleEntry(
+            kind: .metadataNeverIndex, connectionLabel: nil, mountSessionId: nil, hostFileId: nil
         )
     }
 

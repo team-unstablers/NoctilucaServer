@@ -54,6 +54,12 @@ actor NoctilucaNFSServer: NFSServer {
     /// `_README.txt` 의 timestamp. README 본문은 변하지 않으므로 부팅시 stamp.
     private static let readmeTime: NFSTime = NFSTime.now()
 
+    /// `.metadata_never_index` sentinel 파일 이름. 가상 트리 root 에서만 노출.
+    /// macOS Spotlight 가 이 파일 존재만 보고 볼륨 통째로 인덱싱 skip.
+    /// readdir 에는 노출하지 않고 lookup-only — dot file 이라 Spotlight 의
+    /// 표준 probe (`stat()`) 만으로 충분.
+    private static let metadataNeverIndexName: String = ".metadata_never_index"
+
     private func decodeHandle(_ fh: NFSFileHandle) async throws -> (id: UInt64, entry: HandleEntry) {
         guard let id = HandleTable.decode(fh.bytes) else {
             logger.error("decodeHandle: bad fh — bytes=\(fh.bytes.count) hex=\(fh.bytes.map { String(format: "%02x", $0) }.joined())")
@@ -83,6 +89,19 @@ actor NoctilucaNFSServer: NFSServer {
             uid: UInt32(getuid()), gid: UInt32(getgid()),
             size: UInt64(body.count), used: UInt64(body.count),
             fileid: HandleTable.readmeEntryId,
+            atime: stamp, mtime: stamp, ctime: stamp
+        )
+    }
+
+    /// `.metadata_never_index` 의 stat — 0-byte regular file. 본문은 비어있고
+    /// timestamp 는 readme 와 같이 부팅시 stamp 로 stable.
+    private func metadataNeverIndexStat() -> NFSStat {
+        let stamp = Self.readmeTime
+        return NFSStat(
+            type: .regularFile, mode: Self.fileMode, nlink: 1,
+            uid: UInt32(getuid()), gid: UInt32(getgid()),
+            size: 0, used: 0,
+            fileid: HandleTable.metadataNeverIndexEntryId,
             atime: stamp, mtime: stamp, ctime: stamp
         )
     }
@@ -199,6 +218,8 @@ actor NoctilucaNFSServer: NFSServer {
             return try await getattrMountSession(handleEntry: entry, fileid: id)
         case .readme:
             return readmeStat()
+        case .metadataNeverIndex:
+            return metadataNeverIndexStat()
         case .hostFile:
             return try await getattrHostFile(handleEntry: entry, fileid: id)
         }
@@ -226,12 +247,19 @@ actor NoctilucaNFSServer: NFSServer {
             throw NFSError.badHandle
         }
         let channel = try await channel(for: mountSessionId)
+        // 캐시 hit 시 navigator wire 호출 skip. Finder / Spotlight 의 GETATTR
+        // 폭주가 client attr cache 를 뚫고 들어오는 케이스가 핫스팟이라 가장
+        // ROI 큰 단축 경로.
+        if let cached = await channel.pathMap.cachedStat(forHostHandleId: hostFileId) {
+            return Self.makeNFSStat(from: cached, fileid: fileid)
+        }
         let record = await channel.pathMap.record(forHostHandleId: hostFileId)
         if let navHandle = record?.navigatorHandleId {
             let response = try await channel.sendFStat(handleId: navHandle)
             guard response.success, let stat = response.stat else {
                 throw Self.nfsError(from: response.error)
             }
+            await channel.pathMap.updateStat(forHostHandleId: hostFileId, stat: stat)
             return Self.makeNFSStat(from: stat, fileid: fileid)
         }
         let path = record?.path ?? "/"
@@ -239,6 +267,7 @@ actor NoctilucaNFSServer: NFSServer {
         guard response.success, let stat = response.stat else {
             throw Self.nfsError(from: response.error)
         }
+        await channel.pathMap.updateStat(forHostHandleId: hostFileId, stat: stat)
         return Self.makeNFSStat(from: stat, fileid: fileid)
     }
 
@@ -256,6 +285,7 @@ actor NoctilucaNFSServer: NFSServer {
             guard let navHandle = record?.navigatorHandleId else { throw NFSError.badHandle }
             let response = try await channel.sendFTruncate(handleId: navHandle, length: size)
             guard response.success else { throw Self.nfsError(from: response.error) }
+            await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)
         }
         return try await getattrHostFile(handleEntry: entry, fileid: id)
     }
@@ -288,7 +318,7 @@ actor NoctilucaNFSServer: NFSServer {
                 mountSessionId: mountSessionId, parentPath: parentPath, name: name,
                 connectionLabel: entry.connectionLabel
             )
-        case .readme:
+        case .readme, .metadataNeverIndex:
             throw NFSError.notDirectory
         }
     }
@@ -296,6 +326,9 @@ actor NoctilucaNFSServer: NFSServer {
     private func lookupInRoot(name: String) async throws -> NFSFileHandle {
         if name == "_README.txt", await virtualTree.shouldShowReadme() {
             return NFSFileHandle(HandleTable.encode(HandleTable.readmeEntryId))
+        }
+        if name == Self.metadataNeverIndexName {
+            return NFSFileHandle(HandleTable.encode(HandleTable.metadataNeverIndexEntryId))
         }
         let snapshot = await virtualTree.snapshotConnections()
         guard let connection = snapshot.first(where: { $0.connectionLabel == name }) else {
@@ -335,9 +368,21 @@ actor NoctilucaNFSServer: NFSServer {
                                       connectionLabel: String?) async throws -> NFSFileHandle {
         let channel = try await channel(for: mountSessionId)
         let childPath = joinPath(parent: parentPath, name: name)
-        let response = try await channel.sendStat(path: childPath, followSymlinks: false)
-        guard response.success else { throw Self.nfsError(from: response.error) }
-        let hostFileId = await channel.pathMap.issueIfAbsent(path: childPath)
+        // 캐시 hit 이면 'entry 가 존재한다' 는 사실까지 같이 확인된 상태.
+        // sendStat 을 skip 하고 fh 만 발급 — Finder 의 LOOKUP 폭주 단축 경로.
+        let cachedStat = await channel.pathMap.cachedStat(forPath: childPath)
+        let hostFileId: UInt64
+        if cachedStat == nil {
+            let response = try await channel.sendStat(path: childPath, followSymlinks: false)
+            guard response.success else { throw Self.nfsError(from: response.error) }
+            if let stat = response.stat {
+                hostFileId = await channel.pathMap.issueIfAbsent(path: childPath, withStat: stat)
+            } else {
+                hostFileId = await channel.pathMap.issueIfAbsent(path: childPath)
+            }
+        } else {
+            hostFileId = await channel.pathMap.issueIfAbsent(path: childPath)
+        }
         let entry = HandleEntry(
             kind: .hostFile,
             connectionLabel: connectionLabel,
@@ -354,7 +399,7 @@ actor NoctilucaNFSServer: NFSServer {
         let (_, entry) = try await decodeHandle(handle)
         switch entry.kind {
         case .root: return handle
-        case .readme, .connection: return try await root()
+        case .readme, .metadataNeverIndex, .connection: return try await root()
         case .mountSession:
             guard let label = entry.connectionLabel else { throw NFSError.badHandle }
             let connEntry = HandleEntry(
@@ -417,7 +462,7 @@ actor NoctilucaNFSServer: NFSServer {
                                           parentPath: path.isEmpty ? "/" : path,
                                           connectionLabel: entry.connectionLabel,
                                           cookie: cookie, maxEntries: maxEntries)
-        case .readme:
+        case .readme, .metadataNeverIndex:
             throw NFSError.notDirectory
         }
     }
@@ -544,7 +589,14 @@ actor NoctilucaNFSServer: NFSServer {
             // mask 의 FATTR4_FILEHANDLE 로 받은 fh 를 후속 GETATTR 등에서 그대로
             // 쓸 때 동일 entry 로 식별한다.
             let childPath = joinPath(parent: parentPath, name: dirEntry.name)
-            let hostFileId = await channel.pathMap.issueIfAbsent(path: childPath)
+            // readdir 응답에 navigator 가 같이 보내준 stat 을 path 별로 캐시.
+            // 직후 같은 entry 에 대해 들어오는 LOOKUP / GETATTR 가 wire 안 가게.
+            let hostFileId: UInt64
+            if let entryStat = dirEntry.stat {
+                hostFileId = await channel.pathMap.issueIfAbsent(path: childPath, withStat: entryStat)
+            } else {
+                hostFileId = await channel.pathMap.issueIfAbsent(path: childPath)
+            }
             let hostFileEntry = HandleEntry(
                 kind: .hostFile,
                 connectionLabel: connectionLabel,
@@ -578,6 +630,8 @@ actor NoctilucaNFSServer: NFSServer {
         if type == .directory {
             let response = try await channel.sendMkdir(path: childPath, mode: attrs.mode ?? 0o755)
             guard response.success else { throw Self.nfsError(from: response.error) }
+            // parent 의 mtime / dirent 가 변경됨 → 캐시 무효화.
+            await channel.pathMap.invalidateStat(forPath: parentPath)
             let hostId = await channel.pathMap.issueIfAbsent(path: childPath)
             let newEntry = HandleEntry(
                 kind: .hostFile, connectionLabel: connLabel,
@@ -595,6 +649,7 @@ actor NoctilucaNFSServer: NFSServer {
             createDisposition: .createNew, flags: [], mode: attrs.mode ?? 0o644
         )
         guard response.success else { throw Self.nfsError(from: response.error) }
+        await channel.pathMap.invalidateStat(forPath: parentPath)
         let hostId = await channel.pathMap.issueIfAbsent(path: childPath)
         await channel.pathMap.attachNavigatorHandle(hostId: hostId, navigatorId: response.handleId)
         let newEntry = HandleEntry(
@@ -622,6 +677,9 @@ actor NoctilucaNFSServer: NFSServer {
             let response = try await channel.sendUnlink(path: childPath)
             guard response.success else { throw Self.nfsError(from: response.error) }
         }
+        // 삭제된 entry + parent dirent 모두 invalidate.
+        await channel.pathMap.invalidateStat(forPath: childPath)
+        await channel.pathMap.invalidateStat(forPath: parentPath)
     }
 
     func rename(srcParent: NFSFileHandle, srcName: String, dstParent: NFSFileHandle, dstName: String) async throws {
@@ -638,6 +696,13 @@ actor NoctilucaNFSServer: NFSServer {
         let newPath = joinPath(parent: dstParentPath, name: dstName)
         let response = try await channel.sendRename(oldPath: oldPath, newPath: newPath)
         guard response.success else { throw Self.nfsError(from: response.error) }
+        // src/dst entry + 양쪽 parent dirent 모두 invalidate.
+        await channel.pathMap.invalidateStat(forPath: oldPath)
+        await channel.pathMap.invalidateStat(forPath: newPath)
+        await channel.pathMap.invalidateStat(forPath: srcParentPath)
+        if srcParentPath != dstParentPath {
+            await channel.pathMap.invalidateStat(forPath: dstParentPath)
+        }
     }
 
     func link(target: NFSFileHandle, parent: NFSFileHandle, name: String) async throws {
@@ -685,6 +750,12 @@ actor NoctilucaNFSServer: NFSServer {
             let stateid = Self.issueStateid(forEntryId: HandleTable.readmeEntryId)
             return (fh, NFSOpenResult(stateid: stateid, rflags: [], delegation: .none))
         }
+        // .metadata_never_index 도 root 의 read-only sentinel.
+        if parentEntry.kind == .root, name == Self.metadataNeverIndexName {
+            let fh = NFSFileHandle(HandleTable.encode(HandleTable.metadataNeverIndexEntryId))
+            let stateid = Self.issueStateid(forEntryId: HandleTable.metadataNeverIndexEntryId)
+            return (fh, NFSOpenResult(stateid: stateid, rflags: [], delegation: .none))
+        }
         let (mountSessionId, parentPath, connLabel) = try await mountContext(for: parentEntry)
         let channel = try await channel(for: mountSessionId)
         let childPath = joinPath(parent: parentPath, name: name)
@@ -721,6 +792,10 @@ actor NoctilucaNFSServer: NFSServer {
             logger.error("open: navigator returned success=false for path=\(childPath) disposition=\(String(describing: disposition)): \(response.error?.message ?? "<no info>")")
             throw Self.nfsError(from: response.error)
         }
+        // 파일이 새로 생성됐을 가능성이 있는 경로면 parent dirent 캐시 invalidate.
+        if disposition != .openExisting {
+            await channel.pathMap.invalidateStat(forPath: parentPath)
+        }
         let hostId = await channel.pathMap.issueIfAbsent(path: childPath)
         await channel.pathMap.attachNavigatorHandle(hostId: hostId, navigatorId: response.handleId)
         let newEntry = HandleEntry(
@@ -748,7 +823,7 @@ actor NoctilucaNFSServer: NFSServer {
     func close(handle: NFSFileHandle, stateid: NFSStateID) async throws {
         let (id, entry) = try await decodeHandle(handle)
         logger.info("close: enter id=\(id) kind=\(String(describing: entry.kind))")
-        if entry.kind == .readme { return }
+        if entry.kind == .readme || entry.kind == .metadataNeverIndex { return }
         guard entry.kind == .hostFile,
               let mountSessionId = entry.mountSessionId,
               let hostFileId = entry.hostFileId else {
@@ -776,6 +851,10 @@ actor NoctilucaNFSServer: NFSServer {
             let start = Int(offset)
             let end = min(body.count, start + count)
             return NFSReadResult(data: body.subdata(in: start..<end), eof: end >= body.count)
+        }
+        if entry.kind == .metadataNeverIndex {
+            // 0-byte sentinel — Spotlight 가 stat() 만 보지만 read() 도 던질 수 있음.
+            return NFSReadResult(data: Data(), eof: true)
         }
         guard entry.kind == .hostFile,
               let mountSessionId = entry.mountSessionId,
@@ -809,6 +888,8 @@ actor NoctilucaNFSServer: NFSServer {
         }
         let response = try await channel.sendWrite(handleId: navHandle, offset: offset, data: data)
         guard response.success else { throw Self.nfsError(from: response.error) }
+        // size / mtime 변경 → 캐시된 stat invalidate.
+        await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)
         return NFSWriteResult(count: Int(response.bytesWritten), committed: stability, writeVerifier: 0)
     }
 

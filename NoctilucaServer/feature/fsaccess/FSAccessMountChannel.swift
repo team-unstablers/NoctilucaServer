@@ -78,11 +78,21 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         /// mount root 의 sentinel host-side handleId.
         static let rootSentinel: UInt64 = 0
 
+        /// path 별 stat 캐시 TTL. Finder / Spotlight 가 같은 entry 의 GETATTR /
+        /// LOOKUP 을 초당 수십\~수백 번 던지는 케이스에서 navigator wire RTT 를
+        /// 흡수한다. 너무 길면 navigator 측 외부 변경의 반영 지연 (delete /
+        /// truncate 등) 이 커지므로 짧게 유지.
+        static let statCacheTTL: Duration = .seconds(2)
+
         struct Record: Sendable {
             var path: String
             /// fsaccess_mount.OPEN 응답에서 받은 navigator-side handleId. 아직
             /// open 안 된 entry (lookup 만 된 상태) 면 nil.
             var navigatorHandleId: UInt64?
+            /// 직전 readdir / stat / fstat 응답으로 받은 navigator-side stat.
+            /// `cachedStatExpiresAt` 가 future 일 때만 valid.
+            var cachedStat: FileStat?
+            var cachedStatExpiresAt: ContinuousClock.Instant?
         }
 
         private var records: [UInt64: Record] = [:]
@@ -121,6 +131,54 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         func path(forHostHandleId id: UInt64) -> String {
             if id == Self.rootSentinel { return "" }
             return records[id]?.path ?? ""
+        }
+
+        // MARK: - Stat cache
+
+        /// 캐시된 stat 이 아직 유효 (now 이전 만료 X) 하면 리턴, 아니면 nil.
+        func cachedStat(forHostHandleId id: UInt64) -> FileStat? {
+            guard id != Self.rootSentinel,
+                  let r = records[id],
+                  let stat = r.cachedStat,
+                  let exp = r.cachedStatExpiresAt,
+                  exp > ContinuousClock.now else {
+                return nil
+            }
+            return stat
+        }
+
+        /// path 로 캐시 조회. 같은 mount 내 lookup 직전 빠른 경로용.
+        func cachedStat(forPath path: String) -> FileStat? {
+            guard let id = idByPath[path] else { return nil }
+            return cachedStat(forHostHandleId: id)
+        }
+
+        /// hostId 가 이미 존재할 때만 캐시 채움. 존재 안 하면 noop.
+        func updateStat(forHostHandleId id: UInt64, stat: FileStat) {
+            guard id != Self.rootSentinel, records[id] != nil else { return }
+            records[id]?.cachedStat = stat
+            records[id]?.cachedStatExpiresAt = ContinuousClock.now.advanced(by: Self.statCacheTTL)
+        }
+
+        /// path 가 이미 등록돼 있으면 캐시 채움. 없으면 새 hostId 발급해 채움.
+        @discardableResult
+        func issueIfAbsent(path: String, withStat stat: FileStat) -> UInt64 {
+            let id = idByPath[path] ?? issue(path: path)
+            records[id]?.cachedStat = stat
+            records[id]?.cachedStatExpiresAt = ContinuousClock.now.advanced(by: Self.statCacheTTL)
+            return id
+        }
+
+        func invalidateStat(forHostHandleId id: UInt64) {
+            guard id != Self.rootSentinel else { return }
+            records[id]?.cachedStat = nil
+            records[id]?.cachedStatExpiresAt = nil
+        }
+
+        func invalidateStat(forPath path: String) {
+            guard let id = idByPath[path] else { return }
+            records[id]?.cachedStat = nil
+            records[id]?.cachedStatExpiresAt = nil
         }
 
         /// host file 의 record 를 보존하면서 navigator-side handleId 만 떼어낸다.
