@@ -157,8 +157,12 @@ actor NocFSAccessHost {
     private func startListener(timeoutSeconds: Double = 5.0) async throws -> UInt16 {
         if let port = nfsPort { return port }
         let server = NoctilucaNFSServer(virtualTree: virtualTree, handleTable: handleTable)
+        // port 0 → OS-할당 ephemeral. 같은 사용자의 다른 프로세스가 hardcoded
+        // port 로 직접 connect 해 AUTH_SYS UID 를 spoof 하는 surface 를 좁힌다.
+        // 실제 bound port 는 `NFSServerListener.boundAddress` polling 으로
+        // 받아 NetFSMountController.mount 에 그대로 넘겨준다.
         let listener = NFSServerListener(
-            server: server, bind: .loopback(port: 25440), logger: nanonfsLogger
+            server: server, bind: .loopback(port: 0), logger: nanonfsLogger
         )
         self.listener = listener
 
