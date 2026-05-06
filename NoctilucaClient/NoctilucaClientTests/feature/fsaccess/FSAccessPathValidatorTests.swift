@@ -166,4 +166,82 @@ final class FSAccessPathValidatorTests: XCTestCase {
         let outside = URL(fileURLWithPath: "/etc/passwd")
         XCTAssertFalse(FSAccessPathValidator.isWithin(outside, root: mountRoot))
     }
+
+    // MARK: - Symlink containment (mdproto §"Symlinks")
+
+    /// 중간 component 가 mount root 밖으로 나가는 symlink 면 resolve 가
+    /// `.escapesRoot` 로 거절해야 한다. mdproto 의 "outside-the-subtree symlink
+    /// MUST NOT be followed" 강제.
+    func testIntermediateSymlinkEscapingMountRootIsRejected() throws {
+        let fm = FileManager.default
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("fsaccess-validator-symlink-\(UUID().uuidString)", isDirectory: true)
+        let mount = tmp.appendingPathComponent("mount", isDirectory: true)
+        let outside = tmp.appendingPathComponent("outside", isDirectory: true)
+        try fm.createDirectory(at: mount, withIntermediateDirectories: true)
+        try fm.createDirectory(at: outside, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: tmp) }
+
+        // mount/escape -> ../outside (밖으로 나가는 symlink)
+        let escape = mount.appendingPathComponent("escape")
+        try fm.createSymbolicLink(at: escape, withDestinationURL: outside)
+
+        // 비밀 파일.
+        let secret = outside.appendingPathComponent("secret.txt")
+        try "TOP SECRET".write(to: secret, atomically: true, encoding: .utf8)
+
+        // resolve 가 거절해야 한다.
+        XCTAssertThrowsError(
+            try FSAccessPathValidator.resolve(path: "escape/secret.txt", mountRoot: mount)
+        ) { error in
+            guard let validation = error as? FSAccessPathValidator.ValidationError,
+                  case .escapesRoot = validation else {
+                XCTFail("Expected .escapesRoot, got \(error)")
+                return
+            }
+        }
+    }
+
+    /// mount root 안을 가리키는 symlink 는 통과해야 한다.
+    func testInternalSymlinkInsideMountRootIsAccepted() throws {
+        let fm = FileManager.default
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("fsaccess-validator-internal-\(UUID().uuidString)", isDirectory: true)
+        let mount = tmp.appendingPathComponent("mount", isDirectory: true)
+        try fm.createDirectory(at: mount, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: tmp) }
+
+        let real = mount.appendingPathComponent("real", isDirectory: true)
+        try fm.createDirectory(at: real, withIntermediateDirectories: true)
+        let alias = mount.appendingPathComponent("alias")
+        try fm.createSymbolicLink(at: alias, withDestinationURL: real)
+
+        // alias/foo.txt 는 결국 real/foo.txt — 둘 다 mount 안.
+        XCTAssertNoThrow(try FSAccessPathValidator.resolve(path: "alias/foo.txt", mountRoot: mount))
+    }
+
+    /// leaf 자체가 외부를 가리키는 symlink 일 때도 거절. (lstat 만 하는
+    /// followSymlinks=false 분기에서도 mount root 밖 metadata 노출을 차단)
+    func testLeafSymlinkPointingOutsideIsRejected() throws {
+        let fm = FileManager.default
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("fsaccess-validator-leaf-\(UUID().uuidString)", isDirectory: true)
+        let mount = tmp.appendingPathComponent("mount", isDirectory: true)
+        try fm.createDirectory(at: mount, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: tmp) }
+
+        let target = URL(fileURLWithPath: "/etc/hosts")
+        let leaf = mount.appendingPathComponent("hosts")
+        try fm.createSymbolicLink(at: leaf, withDestinationURL: target)
+
+        XCTAssertThrowsError(
+            try FSAccessPathValidator.resolve(path: "hosts", mountRoot: mount)
+        ) { error in
+            guard let validation = error as? FSAccessPathValidator.ValidationError,
+                  case .escapesRoot = validation else {
+                XCTFail("Expected .escapesRoot, got \(error)")
+                return
+            }
+        }
+    }
 }

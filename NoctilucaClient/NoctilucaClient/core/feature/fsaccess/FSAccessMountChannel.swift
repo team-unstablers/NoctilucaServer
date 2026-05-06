@@ -36,6 +36,22 @@ private enum FSAccessMountLimits {
 /// file" 로 정의하며, host syscall 계층에서는 POSIX `l_len = 0` 으로 변환한다.
 private let kFSAccessLockLengthSentinel: UInt64 = 0xFFFF_FFFF_FFFF_FFFF
 
+/// 모든 `open(2)` 호출에 default 로 OR 되는 추가 플래그. macOS 에서는
+/// `O_NOFOLLOW_ANY` (macOS 11+) 를 박아 *경로상의 어떤 component 도* symlink 면
+/// open 을 거절하게 한다 — `FSAccessPathValidator` 의 lexical/realpath 사전
+/// 검증과 함께 TOCTOU race 도 봉쇄. mdproto §"Symlinks" 의
+/// "outside-the-subtree symlink MUST NOT be followed" 강제용.
+///
+/// iOS 는 byte-range lock 자체가 supportsLocks=false 인 것과 같은 이유 (sandbox
+/// 가 컨테이너 밖 follow 를 이미 차단) 로 추가 플래그 불필요.
+private let kFSAccessOpenExtraFlags: Int32 = {
+#if os(macOS)
+    return O_NOFOLLOW_ANY
+#else
+    return 0
+#endif
+}()
+
 // MARK: - FSAccessMountChannel
 
 final class FSAccessMountChannel: Channel, ChannelEventConsumer {
@@ -267,8 +283,10 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             let cstr = resolvedURL.path.withCString { strdup($0) }
             defer { free(cstr) }
 
-            // open(2) with O_DIRECTORY 로 fd 를 잡아 fdopendir 로 stream 생성
-            var openFlags: Int32 = O_RDONLY | O_DIRECTORY
+            // open(2) with O_DIRECTORY 로 fd 를 잡아 fdopendir 로 stream 생성.
+            // `O_NOFOLLOW_ANY` 를 default 로 박아 경로상 어떤 component 의
+            // symlink 도 거절 — mount root escape 차단.
+            var openFlags: Int32 = O_RDONLY | O_DIRECTORY | kFSAccessOpenExtraFlags
             if isNoFollow { openFlags |= O_NOFOLLOW }
             let fd = noc_open_with_mode(cstr!, openFlags, 0)
             if fd < 0 {
@@ -299,8 +317,9 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             return
         }
 
-        // 일반 파일 open
-        var openFlags: Int32 = 0
+        // 일반 파일 open. directoryOnly 분기와 동일하게 `O_NOFOLLOW_ANY` 를
+        // default 로 박아 escape 차단.
+        var openFlags: Int32 = kFSAccessOpenExtraFlags
         switch request.accessMode {
         case .read: openFlags |= O_RDONLY
         case .write: openFlags |= O_WRONLY

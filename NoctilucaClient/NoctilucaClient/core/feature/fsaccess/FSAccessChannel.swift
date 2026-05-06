@@ -230,11 +230,17 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
             }
 
             // session 생성.
+            // rootURL 은 standardize + symlink resolve 까지 모두 적용. 이후
+            // FSAccessPathValidator 의 사후 realpath 검사가 일관된 기준점으로
+            // 비교하도록 — mountRoot 자체가 symlink 인 경우에도 escape 판단이
+            // 정확해진다.
             let session = FSAccessMountSession(
                 id: UUID(),
                 entryId: entry.id,
                 entryName: entry.name,
-                rootURL: URL(fileURLWithPath: entry.path).standardizedFileURL,
+                rootURL: URL(fileURLWithPath: entry.path)
+                    .standardizedFileURL
+                    .resolvingSymlinksInPath(),
                 grantedAccess: grantedAccess
             )
 

@@ -15,7 +15,14 @@ import SiriusKitClient
 ///   2) `/` split → empty / `.` drop, `..` resolve (mount root 밖으로 못 나감)
 ///   3) 길이 체크 (spec=4096, warn=6144, hard=65536)
 ///   4) host path 결합
-///   5) (호출자가 심볼릭 링크 follow 한 경우) subtree 재검사
+///   5) realpath 기반 mount root containment 사후 검증 — 중간/leaf 컴포넌트가
+///      symlink 라서 lexical 검증을 우회한 경우를 차단. mdproto §"Symlinks"
+///      가 명령하는 "outside-the-subtree symlink MUST NOT be followed" 를
+///      강제하기 위함.
+///
+/// 실제 syscall 시점의 race (TOCTOU) 는 호출자가 `O_NOFOLLOW_ANY` (macOS 11+) 등
+/// 으로 함께 방어해야 합니다 — 본 validator 는 lexical + realpath 사전 검증만
+/// 보장합니다.
 enum FSAccessPathValidator {
     /// 정상 경로 길이 상한 (Pattern A spec).
     static let pathSpecLimit = 4096
@@ -101,7 +108,13 @@ enum FSAccessPathValidator {
         for component in stack {
             url.appendPathComponent(component)
         }
-        return url.standardizedFileURL
+        let resolved = url.standardizedFileURL
+
+        // 5) realpath 기반 사후 검증 — mdproto §"Symlinks" 의 "outside-the-subtree
+        //    symlink MUST NOT be followed" 강제. 중간 component 가 symlink 라
+        //    lexical 정규화로 못 잡는 escape 를 차단한다.
+        try checkSymlinkContainment(resolved: resolved, mountRoot: mountRoot)
+        return resolved
     }
 
     /// `resolved` URL 이 `mountRoot` 의 subtree 에 속하는지 재검사합니다.
@@ -116,5 +129,21 @@ enum FSAccessPathValidator {
         }
         let prefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
         return resolvedPath.hasPrefix(prefix)
+    }
+
+    /// `resolved` 의 realpath 가 `mountRoot` 의 realpath subtree 안에 있는지
+    /// 검사. `URL.resolvingSymlinksInPath()` 는 존재하는 component 의 symlink 만
+    /// 따라가고 비존재 component 는 그대로 두므로:
+    ///  - 정상 경로 → resolved 는 mountRoot subtree 그대로 유지 → pass.
+    ///  - 중간 component 가 외부로 나가는 symlink → 그 부분이 follow 되어
+    ///    canonical resolved 가 mountRoot prefix 를 잃음 → fail.
+    ///  - mkdir / createNew 같은 비존재 leaf 도 OK — 비존재 component 는 그대로
+    ///    두기에 prefix 가 보존된다.
+    ///
+    /// 즉 `isWithin` 이 정의하는 동일한 prefix 검증을 사후검증으로 재사용한다.
+    private static func checkSymlinkContainment(resolved: URL, mountRoot: URL) throws {
+        if !isWithin(resolved, root: mountRoot) {
+            throw ValidationError.escapesRoot(component: "<symlink>")
+        }
     }
 }
