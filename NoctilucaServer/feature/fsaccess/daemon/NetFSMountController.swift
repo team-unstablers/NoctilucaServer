@@ -38,7 +38,7 @@ enum NetFSMountController {
     /// 명시가 필수.
     static func mount(port: UInt16, mountPoint: URL) async throws {
         let url = "noctiluca-fsaccess.localhost:/"
-        let options = "vers=4,port=\(port),mountport=\(port),tcp,rsize=1048576,wsize=1048576,dsize=1048576"
+        let options = "vers=4,port=\(port),mountport=\(port),tcp,rsize=1048576,wsize=1048576,dsize=1048576,actimeo=30,noatime,async"
         logger.info("mount: url=\(url) at=\(mountPoint.path) options=\(options)")
 
         let process = Process()
