@@ -20,15 +20,21 @@ final class FSAccessMountSession: @unchecked Sendable {
     let rootURL: URL
     let grantedAccess: AccessMode
 
+    /// mount session 생성 시점에 capture 한 AppleDouble 차단 정책.
+    /// 이후 read-only — settings 변경은 다음 mount session 부터 적용된다.
+    let hidesAppleDoubleSidecar: Bool
+
     private let lock = NSLock()
     private var _mountChannel: FSAccessMountChannel?
 
-    init(id: UUID, entryId: UUID, entryName: String, rootURL: URL, grantedAccess: AccessMode) {
+    init(id: UUID, entryId: UUID, entryName: String, rootURL: URL,
+         grantedAccess: AccessMode, hidesAppleDoubleSidecar: Bool = false) {
         self.id = id
         self.entryId = entryId
         self.entryName = entryName
         self.rootURL = rootURL
         self.grantedAccess = grantedAccess
+        self.hidesAppleDoubleSidecar = hidesAppleDoubleSidecar
     }
 
     var mountChannel: FSAccessMountChannel? {
