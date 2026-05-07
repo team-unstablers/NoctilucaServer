@@ -21,23 +21,23 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// 전송 시작 알림 메시지.
+//// Transfer start notification message.
 /// @opcode: 0x8001
 struct Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// 전송될 데이터의 실제 이름
+  //// Actual name of the data to be transferred
   var name: String = String()
 
-  //// 전송할 데이터의 총 크기 (바이트 단위)
+  //// Total size of the data to be transferred (in bytes)
   var totalSize: UInt64 = 0
 
-  //// 전송할 데이터의 MIME 타입 (예: "application/pdf", "text/plain" 등)
+  //// MIME type of the data to be transferred (e.g., "application/pdf", "text/plain")
   var contentType: String = String()
 
-  //// 전송할 데이터의 설명 (예: 클립보드 데이터 설명 등)
+  //// Description of the data to be transferred (e.g., clipboard data description)
   var description_p: String = String()
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -45,27 +45,61 @@ struct Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: Sendable {
   init() {}
 }
 
-//// 전송 데이터 청크.
+//// Acknowledgment from the receiver that confirms the negotiated compression method for this channel. Sent exactly once, before any TransferStartNotification is processed by the sender.
+/// @opcode: 0x8003
+struct Sirius_Msgdef_V1_Channels_Transfer_TransferReady: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  //// Compression method picked from the candidates the sender proposed in
+  //// the channel-start `compress=` option, or `none` when the sender did not
+  //// propose any. MUST be one of the proposed candidates, or `none` (which
+  //// the receiver MAY pick at any time, regardless of what was proposed).
+  //// Stable for the lifetime of the channel.
+  /// @constset: CompressionMethod
+  var compressionMethod: String = String()
+
+  var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  init() {}
+}
+
+//// Transfer data chunk.
 /// @opcode: 0x8002
 struct Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  //// 이 데이터 청크의 순서 번호 (0부터 시작)
+  //// Sequence number of this data chunk (starting from 0)
   var sequenceNumber: UInt64 = 0
 
-  //// 이 청크에 포함된 데이터
+  //// Data contained in this chunk. When a non-`none` compression method has
+  //// been negotiated (see TransferReady), this field carries the
+  //// compressed bytes; otherwise it carries the raw payload.
   var data: Data = Data()
 
-  var crc32: UInt32 = 0
+  //// CRC32 of the wire bytes carried in `data` (i.e., the compressed bytes
+  //// when compression is in effect). Optional; when absent, the sender did
+  //// not compute a CRC and receivers MUST NOT validate against this field.
+  var crc32: UInt32 {
+    get {return _crc32 ?? 0}
+    set {_crc32 = newValue}
+  }
+  /// Returns true if `crc32` has been explicitly set.
+  var hasCrc32: Bool {return self._crc32 != nil}
+  /// Clears the value of `crc32`. Subsequent reads from it will return its default value.
+  mutating func clearCrc32() {self._crc32 = nil}
 
-  //// 이 청크가 전송의 마지막 청크인지 여부
+  //// Whether this chunk is the last chunk of the transfer
   var isEof: Bool = false
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
   init() {}
+
+  fileprivate var _crc32: UInt32? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -117,6 +151,36 @@ extension Sirius_Msgdef_V1_Channels_Transfer_TransferStartNotification: SwiftPro
   }
 }
 
+extension Sirius_Msgdef_V1_Channels_Transfer_TransferReady: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  static let protoMessageName: String = _protobuf_package + ".TransferReady"
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}compressionMethod\0")
+
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.compressionMethod) }()
+      default: break
+      }
+    }
+  }
+
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.compressionMethod.isEmpty {
+      try visitor.visitSingularStringField(value: self.compressionMethod, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  static func ==(lhs: Sirius_Msgdef_V1_Channels_Transfer_TransferReady, rhs: Sirius_Msgdef_V1_Channels_Transfer_TransferReady) -> Bool {
+    if lhs.compressionMethod != rhs.compressionMethod {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".TransferDataChunk"
   static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}sequenceNumber\0\u{1}data\0\u{1}crc32\0\u{1}isEOF\0")
@@ -129,7 +193,7 @@ extension Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk: SwiftProtobuf.Me
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularUInt64Field(value: &self.sequenceNumber) }()
       case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
-      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.crc32) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self._crc32) }()
       case 4: try { try decoder.decodeSingularBoolField(value: &self.isEof) }()
       default: break
       }
@@ -137,15 +201,19 @@ extension Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk: SwiftProtobuf.Me
   }
 
   func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if self.sequenceNumber != 0 {
       try visitor.visitSingularUInt64Field(value: self.sequenceNumber, fieldNumber: 1)
     }
     if !self.data.isEmpty {
       try visitor.visitSingularBytesField(value: self.data, fieldNumber: 2)
     }
-    if self.crc32 != 0 {
-      try visitor.visitSingularUInt32Field(value: self.crc32, fieldNumber: 3)
-    }
+    try { if let v = self._crc32 {
+      try visitor.visitSingularUInt32Field(value: v, fieldNumber: 3)
+    } }()
     if self.isEof != false {
       try visitor.visitSingularBoolField(value: self.isEof, fieldNumber: 4)
     }
@@ -155,7 +223,7 @@ extension Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk: SwiftProtobuf.Me
   static func ==(lhs: Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk, rhs: Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk) -> Bool {
     if lhs.sequenceNumber != rhs.sequenceNumber {return false}
     if lhs.data != rhs.data {return false}
-    if lhs.crc32 != rhs.crc32 {return false}
+    if lhs._crc32 != rhs._crc32 {return false}
     if lhs.isEof != rhs.isEof {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
