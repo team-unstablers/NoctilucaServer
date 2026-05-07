@@ -1,6 +1,6 @@
 //
 //  TransferChannel.swift
-//  NoctilucaServer
+//  NoctilucaClient
 //
 //  Created by Gyuhwan Park on 3/23/26.
 //
@@ -24,62 +24,11 @@ private enum CRC32Util {
     }
 }
 
-// MARK: - Transfer Channel Types
-
-struct TransferChannelPurpose: RawRepresentable, Hashable {
-    let rawValue: String
-
-    init(rawValue: String) {
-        self.rawValue = rawValue
-    }
-
-    public static let fileTransfer = Self(rawValue: "file-transfer")
-    public static let clipboardData = Self(rawValue: "clipboard-data")
-}
-
-struct TransferChannelDirection: RawRepresentable, Hashable {
-    let rawValue: String
-
-    init(rawValue: String) {
-        self.rawValue = rawValue
-    }
-
-    public static let upload = Self(rawValue: "upload")
-    public static let download = Self(rawValue: "download")
-}
-
-struct TransferChannelArgumentsSet {
-    /// 전송 목적
-    let purpose: TransferChannelPurpose
-    /// 전송 방향
-    let direction: TransferChannelDirection
-
-    /// 전송과 관련된 추가적인 인자들. 예를 들어, 파일 전송의 경우 파일 이름, 크기 등이 포함될 수 있음.
-    let args: [String]
-}
+// MARK: - Task
 
 enum TransferChannelTask {
     case fileTransfer(name: String, path: URL?, offset: Int64, length: Int64)
     case clipboardData(itemIndex: Int, representationIndex: Int)
-}
-
-extension TransferChannelArgumentsSet {
-    static func parse(from args: [String]) -> TransferChannelArgumentsSet? {
-        guard args.count >= 2 else {
-            return nil
-        }
-
-        let purpose = TransferChannelPurpose(rawValue: args[0])
-        let direction = TransferChannelDirection(rawValue: args[1])
-
-        let additionalArgs = Array(args.dropFirst(2))
-
-        return TransferChannelArgumentsSet(purpose: purpose, direction: direction, args: additionalArgs)
-    }
-
-    func serialize() -> [String] {
-        return [purpose.rawValue, direction.rawValue] + args
-    }
 }
 
 // MARK: - TransferChannelError
@@ -89,6 +38,10 @@ enum TransferChannelError: Error, CustomStringConvertible {
     case totalSizeExceeded(expected: UInt64, received: UInt64)
     /// EOF 시점에 수신된 누적 바이트가 totalSize와 일치하지 않음
     case totalSizeMismatch(expected: UInt64, received: UInt64)
+    /// `TransferReady` 가 timeout 안에 도착하지 않음
+    case transferReadyTimeout
+    /// `TransferReady` 가 candidate list 에 없는 method 를 골랐음
+    case transferReadyNegotiationFailed(method: String)
 
     var description: String {
         switch self {
@@ -96,6 +49,10 @@ enum TransferChannelError: Error, CustomStringConvertible {
             return "Received bytes (\(received)) exceeded declared totalSize (\(expected))"
         case .totalSizeMismatch(let expected, let received):
             return "Received bytes (\(received)) do not match declared totalSize (\(expected)) at EOF"
+        case .transferReadyTimeout:
+            return "TransferReady did not arrive within the negotiated timeout"
+        case .transferReadyNegotiationFailed(let method):
+            return "TransferReady picked compression method '\(method)' that was not advertised"
         }
     }
 }
@@ -116,6 +73,13 @@ final class TransferState: @unchecked Sendable {
     /// 수신 중 발생한 치명적 오류. 스트림 소비자가 완료 후 확인하여 결과를 폐기해야 한다.
     var transferError: TransferChannelError? = nil
 
+    /// 압축 협상 결과. `TransferReady` 수신/송신 후 단 한 번 set 된다.
+    var negotiatedCompression: CompressionMethod = .none
+    /// `TransferReady` 가 channel 당 1회 처리됐는지.
+    var transferReadySettled: Bool = false
+    /// sender 측에서 `TransferReady` 도착을 기다리는 continuation.
+    var transferReadyAwaiter: CheckedContinuation<Void, Error>? = nil
+
     func withLock<T>(_ body: (TransferState) throws -> T) rethrows -> T {
         lock.lock()
         defer { lock.unlock() }
@@ -133,7 +97,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
     /// 주어진 argument set가 이 채널 구현체에서 처리 가능한지 판단합니다.
     static func accepts(_ argsSet: TransferChannelArgumentsSet, direction: ChannelDirection) -> Bool {
-        let acceptedPurpose: Set<TransferChannelPurpose> = [.fileTransfer, .clipboardData]
+        let acceptedPurpose: Set<TransferChannelPurpose> = [.fileTransfer, .clipboardData, .fsaccessMount]
         let acceptedDirection: Set<TransferChannelDirection> = [.upload, .download]
 
         return (
@@ -153,6 +117,9 @@ final class TransferChannel: Channel, ChannelEventConsumer {
     nonisolated(unsafe) private(set) var transferDirection: TransferChannelDirection? = nil
     nonisolated(unsafe) private(set) var task: TransferChannelTask? = nil
 
+    /// channel-opener (sender 또는 receiver) 가 광고한 compression candidate 목록.
+    nonisolated(unsafe) private(set) var proposedCompressionMethods: [CompressionMethod] = []
+
     private let state = TransferState()
 
     // AsyncStream 자체는 init 1회 설정 패턴 허용 대상
@@ -169,37 +136,55 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
     func handleChannelReady() async {
         await handle.setServiceClass(Self.defaultServiceClass)
+
+        if shouldRecv() {
+            do {
+                try await emitTransferReadyIfNeeded()
+            } catch {
+                logger.error("Failed to emit TransferReady: \(error)")
+                try? await handle.close()
+                return
+            }
+        }
+
         onReady?()
         onReady = nil
     }
 
     func prepare(_ argsSet: TransferChannelArgumentsSet) async throws {
         self.transferDirection = argsSet.direction
+        self.proposedCompressionMethods = argsSet.proposedCompressionMethods
 
         switch argsSet.purpose {
         case .fileTransfer:
-            guard argsSet.args.count >= 4,
-                  let offset = Int64(argsSet.args[2]),
-                  let length = Int64(argsSet.args[3])
+            let purposeArgs = argsSet.purposeArgs
+            guard let name = purposeArgs["name"],
+                  let lengthRaw = purposeArgs["length"],
+                  let lengthU64 = UInt64(lengthRaw)
             else {
                 throw ChannelError.invalidArguments("Invalid arguments for file transfer")
             }
+            let offsetU64 = UInt64(purposeArgs["offset"] ?? "0") ?? 0
 
-            let fileName = argsSet.args[0]
-            let filePathString = argsSet.args[1]
-            let filePath = URL(fileURLWithPath: filePathString)
+            let pathString = purposeArgs["path"]
+            let filePath: URL? = pathString.flatMap { URL(fileURLWithPath: $0) }
 
-            self.task = .fileTransfer(name: fileName, path: filePath, offset: offset, length: length)
+            let length: Int64 = lengthU64 == UInt64.max ? -1 : Int64(clamping: lengthU64)
+            let offset = Int64(clamping: offsetU64)
+
+            self.task = .fileTransfer(name: name, path: filePath, offset: offset, length: length)
 
         case .clipboardData:
-            guard argsSet.args.count >= 2,
-                  let itemIndex = Int(argsSet.args[0]),
-                  let representationIndex = Int(argsSet.args[1])
+            let purposeArgs = argsSet.purposeArgs
+            guard let itemIndexRaw = purposeArgs["item-index"],
+                  let itemIndex = Int(itemIndexRaw),
+                  let reprIndexRaw = purposeArgs["representation-index"],
+                  let reprIndex = Int(reprIndexRaw)
             else {
                 throw ChannelError.invalidArguments("Invalid arguments for clipboard data transfer")
             }
 
-            self.task = .clipboardData(itemIndex: itemIndex, representationIndex: representationIndex)
+            self.task = .clipboardData(itemIndex: itemIndex, representationIndex: reprIndex)
         default:
             break
         }
@@ -235,6 +220,10 @@ final class TransferChannel: Channel, ChannelEventConsumer {
         return state.withLock { $0.transferError }
     }
 
+    var negotiatedCompression: CompressionMethod {
+        return state.withLock { $0.negotiatedCompression }
+    }
+
     // MARK: - 수신 (handleFrame)
 
     func handleFrame(frame: SiriusFrame) async throws {
@@ -242,21 +231,92 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             throw ChannelError.invalidFrame
         }
 
-        guard shouldRecv() else {
-            logger.warning("Received frame on a channel that should not receive data - ignoring")
-            return
-        }
-
         switch frame.opcode {
+        case .transferReady:
+            try await handleTransferReady(frame)
+
         case .transferStartNotification:
+            guard shouldRecv() else {
+                logger.warning("Received TransferStartNotification on a send channel - ignoring")
+                return
+            }
             try await handleTransferStartNotification(frame)
 
         case .transferDataChunk:
+            guard shouldRecv() else {
+                logger.warning("Received TransferDataChunk on a send channel - ignoring")
+                return
+            }
             try await handleTransferDataChunk(frame)
 
         default:
             logger.warning("Received unexpected opcode: \(frame.opcode) - ignoring")
         }
+    }
+
+    private func handleTransferReady(_ frame: SiriusFrame) async throws {
+        let ready = try TransferReady.fromProtobufBytes(frame.data)
+
+        guard shouldSend() else {
+            logger.error("Received TransferReady on a receive-only channel - closing")
+            try? await handle.close()
+            return
+        }
+
+        let alreadySettled = state.withLock { state -> Bool in
+            if state.transferReadySettled { return true }
+            state.transferReadySettled = true
+            return false
+        }
+        guard !alreadySettled else {
+            logger.error("Received duplicate TransferReady - closing channel")
+            try? await handle.close()
+            return
+        }
+
+        let raw = ready.compressionMethod.rawValue
+        let method: CompressionMethod = raw.isEmpty ? .none : ready.compressionMethod
+
+        if method != .none && !proposedCompressionMethods.contains(method) {
+            let awaiter = state.withLock { state -> CheckedContinuation<Void, Error>? in
+                let cont = state.transferReadyAwaiter
+                state.transferReadyAwaiter = nil
+                return cont
+            }
+            awaiter?.resume(throwing: TransferChannelError.transferReadyNegotiationFailed(method: raw))
+            logger.error("TransferReady negotiation failed: peer picked '\(raw)', not in advertised candidates")
+            try? await handle.close()
+            return
+        }
+
+        let awaiter = state.withLock { state -> CheckedContinuation<Void, Error>? in
+            state.negotiatedCompression = method
+            let cont = state.transferReadyAwaiter
+            state.transferReadyAwaiter = nil
+            return cont
+        }
+        logger.info("TransferReady accepted: compressionMethod=\(method.rawValue)")
+        awaiter?.resume()
+    }
+
+    private func emitTransferReadyIfNeeded() async throws {
+        let alreadySent = state.withLock { state -> Bool in
+            if state.transferReadySettled { return true }
+            state.transferReadySettled = true
+            return false
+        }
+        guard !alreadySent else { return }
+
+        var chosen: CompressionMethod = .none
+        for candidate in proposedCompressionMethods {
+            if candidate == .zstd {
+                chosen = .zstd
+                break
+            }
+        }
+        state.withLock { $0.negotiatedCompression = chosen }
+        logger.info("TransferReady picked: compressionMethod=\(chosen.rawValue)")
+        try await handle.send(opcode: .transferReady, message: TransferReady(compressionMethod: chosen))
     }
 
     private func handleTransferStartNotification(_ frame: SiriusFrame) async throws {
@@ -302,20 +362,29 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             return
         }
 
-        // CRC32 무결성 검증
-        if chunk.crc32 != 0 {
+        if let expectedCRC = chunk.crc32 {
             let computedCRC = CRC32Util.compute(chunk.data)
-            if computedCRC != chunk.crc32 {
-                logger.error("CRC32 mismatch at sequence \(chunk.sequenceNumber): expected \(chunk.crc32), computed \(computedCRC)")
+            if computedCRC != expectedCRC {
+                logger.error("CRC32 mismatch at sequence \(chunk.sequenceNumber): expected \(expectedCRC), computed \(computedCRC)")
                 state.withLock { $0.dataContinuation?.finish() }
                 try? await handle.close()
                 return
             }
         }
 
-        // 데이터를 AsyncStream으로 전달. totalSize 초과 시 즉시 중단한다.
+        // 압축 협상이 zstd 면 wire bytes 를 먼저 decompress.
+        let payload: Data
+        do {
+            payload = try decompressIfNeeded(chunk.data)
+        } catch {
+            logger.error("Decompression failed at sequence \(chunk.sequenceNumber): \(error)")
+            state.withLock { $0.dataContinuation?.finish() }
+            try? await handle.close()
+            return
+        }
+
         let isEof = chunk.isEof
-        let dataCount = chunk.data.count
+        let dataCount = payload.count
 
         let overflow: TransferChannelError? = state.withLock { state in
             let newTotal = state.receivedTotalBytes + UInt64(dataCount)
@@ -325,7 +394,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
                 return state.transferError
             }
             state.receivedTotalBytes = newTotal
-            state.dataContinuation?.yield(chunk.data)
+            state.dataContinuation?.yield(payload)
             state.expectedSequenceNumber += 1
             return nil
         }
@@ -338,7 +407,6 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
         onProgressUpdate?(handle.identifier, UInt64(dataCount))
 
-        // EOF 처리
         if isEof {
             handleTransferComplete()
             try? await handle.close()
@@ -351,8 +419,6 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             return (state.startNotification, state.receivedTotalBytes)
         }
 
-        // totalSize 검증. 불일치 시 transferError를 기록하여 소비자가 결과를 폐기하도록 한다.
-        // totalSize == 0 은 "알 수 없음"을 의미하며 크기 검증을 스킵한다.
         if let notification = notification, notification.totalSize > 0 {
             if receivedBytes != notification.totalSize {
                 state.withLock { state in
@@ -372,24 +438,64 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
     // MARK: - 송신
 
-    /// 전송 시작 알림을 전송합니다.
+    private func awaitTransferReadyForSender() async throws {
+        guard shouldSend() else { return }
+        let alreadyReady = state.withLock { $0.transferReadySettled }
+        if alreadyReady { return }
+
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { [state] in
+                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+                    state.withLock { $0.transferReadyAwaiter = cont }
+                }
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(5))
+                throw TransferChannelError.transferReadyTimeout
+            }
+            try await group.next()
+            group.cancelAll()
+        }
+    }
+
+    private func compressIfNeeded(_ data: Data) throws -> Data {
+        let method = state.withLock { $0.negotiatedCompression }
+        switch method {
+        case .zstd:
+            return try ZstdCodec.compress(data)
+        default:
+            return data
+        }
+    }
+
+    private func decompressIfNeeded(_ data: Data) throws -> Data {
+        let method = state.withLock { $0.negotiatedCompression }
+        switch method {
+        case .zstd:
+            return try ZstdCodec.decompress(data)
+        default:
+            return data
+        }
+    }
+
     func sendStartNotification(_ notification: TransferStartNotification) async throws {
         guard shouldSend() else {
             logger.error("Cannot send on a receive-only channel")
             return
         }
+        try await awaitTransferReadyForSender()
         onTransferStarted?(handle.identifier, notification.totalSize)
         try await handle.send(opcode: .transferStartNotification, message: notification)
     }
 
-    /// 단일 청크를 전송합니다. 스트리밍 송신 시 사용.
     func writeChunk(_ chunkData: Data, isEof: Bool) async throws {
         guard shouldSend() else {
             logger.error("Cannot write on a receive-only channel")
             return
         }
 
-        let crc = CRC32Util.compute(chunkData)
+        let wireData = try compressIfNeeded(chunkData)
+        let crc = CRC32Util.compute(wireData)
 
         let seqNum = state.withLock { state -> UInt64 in
             let seq = state.sendSequenceNumber
@@ -402,7 +508,7 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
         let chunk = TransferDataChunk(
             sequenceNumber: seqNum,
-            data: chunkData,
+            data: wireData,
             crc32: crc,
             isEof: isEof
         )
@@ -415,7 +521,6 @@ final class TransferChannel: Channel, ChannelEventConsumer {
         }
     }
 
-    /// 전체 데이터를 청크로 분할하여 전송합니다.
     func write(_ data: Data) async throws {
         guard shouldSend() else {
             logger.error("Cannot write on a receive-only channel")
@@ -434,20 +539,17 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             offset = end
         }
 
-        // 빈 데이터의 경우 즉시 EOF 전송
         if data.isEmpty {
             try await writeChunk(Data(), isEof: true)
         }
     }
 
-    /// 디스크의 파일을 청크 단위로 읽어 전송합니다.
     func writeFromFile(at url: URL, offset: Int64 = 0, length: Int64 = -1) async throws {
         guard shouldSend() else {
             logger.error("Cannot write on a receive-only channel")
             return
         }
 
-        // 보안: 특수 파일(디바이스, 소켓 등) 전송 거부
         let resolvedURL = url.resolvingSymlinksInPath()
         if let fileType = (try? FileManager.default.attributesOfItem(atPath: resolvedURL.path))?[.type] as? FileAttributeType,
            fileType != .typeRegular {
@@ -468,7 +570,6 @@ final class TransferChannel: Channel, ChannelEventConsumer {
             let readSize = min(Int(remaining), chunkSize)
             guard let chunkData = try fileHandle.read(upToCount: readSize),
                   !chunkData.isEmpty else {
-                // EOF
                 try await writeChunk(Data(), isEof: true)
                 return
             }
@@ -484,10 +585,13 @@ final class TransferChannel: Channel, ChannelEventConsumer {
     // MARK: - 스트림 종료 처리
 
     func handleStreamClose() async {
-        let completed = state.withLock { state -> Bool in
+        let (completed, awaiter) = state.withLock { state -> (Bool, CheckedContinuation<Void, Error>?) in
             state.dataContinuation?.finish()
-            return state.isCompleted
+            let cont = state.transferReadyAwaiter
+            state.transferReadyAwaiter = nil
+            return (state.isCompleted, cont)
         }
+        awaiter?.resume(throwing: ChannelError.invalidFrame)
         if !completed {
             logger.warning("Stream closed before transfer completed")
             onTransferCompleted?(handle.identifier)
@@ -496,10 +600,13 @@ final class TransferChannel: Channel, ChannelEventConsumer {
 
     func handleError(error: any Error) async {
         logger.error("Stream error: \(error)")
-        let completed = state.withLock { state -> Bool in
+        let (completed, awaiter) = state.withLock { state -> (Bool, CheckedContinuation<Void, Error>?) in
             state.dataContinuation?.finish()
-            return state.isCompleted
+            let cont = state.transferReadyAwaiter
+            state.transferReadyAwaiter = nil
+            return (state.isCompleted, cont)
         }
+        awaiter?.resume(throwing: error)
         if !completed {
             onTransferCompleted?(handle.identifier)
         }
@@ -513,8 +620,11 @@ extension TransferChannel {
         handle: ChannelHandle,
         args: [String]
     ) async throws -> ChannelCreationResult {
-        guard let argsSet = TransferChannelArgumentsSet.parse(from: args) else {
-            return .rejected(code: -1, reason: "Invalid arguments for transfer channel")
+        let argsSet: TransferChannelArgumentsSet
+        do {
+            argsSet = try TransferChannelArgumentsSet.parse(from: args)
+        } catch {
+            return .rejected(code: -1, reason: "Invalid arguments for transfer channel: \(error)")
         }
 
         guard TransferChannel.accepts(argsSet, direction: handle.direction) else {

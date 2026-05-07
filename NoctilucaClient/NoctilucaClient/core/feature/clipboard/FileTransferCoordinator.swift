@@ -85,10 +85,16 @@ final class FileTransferCoordinator: NSObject, Sendable {
             throw FileTransferError.sessionUnavailable
         }
 
-        let argsSet = TransferChannelArgumentsSet(
-            purpose: .fileTransfer,
+        let compress: [CompressionMethod] = (clipboardChannel?.transferSettings.enableCompression ?? false)
+            ? [.zstd, .none]
+            : []
+        let argsSet = TransferChannelArgumentsSet.fileTransfer(
             direction: .download,
-            args: [metadata.name, metadata.path, "0", String(metadata.size)]
+            name: metadata.name,
+            path: metadata.path,
+            offset: 0,
+            length: metadata.size,
+            compress: compress
         )
 
         guard let channel = try await session.channelManager.openChannel(
@@ -181,10 +187,16 @@ final class FileTransferCoordinator: NSObject, Sendable {
             throw FileTransferError.sessionUnavailable
         }
 
-        let argsSet = TransferChannelArgumentsSet(
-            purpose: .fileTransfer,
+        let compress: [CompressionMethod] = (clipboardChannel?.transferSettings.enableCompression ?? false)
+            ? [.zstd, .none]
+            : []
+        let argsSet = TransferChannelArgumentsSet.fileTransfer(
             direction: .download,
-            args: [metadata.name, metadata.path, "0", "0"]
+            name: metadata.name,
+            path: metadata.path,
+            offset: 0,
+            length: 0,
+            compress: compress
         )
 
         guard let channel = try await session.channelManager.openChannel(

@@ -76,8 +76,10 @@ final class NoctilucaFeatureProvider: FeatureProvider {
         case .transfer:
             // 정책 게이트: remote가 TransferChannel을 열려고 할 때, 채널 자체를 만들기 전에
             // clipboard 설정(enabled / allowFile)을 먼저 확인하여 공격 표면을 줄인다.
+            // (fsaccess-mount 등 clipboard 외 purpose 는 게이트 적용 대상 아님)
             if handle.direction == .remote,
-               let argsSet = TransferChannelArgumentsSet.parse(from: args) {
+               let argsSet = try? TransferChannelArgumentsSet.parse(from: args),
+               argsSet.purpose == .fileTransfer || argsSet.purpose == .clipboardData {
                 let clip = await SettingsStore.shared.settings.clipboard
                 guard clip.enabled else {
                     return .rejected(code: -1, reason: "Clipboard is disabled by policy")
