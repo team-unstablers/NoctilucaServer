@@ -251,6 +251,11 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
                     "current": self.phase.description
                 ])
 
+                let endpoint = self.remoteAddress
+                Task { @MainActor in
+                    AppNotification.sessionPanic(endpoint: endpoint, reason: "Phase shift timeout").postIfEnabled()
+                }
+
                 await self.closeFatally(
                     notice: .timeout,
                     closure: .protocolError,
@@ -271,6 +276,11 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
 
         logger.fatal("panic(): \(reason)")
         logger.fatal("panic(): dropping the client session \(self.id)")
+
+        let endpoint = self.remoteAddress
+        Task { @MainActor in
+            AppNotification.sessionPanic(endpoint: endpoint, reason: reason).postIfEnabled()
+        }
 
         await self.closeFatally(
             notice: .internalServerError,
@@ -323,8 +333,9 @@ actor NoctilucaClientSession: @preconcurrency Identifiable {
         }
 
         if self.phase == .ready {
+            let endpoint = self.remoteAddress
             Task { @MainActor in
-                await AppNotification.connectionClosed(endpoint: remoteAddress).post()
+                AppNotification.connectionClosed(endpoint: endpoint).postIfEnabled()
             }
         }
 

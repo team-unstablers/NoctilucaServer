@@ -87,18 +87,18 @@ struct GeneralSettingsTab: View {
                 }
             }
             
-            Section {
-                if settings.notifications.enabled {
-                    Toggle(String(localized: "settings.notification.on_connect", defaultValue: "사용자가 접속했을 때"), isOn: .constant(true))
-                    Toggle(String(localized: "settings.notification.on_disconnect", defaultValue: "사용자가 접속을 종료했을 때"), isOn: .constant(true))
-                    Toggle(String(localized: "settings.notification.on_error", defaultValue: "오류가 발생했을 때"), isOn: .constant(true))
+            if settings.notifications.enabled {
+                Section {
+                    Toggle(String(localized: "settings.notification.on_connect", defaultValue: "사용자가 접속했을 때"), isOn: $settings.notifications.onConnect)
+                    Toggle(String(localized: "settings.notification.on_disconnect", defaultValue: "사용자가 접속을 종료했을 때"), isOn: $settings.notifications.onDisconnect)
+                    Toggle(String(localized: "settings.notification.on_error", defaultValue: "오류가 발생했을 때"), isOn: $settings.notifications.onError)
                 }
-            }
-            
-            Section {
-                Toggle(String(localized: "settings.notification.on_clipboard_access", defaultValue: "클립보드 내용에 접근했을 때"), isOn: .constant(false))
-                
-                Toggle(String(localized: "settings.notification.on_file_transfer", defaultValue: "파일 전송이 시작되었을 때"), isOn: .constant(true))
+
+                Section {
+                    Toggle(String(localized: "settings.notification.on_clipboard_access", defaultValue: "클립보드 내용에 접근했을 때"), isOn: $settings.notifications.onClipboardAccess)
+
+                    Toggle(String(localized: "settings.notification.on_file_transfer", defaultValue: "파일 전송이 시작되었을 때"), isOn: $settings.notifications.onFileTransfer)
+                }
             }
         }
         .formStyle(.grouped)

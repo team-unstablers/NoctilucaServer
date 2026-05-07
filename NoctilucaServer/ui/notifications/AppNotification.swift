@@ -22,7 +22,9 @@ enum AppNotification: Identifiable {
     case newConnection(endpoint: String)
     // TODO: 연결 종료
     case connectionClosed(endpoint: String)
-    
+    case authenticationFailed(endpoint: String)
+    case sessionPanic(endpoint: String, reason: String)
+
     // TODO: 서버 시작
     case serverStarted
     // TODO: 서버 시작 시 오류 발생
@@ -40,8 +42,10 @@ enum AppNotification: Identifiable {
     // TODO: 긴급 업데이트 요청
     case criticalUpdateRequired(version: String, isInvalidLicense: Bool)
     case pluginBundleRejectedBySecurityPolicy(metadata: any PluginBundleMetadata, currentPolicy: PluginBundleSecurityPolicy)
+    case clipboardServedToClient(endpoint: String)
     // TODO: 파일 전송 완료
     case fileTransferSent(fileName: String)
+    case directoryTransferSent(directoryName: String)
 
     var id: String {
         switch self {
@@ -49,6 +53,10 @@ enum AppNotification: Identifiable {
             return "new_connection"
         case .connectionClosed:
             return "connection_closed"
+        case .authenticationFailed:
+            return "authentication_failed"
+        case .sessionPanic:
+            return "session_panic"
         case .serverStarted:
             return "server_started"
         case .serverStartFailed:
@@ -69,14 +77,19 @@ enum AppNotification: Identifiable {
             return "critical_update_required"
         case .pluginBundleRejectedBySecurityPolicy:
             return "plugin_bundle_rejected_by_security_policy"
+        case .clipboardServedToClient:
+            return "clipboard_served_to_client"
         case .fileTransferSent:
             return "file_transfer_sent"
+        case .directoryTransferSent:
+            return "directory_transfer_sent"
         }
     }
-    
+
     var category: AppNotificationCategory {
         switch self {
-        case .newConnection, .connectionClosed, .fileTransferSent:
+        case .newConnection, .connectionClosed, .authenticationFailed, .sessionPanic,
+             .clipboardServedToClient, .fileTransferSent, .directoryTransferSent:
             return .clientEvents
         case .serverStarted, .serverStartFailed, .serverStopped, .tlsAutoconfRenewed:
             return .serverEvents
@@ -96,6 +109,10 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.new_connection.title", defaultValue: "새 클라이언트 연결됨")
         case .connectionClosed:
             return String(localized: "notification.connection_closed.title", defaultValue: "클라이언트 연결 종료됨")
+        case .authenticationFailed:
+            return String(localized: "notification.authentication_failed.title", defaultValue: "인증 실패")
+        case .sessionPanic:
+            return String(localized: "notification.session_panic.title", defaultValue: "세션 비정상 종료")
         case .serverStarted:
             return String(localized: "notification.server_started.title", defaultValue: "서버 시작됨")
         case .serverStartFailed:
@@ -116,8 +133,12 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.critical_update_required.title", defaultValue: "긴급 업데이트 필요")
         case .pluginBundleRejectedBySecurityPolicy:
             return String(localized: "notificaiton.plugin_bundle_rejected_by_security_policy.title", defaultValue: "플러그인 번들 로드 거부됨")
+        case .clipboardServedToClient:
+            return String(localized: "notification.clipboard_served_to_client.title", defaultValue: "클립보드 접근됨")
         case .fileTransferSent:
             return String(localized: "notification.file_transfer_sent.title", defaultValue: "파일 전송 완료")
+        case .directoryTransferSent:
+            return String(localized: "notification.directory_transfer_sent.title", defaultValue: "디렉토리 전송 완료")
         }
     }
     
@@ -127,7 +148,13 @@ enum AppNotification: Identifiable {
             return endpoint
         case .connectionClosed(let endpoint):
             return endpoint
-            
+        case .authenticationFailed(let endpoint):
+            return endpoint
+        case .sessionPanic(let endpoint, _):
+            return endpoint
+        case .clipboardServedToClient(let endpoint):
+            return endpoint.isEmpty ? nil : endpoint
+
         default:
             return nil
         }
@@ -140,6 +167,10 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.new_connection.message", defaultValue: "새 클라이언트가 서버에 연결되었습니다.")
         case .connectionClosed:
             return String(localized: "notification.connection_closed.message", defaultValue: "클라이언트 연결이 종료되었습니다.")
+        case .authenticationFailed:
+            return String(localized: "notification.authentication_failed.message", defaultValue: "클라이언트 인증에 실패했습니다.")
+        case .sessionPanic(_, let reason):
+            return String(format: String(localized: "notification.session_panic.message", defaultValue: "세션이 비정상적으로 종료되었습니다: %@"), reason)
         case .serverStarted:
             return String(localized: "notification.server_started.message", defaultValue: "서버가 성공적으로 시작되었습니다.")
         case .serverStartFailed(let error):
@@ -171,6 +202,8 @@ enum AppNotification: Identifiable {
                 ),
                 metadata.id
             )
+        case .clipboardServedToClient:
+            return String(localized: "notification.clipboard_served_to_client.message", defaultValue: "호스트의 클립보드 내용이 클라이언트로 전달되었습니다.")
         case .fileTransferSent(let fileName):
             return String(
                 format: String(
@@ -178,6 +211,14 @@ enum AppNotification: Identifiable {
                     defaultValue: "클라이언트로 '%@' 파일이 전송되었습니다."
                 ),
                 fileName
+            )
+        case .directoryTransferSent(let directoryName):
+            return String(
+                format: String(
+                    localized: "notification.directory_transfer_sent.message",
+                    defaultValue: "클라이언트로 '%@' 디렉토리가 전송되었습니다."
+                ),
+                directoryName
             )
         }
 
@@ -191,21 +232,50 @@ enum AppNotification: Identifiable {
         content.sound = .default
         content.categoryIdentifier = self.category.rawValue
         content.interruptionLevel = .active
-        
+
         if let subtitle = self.subtitle {
             content.subtitle = subtitle
         }
-        
+
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
             trigger: nil
         )
-        
+
         UNUserNotificationCenter.current().add(request) { error in
             if let error {
                 print("Failed to post notification \(self.id): \(error.localizedDescription)")
             }
         }
+    }
+
+    @MainActor
+    func postIfEnabled() {
+        guard let settings: AppSettings = SettingsStore.shared.settings else { return }
+        let n = settings.notifications
+        guard n.enabled else { return }
+
+        let allowed: Bool
+        switch self {
+        case .newConnection:
+            allowed = n.onConnect
+        case .connectionClosed:
+            allowed = n.onDisconnect
+        case .authenticationFailed, .sessionPanic:
+            allowed = n.onError
+        case .clipboardServedToClient:
+            allowed = n.onClipboardAccess
+        case .fileTransferSent, .directoryTransferSent:
+            allowed = n.onFileTransfer
+        case .serverStarted, .serverStopped, .serverStartFailed, .tlsAutoconfRenewed,
+             .invalidLicense, .licenseExpiringSoon, .licenseExpired,
+             .updateAvailable, .criticalUpdateRequired,
+             .pluginBundleRejectedBySecurityPolicy:
+            // 토글 미노출 카테고리: master switch 만 통과하면 발송
+            allowed = true
+        }
+        guard allowed else { return }
+        post()
     }
 }

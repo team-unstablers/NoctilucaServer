@@ -196,8 +196,9 @@ extension NoctilucaClientSession {
 
             try await self.mainChannel.sendAuthResponse(AuthResponse(sessionID: self.id))
 
+            let endpoint = self.remoteAddress
             Task { @MainActor in
-                await AppNotification.newConnection(endpoint: remoteAddress).post()
+                AppNotification.newConnection(endpoint: endpoint).postIfEnabled()
             }
 
             // fsaccess (consuming peer) 자동 시작 — settings.fileAccess.enabled 일 때만.
@@ -213,6 +214,11 @@ extension NoctilucaClientSession {
             ])
 
             logger.error("Authentication failed: \(error.localizedDescription)")
+
+            let endpoint = self.remoteAddress
+            Task { @MainActor in
+                AppNotification.authenticationFailed(endpoint: endpoint).postIfEnabled()
+            }
 
             // SECURITY/UX: spec-violation-policy 3-1 "Reason 필수화"
             //              인증 실패 사유를 클라이언트에게 ServerNotice 로 전달한다.

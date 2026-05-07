@@ -254,7 +254,7 @@ final class NoctilucaServer: ObservableObject {
             await self.handleError(identityLoadError: error)
         } catch {
             logger.error("Failed to start NoctilucaServer: \(error)")
-            AppNotification.serverStartFailed(error: error).post()
+            AppNotification.serverStartFailed(error: error).postIfEnabled()
             self.state = .idle
             throw error
         }

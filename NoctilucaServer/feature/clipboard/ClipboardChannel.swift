@@ -273,6 +273,9 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
                         "type": "directory_listing",
                         "size": String(jsonData.count),
                     ])
+                    Task { @MainActor in
+                        AppNotification.directoryTransferSent(directoryName: name).postIfEnabled()
+                    }
 
                 } else {
                     // 파일: 디스크에서 스트리밍 전송 (검증된 safePath 사용)
@@ -295,7 +298,9 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
                         "size": String(actualLength),
                         "content_type": mimeType,
                     ])
-                    await AppNotification.fileTransferSent(fileName: name).post()
+                    Task { @MainActor in
+                        AppNotification.fileTransferSent(fileName: name).postIfEnabled()
+                    }
                 }
             } catch {
                 logger.error("Failed to serve file transfer: \(error)")
