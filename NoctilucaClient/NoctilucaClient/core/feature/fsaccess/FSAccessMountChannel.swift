@@ -464,8 +464,24 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
         let isEof = read == 0 || (read < len)
 
+        // 압축 method 가 zstd 면 wire bytes 로 압축. 실패하면 per-op ioError 로 응답
+        // (spec: 채널 자체는 유지).
+        let wireData: Data
+        if mountSession.selectedCompressionMethod == .zstd {
+            do {
+                wireData = try ZstdCodec.compress(buffer)
+            } catch {
+                logger.error("Read compression failed: \(error)")
+                try await sendError(opcode: .fileSystemReadResponse, requestId: request.requestId,
+                    code: .ioError, message: "zstd compression failed.")
+                return
+            }
+        } else {
+            wireData = buffer
+        }
+
         try await handle.send(opcode: .fileSystemReadResponse, message: FileSystemReadResponse(
-            requestId: request.requestId, success: true, data: buffer, isEof: isEof, error: nil))
+            requestId: request.requestId, success: true, data: wireData, isEof: isEof, error: nil))
     }
 
     private func handleWrite(_ request: FileSystemWriteRequest) async throws {
@@ -490,10 +506,26 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             return
         }
 
-        let written: Int = request.data.withUnsafeBytes { rawPtr -> Int in
+        // 압축 method 가 zstd 면 wire 로 받은 데이터를 decompress 하고 pwrite. 실패는
+        // per-op ioError 로 회복 (spec).
+        let payload: Data
+        if mountSession.selectedCompressionMethod == .zstd {
+            do {
+                payload = try ZstdCodec.decompress(request.data)
+            } catch {
+                logger.error("Write decompression failed: \(error)")
+                try await sendError(opcode: .fileSystemWriteResponse, requestId: request.requestId,
+                    code: .ioError, message: "zstd decompression failed.")
+                return
+            }
+        } else {
+            payload = request.data
+        }
+
+        let written: Int = payload.withUnsafeBytes { rawPtr -> Int in
             guard let base = rawPtr.baseAddress else { return -1 }
             // O_APPEND 시 offset 무시 (POSIX 보장)
-            return Darwin.pwrite(fd, base, request.data.count, off_t(request.offset))
+            return Darwin.pwrite(fd, base, payload.count, off_t(request.offset))
         }
         if written < 0 {
             try await sendError(opcode: .fileSystemWriteResponse, requestId: request.requestId,

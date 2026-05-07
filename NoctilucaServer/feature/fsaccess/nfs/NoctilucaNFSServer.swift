@@ -872,7 +872,19 @@ actor NoctilucaNFSServer: NFSServer {
             handleId: navHandle, offset: offset, length: UInt32(min(count, Int(UInt32.max)))
         )
         guard response.success else { throw Self.nfsError(from: response.error) }
-        return NFSReadResult(data: response.data, eof: response.isEof)
+        // mount session 이 zstd 협상 상태면 wire bytes 를 decompress 하고 NFS client 에게 raw 반환.
+        let payload: Data
+        if channel.selectedCompressionMethod == .zstd {
+            do {
+                payload = try ZstdCodec.decompress(response.data)
+            } catch {
+                logger.error("read: zstd decompression failed: \(error)")
+                throw NFSError.io
+            }
+        } else {
+            payload = response.data
+        }
+        return NFSReadResult(data: payload, eof: response.isEof)
     }
 
     func write(handle: NFSFileHandle, stateid: NFSStateID, offset: UInt64, stability: NFSWriteStability, data: Data) async throws -> NFSWriteResult {
@@ -886,7 +898,21 @@ actor NoctilucaNFSServer: NFSServer {
         guard let navHandle = await channel.pathMap.record(forHostHandleId: hostFileId)?.navigatorHandleId else {
             throw NFSError.badHandle
         }
-        let response = try await channel.sendWrite(handleId: navHandle, offset: offset, data: data)
+        // mount session 이 zstd 협상 상태면 NFS client 가 준 raw 바이트를 wire 로
+        // 보내기 전 zstd 압축. response.bytesWritten 은 navigator 가 *uncompressed*
+        // 바이트 단위로 응답해야 spec 일관성 — 이는 navigator 측 책임.
+        let wireData: Data
+        if channel.selectedCompressionMethod == .zstd {
+            do {
+                wireData = try ZstdCodec.compress(data)
+            } catch {
+                logger.error("write: zstd compression failed: \(error)")
+                throw NFSError.io
+            }
+        } else {
+            wireData = data
+        }
+        let response = try await channel.sendWrite(handleId: navHandle, offset: offset, data: wireData)
         guard response.success else { throw Self.nfsError(from: response.error) }
         // size / mtime 변경 → 캐시된 stat invalidate.
         await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)

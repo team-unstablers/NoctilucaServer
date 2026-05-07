@@ -12,20 +12,31 @@ import Darwin
 
 import SiriusKitClient
 
-/// fsaccess_mount 의 가상 path 컨벤션.
+/// fsaccess_mount stream IO TransferChannel 의 args 헬퍼. Spec 기준 4-arity:
 ///   args[0] = "fsaccess-mount"
-///   args[1] = transferId UUID string
+///   args[1] = direction ("upload" / "download")
+///   args[2] = purposeArgs query string ("transfer-id=...")
+///   args[3] = transferArgs query string ("compress=zstd" 또는 "")
 enum FSAccessStreamArgs {
-    static let purposeRaw = "fsaccess-mount"
+    static let purposeRaw = TransferChannelPurpose.fsaccessMount.rawValue
 
-    static func make(transferId: UUID) -> [String] {
-        return [purposeRaw, transferId.uuidString]
+    static func make(
+        transferId: UUID,
+        direction: TransferChannelDirection,
+        compressionMethod: CompressionMethod
+    ) -> [String] {
+        let purposeArgs = TransferQueryString.encode([("transfer-id", transferId.uuidString)])
+        let transferArgs: String = compressionMethod == .none
+            ? ""
+            : TransferQueryString.encode([("compress", compressionMethod.rawValue)])
+        return [purposeRaw, direction.rawValue, purposeArgs, transferArgs]
     }
 
     static func parseTransferId(args: [String]) -> UUID? {
-        guard args.count >= 2 else { return nil }
-        guard args[0] == purposeRaw else { return nil }
-        return UUID(uuidString: args[1])
+        guard args.count == 4, args[0] == purposeRaw else { return nil }
+        guard let pairs = try? TransferQueryString.parse(args[2]),
+              let raw = pairs["transfer-id"] else { return nil }
+        return UUID(uuidString: raw)
     }
 }
 
@@ -56,7 +67,17 @@ enum FSAccessStreamCoordinator {
             return
         }
 
-        let args = FSAccessStreamArgs.make(transferId: transferId)
+        // mount session 에서 결정된 compression method 를 그대로 propagate.
+        // sender (=클라) 가 channel-opener 이므로 transferArgs 의 compress= 광고는
+        // 우리(=local) 의 의도. receiver(서버) 는 candidate list 안에서 method 를
+        // 선택해 TransferReady 로 답한다.
+        let mountCompression = channel.mountSession.selectedCompressionMethod
+        // direction 의미: opener(=sender) 가 데이터를 *push* 하는 흐름이므로 upload.
+        let args = FSAccessStreamArgs.make(
+            transferId: transferId,
+            direction: .upload,
+            compressionMethod: mountCompression
+        )
 
         let transferChannel: TransferChannel
         do {
