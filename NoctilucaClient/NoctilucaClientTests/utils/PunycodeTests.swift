@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import NoctilucaClient
+@testable import Noctiluca_Navigator
 
 final class PunycodeTests: XCTestCase {
     private let punycode = Punycode()

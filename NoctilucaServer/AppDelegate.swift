@@ -50,6 +50,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         // ignore SIGPIPE to prevent app from crashing when trying to write to a closed socket
         signal(SIGPIPE, SIG_IGN);
 
+        // SIGTERM / SIGINT 수신 시 fsaccess NFS mount 를 forced unmount 후 graceful 종료.
+        FSAccessSignalGuard.install()
+
         let delegate = AppDelegate()
         app.delegate = delegate
         _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)

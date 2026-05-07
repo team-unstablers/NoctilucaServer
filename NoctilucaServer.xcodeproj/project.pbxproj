@@ -27,6 +27,8 @@
 		F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F64AEF892F6670F300C0EDD8 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = F64AEF882F6670F300C0EDD8 /* Sentry */; };
 		F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */ = {isa = PBXBuildFile; fileRef = F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */; };
+		F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BA2FA818B300F3D400 /* NanoNFS */; };
+		F64FAF892FA95BA700F3D400 /* NetFS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F64FAF882FA95BA700F3D400 /* NetFS.framework */; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
 		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -67,6 +69,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = F6CC836F2F5B522800AA6DC2;
 			remoteInfo = NoctilucaServerTestsHost;
+		};
+		F6630DD02FA95D7E0000981D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F66965032ECF26770032EF4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F621D2062F91FC4F00AEF0FA;
+			remoteInfo = nocvirtdisplay;
 		};
 		F6CC7D3E2F51904400AA6DC2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -183,6 +192,7 @@
 		F627113E2F084EBB00E8A3D7 /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
 		F6379D3D2EE7D554004BC795 /* libbcrypt.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = libbcrypt.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */ = {isa = PBXFileReference; lastKnownFileType = text; path = OPEN_SOURCE_LICENSE.server; sourceTree = "<group>"; };
+		F64FAF882FA95BA700F3D400 /* NetFS.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetFS.framework; path = System/Library/Frameworks/NetFS.framework; sourceTree = SDKROOT; };
 		F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libturbojpeg.xcframework; path = frameworks/libturbojpeg.xcframework; sourceTree = "<group>"; };
 		F659BDF22EF3C1730010A18E /* NoctilucaServerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoctilucaServerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F669650B2ECF26770032EF4E /* NoctilucaServer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoctilucaServer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -354,6 +364,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */,
 				F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */,
 				F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */,
 				F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */,
@@ -361,6 +372,7 @@
 				F627113F2F084EC200E8A3D7 /* libz.1.tbd in Frameworks */,
 				F64AEF892F6670F300C0EDD8 /* Sentry in Frameworks */,
 				F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */,
+				F64FAF892FA95BA700F3D400 /* NetFS.framework in Frameworks */,
 				F6F98E7B2F306B5D0024513A /* SiriusKit in Frameworks */,
 				F62689452F1E50F60030D59B /* Gesu in Frameworks */,
 				F62711442F0852DE00E8A3D7 /* libzstd in Frameworks */,
@@ -427,6 +439,7 @@
 		F66965352ECF27110032EF4E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F64FAF882FA95BA700F3D400 /* NetFS.framework */,
 				F6561F1B2F08C0CD0090BCB3 /* libturbojpeg.xcframework */,
 				F627113E2F084EBB00E8A3D7 /* libz.1.tbd */,
 				F6379D3D2EE7D554004BC795 /* libbcrypt.framework */,
@@ -528,6 +541,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				F6630DD12FA95D7E0000981D /* PBXTargetDependency */,
 				F6CC7D3F2F51904400AA6DC2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -548,6 +562,7 @@
 				F6CC836B2F5B33FC00AA6DC2 /* Inject */,
 				F64AEF882F6670F300C0EDD8 /* Sentry */,
 				F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */,
+				F64F79BA2FA818B300F3D400 /* NanoNFS */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -638,6 +653,7 @@
 				F6CC836A2F5B33FB00AA6DC2 /* XCRemoteSwiftPackageReference "Inject" */,
 				F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669650C2ECF26770032EF4E /* Products */;
@@ -728,6 +744,11 @@
 			isa = PBXTargetDependency;
 			target = F6CC836F2F5B522800AA6DC2 /* NoctilucaServerTestsHost */;
 			targetProxy = F61137D82FA330D3008ED9BB /* PBXContainerItemProxy */;
+		};
+		F6630DD12FA95D7E0000981D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F621D2062F91FC4F00AEF0FA /* nocvirtdisplay */;
+			targetProxy = F6630DD02FA95D7E0000981D /* PBXContainerItemProxy */;
 		};
 		F6CC7D3F2F51904400AA6DC2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1301,6 +1322,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../nanonfs;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1452,6 +1480,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
+		};
+		F64F79BA2FA818B300F3D400 /* NanoNFS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */;
+			productName = NanoNFS;
 		};
 		F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -3658,6 +3658,17 @@
         }
       }
     },
+    "common.allow" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "허용"
+          }
+        }
+      }
+    },
     "common.auto" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -3857,6 +3868,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除"
+          }
+        }
+      }
+    },
+    "common.deny" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "거부"
           }
         }
       }
@@ -6020,6 +6042,149 @@
     },
     "Frame rate: %@ fps" : {
 
+    },
+    "fsaccess.consent.access.read" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "읽기 전용"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.access.read_write" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "읽기/쓰기"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.access.unknown" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "알 수 없음"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.access.write" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "쓰기 전용"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.allow_read_only" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "읽기 전용으로 허용"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.allow_read_write" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "읽기/쓰기로 허용"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.allow_write" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "쓰기로 허용"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.entry" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "폴더"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.reason" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "사유"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.requested_access" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "요청한 권한"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.subtitle" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 호스트가 이 기기의 폴더에 접근하려고 합니다."
+          }
+        }
+      }
+    },
+    "fsaccess.consent.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 시스템 액세스 요청"
+          }
+        }
+      }
+    },
+    "fsaccess.consent.warning" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**주의**: 신뢰할 수 없는 호스트라면 거부하세요. 허용한 권한 범위 내에서 호스트는 폴더를 읽거나 수정할 수 있습니다."
+          }
+        }
+      }
     },
     "GameController.framework" : {
 
@@ -14500,6 +14665,347 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "仅允许文本"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.acl.read_only" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "읽기 전용"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.acl.read_write" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "읽기/쓰기"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.acl" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "권한"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.browse" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "찾아보기..."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에 노출할 디렉토리를 지정하세요. 표시명은 서버에서 보이는 가상 경로 이름입니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.display_name" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "표시명"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.display_name.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "예: 내 작업물"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.panel_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "공유할 디렉토리 선택"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.path" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "경로"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.path.placeholder" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "/Users/..."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.title.add" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "허용된 디렉토리 추가"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.edit.title.edit" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "허용된 디렉토리 편집"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.entries.empty" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(허용된 디렉토리가 없습니다)\n추가 버튼을 눌러 디렉토리를 등록하세요."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.entry.unnamed" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(이름 없음)"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.acl.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 호스트가 이 폴더에 대해 가지는 권한을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.acl.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 호스트의 권한"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.expose_documents.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**파일** 앱의 `Noctiluca Navigator/fsaccess/` 폴더를 원격 호스트에 노출합니다. 사용자는 해당 폴더에 파일을 직접 넣고 뺄 수 있습니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.expose_documents.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "이 기기의 파일 노출하기"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.ios.section_footer" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**파일** 앱에서 *Noctiluca Navigator* 위치를 통해 `fsaccess/` 폴더에 접근할 수 있습니다. 노출하지 않을 파일은 다른 폴더에 보관하세요."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.always_allow" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "항상 허용 **(위험!)**"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.always_allow_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "확인 없이 모든 파일 시스템 접근 요청을 허용합니다. 신뢰할 수 있는 환경에서만 사용하세요."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.always_allow_ro" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "항상 읽기 전용으로 허용"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.always_allow_ro_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모든 접근 요청을 읽기 전용으로 강제하여 허용합니다. 아래 목록의 권한이 '읽기/쓰기'여도 읽기 전용으로 다운그레이드됩니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.always_ask" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "항상 묻기 **(권장)**"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.always_ask_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버에서 접근 요청이 있을 때마다 사용자에게 확인을 받습니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.deny" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "거부하기"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.deny_desc" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "모든 파일 시스템 접근 요청을 거부합니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "서버가 이 기기의 파일 시스템에 접근하려 할 때의 정책을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.policy.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 시스템 액세스 허용하기"
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.section_description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "원격 호스트에서 이 기기의 파일/디렉토리에 접근할 수 있도록 노출할 항목을 설정합니다."
+          }
+        }
+      }
+    },
+    "session-settings.transfer.fs_access.section_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 시스템 액세스"
           }
         }
       }
