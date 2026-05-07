@@ -100,6 +100,8 @@ final class RootViewController: UINavigationController {
             detailView = AnyView(InputSettingsTab().environmentObject(settingsStore))
         case .security:
             detailView = AnyView(SecuritySettingsTab().environmentObject(settingsStore))
+        case .fileAccess:
+            detailView = AnyView(FileAccessSettingsTab().environmentObject(settingsStore))
         case .misc:
             detailView = AnyView(
                 MiscSettingsTab(settings: .init(
