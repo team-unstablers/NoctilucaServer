@@ -95,13 +95,18 @@ extension NoctilucaClientSession {
         await channel.state.setEntries(listResponse.entries)
 
         let access: AccessMode = alwaysReadOnly ? .read : .readWrite
+        let settings = await SettingsStore.shared.settings ?? AppSettings()
+        let proposedCompressionMethods: [CompressionMethod] = settings.fileAccess.enableCompression
+            ? [.zstd, .none]
+            : []
 
         for entry in listResponse.entries {
             await self.autoMountEntry(
                 channel: channel,
                 connectionLabel: connectionLabel,
                 entry: entry,
-                requestedAccess: access
+                requestedAccess: access,
+                proposedCompressionMethods: proposedCompressionMethods
             )
         }
     }
@@ -109,13 +114,15 @@ extension NoctilucaClientSession {
     private func autoMountEntry(channel: FSAccessChannel,
                                 connectionLabel: String,
                                 entry: FileSystemEntry,
-                                requestedAccess: AccessMode) async {
+                                requestedAccess: AccessMode,
+                                proposedCompressionMethods: [CompressionMethod]) async {
         let mountResponse: FileSystemMountResponse
         do {
             mountResponse = try await channel.requestMount(
                 entryId: entry.id,
                 requestedAccess: requestedAccess,
-                reason: "host auto-mount (access=\(requestedAccess))"
+                reason: "host auto-mount (access=\(requestedAccess))",
+                proposedCompressionMethods: proposedCompressionMethods
             )
         } catch {
             Self.fsAccessLogger.error("fsaccess: auto-mount throw for '\(entry.name)': \(error)")
@@ -151,15 +158,22 @@ extension NoctilucaClientSession {
             // capability flag 를 mount channel 자체에 저장 — NFS lock callback
             // dispatch 에서 supportsLocks 분기 판단에 사용.
             fsMountChannel.supportsLocks = mountResponse.supportsLocks
+            // 미인식 identifier 면 spec 의 single-value fallback 규칙대로 .none 으로 강등.
+            let knownMethods: Set<CompressionMethod> = [.none, .zstd]
+            let resolvedCompression: CompressionMethod = knownMethods.contains(mountResponse.selectedCompressionMethod)
+                ? mountResponse.selectedCompressionMethod
+                : .none
+            fsMountChannel.selectedCompressionMethod = resolvedCompression
             let record = FSAccessMountSessionRecord(
                 id: mountResponse.sessionId,
                 connectionLabel: connectionLabel,
                 entry: entry,
                 grantedAccess: mountResponse.grantedAccess,
-                supportsLocks: mountResponse.supportsLocks
+                supportsLocks: mountResponse.supportsLocks,
+                selectedCompressionMethod: resolvedCompression
             )
             await channel.state.addMountSession(record)
-            Self.fsAccessLogger.info("fsaccess: auto-mounted '\(entry.name)' (session=\(mountResponse.sessionId.uuidString) granted=\(mountResponse.grantedAccess.rawValue) supportsLocks=\(mountResponse.supportsLocks))")
+            Self.fsAccessLogger.info("fsaccess: auto-mounted '\(entry.name)' (session=\(mountResponse.sessionId.uuidString) granted=\(mountResponse.grantedAccess.rawValue) supportsLocks=\(mountResponse.supportsLocks) compression=\(resolvedCompression.rawValue))")
         } catch {
             Self.fsAccessLogger.error("fsaccess: openChannel(.fileSystemAccessMount) failed for '\(entry.name)': \(error)")
             await NocFSAccessHost.shared.removeMountSession(mountResponse.sessionId)

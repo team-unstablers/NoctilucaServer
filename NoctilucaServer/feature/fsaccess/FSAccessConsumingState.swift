@@ -25,6 +25,8 @@ struct FSAccessMountSessionRecord: Sendable {
     /// callback 의 wire dispatch 여부를 결정한다 (false 면 host 가 fake success
     /// 로 시뮬레이션, true 면 fsaccess_mount channel 로 navigator 에 전달).
     let supportsLocks: Bool
+    /// 응답으로 받은 selectedCompressionMethod. mount session lifetime 동안 적용.
+    let selectedCompressionMethod: CompressionMethod
 }
 
 actor FSAccessConsumingState {

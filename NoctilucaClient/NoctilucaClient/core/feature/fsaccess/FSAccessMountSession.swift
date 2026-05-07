@@ -24,17 +24,23 @@ final class FSAccessMountSession: @unchecked Sendable {
     /// 이후 read-only — settings 변경은 다음 mount session 부터 적용된다.
     let hidesAppleDoubleSidecar: Bool
 
+    /// `FileSystemMountResponse.selectedCompressionMethod` 에 광고한 method.
+    /// inline read/write 와 stream IO 의 데이터 플레인에 동일하게 적용된다.
+    let selectedCompressionMethod: CompressionMethod
+
     private let lock = NSLock()
     private var _mountChannel: FSAccessMountChannel?
 
     init(id: UUID, entryId: UUID, entryName: String, rootURL: URL,
-         grantedAccess: AccessMode, hidesAppleDoubleSidecar: Bool = false) {
+         grantedAccess: AccessMode, hidesAppleDoubleSidecar: Bool = false,
+         selectedCompressionMethod: CompressionMethod = .none) {
         self.id = id
         self.entryId = entryId
         self.entryName = entryName
         self.rootURL = rootURL
         self.grantedAccess = grantedAccess
         self.hidesAppleDoubleSidecar = hidesAppleDoubleSidecar
+        self.selectedCompressionMethod = selectedCompressionMethod
     }
 
     var mountChannel: FSAccessMountChannel? {

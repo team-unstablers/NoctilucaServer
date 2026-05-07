@@ -178,7 +178,14 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
     }
 
     /// `FileSystemMountRequest` 를 발신하고 응답을 기다린다.
-    func requestMount(entryId: UUID, requestedAccess: AccessMode, reason: String?) async throws -> FileSystemMountResponse {
+    /// `proposedCompressionMethods` 는 navigator(exposing peer)에게 광고할 후보 목록.
+    /// 빈 list 면 `[none]` 과 동등 (spec) — navigator 는 `none` 을 강제로 선택해야 함.
+    func requestMount(
+        entryId: UUID,
+        requestedAccess: AccessMode,
+        reason: String?,
+        proposedCompressionMethods: [CompressionMethod] = []
+    ) async throws -> FileSystemMountResponse {
         let requestId = await state.issueRequestId()
 
         // Self-cap: 우리는 reason 길이를 spec 한도 안으로 보낸다.
@@ -200,6 +207,7 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
             entryId: entryId,
             requestedAccess: requestedAccess,
             reason: safeReason,
+            proposedCompressionMethods: proposedCompressionMethods,
             flags: 0
         )
 
@@ -215,7 +223,8 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
                         sessionId: UUID(),
                         grantedAccess: .read,
                         error: ErrorInfo(code: .internal, message: "send failed: \(error)", platformCode: nil, platformName: nil),
-                        supportsLocks: false
+                        supportsLocks: false,
+                        selectedCompressionMethod: .none
                     ))
                 }
             }

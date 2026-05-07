@@ -54,6 +54,12 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     /// 생성 직후 control channel 측에서 1회 set 하며 그 이후로는 read-only.
     nonisolated(unsafe) var supportsLocks: Bool = false
 
+    /// `FileSystemMountResponse.selectedCompressionMethod`. inline read/write 의
+    /// data 필드와 stream IO 가 spawn 하는 transfer channel 의 transferArgs
+    /// `compress=` 토큰에 그대로 사용된다. mount channel 생성 직후 1회 set
+    /// 그 이후로는 read-only.
+    nonisolated(unsafe) var selectedCompressionMethod: CompressionMethod = .none
+
     /// 응답 매칭. requestId → continuation.
     let pending = PendingMountReplies()
 

@@ -47,6 +47,13 @@ extension AppSettings {
         /// (=navigator 광고 그대로 존중).
         var useFakeLocks: Bool = false
 
+        /// `true` 면 host 가 mount setup 에서 `proposedCompressionMethods=[zstd, none]`
+        /// 을 광고하고, navigator 가 zstd 를 골라 응답하면 inline read/write 와
+        /// stream IO 의 데이터 플레인에 zstd 압축이 적용됩니다.
+        /// `false` 면 빈 list 를 광고하여 navigator 측이 무조건 `none` 으로 답하도록
+        /// 강제합니다. 기본값 `true` (NFS 트래픽 절감 우선).
+        var enableCompression: Bool = true
+
         init() {}
 
         enum CodingKeys: String, CodingKey {
@@ -54,6 +61,7 @@ extension AppSettings {
             case mountPointPath
             case alwaysReadOnly
             case useFakeLocks
+            case enableCompression
         }
 
         init(from decoder: any Decoder) throws {
@@ -73,6 +81,9 @@ extension AppSettings {
             useFakeLocks = container.decodeSafe(
                 Bool.self, forKey: .useFakeLocks, default: useFakeLocks
             )
+            enableCompression = container.decodeSafe(
+                Bool.self, forKey: .enableCompression, default: enableCompression
+            )
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -82,6 +93,7 @@ extension AppSettings {
             try container.encode(mountPointPath, forKey: .mountPointPath)
             try container.encode(alwaysReadOnly, forKey: .alwaysReadOnly)
             try container.encode(useFakeLocks, forKey: .useFakeLocks)
+            try container.encode(enableCompression, forKey: .enableCompression)
         }
     }
 }

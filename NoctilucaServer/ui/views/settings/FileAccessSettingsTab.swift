@@ -161,6 +161,17 @@ struct FileAccessSettingsTab: View {
                     .onChange(of: settings.fileAccess.useFakeLocks) { _, newValue in
                         Task { await NocFSAccessHost.shared.setUseFakeLocks(newValue) }
                     }
+
+                    Toggle(isOn: $settings.fileAccess.enableCompression) {
+                        Text(markdown: String(
+                            localized: "settings.file_access.policy.compression.title",
+                            defaultValue: "데이터 플레인 압축 사용하기 (zstd)"
+                        ))
+                        Text(markdown: String(
+                            localized: "settings.file_access.policy.compression.description",
+                            defaultValue: "파일 read/write 페이로드를 zstd 로 압축하여 전송합니다. 클라이언트가 지원하지 않으면 자동으로 비압축으로 fallback 합니다.\n**다음 마운트부터 적용**됩니다."
+                        ))
+                    }
                 } header: {
                     Text(markdown: String(
                         localized: "settings.file_access.section_policy.title",
