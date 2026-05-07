@@ -40,6 +40,10 @@ struct AppSettings: Codable, Sendable {
     var misc: Misc = .init()
     var plugins: Plugins = .init()
 
+    // MARK: - File Access Settings
+
+    var fileAccess: FileAccess = .init()
+
     init() {}
 
     enum CodingKeys: String, CodingKey {
@@ -51,6 +55,7 @@ struct AppSettings: Codable, Sendable {
         case misc
         case plugins
         case projection
+        case fileAccess
     }
 
     init(from decoder: any Decoder) throws {
@@ -78,6 +83,7 @@ struct AppSettings: Codable, Sendable {
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         misc = container.decodeSafe(Misc.self, forKey: .misc, default: misc)
         plugins = container.decodeSafe(Plugins.self, forKey: .plugins, default: plugins)
+        fileAccess = container.decodeSafeIfPresent(FileAccess.self, forKey: .fileAccess) ?? FileAccess()
 
         migrateIfNeeded(from: decodedSchemaVersion, sessionDefaultsMissing: sessionDefaultsMissing)
     }
@@ -92,6 +98,7 @@ struct AppSettings: Codable, Sendable {
         try container.encode(misc, forKey: .misc)
         try container.encode(plugins, forKey: .plugins)
         try container.encode(projection, forKey: .projection)
+        try container.encode(fileAccess, forKey: .fileAccess)
     }
 
     mutating func migrateIfNeeded(from legacyVersion: Int, sessionDefaultsMissing: Bool = false) {
