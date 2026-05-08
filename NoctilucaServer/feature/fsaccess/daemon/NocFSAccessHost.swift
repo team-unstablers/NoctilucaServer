@@ -148,6 +148,21 @@ actor NocFSAccessHost {
     }
 
     func removeMountSession(_ id: UUID) async {
+        // mount session 의 fsaccess_mount channel 이 아직 살아있으면 (host-
+        // initiated 명시 unmount 등) navigator 측에 남아있는 모든 OPEN slot 을
+        // best-effort 로 close 해 navigator 측 handle table inflate 를 회수한다.
+        // channel 이 이미 죽었으면 (peer-initiated close 후 cleanup) channel 의
+        // teardown 흐름이 메모리만 비우고, 여기 sendClose 호출은 throw 되어
+        // try? 가 흡수.
+        if let channel = await FSAccessRequestRouter.shared.channel(for: id) {
+            let slots = await channel.openSlotTable.drainAll()
+            if !slots.isEmpty {
+                logger.info("removeMountSession: draining \(slots.count) OpenSlot(s) for session=\(id.uuidString)")
+            }
+            for slot in slots {
+                _ = try? await channel.sendClose(handleId: slot.navigatorHandleId)
+            }
+        }
         _ = await virtualTree.removeMountSession(id)
         _ = await handleTable.invalidateAll(mountSession: id)
     }

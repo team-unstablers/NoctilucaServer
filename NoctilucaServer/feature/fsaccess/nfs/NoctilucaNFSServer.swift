@@ -253,17 +253,19 @@ actor NoctilucaNFSServer: NFSServer {
         if let cached = await channel.pathMap.cachedStat(forHostHandleId: hostFileId) {
             return Self.makeNFSStat(from: cached, fileid: fileid)
         }
-        let record = await channel.pathMap.record(forHostHandleId: hostFileId)
-        if let navHandle = record?.navigatorHandleId {
-            let response = try await channel.sendFStat(handleId: navHandle)
+        // GETATTR 는 stateid 인자가 없는 op (RFC 7530 §16.7). hostFile 에 살아
+        // 있는 OPEN slot 이 있으면 그 navHandle 로 fstat (가장 정확). 없으면
+        // path 기반 sendStat 로 fallback.
+        if let slot = await channel.openSlotTable.bestSlot(forHostFileId: hostFileId) {
+            let response = try await channel.sendFStat(handleId: slot.navigatorHandleId)
             guard response.success, let stat = response.stat else {
                 throw Self.nfsError(from: response.error)
             }
             await channel.pathMap.updateStat(forHostHandleId: hostFileId, stat: stat)
             return Self.makeNFSStat(from: stat, fileid: fileid)
         }
-        let path = record?.path ?? "/"
-        let response = try await channel.sendStat(path: path, followSymlinks: true)
+        let path = await channel.pathMap.path(forHostHandleId: hostFileId)
+        let response = try await channel.sendStat(path: path.isEmpty ? "/" : path, followSymlinks: true)
         guard response.success, let stat = response.stat else {
             throw Self.nfsError(from: response.error)
         }
@@ -279,11 +281,19 @@ actor NoctilucaNFSServer: NFSServer {
             throw NFSError.readOnly
         }
         let channel = try await channel(for: mountSessionId)
-        let record = await channel.pathMap.record(forHostHandleId: hostFileId)
         // size 변경은 FTruncate 로 매핑. 그 외 (mode/time) 는 best-effort NOOP.
         if let size = patch.size {
-            guard let navHandle = record?.navigatorHandleId else { throw NFSError.badHandle }
-            let response = try await channel.sendFTruncate(handleId: navHandle, length: size)
+            // RFC 7530 §16.32 — SETATTR 의 size 변경은 OPEN stateid 를 요구.
+            // anonymous / nil 은 거부.
+            guard let stateid, !Self.isAnonymous(stateid) else {
+                logger.error("setattr(size): nil/anonymous stateid not permitted")
+                throw NFSError.badStateid
+            }
+            guard let slot = await channel.openSlotTable.lookup(stateidOther: stateid.other) else {
+                logger.error("setattr(size): stateid lookup miss — hostFileId=\(hostFileId)")
+                throw NFSError.staleStateid
+            }
+            let response = try await channel.sendFTruncate(handleId: slot.navigatorHandleId, length: size)
             guard response.success else { throw Self.nfsError(from: response.error) }
             await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)
         }
@@ -644,14 +654,22 @@ actor NoctilucaNFSServer: NFSServer {
             return NFSFileHandle(HandleTable.encode(id))
         }
         // regular file → Open(createNew).
+        //
+        // NFSv4 CREATE 응답에는 stateid 가 없다 (RFC 7530 §16.4 — handle 만
+        // 응답). navigator 가 createNew 후 떨어뜨린 navHandle 은 client 가
+        // 어차피 직후 OPEN op 로 새 stateid+navHandle 을 다시 잡을 거라
+        // 즉시 close 해 navigator-side handle leak 을 방지한다. 약간의 wire
+        // 왕복이 추가되지만, OpenSlotTable 의 invariant (모든 active
+        // navHandle 은 client 가 echo 가능한 stateid 의 slot 에 1:1 대응) 을
+        // 깨지 않는 게 더 중요하다.
         let response = try await channel.sendOpen(
             path: childPath, accessMode: .readWrite,
             createDisposition: .createNew, flags: [], mode: attrs.mode ?? 0o644
         )
         guard response.success else { throw Self.nfsError(from: response.error) }
+        _ = try? await channel.sendClose(handleId: response.handleId)
         await channel.pathMap.invalidateStat(forPath: parentPath)
         let hostId = await channel.pathMap.issueIfAbsent(path: childPath)
-        await channel.pathMap.attachNavigatorHandle(hostId: hostId, navigatorId: response.handleId)
         let newEntry = HandleEntry(
             kind: .hostFile, connectionLabel: connLabel,
             mountSessionId: mountSessionId, hostFileId: hostId
@@ -729,13 +747,23 @@ actor NoctilucaNFSServer: NFSServer {
 
     // MARK: - OPEN / CLOSE
 
-    /// host-internal entry id 를 인코딩해 unique 한 stateid 를 발급. NFSv4 client
-    /// 일부가 OPEN 응답에 ``NFSStateID.bypass`` (all-ones) 가 오면 fh 를 즉시
-    /// retire 하므로 정상 stateid 가 필요.
-    private static func issueStateid(forEntryId entryId: UInt64) -> NFSStateID {
+    /// host-internal entry id + per-channel monotonic counter 로 unique 한
+    /// stateid 의 12-byte ``other`` 를 발급. 같은 hostFile 에 여러 OPEN 이
+    /// 떨어져도 stateid 가 unique 하므로 (RFC 7530 §8.1.3 정합), CLOSE 가 자기
+    /// stateid 의 slot 만 정확히 닫을 수 있다. NFSv4 client 일부가 OPEN 응답에
+    /// ``NFSStateID.bypass`` (all-ones) 가 오면 fh 를 즉시 retire 하므로 정상
+    /// stateid 가 필요.
+    private static func issueStateid(forEntryId entryId: UInt64, counter: UInt32) -> NFSStateID {
         var other = HandleTable.encode(entryId)  // 8 bytes
-        other.append(Data(repeating: 0, count: 4))  // 12 bytes 총합
+        var beCounter = counter.bigEndian
+        let counterBytes = withUnsafeBytes(of: &beCounter) { Data($0) }
+        other.append(counterBytes)  // 12 bytes 총합
         return NFSStateID(seqid: 1, other: other)
+    }
+
+    /// stateid 가 RFC 7530 §8.1.4.2 의 anonymous (all-zero) 인지 판단.
+    private static func isAnonymous(_ stateid: NFSStateID) -> Bool {
+        return stateid.seqid == 0 && stateid.other.allSatisfy { $0 == 0 }
     }
 
     func open(parent: NFSFileHandle, name: String,
@@ -744,16 +772,17 @@ actor NoctilucaNFSServer: NFSServer {
               wantDelegation: NFSDelegationHint,
               create: NFSCreateMode) async throws -> (handle: NFSFileHandle, result: NFSOpenResult) {
         let (_, parentEntry) = try await decodeHandle(parent)
-        // _README.txt 는 root 의 read-only 파일.
+        // _README.txt 는 root 의 read-only 파일. virtual entry 라 navigator
+        // 측 OpenSlot 등록은 불필요 — read 경로가 entry.kind 분기로 자체 처리.
         if parentEntry.kind == .root, name == "_README.txt", await virtualTree.shouldShowReadme() {
             let fh = NFSFileHandle(HandleTable.encode(HandleTable.readmeEntryId))
-            let stateid = Self.issueStateid(forEntryId: HandleTable.readmeEntryId)
+            let stateid = Self.issueStateid(forEntryId: HandleTable.readmeEntryId, counter: 0)
             return (fh, NFSOpenResult(stateid: stateid, rflags: [], delegation: .none))
         }
         // .metadata_never_index 도 root 의 read-only sentinel.
         if parentEntry.kind == .root, name == Self.metadataNeverIndexName {
             let fh = NFSFileHandle(HandleTable.encode(HandleTable.metadataNeverIndexEntryId))
-            let stateid = Self.issueStateid(forEntryId: HandleTable.metadataNeverIndexEntryId)
+            let stateid = Self.issueStateid(forEntryId: HandleTable.metadataNeverIndexEntryId, counter: 0)
             return (fh, NFSOpenResult(stateid: stateid, rflags: [], delegation: .none))
         }
         let (mountSessionId, parentPath, connLabel) = try await mountContext(for: parentEntry)
@@ -797,7 +826,6 @@ actor NoctilucaNFSServer: NFSServer {
             await channel.pathMap.invalidateStat(forPath: parentPath)
         }
         let hostId = await channel.pathMap.issueIfAbsent(path: childPath)
-        await channel.pathMap.attachNavigatorHandle(hostId: hostId, navigatorId: response.handleId)
         let newEntry = HandleEntry(
             kind: .hostFile, connectionLabel: connLabel,
             mountSessionId: mountSessionId, hostFileId: hostId
@@ -807,8 +835,19 @@ actor NoctilucaNFSServer: NFSServer {
             key: HandleTable.keyForHostFile(mountSessionId: mountSessionId, path: childPath)
         )
         let fh = NFSFileHandle(HandleTable.encode(id))
-        logger.info("open: path=\(childPath) hostFileId=\(hostId) navHandle=\(response.handleId) entryId=\(id)")
-        return (fh, NFSOpenResult(stateid: Self.issueStateid(forEntryId: id), rflags: [], delegation: .none))
+        // 매 OPEN 마다 unique stateid + 별도 OpenSlot. 같은 hostFile 에 read /
+        // write 가 동시에 OPEN 돼도 각자 자기 navHandle 을 보존 → CLOSE 가 자기
+        // slot 만 닫고 다른 OPEN 의 navHandle 을 건드리지 않음.
+        let counter = await channel.stateidGenerator.issue()
+        let stateid = Self.issueStateid(forEntryId: id, counter: counter)
+        await channel.openSlotTable.register(FSAccessMountChannel.OpenSlot(
+            stateidOther: stateid.other,
+            hostFileId: hostId,
+            navigatorHandleId: response.handleId,
+            accessMode: accessMode
+        ))
+        logger.info("open: path=\(childPath) hostFileId=\(hostId) navHandle=\(response.handleId) entryId=\(id) counter=\(counter)")
+        return (fh, NFSOpenResult(stateid: stateid, rflags: [], delegation: .none))
     }
 
     func openConfirm(handle: NFSFileHandle, stateid: NFSStateID, seqid: UInt32) async throws -> NFSStateID {
@@ -825,19 +864,24 @@ actor NoctilucaNFSServer: NFSServer {
         logger.info("close: enter id=\(id) kind=\(String(describing: entry.kind))")
         if entry.kind == .readme || entry.kind == .metadataNeverIndex { return }
         guard entry.kind == .hostFile,
-              let mountSessionId = entry.mountSessionId,
-              let hostFileId = entry.hostFileId else {
+              entry.mountSessionId != nil else {
             return  // virtual tree directory close 는 noop.
         }
-        let channel = try await channel(for: mountSessionId)
-        let record = await channel.pathMap.record(forHostHandleId: hostFileId)
-        if let navHandle = record?.navigatorHandleId {
-            let response = try await channel.sendClose(handleId: navHandle)
-            guard response.success else { throw Self.nfsError(from: response.error) }
+        let channel = try await channel(for: entry.mountSessionId!)
+        // stateid → OpenSlot lookup. 동일 hostFile 의 다른 OPEN 이 살아있어도
+        // 그 slot 들은 절대 건드리지 않는다 (이전 워크어라운드의 race fix).
+        guard let slot = await channel.openSlotTable.unregister(stateidOther: stateid.other) else {
+            // Stale stateid: 이미 close 된 OPEN 이거나 client 가 anonymous /
+            // bypass stateid 로 close 를 시도한 비정상 케이스. RFC 7530
+            // §16.2.5 — close 는 정상 stateid 를 요구. silently noop 하지
+            // 않고 명시적으로 staleStateid 환원해 client 가 정상화하게.
+            logger.warning("close: stateid lookup miss — id=\(id) stateid=\(stateid.other.map { String(format: "%02x", $0) }.joined())")
+            throw NFSError.staleStateid
         }
-        // record 자체는 보존 — 같은 fh 를 재 OPEN 할 때 hostId 가 stable 해야
-        // NFS client cache 가 깨지지 않는다. navigator handle 만 떼기.
-        await channel.pathMap.detachNavigatorHandle(hostId: hostFileId)
+        let response = try await channel.sendClose(handleId: slot.navigatorHandleId)
+        guard response.success else { throw Self.nfsError(from: response.error) }
+        // pathMap.Record 자체는 보존 — 같은 fh 를 재 OPEN 할 때 hostId 가 stable
+        // 해야 NFS client cache 가 깨지지 않는다.
     }
 
     // MARK: - I/O
@@ -863,10 +907,22 @@ actor NoctilucaNFSServer: NFSServer {
             throw NFSError.isDirectory
         }
         let channel = try await channel(for: mountSessionId)
-        guard let navHandle = await channel.pathMap.record(forHostHandleId: hostFileId)?.navigatorHandleId else {
-            let path = await channel.pathMap.path(forHostHandleId: hostFileId)
-            logger.error("read: no navigator handle attached — id=\(id) hostFileId=\(hostFileId) path=\(path) (handle was issued by lookup but not yet promoted to OPEN)")
-            throw NFSError.badHandle
+        // stateid resolution: anonymous (RFC 7530 §8.1.4.2) 면 hostFile 의
+        // bestSlot 으로 fallback, 그 외 stateid 는 정확한 slot lookup 요구.
+        // (write 와 다르게 read 는 RFC 가 anonymous 를 허용한다.)
+        let navHandle: UInt64
+        if Self.isAnonymous(stateid) {
+            guard let slot = await channel.openSlotTable.bestSlot(forHostFileId: hostFileId) else {
+                logger.error("read: anonymous stateid but no OPEN slot for hostFileId=\(hostFileId)")
+                throw NFSError.badStateid
+            }
+            navHandle = slot.navigatorHandleId
+        } else {
+            guard let slot = await channel.openSlotTable.lookup(stateidOther: stateid.other) else {
+                logger.error("read: stateid lookup miss — id=\(id) hostFileId=\(hostFileId)")
+                throw NFSError.staleStateid
+            }
+            navHandle = slot.navigatorHandleId
         }
         let response = try await channel.sendRead(
             handleId: navHandle, offset: offset, length: UInt32(min(count, Int(UInt32.max)))
@@ -895,9 +951,18 @@ actor NoctilucaNFSServer: NFSServer {
             throw NFSError.readOnly
         }
         let channel = try await channel(for: mountSessionId)
-        guard let navHandle = await channel.pathMap.record(forHostHandleId: hostFileId)?.navigatorHandleId else {
-            throw NFSError.badHandle
+        // write 는 RFC 7530 §8.1.4.2 에 따라 anonymous stateid 가 허용되지
+        // 않는다 (§8.1.4 의 special stateid 는 read-only). 정확한 slot
+        // lookup 만 인정.
+        if Self.isAnonymous(stateid) {
+            logger.error("write: anonymous stateid not permitted (RFC 7530 §8.1.4.2)")
+            throw NFSError.badStateid
         }
+        guard let slot = await channel.openSlotTable.lookup(stateidOther: stateid.other) else {
+            logger.error("write: stateid lookup miss — hostFileId=\(hostFileId)")
+            throw NFSError.staleStateid
+        }
+        let navHandle = slot.navigatorHandleId
         // mount session 이 zstd 협상 상태면 NFS client 가 준 raw 바이트를 wire 로
         // 보내기 전 zstd 압축. response.bytesWritten 은 navigator 가 *uncompressed*
         // 바이트 단위로 응답해야 spec 일관성 — 이는 navigator 측 책임.
@@ -927,10 +992,16 @@ actor NoctilucaNFSServer: NFSServer {
             return 0
         }
         let channel = try await channel(for: mountSessionId)
-        guard let navHandle = await channel.pathMap.record(forHostHandleId: hostFileId)?.navigatorHandleId else {
-            throw NFSError.badHandle
+        // NFSv4 COMMIT 은 stateid 가 없는 op (RFC 7530 §16.6) — hostFile 단위로
+        // 가장 강한 OPEN slot 을 골라 그 navHandle 로 flush. write OPEN 이
+        // 살아있는 기간에 대한 commit 은 항상 그 navHandle 을 hit.
+        guard let slot = await channel.openSlotTable.bestSlot(forHostFileId: hostFileId) else {
+            // 어떤 OPEN 도 없는 상태에서 commit 이 들어오는 건 이상하지만,
+            // POSIX 의 close-then-fsync 같은 흐름과 NFSv4 의 timing 차이로
+            // 가능. 무해한 noop 으로 처리.
+            return 0
         }
-        let response = try await channel.sendFlush(handleId: navHandle)
+        let response = try await channel.sendFlush(handleId: slot.navigatorHandleId)
         guard response.success else { throw Self.nfsError(from: response.error) }
         return 0
     }
@@ -962,11 +1033,13 @@ actor NoctilucaNFSServer: NFSServer {
     }
 
     /// hostFile entry 에서 (channel, navigatorHandleId, supportsLocks) 추출.
-    /// stale 한 record 등은 badHandle 로 매핑.
+    /// stale 한 stateid / record 는 staleStateid / badHandle 로 매핑.
     /// `supportsLocks` 는 navigator 의 capability 광고와 host 측의 useFakeLocks
     /// 정책을 함께 반영한 effective 값. useFakeLocks=true 면 강제 false 로 다운
     /// 그레이드되어 lock callback 이 fake success 로 떨어진다.
-    private func resolveLockTarget(_ handle: NFSFileHandle) async throws -> (FSAccessMountChannel, UInt64, Bool) {
+    /// `stateid` 가 nil 이면 (LOCKT — RFC 7530 §16.11) hostFile 의 bestSlot 으로
+    /// fallback 한다.
+    private func resolveLockTarget(_ handle: NFSFileHandle, stateid: NFSStateID?) async throws -> (FSAccessMountChannel, UInt64, Bool) {
         let (_, entry) = try await decodeHandle(handle)
         guard entry.kind == .hostFile,
               let mountSessionId = entry.mountSessionId,
@@ -974,8 +1047,22 @@ actor NoctilucaNFSServer: NFSServer {
             throw NFSError.badHandle
         }
         let channel = try await channel(for: mountSessionId)
-        guard let navHandle = await channel.pathMap.record(forHostHandleId: hostFileId)?.navigatorHandleId else {
-            throw NFSError.badHandle
+        let navHandle: UInt64
+        if let stateid {
+            if Self.isAnonymous(stateid) {
+                logger.error("lock op: anonymous stateid not permitted")
+                throw NFSError.badStateid
+            }
+            guard let slot = await channel.openSlotTable.lookup(stateidOther: stateid.other) else {
+                logger.error("lock op: stateid lookup miss — hostFileId=\(hostFileId)")
+                throw NFSError.staleStateid
+            }
+            navHandle = slot.navigatorHandleId
+        } else {
+            guard let slot = await channel.openSlotTable.bestSlot(forHostFileId: hostFileId) else {
+                throw NFSError.badHandle
+            }
+            navHandle = slot.navigatorHandleId
         }
         let useFakeLocks = await NocFSAccessHost.shared.useFakeLocks
         let effectiveSupportsLocks = channel.supportsLocks && !useFakeLocks
@@ -983,7 +1070,7 @@ actor NoctilucaNFSServer: NFSServer {
     }
 
     func lock(handle: NFSFileHandle, type: NFSLockType, range: NFSLockRange, owner: NFSLockOwner, reclaim: Bool, stateid: NFSStateID) async throws -> NFSStateID {
-        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle)
+        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle, stateid: stateid)
         if !supportsLocks {
             return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
         }
@@ -1010,7 +1097,8 @@ actor NoctilucaNFSServer: NFSServer {
     }
 
     func lockTest(handle: NFSFileHandle, type: NFSLockType, range: NFSLockRange, owner: NFSLockOwner) async throws -> NFSLockTestResult {
-        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle)
+        // LOCKT 는 stateid 가 없는 op — bestSlot fallback.
+        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle, stateid: nil)
         if !supportsLocks {
             return NFSLockTestResult(outcome: .granted)
         }
@@ -1035,7 +1123,7 @@ actor NoctilucaNFSServer: NFSServer {
     }
 
     func unlock(handle: NFSFileHandle, range: NFSLockRange, stateid: NFSStateID) async throws -> NFSStateID {
-        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle)
+        let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle, stateid: stateid)
         if !supportsLocks {
             return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
         }
