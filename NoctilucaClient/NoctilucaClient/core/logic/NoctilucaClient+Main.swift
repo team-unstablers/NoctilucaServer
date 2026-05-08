@@ -57,6 +57,8 @@ extension NoctilucaClient {
         self.clipboardChannel = channel
         channel.clipboardSettings = self.sessionSettings?.clipboard
             ?? SettingsStore.shared.settings.sessionDefaults.clipboard
+        channel.transferSettings = self.sessionSettings?.transfer
+            ?? SettingsStore.shared.settings.sessionDefaults.transfer
         self.logger.info("initializeClipboard(): created ClipboardChannel")
 
         guard channel.clipboardSettings.enabled else {

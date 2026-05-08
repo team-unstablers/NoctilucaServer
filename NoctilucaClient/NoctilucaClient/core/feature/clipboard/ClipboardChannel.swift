@@ -110,6 +110,10 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
     /// nonisolated(unsafe)로 두고 세션 생명주기 동안 변경되지 않음을 가정합니다.
     nonisolated(unsafe) var clipboardSettings: SessionSettings.Clipboard = .init()
 
+    /// Transfer 채널 협상에 사용되는 세션 transfer 설정 (clipboard 채널에서 transfer
+    /// 채널을 자식으로 열 때 enableCompression 등을 참조).
+    nonisolated(unsafe) var transferSettings: SessionSettings.Transfer = .init()
+
     let state = ClipboardChannelState()
 
     // ~Copyable CompatBridge; init 마지막 대입 후 수정 없음.
@@ -560,10 +564,14 @@ final class ClipboardChannel: Channel, ChannelEventConsumer {
     private func resolveOmittedData(itemIndex: Int, reprIndex: Int) async throws -> Data? {
         guard let session = self.clientSession else { return nil }
 
-        let argsSet = TransferChannelArgumentsSet(
-            purpose: .clipboardData,
+        let compress: [CompressionMethod] = self.transferSettings.enableCompression
+            ? [.zstd, .none]
+            : []
+        let argsSet = TransferChannelArgumentsSet.clipboardData(
             direction: .download,
-            args: [String(itemIndex), String(reprIndex)]
+            itemIndex: UInt32(itemIndex),
+            representationIndex: UInt32(reprIndex),
+            compress: compress
         )
 
         guard let channel = try await session.channelManager.openChannel(

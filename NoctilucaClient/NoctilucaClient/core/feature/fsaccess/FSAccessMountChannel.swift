@@ -70,6 +70,12 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         var handles: [UInt64: FSAccessHandle] = [:]
         var nextHandleId: UInt64 = 1
 
+        /// `handleFrame` 이 spawn 한 in-flight dispatch task counter.
+        /// teardown 시점에 drain 하여, fd close 가 진행중 syscall 보다 먼저
+        /// 일어나서 stale fd 를 사용하는 use-after-close race 를 막는다.
+        private var inFlightFrameCount: Int = 0
+        private var drainContinuations: [CheckedContinuation<Void, Never>] = []
+
         func issueHandle(_ make: (UInt64) -> FSAccessHandle) -> FSAccessHandle {
             let id = nextHandleId
             nextHandleId &+= 1
@@ -92,6 +98,26 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
         func snapshot() -> [FSAccessHandle] {
             return Array(handles.values)
+        }
+
+        func taskStarted() {
+            inFlightFrameCount += 1
+        }
+
+        func taskFinished() {
+            inFlightFrameCount -= 1
+            if inFlightFrameCount == 0 {
+                let conts = drainContinuations
+                drainContinuations.removeAll()
+                for c in conts { c.resume() }
+            }
+        }
+
+        func waitForDrain() async {
+            if inFlightFrameCount == 0 { return }
+            await withCheckedContinuation { c in
+                drainContinuations.append(c)
+            }
         }
     }
 
@@ -143,6 +169,25 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             throw ChannelError.invalidFrame
         }
 
+        // counter 증가는 Task spawn 전에 수행 — Task 가 schedule 만 되고 아직
+        // 실행 전인 상태에서 teardown 의 drain 이 통과해버리는 race 차단.
+        // capturedState 는 self == nil 분기에서도 counter balance 를 맞추기
+        // 위해 강참조로 캡처.
+        await state.taskStarted()
+        let capturedState = self.state
+        Task { [weak self] in
+            if let self {
+                do {
+                    try await self.dispatchFrame(frame)
+                } catch {
+                    self.logger.error("Frame dispatch failed: \(error)")
+                }
+            }
+            await capturedState.taskFinished()
+        }
+    }
+
+    private func dispatchFrame(_ frame: SiriusFrame) async throws {
         switch frame.opcode {
         case .fileSystemOpenRequest:
             let req = try FileSystemOpenRequest.fromProtobufBytes(frame.data)
@@ -215,6 +260,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     }
 
     private func teardown() async {
+        // 진행중인 frame dispatch task 들이 자연 완료될 때까지 대기.
+        // 이 시점 이후엔 어떤 task 도 fd 를 사용하지 않음이 보장되므로,
+        // 핸들 close 를 안전하게 수행할 수 있다 (use-after-close race 차단).
+        await state.waitForDrain()
+
         // 모든 핸들 close
         let handles = await state.snapshot()
         for h in handles {
@@ -264,7 +314,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         // path 정규화
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -464,8 +518,24 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
         let isEof = read == 0 || (read < len)
 
+        // 압축 method 가 zstd 면 wire bytes 로 압축. 실패하면 per-op ioError 로 응답
+        // (spec: 채널 자체는 유지).
+        let wireData: Data
+        if mountSession.selectedCompressionMethod == .zstd {
+            do {
+                wireData = try ZstdCodec.compress(buffer)
+            } catch {
+                logger.error("Read compression failed: \(error)")
+                try await sendError(opcode: .fileSystemReadResponse, requestId: request.requestId,
+                    code: .ioError, message: "zstd compression failed.")
+                return
+            }
+        } else {
+            wireData = buffer
+        }
+
         try await handle.send(opcode: .fileSystemReadResponse, message: FileSystemReadResponse(
-            requestId: request.requestId, success: true, data: buffer, isEof: isEof, error: nil))
+            requestId: request.requestId, success: true, data: wireData, isEof: isEof, error: nil))
     }
 
     private func handleWrite(_ request: FileSystemWriteRequest) async throws {
@@ -490,10 +560,26 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             return
         }
 
-        let written: Int = request.data.withUnsafeBytes { rawPtr -> Int in
+        // 압축 method 가 zstd 면 wire 로 받은 데이터를 decompress 하고 pwrite. 실패는
+        // per-op ioError 로 회복 (spec).
+        let payload: Data
+        if mountSession.selectedCompressionMethod == .zstd {
+            do {
+                payload = try ZstdCodec.decompress(request.data)
+            } catch {
+                logger.error("Write decompression failed: \(error)")
+                try await sendError(opcode: .fileSystemWriteResponse, requestId: request.requestId,
+                    code: .ioError, message: "zstd decompression failed.")
+                return
+            }
+        } else {
+            payload = request.data
+        }
+
+        let written: Int = payload.withUnsafeBytes { rawPtr -> Int in
             guard let base = rawPtr.baseAddress else { return -1 }
             // O_APPEND 시 offset 무시 (POSIX 보장)
-            return Darwin.pwrite(fd, base, request.data.count, off_t(request.offset))
+            return Darwin.pwrite(fd, base, payload.count, off_t(request.offset))
         }
         if written < 0 {
             try await sendError(opcode: .fileSystemWriteResponse, requestId: request.requestId,
@@ -531,7 +617,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleStat(_ request: FileSystemStatRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -561,7 +651,7 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
         // followSymlinks 였다면 resolved path 가 mount root 밖으로 escape 했는지 재검사
         if request.followSymlinks {
-            if !FSAccessPathValidator.isWithin(resolvedURL, root: mountSession.rootURL) {
+            if !FSAccessPathValidator.isWithin(resolvedURL, rootResolvedPath: mountSession.resolvedRootPath) {
                 try await sendError(opcode: .fileSystemStatResponse, requestId: request.requestId,
                     code: .policyViolation, message: "Symlink target escapes mount root subtree.")
                 return
@@ -679,7 +769,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleMkdir(_ request: FileSystemMkdirRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -711,7 +805,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleRmdir(_ request: FileSystemRmdirRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -744,7 +842,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleUnlink(_ request: FileSystemUnlinkRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -782,8 +884,16 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         let oldURL: URL
         let newURL: URL
         do {
-            oldURL = try FSAccessPathValidator.resolve(path: request.oldPath, mountRoot: mountSession.rootURL)
-            newURL = try FSAccessPathValidator.resolve(path: request.newPath, mountRoot: mountSession.rootURL)
+            oldURL = try FSAccessPathValidator.resolve(
+                path: request.oldPath,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
+            newURL = try FSAccessPathValidator.resolve(
+                path: request.newPath,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)

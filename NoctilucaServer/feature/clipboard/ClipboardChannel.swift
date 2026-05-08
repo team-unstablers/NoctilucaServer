@@ -612,10 +612,14 @@ actor ClipboardChannel: Channel, ChannelEventConsumer {
     private func resolveOmittedData(itemIndex: Int, reprIndex: Int) async throws -> Data? {
         guard let session = self.clientSession else { return nil }
 
-        let argsSet = TransferChannelArgumentsSet(
-            purpose: .clipboardData,
+        let compress: [CompressionMethod] = await SettingsStore.shared.settings.transfer.enableCompression
+            ? [.zstd, .none]
+            : []
+        let argsSet = TransferChannelArgumentsSet.clipboardData(
             direction: .download,
-            args: [String(itemIndex), String(reprIndex)]
+            itemIndex: UInt32(itemIndex),
+            representationIndex: UInt32(reprIndex),
+            compress: compress
         )
 
         guard let channel = try await session.channelManager.openChannel(

@@ -18,23 +18,35 @@ final class FSAccessMountSession: @unchecked Sendable {
     let entryId: UUID
     let entryName: String
     let rootURL: URL
+    /// `rootURL.path` 의 캐시본. mount 시점에 이미 standardize +
+    /// `resolvingSymlinksInPath()` 가 적용된 상태로 들어오므로 추가 syscall
+    /// 없이 그대로 저장한다. `FSAccessPathValidator` 가 path 검증 hot-path 에서
+    /// mountRoot 를 매 호출마다 다시 resolve 하지 않도록 한다.
+    let resolvedRootPath: String
     let grantedAccess: AccessMode
 
     /// mount session 생성 시점에 capture 한 AppleDouble 차단 정책.
     /// 이후 read-only — settings 변경은 다음 mount session 부터 적용된다.
     let hidesAppleDoubleSidecar: Bool
 
+    /// `FileSystemMountResponse.selectedCompressionMethod` 에 광고한 method.
+    /// inline read/write 와 stream IO 의 데이터 플레인에 동일하게 적용된다.
+    let selectedCompressionMethod: CompressionMethod
+
     private let lock = NSLock()
     private var _mountChannel: FSAccessMountChannel?
 
     init(id: UUID, entryId: UUID, entryName: String, rootURL: URL,
-         grantedAccess: AccessMode, hidesAppleDoubleSidecar: Bool = false) {
+         grantedAccess: AccessMode, hidesAppleDoubleSidecar: Bool = false,
+         selectedCompressionMethod: CompressionMethod = .none) {
         self.id = id
         self.entryId = entryId
         self.entryName = entryName
         self.rootURL = rootURL
+        self.resolvedRootPath = rootURL.path
         self.grantedAccess = grantedAccess
         self.hidesAppleDoubleSidecar = hidesAppleDoubleSidecar
+        self.selectedCompressionMethod = selectedCompressionMethod
     }
 
     var mountChannel: FSAccessMountChannel? {

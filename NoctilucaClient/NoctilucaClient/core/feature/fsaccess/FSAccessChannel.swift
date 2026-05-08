@@ -229,6 +229,16 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
                 grantedAccess = request.requestedAccess
             }
 
+            // 압축 method 협상: candidate 중 첫 번째로 인식 가능한 것 (현 시점 zstd only).
+            // 미인식 identifier 는 무시 (spec). 어떤 candidate 도 인식 못 하면 .none.
+            var selectedCompressionMethod: CompressionMethod = .none
+            for candidate in request.proposedCompressionMethods {
+                if candidate == .zstd {
+                    selectedCompressionMethod = .zstd
+                    break
+                }
+            }
+
             // session 생성.
             // rootURL 은 standardize + symlink resolve 까지 모두 적용. 이후
             // FSAccessPathValidator 의 사후 realpath 검사가 일관된 기준점으로
@@ -247,7 +257,8 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
                     .standardizedFileURL
                     .resolvingSymlinksInPath(),
                 grantedAccess: grantedAccess,
-                hidesAppleDoubleSidecar: hidesAppleDoubleSidecar
+                hidesAppleDoubleSidecar: hidesAppleDoubleSidecar,
+                selectedCompressionMethod: selectedCompressionMethod
             )
 
             await state.add(session)
@@ -259,10 +270,11 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
                 sessionId: session.id,
                 grantedAccess: grantedAccess,
                 error: nil,
-                supportsLocks: kFSAccessHostSupportsLocks
+                supportsLocks: kFSAccessHostSupportsLocks,
+                selectedCompressionMethod: selectedCompressionMethod
             ))
 
-            logger.info("Mount granted: session=\(session.id) entry=\(entry.name) access=\(grantedAccess.rawValue) supportsLocks=\(kFSAccessHostSupportsLocks)")
+            logger.info("Mount granted: session=\(session.id) entry=\(entry.name) access=\(grantedAccess.rawValue) supportsLocks=\(kFSAccessHostSupportsLocks) compression=\(selectedCompressionMethod.rawValue)")
         }
     }
 
@@ -273,7 +285,8 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
             sessionId: UUID(),
             grantedAccess: .read,
             error: FSAccessErrorMapper.errorInfo(code, message: message),
-            supportsLocks: false
+            supportsLocks: false,
+            selectedCompressionMethod: .none
         ))
     }
 

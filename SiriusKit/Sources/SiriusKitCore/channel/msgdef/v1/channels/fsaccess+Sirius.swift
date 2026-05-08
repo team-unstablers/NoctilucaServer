@@ -158,6 +158,7 @@ public struct FileSystemMountRequest: SiriusMessage {
     public let entryId: UUID
     public let requestedAccess: AccessMode
     public let reason: String?
+    public let proposedCompressionMethods: [CompressionMethod]
     public let flags: UInt32
 
     public init(
@@ -165,12 +166,14 @@ public struct FileSystemMountRequest: SiriusMessage {
         entryId: UUID,
         requestedAccess: AccessMode,
         reason: String?,
+        proposedCompressionMethods: [CompressionMethod],
         flags: UInt32
     ) {
         self.requestId = requestId
         self.entryId = entryId
         self.requestedAccess = requestedAccess
         self.reason = reason
+        self.proposedCompressionMethods = proposedCompressionMethods
         self.flags = flags
     }
 
@@ -179,6 +182,7 @@ public struct FileSystemMountRequest: SiriusMessage {
         self.entryId = UUID(msgdef: protobuf.entryID)
         self.requestedAccess = AccessMode(rawValue: protobuf.requestedAccess)
         self.reason = protobuf.hasReason ? protobuf.reason : nil
+        self.proposedCompressionMethods = protobuf.proposedCompressionMethods.map { CompressionMethod(rawValue: $0) }
         self.flags = protobuf.flags
     }
 
@@ -191,6 +195,7 @@ public struct FileSystemMountRequest: SiriusMessage {
         if let val = self.reason {
             message.reason = val
         }
+        message.proposedCompressionMethods = proposedCompressionMethods.map { $0.rawValue }
         message.flags = flags
 
         return message
@@ -206,6 +211,7 @@ public struct FileSystemMountResponse: SiriusMessage {
     public let grantedAccess: AccessMode
     public let error: ErrorInfo?
     public let supportsLocks: Bool
+    public let selectedCompressionMethod: CompressionMethod
 
     public init(
         requestId: UInt64,
@@ -213,7 +219,8 @@ public struct FileSystemMountResponse: SiriusMessage {
         sessionId: UUID,
         grantedAccess: AccessMode,
         error: ErrorInfo?,
-        supportsLocks: Bool
+        supportsLocks: Bool,
+        selectedCompressionMethod: CompressionMethod
     ) {
         self.requestId = requestId
         self.success = success
@@ -221,6 +228,7 @@ public struct FileSystemMountResponse: SiriusMessage {
         self.grantedAccess = grantedAccess
         self.error = error
         self.supportsLocks = supportsLocks
+        self.selectedCompressionMethod = selectedCompressionMethod
     }
 
     init(from protobuf: ProtobufMessage) throws {
@@ -230,6 +238,8 @@ public struct FileSystemMountResponse: SiriusMessage {
         self.grantedAccess = AccessMode(rawValue: protobuf.grantedAccess)
         self.error = protobuf.hasError ? try ErrorInfo(from: protobuf.error) : nil
         self.supportsLocks = protobuf.supportsLocks
+        let rawMethod = protobuf.selectedCompressionMethod
+        self.selectedCompressionMethod = rawMethod.isEmpty ? .none : CompressionMethod(rawValue: rawMethod)
     }
 
     func toProtobufMessage() -> ProtobufMessage {
@@ -243,6 +253,7 @@ public struct FileSystemMountResponse: SiriusMessage {
             message.error = val.toProtobufMessage()
         }
         message.supportsLocks = supportsLocks
+        message.selectedCompressionMethod = selectedCompressionMethod.rawValue
 
         return message
     }

@@ -5,9 +5,13 @@
 //  fsaccess_mount data channel — consuming peer (host) 측 구현.
 //  See: docs/nocfsaccessd.md, SiriusProtocol/v1/channels/fsaccess_mount.mdproto.md
 //
-//  본 파일의 Stage C 버전은 채널 lifecycle / handleFrame dispatch 의 *프레임워크*
-//  만 잡는다. 모든 13개 message 의 발신 / 응답 매칭 본문은 Stage F 에서 본격
-//  구현된다.
+//  채널 lifecycle / handleFrame dispatch 외에 본 파일의 핵심 자료구조는 두 종류:
+//  - ``MountSessionPathMap``: host-side hostFileId ↔ navigator-side path 매핑 +
+//    path 별 stat 캐시.
+//  - ``OpenSlotTable``: NFSv4 stateid ↔ navigator-side fsaccess_mount handleId
+//    매핑. 같은 hostFile 의 read OPEN + write OPEN 이 동시에 살아있을 때 각자
+//    별도 slot 으로 보존되어, CLOSE 가 자기 stateid 의 slot 만 정확히 닫고
+//    다른 OPEN 의 navigator handle 은 건드리지 않는다.
 //
 
 import Foundation
@@ -54,6 +58,12 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     /// 생성 직후 control channel 측에서 1회 set 하며 그 이후로는 read-only.
     nonisolated(unsafe) var supportsLocks: Bool = false
 
+    /// `FileSystemMountResponse.selectedCompressionMethod`. inline read/write 의
+    /// data 필드와 stream IO 가 spawn 하는 transfer channel 의 transferArgs
+    /// `compress=` 토큰에 그대로 사용된다. mount channel 생성 직후 1회 set
+    /// 그 이후로는 read-only.
+    nonisolated(unsafe) var selectedCompressionMethod: CompressionMethod = .none
+
     /// 응답 매칭. requestId → continuation.
     let pending = PendingMountReplies()
 
@@ -63,6 +73,15 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     /// host-side fsaccess_mount handleId ↔ navigator-side path 매핑. mount root
     /// 는 sentinel (`0`) 으로 표현한다.
     let pathMap = MountSessionPathMap()
+
+    /// NFSv4 stateid → navigator-side fsaccess_mount handleId 매핑. open 마다
+    /// unique 한 slot 이 발급된다 (같은 hostFile 의 read + write 동시 OPEN 이
+    /// 별도 slot 으로 보존되어, close 가 stateid 만 보고 정확히 자기 slot 만
+    /// 닫게 한다).
+    let openSlotTable = OpenSlotTable()
+
+    /// NFSv4 stateid 의 lower 4 byte counter. channel 단위 monotonic.
+    let stateidGenerator = StateidGenerator()
 
     actor RequestIdGenerator {
         private var next: UInt64 = 1
@@ -84,11 +103,10 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         /// truncate 등) 이 커지므로 짧게 유지.
         static let statCacheTTL: Duration = .seconds(2)
 
+        /// hostFileId 가 가리키는 path + 캐시된 stat. navigator-side handleId 는
+        /// ``OpenSlotTable`` 이 stateid 별로 따로 보관하므로 여기엔 두지 않는다.
         struct Record: Sendable {
             var path: String
-            /// fsaccess_mount.OPEN 응답에서 받은 navigator-side handleId. 아직
-            /// open 안 된 entry (lookup 만 된 상태) 면 nil.
-            var navigatorHandleId: UInt64?
             /// 직전 readdir / stat / fstat 응답으로 받은 navigator-side stat.
             /// `cachedStatExpiresAt` 가 future 일 때만 valid.
             var cachedStat: FileStat?
@@ -101,11 +119,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         /// (NFS client 가 fh 를 cache 하므로 fh 가 stable 해야 ESTALE 회피).
         private var idByPath: [String: UInt64] = [:]
 
-        func issue(path: String, navigatorHandleId: UInt64? = nil) -> UInt64 {
+        func issue(path: String) -> UInt64 {
             let id = nextId
             nextId &+= 1
             if nextId == 0 || nextId == Self.rootSentinel { nextId = 1 }
-            records[id] = Record(path: path, navigatorHandleId: navigatorHandleId)
+            records[id] = Record(path: path)
             idByPath[path] = id
             return id
         }
@@ -116,14 +134,9 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             return issue(path: path)
         }
 
-        func attachNavigatorHandle(hostId: UInt64, navigatorId: UInt64) {
-            guard hostId != Self.rootSentinel else { return }
-            records[hostId]?.navigatorHandleId = navigatorId
-        }
-
         func record(forHostHandleId id: UInt64) -> Record? {
             if id == Self.rootSentinel {
-                return Record(path: "", navigatorHandleId: nil)
+                return Record(path: "")
             }
             return records[id]
         }
@@ -181,14 +194,6 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             records[id]?.cachedStatExpiresAt = nil
         }
 
-        /// host file 의 record 를 보존하면서 navigator-side handleId 만 떼어낸다.
-        /// close 후 같은 fh 를 재 OPEN 할 때 같은 hostId 가 유지되어야 NFS
-        /// client cache 가 깨지지 않는다.
-        func detachNavigatorHandle(hostId: UInt64) {
-            guard hostId != Self.rootSentinel else { return }
-            records[hostId]?.navigatorHandleId = nil
-        }
-
         @discardableResult
         func unregister(_ id: UInt64) -> Record? {
             guard id != Self.rootSentinel else { return nil }
@@ -228,6 +233,95 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     }
 
     nonisolated(unsafe) private var channelEventCompatBridge: ChannelEventCompatBridge<FSAccessMountChannel>!
+
+    // MARK: - OpenSlot table
+
+    /// NFSv4 OPEN 한 건당 하나의 slot. ``stateidOther`` (12 bytes) 가 unique key.
+    /// 같은 hostFile 에 여러 OPEN (예: read + write 동시 OPEN by 다른 NFSv4
+    /// OPEN owner) 이 떨어져도 각자 별도 slot 으로 보존된다. CLOSE 는 자기
+    /// stateid 의 slot 의 navigatorHandleId 만 닫고 나머지 slot 에는 영향 없음.
+    struct OpenSlot: Sendable {
+        let stateidOther: Data
+        let hostFileId: UInt64
+        let navigatorHandleId: UInt64
+        let accessMode: AccessMode
+    }
+
+    actor OpenSlotTable {
+        private var byStateID: [Data: OpenSlot] = [:]
+        /// hostFileId → 그 hostFile 에 발급된 모든 OPEN 의 stateidOther 집합.
+        /// stateid 가 anonymous 인 op (RFC 7530 §8.1.4.2) 의 fallback path 와
+        /// stateid 인자가 없는 GETATTR fastpath 에서 best slot 선택용.
+        private var byHostFileId: [UInt64: Set<Data>] = [:]
+
+        func register(_ slot: OpenSlot) {
+            byStateID[slot.stateidOther] = slot
+            byHostFileId[slot.hostFileId, default: []].insert(slot.stateidOther)
+        }
+
+        func lookup(stateidOther: Data) -> OpenSlot? {
+            return byStateID[stateidOther]
+        }
+
+        /// hostFile 에 등록된 OPEN slot 중 가장 강한 access mode 1개. accessRank:
+        /// ``readWrite`` > ``write`` > ``read`` > 그 외. anonymous READ stateid
+        /// 의 fallback (RFC 7530 §8.1.4.2) 과 stateid 가 없는 GETATTR 에서 사용.
+        func bestSlot(forHostFileId hostFileId: UInt64) -> OpenSlot? {
+            guard let stateids = byHostFileId[hostFileId], !stateids.isEmpty else { return nil }
+            return stateids.compactMap { byStateID[$0] }
+                .max { Self.accessRank($0.accessMode) < Self.accessRank($1.accessMode) }
+        }
+
+        func slots(forHostFileId hostFileId: UInt64) -> [OpenSlot] {
+            guard let stateids = byHostFileId[hostFileId] else { return [] }
+            return stateids.compactMap { byStateID[$0] }
+        }
+
+        @discardableResult
+        func unregister(stateidOther: Data) -> OpenSlot? {
+            guard let slot = byStateID.removeValue(forKey: stateidOther) else { return nil }
+            if var set = byHostFileId[slot.hostFileId] {
+                set.remove(stateidOther)
+                if set.isEmpty {
+                    byHostFileId.removeValue(forKey: slot.hostFileId)
+                } else {
+                    byHostFileId[slot.hostFileId] = set
+                }
+            }
+            return slot
+        }
+
+        /// 모든 slot 을 unregister 하고 목록을 리턴. caller (mount session unmount
+        /// / channel teardown) 가 navigator 측에 ``FSAccessMountChannel.sendClose``
+        /// 를 best-effort 로 발송하는 데 사용.
+        func drainAll() -> [OpenSlot] {
+            let all = Array(byStateID.values)
+            byStateID.removeAll()
+            byHostFileId.removeAll()
+            return all
+        }
+
+        private static func accessRank(_ mode: AccessMode) -> Int {
+            switch mode {
+            case .readWrite: return 3
+            case .write: return 2
+            case .read: return 1
+            default: return 0
+            }
+        }
+    }
+
+    actor StateidGenerator {
+        private var nextOpenInstance: UInt32 = 1
+        /// channel 생애 동안 monotonic. 0 / `.max` 는 NFSv4 anonymous (all-zero) /
+        /// bypass (all-FF) stateid 와의 표면적 충돌을 피하려고 보수적으로 reserve.
+        func issue() -> UInt32 {
+            let v = nextOpenInstance
+            nextOpenInstance &+= 1
+            if nextOpenInstance == 0 || nextOpenInstance == .max { nextOpenInstance = 1 }
+            return v
+        }
+    }
 
     init(handle: ChannelHandle, sessionId: UUID) {
         self.handle = handle
@@ -325,6 +419,14 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
     private func teardown() async {
         await FSAccessRequestRouter.shared.unregister(sessionId: self.sessionId)
+        // 남아있던 OpenSlot 메모리만 정리. 이 시점에서 channel 자체가 닫혀
+        // navigator 에 sendClose 를 보내봤자 의미가 없다 (host-initiated 명시
+        // unmount 흐름에서는 ``NocFSAccessHost.removeMountSession`` 이 channel
+        // 이 살아있는 동안 best-effort sendClose 를 먼저 발송한다).
+        let leftover = await openSlotTable.drainAll()
+        if !leftover.isEmpty {
+            logger.info("teardown: dropping \(leftover.count) leftover OpenSlot(s) (channel already closed; navigator side cleans up at mount session teardown)")
+        }
         await pending.failAll(FSAccessChannelError.channelClosed)
     }
 

@@ -176,6 +176,15 @@ struct Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountRequest: Sendable {
   /// Clears the value of `reason`. Subsequent reads from it will return its default value.
   mutating func clearReason() {self._reason = nil}
 
+  //// Compression methods proposed by the consuming peer for the data plane
+  //// of this mount session, ordered by preference (the first entry is the
+  //// most-preferred). The exposing peer picks one of these in
+  //// `FileSystemMountResponse.selectedCompressionMethod`, or picks `none`
+  //// when no candidate is supported. An empty list is equivalent to a
+  //// list containing only `none`.
+  /// @constset: CompressionMethod
+  var proposedCompressionMethods: [String] = []
+
   //// Reserved for future flag bits. MUST be zero in the current revision.
   var flags: UInt32 = 0
 
@@ -225,6 +234,15 @@ struct Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: Sendable {
 
   //// Whether the exposing peer supports byte-range locking on this mount session. When false, all three lock operations on the corresponding `fsaccess_mount` channel (`FileSystemLockRequest`, `FileSystemUnlockRequest`, `FileSystemTestLockRequest`) MUST fail with `notSupported`, and the consuming peer SHOULD avoid sending them. See the `LOCK SEMANTICS` appendix of `fsaccess_mount.mdproto.md` for the full capability-negotiation contract.
   var supportsLocks: Bool = false
+
+  //// Compression method picked from `FileSystemMountRequest.proposedCompressionMethods`,
+  //// or `none` when the exposing peer opts out (e.g., no candidate supported,
+  //// or local policy disables compression for this mount). Stable for the
+  //// lifetime of the mount session and applies to every byte payload
+  //// exchanged on the corresponding `fsaccess_mount` channel. An empty
+  //// string is equivalent to `none`.
+  /// @constset: CompressionMethod
+  var selectedCompressionMethod: String = String()
 
   var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -479,7 +497,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemListResponse: SwiftProtob
 
 extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".FileSystemMountRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}entryId\0\u{1}requestedAccess\0\u{1}reason\0\u{2}\u{b}flags\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}entryId\0\u{1}requestedAccess\0\u{1}reason\0\u{1}proposedCompressionMethods\0\u{2}\u{a}flags\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -491,6 +509,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountRequest: SwiftProtob
       case 2: try { try decoder.decodeSingularMessageField(value: &self._entryID) }()
       case 3: try { try decoder.decodeSingularUInt32Field(value: &self.requestedAccess) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self._reason) }()
+      case 5: try { try decoder.decodeRepeatedStringField(value: &self.proposedCompressionMethods) }()
       case 15: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       default: break
       }
@@ -514,6 +533,9 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountRequest: SwiftProtob
     try { if let v = self._reason {
       try visitor.visitSingularStringField(value: v, fieldNumber: 4)
     } }()
+    if !self.proposedCompressionMethods.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.proposedCompressionMethods, fieldNumber: 5)
+    }
     if self.flags != 0 {
       try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 15)
     }
@@ -525,6 +547,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountRequest: SwiftProtob
     if lhs._entryID != rhs._entryID {return false}
     if lhs.requestedAccess != rhs.requestedAccess {return false}
     if lhs._reason != rhs._reason {return false}
+    if lhs.proposedCompressionMethods != rhs.proposedCompressionMethods {return false}
     if lhs.flags != rhs.flags {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -533,7 +556,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountRequest: SwiftProtob
 
 extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".FileSystemMountResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}sessionId\0\u{1}grantedAccess\0\u{1}error\0\u{1}supportsLocks\0")
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}requestId\0\u{1}success\0\u{1}sessionId\0\u{1}grantedAccess\0\u{1}error\0\u{1}supportsLocks\0\u{1}selectedCompressionMethod\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -547,6 +570,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProto
       case 4: try { try decoder.decodeSingularUInt32Field(value: &self.grantedAccess) }()
       case 5: try { try decoder.decodeSingularMessageField(value: &self._error) }()
       case 6: try { try decoder.decodeSingularBoolField(value: &self.supportsLocks) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.selectedCompressionMethod) }()
       default: break
       }
     }
@@ -575,6 +599,9 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProto
     if self.supportsLocks != false {
       try visitor.visitSingularBoolField(value: self.supportsLocks, fieldNumber: 6)
     }
+    if !self.selectedCompressionMethod.isEmpty {
+      try visitor.visitSingularStringField(value: self.selectedCompressionMethod, fieldNumber: 7)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -585,6 +612,7 @@ extension Sirius_Msgdef_V1_Channels_Fsaccess_FileSystemMountResponse: SwiftProto
     if lhs.grantedAccess != rhs.grantedAccess {return false}
     if lhs._error != rhs._error {return false}
     if lhs.supportsLocks != rhs.supportsLocks {return false}
+    if lhs.selectedCompressionMethod != rhs.selectedCompressionMethod {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

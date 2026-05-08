@@ -11,6 +11,7 @@ internal import SwiftProtobuf
 public extension MessageOpcode {
     static let transferStartNotification: MessageOpcode = MessageOpcode(rawValue: 0x8001)
     static let transferDataChunk: MessageOpcode = MessageOpcode(rawValue: 0x8002)
+    static let transferReady: MessageOpcode = MessageOpcode(rawValue: 0x8003)
 }
 
 public struct TransferStartNotification: SiriusMessage {
@@ -47,15 +48,37 @@ public struct TransferStartNotification: SiriusMessage {
     }
 }
 
+public struct TransferReady: SiriusMessage {
+    typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Transfer_TransferReady
+
+    public let compressionMethod: CompressionMethod
+
+    public init(compressionMethod: CompressionMethod) {
+        self.compressionMethod = compressionMethod
+    }
+
+    init(from protobuf: ProtobufMessage) throws {
+        self.compressionMethod = CompressionMethod(rawValue: protobuf.compressionMethod)
+    }
+
+    func toProtobufMessage() -> ProtobufMessage {
+        var message = ProtobufMessage()
+
+        message.compressionMethod = compressionMethod.rawValue
+
+        return message
+    }
+}
+
 public struct TransferDataChunk: SiriusMessage {
     typealias ProtobufMessage = Sirius_Msgdef_V1_Channels_Transfer_TransferDataChunk
 
     public let sequenceNumber: UInt64
     public let data: Data
-    public let crc32: UInt32
+    public let crc32: UInt32?
     public let isEof: Bool
 
-    public init(sequenceNumber: UInt64, data: Data, crc32: UInt32, isEof: Bool) {
+    public init(sequenceNumber: UInt64, data: Data, crc32: UInt32?, isEof: Bool) {
         self.sequenceNumber = sequenceNumber
         self.data = data
         self.crc32 = crc32
@@ -65,7 +88,7 @@ public struct TransferDataChunk: SiriusMessage {
     init(from protobuf: ProtobufMessage) throws {
         self.sequenceNumber = protobuf.sequenceNumber
         self.data = protobuf.data
-        self.crc32 = protobuf.crc32
+        self.crc32 = protobuf.hasCrc32 ? protobuf.crc32 : nil
         self.isEof = protobuf.isEof
     }
 
@@ -74,7 +97,9 @@ public struct TransferDataChunk: SiriusMessage {
 
         message.sequenceNumber = sequenceNumber
         message.data = data
-        message.crc32 = crc32
+        if let crc32 = crc32 {
+            message.crc32 = crc32
+        }
         message.isEof = isEof
 
         return message
