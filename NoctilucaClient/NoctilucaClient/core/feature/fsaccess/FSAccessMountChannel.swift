@@ -70,6 +70,12 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         var handles: [UInt64: FSAccessHandle] = [:]
         var nextHandleId: UInt64 = 1
 
+        /// `handleFrame` 이 spawn 한 in-flight dispatch task counter.
+        /// teardown 시점에 drain 하여, fd close 가 진행중 syscall 보다 먼저
+        /// 일어나서 stale fd 를 사용하는 use-after-close race 를 막는다.
+        private var inFlightFrameCount: Int = 0
+        private var drainContinuations: [CheckedContinuation<Void, Never>] = []
+
         func issueHandle(_ make: (UInt64) -> FSAccessHandle) -> FSAccessHandle {
             let id = nextHandleId
             nextHandleId &+= 1
@@ -92,6 +98,26 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
         func snapshot() -> [FSAccessHandle] {
             return Array(handles.values)
+        }
+
+        func taskStarted() {
+            inFlightFrameCount += 1
+        }
+
+        func taskFinished() {
+            inFlightFrameCount -= 1
+            if inFlightFrameCount == 0 {
+                let conts = drainContinuations
+                drainContinuations.removeAll()
+                for c in conts { c.resume() }
+            }
+        }
+
+        func waitForDrain() async {
+            if inFlightFrameCount == 0 { return }
+            await withCheckedContinuation { c in
+                drainContinuations.append(c)
+            }
         }
     }
 
@@ -143,6 +169,25 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             throw ChannelError.invalidFrame
         }
 
+        // counter 증가는 Task spawn 전에 수행 — Task 가 schedule 만 되고 아직
+        // 실행 전인 상태에서 teardown 의 drain 이 통과해버리는 race 차단.
+        // capturedState 는 self == nil 분기에서도 counter balance 를 맞추기
+        // 위해 강참조로 캡처.
+        await state.taskStarted()
+        let capturedState = self.state
+        Task { [weak self] in
+            if let self {
+                do {
+                    try await self.dispatchFrame(frame)
+                } catch {
+                    self.logger.error("Frame dispatch failed: \(error)")
+                }
+            }
+            await capturedState.taskFinished()
+        }
+    }
+
+    private func dispatchFrame(_ frame: SiriusFrame) async throws {
         switch frame.opcode {
         case .fileSystemOpenRequest:
             let req = try FileSystemOpenRequest.fromProtobufBytes(frame.data)
@@ -215,6 +260,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     }
 
     private func teardown() async {
+        // 진행중인 frame dispatch task 들이 자연 완료될 때까지 대기.
+        // 이 시점 이후엔 어떤 task 도 fd 를 사용하지 않음이 보장되므로,
+        // 핸들 close 를 안전하게 수행할 수 있다 (use-after-close race 차단).
+        await state.waitForDrain()
+
         // 모든 핸들 close
         let handles = await state.snapshot()
         for h in handles {
