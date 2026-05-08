@@ -293,7 +293,11 @@ actor NoctilucaNFSServer: NFSServer {
                 logger.error("setattr(size): stateid lookup miss — hostFileId=\(hostFileId)")
                 throw NFSError.staleStateid
             }
-            let response = try await channel.sendFTruncate(handleId: slot.navigatorHandleId, length: size)
+            let navHandle = try await Self.resolveWritableNavHandle(
+                channel: channel, slot: slot, hostFileId: hostFileId,
+                op: "setattr(size)", logger: logger
+            )
+            let response = try await channel.sendFTruncate(handleId: navHandle, length: size)
             guard response.success else { throw Self.nfsError(from: response.error) }
             await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)
         }
@@ -766,6 +770,33 @@ actor NoctilucaNFSServer: NFSServer {
         return stateid.seqid == 0 && stateid.other.allSatisfy { $0 == 0 }
     }
 
+    /// `slot` 이 read-only 인 경우 같은 hostFile 의 write-capable bestSlot 으로
+    /// fallback. macOS NFSv4 client 는 Finder copy 같은 시나리오에서 같은 파일에
+    /// 대해 read-only OPEN 과 read-write OPEN 을 동시에 연 뒤 WRITE / SETATTR(size)
+    /// 을 *read-only stateid* 로 보내는 경우가 있는데, 그대로 navigator 에 dispatch
+    /// 하면 navigator 가 EPERM 으로 응답해 전송이 끊긴다. 같은 hostFile 에 살아있는
+    /// write-capable slot 이 있다면 그쪽 navHandle 로 라우팅해 전송을 살린다.
+    /// fallback 은 warning 로그를 남기고, write-capable slot 이 없으면 종전대로
+    /// `NFSError.permission` 환원.
+    private static func resolveWritableNavHandle(
+        channel: FSAccessMountChannel,
+        slot: FSAccessMountChannel.OpenSlot,
+        hostFileId: UInt64,
+        op: String,
+        logger: Logger
+    ) async throws -> UInt64 {
+        if slot.accessMode != .read {
+            return slot.navigatorHandleId
+        }
+        if let writable = await channel.openSlotTable.bestSlot(forHostFileId: hostFileId),
+           writable.accessMode != .read {
+            logger.warning("\(op): stateid points to read-only slot (navHandle=\(slot.navigatorHandleId)) — falling back to bestSlot navHandle=\(writable.navigatorHandleId) accessMode=\(writable.accessMode.rawValue)")
+            return writable.navigatorHandleId
+        }
+        logger.error("\(op): stateid points to read-only slot (navHandle=\(slot.navigatorHandleId)) and no write-capable slot exists for hostFileId=\(hostFileId) — returning permission denied")
+        throw NFSError.permission
+    }
+
     func open(parent: NFSFileHandle, name: String,
               share: NFSShareAccess, deny: NFSShareDeny,
               owner: NFSOpenOwner,
@@ -962,7 +993,10 @@ actor NoctilucaNFSServer: NFSServer {
             logger.error("write: stateid lookup miss — hostFileId=\(hostFileId)")
             throw NFSError.staleStateid
         }
-        let navHandle = slot.navigatorHandleId
+        let navHandle = try await Self.resolveWritableNavHandle(
+            channel: channel, slot: slot, hostFileId: hostFileId,
+            op: "write", logger: logger
+        )
         // mount session 이 zstd 협상 상태면 NFS client 가 준 raw 바이트를 wire 로
         // 보내기 전 zstd 압축. response.bytesWritten 은 navigator 가 *uncompressed*
         // 바이트 단위로 응답해야 spec 일관성 — 이는 navigator 측 책임.
