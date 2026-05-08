@@ -68,9 +68,12 @@ enum FSAccessPathValidator {
     /// - Parameters:
     ///   - path: wire 에서 들어온 path 문자열
     ///   - mountRoot: 이 mount session 의 host root URL (이미 절대 경로 + symlink 해석 완료)
+    ///   - resolvedRootPath: `mountRoot` 를 미리 resolve 해 둔 path 문자열.
+    ///     매 호출마다 mountRoot 를 다시 `resolvingSymlinksInPath()` 하는 비용
+    ///     (path component 별 lstat) 을 회피하기 위한 fast-path 매개변수.
     /// - Returns: host filesystem 의 절대 URL
     /// - Throws: `ValidationError`
-    static func resolve(path: String, mountRoot: URL) throws -> URL {
+    static func resolve(path: String, mountRoot: URL, resolvedRootPath: String) throws -> URL {
         // 1) NUL 검증
         if path.utf8.contains(0) {
             throw ValidationError.containsNUL
@@ -113,26 +116,41 @@ enum FSAccessPathValidator {
         // 5) realpath 기반 사후 검증 — mdproto §"Symlinks" 의 "outside-the-subtree
         //    symlink MUST NOT be followed" 강제. 중간 component 가 symlink 라
         //    lexical 정규화로 못 잡는 escape 를 차단한다.
-        try checkSymlinkContainment(resolved: resolved, mountRoot: mountRoot)
+        try checkSymlinkContainment(resolved: resolved, resolvedRootPath: resolvedRootPath)
         return resolved
+    }
+
+    /// `resolvedRootPath` 를 별도로 캐싱하지 않은 호출자를 위한 back-compat
+    /// 진입점. 내부적으로 mountRoot 를 한 번 resolve 한 뒤 fast-path 로 위임한다.
+    /// hot-path (mount channel handler 등) 에서는 미리 resolve 된 path 를 가진
+    /// 오버로드를 사용해야 한다.
+    static func resolve(path: String, mountRoot: URL) throws -> URL {
+        let resolvedRootPath = mountRoot.standardizedFileURL.resolvingSymlinksInPath().path
+        return try resolve(path: path, mountRoot: mountRoot, resolvedRootPath: resolvedRootPath)
+    }
+
+    /// `resolved` URL 이 미리 resolve 된 `rootResolvedPath` 의 subtree 에 속하는지
+    /// 재검사합니다. mountRoot 측 lstat 을 절약하기 위한 fast-path.
+    static func isWithin(_ resolved: URL, rootResolvedPath: String) -> Bool {
+        let resolvedPath = resolved.standardizedFileURL.resolvingSymlinksInPath().path
+
+        // 정확히 root 자체이거나 root 의 subdirectory 인지 검사 (prefix + 경로 구분자)
+        if resolvedPath == rootResolvedPath {
+            return true
+        }
+        let prefix = rootResolvedPath.hasSuffix("/") ? rootResolvedPath : rootResolvedPath + "/"
+        return resolvedPath.hasPrefix(prefix)
     }
 
     /// `resolved` URL 이 `mountRoot` 의 subtree 에 속하는지 재검사합니다.
     /// 심볼릭 링크 follow 후 escape 여부를 확인할 때 사용합니다.
     static func isWithin(_ resolved: URL, root mountRoot: URL) -> Bool {
         let rootPath = mountRoot.standardizedFileURL.resolvingSymlinksInPath().path
-        let resolvedPath = resolved.standardizedFileURL.resolvingSymlinksInPath().path
-
-        // 정확히 root 자체이거나 root 의 subdirectory 인지 검사 (prefix + 경로 구분자)
-        if resolvedPath == rootPath {
-            return true
-        }
-        let prefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
-        return resolvedPath.hasPrefix(prefix)
+        return isWithin(resolved, rootResolvedPath: rootPath)
     }
 
-    /// `resolved` 의 realpath 가 `mountRoot` 의 realpath subtree 안에 있는지
-    /// 검사. `URL.resolvingSymlinksInPath()` 는 존재하는 component 의 symlink 만
+    /// `resolved` 의 realpath 가 `resolvedRootPath` 의 subtree 안에 있는지 검사.
+    /// `URL.resolvingSymlinksInPath()` 는 존재하는 component 의 symlink 만
     /// 따라가고 비존재 component 는 그대로 두므로:
     ///  - 정상 경로 → resolved 는 mountRoot subtree 그대로 유지 → pass.
     ///  - 중간 component 가 외부로 나가는 symlink → 그 부분이 follow 되어
@@ -141,8 +159,8 @@ enum FSAccessPathValidator {
     ///    두기에 prefix 가 보존된다.
     ///
     /// 즉 `isWithin` 이 정의하는 동일한 prefix 검증을 사후검증으로 재사용한다.
-    private static func checkSymlinkContainment(resolved: URL, mountRoot: URL) throws {
-        if !isWithin(resolved, root: mountRoot) {
+    private static func checkSymlinkContainment(resolved: URL, resolvedRootPath: String) throws {
+        if !isWithin(resolved, rootResolvedPath: resolvedRootPath) {
             throw ValidationError.escapesRoot(component: "<symlink>")
         }
     }

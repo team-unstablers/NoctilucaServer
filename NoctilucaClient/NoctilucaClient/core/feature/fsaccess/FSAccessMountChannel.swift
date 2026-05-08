@@ -264,7 +264,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         // path 정규화
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -563,7 +567,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleStat(_ request: FileSystemStatRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -593,7 +601,7 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
         // followSymlinks 였다면 resolved path 가 mount root 밖으로 escape 했는지 재검사
         if request.followSymlinks {
-            if !FSAccessPathValidator.isWithin(resolvedURL, root: mountSession.rootURL) {
+            if !FSAccessPathValidator.isWithin(resolvedURL, rootResolvedPath: mountSession.resolvedRootPath) {
                 try await sendError(opcode: .fileSystemStatResponse, requestId: request.requestId,
                     code: .policyViolation, message: "Symlink target escapes mount root subtree.")
                 return
@@ -711,7 +719,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleMkdir(_ request: FileSystemMkdirRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -743,7 +755,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleRmdir(_ request: FileSystemRmdirRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -776,7 +792,11 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     private func handleUnlink(_ request: FileSystemUnlinkRequest) async throws {
         let resolvedURL: URL
         do {
-            resolvedURL = try FSAccessPathValidator.resolve(path: request.path, mountRoot: mountSession.rootURL)
+            resolvedURL = try FSAccessPathValidator.resolve(
+                path: request.path,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
@@ -814,8 +834,16 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         let oldURL: URL
         let newURL: URL
         do {
-            oldURL = try FSAccessPathValidator.resolve(path: request.oldPath, mountRoot: mountSession.rootURL)
-            newURL = try FSAccessPathValidator.resolve(path: request.newPath, mountRoot: mountSession.rootURL)
+            oldURL = try FSAccessPathValidator.resolve(
+                path: request.oldPath,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
+            newURL = try FSAccessPathValidator.resolve(
+                path: request.newPath,
+                mountRoot: mountSession.rootURL,
+                resolvedRootPath: mountSession.resolvedRootPath
+            )
         } catch let err as FSAccessPathValidator.ValidationError {
             if case .pathTooLongHard = err {
                 await escalateFatalClose(code: .quotaExceeded, reason: err.description)
