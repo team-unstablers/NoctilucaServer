@@ -293,24 +293,6 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             return
         }
 
-        // AppleDouble sidecar 신규 생성 차단. host 측에서 createNew /
-        // createAlways / openOrCreate 로 sidecar 를 만들려는 모든 시도를
-        // EPERM 으로 거부 — iOS storage 에 sidecar 가 누적되지 않도록.
-        // openExisting / truncateExisting 은 이미 존재하는 entry 대상이라
-        // 통과시킨다 (filter 로 인해 host 가 그 path 를 알 가능성이 낮지만).
-        if mountSession.hidesAppleDoubleSidecar,
-           FSAccessAppleDoubleFilter.isSidecarPath(request.path) {
-            switch request.createDisposition {
-            case .createNew, .createAlways, .openOrCreate:
-                try await sendError(opcode: .fileSystemOpenResponse, requestId: request.requestId,
-                    code: .permissionDenied,
-                    message: "AppleDouble sidecar creation is blocked by client policy.")
-                return
-            default:
-                break
-            }
-        }
-
         // path 정규화
         let resolvedURL: URL
         do {
@@ -732,14 +714,6 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             }
             // . / .. 스킵
             if name == "." || name == ".." { continue }
-
-            // AppleDouble sidecar 숨김 — mount session 단위의 토글로 결정.
-            // macOS NFS client 가 자동 생성하는 `._<name>` 가 host 측에 노출
-            // 되지 않게 하여 git 등 도구의 오작동 회피.
-            if mountSession.hidesAppleDoubleSidecar,
-               FSAccessAppleDoubleFilter.isSidecarName(name) {
-                continue
-            }
 
             // name 길이 체크
             let nameByteCount = name.utf8.count

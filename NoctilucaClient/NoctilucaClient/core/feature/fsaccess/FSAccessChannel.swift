@@ -244,11 +244,6 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
             // FSAccessPathValidator 의 사후 realpath 검사가 일관된 기준점으로
             // 비교하도록 — mountRoot 자체가 symlink 인 경우에도 escape 판단이
             // 정확해진다.
-            // AppleDouble 차단 정책은 mount 시점의 settings 값을 그대로 capture.
-            // 토글 변경은 다음 mount session 부터 효력 발생.
-            let hidesAppleDoubleSidecar = await MainActor.run {
-                SettingsStore.shared.settings.fileAccess.hideAppleDoubleFiles
-            }
             let session = FSAccessMountSession(
                 id: UUID(),
                 entryId: entry.id,
@@ -257,7 +252,6 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
                     .standardizedFileURL
                     .resolvingSymlinksInPath(),
                 grantedAccess: grantedAccess,
-                hidesAppleDoubleSidecar: hidesAppleDoubleSidecar,
                 selectedCompressionMethod: selectedCompressionMethod
             )
 

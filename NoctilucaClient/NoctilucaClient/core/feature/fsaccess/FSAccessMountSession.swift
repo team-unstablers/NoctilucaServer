@@ -25,10 +25,6 @@ final class FSAccessMountSession: @unchecked Sendable {
     let resolvedRootPath: String
     let grantedAccess: AccessMode
 
-    /// mount session 생성 시점에 capture 한 AppleDouble 차단 정책.
-    /// 이후 read-only — settings 변경은 다음 mount session 부터 적용된다.
-    let hidesAppleDoubleSidecar: Bool
-
     /// `FileSystemMountResponse.selectedCompressionMethod` 에 광고한 method.
     /// inline read/write 와 stream IO 의 데이터 플레인에 동일하게 적용된다.
     let selectedCompressionMethod: CompressionMethod
@@ -37,7 +33,7 @@ final class FSAccessMountSession: @unchecked Sendable {
     private var _mountChannel: FSAccessMountChannel?
 
     init(id: UUID, entryId: UUID, entryName: String, rootURL: URL,
-         grantedAccess: AccessMode, hidesAppleDoubleSidecar: Bool = false,
+         grantedAccess: AccessMode,
          selectedCompressionMethod: CompressionMethod = .none) {
         self.id = id
         self.entryId = entryId
@@ -45,7 +41,6 @@ final class FSAccessMountSession: @unchecked Sendable {
         self.rootURL = rootURL
         self.resolvedRootPath = rootURL.path
         self.grantedAccess = grantedAccess
-        self.hidesAppleDoubleSidecar = hidesAppleDoubleSidecar
         self.selectedCompressionMethod = selectedCompressionMethod
     }
 

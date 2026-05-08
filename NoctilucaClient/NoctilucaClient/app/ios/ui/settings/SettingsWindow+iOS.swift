@@ -15,7 +15,6 @@ struct UIKitSettingsWindow: View {
         case projection
         case input
         case security
-        case fileAccess
         case misc
         case plugins
         case about
@@ -31,7 +30,6 @@ struct UIKitSettingsWindow: View {
                     Button(String(localized: "settings.tabs.projection", defaultValue: "프로젝션")) { onSelectTab(.projection) }
                     Button(String(localized: "settings.tabs.input", defaultValue: "입력")) { onSelectTab(.input) }
                     Button(String(localized: "settings.tabs.security", defaultValue: "보안")) { onSelectTab(.security) }
-                    Button(String(localized: "settings.tabs.file_access", defaultValue: "파일 시스템 공유")) { onSelectTab(.fileAccess) }
                     Button(String(localized: "settings.tabs.misc", defaultValue: "기타")) { onSelectTab(.misc) }
                     // Button(String(localized: "settings.tabs.plugins", defaultValue: "플러그인")) { onSelectTab(.plugins) }
                     Button(String(localized: "settings.tabs.about", defaultValue: "정보")) { onSelectTab(.about) }
