@@ -308,7 +308,6 @@ actor NoctilucaNFSServer: NFSServer {
 
     func lookup(parent: NFSFileHandle, name: String) async throws -> NFSFileHandle {
         let (parentId, entry) = try await decodeHandle(parent)
-        logger.debug("lookup: parentId=\(parentId) parentKind=\(String(describing: entry.kind)) name=\(name)")
         switch entry.kind {
         case .root:
             return try await lookupInRoot(name: name)
@@ -532,7 +531,6 @@ actor NoctilucaNFSServer: NFSServer {
         }
         let sessions = Array(connection.mountSessions.values).sorted { $0.displayName < $1.displayName }
         let nameList = sessions.map { $0.displayName }.joined(separator: ",")
-        logger.info("readdirConnection: label=\(label) sessionCount=\(sessions.count) names=[\(nameList)]")
         var entries: [NFSDirEntry] = []
         var nextCookie: UInt64 = cookie
         for (i, session) in sessions.enumerated() {
@@ -567,7 +565,6 @@ actor NoctilucaNFSServer: NFSServer {
                               cookie: UInt64,
                               maxEntries: Int) async throws -> NFSDirList {
         let channel = try await channel(for: mountSessionId)
-        logger.info("readdir: enter path=\(parentPath) maxEntries=\(maxEntries) cookie=\(cookie)")
         let openResponse = try await channel.sendOpen(
             path: parentPath,
             accessMode: .read,
@@ -576,20 +573,16 @@ actor NoctilucaNFSServer: NFSServer {
             mode: 0
         )
         guard openResponse.success else {
-            logger.error("readdir: OPEN failed for path=\(parentPath): \(openResponse.error?.message ?? "<no info>") code=\(openResponse.error?.code.rawValue ?? 0)")
             throw Self.nfsError(from: openResponse.error)
         }
-        logger.debug("readdir: OPEN ok navHandle=\(openResponse.handleId)")
         let response = try await channel.sendReadDir(
             handleId: openResponse.handleId,
             maxEntries: UInt32(min(maxEntries, Int(UInt32.max)))
         )
         _ = try? await channel.sendClose(handleId: openResponse.handleId)
         guard response.success else {
-            logger.error("readdir: ReadDir failed: \(response.error?.message ?? "<no info>") code=\(response.error?.code.rawValue ?? 0)")
             throw Self.nfsError(from: response.error)
         }
-        logger.info("readdir: ReadDir ok entries=\(response.entries.count) isEnd=\(response.isEnd)")
 
         var entries: [NFSDirEntry] = []
         for (i, dirEntry) in response.entries.enumerated() {
@@ -849,7 +842,6 @@ actor NoctilucaNFSServer: NFSServer {
             createDisposition: disposition, flags: [], mode: createMode
         )
         guard response.success else {
-            logger.error("open: navigator returned success=false for path=\(childPath) disposition=\(String(describing: disposition)): \(response.error?.message ?? "<no info>")")
             throw Self.nfsError(from: response.error)
         }
         // 파일이 새로 생성됐을 가능성이 있는 경로면 parent dirent 캐시 invalidate.
@@ -877,7 +869,6 @@ actor NoctilucaNFSServer: NFSServer {
             navigatorHandleId: response.handleId,
             accessMode: accessMode
         ))
-        logger.info("open: path=\(childPath) hostFileId=\(hostId) navHandle=\(response.handleId) entryId=\(id) counter=\(counter)")
         return (fh, NFSOpenResult(stateid: stateid, rflags: [], delegation: .none))
     }
 
@@ -892,7 +883,6 @@ actor NoctilucaNFSServer: NFSServer {
 
     func close(handle: NFSFileHandle, stateid: NFSStateID) async throws {
         let (id, entry) = try await decodeHandle(handle)
-        logger.info("close: enter id=\(id) kind=\(String(describing: entry.kind))")
         if entry.kind == .readme || entry.kind == .metadataNeverIndex { return }
         guard entry.kind == .hostFile,
               entry.mountSessionId != nil else {
@@ -906,7 +896,6 @@ actor NoctilucaNFSServer: NFSServer {
             // bypass stateid 로 close 를 시도한 비정상 케이스. RFC 7530
             // §16.2.5 — close 는 정상 stateid 를 요구. silently noop 하지
             // 않고 명시적으로 staleStateid 환원해 client 가 정상화하게.
-            logger.warning("close: stateid lookup miss — id=\(id) stateid=\(stateid.other.map { String(format: "%02x", $0) }.joined())")
             throw NFSError.staleStateid
         }
         let response = try await channel.sendClose(handleId: slot.navigatorHandleId)
@@ -934,7 +923,6 @@ actor NoctilucaNFSServer: NFSServer {
         guard entry.kind == .hostFile,
               let mountSessionId = entry.mountSessionId,
               let hostFileId = entry.hostFileId else {
-            logger.error("read: not a hostFile — id=\(id) kind=\(String(describing: entry.kind))")
             throw NFSError.isDirectory
         }
         let channel = try await channel(for: mountSessionId)
@@ -944,13 +932,11 @@ actor NoctilucaNFSServer: NFSServer {
         let navHandle: UInt64
         if Self.isAnonymous(stateid) {
             guard let slot = await channel.openSlotTable.bestSlot(forHostFileId: hostFileId) else {
-                logger.error("read: anonymous stateid but no OPEN slot for hostFileId=\(hostFileId)")
                 throw NFSError.badStateid
             }
             navHandle = slot.navigatorHandleId
         } else {
             guard let slot = await channel.openSlotTable.lookup(stateidOther: stateid.other) else {
-                logger.error("read: stateid lookup miss — id=\(id) hostFileId=\(hostFileId)")
                 throw NFSError.staleStateid
             }
             navHandle = slot.navigatorHandleId
