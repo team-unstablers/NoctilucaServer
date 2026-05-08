@@ -3437,6 +3437,50 @@
         }
       }
     },
+    "notification.authentication_failed.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트 인증에 실패했습니다."
+          }
+        }
+      }
+    },
+    "notification.authentication_failed.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "인증 실패"
+          }
+        }
+      }
+    },
+    "notification.clipboard_served_to_client.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "호스트의 클립보드 내용이 클라이언트로 전달되었습니다."
+          }
+        }
+      }
+    },
+    "notification.clipboard_served_to_client.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 접근됨"
+          }
+        }
+      }
+    },
     "notification.connection_closed.message" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -3578,6 +3622,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要紧急更新"
+          }
+        }
+      }
+    },
+    "notification.directory_transfer_sent.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클라이언트로 '%@' 디렉토리가 전송되었습니다."
+          }
+        }
+      }
+    },
+    "notification.directory_transfer_sent.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "디렉토리 전송 완료"
           }
         }
       }
@@ -4071,6 +4137,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "服务器已停止"
+          }
+        }
+      }
+    },
+    "notification.session_panic.message" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세션이 비정상적으로 종료되었습니다: %@"
+          }
+        }
+      }
+    },
+    "notification.session_panic.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "세션 비정상 종료"
           }
         }
       }
@@ -7610,6 +7698,28 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "모든 엔트리를 자동으로 마운트"
+          }
+        }
+      }
+    },
+    "settings.file_access.policy.compression.description" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "파일 read/write 페이로드를 zstd 로 압축하여 전송합니다. 클라이언트가 지원하지 않으면 자동으로 비압축으로 fallback 합니다.\n**다음 마운트부터 적용**됩니다."
+          }
+        }
+      }
+    },
+    "settings.file_access.policy.compression.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "데이터 플레인 압축 사용하기 (zstd)"
           }
         }
       }
