@@ -113,12 +113,13 @@ extension ProjectionChannel {
                     try await desktopContextManager.focusWindow(id: windowID)
                 }
             case .setGeometry(let rect):
-                // AppStream 대상 윈도우는 가상 디스플레이의 origin에 anchor되어야 하므로
-                // 클라이언트가 보내는 position은 무시하고 size만 반영한다. (anchor와의 ping-pong 방지)
-                let frameToApply = await resolveSetGeometryFrame(windowID: windowID, requested: rect.cgRect)
+                // AppStream 대상이든 아니든, 클라이언트가 보낸 frame 을 그대로 적용한다.
+                // AppStream 의 (0,0) 강제 anchor 가 *처음 등장 시 1회* 로 축소되어 ping-pong
+                // 위험이 사라졌으며, 클라가 NSWindow 드래그/리사이즈 시 정확한 호스트 좌표를
+                // 계산해서 보내준다 (echo 방지 로직은 클라 측에서 처리).
                 try await desktopContextManager.setWindowFrame(
                     id: windowID,
-                    frame: frameToApply
+                    frame: rect.cgRect
                 )
             case .setFlags(_), .clearFlags(_):
                 break // macOS에서는 flags 직접 조작 미지원
@@ -140,19 +141,4 @@ extension ProjectionChannel {
         }
     }
 
-    /// setGeometry 적용 frame을 결정한다.
-    /// - AppStream 세션 대상 윈도우(같은 PID): position 무시, size만 반영 — 현재 origin 유지
-    /// - 그 외: 요청 그대로 적용
-    private func resolveSetGeometryFrame(windowID: WindowID, requested: CGRect) async -> CGRect {
-        guard let appStreamSession = await state.currentAppStreamSession() else {
-            return requested
-        }
-        guard let info = await desktopContextManager.windowInfo(for: windowID),
-              pid_t(info.pid) == appStreamSession.pid
-        else {
-            return requested
-        }
-        let currentOrigin = CGPoint(x: info.bounds.x, y: info.bounds.y)
-        return CGRect(origin: currentOrigin, size: requested.size)
-    }
 }

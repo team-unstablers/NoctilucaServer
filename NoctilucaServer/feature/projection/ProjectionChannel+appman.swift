@@ -474,28 +474,14 @@ extension ProjectionChannel {
             isNewlyAppeared = false
         }
 
-        // 윈도우 anchor 결정:
-        //  - 새 윈도우(appeared)는 무조건 center로 정렬
-        //  - moved/resized 이벤트가 들어왔고 self-triggered가 아니면 재고정
-        if let windowInfo = info {
-            let positionalChange = windowEvent.eventType.contains(.moved)
-                || windowEvent.eventType.contains(.resized)
-            let shouldAnchor: Bool
-            if isNewlyAppeared {
-                shouldAnchor = true
-            } else if positionalChange {
-                shouldAnchor = !windowAnchor.consumeIfSelfTriggered(
-                    windowId: windowEvent.windowID,
-                    currentBounds: windowInfo.bounds
-                )
-            } else {
-                shouldAnchor = false
-            }
-
-            if shouldAnchor {
-                await MainActor.run {
-                    self.anchorWindowToCenter(windowInfo, using: windowAnchor)
-                }
+        // AppStream 윈도우 anchor 정책:
+        //  - 새 윈도우(appeared)는 primary 가상 디스플레이의 좌상단 (0,0) 으로 *한 번만* 정렬한다.
+        //  - 그 이후 moved/resized 이벤트는 그대로 클라로 push 하고 호스트 윈도우 위치는
+        //    호스트/클라 측 입력에 따라 자유롭게 변경되도록 둔다. 클라가 NSWindow 를 드래그하면
+        //    WindowManipulationRequest(.setGeometry) 로 호스트 윈도우도 따라간다.
+        if let windowInfo = info, isNewlyAppeared {
+            await MainActor.run {
+                self.anchorWindowToCenter(windowInfo, using: windowAnchor)
             }
         }
 

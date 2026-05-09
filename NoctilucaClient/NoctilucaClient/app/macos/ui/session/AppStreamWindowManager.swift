@@ -40,6 +40,13 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     /// 직전 동기화 시점의 NSScreen 스냅샷 (diff 계산용).
     var lastSyncedLocalScreens: [CGDirectDisplayID: LocalScreenInfo] = [:]
 
+    /// 양방향 위치 동기화의 echo 방지: 우리가 setFrameOrigin 으로 적용한 NSWindow Cocoa
+    /// origin 을 windowID 별로 기록해 두고, 이어지는 windowDidMove 가 같은 origin 이면
+    /// 호스트로 setGeometry 를 다시 보내지 않는다. (서버측 AppStreamWindowAnchor 의 mirror)
+    var expectedWindowOrigins: [UInt64: CGPoint] = [:]
+    /// windowDidMove debounce — 드래그 도중 setGeometry 폭주 방지.
+    var moveDebounceTask: [UInt64: Task<Void, Never>] = [:]
+
     // 원격 메뉴 스왑 관련 상태
     private var menuBuilder: AppStreamMenuBuilder?
     private var remoteMenu: NSMenu?
@@ -210,6 +217,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             }
 
             if let cocoaOrigin = translateServerFrameToClientOrigin(serverBounds: serverBounds) {
+                expectedWindowOrigins[windowID] = cocoaOrigin
                 window.setFrameOrigin(cocoaOrigin)
             }
 
@@ -231,6 +239,9 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     private func destroyWindow(windowID: UInt64, sendCloseToServer: Bool) {
         resizeDebounceTask[windowID]?.cancel()
         resizeDebounceTask.removeValue(forKey: windowID)
+        moveDebounceTask[windowID]?.cancel()
+        moveDebounceTask.removeValue(forKey: windowID)
+        expectedWindowOrigins.removeValue(forKey: windowID)
 
         if sendCloseToServer {
             closedWindowIDs.insert(windowID)
@@ -278,6 +289,8 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             let currentOrigin = window.frame.origin
             if abs(currentOrigin.x - cocoaOrigin.x) > 1 ||
                abs(currentOrigin.y - cocoaOrigin.y) > 1 {
+                // setFrameOrigin 이 windowDidMove 를 트리거하므로 echo 방지를 위해 마커 등록.
+                expectedWindowOrigins[windowID] = cocoaOrigin
                 window.setFrameOrigin(cocoaOrigin)
             }
         }
@@ -417,18 +430,93 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         resizeDebounceTask[windowID] = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else { return }
-            guard let projectionChannel = self?.remoteSession.projection?.channel else { return }
+            guard let self else { return }
+            guard let projectionChannel = self.remoteSession.projection?.channel else { return }
 
-            let newRect = SRRect(
+            let hostRect = self.translateClientFrameToServerRect(
+                window: window,
+                contentSize: contentSize
+            ) ?? SRRect(
                 x: 0, y: 0,
                 width: Double(contentSize.width),
                 height: Double(contentSize.height)
             )
             try? await projectionChannel.sendWindowManipulation(
                 windowID: windowID,
-                operation: .setGeometry(newRect)
+                operation: .setGeometry(hostRect)
             )
         }
+    }
+
+    /// 사용자가 NSWindow 를 드래그할 때 호출. drag 중 매 프레임 호출되므로 debounce 한다.
+    /// echo 방지: 직전에 우리가 setFrameOrigin 으로 적용한 origin 과 일치하면 송신하지 않는다.
+    func windowDidMove(_ notification: Notification) {
+        guard let window = notification.object as? AppStreamWindow else { return }
+        let windowID = UInt64(window.windowID)
+
+        // setFrameOrigin 으로 인한 self-triggered move 인지 확인.
+        if let expected = expectedWindowOrigins[windowID] {
+            let current = window.frame.origin
+            if abs(current.x - expected.x) < 0.5 && abs(current.y - expected.y) < 0.5 {
+                expectedWindowOrigins.removeValue(forKey: windowID)
+                return
+            }
+        }
+
+        // 사용자 드래그 — debounce 후 호스트로 좌표 송신.
+        moveDebounceTask[windowID]?.cancel()
+        moveDebounceTask[windowID] = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+            guard let self else { return }
+            guard let projectionChannel = self.remoteSession.projection?.channel else { return }
+            guard let hostRect = self.translateClientFrameToServerRect(
+                window: window,
+                contentSize: window.contentView?.frame.size ?? window.frame.size
+            ) else {
+                // 매핑이 없으면 호스트 측 위치는 손대지 않는다.
+                return
+            }
+            try? await projectionChannel.sendWindowManipulation(
+                windowID: windowID,
+                operation: .setGeometry(hostRect)
+            )
+        }
+    }
+
+    /// NSWindow 의 *현재* 위치/크기를 호스트 글로벌 좌표 (top-left) `SRRect` 로 변환.
+    /// 매핑된 NSScreen 이 없거나 window 가 어느 NSScreen 과도 교차하지 않으면 nil 반환.
+    private func translateClientFrameToServerRect(
+        window: NSWindow,
+        contentSize: CGSize
+    ) -> SRRect? {
+        // NSWindow 가 속한 NSScreen 찾기 (가장 많이 겹치는 화면).
+        guard let nsScreen = window.screen ?? NSScreen.main else { return nil }
+        guard let screenDisplayID = nsScreen.compatibleDisplayID else { return nil }
+        guard let mapping = hostVDMappings[screenDisplayID] else { return nil }
+
+        // NSWindow.frame 은 frame (title bar 포함) 의 bottom-left.
+        // contentView 좌상단 (Cocoa) = window.frame.origin.x, window.frame.maxY - titleBarHeight
+        // 그러나 호스트 측 setWindowFrame 은 *frame 전체* (title 포함) 의 top-left 기준이라
+        // window.frame 그대로 변환해도 무방. AX kAXPositionAttribute 도 frame top-left.
+        let frame = window.frame
+
+        // Cocoa bottom-left → NSScreen 내부 top-left.
+        // intra.x = frame.origin.x - nsScreen.frame.origin.x
+        // intra.y = nsScreen.frame.maxY - frame.maxY
+        let intraX = frame.origin.x - nsScreen.frame.origin.x
+        let intraY = nsScreen.frame.maxY - frame.maxY
+
+        // 호스트 VD origin + intra → 호스트 글로벌 top-left.
+        let hostX = mapping.hostFrame.origin.x + intraX
+        let hostY = mapping.hostFrame.origin.y + intraY
+
+        return SRRect(
+            x: Double(hostX),
+            y: Double(hostY),
+            width: Double(contentSize.width),
+            height: Double(contentSize.height)
+        )
     }
 }
 
