@@ -457,9 +457,12 @@ final class AppSession {
     func setWindowFrame(id: WindowID, frame: CGRect) throws {
         try ensureAppIsRunning()
         let windowElement = try self.windowElement(for: id)
-        
-        // FIXME: 멀티 디스플레이 사용 시 이건 난감해짐
-        var origin = CGPoint(x: max(0, frame.origin.x), y: max(0, frame.origin.y))
+
+        // 멀티 디스플레이 (특히 가상 디스플레이가 음수 origin 으로 배치되는 경우) 를
+        // 지원하기 위해 origin 을 그대로 전달한다. AX API 는 글로벌 좌표계의 음수 좌표를
+        // 그대로 받아들이며, kAXPositionAttribute 는 윈도우가 어느 화면에 속하는지를
+        // origin 만으로 재결정한다.
+        var origin = frame.origin
         var size = frame.size
         
         guard let positionValue = AXValueCreate(.cgPoint, &origin),
@@ -1514,17 +1517,6 @@ extension DesktopContextManager: AppSessionDelegate {
 
     func appSession(_ session: AppSession, didUpdateWindow window: WindowInfo) {
         logger.info("[\(session.appIdentifier)] window updated: #\(window.windowID) \"\(window.windowTitle)\" (\(window.bounds.x),\(window.bounds.y) \(window.bounds.width)x\(window.bounds.height))")
-
-        // FIXME: 멀티 디스플레이 사용 시 이건 난감해짐
-        if window.bounds.x < 0 || window.bounds.y < 0 {
-            let correctedOrigin = CGPoint(x: max(0, window.bounds.x), y: max(0, window.bounds.y))
-            let correctedFrame = CGRect(
-                origin: correctedOrigin,
-                size: CGSize(width: window.bounds.width, height: window.bounds.height)
-            )
-            logger.warning("[\(session.appIdentifier)] window #\(window.windowID) out of bounds (\(window.bounds.x),\(window.bounds.y)), forcing to (\(correctedOrigin.x),\(correctedOrigin.y))")
-            try? session.setWindowFrame(id: CGWindowID(window.windowID), frame: correctedFrame)
-        }
 
         // 통합 이벤트: 이동, 리사이즈, 메타 변경을 하나로 전달
         let event = WindowChangedEvent(
