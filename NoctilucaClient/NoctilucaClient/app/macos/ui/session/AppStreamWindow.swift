@@ -85,6 +85,17 @@ class AppStreamWindow: NSWindow {
         hidioController?.disconnect(mouse.identifierString)
     }
 
+    /// 사용자가 마우스 좌버튼을 *놓은* 시점을 detect 해 pending 한 windowDidMove
+    /// debounce 를 즉시 flush 한다 — 짧고 빠른 드래그에서 setGeometry 가 늦게
+    /// 송신되어 stale update event 에 의해 NSWindow 가 원위치로 워프하는 문제를
+    /// 방지한다.
+    override func sendEvent(_ event: NSEvent) {
+        super.sendEvent(event)
+        if event.type == .leftMouseUp {
+            (delegate as? AppStreamWindowManager)?.flushPendingMove(windowID: UInt64(windowID))
+        }
+    }
+
     private static func displayTitle(for windowID: Int, remoteSession: RemoteSession) -> String {
         return "AppStream Window (streaming #\(windowID))"
     }

@@ -494,6 +494,33 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         }
     }
 
+    /// 사용자가 마우스 좌버튼을 놓은 직후 호출 (AppStreamWindow.sendEvent 에서).
+    /// pending 한 windowDidMove debounce 를 cancel 하고 *즉시* 마지막 위치를 호스트로
+    /// 송신한다. 짧고 빠른 드래그 (debounce 만료 전에 mouse up) 에서 setGeometry 가
+    /// 누락되어 호스트가 옛 위치를 들고 있다가 stale update event 로 NSWindow 를
+    /// 원위치로 워프시키는 문제를 막는다.
+    func flushPendingMove(windowID: UInt64) {
+        guard let task = moveDebounceTask[windowID] else { return }
+        task.cancel()
+        moveDebounceTask.removeValue(forKey: windowID)
+
+        guard let window = windows[windowID]?.window else { return }
+        let contentSize = window.contentView?.frame.size ?? window.frame.size
+        guard let hostRect = translateClientFrameToServerRect(
+            window: window,
+            contentSize: contentSize
+        ) else { return }
+
+        Task { [weak self] in
+            guard let self else { return }
+            guard let projectionChannel = self.remoteSession.projection?.channel else { return }
+            try? await projectionChannel.sendWindowManipulation(
+                windowID: windowID,
+                operation: .setGeometry(hostRect)
+            )
+        }
+    }
+
     /// NSWindow 의 *현재* 위치/크기를 호스트 글로벌 좌표 (top-left) `SRRect` 로 변환.
     /// 매핑된 NSScreen 이 없거나 window 가 어느 NSScreen 과도 교차하지 않으면 nil 반환.
     private func translateClientFrameToServerRect(
