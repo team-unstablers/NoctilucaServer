@@ -85,21 +85,33 @@ struct AccessibilityTreeBuilder {
         // UUID 발급 및 등록
         let id = AppMenuRegistry.shared.register(element: element, pid: pid)
 
-        // 자식 순회: depth 제한을 체크
-        let shouldRecurse = Self.shouldRecurseInto(role: mappedRole) && (maxDepth < 0 || depth < maxDepth)
+        // 자식 순회: wrapper detection은 depth 제한과 무관하게 수행하여,
+        // depth 한계에 도달해 children enumerate를 생략하더라도 클라이언트가 submenu 존재
+        // 여부를 알 수 있도록 hint(`hasSubmenu`)를 부착한다. macOS AX 메뉴는 사용자가
+        // 한 번도 펼쳐본 적 없는 nested submenu의 children이 빈 배열로 보고되는 경우가 있어,
+        // children 유무만으로는 leaf 여부를 판단할 수 없기 때문이다.
+        let canRecurseRole = Self.shouldRecurseInto(role: mappedRole)
+        let depthOK = (maxDepth < 0 || depth < maxDepth)
         let children: [AccessibilityNode]
-        if shouldRecurse {
+        if canRecurseRole {
             // macOS AX 구조상 menuItem의 자식은 단일 AXMenu wrapper를 거쳐 실제 항목들이 존재한다.
             // 트리가 불필요하게 중첩되지 않도록 wrapper를 투명하게 unwrap하여 wrapper의 children을
             // 현재 menuItem의 직접 children으로 승격시킨다.
             let rawChildren = readChildren(element)
-            let effectiveChildren = Self.unwrapMenuWrapper(
+            let unwrap = Self.unwrapMenuWrapper(
                 rawChildren: rawChildren,
                 parentRole: mappedRole,
                 reader: readChildren
             )
-            children = effectiveChildren.map { child in
-                buildNode(element: child, depth: depth + 1, parentId: id)
+            if unwrap.hasWrapper {
+                attributes["app.noctiluca.server.x-ax.hasSubmenu"] = "1"
+            }
+            if depthOK {
+                children = unwrap.children.map { child in
+                    buildNode(element: child, depth: depth + 1, parentId: id)
+                }
+            } else {
+                children = []
             }
         } else {
             children = []
@@ -164,21 +176,25 @@ struct AccessibilityTreeBuilder {
     ///             └─ AXMenuItem "Open"
     /// 위 구조에서 wrapper AXMenu를 투명 처리하여 MenuBarItem이 직접 MenuItem들을 자식으로
     /// 갖는 것처럼 트리를 평탄화한다.
+    ///
+    /// - Returns: 평탄화된 children 배열과 wrapper 발견 여부. wrapper가 발견되면 children이
+    ///   비어있더라도(예: macOS가 아직 lazy populate하지 않은 nested submenu) 호출자는
+    ///   submenu 존재를 클라이언트에 알릴 수 있다.
     private static func unwrapMenuWrapper(
         rawChildren: [AXUIElement],
         parentRole: AccessibilityNodeRole,
         reader: (AXUIElement) -> [AXUIElement]
-    ) -> [AXUIElement] {
-        guard parentRole == .menuItem else { return rawChildren }
-        guard rawChildren.count == 1 else { return rawChildren }
+    ) -> (children: [AXUIElement], hasWrapper: Bool) {
+        guard parentRole == .menuItem else { return (rawChildren, false) }
+        guard rawChildren.count == 1 else { return (rawChildren, false) }
 
         var roleValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(rawChildren[0], kAXRoleAttribute as CFString, &roleValue) == .success,
               let role = roleValue as? String,
               role == "AXMenu" else {
-            return rawChildren
+            return (rawChildren, false)
         }
-        return reader(rawChildren[0])
+        return (reader(rawChildren[0]), true)
     }
 
     // MARK: - AX Readers
