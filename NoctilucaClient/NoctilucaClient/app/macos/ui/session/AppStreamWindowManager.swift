@@ -47,6 +47,13 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     /// windowDidMove debounce — 드래그 도중 setGeometry 폭주 방지.
     var moveDebounceTask: [UInt64: Task<Void, Never>] = [:]
 
+    /// 사용자가 *지금* 마우스 좌버튼을 누르고 있는지 (= 드래그/리사이즈 중일 가능성).
+    /// 이 동안 호스트로부터 들어오는 update event 의 위치 매핑은 skip 해, 사용자가
+    /// 컨트롤하고 있는 NSWindow 위치를 stale 한 좌표로 덮어쓰지 않게 한다.
+    var isUserHoldingMouse: Bool {
+        return (NSEvent.pressedMouseButtons & 0x1) != 0
+    }
+
     // 원격 메뉴 스왑 관련 상태
     private var menuBuilder: AppStreamMenuBuilder?
     private var remoteMenu: NSMenu?
@@ -283,8 +290,11 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         }
 
         // 서버에서 위치가 변경되었으면 매핑된 클라 NSScreen 안에서 1:1 추적.
+        // 단, 사용자가 마우스를 누르고 드래그 중일 가능성이 있으면 (= mouse down 상태)
+        // backlog 된 stale update event 가 사용자의 현재 위치를 덮어쓰지 못하도록 skip.
         // 매핑이 없거나 어느 VD 와도 교차하지 않으면 위치는 그대로 둔다.
-        if let cocoaOrigin = translateServerFrameToClientOrigin(serverBounds: serverBounds),
+        if !isUserHoldingMouse,
+           let cocoaOrigin = translateServerFrameToClientOrigin(serverBounds: serverBounds),
            let window = windows[windowID]?.window {
             let currentOrigin = window.frame.origin
             if abs(currentOrigin.x - cocoaOrigin.x) > 1 ||
