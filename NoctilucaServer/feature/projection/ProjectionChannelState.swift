@@ -413,6 +413,22 @@ actor ProjectionChannelState {
         return nil
     }
 
+    /// 채널에 등록된 가상 디스플레이 중 `purpose` 와 일치하는 핸들들을 반환한다.
+    /// AppStream 시작 시 클라가 사전에 만들어둔 VD pool 을 조회할 때 사용한다.
+    func virtualDisplays(withPurpose purpose: NOCVirtualDisplayPurpose) -> [NOCVirtualDisplayHandle] {
+        return virtualDisplayHandles.values.filter { $0.purpose == purpose }
+    }
+
+    /// `purpose` 와 일치하는 모든 가상 디스플레이를 레지스트리에서 회수해 반환한다.
+    /// AppStream 종료 시 일괄 destroy 안전망에서 사용한다.
+    func takeVirtualDisplays(withPurpose purpose: NOCVirtualDisplayPurpose) -> [NOCVirtualDisplayHandle] {
+        let matching = virtualDisplayHandles.filter { $0.value.purpose == purpose }
+        for key in matching.keys {
+            virtualDisplayHandles.removeValue(forKey: key)
+        }
+        return Array(matching.values)
+    }
+
     private func isIdentifierInUse(_ identifier: UUID) -> Bool {
         sessions[identifier] != nil ||
         audioSessions[identifier] != nil ||
