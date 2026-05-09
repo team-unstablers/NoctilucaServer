@@ -31,6 +31,15 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     private var resizeDebounceTask: [UInt64: Task<Void, Never>] = [:]
     private var isHandlingRemoteFocusChange = false
 
+    /// 클라 NSScreen ↔ 호스트 가상 디스플레이 매핑. AppStream 활성 동안만 유효.
+    var hostVDMappings: [CGDirectDisplayID: HostVDMapping] = [:]
+    /// 우리가 호스트에 만든 VD 의 wire identifier 목록 (stop 시 destroy 용).
+    var createdVDIdentifiers: [UUID] = []
+    /// LocalDisplayLayoutManager 변경 구독 (Phase 4 실시간 동기화).
+    var localDisplayChangeCancellable: AnyCancellable?
+    /// 직전 동기화 시점의 NSScreen 스냅샷 (diff 계산용).
+    var lastSyncedLocalScreens: [CGDirectDisplayID: LocalScreenInfo] = [:]
+
     // 원격 메뉴 스왑 관련 상태
     private var menuBuilder: AppStreamMenuBuilder?
     private var remoteMenu: NSMenu?
@@ -48,6 +57,10 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         guard let projectionChannel = remoteSession.projection?.channel else {
             return
         }
+
+        // AppStream 시작 *전* 에 클라 NSScreen 레이아웃을 호스트 VD 로 복제한다.
+        // 실패해도 throw 하지 않으며, 이 경우 서버는 fallback path 로 단일 VD 자동 생성.
+        await provisionHostVirtualDisplays(projectionChannel: projectionChannel)
 
         let response = try await projectionChannel.startAppStream(
             bundleId: bundleId,
@@ -116,9 +129,13 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
 
         await teardownRemoteMenu()
 
-        if let streamId = self.streamId,
-           let projectionChannel = remoteSession.projection?.channel {
-            _ = try? await projectionChannel.stopAppStream(streamId: streamId)
+        if let projectionChannel = remoteSession.projection?.channel {
+            if let streamId = self.streamId {
+                _ = try? await projectionChannel.stopAppStream(streamId: streamId)
+            }
+            // 우리가 만든 가상 디스플레이를 명시적으로 회수.
+            // 실패해도 서버 측 cleanupAppStreamSession 안전망이 처리한다.
+            await unprovisionHostVirtualDisplays(projectionChannel: projectionChannel)
         }
 
         self.streamId = nil
@@ -185,10 +202,15 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
                 windowInfoStore: windowInfoStore
             )
 
-            // 서버 bounds에서 크기만 반영 (위치는 클라이언트 자유)
-            let serverSize = windowInfo.bounds.cgRect.size
-            if serverSize.width > 0 && serverSize.height > 0 {
-                window.setContentSize(serverSize)
+            // 서버 bounds 의 크기 반영 + 위치는 호스트 VD ↔ 클라 NSScreen 매핑이
+            // 있으면 1:1 변환, 없으면 NSWindow 의 기본 .center() 위치 유지.
+            let serverBounds = windowInfo.bounds.cgRect
+            if serverBounds.size.width > 0 && serverBounds.size.height > 0 {
+                window.setContentSize(serverBounds.size)
+            }
+
+            if let cocoaOrigin = translateServerFrameToClientOrigin(serverBounds: serverBounds) {
+                window.setFrameOrigin(cocoaOrigin)
             }
 
             window.delegate = self
@@ -238,13 +260,25 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         windows[windowID]?.window.title = info.windowTitle
 
         // 서버에서 크기가 변경되었으면 클라이언트 윈도우 크기도 반영
-        let serverSize = info.bounds.cgRect.size
+        let serverBounds = info.bounds.cgRect
+        let serverSize = serverBounds.size
         if serverSize.width > 0 && serverSize.height > 0 {
             let currentSize = windows[windowID]?.window.contentView?.frame.size ?? .zero
             // 리사이즈 무한 루프 방지: 1pt 이하 차이는 무시
             if abs(currentSize.width - serverSize.width) > 1 ||
                abs(currentSize.height - serverSize.height) > 1 {
                 windows[windowID]?.window.setContentSize(serverSize)
+            }
+        }
+
+        // 서버에서 위치가 변경되었으면 매핑된 클라 NSScreen 안에서 1:1 추적.
+        // 매핑이 없거나 어느 VD 와도 교차하지 않으면 위치는 그대로 둔다.
+        if let cocoaOrigin = translateServerFrameToClientOrigin(serverBounds: serverBounds),
+           let window = windows[windowID]?.window {
+            let currentOrigin = window.frame.origin
+            if abs(currentOrigin.x - cocoaOrigin.x) > 1 ||
+               abs(currentOrigin.y - cocoaOrigin.y) > 1 {
+                window.setFrameOrigin(cocoaOrigin)
             }
         }
 
