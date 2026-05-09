@@ -195,11 +195,11 @@ actor NocFSAccessHost {
         // boundAddress polling (50ms × 100 = 5s).
         let deadline = Date().addingTimeInterval(timeoutSeconds)
         while Date() < deadline {
-            if let address = await listener.boundAddress, let port = address.port {
-                let port16 = UInt16(port)
-                self.nfsPort = port16
-                logger.info("NFS listener bound: localhost:\(port16)")
-                return port16
+            if let address = await listener.boundAddress {
+                let port = address.port
+                self.nfsPort = port
+                logger.info("NFS listener bound: localhost:\(port)")
+                return port
             }
             try? await Task.sleep(for: .milliseconds(50))
         }
