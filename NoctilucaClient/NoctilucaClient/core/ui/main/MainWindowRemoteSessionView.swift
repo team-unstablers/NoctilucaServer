@@ -370,6 +370,12 @@ struct MainWindowRemoteSessionView: View {
             return
         }
         #endif
+        #if os(macOS)
+        if isAppStreamActive {
+            Self.logger.info("Skipping backoff retry for display \(displayID) because AppStream is active")
+            return
+        }
+        #endif
 
         // backoff 재시도
         retryTask?.cancel()
