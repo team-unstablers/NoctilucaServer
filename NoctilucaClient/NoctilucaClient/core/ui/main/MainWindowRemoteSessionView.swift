@@ -58,9 +58,6 @@ struct MainWindowRemoteSessionView: View {
         VStack {
             if isAppStreamActive {
                 Text("AppStream 활성화됨")
-                    .onAppear {
-                        subscription = nil
-                    }
             } else {
                 if case .displayID(let displayID) = sourceDescriptor, displayID != -1 {
                     RemoteSessionProjectionView(
@@ -207,6 +204,26 @@ struct MainWindowRemoteSessionView: View {
             )
         } subcontent: {
             EmptyView()
+        }
+#endif
+#if os(macOS)
+        .onChange(of: isAppStreamActive) { _, active in
+            if active {
+                // AppStream 활성화: 풀스크린 프로젝션 정리 (서버에 stop 요청 전송)
+                retryTask?.cancel()
+                retryTask = nil
+                subscription?.invalidate()
+                subscription = nil
+            } else {
+                // AppStream 종료: 풀스크린 프로젝션 자동 재개
+                Task {
+                    if case .displayID(let id) = sourceDescriptor, id != -1 {
+                        try? await self.updateProjectionTarget(.displayID(id))
+                    } else {
+                        try? await self.decideTargetDisplayID()
+                    }
+                }
+            }
         }
 #endif
         .onChange(of: projection.sessionErrors[sourceDescriptor]) { _, error in
