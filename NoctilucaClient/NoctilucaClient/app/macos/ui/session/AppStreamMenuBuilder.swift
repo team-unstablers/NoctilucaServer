@@ -78,8 +78,18 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
             )
         }
 
-        // 자식이 있을 가능성이 있으면 submenu 부착 + delegate로 lazy populate
-        if node.role == .menu || !node.children.isEmpty {
+        // 자식이 있을 가능성이 있으면 submenu 부착 + delegate로 lazy populate.
+        //
+        // submenu 존재 판단 우선순위:
+        //   1. role == .menu — 메뉴 자체
+        //   2. children 비어있지 않음 — 이미 트리에 포함되어 옴
+        //   3. hasSubmenu hint — 서버에서 AXMenu wrapper 발견을 알린 경우.
+        //      macOS AX 메뉴는 사용자가 한 번도 펼쳐보지 않은 nested submenu의 children이
+        //      빈 채로 보고되는 경우가 있어, hint 없이는 ▶ 표시가 누락되어 사용자가
+        //      submenu에 접근하지 못한다.
+        let hasSubmenuHint = node.attributes["app.noctiluca.server.x-ax.hasSubmenu"] == "1"
+        let shouldAttachSubmenu = node.role == .menu || !node.children.isEmpty || hasSubmenuHint
+        if shouldAttachSubmenu {
             let submenu = NSMenu(title: title)
             submenu.delegate = self
             menuToNodeId[ObjectIdentifier(submenu)] = node.id
