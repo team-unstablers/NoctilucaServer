@@ -7,6 +7,7 @@
 
 import Foundation
 import Observation
+import Combine
 
 import SiriusKitClient
 
@@ -19,13 +20,19 @@ final class DisplayLayoutManager {
     let logger = NoctilucaLogger(category: "DisplayLayoutManager")
 
     private(set) var displayLayouts: [DisplayID: DisplayInfo] = [:]
-    
+
+    /// 호스트가 보낸 `DisplayChangedEvent` 의 raw stream.
+    /// `consumeDisplayChangeEvent` 가 store 갱신 후 발행한다. AppStream VD 동기화처럼
+    /// wire identifier 매칭이 필요한 곳에서 구독한다.
+    @ObservationIgnored
+    let displayChangeSubject = PassthroughSubject<DisplayChangedEvent, Never>()
+
     var primaryDisplayID: DisplayID? {
         displayLayouts.first { $0.value.state.isPrimary }?.key
     }
-    
+
     nonisolated init() {
-        
+
     }
     
     func reset() {
@@ -48,6 +55,8 @@ final class DisplayLayoutManager {
         default:
             break
         }
+
+        displayChangeSubject.send(event)
     }
 
     /// 새 DisplayInfo에 thumbnail이 없으면 기존 thumbnail을 보존합니다.
