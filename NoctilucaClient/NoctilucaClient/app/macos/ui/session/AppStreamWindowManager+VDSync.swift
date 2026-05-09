@@ -84,44 +84,16 @@ extension AppStreamWindowManager {
             return
         }
 
-        // 2) wire UUID → host displayID 매핑 학습 (DisplayList 조회로 race-free 매칭).
-        let displayList: DisplayListResponse
-        do {
-            displayList = try await projectionChannel.requestDisplayList()
-        } catch {
-            logger.warning("provisionHostVirtualDisplays: requestDisplayList failed after create: \(error)")
-            return
-        }
-
-        var mappings: [CGDirectDisplayID: HostVDMapping] = [:]
-        var hostDisplayIDs: Set<UInt32> = []
-
-        for pending in pendingMappings {
-            guard let display = displayList.displays.first(where: {
-                $0.virtualDisplayIdentifier == pending.wireIdentifier
-            }) else {
-                logger.warning("provisionHostVirtualDisplays: VD \(pending.wireIdentifier) not found in DisplayList")
-                continue
-            }
-
-            let hostFrame = CGRect(
-                x: CGFloat(display.bounds.x),
-                y: CGFloat(display.bounds.y),
-                width: CGFloat(display.bounds.width),
-                height: CGFloat(display.bounds.height)
-            )
-            mappings[pending.clientScreen.displayID] = HostVDMapping(
-                wireIdentifier: pending.wireIdentifier,
-                hostDisplayID: UInt32(display.displayID),
-                clientDisplayID: pending.clientScreen.displayID,
-                hostFrame: hostFrame,
-                clientCocoaFrame: pending.clientScreen.frame
-            )
-            hostDisplayIDs.insert(UInt32(display.displayID))
-        }
+        // 2) wire UUID → host displayID 매핑 학습.
+        //    nocvirtdisplay 가 spawn 된 직후엔 macOS WindowServer 에 아직 등록 전이라
+        //    DisplayList 에 안 잡힐 수 있다. 짧은 backoff 로 재조회한다.
+        let mappings = await learnVDMappings(
+            pendingMappings: pendingMappings,
+            projectionChannel: projectionChannel
+        )
 
         guard !mappings.isEmpty else {
-            logger.warning("provisionHostVirtualDisplays: no VD-to-display mappings learned")
+            logger.warning("provisionHostVirtualDisplays: no VD-to-display mappings learned after retries")
             return
         }
 
@@ -357,46 +329,27 @@ extension AppStreamWindowManager {
             return
         }
 
-        // 매핑 학습 + origin change.
-        let displayList: DisplayListResponse
-        do {
-            displayList = try await projectionChannel.requestDisplayList()
-        } catch {
-            logger.warning("provisionAddedScreens: requestDisplayList failed: \(error)")
-            return
-        }
+        // 매핑 학습 (retry 포함) + origin change.
+        let learned = await learnVDMappings(
+            pendingMappings: pending,
+            projectionChannel: projectionChannel
+        )
 
         var changeOps: [DisplayOperation] = []
-        for entry in pending {
-            guard let display = displayList.displays.first(where: {
-                $0.virtualDisplayIdentifier == entry.wireIdentifier
-            }) else {
-                logger.warning("provisionAddedScreens: VD \(entry.wireIdentifier) not found")
+        for (clientID, mapping) in learned {
+            hostVDMappings[clientID] = mapping
+            createdVDIdentifiers.append(mapping.wireIdentifier)
+
+            guard let screen = pending.first(where: { $0.clientScreen.displayID == clientID })?.clientScreen else {
                 continue
             }
-
-            let hostFrame = CGRect(
-                x: CGFloat(display.bounds.x),
-                y: CGFloat(display.bounds.y),
-                width: CGFloat(display.bounds.width),
-                height: CGFloat(display.bounds.height)
-            )
-            hostVDMappings[entry.clientScreen.displayID] = HostVDMapping(
-                wireIdentifier: entry.wireIdentifier,
-                hostDisplayID: UInt32(display.displayID),
-                clientDisplayID: entry.clientScreen.displayID,
-                hostFrame: hostFrame,
-                clientCocoaFrame: entry.clientScreen.frame
-            )
-            createdVDIdentifiers.append(entry.wireIdentifier)
-
             changeOps.append(DisplayOperation(operation: .change(DisplayLayoutChange(
-                displayID: UInt32(display.displayID),
+                displayID: UInt32(mapping.hostDisplayID),
                 spec: nil,
                 rotation: nil,
                 origin: SRPoint(
-                    x: Double(entry.clientScreen.x11Frame.origin.x),
-                    y: Double(entry.clientScreen.x11Frame.origin.y)
+                    x: Double(screen.x11Frame.origin.x),
+                    y: Double(screen.x11Frame.origin.y)
                 )
             ))))
         }
@@ -466,6 +419,78 @@ extension AppStreamWindowManager {
                 logger.warning("applyModifiedScreens: transaction failed: \(error)")
             }
         }
+    }
+
+    // MARK: - Mapping Learning (with retry)
+
+    /// VD 가 시스템에 등록되어 DisplayList 에 노출되기까지 최대 ~1.4초 동안 짧은 backoff 로 조회.
+    /// 이미 학습한 매핑은 재조회하지 않고 누적한다. 매칭 안 된 wire UUID 는 그냥 누락된 채로 넘긴다 —
+    /// 호출 측이 매핑 0개여도 진행할지 abort 할지 판단한다.
+    private static let vdMappingMaxAttempts = 8
+    private static let vdMappingDelays: [Duration] = [
+        .milliseconds(50),
+        .milliseconds(100),
+        .milliseconds(150),
+        .milliseconds(200),
+        .milliseconds(250),
+        .milliseconds(300),
+        .milliseconds(400),
+    ]
+
+    func learnVDMappings(
+        pendingMappings: [(wireIdentifier: UUID, clientScreen: LocalScreenInfo)],
+        projectionChannel: ProjectionChannel
+    ) async -> [CGDirectDisplayID: HostVDMapping] {
+        var mappings: [CGDirectDisplayID: HostVDMapping] = [:]
+        var unmatched = Set(pendingMappings.map { $0.wireIdentifier })
+
+        for attempt in 0..<Self.vdMappingMaxAttempts where !unmatched.isEmpty {
+            if attempt > 0 {
+                let delay = Self.vdMappingDelays[min(attempt - 1, Self.vdMappingDelays.count - 1)]
+                try? await Task.sleep(for: delay)
+            }
+
+            let displayList: DisplayListResponse
+            do {
+                displayList = try await projectionChannel.requestDisplayList()
+            } catch {
+                logger.warning("learnVDMappings: requestDisplayList failed (attempt \(attempt + 1)): \(error)")
+                continue
+            }
+
+            for pending in pendingMappings where unmatched.contains(pending.wireIdentifier) {
+                guard let display = displayList.displays.first(where: {
+                    $0.virtualDisplayIdentifier == pending.wireIdentifier
+                }) else {
+                    continue
+                }
+
+                let hostFrame = CGRect(
+                    x: CGFloat(display.bounds.x),
+                    y: CGFloat(display.bounds.y),
+                    width: CGFloat(display.bounds.width),
+                    height: CGFloat(display.bounds.height)
+                )
+                mappings[pending.clientScreen.displayID] = HostVDMapping(
+                    wireIdentifier: pending.wireIdentifier,
+                    hostDisplayID: UInt32(display.displayID),
+                    clientDisplayID: pending.clientScreen.displayID,
+                    hostFrame: hostFrame,
+                    clientCocoaFrame: pending.clientScreen.frame
+                )
+                unmatched.remove(pending.wireIdentifier)
+            }
+
+            if !unmatched.isEmpty {
+                logger.info("learnVDMappings: \(unmatched.count) VD(s) still pending after attempt \(attempt + 1); retrying")
+            }
+        }
+
+        if !unmatched.isEmpty {
+            logger.warning("learnVDMappings: \(unmatched.count) VD(s) never appeared in DisplayList after \(Self.vdMappingMaxAttempts) attempts")
+        }
+
+        return mappings
     }
 
     // MARK: - Coordinate Mapping
