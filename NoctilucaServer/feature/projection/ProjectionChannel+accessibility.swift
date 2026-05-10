@@ -225,12 +225,12 @@ extension ProjectionChannel {
         // 액션 별 AX action 매핑.
         // - .activate : kAXPressAction (메뉴 항목 활성화 등)
         // - .cancel   : kAXCancelAction (popup 메뉴 dismiss 등)
-        let axActionName: CFString
+        let axActionName: String
         switch request.actionType {
         case .activate:
-            axActionName = kAXPressAction as CFString
+            axActionName = kAXPressAction as String
         case .cancel:
-            axActionName = kAXCancelAction as CFString
+            axActionName = kAXCancelAction as String
         default:
             try await self.handle.send(opcode: .dispatchActionResponse, message: DispatchActionResponse(
                 requestId: request.requestId,
@@ -241,7 +241,7 @@ extension ProjectionChannel {
         }
 
         let axResult: AXError = await MainActor.run {
-            AXUIElementPerformAction(element, axActionName)
+            AXUIElementPerformAction(element, axActionName as CFString)
         }
 
         if axResult == .success {
