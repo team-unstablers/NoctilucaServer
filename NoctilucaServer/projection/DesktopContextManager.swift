@@ -1151,9 +1151,7 @@ final class DesktopContextManager {
     
     @MainActor
     deinit {
-        workspaceObservers.forEach { observer in
-            workspace.notificationCenter.removeObserver(observer)
-        }
+        shutdown()
     }
 
     // MARK: - Public Methods
@@ -1216,6 +1214,8 @@ final class DesktopContextManager {
     func shutdown() {
         subscriptions.removeAll()
         appEventSubscriptions.removeAll()
+        menuEventSubscriptions.removeAll()
+        contextMenuEventSubscriptions.removeAll()
         for session in activeSessions.values {
             session.stop()
         }

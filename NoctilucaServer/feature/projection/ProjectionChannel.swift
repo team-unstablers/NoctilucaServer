@@ -257,6 +257,7 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
             let desktopContextManager = await DesktopContextManager.shared
             for subscription in snapshot.accessibilitySubscriptions {
                 await desktopContextManager.unsubscribeMenuEvents(id: subscription.menuEventHandlerId)
+                await desktopContextManager.unsubscribeContextMenuEvents(id: subscription.contextMenuEventHandlerId)
             }
         }
 
