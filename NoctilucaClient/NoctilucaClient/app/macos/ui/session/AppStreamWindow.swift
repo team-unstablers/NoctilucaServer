@@ -71,8 +71,7 @@ class AppStreamWindow: NSWindow {
                 mouse: mouse
             )
 
-            WindowInfoOverlay(store: windowInfoStore)
-                .padding(8)
+            AppStreamWindowInfoOverlayContainer(store: windowInfoStore)
         }
         .ignoresSafeArea(.all)
         .environmentObject(SettingsStore.shared)

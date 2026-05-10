@@ -11,6 +11,18 @@ import SwiftUI
 
 import SiriusKitClient
 
+struct AppStreamWindowInfoOverlayContainer: View {
+    @ObservedObject var store: ObservableWindowInfo
+    @EnvironmentObject private var settingsStore: SettingsStore
+
+    var body: some View {
+        if settingsStore.settings.misc.showAppStreamWindowInfoOverlay {
+            WindowInfoOverlay(store: store)
+                .padding(8)
+        }
+    }
+}
+
 struct WindowInfoOverlay: View {
     @ObservedObject var store: ObservableWindowInfo
 
