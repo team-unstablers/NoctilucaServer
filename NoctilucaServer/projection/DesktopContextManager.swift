@@ -44,6 +44,20 @@ private func axElementAttribute(_ element: AXUIElement, _ attribute: String) -> 
     return (ref as! AXUIElement)
 }
 
+/// AXUIElement에서 Bool 속성을 안전하게 읽는다. 실패 / 타입 불일치 시 nil.
+private func axBoolAttribute(_ element: AXUIElement, _ attribute: String) -> Bool? {
+    var value: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
+          let cf = value
+    else {
+        return nil
+    }
+    guard CFGetTypeID(cf) == CFBooleanGetTypeID() else {
+        return nil
+    }
+    return CFBooleanGetValue((cf as! CFBoolean))
+}
+
 struct SkyLightWindowInfo: Sendable {
     let parentWindowId: CGWindowID?
     let tag: CGSWindowTag
@@ -101,12 +115,38 @@ private struct AXWindowAttributes {
     let axRole: String?
     let axSubrole: String?
 
+    /// 셋 다 nil 이면 borderless / decoration 없는 윈도우로 본다.
+    let hasCloseButton: Bool
+    let hasMinimizeButton: Bool
+    let hasZoomButton: Bool
+
+    /// 버튼이 존재하지 않으면 false. 존재하지만 disabled 인 경우만 false 가 의미를 가짐.
+    let isMinimizeEnabled: Bool
+    let isZoomEnabled: Bool
+
+    let isMinimized: Bool
+    let isFullscreenAX: Bool
+
     var windowRole: WindowRole {
         mapAXRoleToWindowRole(axRole: axRole, axSubrole: axSubrole)
     }
 
+    /// 신호등 자체가 아예 없는 borderless 윈도우인지.
+    var hasNoTitleBarButtons: Bool {
+        !hasCloseButton && !hasMinimizeButton && !hasZoomButton
+    }
+
     static let empty = AXWindowAttributes(
-        axClassName: nil, axRole: nil, axSubrole: nil
+        axClassName: nil,
+        axRole: nil,
+        axSubrole: nil,
+        hasCloseButton: false,
+        hasMinimizeButton: false,
+        hasZoomButton: false,
+        isMinimizeEnabled: false,
+        isZoomEnabled: false,
+        isMinimized: false,
+        isFullscreenAX: false
     )
 }
 
@@ -116,10 +156,149 @@ private func readAXWindowAttributes(from element: AXUIElement) -> AXWindowAttrib
     let axRole = axStringAttribute(element, kAXRoleAttribute as String)
     let axSubrole = axStringAttribute(element, kAXSubroleAttribute as String)
 
+    let closeButton = axElementAttribute(element, kAXCloseButtonAttribute as String)
+    let minimizeButton = axElementAttribute(element, kAXMinimizeButtonAttribute as String)
+    let zoomButton = axElementAttribute(element, kAXZoomButtonAttribute as String)
+
+    let isMinimizeEnabled: Bool = {
+        guard let minimizeButton else { return false }
+        return axBoolAttribute(minimizeButton, kAXEnabledAttribute as String) ?? true
+    }()
+    let isZoomEnabled: Bool = {
+        guard let zoomButton else { return false }
+        return axBoolAttribute(zoomButton, kAXEnabledAttribute as String) ?? true
+    }()
+
+    let isMinimized = axBoolAttribute(element, kAXMinimizedAttribute as String) ?? false
+    let isFullscreenAX = axBoolAttribute(element, "AXFullScreen") ?? false
+
     return AXWindowAttributes(
         axClassName: axClassName,
         axRole: axRole,
-        axSubrole: axSubrole
+        axSubrole: axSubrole,
+        hasCloseButton: closeButton != nil,
+        hasMinimizeButton: minimizeButton != nil,
+        hasZoomButton: zoomButton != nil,
+        isMinimizeEnabled: isMinimizeEnabled,
+        isZoomEnabled: isZoomEnabled,
+        isMinimized: isMinimized,
+        isFullscreenAX: isFullscreenAX
+    )
+}
+
+// MARK: - WindowInfo signal derivation (CGSWindowTag + AX → Sirius flags/hints)
+
+/// fetchWindowList 가 채울 hints / flags / metadata 묶음.
+private struct WindowInfoSignalSet {
+    var hints: WindowHint
+    var flags: WindowInfoFlags
+    var metadataExtras: [String: String]
+}
+
+/// AX 속성과 CGSWindowTag, CGWindowList 값들을 종합해 Sirius `WindowInfo` 의
+/// hints / flags / metadata 를 산출한다.
+///
+/// 신호 우선순위:
+///   - `noWindowDecoration` 은 AX 버튼 셋 다 nil (primary) OR CGSWindowTag 휴리스틱 (fallback).
+///   - 그 외 플래그/힌트는 AX 와 tag 중 더 직접적인 쪽을 1차로 사용하고, 여건이 되면 cross-check.
+private func deriveWindowInfoSignals(
+    axAttrs: AXWindowAttributes,
+    skyLightInfo: SkyLightWindowInfo,
+    isFocused: Bool,
+    isOnscreen: Bool,
+    isVisible: Bool,
+    layer: Int32
+) -> WindowInfoSignalSet {
+    let tag = skyLightInfo.tag
+
+    // MARK: hints
+
+    var hints: WindowHint = []
+    // border-radius / 부분 투명은 macOS 윈도우 대부분에 해당. tag 에 명확한 inverse
+    // 신호가 없어 보수적으로 항상 true 로 둔다.
+    hints.insert(.hasTransparency)
+
+    if !tag.contains(.disableShadow) {
+        hints.insert(.hasShadow)
+    }
+    if tag.contains(.avoidsCapture) {
+        hints.insert(.protectedContent)
+    }
+    if tag.contains(.attachesToMenuBar)
+        || tag.contains(.mergesWithMenuBar)
+        || tag.contains(.windowIsMagicMirror)
+        || tag.contains(.desktopPicture)
+    {
+        hints.insert(.systemUI)
+    }
+
+    // MARK: flags
+
+    var flags: WindowInfoFlags = []
+
+    if isFocused {
+        flags.insert(.isFocused)
+    }
+    if !isVisible || !isOnscreen || tag.contains(.hidden) {
+        flags.insert(.isHidden)
+    }
+    if axAttrs.isMinimized {
+        flags.insert(.isMinimized)
+    }
+    if axAttrs.isFullscreenAX || tag.contains(.fullScreen) {
+        flags.insert(.isFullscreen)
+    }
+
+    // 신호등 자체가 없는 borderless 윈도우 판정.
+    let noDecorationByAX = axAttrs.hasNoTitleBarButtons
+    let noDecorationByTag =
+        tag.contains(.attachedWindow)
+        || tag.contains(.attachesToMenuBar)
+        || tag.contains(.mergesWithMenuBar)
+        || (tag.contains(.disableShadow)
+            && (tag.contains(.ignoreForEvents)
+                || tag.contains(.avoidsActivation)
+                || tag.contains(.preventsActivation)))
+    if noDecorationByAX || noDecorationByTag {
+        flags.insert(.noWindowDecoration)
+    }
+
+    // 버튼이 존재하면서 disabled 인 경우만 cannot* 로 본다. 버튼 자체가 없는 케이스는
+    // noWindowDecoration 으로 흡수되므로 따로 set 하지 않는다.
+    if axAttrs.hasMinimizeButton && !axAttrs.isMinimizeEnabled {
+        flags.insert(.cannotMinimize)
+    }
+    if axAttrs.hasZoomButton && !axAttrs.isZoomEnabled {
+        flags.insert(.cannotMaximize)
+    }
+    if !tag.contains(.fullScreenCapable) && !tag.contains(.fullScreenTileCapable) {
+        flags.insert(.cannotFullscreen)
+    }
+
+    // 레벨 / 플로팅: kCGNormalWindowLevel == 0. 양수는 floating/utility/popup,
+    // 음수는 desktop 류.
+    if tag.contains(.floatingWindow) || layer > 0 {
+        flags.insert(.isTopmost)
+    }
+    if tag.contains(.desktopPicture) || layer < 0 {
+        flags.insert(.isBottommost)
+    }
+
+    if tag.contains(.ignoreForExpose) {
+        flags.insert(.skipWindowEntry)
+    }
+
+    // MARK: metadata
+
+    let metadataExtras: [String: String] = [
+        "app.noctiluca.server.x-cgs-tags": tag.debugDescription,
+        "app.noctiluca.server.x-cgs-tags-raw": String(format: "0x%016llx", tag.rawValue),
+    ]
+
+    return WindowInfoSignalSet(
+        hints: hints,
+        flags: flags,
+        metadataExtras: metadataExtras
     )
 }
 
@@ -700,47 +879,42 @@ final class AppSession {
                 axAttrs = .empty
             }
 
-            // FIXME
-            var hints: WindowHint = [
-                .hasShadow,
-                .hasTransparency,
-            ]
-            var flags: WindowInfoFlags = []
-
-            if isActive {
-                flags.insert(.isFocused)
-            }
-
-            if !isVisible || !isOnscreen {
-                flags.insert(.isHidden)
-            }
-
-            var metadata: [String: String] = [
-                "app.noctiluca.server.x-window-layer": "\(layer)",
-                "app.noctiluca.server.x-window-alpha": "\(alpha)",
-            ]
-            
             guard let axRole = axAttrs.axRole,
                   let axSubrole = axAttrs.axSubrole
             else {
                 // HACK(Xcode): treat as closed window when axRole is nil (shift-f2)
                 return nil
             }
-            
-            metadata["app.noctiluca.server.x-axrole"] = axRole
-            metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
 
-            let bundleID = runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
             guard let skyLightWindowInfo = getSkyLightWindowInfo(for: windowID) else {
                 return nil
             }
-            
+
+            let signals = deriveWindowInfoSignals(
+                axAttrs: axAttrs,
+                skyLightInfo: skyLightWindowInfo,
+                isFocused: isActive,
+                isOnscreen: isOnscreen,
+                isVisible: isVisible,
+                layer: layer
+            )
+
+            var metadata: [String: String] = [
+                "app.noctiluca.server.x-window-layer": "\(layer)",
+                "app.noctiluca.server.x-window-alpha": "\(alpha)",
+                "app.noctiluca.server.x-axrole": axRole,
+                "app.noctiluca.server.x-axsubrole": axSubrole,
+            ]
+            metadata.merge(signals.metadataExtras) { _, new in new }
+
+            let bundleID = runningApplication.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
+
             let parentWindowID = if let cgParentWindowID = skyLightWindowInfo.parentWindowId {
                 UInt64(cgParentWindowID)
             } else {
                 UInt64(0)
             }
-            
+
             let windowInfo = WindowInfo(
                 windowID: UInt64(windowID),
                 pid: UInt64(ownerPID),
@@ -754,10 +928,10 @@ final class AppSession {
                 iconHash: nil,
                 thumbnail: nil,
                 metadata: metadata,
-                hints: hints,
-                flags: flags
+                hints: signals.hints,
+                flags: signals.flags
             )
-            
+
             // FIXME: ...
             if windowInfo.isNSLocalWindowSharingWindow || !windowInfo.isStandaloneWindow {
                 return nil
@@ -1300,48 +1474,41 @@ final class DesktopContextManager {
                 axAttrs = .empty
             }
 
-            var hints: WindowHint = [
-                .hasShadow,
-                .hasTransparency,
-            ]
-            var flags: WindowInfoFlags = []
-
-            if isActive {
-                flags.insert(.isFocused)
-            }
-
-            if !isVisible || !isOnscreen {
-                flags.insert(.isHidden)
-            }
-
-            var metadata: [String: String] = [
-                "app.noctiluca.server.x-window-layer": "\(layer)",
-                "app.noctiluca.server.x-window-alpha": "\(alpha)",
-            ]
-            
             guard let axRole = axAttrs.axRole,
                   let axSubrole = axAttrs.axSubrole
             else {
                 // HACK(Xcode): treat as closed window when axRole is nil (shift-f2)
                 return nil
             }
-            
-            metadata["app.noctiluca.server.x-axrole"] = axRole
-            metadata["app.noctiluca.server.x-axsubrole"] = axSubrole
 
-
-            let bundleID = relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
-            
             guard let skyLightWindowInfo = getSkyLightWindowInfo(for: windowID) else {
                 return nil
             }
-            
+
+            let signals = deriveWindowInfoSignals(
+                axAttrs: axAttrs,
+                skyLightInfo: skyLightWindowInfo,
+                isFocused: isActive,
+                isOnscreen: isOnscreen,
+                isVisible: isVisible,
+                layer: layer
+            )
+
+            var metadata: [String: String] = [
+                "app.noctiluca.server.x-window-layer": "\(layer)",
+                "app.noctiluca.server.x-window-alpha": "\(alpha)",
+                "app.noctiluca.server.x-axrole": axRole,
+                "app.noctiluca.server.x-axsubrole": axSubrole,
+            ]
+            metadata.merge(signals.metadataExtras) { _, new in new }
+
+            let bundleID = relatedApp?.bundleIdentifier ?? "app.noctiluca.server.UnknownBundleID"
+
             let parentWindowID = if let cgParentWindowID = skyLightWindowInfo.parentWindowId {
                 UInt64(cgParentWindowID)
             } else {
                 UInt64(0)
             }
-            
 
             let windowInfo = WindowInfo(
                 windowID: UInt64(windowID),
@@ -1356,8 +1523,8 @@ final class DesktopContextManager {
                 iconHash: nil,
                 thumbnail: nil,
                 metadata: metadata,
-                hints: hints,
-                flags: flags
+                hints: signals.hints,
+                flags: signals.flags
             )
             
             if windowInfo.isNSLocalWindowSharingWindow || !windowInfo.isStandaloneWindow {
