@@ -441,6 +441,8 @@ protocol DesktopContextManagerDelegate: AnyObject {
 /// (기존 AppSubscription)
 @MainActor
 final class AppSession {
+    private let logger = NoctilucaLogger(category: "AppSession")
+
     // 식별 및 상태
     let appIdentifier: AppIdentifier
     let pid: pid_t
@@ -776,7 +778,13 @@ final class AppSession {
         self.observerRefCon = refCon
 
         for notification in observedNotifications {
-            _ = AXObserverAddNotification(observer, appElement, notification, refCon)
+            let addResult = AXObserverAddNotification(observer, appElement, notification, refCon)
+            switch addResult {
+            case .success, .notificationAlreadyRegistered:
+                break
+            default:
+                self.logger.warning("[\(self.appIdentifier)] Failed to register AX notification \(notification as String): \(addResult)")
+            }
         }
 
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
@@ -1794,6 +1802,7 @@ final class DesktopContextManager {
                     ApplicationChangedEvent(eventType: .terminated, info: appInfo),
                     bundleId: app.bundleIdentifier
                 )
+                self.pruneSubscriptions(forTerminatedPID: app.processIdentifier)
             }
         }
 
@@ -1886,6 +1895,30 @@ final class DesktopContextManager {
             }
 
             subscription.callback(event)
+        }
+    }
+
+    // MARK: - Subscription Cleanup
+
+    /// 종료된 앱(pid) 에 묶인 pid-keyed 구독을 자동 청소한다. caller 가 명시적 unsubscribe 를
+    /// 누락해도 stale entry 가 누적되지 않도록 하는 안전망. caller 가 후속 unsubscribe 를
+    /// 호출해도 idempotent (false 반환).
+    ///
+    /// window subscriptions 은 filter 기반(AND/OR/regex 조합 가능)이라 이 prune 의 대상이
+    /// 아니며, app event subscriptions 는 bundleId 가 같은 앱이 재실행될 수 있어 보존한다.
+    private func pruneSubscriptions(forTerminatedPID pid: pid_t) {
+        let menuToRemove = menuEventSubscriptions.filter { $0.value.pid == pid }.map { $0.key }
+        let contextMenuToRemove = contextMenuEventSubscriptions.filter { $0.value.pid == pid }.map { $0.key }
+
+        for id in menuToRemove {
+            menuEventSubscriptions.removeValue(forKey: id)
+        }
+        for id in contextMenuToRemove {
+            contextMenuEventSubscriptions.removeValue(forKey: id)
+        }
+
+        if !menuToRemove.isEmpty || !contextMenuToRemove.isEmpty {
+            logger.info("[Workspace] pruned subscriptions for terminated pid=\(pid) (menu: \(menuToRemove.count), contextMenu: \(contextMenuToRemove.count))")
         }
     }
 }
