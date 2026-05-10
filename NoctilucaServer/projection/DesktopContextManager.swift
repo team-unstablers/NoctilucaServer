@@ -392,6 +392,21 @@ protocol AppSessionDelegate: AnyObject {
     /// Phase 4에서 diff 기반 세밀한 이벤트로 확장 예정.
     func appSession(_ session: AppSession, didUpdateMenuBar rootNode: AccessibilityNode)
 
+    // Context Menu (popup): 메뉴바 산하가 아닌 우클릭 등으로 뜨는 transient popup 메뉴.
+    // AccessibilityTreeUpdateEvent (.nodeAdded / .nodeRemoved) 로 클라에 직렬화될 예정.
+    /// popup 메뉴가 호스트에서 열리면 호출된다. `tree.id` 가 곧 menuId 이며, 클라이언트가
+    /// native NSMenu 로 미러링하기 위한 트리이다.
+    func appSession(
+        _ session: AppSession,
+        didOpenContextMenu tree: AccessibilityNode,
+        hostBounds: CGRect,
+        triggerWindowID: WindowID?
+    )
+
+    /// popup 메뉴가 호스트 측에서 dismiss 되면 호출된다. AppMenuRegistry 역매핑으로 menuId 를
+    /// 찾을 수 없는 경우(예: 미등록 element) 호출되지 않는다.
+    func appSession(_ session: AppSession, didCloseContextMenu menuID: UUID)
+
     // Window Events (winman.proto의 Window...Event 메시지들과 대응)
     /// 윈도우가 생성되었거나, 감시 대상에 포함됨
     func appSession(_ session: AppSession, didDiscoverWindow window: WindowInfo)
@@ -457,6 +472,10 @@ final class AppSession {
     // 디바운스+병합: 잦은 AX 노티를 100~200ms 간격으로 묶고, 실행 중 중복을 한 번으로 합친다.
     private let refreshSubject = PassthroughSubject<Void, Never>()
     private let menuRefreshSubject = PassthroughSubject<Void, Never>()
+    /// popup(컨텍스트) 메뉴 open AX 알림을 흘려보내는 파이프라인. 메뉴바와 달리 응답성이
+    /// 중요하므로 debounce 가 없다.
+    private let contextMenuOpenedSubject = PassthroughSubject<AXUIElement, Never>()
+    private let contextMenuClosedSubject = PassthroughSubject<AXUIElement, Never>()
     private var cancellables = Set<AnyCancellable>()
     private let refreshDelay: TimeInterval = 0.05
     private let menuRefreshDelay: TimeInterval = 0.2
@@ -496,6 +515,7 @@ final class AppSession {
         try self.setupObserver()
         self.setupRefreshPipeline()
         self.setupMenuRefreshPipeline()
+        self.setupContextMenuPipeline()
         self.monitoredWindows = self.fetchWindowList()
     }
     
@@ -673,11 +693,32 @@ final class AppSession {
     
     // MARK: - Internal Logic
     
-    /// AXObserver 콜백 등에서 호출되어 Delegate에게 알림
-    private func handleAXNotification(_ notification: CFString) {
+    /// AXObserver 콜백 등에서 호출되어 Delegate에게 알림.
+    /// `element` 는 알림이 발생한 AX 요소이며, popup 메뉴(컨텍스트 메뉴) 와 메뉴바 산하 메뉴를
+    /// 구분하기 위해 사용한다.
+    private func handleAXNotification(_ notification: CFString, element: AXUIElement) {
         let name = notification as String
 
+        if name == kAXMenuOpenedNotification as String {
+            if Self.isInsideMenuBar(element: element) {
+                menuRefreshSubject.send(())
+            } else {
+                contextMenuOpenedSubject.send(element)
+            }
+            return
+        }
+
+        if name == kAXMenuClosedNotification as String {
+            if Self.isInsideMenuBar(element: element) {
+                menuRefreshSubject.send(())
+            } else {
+                contextMenuClosedSubject.send(element)
+            }
+            return
+        }
+
         if Self.menuNotifications.contains(name) {
+            // kAXMenuItemSelectedNotification: popup 의 경우 close 가 뒤따라 오므로 별도 처리하지 않는다.
             menuRefreshSubject.send(())
             return
         }
@@ -688,15 +729,39 @@ final class AppSession {
             menuRefreshSubject.send(())
         }
     }
-    
+
+    /// 주어진 AX 요소가 메뉴바(AXMenuBar) 산하인지 검사한다. parent 체인을 따라 올라가며 role 을
+    /// 확인하고, 적정 depth 안에서 AXMenuBar 를 만나면 true. AppKit popup 메뉴(컨텍스트 메뉴) 는
+    /// 메뉴바와 무관한 별도 윈도우에 그려지므로 false 가 된다.
+    nonisolated private static func isInsideMenuBar(element: AXUIElement) -> Bool {
+        var current: AXUIElement? = element
+        var depth = 0
+        while let elem = current, depth < 12 {
+            var roleValue: CFTypeRef?
+            if AXUIElementCopyAttributeValue(elem, kAXRoleAttribute as CFString, &roleValue) == .success,
+               let role = roleValue as? String,
+               role == kAXMenuBarRole as String {
+                return true
+            }
+            var parentValue: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(elem, kAXParentAttribute as CFString, &parentValue) == .success,
+                  let raw = parentValue, CFGetTypeID(raw) == AXUIElementGetTypeID() else {
+                return false
+            }
+            current = (raw as! AXUIElement)
+            depth += 1
+        }
+        return false
+    }
+
     private func setupObserver() throws {
         var observer: AXObserver?
-        let result = AXObserverCreate(self.pid, { _, _, notification, context in
+        let result = AXObserverCreate(self.pid, { _, element, notification, context in
             guard let context else { return }
             // AXObserver 콜백은 메인 런루프에서 실행되므로 assumeIsolated가 안전함
             MainActor.assumeIsolated {
                 let session = Unmanaged<AppSession>.fromOpaque(context).takeUnretainedValue()
-                session.handleAXNotification(notification)
+                session.handleAXNotification(notification, element: element)
             }
         }, &observer)
 
@@ -748,7 +813,68 @@ final class AppSession {
     func requestMenuRefresh() {
         menuRefreshSubject.send(())
     }
-    
+
+    /// popup(컨텍스트) 메뉴 open/close 알림을 delegate 에 전달하는 파이프라인.
+    /// 메뉴바와 달리 응답성이 중요하므로 debounce 없이 즉시 dispatch 한다.
+    private func setupContextMenuPipeline() {
+        contextMenuOpenedSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] element in
+                self?.dispatchContextMenuOpened(element: element)
+            }
+            .store(in: &cancellables)
+
+        contextMenuClosedSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] element in
+                self?.dispatchContextMenuClosed(element: element)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func dispatchContextMenuOpened(element: AXUIElement) {
+        let builder = AccessibilityTreeBuilder(pid: self.pid, maxDepth: 2)
+        let tree = builder.snapshot(subtreeRoot: element, parentId: nil)
+
+        let bounds = Self.readPopupBounds(element: element)
+        // 현재 focus 된 윈도우를 트리거 윈도우 후보로 사용한다.
+        let triggerWindowID: WindowID? = monitoredWindows
+            .first(where: { $0.value.flags.contains(.isFocused) })?.key
+
+        delegate?.appSession(
+            self,
+            didOpenContextMenu: tree,
+            hostBounds: bounds,
+            triggerWindowID: triggerWindowID
+        )
+    }
+
+    private func dispatchContextMenuClosed(element: AXUIElement) {
+        guard let menuID = AppMenuRegistry.shared.lookup(element: element, pid: pid) else {
+            // 등록되지 않은 element 의 close 는 무시한다 (예: popup open 알림이 우리에게 닿기 전에
+            // 사용자가 닫은 경우, 혹은 prune 후 stale 한 close).
+            return
+        }
+        delegate?.appSession(self, didCloseContextMenu: menuID)
+    }
+
+    nonisolated private static func readPopupBounds(element: AXUIElement) -> CGRect {
+        var origin = CGPoint.zero
+        var size = CGSize.zero
+
+        var positionValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &positionValue) == .success,
+           let raw = positionValue, CFGetTypeID(raw) == AXValueGetTypeID() {
+            AXValueGetValue(raw as! AXValue, .cgPoint, &origin)
+        }
+        var sizeValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeValue) == .success,
+           let raw = sizeValue, CFGetTypeID(raw) == AXValueGetTypeID() {
+            AXValueGetValue(raw as! AXValue, .cgSize, &size)
+        }
+        return CGRect(origin: origin, size: size)
+    }
+
     /// 실제 refresh 실행을 직렬화하고, 실행 중 추가 요청은 한 번 더 실행하도록 병합
     private func enqueueRefresh() {
         guard !isRefreshing else {
@@ -970,6 +1096,23 @@ struct MenuEventSubscription {
     let callback: @MainActor @Sendable (AccessibilityNode) -> Void
 }
 
+// MARK: - Context Menu Event Subscription
+
+/// popup(컨텍스트) 메뉴 이벤트. 메뉴바 갱신과 별개로 처리한다.
+/// 클라이언트 송신 시점에 일반 `AccessibilityTreeUpdateEvent` 로 변환된다.
+enum ContextMenuEvent: Sendable {
+    /// 메뉴가 새로 떴음을 알린다. `tree.id` 가 곧 menuId 이다.
+    case opened(tree: AccessibilityNode, hostBounds: CGRect, triggerWindowID: WindowID?)
+    /// 메뉴가 호스트 측에서 닫혔음을 알린다.
+    case closed(menuID: UUID)
+}
+
+struct ContextMenuEventSubscription {
+    let id: UUID
+    let pid: pid_t
+    let callback: @MainActor @Sendable (ContextMenuEvent) -> Void
+}
+
 /// 시스템 전체의 앱 실행 상태와 포커스를 관장하는 매니저
 /// (기존 WindowManagerOrSpy)
 @MainActor
@@ -991,6 +1134,9 @@ final class DesktopContextManager {
 
     /// 활성 메뉴 이벤트 구독 (SubscriptionID: Subscription)
     private var menuEventSubscriptions: [UUID: MenuEventSubscription] = [:]
+
+    /// 활성 컨텍스트(popup) 메뉴 이벤트 구독
+    private var contextMenuEventSubscriptions: [UUID: ContextMenuEventSubscription] = [:]
 
     private let workspace: NSWorkspace
     private var workspaceObservers: [Any] = []
@@ -1390,6 +1536,24 @@ final class DesktopContextManager {
         return menuEventSubscriptions.removeValue(forKey: id) != nil
     }
 
+    // MARK: - Context Menu (Popup) Event Subscription
+
+    /// 컨텍스트(popup) 메뉴 이벤트 구독 등록.
+    func subscribeContextMenuEvents(
+        pid: pid_t,
+        callback: @escaping @MainActor @Sendable (ContextMenuEvent) -> Void
+    ) -> UUID {
+        let id = UUID()
+        contextMenuEventSubscriptions[id] = ContextMenuEventSubscription(id: id, pid: pid, callback: callback)
+        return id
+    }
+
+    /// 컨텍스트(popup) 메뉴 이벤트 구독 해제
+    @discardableResult
+    func unsubscribeContextMenuEvents(id: UUID) -> Bool {
+        return contextMenuEventSubscriptions.removeValue(forKey: id) != nil
+    }
+
     // MARK: - App Management Helpers
 
     /// 번들 ID로 실행 중인 앱 조회
@@ -1759,6 +1923,29 @@ extension DesktopContextManager: AppSessionDelegate {
         let targets = menuEventSubscriptions.values.filter { $0.pid == session.pid }
         for subscription in targets {
             subscription.callback(rootNode)
+        }
+    }
+
+    func appSession(
+        _ session: AppSession,
+        didOpenContextMenu tree: AccessibilityNode,
+        hostBounds: CGRect,
+        triggerWindowID: WindowID?
+    ) {
+        logger.debug("[\(session.appIdentifier)] context menu opened: \(tree.children.count) item(s) at \(hostBounds.debugDescription)")
+        let event = ContextMenuEvent.opened(tree: tree, hostBounds: hostBounds, triggerWindowID: triggerWindowID)
+        let targets = contextMenuEventSubscriptions.values.filter { $0.pid == session.pid }
+        for subscription in targets {
+            subscription.callback(event)
+        }
+    }
+
+    func appSession(_ session: AppSession, didCloseContextMenu menuID: UUID) {
+        logger.debug("[\(session.appIdentifier)] context menu closed: \(menuID)")
+        let event = ContextMenuEvent.closed(menuID: menuID)
+        let targets = contextMenuEventSubscriptions.values.filter { $0.pid == session.pid }
+        for subscription in targets {
+            subscription.callback(event)
         }
     }
 

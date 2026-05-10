@@ -53,6 +53,14 @@ final class AppMenuRegistry {
         return idToEntry[id]?.element
     }
 
+    /// 이미 등록된 AXUIElement에 대응하는 UUID를 조회한다. 등록되지 않은 element면 `nil`.
+    /// `register()` 와 달리 새 entry 를 만들지 않는다. popup 메뉴가 닫혔을 때 element 를
+    /// 다시 등록하지 않고 menuId 만 역매핑할 때 사용한다.
+    func lookup(element: AXUIElement, pid: pid_t) -> UUID? {
+        let key = AXElementKey(element: element)
+        return elementIndex[pid]?[key]
+    }
+
     /// UUID에 연결된 pid를 조회한다.
     func pid(for id: UUID) -> pid_t? {
         return idToEntry[id]?.pid

@@ -43,6 +43,9 @@ actor ProjectionChannelState {
         /// `DesktopContextManager.subscribeMenuEvents`가 반환한 메뉴 핸들러 UUID.
         /// Unsubscribe 시 반드시 해제해야 한다.
         let menuEventHandlerId: UUID
+        /// `DesktopContextManager.subscribeContextMenuEvents`가 반환한 popup 메뉴 핸들러 UUID.
+        /// Unsubscribe 시 menuEventHandlerId 와 함께 해제해야 한다.
+        let contextMenuEventHandlerId: UUID
     }
 
     struct DestroySnapshot {
