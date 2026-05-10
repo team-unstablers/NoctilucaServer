@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 100;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -89,25 +89,29 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		F621D2052F91FC4F00AEF0FA /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
-			dstSubfolder = None;
+			dstSubfolderSpec = 0;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		F621D22A2F93286B00AEF0FA /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = Executables;
+			dstSubfolderSpec = 6;
 			files = (
 				F621D22B2F93287B00AEF0FA /* nocvirtdisplay in Copy Files */,
 			);
 			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F66965392ECF27110032EF4E /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = Frameworks;
+			dstSubfolderSpec = 10;
 			files = (
 				F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */,
 				F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */,
@@ -118,36 +122,44 @@
 				F625DABA2F41A8DE00AE4E2B /* Gesu in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6B57F0D2F504758002BBDDC /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = PlugIns;
+			dstSubfolderSpec = 13;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6B57F122F5047AB002BBDDC /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = Frameworks;
+			dstSubfolderSpec = 10;
 			files = (
 				F6B57F172F5049F8002BBDDC /* SiriusKit in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6CC7D3C2F51903500AA6DC2 /* Embed PlugIns */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = PlugIns;
+			dstSubfolderSpec = 13;
 			files = (
 				F60021EE2F9B491800AFD3CF /* CJKKeyboardHacks.nocbundle in Embed PlugIns */,
 			);
 			name = "Embed PlugIns";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6CC83922F5B522800AA6DC2 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = Frameworks;
+			dstSubfolderSpec = 10;
 			files = (
 				F6CC83932F5B522800AA6DC2 /* NoctilucaWebPEncoder in Embed Frameworks */,
 				F6CC83942F5B522800AA6DC2 /* SiriusKit in Embed Frameworks */,
@@ -158,14 +170,17 @@
 				F621CB092F8AC11A00AEF0FA /* NoctilucaLibVPX in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6CC839A2F5B522800AA6DC2 /* Embed PlugIns */ = {
 			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolder = PlugIns;
+			dstSubfolderSpec = 13;
 			files = (
 			);
 			name = "Embed PlugIns";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -323,24 +338,31 @@
 /* Begin PBXFrameworksBuildPhase section */
 		F61AB3152F41274E00BB69AF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 				F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F621D2042F91FC4F00AEF0FA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 				F621D2102F91FDA500AEF0FA /* ArgumentParser in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F659BDEF2EF3C1730010A18E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 				F6B57F162F5049F8002BBDDC /* SiriusKit in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F66965082ECF26770032EF4E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 				F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */,
 				F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */,
@@ -360,9 +382,11 @@
 				F696483B2F33AAF50093CFC2 /* AsyncAlgorithms in Frameworks */,
 				F6CC83562F5A885000AA6DC2 /* Alamofire in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6CC83822F5B522800AA6DC2 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 				F6CC83832F5B522800AA6DC2 /* NoctilucaWebPEncoder in Frameworks */,
 				F6CC83842F5B522800AA6DC2 /* libpam.tbd in Frameworks */,
@@ -380,6 +404,7 @@
 				F6CC83902F5B522800AA6DC2 /* Alamofire in Frameworks */,
 				F621CB072F8AC11A00AEF0FA /* NoctilucaLibVPX in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -440,6 +465,8 @@
 			);
 			buildRules = (
 			);
+			dependencies = (
+			);
 			fileSystemSynchronizedGroups = (
 				F61AB31C2F41275F00BB69AF /* CJKKeyboardHacks */,
 			);
@@ -460,6 +487,8 @@
 				F621D2052F91FC4F00AEF0FA /* CopyFiles */,
 			);
 			buildRules = (
+			);
+			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
 				F621D2082F91FC4F00AEF0FA /* nocvirtdisplay */,
@@ -551,6 +580,8 @@
 			);
 			buildRules = (
 			);
+			dependencies = (
+			);
 			fileSystemSynchronizedGroups = (
 				F6379F9C2EEAAFD9004BC795 /* pam.d */,
 				F64C01132F1B98E1009781D8 /* distutil */,
@@ -641,52 +672,70 @@
 /* Begin PBXResourcesBuildPhase section */
 		F61AB3162F41274E00BB69AF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F659BDF02EF3C1730010A18E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F66965092ECF26770032EF4E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 				F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6CC83912F5B522800AA6DC2 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		F61AB3142F41274E00BB69AF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F621D2032F91FC4F00AEF0FA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F659BDEE2EF3C1730010A18E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F66965072ECF26770032EF4E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F6CC83812F5B522800AA6DC2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -709,7 +758,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		F61AB31A2F41274E00BB69AF /* Debug configuration for PBXNativeTarget "CJKKeyboardHacks" */ = {
+		F61AB31A2F41274E00BB69AF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -735,7 +784,7 @@
 			};
 			name = Debug;
 		};
-		F61AB31B2F41274E00BB69AF /* Release configuration for PBXNativeTarget "CJKKeyboardHacks" */ = {
+		F61AB31B2F41274E00BB69AF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -761,7 +810,7 @@
 			};
 			name = Release;
 		};
-		F621D20C2F91FC4F00AEF0FA /* Debug configuration for PBXNativeTarget "nocvirtdisplay" */ = {
+		F621D20C2F91FC4F00AEF0FA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
@@ -779,7 +828,7 @@
 			};
 			name = Debug;
 		};
-		F621D20D2F91FC4F00AEF0FA /* Release configuration for PBXNativeTarget "nocvirtdisplay" */ = {
+		F621D20D2F91FC4F00AEF0FA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
@@ -796,7 +845,7 @@
 			};
 			name = Release;
 		};
-		F659BDF82EF3C1730010A18E /* Debug configuration for PBXNativeTarget "NoctilucaServerTests" */ = {
+		F659BDF82EF3C1730010A18E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -819,7 +868,7 @@
 			};
 			name = Debug;
 		};
-		F659BDF92EF3C1730010A18E /* Release configuration for PBXNativeTarget "NoctilucaServerTests" */ = {
+		F659BDF92EF3C1730010A18E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -840,7 +889,7 @@
 			};
 			name = Release;
 		};
-		F66965142ECF26780032EF4E /* Debug configuration for PBXProject "NoctilucaServer" */ = {
+		F66965142ECF26780032EF4E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -905,7 +954,7 @@
 			};
 			name = Debug;
 		};
-		F66965152ECF26780032EF4E /* Release configuration for PBXProject "NoctilucaServer" */ = {
+		F66965152ECF26780032EF4E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -962,7 +1011,7 @@
 			};
 			name = Release;
 		};
-		F66965172ECF26780032EF4E /* Debug configuration for PBXNativeTarget "NoctilucaServer" */ = {
+		F66965172ECF26780032EF4E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = ServerAppIcon;
@@ -1027,7 +1076,7 @@
 			};
 			name = Debug;
 		};
-		F66965182ECF26780032EF4E /* Release configuration for PBXNativeTarget "NoctilucaServer" */ = {
+		F66965182ECF26780032EF4E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = ServerAppIcon;
@@ -1089,7 +1138,7 @@
 			};
 			name = Release;
 		};
-		F6CC839D2F5B522800AA6DC2 /* Debug configuration for PBXNativeTarget "NoctilucaServerTestsHost" */ = {
+		F6CC839D2F5B522800AA6DC2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = ServerAppIcon;
@@ -1154,7 +1203,7 @@
 			};
 			name = Debug;
 		};
-		F6CC839E2F5B522800AA6DC2 /* Release configuration for PBXNativeTarget "NoctilucaServerTestsHost" */ = {
+		F6CC839E2F5B522800AA6DC2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = ServerAppIcon;
@@ -1220,49 +1269,55 @@
 		F61AB3192F41274E00BB69AF /* Build configuration list for PBXNativeTarget "CJKKeyboardHacks" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F61AB31A2F41274E00BB69AF /* Debug configuration for PBXNativeTarget "CJKKeyboardHacks" */,
-				F61AB31B2F41274E00BB69AF /* Release configuration for PBXNativeTarget "CJKKeyboardHacks" */,
+				F61AB31A2F41274E00BB69AF /* Debug */,
+				F61AB31B2F41274E00BB69AF /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		F621D20B2F91FC4F00AEF0FA /* Build configuration list for PBXNativeTarget "nocvirtdisplay" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F621D20C2F91FC4F00AEF0FA /* Debug configuration for PBXNativeTarget "nocvirtdisplay" */,
-				F621D20D2F91FC4F00AEF0FA /* Release configuration for PBXNativeTarget "nocvirtdisplay" */,
+				F621D20C2F91FC4F00AEF0FA /* Debug */,
+				F621D20D2F91FC4F00AEF0FA /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		F659BDFA2EF3C1730010A18E /* Build configuration list for PBXNativeTarget "NoctilucaServerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F659BDF82EF3C1730010A18E /* Debug configuration for PBXNativeTarget "NoctilucaServerTests" */,
-				F659BDF92EF3C1730010A18E /* Release configuration for PBXNativeTarget "NoctilucaServerTests" */,
+				F659BDF82EF3C1730010A18E /* Debug */,
+				F659BDF92EF3C1730010A18E /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		F66965062ECF26770032EF4E /* Build configuration list for PBXProject "NoctilucaServer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F66965142ECF26780032EF4E /* Debug configuration for PBXProject "NoctilucaServer" */,
-				F66965152ECF26780032EF4E /* Release configuration for PBXProject "NoctilucaServer" */,
+				F66965142ECF26780032EF4E /* Debug */,
+				F66965152ECF26780032EF4E /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		F66965162ECF26780032EF4E /* Build configuration list for PBXNativeTarget "NoctilucaServer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F66965172ECF26780032EF4E /* Debug configuration for PBXNativeTarget "NoctilucaServer" */,
-				F66965182ECF26780032EF4E /* Release configuration for PBXNativeTarget "NoctilucaServer" */,
+				F66965172ECF26780032EF4E /* Debug */,
+				F66965182ECF26780032EF4E /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		F6CC839C2F5B522800AA6DC2 /* Build configuration list for PBXNativeTarget "NoctilucaServerTestsHost" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F6CC839D2F5B522800AA6DC2 /* Debug configuration for PBXNativeTarget "NoctilucaServerTestsHost" */,
-				F6CC839E2F5B522800AA6DC2 /* Release configuration for PBXNativeTarget "NoctilucaServerTestsHost" */,
+				F6CC839D2F5B522800AA6DC2 /* Debug */,
+				F6CC839E2F5B522800AA6DC2 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
@@ -1272,7 +1327,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../nanonfs;
 			traits = (
-				BSDSocket,
 			);
 		};
 /* End XCLocalSwiftPackageReference section */
