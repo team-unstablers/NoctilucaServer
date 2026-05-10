@@ -66,7 +66,14 @@ final class MainToolbar: NSObject, NSToolbarDelegate {
         attachedWindow = window
         installFocusDismissMonitor()
         
-        let toolbar = NSToolbar(identifier: "app.noctiluca.client.ui.MainWindow.MainToolbar")
+        // 동일 identifier 의 NSToolbar 인스턴스들 사이에 AppKit internal item store 가
+        // 공유되어, 다중 세션 윈도우를 동시에 띄우면 같은 NSToolbarItem identifier 가
+        // 중복 등록되며 NSInternalInconsistencyException 이 발생한다. 인스턴스별 UUID
+        // suffix 로 store 를 분리한다. (autosavesConfiguration = false 라 identifier 가
+        // 무엇이든 customization 저장에는 영향 없음.)
+        let toolbar = NSToolbar(
+            identifier: "app.noctiluca.client.ui.MainWindow.MainToolbar.\(UUID().uuidString)"
+        )
         toolbar.delegate = self
         toolbar.centeredItemIdentifiers = [.nocAddressBar]
         toolbar.allowsUserCustomization = false
