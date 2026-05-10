@@ -104,4 +104,9 @@ public struct AccessibilityActionType: RawRepresentable, Hashable, Equatable, Co
     /// Sets the value of the node.
     /// For example, this could be entering text in a text field or changing the value of a slider.
     public static let setValue = AccessibilityActionType(rawValue: "setValue")
+
+    /// Cancels or dismisses a transient UI element associated with the node.
+    /// For example, this could close a popup/context menu, dismiss a modal dialog, or abort an in-progress gesture.
+    /// On macOS hosts, this typically maps to the AX `kAXCancelAction`.
+    public static let cancel = AccessibilityActionType(rawValue: "cancel")
 }
