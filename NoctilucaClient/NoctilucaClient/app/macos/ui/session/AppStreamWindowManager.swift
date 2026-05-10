@@ -55,7 +55,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     }
 
     // 원격 메뉴 스왑 관련 상태
-    private var menuBuilder: AppStreamMenuBuilder?
+    fileprivate(set) var menuBuilder: AppStreamMenuBuilder?
     private var remoteMenu: NSMenu?
     private var remoteMenuRootNodeId: UUID?
     private var accessibilitySubscriptionId: UUID?
@@ -409,8 +409,23 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         }
     }
 
-    /// Accessibility tree update 이벤트 처리. 현재 구현은 루트 메뉴바 전체 재구성에 한정한다.
+    /// Accessibility tree update 이벤트 처리. 메뉴바 재구성 + popup(컨텍스트) 메뉴 미러링.
     func handleAccessibilityTreeUpdateEvent(_ event: AccessibilityTreeUpdateEvent) {
+        // popup(컨텍스트) 메뉴: 서버는 .nodeAdded + metadata["app.noctiluca.server.popup"] == "true" 로,
+        // close 는 .nodeRemoved 로 푸시한다. close 알림은 updatedNode 가 nil 이라 metadata 검사를
+        // 못하므로 metadata 검사 없이 모든 .nodeRemoved 를 popup close 후보로 dispatch 하고,
+        // menuId 매칭 안 되면 +ContextMenu extension 에서 silently 무시한다.
+        if event.eventType.contains(.nodeAdded),
+           let updated = event.updatedNode,
+           updated.metadata["app.noctiluca.server.popup"] == "true" {
+            handlePopupOpened(tree: updated)
+            return
+        }
+        if event.eventType.contains(.nodeRemoved) {
+            handlePopupClosed(menuId: event.nodeId)
+            return
+        }
+
         guard let builder = menuBuilder else { return }
         guard let currentRootId = remoteMenuRootNodeId else { return }
 

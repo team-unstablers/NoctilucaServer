@@ -31,6 +31,10 @@ class AppStreamWindow: NSWindow {
 
     weak var hidioController: HIDIOController?
 
+    /// 현재 표시 중인 컨텍스트 메뉴와 그 menuId. ContextMenu 종료(.nodeRemoved) 알림 수신 시 매칭에 사용.
+    fileprivate(set) var activeContextMenu: NSMenu?
+    fileprivate(set) var activeContextMenuID: UUID?
+
     init(windowID: Int, remoteSession: RemoteSession, subscription: ProjectionSessionSubscription, windowInfoStore: ObservableWindowInfo) {
         self.windowID = windowID
         self.windowInfoStore = windowInfoStore
@@ -101,6 +105,43 @@ class AppStreamWindow: NSWindow {
 
     private static func displayTitle(for windowID: Int, remoteSession: RemoteSession) -> String {
         return "AppStream Window (streaming #\(windowID))"
+    }
+
+    // MARK: - Context Menu (popup) 표시
+
+    /// 호스트의 popup 메뉴를 클라 native NSMenu 로 표시한다.
+    /// `screenPoint` 는 클라 NSScreen 좌표계의 popup 좌상단(Cocoa 기준; `translateServerFrameToClientOrigin` 결과).
+    ///
+    /// `NSMenu.popUp(positioning:at:in:)` 은 메뉴 트래킹 동안 main run loop 를 modal 로 block 하므로,
+    /// 호출이 return 한 시점이 곧 메뉴 close 시점이다.
+    func showContextMenu(_ menu: NSMenu, atScreenPoint screenPoint: NSPoint, menuId: UUID) {
+        guard let anchor = self.contentView else { return }
+
+        // 동시에 여러 popup 은 1차 범위 외. 기존 메뉴가 떠 있으면 먼저 닫는다.
+        if let existing = self.activeContextMenu {
+            existing.cancelTracking()
+        }
+
+        // screen → window → contentView 좌표
+        let windowPoint = self.convertPoint(fromScreen: screenPoint)
+        let viewPoint = anchor.convert(windowPoint, from: nil)
+
+        self.activeContextMenu = menu
+        self.activeContextMenuID = menuId
+
+        menu.popUp(positioning: nil, at: viewPoint, in: anchor)
+
+        // popUp 이 return 했다는 것은 menu tracking 이 끝났다는 의미. 호출자가 후속 동기화
+        // (cancel action 송신 여부 등) 를 결정한다.
+        self.activeContextMenu = nil
+        self.activeContextMenuID = nil
+    }
+
+    /// 호스트로부터 popup close 알림(AccessibilityTreeUpdateEvent .nodeRemoved)이 도착했을 때 호출.
+    /// `menuId` 가 매칭되면 표시 중인 NSMenu 의 트래킹을 종료한다.
+    func cancelContextMenu(matching menuId: UUID) {
+        guard self.activeContextMenuID == menuId else { return }
+        self.activeContextMenu?.cancelTracking()
     }
 
     /// 서버가 보고한 `WindowInfoFlags` 를 NSWindow.StyleMask 로 변환한다.
