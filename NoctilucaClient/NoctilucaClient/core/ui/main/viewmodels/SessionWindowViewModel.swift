@@ -109,6 +109,7 @@ final class SessionWindowViewModel {
                     }
                 }
             case .inactive:
+                isAppStreamAppSelectorPresented = false
                 Task {
                     await appStreamWindowManager?.stop()
                 }
@@ -527,6 +528,14 @@ final class SessionWindowViewModel {
             RemoteSessionManager.shared.unregister(session.id)
         }
         remoteSession?.prepareForDetach()
+
+#if os(macOS)
+        // didSet에서 windowManager.stop()을 트리거하기 위해 remoteSession을 nil로
+        // 만들기 전에 먼저 .inactive로 전환한다.
+        appStreamState = .inactive
+#endif
+        shouldPresentDisplaySwitchSheet = false
+
         remoteSession = nil
         pingRTT = nil
         fileTransferProgress = nil
