@@ -35,11 +35,6 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
 
     /// 루트 메뉴바 `AccessibilityNode`를 `NSMenu`로 변환한다.
     /// 루트 노드 자체는 `NSMenu` 하나로 치환되고, 자식이 최상위 메뉴 아이템이 된다.
-    ///
-    /// 원격 메뉴바의 첫 번째 자식은 macOS 시스템 애플 메뉴(About This Mac / Sleep /
-    /// Shut Down 등)이다. 이를 그대로 포함시키면 NSApp.mainMenu 의 0번 슬롯
-    /// (즉, 굵은 "앱 이름" 자리)을 차지해 사용자에게 우리 로컬 앱 메뉴 대신
-    /// 원격 애플 메뉴가 노출된다. 따라서 빌드 단계에서 제외한다.
     func buildMenu(from root: AccessibilityNode) -> NSMenu {
         let menu = NSMenu(title: root.description)
         menu.delegate = self
@@ -47,7 +42,7 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
 
         // 루트는 eager로 이미 children이 채워져 있다고 가정
         populatedMenus.insert(ObjectIdentifier(menu))
-        for child in root.children.dropFirst() {
+        for child in root.children {
             let item = buildMenuItem(from: child)
             menu.addItem(item)
         }

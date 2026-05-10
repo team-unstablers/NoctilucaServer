@@ -29,10 +29,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindowController: AppKitSettingsWindowController?
     private var aboutAppWindowController: AppKitAboutAppWindowController?
 
-    /// AppStream 활성 시, 메인 메뉴의 첫 번째 NSMenuItem(로컬 앱 메뉴)는 유지한 채
-    /// 그 뒤 NSMenuItem 들만 원격 메뉴로 swap 한다. swap 이전 원본 항목들을 여기에
-    /// 보관해 두었다가 `restoreOriginalMainMenu()` 시 복구한다.
-    private var savedNonAppMenuItems: [NSMenuItem]?
+    /// AppStream에서 원격 메뉴로 스왑하기 전의 원본 메뉴. AppStream이 key resign 시 이 메뉴로 복구한다.
+    private(set) var originalMainMenu: NSMenu?
 
     private let menuShortcutRedirector = MenuShortcutRedirector()
     private var settingsCancellable: AnyCancellable?
@@ -142,54 +140,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
-    /// AppStream 이 활성화되었을 때 `NSApp.mainMenu` 의 첫 번째 NSMenuItem
-    /// (로컬 앱 메뉴 — "Noctiluca Navigator" 자리)는 그대로 두고, 그 뒤 항목들을
-    /// 원격 앱 메뉴로 교체한다. 원본 메뉴 항목들은 `savedNonAppMenuItems` 에
-    /// 보관하며, `restoreOriginalMainMenu()` 로 복구할 수 있다.
-    ///
-    /// 원격 AX 트리의 첫 번째 자식(원격 시스템 애플 메뉴)은
-    /// `AppStreamMenuBuilder` 에서 이미 제외되어 있으므로, 여기서 받는
-    /// `menu.items` 는 곧 원격 앱의 File / Edit / View … 메뉴들이다.
+    /// AppStream이 활성화되었을 때 `NSApp.mainMenu`를 원격 앱 메뉴로 교체한다.
+    /// 원본 메뉴는 `originalMainMenu`에 보관하며, `restoreOriginalMainMenu()`로 복구할 수 있다.
     func installRemoteMainMenu(_ menu: NSMenu) {
-        guard let mainMenu = NSApp.mainMenu, mainMenu.numberOfItems > 0 else { return }
-
-        if savedNonAppMenuItems == nil {
-            // 최초 swap — 원본 non-app 항목들을 백업.
-            var saved: [NSMenuItem] = []
-            while mainMenu.numberOfItems > 1 {
-                let item = mainMenu.item(at: 1)!
-                mainMenu.removeItem(item)
-                saved.append(item)
-            }
-            savedNonAppMenuItems = saved
-        } else {
-            // 이미 swap 상태 — 기존 원격 항목들을 제거하고 새로 채운다.
-            while mainMenu.numberOfItems > 1 {
-                mainMenu.removeItem(at: 1)
-            }
+        if originalMainMenu == nil {
+            originalMainMenu = NSApp.mainMenu
         }
-
-        // 받은 menu 의 항목들을 mainMenu 로 옮긴다. NSMenuItem 은 한 NSMenu 에만
-        // 속할 수 있으므로 source 에서 detach 한 뒤 add.
-        let items = menu.items
-        for item in items {
-            menu.removeItem(item)
-            mainMenu.addItem(item)
-        }
+        NSApp.mainMenu = menu
     }
 
     /// 원격 메뉴 스왑을 해제하고 원본으로 복귀한다.
     func restoreOriginalMainMenu() {
-        guard let saved = savedNonAppMenuItems, let mainMenu = NSApp.mainMenu else { return }
-
-        while mainMenu.numberOfItems > 1 {
-            mainMenu.removeItem(at: 1)
-        }
-        for item in saved {
-            mainMenu.addItem(item)
-        }
-
-        savedNonAppMenuItems = nil
+        guard let original = originalMainMenu else { return }
+        NSApp.mainMenu = original
     }
 
     private func subscribeShortcutRedirectionTriggers() {
