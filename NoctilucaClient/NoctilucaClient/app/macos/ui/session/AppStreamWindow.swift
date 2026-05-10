@@ -40,16 +40,20 @@ class AppStreamWindow: NSWindow {
 
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: Self.styleMask(for: windowInfoStore.windowInfo.flags),
             backing: .buffered,
             defer: false
         )
 
         self.title = Self.displayTitle(for: windowID, remoteSession: remoteSession)
-        
-        self.styleMask.insert(.fullSizeContentView)
-        self.titlebarAppearsTransparent = true
-        self.titleVisibility = .hidden
+
+        // borderless 윈도우엔 fullSizeContentView 가 의미가 없고, titlebar 관련 옵션은
+        // .titled 이 아닐 때 무시되거나 경고가 발생할 수 있으므로 가드.
+        if self.styleMask.contains(.titled) {
+            self.styleMask.insert(.fullSizeContentView)
+            self.titlebarAppearsTransparent = true
+            self.titleVisibility = .hidden
+        }
         
         // self.minSize = NSSize(width: 640, height: 480)
         self.isReleasedWhenClosed = false
@@ -97,6 +101,20 @@ class AppStreamWindow: NSWindow {
 
     private static func displayTitle(for windowID: Int, remoteSession: RemoteSession) -> String {
         return "AppStream Window (streaming #\(windowID))"
+    }
+
+    /// 서버가 보고한 `WindowInfoFlags` 를 NSWindow.StyleMask 로 변환한다.
+    /// `noWindowDecoration` 이 set 이면 신호등이 없는 borderless 윈도우로 만든다.
+    private static func styleMask(for flags: WindowInfoFlags) -> NSWindow.StyleMask {
+        if flags.contains(.noWindowDecoration) {
+            return [.borderless, .resizable]
+        }
+
+        var mask: NSWindow.StyleMask = [.titled, .closable, .resizable]
+        if !flags.contains(.cannotMinimize) {
+            mask.insert(.miniaturizable)
+        }
+        return mask
     }
 }
 
