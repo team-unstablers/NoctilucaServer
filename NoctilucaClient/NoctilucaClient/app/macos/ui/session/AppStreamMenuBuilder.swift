@@ -39,10 +39,40 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
         let menu = NSMenu(title: root.description)
         menu.delegate = self
         menuToNodeId[ObjectIdentifier(menu)] = root.id
-
+        
         // 루트는 eager로 이미 children이 채워져 있다고 가정
         populatedMenus.insert(ObjectIdentifier(menu))
-        for child in root.children {
+        
+        let isMacOSMenu = root.children.first?.description == "Apple"
+        
+        let children = if isMacOSMenu {
+            Array(root.children.dropFirst(1))
+        } else {
+            root.children
+        }
+        
+        if isMacOSMenu {
+            let appMenuItem = NSMenuItem()
+            menu.addItem(appMenuItem)
+            
+            let appMenu = NSMenu()
+            appMenuItem.submenu = appMenu
+            
+            // add dummy menu
+            let aboutItem = NSMenuItem(
+                title: String(
+                    localized: "menu.appstream.appmenu.appstream_indicator",
+                    defaultValue: "AppStream 활성화됨"
+                ),
+                action: nil,
+                keyEquivalent: ""
+            )
+            
+            aboutItem.target = self
+            appMenu.addItem(aboutItem)
+        }
+        
+        for child in children {
             let item = buildMenuItem(from: child)
             menu.addItem(item)
         }
