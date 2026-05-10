@@ -290,6 +290,15 @@ final class AppSession {
         kAXMenuClosedNotification as String,
         kAXMenuItemSelectedNotification as String
     ]
+
+    /// 메뉴바 자체 노티는 아니지만, 발생 시 앱이 메뉴 항목 enabled set 을 동적으로
+    /// 변경하는 경우가 많아(예: Firefox 가 sheet 첨부 시 메뉴바를 일시적으로 좁힘)
+    /// 메뉴 재스냅샷도 함께 트리거한다. 이미 200ms 디바운스가 걸려 있어 폭주
+    /// 우려는 없다.
+    nonisolated(unsafe) private static let windowFocusNotifications: Set<String> = [
+        kAXFocusedWindowChangedNotification as String,
+        kAXMainWindowChangedNotification as String
+    ]
     
     init(runningApp: NSRunningApplication) throws {
         if let bundleID = runningApp.bundleIdentifier, bundleID.isEmpty == false {
@@ -487,10 +496,17 @@ final class AppSession {
     
     /// AXObserver 콜백 등에서 호출되어 Delegate에게 알림
     private func handleAXNotification(_ notification: CFString) {
-        if Self.menuNotifications.contains(notification as String) {
+        let name = notification as String
+
+        if Self.menuNotifications.contains(name) {
             menuRefreshSubject.send(())
-        } else {
-            refreshSubject.send(())
+            return
+        }
+
+        refreshSubject.send(())
+
+        if Self.windowFocusNotifications.contains(name) {
+            menuRefreshSubject.send(())
         }
     }
     
