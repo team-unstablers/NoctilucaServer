@@ -26,6 +26,11 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
     /// 현재 populate 진행 중인 NSMenu 집합 (중복 호출 방지)
     private var populatingMenus: Set<ObjectIdentifier> = []
 
+    /// 마지막 NSMenu 트래킹에서 사용자가 항목을 선택했는지 여부.
+    /// `consumeSelectionFlag()` 호출 시점에만 한 번 true 로 응답하고 즉시 reset.
+    /// popup(컨텍스트) 메뉴 호출자가 트래킹 종료 후 .cancel 송신 여부를 결정할 때 사용한다.
+    private var didSelectItem: Bool = false
+
     init(projectionChannel: ProjectionChannel) {
         self.projectionChannel = projectionChannel
         super.init()
@@ -250,6 +255,17 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
         menuToNodeId.removeAll()
         populatedMenus.removeAll()
         populatingMenus.removeAll()
+        didSelectItem = false
+    }
+
+    // MARK: - Selection Flag (popup 트래킹 종료 시 .cancel 송신 여부 판단용)
+
+    /// 마지막 NSMenu 트래킹에서 항목이 선택되었는지 검사하고, 동시에 플래그를 reset 한다.
+    /// 한 popup 사이클당 한 번만 true 를 반환하므로 `if consumeSelectionFlag() { ... }` 패턴으로 사용.
+    func consumeSelectionFlag() -> Bool {
+        let value = didSelectItem
+        didSelectItem = false
+        return value
     }
 
     // MARK: - Action Selector
@@ -259,6 +275,10 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
             logger.warning("Menu item activated but representedObject is not UUID")
             return
         }
+
+        // popup 호출자에게 selection 으로 닫혔음을 알린다 (단축키 invoke 포함 — 어느 경우든
+        // 호스트 앱이 selection 결과로 popup 을 자동 dismiss 하므로 별도 .cancel 불필요).
+        didSelectItem = true
 
         // 단축키(keyEquivalent)로 invoke된 경우는 HIDIO 경로가 이미 원격 앱에 키 이벤트를
         // 전달하므로 DispatchAction을 보내면 이중 실행이 발생한다. 메뉴를 직접 클릭한
