@@ -943,6 +943,94 @@ final class DesktopContextManager {
         return bounds
     }
 
+    // MARK: - AppStream Helper Window Bounds
+
+    /// AppStream으로 윈도우를 캡쳐하는 동안 WindowServer가 신호등 자리에 그리는
+    /// "Screen Sharing Helper" 다이얼로그는 ScreenCaptureKit 출력에 포함되지 않아
+    /// 클라이언트에는 보이지 않는다. 클라이언트 마우스 입력이 이 영역에 들어가면
+    /// 호스트에서 캡쳐 중지/창 닫기 메뉴가 잘못 트리거될 수 있어 HIDIO 인젝션
+    /// 단계에서 차단할 때 사용한다.
+    ///
+    /// 판정 조건은 `WindowInfo.isNSLocalWindowSharingWindow` 와 동일하며
+    /// (size 60×20 또는 66×20 + AX role = dialog), 마우스 이벤트마다 호출될 수
+    /// 있어 TTL 캐시를 적용한다.
+    nonisolated private static let helperWindowBoundsCacheTTL: CFAbsoluteTime = 0.5
+
+    private static let helperWindowBoundsCache = OSAllocatedUnfairLock(initialState: (
+        bounds: [CGRect](),
+        timestamp: CFAbsoluteTime(0)
+    ))
+
+    @MainActor
+    static func appStreamHelperWindowBounds() -> [CGRect] {
+        let now = CFAbsoluteTimeGetCurrent()
+
+        let cached: [CGRect]? = helperWindowBoundsCache.withLock { state in
+            guard (now - state.timestamp) < helperWindowBoundsCacheTTL else {
+                return nil
+            }
+            return state.bounds
+        }
+        if let cached { return cached }
+
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+            return []
+        }
+
+        // size 조건이 가장 변별력 있으므로 먼저 필터링하여 AX 쿼리 횟수를 최소화한다.
+        let candidates = infoList.compactMap { info -> (pid_t, CGWindowID, CGRect)? in
+            guard info.keys.contains(kCGWindowBounds as String) else { return nil }
+            let boundsDictionary = info[kCGWindowBounds as String] as! CFDictionary
+            guard let bounds = CGRect(dictionaryRepresentation: boundsDictionary),
+                  (bounds.width == 66 || bounds.width == 60) && bounds.height == 20,
+                  let pid = info[kCGWindowOwnerPID as String] as? pid_t,
+                  let windowID = info[kCGWindowNumber as String] as? CGWindowID
+            else {
+                return nil
+            }
+            return (pid, windowID, bounds)
+        }
+
+        var axMapsByPID: [pid_t: [CGWindowID: AXUIElement]] = [:]
+        var collected: [CGRect] = []
+
+        for (pid, windowID, bounds) in candidates {
+            let axMap: [CGWindowID: AXUIElement]
+            if let cachedMap = axMapsByPID[pid] {
+                axMap = cachedMap
+            } else {
+                var map: [CGWindowID: AXUIElement] = [:]
+                let appElement = AXUIElementCreateApplication(pid)
+                var value: CFTypeRef?
+                let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
+                if result == .success, let windows = value as? [AXUIElement] {
+                    for element in windows {
+                        var number: CGWindowID = 0
+                        guard let error = ApplicationServicesPrivate._AXUIElementGetWindow?(element, &number),
+                              error == .success else { continue }
+                        map[number] = element
+                    }
+                }
+                axMapsByPID[pid] = map
+                axMap = map
+            }
+
+            guard let axElement = axMap[windowID] else { continue }
+            let axRole = axStringAttribute(axElement, kAXRoleAttribute as String)
+            let axSubrole = axStringAttribute(axElement, kAXSubroleAttribute as String)
+            guard mapAXRoleToWindowRole(axRole: axRole, axSubrole: axSubrole) == .dialog else { continue }
+
+            collected.append(bounds)
+        }
+
+        let helpers = collected
+        helperWindowBoundsCache.withLock { state in
+            state = (helpers, now)
+        }
+        return helpers
+    }
+
     // MARK: - Window ID Lookup
 
     /// CGWindowList에서 windowID의 소유 pid를 조회 (on-demand)

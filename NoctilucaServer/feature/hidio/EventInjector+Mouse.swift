@@ -57,13 +57,25 @@ extension EventInjector {
 
         switch scope {
         case .windowId(let windowId):
-            guard let bounds = MainActor.assumeIsolated({ DesktopContextManager.queryWindowBounds(for: CGWindowID(windowId)) }) else {
+            let resolved: (bounds: CGRect, helpers: [CGRect])? = MainActor.assumeIsolated {
+                guard let bounds = DesktopContextManager.queryWindowBounds(for: CGWindowID(windowId)) else {
+                    return nil
+                }
+                let helpers = DesktopContextManager.appStreamHelperWindowBounds()
+                return (bounds, helpers)
+            }
+            guard let resolved else { return }
+            let candidate = CGPoint(
+                x: resolved.bounds.minX + (resolved.bounds.width * CGFloat(position.x)),
+                y: resolved.bounds.minY + (resolved.bounds.height * CGFloat(position.y))
+            )
+            // Screen Sharing Helper 다이얼로그 영역으로 향하는 입력은 차단한다.
+            // 후속 click/drag 는 lastMousePosition (zone 밖 마지막 위치) 을 재사용하므로
+            // 같이 안전하게 zone 바깥에서 발생한다.
+            if resolved.helpers.contains(where: { $0.contains(candidate) }) {
                 return
             }
-            targetPosition = CGPoint(
-                x: bounds.minX + (bounds.width * CGFloat(position.x)),
-                y: bounds.minY + (bounds.height * CGFloat(position.y))
-            )
+            targetPosition = candidate
 
         case .displayId(let id):
             let displayID: CGDirectDisplayID
