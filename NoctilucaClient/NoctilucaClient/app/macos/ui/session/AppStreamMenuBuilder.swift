@@ -33,6 +33,30 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
 
     // MARK: - Public
 
+    /// 호스트 메뉴바에서 앱 이름 메뉴 (보통 "Apple" 다음 첫 번째 아이템) 의 라벨을 추출한다.
+    /// "Apple" wrapper 가 없으면 root.children 의 첫 번째 노드 라벨을 사용한다.
+    /// 둘 다 비어있으면 nil.
+    static func extractAppTitle(from root: AccessibilityNode) -> String? {
+        guard !root.children.isEmpty else { return nil }
+        let isMacOSMenu = root.children.first?.description == "Apple"
+        let candidate = isMacOSMenu ? root.children.dropFirst().first : root.children.first
+        guard let label = candidate?.description, !label.isEmpty else { return nil }
+        return label
+    }
+
+    /// `buildMenu(from:)` 결과 NSMenu 를 NSMenuItem(submenu) 으로 wrap 하여 반환한다.
+    /// contained mode 에서 NocClient 본 메뉴의 root 에 inject 하기 위해 사용한다.
+    func buildContainedItem(from root: AccessibilityNode, appTitle: String) -> NSMenuItem {
+        let menu = buildMenu(from: root)
+        // wrapping NSMenu 의 title 도 appTitle 로 맞춰 둔다 (NSMenuItem submenu 의 외부 title 은
+        // wrapping NSMenuItem.title 이 우선이지만, NSMenu.title 도 일관되게 유지).
+        menu.title = appTitle
+
+        let item = NSMenuItem(title: appTitle, action: nil, keyEquivalent: "")
+        item.submenu = menu
+        return item
+    }
+
     /// 루트 메뉴바 `AccessibilityNode`를 `NSMenu`로 변환한다.
     /// 루트 노드 자체는 `NSMenu` 하나로 치환되고, 자식이 최상위 메뉴 아이템이 된다.
     func buildMenu(from root: AccessibilityNode) -> NSMenu {
@@ -53,6 +77,7 @@ final class AppStreamMenuBuilder: NSObject, NSMenuDelegate {
         
         if isMacOSMenu {
             let appMenuItem = NSMenuItem()
+            appMenuItem.title = "Noctiluca Navigator"
             menu.addItem(appMenuItem)
             
             let appMenu = NSMenu()

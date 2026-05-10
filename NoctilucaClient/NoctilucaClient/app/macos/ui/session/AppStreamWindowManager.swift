@@ -60,6 +60,24 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
     private var remoteMenuRootNodeId: UUID?
     private var accessibilitySubscriptionId: UUID?
 
+    /// 메뉴 mount 모드.
+    /// - none: AppStream 세션 비활성 또는 메뉴 미설치 상태.
+    /// - contained: NocClient 본 메뉴 root 에 호스트 앱 NSMenuItem 1개 inject.
+    /// - swap: NSApp.mainMenu 자체를 호스트 앱 메뉴로 교체 (AppStream window 가 key 인 동안).
+    private enum MenuMode {
+        case none
+        case contained
+        case swap
+    }
+    private var currentMenuMode: MenuMode = .none
+
+    /// contained mode 에서 originalMainMenu 에 inject 되는 NSMenuItem.
+    /// submenu 는 `remoteMenu` 와 동일 인스턴스이며, mode 전환 시 attach/detach 가 토글된다.
+    private var containedMenuItem: NSMenuItem?
+
+    /// 호스트 앱 이름 (예: "Firefox"). contained mode 의 NSMenuItem 라벨에 사용.
+    private var appTitle: String = ""
+
     init(remoteSession: RemoteSession) {
         self.remoteSession = remoteSession
         super.init()
@@ -101,12 +119,12 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         }
 
         // 원격 앱 메뉴바 구독 및 로컬 NSMenu 트리 빌드
-        await setupRemoteMenu(projectionChannel: projectionChannel)
+        await setupRemoteMenu(projectionChannel: projectionChannel, bundleId: bundleId)
     }
 
     /// 원격 메뉴 초기 fetch + Subscribe push 구독.
     /// 실패해도 AppStream 자체는 계속 동작하도록 throw하지 않는다.
-    private func setupRemoteMenu(projectionChannel: ProjectionChannel) async {
+    private func setupRemoteMenu(projectionChannel: ProjectionChannel, bundleId: String) async {
         do {
             let response = try await projectionChannel.getAccessibilityTree(nodeId: nil)
             guard response.success, let root = response.rootNode else {
@@ -117,7 +135,16 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             let builder = AppStreamMenuBuilder(projectionChannel: projectionChannel)
             self.menuBuilder = builder
             self.remoteMenuRootNodeId = root.id
-            self.remoteMenu = builder.buildMenu(from: root)
+
+            let title = AppStreamMenuBuilder.extractAppTitle(from: root) ?? bundleId
+            let containedItem = builder.buildContainedItem(from: root, appTitle: title)
+            self.appTitle = title
+            self.containedMenuItem = containedItem
+            self.remoteMenu = containedItem.submenu
+
+            // 메뉴 빌드 직후 contained mode 로 mount. AppStream window 가 key 가 되면
+            // windowDidBecomeKey 에서 swap mode 로 전환된다.
+            applyMenuMode(.contained)
 
             let subResponse = try await projectionChannel.subscribeAccessibilityTreeUpdates(
                 nodeId: root.id,
@@ -132,6 +159,49 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         } catch {
             logger.warning("Failed to setup remote menu: \(error)")
         }
+    }
+
+    /// 단일 진입점으로 메뉴 mount 모드를 전환한다.
+    /// NSMenu 인스턴스 1개를 contained 의 NSMenuItem.submenu 와 swap 의 NSApp.mainMenu 양쪽에서
+    /// reuse 하므로, 모드 전환 시 반드시 detach 먼저 / attach 나중 순서를 지켜야 한다.
+    private func applyMenuMode(_ newMode: MenuMode) {
+        guard currentMenuMode != newMode else { return }
+
+        let appDelegate = NSApp.delegate as? AppDelegate
+
+        // 1. 현재 모드 detach
+        switch currentMenuMode {
+        case .none:
+            break
+        case .contained:
+            // remoteMenu 의 supermenu 를 끊어 NSApp.mainMenu 에 set 가능하게 한다.
+            containedMenuItem?.submenu = nil
+            appDelegate?.removeContainedRemoteMenu()
+        case .swap:
+            appDelegate?.restoreOriginalMainMenu()
+        }
+
+        // 2. 새 모드 attach
+        switch newMode {
+        case .none:
+            break
+        case .contained:
+            guard let containedItem = containedMenuItem, let menu = remoteMenu else {
+                currentMenuMode = .none
+                return
+            }
+            // NSMenu 의 supermenu 가 nil 인 시점에 NSMenuItem.submenu 로 재attach.
+            containedItem.submenu = menu
+            appDelegate?.installContainedRemoteMenu(item: containedItem)
+        case .swap:
+            guard let menu = remoteMenu else {
+                currentMenuMode = .none
+                return
+            }
+            appDelegate?.installRemoteMainMenu(menu)
+        }
+
+        currentMenuMode = newMode
     }
 
     func stop() async {
@@ -177,13 +247,15 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             _ = try? await projectionChannel.unsubscribeAccessibilityTreeUpdates(subscriptionId: subId)
         }
 
-        (NSApp.delegate as? AppDelegate)?.restoreOriginalMainMenu()
+        applyMenuMode(.none)
 
         self.menuBuilder?.reset()
         self.menuBuilder = nil
         self.remoteMenu = nil
         self.remoteMenuRootNodeId = nil
         self.accessibilitySubscriptionId = nil
+        self.containedMenuItem = nil
+        self.appTitle = ""
     }
 
     // MARK: - Window Management
@@ -351,7 +423,11 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             return
         }
 
-        // 새 빌더로 교체 — 기존 NSMenu 인스턴스 객체는 버리고 새로 빌드 (가장 단순하고 안전)
+        // 새 빌더로 교체 — 기존 NSMenu 인스턴스 객체는 버리고 새로 빌드 (가장 단순하고 안전).
+        // mode 전환 정합성을 위해 (1) 현재 모드 기억 → (2) none 으로 강등 → (3) rebuild → (4) 모드 복귀.
+        let preservedMode = currentMenuMode
+        applyMenuMode(.none)
+
         builder.reset()
         self.remoteMenuRootNodeId = updatedNode.id
 
@@ -359,13 +435,14 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             projectionChannel: (remoteSession.projection?.channel)!
         )
         self.menuBuilder = newBuilder
-        let newMenu = newBuilder.buildMenu(from: updatedNode)
-        self.remoteMenu = newMenu
 
-        // 현재 AppStreamWindow가 key이면 즉시 적용
-        if NSApp.keyWindow is AppStreamWindow {
-            (NSApp.delegate as? AppDelegate)?.installRemoteMainMenu(newMenu)
-        }
+        let title = AppStreamMenuBuilder.extractAppTitle(from: updatedNode) ?? appTitle
+        let newContainedItem = newBuilder.buildContainedItem(from: updatedNode, appTitle: title)
+        self.appTitle = title
+        self.containedMenuItem = newContainedItem
+        self.remoteMenu = newContainedItem.submenu
+
+        applyMenuMode(preservedMode)
     }
 
     // MARK: - NSWindowDelegate
@@ -375,10 +452,8 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
 
         remoteSession.hidio?.session.activateSession()
 
-        // 원격 메뉴 스왑
-        if let remoteMenu {
-            (NSApp.delegate as? AppDelegate)?.installRemoteMainMenu(remoteMenu)
-        }
+        // 원격 메뉴 swap mode 로 전환
+        applyMenuMode(.swap)
 
         // 서버에서 온 포커스 변경이면 서버로 재전송하지 않음 (무한 루프 방지)
         guard !isHandlingRemoteFocusChange else { return }
@@ -396,14 +471,14 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         guard notification.object is AppStreamWindow else { return }
         remoteSession.hidio?.session.deactivateSession()
 
-        // 포커스가 다른 AppStreamWindow로 이동했는지 확인. 아니면 원본 메뉴로 복구.
+        // 포커스가 다른 AppStreamWindow로 이동했는지 확인. 아니면 contained mode 로 복귀.
         // NSApp.keyWindow는 이 시점에는 아직 nil/이전 window일 수 있으므로 한 틱 뒤에 확인.
         Task { @MainActor [weak self] in
             await Task.yield()
             guard let self else { return }
             let newKey = NSApp.keyWindow
             if !(newKey is AppStreamWindow) {
-                (NSApp.delegate as? AppDelegate)?.restoreOriginalMainMenu()
+                self.applyMenuMode(.contained)
             }
         }
     }
