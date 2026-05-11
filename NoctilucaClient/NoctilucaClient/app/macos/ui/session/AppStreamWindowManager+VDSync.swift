@@ -58,11 +58,11 @@ extension AppStreamWindowManager {
 
             let spec = DisplaySpec(
                 resolution: SRSize(
-                    width: Double(screen.resolution.width),
-                    height: Double(screen.resolution.height)
+                    width: Double(screen.frame.width),
+                    height: Double(screen.frame.height)
                 ),
-                refreshRate: screen.refreshRate,
-                scaleFactor: screen.scaleFactor,
+                refreshRate: 60,
+                scaleFactor: 1,
                 metadata: [:]
             )
             createOps.append(DisplayOperation(operation: .createVirtualDisplay(VirtualDisplayCreate(
@@ -303,11 +303,11 @@ extension AppStreamWindowManager {
 
             let spec = DisplaySpec(
                 resolution: SRSize(
-                    width: Double(screen.resolution.width),
-                    height: Double(screen.resolution.height)
+                    width: Double(screen.frame.width),
+                    height: Double(screen.frame.height)
                 ),
-                refreshRate: screen.refreshRate,
-                scaleFactor: screen.scaleFactor,
+                refreshRate: 60,
+                scaleFactor: 1,
                 metadata: [:]
             )
             createOps.append(DisplayOperation(operation: .createVirtualDisplay(VirtualDisplayCreate(
@@ -379,11 +379,11 @@ extension AppStreamWindowManager {
 
             let spec = DisplaySpec(
                 resolution: SRSize(
-                    width: Double(screen.resolution.width),
-                    height: Double(screen.resolution.height)
+                    width: Double(screen.frame.width),
+                    height: Double(screen.frame.height)
                 ),
-                refreshRate: screen.refreshRate,
-                scaleFactor: screen.scaleFactor,
+                refreshRate: 60,
+                scaleFactor: 1,
                 metadata: [:]
             )
 
