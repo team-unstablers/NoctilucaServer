@@ -913,7 +913,6 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     // MARK: - Byte-range locking
 
     private func handleLock(_ request: FileSystemLockRequest) async throws {
-#if os(macOS)
         guard let h = await state.get(request.handleId), let fd = h.fileDescriptor else {
             try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
                 code: .invalidHandle, message: "Handle \(request.handleId) is not an open file.")
@@ -968,14 +967,9 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         }
         try await handle.send(opcode: .fileSystemLockResponse, message: FileSystemLockResponse(
             requestId: request.requestId, success: true, error: nil))
-#else
-        try await sendError(opcode: .fileSystemLockResponse, requestId: request.requestId,
-            code: .notSupported, message: "Byte-range locking is not supported on this platform.")
-#endif
     }
 
     private func handleUnlock(_ request: FileSystemUnlockRequest) async throws {
-#if os(macOS)
         guard let h = await state.get(request.handleId), let fd = h.fileDescriptor else {
             try await sendError(opcode: .fileSystemUnlockResponse, requestId: request.requestId,
                 code: .invalidHandle, message: "Handle \(request.handleId) is not an open file.")
@@ -1004,14 +998,9 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
         }
         try await handle.send(opcode: .fileSystemUnlockResponse, message: FileSystemUnlockResponse(
             requestId: request.requestId, success: true, error: nil))
-#else
-        try await sendError(opcode: .fileSystemUnlockResponse, requestId: request.requestId,
-            code: .notSupported, message: "Byte-range locking is not supported on this platform.")
-#endif
     }
 
     private func handleTestLock(_ request: FileSystemTestLockRequest) async throws {
-#if os(macOS)
         guard let h = await state.get(request.handleId), let fd = h.fileDescriptor else {
             try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
                 code: .invalidHandle, message: "Handle \(request.handleId) is not an open file.")
@@ -1077,10 +1066,6 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
             conflictingOffset: UInt64(fl.l_start),
             conflictingLength: conflictingLength,
             error: nil))
-#else
-        try await sendError(opcode: .fileSystemTestLockResponse, requestId: request.requestId,
-            code: .notSupported, message: "Byte-range locking is not supported on this platform.")
-#endif
     }
 
     // MARK: - Stream Read / Write
