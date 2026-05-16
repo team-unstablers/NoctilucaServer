@@ -13,16 +13,7 @@ import NoctilucaPluginKit
 
 actor NullAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "app.noctiluca.server.auth.plugin.null"
-    
-    static let name = NSLocalizedString("plugins.auth.NullAuthPlugin.name", comment: "NullAuthPlugin")
-    static let description = NSLocalizedString("plugins.auth.NullAuthPlugin.description", comment: "Provides 'NULL' authentication that always succeeds.")
-    static let authors = [
-        "Gyuhwan Park <unstabler@unstabler.pl>"
-    ]
-    static let license: SoftwareLicense = NoctilucaMeta.license
-    static let version: UInt32 = 1
-    static let displayVersion = NoctilucaMeta.version
-    
+
     static let supportedMethods: Set<AuthMethod> = [.null]
     
     private let logger = NoctilucaLogger(category: "NullAuthPlugin")

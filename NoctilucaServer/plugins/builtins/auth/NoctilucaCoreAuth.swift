@@ -24,10 +24,7 @@ final class NoctilucaCoreAuth: NoctilucaPluginBundle {
             SimplePasswordAuthPlugin.manifest
         ]
     )
-    
-    static let name = NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.name", comment: "Noctiluca 기본 인증 플러그인 번들")
-    static let description = NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.description", comment: "Noctiluca의 기본 인증 플러그인 번들입니다.")
-    
+
     static func initialize() async throws {
         
     }

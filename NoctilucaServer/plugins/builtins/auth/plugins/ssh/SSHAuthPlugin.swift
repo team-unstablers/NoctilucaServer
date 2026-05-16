@@ -17,30 +17,22 @@ typealias SSHPublicKey = Xuanxue.PublicKey
 actor SSHAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "app.noctiluca.server.auth.plugin.ssh"
 
-    static let name = NSLocalizedString("plugins.auth.SSHAuthPlugin.name", comment: "SSHAuthPlugin")
-    static let description = NSLocalizedString(
-        "plugins.auth.SSHAuthPlugin.description",
-        comment: "Provides SSH public key authentication."
-    )
-    static let authors = [
-        "Gyuhwan Park <unstabler@unstabler.pl>"
-    ]
-
-    static let license: SoftwareLicense = NoctilucaMeta.license
-    static let version: UInt32 = 1
-    static let displayVersion = NoctilucaMeta.version
-
     static let supportedMethods: Set<NoctilucaPluginKit.AuthMethod> = [.sshKey]
 
     static let manifest: NocPluginManifest = .auth(
         BuiltinAuthPluginManifest(
             id: id,
-            name: name,
-            pluginDescription: description,
-            authors: authors,
-            license: license,
-            version: version,
-            displayVersion: displayVersion,
+            name: NSLocalizedString("plugins.auth.SSHAuthPlugin.name", comment: "SSHAuthPlugin"),
+            pluginDescription: NSLocalizedString(
+                "plugins.auth.SSHAuthPlugin.description",
+                comment: "Provides SSH public key authentication."
+            ),
+            authors: [
+                "Gyuhwan Park <unstabler@unstabler.pl>"
+            ],
+            license: NoctilucaMeta.license,
+            version: 1,
+            displayVersion: NoctilucaMeta.version,
             supportedMethods: supportedMethods.map(\.rawValue)
         )
     )
