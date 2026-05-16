@@ -15,8 +15,6 @@ public protocol NoctilucaServerExtensionContext: AnyObject, Sendable {
 /// 서버 이벤트를 관찰하고 반응하는 저레벨 확장 (예: fail2ban)
 public protocol NoctilucaServerExtensionV1: AnyObject, Sendable {
     static var id: String { get }
-    static var name: String { get }
-    static var description: String { get }
 
     init()
 

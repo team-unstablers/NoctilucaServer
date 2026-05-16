@@ -50,15 +50,7 @@ public protocol RPCRequest: Sendable {
 
 public protocol RPCHandlerPluginV1: AnyObject, Sendable {
     static var id: String { get }
-    static var name: String { get }
-    static var description: String { get }
-    
-    static var authors: [String] { get }
-    static var license: SoftwareLicense { get }
-    
-    static var version: UInt32 { get }
-    static var displayVersion: String { get }
-    
+
     /// 이 플러그인이 지원할 RPC 오퍼레이션 목록.
     /// 역방향 도메인 표기 방식 (e.g. `com.example.buy-bananas`) 를 사용하십시오.
     /// - NOTE: `app.noctiluca.*` 네임스페이스는 team unstablers Inc. (teamid XHA76UVA95) 로 서명되지 않으면 사용할 수 없습니다. 다른 아이덴티티로 서명된 경우, 플러그인 자체가 동작하지 않을 수 있습니다.

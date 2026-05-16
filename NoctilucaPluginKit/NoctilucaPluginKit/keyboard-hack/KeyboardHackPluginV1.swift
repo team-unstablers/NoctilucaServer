@@ -20,15 +20,7 @@ public enum KeyboardHackResult: Sendable {
 
 public protocol KeyboardHackPluginV1: AnyObject, Sendable {
     static var id: String { get }
-    static var name: String { get }
-    static var description: String { get }
-    
-    static var authors: [String] { get }
-    static var license: SoftwareLicense { get }
-    
-    static var version: UInt32 { get }
-    static var displayVersion: String { get }
-    
+
     /// 보안을 위해 모든 플러그인은 받고자 하는 키 이벤트를 명시적으로 선언해야만 합니다.
     /// 서버는 여기에 명시된 키 이벤트 외에는 플러그인에게 전달하지 않습니다.
     static var desiredKeyEvents: Set<LinuxKeycode> { get }

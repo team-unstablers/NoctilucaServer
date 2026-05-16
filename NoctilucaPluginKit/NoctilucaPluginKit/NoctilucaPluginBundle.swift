@@ -8,14 +8,6 @@
 import Foundation
 
 public protocol NoctilucaPluginBundle: AnyObject, Sendable {
-    /// The name of the plugin bundle.
-    /// This should be a human-readable name.
-    static var name: String { get }
-    
-    /// A brief description of the plugin's functionality.
-    /// This helps users understand what the plugin does.
-    static var description: String { get }
-
     /// 플러그인 번들을 초기화합니다.
     /// 이 메서드는 플러그인이 로드될 때 호출됩니다.
     static func initialize() async throws
