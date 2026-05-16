@@ -16,28 +16,6 @@ final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
     static let id: String =
         "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle"
 
-    static let name: String =
-        String(
-            localized: "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle.name",
-            defaultValue: ""
-        )
-
-    static let description: String =
-        String(
-            localized: "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle.description",
-            defaultValue: ""
-        )
-
-    static let authors: [String] = [
-        "Gyuhwan Park <unstabler@unstabler.pl>"
-    ]
-
-    static let license: SoftwareLicense = .mit
-
-    static let version: UInt32 = 1
-
-    static let displayVersion: String = "1.0.0"
-
     static let desiredKeyEvents: Set<NoctilucaPluginKit.LinuxKeycode> = [
         .KEY_RIGHTMETA,
         .KEY_RIGHTALT,

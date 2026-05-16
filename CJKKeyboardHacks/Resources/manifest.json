@@ -1,0 +1,49 @@
+{
+  "$schema": "https://noctiluca.app/schemas/server/pluginkit/v1-draft/20260516.json",
+  "pluginKitVersion": "20260516",
+  "id": "app.noctiluca.server.bundles.CJKKeyboardHacks",
+  "name": {
+    "default": "CJK Keyboard Hack Bundle",
+    "ko": "CJK 키보드 핵 번들"
+  },
+  "description": {
+    "default": "Keyboard hacks to improve usability under CJK input environments.",
+    "ko": "CJK 입력이 필요한 환경에서 사용성 개선을 위한 키보드 핵(Hack)을 클라이언트에게 제공합니다."
+  },
+  "authors": [
+    "Gyuhwan Park <unstabler@unstabler.pl>"
+  ],
+  "license": {
+    "type": "proprietary",
+    "name": "Noctiluca Server EULA",
+    "url": "https://eula.noctiluca.app"
+  },
+  "isolationPolicy": "isolate",
+  "exports": [
+    {
+      "type": "keyboard_hack_v1",
+      "id": "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle",
+      "name": {
+        "default": "CJK Emulate Win32 Hangul Toggle"
+      },
+      "description": {
+        "default": "Emulates Win32-style Han/Eng toggle key behavior for CJK input methods."
+      },
+      "authors": [
+        "Gyuhwan Park <unstabler@unstabler.pl>"
+      ],
+      "license": {
+        "type": "proprietary",
+        "name": "Noctiluca Server EULA",
+        "url": "https://eula.noctiluca.app"
+      },
+      "version": 1,
+      "displayVersion": "1.0.0",
+      "desiredKeyEvents": [
+        "KEY_HANGEUL",
+        "KEY_RIGHTALT",
+        "KEY_RIGHTMETA"
+      ]
+    }
+  ]
+}

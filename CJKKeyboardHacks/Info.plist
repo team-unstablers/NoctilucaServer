@@ -2,30 +2,5 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NOCBundleAuthors</key>
-	<array>
-		<string>Gyuhwan Park &lt;unstabler@unstabler.pl&gt;</string>
-	</array>
-	<key>NOCBundleDescription</key>
-	<string>CJK 입력이 필요한 환경에서 사용성 개선을 위한 키보드 핵(Hack)을 클라이언트에게 제공합니다.</string>
-	<key>NOCBundleExports</key>
-	<array>
-		<dict>
-			<key>NOCPluginDescription</key>
-			<string>Emulates Win32 Hangul toggle key behavior for CJK input methods.</string>
-			<key>NOCPluginDisplayName</key>
-			<string>CJK Emulate Win32 Hangul Toggle</string>
-			<key>NOCPluginID</key>
-			<string>app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle</string>
-			<key>NOCPluginType</key>
-			<string>keyboard_hack</string>
-		</dict>
-	</array>
-	<key>NOCBundleLicense</key>
-	<string>CUSTOM:Noctiluca Server EULA</string>
-	<key>NOCBundleLicenseURL</key>
-	<string>https://docs.noctiluca.app/server/eula</string>
-	<key>NOCPluginKitVersion</key>
-	<integer>65536</integer>
 </dict>
 </plist>

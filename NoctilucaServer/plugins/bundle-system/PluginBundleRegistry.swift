@@ -21,6 +21,14 @@ enum PluginBundleRegistryError: LocalizedError {
     /// 보안 정책 위반
     case securityPolicyViolation(currentPolicy: PluginBundleSecurityPolicy, requiredPolicy: PluginBundleSecurityPolicy)
 
+    /// `no-isolate` 매니페스트가 요구하는 team identifier 와 실제 서명의 team ID 가
+    /// 일치하지 않거나, 서명 자체가 없는 경우.
+    case isolationPolicyViolation(
+        declaredPolicy: PluginIsolationPolicy,
+        actualTeamID: String?,
+        requiredTeamID: String
+    )
+
     /// 보안 정책은 위반하지 않았으나, 시스템에서 로드를 거부한 경우
     case rejectedBySystem
 
@@ -44,6 +52,16 @@ enum PluginBundleRegistryError: LocalizedError {
             return String(
                 localized: "core.plugin.PluginBundleRegistryError.securityPolicyViolation(currentPolicy: \(currentPolicy.rawValue), requiredPolicy: \(requiredPolicy.rawValue))",
                 comment: "플러그인 번들이 보안 정책을 위반했습니다."
+            )
+        case .isolationPolicyViolation(let declaredPolicy, let actualTeamID, let requiredTeamID):
+            let policyDescription: String = switch declaredPolicy {
+            case .isolate: "isolate"
+            case .noIsolate: "no-isolate"
+            }
+            let teamIDDescription = actualTeamID ?? "<unsigned>"
+            return String(
+                localized: "core.plugin.PluginBundleRegistryError.isolationPolicyViolation(declaredPolicy: \(policyDescription), actualTeamID: \(teamIDDescription), requiredTeamID: \(requiredTeamID))",
+                comment: "플러그인 번들의 isolation policy 가 실제 서명과 일치하지 않습니다."
             )
         case .rejectedBySystem:
             return NSLocalizedString("core.plugin.PluginBundleRegistryError.rejectedBySystem", comment: "플러그인 번들이 시스템에서 거부되었습니다.")
@@ -162,6 +180,32 @@ actor PluginBundleRegistry {
                     .post()
             }
             return .failure(error)
+        }
+
+        // 매니페스트의 isolationPolicy 와 실제 서명의 team identifier 교차 검증.
+        // no-isolate 는 unstabler team ID 로 서명된 번들에만 허용한다.
+        // (codesign 정책은 통과했더라도, no-isolate 선언만으로 임의 서명 번들을
+        // in-process 로드하는 것을 막기 위함.)
+        if manifest.isolationPolicy == .noIsolate {
+            let requiredTeamID = PluginBundleCodeSigningVerifier.teamUnstablersTeamID
+            let actualTeamID: String? = if case .validSignature(let teamID, _, _) = verificationResult {
+                teamID
+            } else {
+                nil
+            }
+
+            guard actualTeamID == requiredTeamID else {
+                logger.warning(
+                    "Plugin bundle \(manifest.id) declares 'no-isolate' but"
+                    + " team identifier (\(actualTeamID ?? "<unsigned>")) does not match"
+                    + " required (\(requiredTeamID))."
+                )
+                return .failure(.isolationPolicyViolation(
+                    declaredPolicy: .noIsolate,
+                    actualTeamID: actualTeamID,
+                    requiredTeamID: requiredTeamID
+                ))
+            }
         }
 
         // allowAll 정책에서 unsigned/adHoc 번들은 사용자 확인 필요
