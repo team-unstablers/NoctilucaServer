@@ -22,7 +22,7 @@ struct PluginBundleDetailSheet: View {
         case codeSigning
     }
 
-    let metadata: any PluginBundleMetadata
+    let manifest: any PluginBundleManifest
     let signingResult: CodeSigningVerificationResult?
 
     @Environment(\.dismiss)
@@ -33,8 +33,8 @@ struct PluginBundleDetailSheet: View {
 
     // MARK: - Computed Properties
 
-    private var exportsByCategory: [NoctilucaPluginType: [any PluginBundleExportMetadata]] {
-        Dictionary(grouping: metadata.exports, by: { $0.type })
+    private var exportsByCategory: [NoctilucaPluginType: [any PluginManifest]] {
+        Dictionary(grouping: manifest.exports.map(\.manifest), by: { $0.type })
     }
 
     private var sortedExportCategories: [NoctilucaPluginType] {
@@ -54,9 +54,9 @@ struct PluginBundleDetailSheet: View {
                         .frame(width: 48, height: 48)
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(metadata.displayName)
+                        Text(manifest.name.getString())
                             .font(.title2.bold())
-                        Text(metadata.id)
+                        Text(manifest.id)
                             .font(.subheadline.monospaced())
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
@@ -65,29 +65,25 @@ struct PluginBundleDetailSheet: View {
             }
 
             Section {
-                Text(metadata.description)
+                Text(manifest.bundleDescription.getString())
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Section {
                 SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.developer", defaultValue: "개발자")) {
                     VStack(alignment: .trailing) {
-                        ForEach(metadata.authors, id: \.self) { author in
+                        ForEach(manifest.authors, id: \.self) { author in
                             Text(verbatim: author)
                         }
                     }
                 }
 
                 SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.license", defaultValue: "라이선스")) {
-                    SoftwareLicenseText(license: metadata.license)
-                }
-
-                SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.version", defaultValue: "버전")) {
-                    Text("\(metadata.displayVersion) (\(metadata.version))")
+                    SoftwareLicenseText(license: manifest.license)
                 }
 
                 SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.general.pluginkit_version", defaultValue: "PluginKit 버전")) {
-                    Text(String(format: "0x%08X", metadata.pluginKitVersion.rawValue))
+                    Text(String(format: "0x%08X", manifest.pluginKitVersion.rawValue))
                         .font(.body.monospaced())
                 }
             }
@@ -96,12 +92,15 @@ struct PluginBundleDetailSheet: View {
     }
 
     @ViewBuilder
-    private func exportCategoryDetail(type: NoctilucaPluginType, exports: [any PluginBundleExportMetadata]) -> some View {
+    private func exportCategoryDetail(type: NoctilucaPluginType, exports: [any PluginManifest]) -> some View {
         Form {
             ForEach(exports, id: \.id) { export in
+                let displayName = export.name.getString()
+                let pluginDescription = export.pluginDescription.getString()
+
                 Section {
                     SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.name", defaultValue: "이름")) {
-                        Text(export.displayName)
+                        Text(displayName)
                     }
 
                     SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.id", defaultValue: "ID")) {
@@ -110,13 +109,17 @@ struct PluginBundleDetailSheet: View {
                             .textSelection(.enabled)
                     }
 
-                    if !export.description.isEmpty {
-                        Text(export.description)
+                    SettingsEntry(title: String(localized: "settings.plugins.detail_sheet.export.version", defaultValue: "버전")) {
+                        Text("\(export.displayVersion) (\(export.version))")
+                    }
+
+                    if !pluginDescription.isEmpty {
+                        Text(pluginDescription)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text(export.displayName)
+                    Text(displayName)
                 }
             }
         }

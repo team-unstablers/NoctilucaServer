@@ -8,6 +8,6 @@ import Foundation
 
 extension PluginBundleRegistry {
     func registerBuiltinBundles() async throws {
-        try await registerBundle(bundleClass: NoctilucaCoreAuth.self, metadata: NoctilucaCoreAuth.metadata)
+        try await registerBundle(bundleClass: NoctilucaCoreAuth.self, manifest: NoctilucaCoreAuth.manifest)
     }
 }

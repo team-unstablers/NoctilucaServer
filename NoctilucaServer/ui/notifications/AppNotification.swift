@@ -41,7 +41,7 @@ enum AppNotification: Identifiable {
     case updateAvailable(version: String)
     // TODO: 긴급 업데이트 요청
     case criticalUpdateRequired(version: String, isInvalidLicense: Bool)
-    case pluginBundleRejectedBySecurityPolicy(metadata: any PluginBundleMetadata, currentPolicy: PluginBundleSecurityPolicy)
+    case pluginBundleRejectedBySecurityPolicy(manifest: any PluginBundleManifest, currentPolicy: PluginBundleSecurityPolicy)
     case clipboardServedToClient(endpoint: String)
     // TODO: 파일 전송 완료
     case fileTransferSent(fileName: String)
@@ -194,13 +194,13 @@ enum AppNotification: Identifiable {
             }
 
             return message
-        case .pluginBundleRejectedBySecurityPolicy(let metadata, let currentPolicy):
+        case .pluginBundleRejectedBySecurityPolicy(let manifest, _):
             return String(
                 format: String(
                     localized: "notification.plugin_bundle_rejected_by_security_policy.message",
                     defaultValue: "플러그인 번들 '%@'이 코드 서명 정책을 위반하여 로드될 수 없었습니다."
                 ),
-                metadata.id
+                manifest.id
             )
         case .clipboardServedToClient:
             return String(localized: "notification.clipboard_served_to_client.message", defaultValue: "호스트의 클립보드 내용이 클라이언트로 전달되었습니다.")

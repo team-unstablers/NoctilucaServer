@@ -5363,6 +5363,7 @@
     },
     "plugins.auth.NullAuthPlugin.description" : {
       "comment" : "Provides 'NULL' authentication that always succeeds.",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5392,6 +5393,7 @@
     },
     "plugins.auth.NullAuthPlugin.name" : {
       "comment" : "NullAuthPlugin",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5858,7 +5860,7 @@
       }
     },
     "projection.recorder.type.null.description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5887,7 +5889,7 @@
       }
     },
     "projection.recorder.type.null.display_name" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7140,7 +7142,7 @@
       }
     },
     "settings.about.server_version.development" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -19435,7 +19437,7 @@
       }
     },
     "settings.security.auth_entry.null.description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -19464,7 +19466,7 @@
       }
     },
     "settings.security.auth_entry.null.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -20421,7 +20423,7 @@
       }
     },
     "settings.security.auth_method.template.null.description" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -20450,7 +20452,7 @@
       }
     },
     "settings.security.auth_method.template.null.title" : {
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

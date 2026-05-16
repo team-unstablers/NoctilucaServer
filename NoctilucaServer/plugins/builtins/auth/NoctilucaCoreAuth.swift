@@ -10,24 +10,18 @@ import Foundation
 @preconcurrency import NoctilucaPluginKit
 
 final class NoctilucaCoreAuth: NoctilucaPluginBundle {
-    static let metadata = BuiltinPluginBundleMetadata(
+    static let manifest = BuiltinPluginBundleManifest(
         id: "app.noctiluca.server.bundles.NoctilucaCoreAuth",
-        displayName: NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.name", comment: "Noctiluca 기본 인증 플러그인 번들"),
-        
-        version: 1,
-        displayVersion: NoctilucaMeta.version,
-        
-        pluginKitVersion: .v1,
-        description: NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.description", comment: "Noctiluca의 기본 인증 플러그인 번들입니다."),
-        
+        name: NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.name", comment: "Noctiluca 기본 인증 플러그인 번들"),
+        bundleDescription: NSLocalizedString("builtin-bundles.auth.NoctilucaCoreAuth.description", comment: "Noctiluca의 기본 인증 플러그인 번들입니다."),
         authors: [
             "Gyuhwan Park <unstabler@unstabler.pl>"
         ],
         license: NoctilucaMeta.license,
-        
+        pluginKitVersion: .v1,
         exports: [
-            PAMAuthPlugin.metadata,
-            SimplePasswordAuthPlugin.metadata
+            PAMAuthPlugin.manifest,
+            SimplePasswordAuthPlugin.manifest
         ]
     )
     

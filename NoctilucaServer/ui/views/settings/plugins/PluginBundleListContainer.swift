@@ -27,17 +27,17 @@ struct PluginBundleListContainer: View {
         VStack(alignment: .leading, spacing: 12) {
             EditableList(
                 items: .constant(Array(pluginRegistry.bundles.values)),
-                id: \.metadata.id,
+                id: \.manifest.id,
                 selection: $selection,
                 rowContent: { handle in
-                    PluginBundleListEntry(metadata: handle.metadata)
+                    PluginBundleListEntry(manifest: handle.manifest)
                 }
             )
-            
+
             if let selected = selection.first,
                let handle = pluginRegistry.bundles[selected]
             {
-                PluginBundleDetailView(metadata: handle.metadata, signingResult: handle.signingResult)
+                PluginBundleDetailView(manifest: handle.manifest, signingResult: handle.signingResult)
             }
         }
     }
