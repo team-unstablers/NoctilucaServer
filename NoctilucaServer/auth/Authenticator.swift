@@ -79,14 +79,14 @@ final class Authenticator: Sendable {
 
         // 순차적으로 dispatch한다.
         for supportedPlugin in supportedPlugins {
-            logger.debug("\(LOG_TAG): trying plugin: \(type(of: supportedPlugin).name)")
+            logger.debug("\(LOG_TAG): trying plugin: \(type(of: supportedPlugin).id)")
             let result = await supportedPlugin.authenticate(using: method, payload: payload, nonce: nonce)
             
             if case .success(let uid) = result {
-                logger.info("\(LOG_TAG): authentication succeeded using plugin: \(type(of: supportedPlugin).name), uid: \(uid)")
+                logger.info("\(LOG_TAG): authentication succeeded using plugin: \(type(of: supportedPlugin).id), uid: \(uid)")
                 return .success(uid)
             } else {
-                logger.debug("\(LOG_TAG): authentication failed using plugin: \(type(of: supportedPlugin).name)")
+                logger.debug("\(LOG_TAG): authentication failed using plugin: \(type(of: supportedPlugin).id)")
             }
         }
 

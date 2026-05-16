@@ -116,6 +116,11 @@ struct SoftwareLicenseV1Draft: Codable, Sendable {
                 codingPath: encoder.codingPath,
                 debugDescription: "SoftwareLicense.dual is not representable in v1-draft manifest"
             ))
+        @unknown default:
+            throw EncodingError.invalidValue(resolved, .init(
+                codingPath: encoder.codingPath,
+                debugDescription: "Unknown SoftwareLicense case is not representable in v1-draft manifest"
+            ))
         }
     }
 }
