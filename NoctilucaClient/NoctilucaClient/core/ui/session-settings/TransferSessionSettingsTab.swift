@@ -109,7 +109,7 @@ struct TransferSessionSettingsTab: View {
                 Text(markdown: String(localized: "session-settings.transfer.fs_access.section_description", defaultValue: "원격 호스트에서 이 기기의 파일/디렉토리에 접근할 수 있도록 노출할 항목을 설정합니다."))
             } footer: {
 #if os(iOS)
-                Text(markdown: String(localized: "session-settings.transfer.fs_access.ios.section_footer", defaultValue: "**파일** 앱에서 *Noctiluca Navigator* 위치를 통해 `fsaccess/` 폴더에 접근할 수 있습니다. 노출하지 않을 파일은 다른 폴더에 보관하세요."))
+                Text(markdown: String(localized: "session-settings.transfer.fs_access.ios_warning", defaultValue: ""))
 #endif
             }
 
