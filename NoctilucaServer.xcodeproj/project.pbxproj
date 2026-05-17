@@ -29,6 +29,8 @@
 		F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */ = {isa = PBXBuildFile; fileRef = F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */; };
 		F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BA2FA818B300F3D400 /* NanoNFS */; };
 		F64FAF892FA95BA700F3D400 /* NetFS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F64FAF882FA95BA700F3D400 /* NetFS.framework */; };
+		F67827D22FB9925600DC5D5E /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F67827D12FB9925600DC5D5E /* NanoNFS */; };
+		F67827D32FB9925C00DC5D5E /* NetFS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F64FAF882FA95BA700F3D400 /* NetFS.framework */; };
 		F686CFEF2F3A265C004383CF /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F6F98E7A2F306B5D0024513A /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; };
 		F686CFF52F3A34F6004383CF /* NoctilucaWebPEncoder in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F686CFF32F3A34F6004383CF /* NoctilucaWebPEncoder */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -396,8 +398,10 @@
 				F6CC83882F5B522800AA6DC2 /* SiriusKit in Frameworks */,
 				F6CC838A2F5B522800AA6DC2 /* Gesu in Frameworks */,
 				F6CC838B2F5B522800AA6DC2 /* libzstd in Frameworks */,
+				F67827D32FB9925C00DC5D5E /* NetFS.framework in Frameworks */,
 				F6CC838C2F5B522800AA6DC2 /* libbcrypt.framework in Frameworks */,
 				F6CC838D2F5B522800AA6DC2 /* Sparkle in Frameworks */,
+				F67827D22FB9925600DC5D5E /* NanoNFS in Frameworks */,
 				F606EFE42F9CC0E700B8E05C /* Sentry in Frameworks */,
 				F6CC838E2F5B522800AA6DC2 /* NoctilucaPluginKit.framework in Frameworks */,
 				F6CC838F2F5B522800AA6DC2 /* AsyncAlgorithms in Frameworks */,
@@ -600,6 +604,7 @@
 				F6CC837F2F5B522800AA6DC2 /* Inject */,
 				F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */,
 				F606EFE32F9CC0E700B8E05C /* Sentry */,
+				F67827D12FB9925600DC5D5E /* NanoNFS */,
 			);
 			productName = NoctilucaServer;
 			productReference = F6CC839F2F5B522800AA6DC2 /* NoctilucaServerTestsHost.app */;
@@ -1486,6 +1491,11 @@
 			productName = Sentry;
 		};
 		F64F79BA2FA818B300F3D400 /* NanoNFS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */;
+			productName = NanoNFS;
+		};
+		F67827D12FB9925600DC5D5E /* NanoNFS */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */;
 			productName = NanoNFS;
