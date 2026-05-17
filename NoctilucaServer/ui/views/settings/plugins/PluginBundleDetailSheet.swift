@@ -13,6 +13,7 @@ import SecurityInterface
 import UniformTypeIdentifiers
 
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 
 struct PluginBundleDetailSheet: View {
@@ -265,6 +266,9 @@ private extension PluginBundleDetailSheet {
                             defaultValue: "이 플러그인 번들은 애플리케이션에 내장되어 있습니다."))
                     .foregroundStyle(.secondary)
             }
+
+        @unknown default:
+            EmptyView()
         }
     }
 

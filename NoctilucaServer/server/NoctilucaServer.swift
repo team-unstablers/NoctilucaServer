@@ -10,6 +10,7 @@ import Combine
 
 import SiriusKit
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 enum NoctilucaServerError: LocalizedError {
     case noIdentityConfigured

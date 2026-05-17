@@ -1,0 +1,143 @@
+//
+//  XPCLoader.swift
+//  NoctilucaServer
+//
+//  Created by Gyuhwan Park on 5/17/26.
+//
+
+import Foundation
+import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
+import Shotoku
+
+import XPC
+
+import SiriusKit
+
+/// 본 PR 범위에서 `HostControlInterface` proxy 를 `KeyboardHackPluginV1RPC`
+/// surface 로 노출하는 thin bridge.
+///
+/// host process 가 한 번에 한 plugin 만 load 하므로 (single-instance per
+/// connection), bridge 는 underlying proxy 의 `keyboardHack_*` forwarding
+/// method 를 호출.
+private final class HostControlKeyboardHackBridge: KeyboardHackPluginV1RPC {
+    private let proxy: any HostControlInterface
+
+    init(_ proxy: any HostControlInterface) {
+        self.proxy = proxy
+    }
+
+    func id() async throws -> String {
+        try await proxy.keyboardHack_id()
+    }
+
+    func desiredKeyEvents() async throws -> [NoctilucaPluginKit.LinuxKeycode] {
+        try await proxy.keyboardHack_desiredKeyEvents()
+    }
+
+    func onKeyDown(_ keyCode: NoctilucaPluginKit.LinuxKeycode) async throws -> KeyboardHackResult {
+        try await proxy.keyboardHack_onKeyDown(keyCode)
+    }
+
+    func onKeyUp(_ keyCode: NoctilucaPluginKit.LinuxKeycode) async throws -> KeyboardHackResult {
+        try await proxy.keyboardHack_onKeyUp(keyCode)
+    }
+}
+
+/// `isolate` 매니페스트로 선언된 번들을 `NoctilucaPluginKitHost.xpc` 의 별도
+/// process instance 에서 dlopen 하도록 위임한다.
+///
+/// 한 bundle = 한 host process instance (launchd `_MultipleInstances=YES`).
+/// loadBundle 호출 시 server 가 새 `RPCClient<HostControlInterface>` 를
+/// 생성하여 connect → loadBundle → 결과의 forwarding method 를
+/// `KeyboardHackPluginV1RPC` bridge 로 wrap 하여 반환.
+actor XPCLoader: PluginLoader {
+
+    private let logger = NoctilucaLogger(category: "XPCLoader")
+    private let hostServiceName = "app.noctiluca.server.NoctilucaPluginKitHost"
+
+    /// bundleId → 활성 client (disconnect / unload 용)
+    private var clients: [String: RPCClient<HostControlInterface>] = [:]
+
+    init() {}
+
+    func load(
+        url: URL,
+        manifest: any PluginBundleManifest
+    ) async throws -> LoadedPluginExports {
+        let client = RPCClient<HostControlInterface>(
+            endpoint: .xpc(hostServiceName)
+        )
+
+        do {
+            try await client.connect()
+        } catch {
+            logger.error("XPCLoader: failed to connect to host service for \(manifest.id): \(error)")
+            throw PluginBundleRegistryError.initializationFailed(error: error)
+        }
+
+        let proxy: any HostControlInterface
+        do {
+            proxy = try await client.proxy(HostControlInterface.Proxy.self)
+        } catch {
+            logger.error("XPCLoader: failed to obtain proxy for \(manifest.id): \(error)")
+            await client.disconnect()
+            throw PluginBundleRegistryError.initializationFailed(error: error)
+        }
+
+        // health check
+        do {
+            _ = try await proxy.ping()
+        } catch {
+            logger.error("XPCLoader: ping failed for \(manifest.id): \(error)")
+            await client.disconnect()
+            throw PluginBundleRegistryError.initializationFailed(error: error)
+        }
+
+        let loadedInfo: LoadedBundleInfo
+        do {
+            loadedInfo = try await proxy.loadBundle(bundlePath: url.path)
+        } catch {
+            logger.error("XPCLoader: host loadBundle failed for \(manifest.id): \(error)")
+            await client.disconnect()
+            throw PluginBundleRegistryError.initializationFailed(error: error)
+        }
+
+        var proxies: [LoadedPluginProxy] = []
+        for entry in loadedInfo.exports {
+            switch entry.type {
+            case .keyboardHack:
+                let bridge = HostControlKeyboardHackBridge(proxy)
+                proxies.append(.keyboardHack(bridge))
+            case .auth, .extension, .rpcHandler, .feature:
+                // 본 PR 범위 밖.
+                logger.warning("XPCLoader: unsupported plugin type \(entry.type.rawValue) in bundle \(manifest.id), skipping")
+            @unknown default:
+                logger.warning("XPCLoader: unknown plugin type for bundle \(manifest.id), skipping")
+            }
+        }
+
+        clients[manifest.id] = client
+        logger.info("XPCLoader: loaded bundle \(manifest.id) with \(proxies.count) proxy(s) via XPC")
+
+        return LoadedPluginExports(
+            bundleId: manifest.id,
+            manifest: manifest,
+            proxies: proxies
+        )
+    }
+
+    func unload(bundleId: String) async {
+        guard let client = clients.removeValue(forKey: bundleId) else {
+            return
+        }
+        do {
+            let proxy = try await client.proxy(HostControlInterface.Proxy.self)
+            try await proxy.unloadBundle()
+        } catch {
+            logger.warning("XPCLoader: unloadBundle remote call failed for \(bundleId): \(error)")
+        }
+        await client.disconnect()
+        logger.info("XPCLoader: unloaded bundle \(bundleId)")
+    }
+}

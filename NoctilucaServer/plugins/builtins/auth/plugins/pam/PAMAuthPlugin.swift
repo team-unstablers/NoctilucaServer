@@ -9,6 +9,7 @@ import Foundation
 
 import SiriusKit
 @preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 actor PAMAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "app.noctiluca.server.plugins.auth.pam"

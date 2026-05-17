@@ -11,6 +11,7 @@ import SwiftUI
 import UniformTypeIdentifiers // UTType을 쓰기 위해 필요
 
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 
 struct PluginBundleDetailView: View {
@@ -96,6 +97,8 @@ struct PluginBundleDetailView: View {
             Text(markdown: String(localized: "settings.plugins.detail.signature.invalid", defaultValue: "서명 검증 실패 (OSStatus: \(error))"))
         case nil:
             Text(markdown: String(localized: "settings.plugins.detail.signature.builtin", defaultValue: "내장 플러그인"))
+        @unknown default:
+            EmptyView()
         }
     }
 }

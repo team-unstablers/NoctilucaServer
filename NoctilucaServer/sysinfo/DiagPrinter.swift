@@ -11,6 +11,7 @@ import Darwin
 
 import SiriusKit
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 enum DiagLevel {
     /// 공개용 (GitHub 이슈 등). PII 최소화.

@@ -8,6 +8,7 @@
 import Foundation
 
 @preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 final class NoctilucaCoreAuth: NoctilucaPluginBundle {
     static let manifest = BuiltinPluginBundleManifest(

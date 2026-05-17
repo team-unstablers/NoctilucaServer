@@ -11,6 +11,7 @@ import libbcrypt
 
 import SiriusKit
 @preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 actor SimplePasswordAuthPlugin: BuiltInAuthPluginV1 {
     static let id = "app.noctiluca.server.auth.plugin.simple-password"

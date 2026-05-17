@@ -7,6 +7,7 @@
 
 import Foundation
 @preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 // MARK: - Bundle manifest
 

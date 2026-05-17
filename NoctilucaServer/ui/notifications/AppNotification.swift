@@ -9,6 +9,8 @@ import Foundation
 
 import UserNotifications
 
+import NoctilucaPluginKitHostCore
+
 enum AppNotificationCategory: String {
     case clientEvents  = "app.noctiluca.server.notification-events.client"
     case serverEvents  = "app.noctiluca.server.notification-events.server"

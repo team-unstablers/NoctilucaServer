@@ -10,6 +10,7 @@ import AppKit
 
 import SiriusKit
 @preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 enum PluginBundleRegistryError: LocalizedError {
     /// 번들이 존재하지 않거나, 번들 검증에 실패한 경우
@@ -57,6 +58,7 @@ enum PluginBundleRegistryError: LocalizedError {
             let policyDescription: String = switch declaredPolicy {
             case .isolate: "isolate"
             case .noIsolate: "no-isolate"
+            @unknown default: "<unknown>"
             }
             let teamIDDescription = actualTeamID ?? "<unsigned>"
             return String(
@@ -85,7 +87,8 @@ enum PluginBundleRegistryError: LocalizedError {
 }
 
 struct PluginBundleHandle {
-    let bundleClass: NoctilucaPluginBundle.Type
+    /// builtin 번들의 principal class. 외부 번들은 loader 가 lifecycle 을 책임지므로 nil.
+    let bundleClass: NoctilucaPluginBundle.Type?
     let manifest: any PluginBundleManifest
     let signingResult: CodeSigningVerificationResult?
 }
@@ -102,6 +105,9 @@ actor PluginBundleRegistry {
     private(set) var bundles: [String: PluginBundleHandle] = [:]
     private(set) var defaultPolicy: PluginBundleSecurityPolicy = .allowTeamUnstablers
 
+    private let inProcessLoader = InProcessLoader()
+    private let xpcLoader = XPCLoader()
+
     private init() {
     }
 
@@ -110,9 +116,12 @@ actor PluginBundleRegistry {
     }
 
     deinit {
+        // 외부 번들은 loader 가 lifecycle 을 책임지므로 builtin (bundleClass != nil)
+        // 에 대해서만 직접 deinitialize 호출.
         for (id, handle) in bundles {
+            guard let bundleClass = handle.bundleClass else { continue }
             do {
-                try handle.bundleClass.deinitialize()
+                try bundleClass.deinitialize()
                 logger.info("Successfully deinitialized plugin bundle with id: \(id)")
             } catch {
                 logger.error("Failed to deinitialize plugin bundle with id: \(id), error: \(error)")
@@ -173,13 +182,19 @@ actor PluginBundleRegistry {
         let verificationResult = PluginBundleCodeSigningVerifier.verify(bundleURL: url)
         let allowResult = PluginBundleCodeSigningVerifier.shouldAllow(result: verificationResult, policy: effectivePolicy)
 
-        if case .failure(let error) = allowResult {
-            logger.warning("Plugin bundle \(manifest.id) rejected by security policy (\(effectivePolicy.rawValue)): \(error.localizedDescription ?? "")")
+        if case .failure(let codeSigningError) = allowResult {
+            let registryError: PluginBundleRegistryError = switch codeSigningError {
+            case .securityPolicyViolation(let currentPolicy, let requiredPolicy):
+                .securityPolicyViolation(currentPolicy: currentPolicy, requiredPolicy: requiredPolicy)
+            @unknown default:
+                .securityPolicyViolation(currentPolicy: effectivePolicy, requiredPolicy: .allowTeamUnstablers)
+            }
+            logger.warning("Plugin bundle \(manifest.id) rejected by security policy (\(effectivePolicy.rawValue)): \(registryError.localizedDescription ?? "")")
             Task { @MainActor [manifest, effectivePolicy] in
                 AppNotification.pluginBundleRejectedBySecurityPolicy(manifest: manifest, currentPolicy: effectivePolicy)
                     .post()
             }
-            return .failure(error)
+            return .failure(registryError)
         }
 
         // 매니페스트의 isolationPolicy 와 실제 서명의 team identifier 교차 검증.
@@ -222,17 +237,41 @@ actor PluginBundleRegistry {
             }
         }
 
-        guard bundle.load() else {
-            logger.error("Failed to load plugin bundle from \(url.path): unable to load bundle")
-            return .failure(.rejectedBySystem)
+        // isolation policy 기반 loader 선택.
+        let loader: any PluginLoader = switch manifest.isolationPolicy {
+        case .isolate: xpcLoader
+        case .noIsolate: inProcessLoader
+        @unknown default: inProcessLoader
         }
 
-        guard let bundleClass = bundle.principalClass as? NoctilucaPluginBundle.Type else {
-            logger.error("Failed to load plugin bundle from \(url.path): principal class is not a NoctilucaPluginBundle")
-            return .failure(.invalidBundle)
+        let loadedExports: LoadedPluginExports
+        do {
+            loadedExports = try await loader.load(url: url, manifest: manifest)
+        } catch let registryError as PluginBundleRegistryError {
+            return .failure(registryError)
+        } catch {
+            return .failure(.initializationFailed(error: error))
         }
 
-        return await registerBundle(bundleClass: bundleClass, manifest: manifest, signingResult: verificationResult)
+        // RPC proxy 들을 type 별 registry 에 등록.
+        for proxy in loadedExports.proxies {
+            switch proxy {
+            case .keyboardHack(let rpc):
+                await HIDIOKeyboardHackRegistry.shared.register(rpc)
+                logger.info("Registered keyboard hack proxy from bundle: \(manifest.id)")
+            }
+        }
+
+        // 외부 번들 handle 저장 — bundleClass 는 loader 가 책임지므로 nil.
+        let handle = PluginBundleHandle(
+            bundleClass: nil,
+            manifest: manifest,
+            signingResult: verificationResult
+        )
+        self.bundles[manifest.id] = handle
+        logger.info("Successfully registered external plugin bundle: \(manifest.id)")
+
+        return .success(manifest)
     }
 
     /// 플러그인 번들을 등록한다.
@@ -277,8 +316,12 @@ actor PluginBundleRegistry {
                 // TODO: ExtensionPluginRegistry 연동 (향후 구현)
                 logger.info("Registered extension plugin: \(type(of: extensionPlugin).id) from bundle: \(manifest.id)")
             case .keyboardHack(let keyboardHack):
-                await HIDIOKeyboardHackRegistry.shared.register(keyboardHack)
+                let adapter = KeyboardHackPluginV1Adapter(wrapping: keyboardHack)
+                await HIDIOKeyboardHackRegistry.shared.register(adapter)
                 logger.info("Registered keyboard hack: \(type(of: keyboardHack).id) from bundle: \(manifest.id)")
+            case .rpcHandler(let rpcHandler):
+                // TODO: RPCHandlerRegistry 연동 (T6 에서 RPC variant 도입 후 구현)
+                logger.info("Registered rpc handler: \(type(of: rpcHandler).id) from bundle: \(manifest.id) (no-op for now)")
             @unknown default:
                 logger.warning("Encountered unknown plugin export type from bundle: \(manifest.id), skipping registration")
             }
@@ -289,17 +332,30 @@ actor PluginBundleRegistry {
         return .success(manifest)
     }
 
-    func unloadBundle(withId id: String) {
+    func unloadBundle(withId id: String) async {
         guard let handle = self.bundles[id] else {
             logger.warning("Attempted to unload non-existent plugin bundle with id: \(id)")
             return
         }
 
-        do {
-            try handle.bundleClass.deinitialize()
-            logger.info("Successfully deinitialized plugin bundle with id: \(id)")
-        } catch {
-            logger.error("Failed to deinitialize plugin bundle with id: \(id), error: \(error)")
+        if let bundleClass = handle.bundleClass {
+            // builtin path — 직접 deinitialize.
+            do {
+                try bundleClass.deinitialize()
+                logger.info("Successfully deinitialized plugin bundle with id: \(id)")
+            } catch {
+                logger.error("Failed to deinitialize plugin bundle with id: \(id), error: \(error)")
+            }
+        } else {
+            // 외부 번들 — loader 가 lifecycle 책임. isolation policy 로 loader 식별.
+            switch handle.manifest.isolationPolicy {
+            case .isolate:
+                await xpcLoader.unload(bundleId: id)
+            case .noIsolate:
+                await inProcessLoader.unload(bundleId: id)
+            @unknown default:
+                await inProcessLoader.unload(bundleId: id)
+            }
         }
 
         self.bundles.removeValue(forKey: id)
@@ -419,6 +475,7 @@ extension PluginBundleRegistry {
         case .auth: .auth
         case .extension: .extension
         case .keyboardHack: .keyboardHack
+        case .rpcHandler: .rpcHandler
         @unknown default: nil
         }
 

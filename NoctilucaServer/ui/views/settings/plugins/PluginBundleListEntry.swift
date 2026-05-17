@@ -11,6 +11,7 @@ import SwiftUI
 import UniformTypeIdentifiers // UTType을 쓰기 위해 필요
 
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 struct PluginBundleListEntry: View {
     let manifest: any PluginBundleManifest

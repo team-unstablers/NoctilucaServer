@@ -9,6 +9,7 @@ import Foundation
 
 import SiriusKit
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 extension AppSettings {
     struct Security: SecureCategory {
