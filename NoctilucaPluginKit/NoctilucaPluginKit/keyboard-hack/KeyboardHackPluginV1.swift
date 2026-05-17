@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum KeyboardHackResult: Sendable {
+public enum KeyboardHackResult: Codable, Sendable {
     /// 다음 파이프라인으로 키보드 입력이 전달됩니다.
     case passthrough
 
