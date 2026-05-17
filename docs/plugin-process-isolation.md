@@ -274,7 +274,7 @@ N 회 연속 crash 시 disable 전환 등의 정책은 구현 단계에서 결�
 같이 분할합니다. 각 task 는 **1 세션 (~PR, 4–8시간)** 분량을 목표로 하며,
 task 간 의존성을 명시합니다.
 
-### 9-A. 진행 현황 (2026-05-16 기준)
+### 9-A. 진행 현황 (2026-05-17 기준)
 
 이미 별도 작업으로 완료된 부분:
 
@@ -284,8 +284,8 @@ task 간 의존성을 명시합니다.
 - [x] **Swift 측 manifest.json 디코딩**:
   `NoctilucaServer/plugins/bundle-system/manifest/v1_draft/` 의 v1-draft
   Codable struct + `NocPluginLocalizableString` / `SoftwareLicenseV1Draft`.
-- [x] **`PluginIsolationPolicy` enum + manifest 필드 파싱** (실제 enforcement 는
-  T2 / T10 에서).
+- [x] **`PluginIsolationPolicy` enum + manifest 필드 파싱** (enforcement 는
+  T2 에서 완료, loader 분기는 T10 에서).
 - [x] **codesign 검증 인프라**:
   `PluginBundleCodeSigningVerifier` (team ID 추출, 서명 유효성 검증),
   `PluginBundleSecurityPolicy` 4단계
@@ -295,6 +295,32 @@ task 간 의존성을 명시합니다.
   `authors` / `license` / `version` / `displayVersion` 모두 manifest.json 으로
   일원화. protocol 에는 `id` + 런타임 capability (`supportedMethods` 등) 만
   남음.
+
+**T2 완료 (2026-05-17)** — isolation policy 교차 검증 + CJKKeyboardHacks manifest 이행:
+
+- [x] `PluginBundleRegistry.loadBundle()` 에 isolation policy 강제 분기 추가.
+  `no-isolate` 매니페스트는 team identifier `XHA76UVA95` 의 valid signature
+  에만 in-process 로드 허용. 그 외 (서명 없음 / ad-hoc / 다른 team ID) 는
+  `manifest.isolationPolicy` 가 `no-isolate` 인 한 거부. 신규 에러 case
+  `PluginBundleRegistryError.isolationPolicyViolation` 추가. (커밋 `7a8795a`)
+- [x] `CJKKeyboardHacks` 의 메타데이터를 `Contents/Resources/manifest.json`
+  으로 이행. `isolationPolicy: "isolate"` 로 선언 (T11 의 XPC 격리 실증에
+  대비하여 미리 isolate; T10 까지는 InProcessLoader 폴백). Info.plist 의
+  `NOC*` 키 전체 제거. (커밋 `7a8795a`)
+- [x] `CJKKeyboardHacksBundle` / `CJKEmulateWin32HangulToggleHack` 의 unused
+  stale metadata `static let` (name / description / authors / license /
+  version / displayVersion) 제거 — protocol 에서 이미 제거된 필드들의
+  caller 정리. (커밋 `7a8795a`)
+- [x] 공식 예시 manifest 두 종 (`NoctilucaPluginSystem/examples/server/`
+  의 `cjk-assist.json` / `nonke-auth.json`) 의 디코딩 검증 XCTest 추가 —
+  `V1DraftManifestDecodingTests`. multi-export / single-export, license
+  object form / string form, localized string dict form / 등 wire shape
+  variation 을 모두 커버. (커밋 `54e08f5`)
+- [x] baseline `81cfb05` 의 protocol metadata 제거에서 stale 해진 caller
+  3건 정리 (`Authenticator.swift` 의 `type(of:).name` → `.id`,
+  `SoftwareLicenseV1Draft.swift` 의 `@unknown default` 추가,
+  `DiagPrinter.swift` 의 누락된 `import NoctilucaPluginKit`). (커밋
+  `f2bf0a5`)
 
 스킵 결정:
 
@@ -335,14 +361,10 @@ T3 ─┴── Track B (Protocol 적용, T3 후) │      │
 - **의존성**: 없음 (다른 task 가 T1 에 의존하지 않으므로 스킵해도 그래프
   영향 없음)
 
-##### T2. isolation policy 교차 검증 + CJKKeyboardHacks manifest 교체 (§9.6 일부 + §9.7 manifest 부분)
-- **목표**: `isolationPolicy == .noIsolate` 시 team identifier `XHA76UVA95`
-  강제 + CJK 번들의 메타데이터를 manifest.json 으로 이동.
-- **포함**:
-  - `PluginBundleRegistry.loadBundle()` 에서 isolation policy 강제 분기 추가
-  - `CJKKeyboardHacks/Info.plist` → `Contents/Resources/manifest.json` 이동
-  - `Info.plist` 는 표준 bundle 키 (`CFBundleIdentifier` / `CFBundleVersion`) 만
-    남김
+##### ~~T2. isolation policy 교차 검증 + CJKKeyboardHacks manifest 교체 (§9.6 일부 + §9.7 manifest 부분)~~ — **DONE (2026-05-17)**
+- **상태**: 완료. 자세한 내용은 §9-A *T2 완료 (2026-05-17)* 섹션 참조.
+- **(원래 계획)**: `isolationPolicy == .noIsolate` 시 team identifier
+  `XHA76UVA95` 강제 + CJK 번들의 메타데이터를 manifest.json 으로 이동.
 - **의존성**: 없음 (T1 없어도 수동 manifest 작성 가능)
 
 ##### T3. XPC-portable protocol 설계 + `NoctilucaPluginExport.rpcHandler` case 추가 (§9.1 설계)
