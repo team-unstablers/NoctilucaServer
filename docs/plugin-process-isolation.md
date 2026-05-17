@@ -31,7 +31,7 @@ IPC 는 XPC (`NSXPCConnection`) 를 사용합니다.
 | 격리 단위 | **Plugin Bundle** (1 bundle = 1 host process). 한 bundle 내 여러 plugin 은 같은 process 에서 공존 |
 | Isolation policy | `isolate` (기본) / `no-isolate` (team unstablers Inc., teamid `XHA76UVA95` 서명에 한정) |
 | Bundle 설치 위치 | (a) Server bundle 내장 (`Contents/PlugIns/`) (b) `~/Library/Application Support/Noctiluca/Plugins/`. **외부 임의 경로는 미지원** |
-| IPC | `NSXPCConnection`. Server bundle 내장 단일 `NoctilucaPluginHost.xpc` 가 `_MultipleInstances=YES` 로 동작 |
+| IPC | [Shotoku](../../Shotoku/) (MessagePack over XPC) + `audit_token_t` per-message authorize. Server 내장 `NoctilucaPluginHost.xpc` (XPC service bundle, `_MultipleInstances=YES`) 가 instance 마다 launchd-managed spawn. Bootstrap channel (`HostControlInterface`) + anonymous-endpoint plugin channel (`*Adapter`) 두 단계 (2026-05-17 결정 — §9-A 참조; §4 본문은 stale, T11 에서 재작성 예정) |
 | Sandbox | **현재 단계 미적용**. Process 격리만 적용. 향후 capability profile 기반 sandbox 도입 여지는 남겨둠 |
 | Lifetime | 모든 host process 는 server 와 lifetime 일치 (idle exit 없음) |
 | Manifest | JSON (`NoctilucaPluginSystem/schemas/server-*.json` 스키마) 로 통일. Info.plist 의 메타데이터 필드는 폐기 |
@@ -327,26 +327,61 @@ task 간 의존성을 명시합니다.
 - [~] **T1 — manifest.json codegen CLI**: 현 시점 스킵. 외부 플러그인 저자가
   늘어나거나 metadata 동기화 부담이 실측되면 재고. 자세한 사유는 §9-B T1 참조.
 
+**Shotoku RPC framework 채택 (2026-05-17)** — XPC 통신 인프라를 자체 구축
+(§4 / §7 / §8 의 wire 부분) 하지 않고, 외부 RPC 패키지
+[Shotoku](../../Shotoku/) (v0.1.0) 를 도입하기로 결정.
+
+- Shotoku 는 `@RPCInterface` / `@RPCService` / `@RPCProcedure` 매크로 기반
+  RPC framework. MessagePack wire, XPC + InProcess 트랜스포트 양쪽 지원,
+  `audit_token_t` 기반 per-message authorize (mid-connection send-right
+  forwarding 방어 포함), server-streaming / callback closure shape, Codable
+  user-error round-trip 까지 모두 v0.1.0 에서 지원.
+- 본 결정으로 §4 (NoctilucaPluginHost.xpc) / §7 (XPC-portable 재설계) /
+  §8 (Lifecycle 의 wire 부분) 의 인프라 *대부분* 이 Shotoku 로 대체됨. 본
+  docs 의 해당 섹션은 일단 그대로 두되, 향후 별도 정리 PR (T11) 에서
+  Shotoku 기반으로 재작성 예정.
+- **NoctilucaPluginKit (외부 plugin SDK) 자체는 Shotoku 의존성을 갖지
+  않음.** 외부 plugin 작성자가 보는 surface 는 깨끗하게 유지. 호스트만
+  Shotoku 를 안다. 3-layer 패턴:
+    1. **`NoctilucaPluginKit.AuthPluginV1`** — 외부 contract. plugin
+       작성자가 보는 surface. Shotoku 미인식.
+    2. **`NoctilucaServer 내부 @RPCInterface AuthPluginV1RPC: AuthPluginV1`**
+       — host-only wire mirror. parent protocol refinement 으로 시그니처
+       drift 를 컴파일 타임에 catch.
+    3. **`AuthPluginV1Adapter: AuthPluginV1RPC`** — `any AuthPluginV1`
+       instance 를 wrap 하는 thin forwarding class. host 측만 존재.
+- 본 결정으로 §9-B 의 T3 ~ T12 가 대폭 단축됨. Shotoku 가 처리하는 부분
+  (wire envelope, dispatch, cancellation, callback marshaling, audit token
+  검증) 은 모두 본 마이그레이션 범위 밖으로 이동. 자세한 내용은 §9-B 참조.
+
 ### 9-B. 남은 작업 (세션 단위)
 
-작업은 5 track 으로 묶이며, track 간 의존성은 아래와 같습니다.
+Shotoku 도입 (§9-A) 으로 의존성 그래프가 다음과 같이 단순화되었습니다.
 
 ```
-Track A (Bootstrap, 병렬 가능)        Track C (XPC Host, T3 후)
-T1 (SKIPPED)                           ┌─ T7 ─┐
-T2 ─┐                                  │      │
-T3 ─┴── Track B (Protocol 적용, T3 후) │      │
-        T4 ─┐                          │      │
-        T5 ─┤                          │      │
-        T6 ─┘                          └─ T8 ─┘
-                       │                      │
-                       ▼                      ▼
-                  Track D (Loader)
-                  T9 ──── T10
-                          │
-                          ▼
-                     Track E (실증/정리)
-                     T11 ── T12
+T1 (SKIPPED) — Track A
+T2 (DONE)    — Track A
+   │
+   ▼
+T3 (Shotoku 도입 + adapter 패턴 PoC) — Track A
+   │
+   ├──── T4 (KeyboardHack 적용)   ┐
+   ├──── T5 (Auth 적용)           ├── Track B (병렬 가능)
+   ├──── T6 (RPCHandler 적용)     ┘
+   │
+   └──── T7 (NoctilucaPluginHost.xpc)   — Track C (단일 task)
+              │
+              ▼
+            T8 (PluginLoader 추상화 + InProc/XPC 구현)  — Track D
+              │
+              ▼
+            T9 (Registry isolation 분기)                — Track D
+              │
+              ▼
+            T10 (CJK XPC 격리 실증)                     — Track E
+              │
+              ▼
+            T11 (정리 + docs 재작성)                    — Track E
 ```
 
 #### Track A — Independent / Bootstrap (병렬 진행 가능)
@@ -367,111 +402,171 @@ T3 ─┴── Track B (Protocol 적용, T3 후) │      │
   `XHA76UVA95` 강제 + CJK 번들의 메타데이터를 manifest.json 으로 이동.
 - **의존성**: 없음 (T1 없어도 수동 manifest 작성 가능)
 
-##### T3. XPC-portable protocol 설계 + `NoctilucaPluginExport.rpcHandler` case 추가 (§9.1 설계)
-- **목표**: 4개 plugin protocol 의 XPC 친화적 재설계 문서 + export enum
-  누락 케이스 보강.
+##### T3. Shotoku 도입 + adapter 패턴 PoC + `.rpcHandler` case 추가 (2026-05-17 결정 반영)
+- **목표**: Shotoku 의존성 추가 + 3-layer adapter 패턴의 PoC 검증 +
+  `NoctilucaPluginExport` 의 누락 case 보강.
 - **포함**:
-  - `AuthPluginV1`: `borrowing Data` / `uid_t` / `AuthError` 의 wire shape
-    결정 (NSSecureCoding DTO)
-  - `KeyboardHackPluginV1`: `KeyboardHackResult` (`.modify(LinuxKeycode)`
-    associated value) 의 DTO 표현
-  - `RPCHandlerPluginV1`: `RPCRequest` / `RPCResponse` 의 NSSecureCoding 호환
-    DTO
-  - `NoctilucaServerExtensionV1`: `any Sendable` payload 의 wire shape
-  - `NoctilucaPluginExport` enum 에 `.rpcHandler(RPCHandlerPluginV1)` case
-    추가 (현재 누락)
-- **출력**: 본 문서의 §11 으로 추가될 설계 ADR + 코드 변경은 enum case 추가만.
-- **의존성**: 없음
+  - `NoctilucaServer` 의 SPM dependency 에 Shotoku 추가 (path 또는 git
+    URL — Noctiluca 레포 외부의 별도 Swift Package).
+  - host-side `*RPC` mirror protocol + `*Adapter` class 의 디렉토리
+    컨벤션 결정 (예: `NoctilucaServer/plugins/rpc-adapter/`).
+  - **PoC**: 가장 단순한 `KeyboardHackPluginV1` 을 대상으로:
+    - `KeyboardHackPluginV1RPC: KeyboardHackPluginV1, Sendable` mirror
+      protocol (`@RPCInterface`)
+    - `KeyboardHackPluginV1Adapter: KeyboardHackPluginV1RPC` thin
+      forwarding class
+    - `RPCInProcessFabric` 을 이용한 e2e 검증 (in-process listener +
+      client 의 결과가 direct 호출과 일치하는지)
+  - `NoctilucaPluginExport.rpcHandler(RPCHandlerPluginV1)` case 추가
+    (현재 누락)
+- **출력**: PoC 검증 결과 + `*RPC` / `*Adapter` 코드 컨벤션 (네이밍 /
+  디렉토리 / 보일러플레이트 단축 여지 — 매크로로 더 줄일 수 있는지 여부).
+- **의존성**: T2 완료 전제. 그 외 없음.
 
-#### Track B — Protocol 재설계 적용 (T3 후, 내부 병렬 가능)
+#### Track B — 3개 plugin protocol 의 RPC variant + Adapter 적용 (T3 후, 내부 병렬 가능)
 
-##### T4. KeyboardHackPluginV1 + KeyboardHackResult DTO + CJKKeyboardHacks 갱신
+각 task 의 공통 패턴:
+1. NoctilucaPluginKit 측 protocol 시그니처 정리 (필요시 — 외부 contract
+   이므로 최소 변경).
+2. host 측 `*RPC` mirror protocol + `*Adapter` class 작성.
+3. registry / dispatcher 가 Adapter 경유하도록 갱신.
+4. builtin 구현체 (있다면) conformance 검증.
+
+##### T4. KeyboardHackPluginV1 — 본 적용 (T3 의 PoC 를 확정)
 - **포함**:
-  - protocol 시그니처 변경
-  - DTO 정의 (NSSecureCoding 또는 Codable)
-  - `HIDIOKeyboardHackRegistry` 갱신
-  - `CJKEmulateWin32HangulToggleHack` 구현체 갱신
+  - `LinuxKeycode` / `KeyboardHackResult` 의 Codable 검증 (enum +
+    associated value 자동 derive 확인)
+  - `KeyboardHackPluginV1RPC` + `KeyboardHackPluginV1Adapter` 본 적용
+  - `HIDIOKeyboardHackRegistry` 가 Adapter 경유하도록 갱신
+  - `CJKEmulateWin32HangulToggleHack` (NoctilucaPluginKit 측) 시그니처
+    변경 없음 — 외부 contract 유지
 - **의존성**: T3
 
-##### T5. AuthPluginV1 + DTO 적용 + builtin auth plugin 갱신
+##### T5. AuthPluginV1 — 시그니처 정리 + RPC variant + Adapter + builtin 갱신
 - **포함**:
-  - `borrowing Data` / `uid_t` / `AuthError` 의 DTO 표현
-  - `AuthPluginRegistry` / `Authenticator` 갱신
-  - PAM / SSH / SimplePassword / Null AuthPlugin 갱신
+  - 시그니처 정리 (외부 contract 변경 — 필요한 만큼만):
+    - `borrowing Data` → `Data` (wire 너머에서 borrow 의미 상실)
+    - `: Actor` constraint → `: Sendable` (backing impl 만 actor 로
+      유지 가능; protocol 자체는 Sendable 로 약화)
+    - `AuthError` 의 `Codable` conform (없으면 추가)
+    - `AuthMethod` / `AuthEntry` 의 `Codable & Sendable` 검증
+  - `AuthPluginV1RPC` + `AuthPluginV1Adapter` 작성
+  - `AuthPluginRegistry` / `Authenticator` 가 Adapter 경유하도록 갱신
+  - PAM / SSH / SimplePassword / Null AuthPlugin 의 시그니처 변경 반영
 - **의존성**: T3
 
-##### T6. RPCHandlerPluginV1 + NoctilucaServerExtensionV1 적용
+##### T6. RPCHandlerPluginV1 — protocol→struct 전환 + RPC variant + Adapter + builtin 갱신
 - **포함**:
-  - `RPCRequest` / `RPCResponse` DTO 화
-  - `NoctilucaServerExtensionV1.onEvent(payload:)` wire shape 적용
-  - 현 시점 구현체 없음 — protocol + DTO + (가능하면) sample stub
+  - `RPCRequest` / `RPCResponse` protocol → `Codable & Sendable` struct
+    전환 (Shotoku wire 호환)
+  - `request.resolve(with:)` self-reply 패턴 제거 → plugin 이
+    `RPCResponse` struct 만 반환
+  - `RPCHandlerPluginV1RPC` + `RPCHandlerPluginV1Adapter`
+  - `SimpleRPCHandlerRegistry` (또는 해당 dispatcher) 갱신
+  - 기존 RPC handler plugin 구현체 (있다면) 갱신
 - **의존성**: T3
+- **참고**: `NoctilucaServerExtensionV1` 은 본 마이그레이션 범위 밖.
+  sketch (`NoctilucaPluginKit/extension/`) 만 보존, 실 구현은 별도 작업
+  으로 분리. 양방향 procedure 호출이 본격 필요해지면 Shotoku v0.3 의
+  dual-interface 가 도착한 후 다시 검토.
 
-#### Track C — XPC Host 인프라 (T3 후, Track B 와 병렬)
+#### Track C — Plugin Host process binary (단일 task)
 
-##### T7. NoctilucaPluginHost.xpc 타겟 + 공유 host dylib + Orphan watchdog (§9.3 + §9.4)
-- **목표**: XPC service 타겟 + dlopen / manifest 재검증 / orphan 방지의 thin
-  entry point.
+##### T7. `NoctilucaPluginHost.xpc` (XPC service bundle) + bootstrap/anonymous-endpoint 패턴
+- **목표**: 외부 plugin (`.nocbundle`, `isolate=true`) 을 호스팅하는
+  sandboxed XPC service bundle. Shotoku `RPCListener` 를 자체 process
+  안에서 띄우는 thin entry point.
 - **포함**:
-  - Xcode 프로젝트에 `NoctilucaPluginHost.xpc` 타겟 추가
-  - `Info.plist`: `ServiceType=Application` + `_MultipleInstances=YES`
-  - 공유 dylib `NoctilucaPluginHostKit` (dlopen entry + 매니페스트 재파싱)
-  - Orphan watchdog: `kqueue(EVFILT_PROC, NOTE_EXIT)` 로 server PID 감시 +
-    self-terminate
-  - 이 단계에서는 `HostControlProtocol` 의 `loadBundle` / `unloadBundle` /
-    `ping` 까지만 동작 (export dispatch 는 T8)
-- **의존성**: T3
+  - 신규 타겟: `NoctilucaPluginHost.xpc` (XPC service bundle, App
+    bundle 의 `Contents/XPCServices/` 에 embed)
+  - Info.plist: `XPCService` dict + `_MultipleInstances = YES`
+    (connection 마다 새 instance — launchd 가 lifecycle 관리)
+  - 자체 `.entitlements` (App Sandbox + 필요한 capability — T2 의
+    codesign 정책과 정합)
+  - **2-channel 패턴**:
+    1. **Bootstrap channel** (`HostControlInterface` — `loadBundle(path:)`
+       / `unloadBundle()` / `ping()`): server 가 mach service name 으로
+       connect → launchd 가 새 host instance spawn → server 가
+       `loadBundle(path:)` 호출
+    2. host 동작: dlopen → `Bundle.initialize()` → plugin instance →
+       plugin type 식별 → 해당 `*Adapter` 로 wrap → **anonymous
+       `xpc_endpoint_t` 로 second `RPCListener` 띄움** → endpoint 를
+       bootstrap reply 로 반환
+    3. **Plugin channel** (`*Adapter`): server 가 받은 anonymous
+       endpoint 로 second connection → `*RPC` proxy 얻음
+  - `authorize:` hook (bootstrap / plugin 양쪽) 에서 parent server 의
+    audit token 검증
+  - Orphan 방지: launchd 가 처리 (parent app 종료 시 자동 cleanup);
+    추가로 `kqueue(EVFILT_PROC, NOTE_EXIT)` 로 parent PID watch 하는
+    safety net 검토
+- **의존성**: T3 (Adapter pattern 확정 후)
+- **참고**: 기존 §9-B 의 T7 (`NoctilucaPluginHost.xpc` + 공유 host
+  dylib) + T8 (`HostControlProtocol` + dispatch + `HostCallbackProtocol`)
+  의 `.xpc` 타겟 자체는 그대로 살아남았으나, dispatch / callback 부분은
+  Shotoku 가 처리하므로 본 단일 T7 으로 통합 + 대폭 축소. Adapter
+  framework 분리 (Adapter 코드만 따로 SPM target) 가 필요해지면 본 T7
+  진행 중 재고.
 
-##### T8. HostControlProtocol + plugin-type dispatch + HostCallbackProtocol (§9.3 dispatch)
-- **목표**: XPC 인터페이스 위에 plugin 호출 라우팅 + 양방향 callback.
+#### Track D — Loader 추상화 + Registry 분기
+
+##### T8. `PluginLoader` 추상화 + `InProcessLoader` / `XPCLoader` 구현
+- **목표**: `PluginBundleRegistry` 가 isolation policy 에 따라 분기할 수
+  있는 loader interface 도입. 두 loader 모두 Shotoku endpoint 차이로
+  표현.
 - **포함**:
-  - `HostControlProtocol` 확장 (export endpoint 반환)
-  - 각 plugin type 별 service protocol 호출 dispatch
-  - `HostCallbackProtocol` (양방향): `log` / `requestUserConsent` /
-    `readBundleConfig`
-  - host process 내 plugin instance lifetime 관리
-- **의존성**: T7, Track B (DTO 필요)
+  - `PluginLoader` protocol — `func load(bundle:) async throws ->
+    LoadedPluginExports`
+  - `InProcessLoader`: `RPCInProcessFabric` 공유 + `.inProcess(id:,
+    fabric:)` endpoint. 또는 (perf 위해) builtin path 는 Adapter 우회
+    direct 호출 — 본 T8 진행 중 결정.
+  - `XPCLoader`: `NoctilucaPluginHost.xpc` 의 mach service name 으로
+    bootstrap connect (launchd 가 새 host instance spawn) →
+    `HostControlInterface.loadBundle(path:)` 호출 → host 가 반환한
+    anonymous `xpc_endpoint_t` 로 second connection → `*RPC` proxy
+    반환
+  - Loader 반환 type `LoadedPluginExports` 는 `[NoctilucaPluginExport]`
+    형태 (외부 surface 그대로 — `any AuthPluginV1` 등)
+- **의존성**: T3, T7
 
-#### Track D — Loader 추상화
-
-##### T9. PluginLoader 추상화 + InProcessLoader (§9.5 1단계)
-- **목표**: 기존 in-process 로드를 `PluginLoader` protocol 뒤로 추상화 (외부
-  동작 변화 없음).
-- **포함**:
-  - `PluginLoader` protocol 정의 (load / unload / exports endpoint)
-  - `InProcessLoader` 구현 (기존 `bundle.load()` + `principalClass` wrapping)
-  - `PluginBundleRegistry` 가 loader 를 통해 호출
-- **의존성**: Track B (protocol 시그니처 확정 후)
-
-##### T10. XPCLoader 구현 + isolationPolicy 기반 분기 (§9.5 + §9.6 isolate 분기)
-- **목표**: XPCLoader 구현 + `PluginBundleRegistry` 가 `isolationPolicy` 보고
+##### T9. `PluginBundleRegistry` 의 isolation 기반 loader 분기
+- **목표**: T2 의 isolation policy 검증을 통과한 후, 정책에 따라 적절한
   loader 선택.
 - **포함**:
-  - `XPCLoader` 구현 (T7/T8 의 XPC 인터페이스 사용)
-  - `PluginBundleRegistry.loadBundle()` 의 isolation 분기
-  - codesign 결과 ↔ isolation policy 교차 검증 (T2 산출물과 통합)
-  - builtin 번들 (NoctilucaCoreAuth) 은 항상 InProcessLoader
-- **의존성**: T8, T9, T2
+  - `PluginBundleRegistry.loadBundle()` 에 `InProcessLoader` vs
+    `XPCLoader` 분기
+  - `isolationPolicy == .noIsolate` → `InProcessLoader`
+  - `isolationPolicy == .isolate` → `XPCLoader`
+  - builtin bundle (`NoctilucaCoreAuth`) 은 항상 `InProcessLoader`
+- **의존성**: T8
 
 #### Track E — 실증 + 정리
 
-##### T11. CJKKeyboardHacks XPC 격리 실증 (§9.7 실증)
-- **목표**: 실제 XPC 격리 동작 검증 + 회귀 테스트.
+##### T10. CJKKeyboardHacks XPC 격리 실증
+- **목표**: 실제 외부 plugin 의 XPC 격리 동작 검증 + 회귀 테스트.
 - **포함**:
-  - CJKKeyboardHacks manifest 의 `isolationPolicy: "isolate"` 로 변경
+  - CJKKeyboardHacks 의 manifest `isolationPolicy` (이미 `"isolate"` 로
+    T2 에서 선언됨) 가 `XPCLoader` 경로로 로드되는지 확인
   - host process spawn / dlopen / 키 입력 라우팅 동작 확인
-  - 키 입력 latency 측정 (in-process 대비 overhead 평가)
+  - 한/영 키 입력 정상 동작 회귀 확인
+  - latency 측정 (Shotoku XPC round-trip + per-message authorize
+    오버헤드)
   - host crash 시 server 정상 동작 + respawn 정책 확인
-- **의존성**: T10, T4
+- **의존성**: T9
 
-##### T12. In-process path cleanup + 문서 정리 (§9.8)
-- **목표**: 외부 번들에 더 이상 사용되지 않는 in-process 가정 정리.
+##### T11. 정리 + docs 재작성
+- **목표**: 마이그레이션 종료 + docs 의 stale 한 부분 (§4 / §7 / §8) 의
+  Shotoku 기반 재작성.
 - **포함**:
-  - `PluginBundleRegistry` 의 `@unknown default` switch 정리
-  - in-process 전용 가정에 deprecation annotation
-  - 본 문서를 living document 로 갱신 (완료 항목 [x] 처리, 새 ADR 통합)
+  - 본 docs 의 §4 / §7 / §8 을 Shotoku 기반으로 다시 씀 (현재는 stale
+    한 상태로 둠)
+  - `PluginBundleRegistry` 의 `@unknown default` switch 등 잔여
+    in-process 가정 정리
+  - Sketch 로 남아있는 `NoctilucaServerExtensionV1` 관련 파일의 처리
+    결정 (보존 / 이동 / 삭제)
+  - 외부 plugin 작성자 가이드 docs 작성 (3-layer 패턴 노출 X — plugin
+    SDK 만 보이게)
   - AGENTS.md / CLAUDE.md 의 플러그인 섹션 갱신
-- **의존성**: T11
+- **의존성**: T10
 
 ## 10. 향후 확장 (현 단계 미적용)
 
