@@ -12,6 +12,7 @@
 import XCTest
 
 @testable import NoctilucaPluginKit
+@testable import NoctilucaPluginKitHostCore
 @testable import NoctilucaServerTestsHost
 
 final class V1DraftManifestDecodingTests: XCTestCase {
