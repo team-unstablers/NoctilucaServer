@@ -37,7 +37,7 @@
 			</dict>
 		</dict>
 	</array>
-    <key>NSAppTransportSecurity</key>
+	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSPinnedDomains</key>
 		<dict>
@@ -47,17 +47,27 @@
 				<true/>
 				<key>NSPinnedCAIdentities</key>
 				<array>
-                    <!-- OU=GlobalSign ECC Root CA - R4, O=GlobalSign, CN=GlobalSign -->
-                    <dict><key>SPKI-SHA256-BASE64</key><string>CLOmM1/OXvSPjw5UOYbAf9GKOxImEp9hhku9W90fHMk=</string></dict>
-                    <!-- C=US, O=Google Trust Services LLC, CN=GTS Root R1 -->
-                    <dict><key>SPKI-SHA256-BASE64</key><string>hxqRlPTu1bMS/0DITB1SSu0vd4u/8l8TjPgfaAp63Gc=</string></dict>
-                    <!-- C=US, O=Google Trust Services LLC, CN=GTS Root R2 -->
-                    <dict><key>SPKI-SHA256-BASE64</key><string>Vfd95BwDeSQo+NUYxVEEIlvkOlWY2SalKK1lPhzOx78=</string></dict>
-                    <!-- C=US, O=Google Trust Services LLC, CN=GTS Root R3 -->
-                    <dict><key>SPKI-SHA256-BASE64</key><string>QXnt2YHvdHR3tJYmQIr0Paosp6t/nggsEGD4QJZ3Q0g=</string></dict>
-                    <!-- C=US, O=Google Trust Services LLC, CN=GTS Root R4 -->
-                    <dict><key>SPKI-SHA256-BASE64</key><string>mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=</string></dict>
-                </array>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>CLOmM1/OXvSPjw5UOYbAf9GKOxImEp9hhku9W90fHMk=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>hxqRlPTu1bMS/0DITB1SSu0vd4u/8l8TjPgfaAp63Gc=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>Vfd95BwDeSQo+NUYxVEEIlvkOlWY2SalKK1lPhzOx78=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>QXnt2YHvdHR3tJYmQIr0Paosp6t/nggsEGD4QJZ3Q0g=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=</string>
+					</dict>
+				</array>
 			</dict>
 		</dict>
 	</dict>
