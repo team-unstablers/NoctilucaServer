@@ -34,18 +34,15 @@ final class NoctilucaCoreAuth: NoctilucaPluginBundle {
         
     }
     
-#if DEBUG
-    static let exports: [NoctilucaPluginExport] = [
-        .auth(PAMAuthPlugin()),
-        .auth(SimplePasswordAuthPlugin()),
-        .auth(SSHAuthPlugin()),
-        .auth(NullAuthPlugin())
-    ]
-#else
     static let exports: [NoctilucaPluginExport] = [
         .auth(PAMAuthPlugin()),
         .auth(SSHAuthPlugin()),
         .auth(SimplePasswordAuthPlugin()),
     ]
-#endif
+    
+    static let supportedActions: [NoctilucaPluginBundleAction] = []
+    
+    static func dispatchAction(action: NoctilucaPluginBundleAction) async throws {
+        
+    }
 }
