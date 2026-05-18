@@ -25,6 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
     private var onboardingWindowController: OnboardingWindowController?
     private var licensingWindowController: LicensingWindowController?
     private var aboutAppWindowController: AboutAppWindowController?
+    private let activationPolicyCoordinator = ActivationPolicyCoordinator()
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
@@ -143,7 +144,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.onboardingWindowController?.showWindow(nil)
             self.onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.onboardingWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
@@ -159,7 +165,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.licensingWindowController?.showWindow(nil)
             self.licensingWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.licensingWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
@@ -173,7 +184,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.aboutAppWindowController?.showWindow(nil)
             self.aboutAppWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.aboutAppWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
@@ -187,7 +203,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.settingsWindowController?.showWindow(nil)
             self.settingsWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.settingsWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
