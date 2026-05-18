@@ -158,7 +158,10 @@ final class NoctilucaServer: ObservableObject {
         NoctilucaLoggingConfigurator.apply(settings: settings.logging)
 
         // 보안 정책 주입
-        await pluginBundleRegistry.configure(policy: settings.security.pluginBundleSecurityPolicy)
+        await pluginBundleRegistry.configure(
+            policy: settings.security.pluginBundleSecurityPolicy,
+            allowNonisolatedThirdPartyPluginBundle: settings.security.allowNonisolatedThirdPartyPluginBundle
+        )
 
         // 1. 내장 번들 등록
         try await pluginBundleRegistry.registerBuiltinBundles()

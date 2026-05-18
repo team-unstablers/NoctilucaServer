@@ -14,21 +14,24 @@ import NoctilucaPluginKitHostCore
 extension AppSettings {
     struct Security: SecureCategory {
         private static let KEY_ALLOWED_ENTRIES = "app.noctiluca.server.settings.security.allowedEntries"
-        
+        private static let KEY_PLUGIN_BUNDLE_SECURITY_POLICY = "app.noctiluca.server.settings.security.pluginBundleSecurityPolicy"
+        private static let KEY_ALLOW_NONISOLATED_THIRD_PARTY_PLUGIN_BUNDLE = "app.noctiluca.server.settings.security.allowNonisolatedThirdPartyPluginBundle"
+
         var allowedEntries: [AuthEntry] = []
         var maxLoginAttempts: Int = 3
         var pluginBundleSecurityPolicy: PluginBundleSecurityPolicy = .allowTeamUnstablers
+        var allowNonisolatedThirdPartyPluginBundle: Bool = false
 
         enum CodingKeys: String, CodingKey {
-            // allowedEntries는 보안 항목이므로 인코딩/디코딩 시 제외
+            // allowedEntries, pluginBundleSecurityPolicy, allowNonisolatedThirdPartyPluginBundle는
+            // 보안 항목이므로 인코딩/디코딩 시 제외
             case maxLoginAttempts
-            case pluginBundleSecurityPolicy
         }
-        
+
         init() {
-            
+
         }
-        
+
         init(from decoder: any Decoder) throws {
             self.init()
 
@@ -37,21 +40,23 @@ extension AppSettings {
             }
 
             maxLoginAttempts = container.decodeSafe(Int.self, forKey: .maxLoginAttempts, default: maxLoginAttempts)
-            pluginBundleSecurityPolicy = container.decodeSafe(PluginBundleSecurityPolicy.self, forKey: .pluginBundleSecurityPolicy, default: pluginBundleSecurityPolicy)
         }
 
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(maxLoginAttempts, forKey: .maxLoginAttempts)
-            try container.encode(pluginBundleSecurityPolicy, forKey: .pluginBundleSecurityPolicy)
         }
-        
+
         func saveSecureEntries() throws {
             try saveSecureEntry(allowedEntries, forKey: Self.KEY_ALLOWED_ENTRIES)
+            try saveSecureEntry(pluginBundleSecurityPolicy, forKey: Self.KEY_PLUGIN_BUNDLE_SECURITY_POLICY)
+            try saveSecureEntry(allowNonisolatedThirdPartyPluginBundle, forKey: Self.KEY_ALLOW_NONISOLATED_THIRD_PARTY_PLUGIN_BUNDLE)
         }
-        
+
         mutating func loadSecureEntries() throws {
             allowedEntries = (try loadSecureEntry(forKey: Self.KEY_ALLOWED_ENTRIES, as: [AuthEntry].self)) ?? []
+            pluginBundleSecurityPolicy = (try loadSecureEntry(forKey: Self.KEY_PLUGIN_BUNDLE_SECURITY_POLICY, as: PluginBundleSecurityPolicy.self)) ?? pluginBundleSecurityPolicy
+            allowNonisolatedThirdPartyPluginBundle = (try loadSecureEntry(forKey: Self.KEY_ALLOW_NONISOLATED_THIRD_PARTY_PLUGIN_BUNDLE, as: Bool.self)) ?? allowNonisolatedThirdPartyPluginBundle
         }
     }
     

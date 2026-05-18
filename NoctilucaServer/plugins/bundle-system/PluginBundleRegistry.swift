@@ -105,14 +105,22 @@ actor PluginBundleRegistry {
     private(set) var bundles: [String: PluginBundleHandle] = [:]
     private(set) var defaultPolicy: PluginBundleSecurityPolicy = .allowTeamUnstablers
 
+    /// `no-isolate` 매니페스트를 선언한 서드 파티 (team unstablers 이외) 번들도
+    /// in-process 로드를 허용할지 여부. 사용자가 설정에서 명시적으로 opt-in 해야 한다.
+    private(set) var allowNonisolatedThirdPartyPluginBundle: Bool = false
+
     private let inProcessLoader = InProcessLoader()
     private let xpcLoader = XPCLoader()
 
     private init() {
     }
 
-    func configure(policy: PluginBundleSecurityPolicy) {
+    func configure(
+        policy: PluginBundleSecurityPolicy,
+        allowNonisolatedThirdPartyPluginBundle: Bool = false
+    ) {
         self.defaultPolicy = policy
+        self.allowNonisolatedThirdPartyPluginBundle = allowNonisolatedThirdPartyPluginBundle
     }
 
     deinit {
@@ -198,9 +206,12 @@ actor PluginBundleRegistry {
         }
 
         // 매니페스트의 isolationPolicy 와 실제 서명의 team identifier 교차 검증.
-        // no-isolate 는 unstabler team ID 로 서명된 번들에만 허용한다.
+        // no-isolate 는 기본적으로 unstabler team ID 로 서명된 번들에만 허용한다.
         // (codesign 정책은 통과했더라도, no-isolate 선언만으로 임의 서명 번들을
         // in-process 로드하는 것을 막기 위함.)
+        // 단, 사용자가 설정에서 `allowNonisolatedThirdPartyPluginBundle` 을 명시적으로
+        // opt-in 한 경우에는 위험을 인지한 것으로 간주하고 서드 파티 no-isolate 번들도
+        // 통과시킨다.
         if manifest.isolationPolicy == .noIsolate {
             let requiredTeamID = PluginBundleCodeSigningVerifier.teamUnstablersTeamID
             let actualTeamID: String? = if case .validSignature(let teamID, _, _) = verificationResult {
@@ -209,17 +220,25 @@ actor PluginBundleRegistry {
                 nil
             }
 
-            guard actualTeamID == requiredTeamID else {
-                logger.warning(
-                    "Plugin bundle \(manifest.id) declares 'no-isolate' but"
-                    + " team identifier (\(actualTeamID ?? "<unsigned>")) does not match"
-                    + " required (\(requiredTeamID))."
-                )
-                return .failure(.isolationPolicyViolation(
-                    declaredPolicy: .noIsolate,
-                    actualTeamID: actualTeamID,
-                    requiredTeamID: requiredTeamID
-                ))
+            if actualTeamID != requiredTeamID {
+                if allowNonisolatedThirdPartyPluginBundle {
+                    logger.warning(
+                        "Loading non-isolated third-party plugin bundle \(manifest.id)"
+                        + " (team identifier: \(actualTeamID ?? "<unsigned>"))"
+                        + " — allowed by user setting (allowNonisolatedThirdPartyPluginBundle=true)."
+                    )
+                } else {
+                    logger.warning(
+                        "Plugin bundle \(manifest.id) declares 'no-isolate' but"
+                        + " team identifier (\(actualTeamID ?? "<unsigned>")) does not match"
+                        + " required (\(requiredTeamID))."
+                    )
+                    return .failure(.isolationPolicyViolation(
+                        declaredPolicy: .noIsolate,
+                        actualTeamID: actualTeamID,
+                        requiredTeamID: requiredTeamID
+                    ))
+                }
             }
         }
 
