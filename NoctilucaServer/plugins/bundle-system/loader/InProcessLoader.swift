@@ -70,8 +70,10 @@ actor InProcessLoader: PluginLoader {
 
         return LoadedPluginExports(
             bundleId: manifest.id,
+            bundleClass: bundleClass,
             manifest: manifest,
-            proxies: proxies
+            proxies: proxies,
+            accessor: nil
         )
     }
 

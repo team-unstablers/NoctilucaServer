@@ -15,13 +15,20 @@ import NoctilucaPluginKitHostCore
 
 
 struct PluginBundleDetailView: View {
-    let manifest: any PluginBundleManifest
+    let handle: PluginBundleHandle
     let signingResult: CodeSigningVerificationResult?
 
     @State
     var showingInfoSheet = false
 
+    /// XPC 격리 번들의 supportedActions 는 host 너머로 async fetch 가 필요하므로
+    /// view body 에서 sync 로 즉시 광고할 수 없음. `.task` 로 한 번 fetch 해서 캐시.
+    @State
+    private var supportedActions: [NoctilucaPluginBundleAction] = []
+
     var body: some View {
+        let manifest = handle.manifest
+
         HStack(alignment: .center) {
             Image(nsImage: NSWorkspace.shared.icon(for: .applicationExtension))
                 .resizable()
@@ -44,9 +51,21 @@ struct PluginBundleDetailView: View {
                     .lineLimit(1)
             }
             Spacer()
+            
+            if supportedActions.contains(.showSettingsUI) {
+                Button(String(localized: "settings.plugins.detail.show_settings_ui", defaultValue: "설정")) {
+                    Task {
+                        try? await handle.dispatchAction(.showSettingsUI)
+                    }
+                }
+            }
+            
             Button(String(localized: "settings.plugins.detail.show_info", defaultValue: "정보 보기…")) {
                 showingInfoSheet = true
             }
+        }
+        .task {
+            supportedActions = (try? await handle.supportedActions()) ?? []
         }
         .sheet(isPresented: $showingInfoSheet) {
             PluginBundleDetailSheet(manifest: manifest, signingResult: signingResult)

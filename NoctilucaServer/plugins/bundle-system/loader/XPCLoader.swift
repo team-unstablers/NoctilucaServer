@@ -14,6 +14,25 @@ import XPC
 
 import SiriusKit
 
+/// `HostControlInterface` proxy 의 `bundle_*` forwarding method 를 호출하여
+/// host process 너머의 plugin bundle 에 대한 bundle-level action 액세스를
+/// 제공.
+private final class XPCBundleAccessor: PluginBundleAccessor {
+    private let proxy: any HostControlInterface
+
+    init(_ proxy: any HostControlInterface) {
+        self.proxy = proxy
+    }
+
+    func supportedActions() async throws -> [NoctilucaPluginBundleAction] {
+        try await proxy.bundle_supportedActions()
+    }
+
+    func dispatchAction(_ action: NoctilucaPluginBundleAction) async throws {
+        try await proxy.bundle_dispatchAction(action)
+    }
+}
+
 /// 본 PR 범위에서 `HostControlInterface` proxy 를 `KeyboardHackPluginV1RPC`
 /// surface 로 노출하는 thin bridge.
 ///
@@ -120,13 +139,17 @@ actor XPCLoader: PluginLoader {
             }
         }
 
+        let accessor = XPCBundleAccessor(proxy)
+
         clients[manifest.id] = client
         logger.info("XPCLoader: loaded bundle \(manifest.id) with \(proxies.count) proxy(s) via XPC")
 
         return LoadedPluginExports(
             bundleId: manifest.id,
+            bundleClass: nil,
             manifest: manifest,
-            proxies: proxies
+            proxies: proxies,
+            accessor: accessor
         )
     }
 

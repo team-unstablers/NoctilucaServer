@@ -13,10 +13,17 @@ import NoctilucaPluginKitHostCore
 ///
 /// builtin 번들은 `PluginBundleRegistry.registerBundle(bundleClass:manifest:)`
 /// 경로를 그대로 사용하며 `PluginLoader` 를 거치지 않는다.
+///
+/// `bundleClass` 와 `accessor` 는 mutually exclusive 한 access path 다:
+/// - `InProcessLoader` 는 `bundleClass` 만 반환 (process 내 직접 호출 가능).
+/// - `XPCLoader` 는 `accessor` 만 반환 (host process 너머 — `HostControlInterface`
+///   forwarding 경유).
 struct LoadedPluginExports: Sendable {
     let bundleId: String
+    let bundleClass: NoctilucaPluginBundle.Type?
     let manifest: any PluginBundleManifest
     let proxies: [LoadedPluginProxy]
+    let accessor: PluginBundleAccessor?
 }
 
 /// `*RPC` mirror protocol 의 existential 을 case 별로 운반하는 enum.

@@ -37,7 +37,7 @@ struct PluginBundleListContainer: View {
             if let selected = selection.first,
                let handle = pluginRegistry.bundles[selected]
             {
-                PluginBundleDetailView(manifest: handle.manifest, signingResult: handle.signingResult)
+                PluginBundleDetailView(handle: handle, signingResult: handle.signingResult)
             }
         }
     }

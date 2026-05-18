@@ -87,10 +87,42 @@ enum PluginBundleRegistryError: LocalizedError {
 }
 
 struct PluginBundleHandle {
-    /// builtin 번들의 principal class. 외부 번들은 loader 가 lifecycle 을 책임지므로 nil.
+    /// builtin / no-isolate in-process 번들의 principal class.
+    /// XPC 격리된 외부 번들은 nil — `accessor` 를 통해 host 너머로 호출.
     let bundleClass: NoctilucaPluginBundle.Type?
+
+    /// XPC 격리된 외부 번들의 bundle-level action accessor.
+    /// builtin / in-process 번들은 nil — `bundleClass` 를 통해 직접 호출.
+    let accessor: PluginBundleAccessor?
+
     let manifest: any PluginBundleManifest
     let signingResult: CodeSigningVerificationResult?
+}
+
+extension PluginBundleHandle {
+    /// Bundle 이 지원하는 action 목록.
+    ///
+    /// builtin / in-process 번들은 sync `static var supportedActions` 를
+    /// 직접 조회. XPC 격리 번들은 host 너머로 `bundle_supportedActions`
+    /// 호출.
+    func supportedActions() async throws -> [NoctilucaPluginBundleAction] {
+        if let bundleClass {
+            return bundleClass.supportedActions
+        }
+        return try await accessor?.supportedActions() ?? []
+    }
+
+    /// Bundle 에 action dispatch 요청.
+    ///
+    /// builtin / in-process 번들은 `dispatchAction(action:)` 직접 호출.
+    /// XPC 격리 번들은 host 너머로 `bundle_dispatchAction` 호출.
+    func dispatchAction(_ action: NoctilucaPluginBundleAction) async throws {
+        if let bundleClass {
+            try await bundleClass.dispatchAction(action: action)
+            return
+        }
+        try await accessor?.dispatchAction(action)
+    }
 }
 
 actor PluginBundleRegistry {
@@ -280,10 +312,13 @@ actor PluginBundleRegistry {
                 logger.info("Registered keyboard hack proxy from bundle: \(manifest.id)")
             }
         }
-
-        // 외부 번들 handle 저장 — bundleClass 는 loader 가 책임지므로 nil.
+        
+        // 외부 번들 handle 저장.
+        // - InProcessLoader (no-isolate) path: `bundleClass` non-nil, `accessor` nil
+        // - XPCLoader (isolate) path: `bundleClass` nil, `accessor` non-nil
         let handle = PluginBundleHandle(
-            bundleClass: nil,
+            bundleClass: loadedExports.bundleClass,
+            accessor: loadedExports.accessor,
             manifest: manifest,
             signingResult: verificationResult
         )
@@ -321,7 +356,12 @@ actor PluginBundleRegistry {
             }
         }
 
-        let handle = PluginBundleHandle(bundleClass: bundleClass, manifest: manifest, signingResult: signingResult)
+        let handle = PluginBundleHandle(
+            bundleClass: bundleClass,
+            accessor: nil,
+            manifest: manifest,
+            signingResult: signingResult
+        )
         self.bundles[manifest.id] = handle
 
         for export in bundleClass.exports {
