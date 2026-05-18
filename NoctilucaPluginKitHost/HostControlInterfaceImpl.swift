@@ -113,6 +113,22 @@ actor HostControlInterfaceImpl: HostControlInterface {
         self.keyboardHackAdapter = nil
     }
 
+    // MARK: - Bundle action forwarding
+
+    func bundle_supportedActions() async throws -> [NoctilucaPluginBundleAction] {
+        guard let bundleClass = loadedBundleClass else {
+            throw HostControlError.notLoaded
+        }
+        return bundleClass.supportedActions
+    }
+
+    func bundle_dispatchAction(_ action: NoctilucaPluginBundleAction) async throws {
+        guard let bundleClass = loadedBundleClass else {
+            throw HostControlError.notLoaded
+        }
+        try await bundleClass.dispatchAction(action: action)
+    }
+
     // MARK: - KeyboardHack forwarding
 
     func keyboardHack_id() async throws -> String {

@@ -11,11 +11,14 @@ import Shotoku
 
 /// `loadBundle` 응답. bundle 안에서 발견된 plugin export 들의 metadata.
 ///
-/// 본 PR 범위에서는 endpoint Data (anonymous xpc_endpoint serialization) 를
-/// 함께 운반하지 않는다 — Shotoku v0.1 이 cross-process anonymous endpoint
-/// pattern 을 직접 지원하지 않기 때문. 대신 plugin type 별 forwarding method
-/// 를 `HostControlInterface` 가 직접 expose 한다 (`keyboardHack_*` 등).
-/// dual-interface (Shotoku v0.3) 도착 시 이 디자인은 정리될 예정.
+/// 본 응답에는 endpoint Data (anonymous xpc_endpoint serialization) 를 함께
+/// 운반하지 않는다 — **XPC 자체의 설계 제약상 `xpc_endpoint_t` 는 wire
+/// serialize 가 불가능 (= 다른 프로세스로 운반 불가) 하기 때문**. Shotoku
+/// 라이브러리 한계가 아니라 XPC 프리미티브의 한계.
+///
+/// 대신 plugin type 별 forwarding method 를 `HostControlInterface` 가 직접
+/// expose 한다 (`keyboardHack_*` 등). dual-interface (Shotoku v0.3) 도착
+/// 시 이 디자인은 재검토 예정.
 public struct LoadedBundleInfo: Codable, Sendable {
     public let bundleId: String
     public let exports: [LoadedPluginInfo]
@@ -68,6 +71,18 @@ public protocol HostControlInterface: Sendable {
 
     @RPCProcedure
     func unloadBundle() async throws
+
+    // MARK: - Bundle action forwarding
+    //
+    // `loadBundle` 후 활성화. plugin type 과 무관하게 bundle 전체에 적용되는
+    // action (예: `showSettingsUI`). bundle 이 load 되지 않은 상태에서는
+    // `HostControlError.notLoaded` throw.
+
+    @RPCProcedure
+    func bundle_supportedActions() async throws -> [NoctilucaPluginBundleAction]
+
+    @RPCProcedure
+    func bundle_dispatchAction(_ action: NoctilucaPluginBundleAction) async throws
 
     // MARK: - KeyboardHack forwarding
     //
