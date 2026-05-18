@@ -1,6 +1,6 @@
 //
-//  SamplePluginBundle.swift
-//  SamplePluginBundle
+//  CJKKeyboardHacksBundle.swift
+//  CJKKeyboardHacks
 //
 //  Created by Gyuhwan Park on 12/5/25.
 //
@@ -21,18 +21,19 @@ public final class CJKKeyboardHacksBundle: NoctilucaPluginBundle {
     }
 
     public static let exports: [NoctilucaPluginKit.NoctilucaPluginExport] = [
-        .keyboardHack(CJKEmulateWin32HangulToggleHack())
+        .keyboardHack(CJKEmulateWin32HangulToggleHack()),
+        .rpcHandler(CJKSwitchInputMethodRPCHandler()),
     ]
-    
+
     public static let supportedActions: [NoctilucaPluginBundleAction] = [
         .showSettingsUI
     ]
-    
+
     public static func dispatchAction(action: NoctilucaPluginBundleAction) async throws {
         guard action == .showSettingsUI else {
             return
         }
-        
+
         NSWorkspace.shared.open(URL(string: "https://google.com")!)
     }
 }

@@ -1,41 +1,52 @@
 {
   "$schema": "https://noctiluca.app/schemas/server/pluginkit/v1-draft/20260516.json",
   "pluginKitVersion": "20260516",
-  "id": "app.noctiluca.server.bundles.CJKKeyboardHacks",
+  "id": "app.noctiluca.server.plugins.cjk-assist",
   "name": {
-    "default": "CJK Keyboard Hack Bundle",
-    "ko": "CJK 키보드 핵 번들"
-  },
-  "description": {
-    "default": "Keyboard hacks to improve usability under CJK input environments.",
-    "ko": "CJK 입력이 필요한 환경에서 사용성 개선을 위한 키보드 핵(Hack)을 클라이언트에게 제공합니다."
+    "default": "CJK Input Assist",
+    "ko": "CJK 입력 지원",
+    "ja": "CJK入力アシスト",
+    "zh-Hans": "CJK 输入辅助"
   },
   "authors": [
-    "Gyuhwan Park <unstabler@unstabler.pl>"
+    "Gyuhwan Park★ <unstabler@unstabler.pl>"
   ],
+  "description": {
+    "default": "Provides additional features for CJK input assistance.",
+    "ko": "CJK 입력 지원을 위한 추가 기능을 제공합니다.",
+    "ja": "CJK入力アシストのための追加機能を提供します。",
+    "zh-Hans": "为 CJK 输入辅助提供附加功能。"
+  },
   "license": {
     "type": "proprietary",
     "name": "Noctiluca Server EULA",
-    "url": "https://eula.noctiluca.app"
+    "url": "https://noctiluca.app/docs/eula/server"
   },
+  "url": "https://noctiluca.app",
   "isolationPolicy": "isolate",
   "exports": [
     {
       "type": "keyboard_hack_v1",
       "id": "app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle",
       "name": {
-        "default": "CJK Emulate Win32 Hangul Toggle"
+        "default": "Keyboard Hack: Emulate Win32-style Han/Eng Toggle",
+        "ko": "키보드 핵: Win32 스타일의 한/영 전환",
+        "ja": "キーボードハック: Win32スタイルのハングル/英語切り替え",
+        "zh-Hans": "键盘 Hack：模拟 Win32 风格的韩/英切换"
       },
       "description": {
-        "default": "Emulates Win32-style Han/Eng toggle key behavior for CJK input methods."
+        "default": "Emulates Win32-style Han/Eng toggle key behavior.",
+        "ko": "Win32 스타일의 한/영 키를 통한 입력 언어 전환 동작을 에뮬레이트합니다.",
+        "ja": "Win32スタイルのハングル/英語切り替えキーの動作をエミュレートします。",
+        "zh-Hans": "模拟 Win32 风格的韩/英切换键的行为。"
       },
       "authors": [
-        "Gyuhwan Park <unstabler@unstabler.pl>"
+        "Gyuhwan Park★ <unstabler@unstabler.pl>"
       ],
       "license": {
         "type": "proprietary",
         "name": "Noctiluca Server EULA",
-        "url": "https://eula.noctiluca.app"
+        "url": "https://noctiluca.app/docs/eula/server"
       },
       "version": 1,
       "displayVersion": "1.0.0",
@@ -43,6 +54,35 @@
         "KEY_HANGEUL",
         "KEY_RIGHTALT",
         "KEY_RIGHTMETA"
+      ]
+    },
+    {
+      "type": "rpc_handler_v1",
+      "id": "app.noctiluca.rpchandler.cjk.switch_im",
+      "name": {
+        "default": "RPC Handler: Switch Input Method",
+        "ko": "RPC 핸들러: 입력 방법 전환",
+        "ja": "RPCハンドラー: 入力メソッドの切り替え",
+        "zh-Hans": "RPC 处理器：切换输入法"
+      },
+      "description": {
+        "default": "Provides functionality for clients to switch input methods (IM).",
+        "ko": "클라이언트들에게 입력 방법 (IM)을 전환할 수 있는 기능을 제공합니다.",
+        "ja": "クライアントに入力メソッド (IM) を切り替える機能を提供します。",
+        "zh-Hans": "为客户端提供切换输入法 (IM) 的功能。"
+      },
+      "authors": [
+        "Gyuhwan Park★ <unstabler@unstabler.pl>"
+      ],
+      "license": {
+        "type": "proprietary",
+        "name": "Noctiluca Server EULA",
+        "url": "https://noctiluca.app/docs/eula/server"
+      },
+      "version": 1,
+      "displayVersion": "1.0.0",
+      "supportedOperations": [
+        "app.noctiluca.rpc.switch-im"
       ]
     }
   ]
