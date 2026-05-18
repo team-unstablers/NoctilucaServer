@@ -84,8 +84,15 @@ actor XPCLoader: PluginLoader {
         url: URL,
         manifest: any PluginBundleManifest
     ) async throws -> LoadedPluginExports {
+        // docs/xpc-safety.md §3.3 — client-side OS-level gate.
+        // libxpc 가 connection 시점에 host XPC service 의 DR 매칭을 평가한다.
+        // 동일 service name 으로 다른 launchd 등록이 끼어든 경우 (사용자
+        // LaunchAgent 우선순위 / 환경 변수 조작 등) 를 차단한다.
+        let endpointOptions = RPCXPCEndpointOptions(
+            peerCodeSigningRequirement: XPCPeerIdentity.hostPeerRequirement
+        )
         let client = RPCClient<HostControlInterface>(
-            endpoint: .xpc(hostServiceName)
+            endpoint: .xpc(hostServiceName, options: endpointOptions)
         )
 
         do {
