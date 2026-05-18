@@ -31,7 +31,7 @@ IPC 는 XPC (`NSXPCConnection`) 를 사용합니다.
 | 격리 단위 | **Plugin Bundle** (1 bundle = 1 host process). 한 bundle 내 여러 plugin 은 같은 process 에서 공존 |
 | Isolation policy | `isolate` (기본) / `no-isolate` (team unstablers Inc., teamid `XHA76UVA95` 서명에 한정) |
 | Bundle 설치 위치 | (a) Server bundle 내장 (`Contents/PlugIns/`) (b) `~/Library/Application Support/Noctiluca/Plugins/`. **외부 임의 경로는 미지원** |
-| IPC | [Shotoku](../../Shotoku/) (MessagePack over XPC) + `audit_token_t` per-message authorize. Server 내장 `NoctilucaPluginHost.xpc` (XPC service bundle, `_MultipleInstances=YES`) 가 instance 마다 launchd-managed spawn. Bootstrap channel (`HostControlInterface`) + anonymous-endpoint plugin channel (`*Adapter`) 두 단계 (2026-05-17 결정 — §9-A 참조; §4 본문은 stale, T11 에서 재작성 예정) |
+| IPC | [Shotoku](../../Shotoku/) (MessagePack over XPC) + `audit_token_t` per-message authorize. Server 내장 `NoctilucaPluginKitHost.xpc` (XPC service bundle, `_MultipleInstances=YES`) 가 instance 마다 launchd-managed spawn. **Bootstrap channel (`HostControlInterface`) 단일 채널 + plugin type 별 flat forwarding method** (예: `keyboardHack_id` / `keyboardHack_onKeyDown` / ...). 당초 (2026-05-17) anonymous-endpoint 로 plugin channel 을 분리하는 패턴을 검토했으나, **XPC 의 endpoint 시리얼라이즈 제약 (`xpc_endpoint_t` 는 다른 프로세스로 운반 불가)** 으로 폐기됨 (2026-05-18). dual-interface (Shotoku v0.3) 도착 시 본 디자인 재검토 예정. §4 본문은 stale — T11 에서 재작성 예정 |
 | Sandbox | **현재 단계 미적용**. Process 격리만 적용. 향후 capability profile 기반 sandbox 도입 여지는 남겨둠 |
 | Lifetime | 모든 host process 는 server 와 lifetime 일치 (idle exit 없음) |
 | Manifest | JSON (`NoctilucaPluginSystem/schemas/server-*.json` 스키마) 로 통일. Info.plist 의 메타데이터 필드는 폐기 |
@@ -172,7 +172,10 @@ connection.exportedObject        = hostCallback
    - `SecCodeCopySigningInformation` 으로 team identifier 추출
 4. `manifest.isolation` 과 team identifier 일관성 검사
    - `"no-isolate"` + team ID `XHA76UVA95` → in-process 로드 허용
-   - `"no-isolate"` + 다른 team ID → **reject**
+   - `"no-isolate"` + 다른 team ID → **기본적으로 reject**.
+     단, `PluginBundleRegistry.configure(allowNonisolatedThirdPartyPluginBundle: true)`
+     로 사용자가 명시적으로 opt-in 한 경우 통과 (위험을 인지한 것으로 간주,
+     warn 로그 발행). 본 설정은 `AppSettings.Security` 의 사용자 토글에 연결됨.
    - `"isolate"` → 어느 team ID 든 XPC 로드
 5. PluginLoader 선택 후 spawn / dlopen
 
@@ -354,34 +357,102 @@ task 간 의존성을 명시합니다.
   (wire envelope, dispatch, cancellation, callback marshaling, audit token
   검증) 은 모두 본 마이그레이션 범위 밖으로 이동. 자세한 내용은 §9-B 참조.
 
+**Anonymous-endpoint plugin channel 패턴 폐기 (2026-05-18)** —
+당초 (2026-05-17 결정문) host 가 `loadBundle` 응답에 anonymous `xpc_endpoint_t`
+를 담아 반환하고 server 가 그 endpoint 로 second connection 을 열어 plugin
+type 별 `*RPC` proxy 를 받는 2-channel 디자인을 채택했으나, **XPC 자체의
+설계 제약 — `xpc_endpoint_t` 가 wire serialize 불가능 (= 다른 프로세스로
+운반 불가)** 으로 폐기됨. Shotoku v0.1 의 라이브러리 한계가 아니라 XPC
+프리미티브의 한계.
+
+대체 디자인: **`HostControlInterface` 단일 bootstrap channel + plugin type
+별 flat forwarding method**. 즉 `HostControlInterface` 에 `keyboardHack_id` /
+`keyboardHack_desiredKeyEvents` / `keyboardHack_onKeyDown` /
+`keyboardHack_onKeyUp` 와 같이 type prefix 가 붙은 forwarding method 들을
+모두 직접 expose. server 측에서는 `HostControlKeyboardHackBridge` 같은 thin
+bridge class 가 underlying `HostControlInterface` proxy 의 forwarding
+method 호출을 plugin type 별 `*RPC` surface 로 노출. `*Adapter` (host 측)
++ `*Bridge` (server 측) 의 두 wrapper class 가 한 쌍을 이룸.
+
+본 디자인의 한계: plugin type 마다 `HostControlInterface` 가 method 를
+flat 하게 갖게 되어 surface 가 비대해짐. Shotoku v0.3 의 dual-interface
+가 도착하면 dual-interface 기반으로 재구조화 검토 예정.
+
+**T3 / T7 / T8 / T9 / T4 완료 (2026-05-17 ~ 2026-05-18)** — Shotoku 도입,
+host process, loader 추상화, registry 분기, KeyboardHack 본 적용까지
+한 번에 진행됨.
+
+- [x] **T3** — Shotoku 도입 + adapter 패턴 + `.rpcHandler` case 추가:
+  - `NoctilucaPluginKitHostCore` framework 신설 (`NoctilucaPluginKitHostCore/`).
+    rpc-adapter / host-control / manifest / security 디렉토리로 분리.
+  - `KeyboardHackPluginV1RPC` (`@RPCInterface` mirror protocol) +
+    `KeyboardHackPluginV1Adapter` (forwarding class) 작성. host / server
+    양쪽이 모두 이 framework 에 의존.
+  - `NoctilucaPluginKit.NoctilucaPluginExport.rpcHandler(RPCHandlerPluginV1)`
+    case 추가. (커밋 `125c5ce` / `774c874`)
+- [x] **T7** — `NoctilucaPluginKitHost.xpc` (XPC service bundle) + bootstrap channel:
+  - 신규 타깃 `NoctilucaPluginKitHost` (App bundle 의 `Contents/XPCServices/`
+    에 embed). `XPCService.ServiceType=Application` + `_MultipleInstances=YES`
+    + `JoinExistingSession=YES`.
+  - `main.swift`: `RPCListener<HostControlInterfaceImpl>` 를
+    `.xpc("app.noctiluca.server.NoctilucaPluginKitHost")` endpoint 로 띄움.
+    `NSApplication` setActivationPolicy(.accessory).
+  - `HostControlInterfaceImpl` (host process 측 actor): `ping` /
+    `loadBundle(bundlePath:)` / `unloadBundle` + plugin type 별 forwarding
+    (`keyboardHack_*`). 한 host instance 당 한 bundle (single-bundle-per-host).
+  - 2026-05-18 `XPCMultiInstanceSmoke` 진단 추가 (`NOC_PLUGIN_HOST_SMOKE=1`
+    환경변수 가드). 같은 mach service name 으로 connection 두 개를 띄워
+    각각의 ping 응답 (host pid 포함) 으로 multi-instance 동작 검증.
+    (커밋 `125c5ce` / `57e455b`)
+- [x] **T8** — `PluginLoader` 추상화 + `InProcessLoader` / `XPCLoader`:
+  - `NoctilucaServer/plugins/bundle-system/loader/PluginLoader.swift` —
+    `LoadedPluginExports` / `LoadedPluginProxy` enum.
+  - `InProcessLoader` (actor): `Bundle.load()` + `bundleClass.initialize()`
+    + `KeyboardHackPluginV1Adapter(wrapping:)` 로 wrap.
+  - `XPCLoader` (actor): `RPCClient<HostControlInterface>` 로 host service
+    connect → `proxy.ping` health check → `proxy.loadBundle(bundlePath:)`
+    → 반환된 `LoadedBundleInfo.exports` 를 순회하며
+    `HostControlKeyboardHackBridge` 로 wrap. (커밋 `774c874`)
+- [x] **T9** — `PluginBundleRegistry.loadBundle()` 의 isolation 기반 분기:
+  - `manifest.isolationPolicy == .isolate` → `xpcLoader`,
+    `.noIsolate` → `inProcessLoader`.
+  - builtin 번들은 `registerBundle(bundleClass:manifest:)` 경로로 항상
+    in-process 직접 등록 (loader 자체를 거치지 않음).
+  - 로드 성공 시 `HIDIOKeyboardHackRegistry.shared.register(rpc)` 로
+    plugin type 별 registry 에 등록. (커밋 `774c874`)
+- [x] **T4** — KeyboardHackPluginV1 본 적용:
+  - builtin path (`registerBundle`): `KeyboardHackPluginV1Adapter` 직접 wrap.
+  - 외부 path (`loadBundle` → `xpcLoader`): `HostControlKeyboardHackBridge`
+    경유.
+  - `HIDIOKeyboardHackRegistry` 가 양쪽 path 의 결과를 동일하게 수용.
+
 ### 9-B. 남은 작업 (세션 단위)
 
-Shotoku 도입 (§9-A) 으로 의존성 그래프가 다음과 같이 단순화되었습니다.
+Shotoku 도입 (§9-A) 및 T3/T4/T7/T8/T9 완료 (2026-05-17 ~ 18) 로 의존성
+그래프가 다음과 같이 정리되었습니다.
 
 ```
-T1 (SKIPPED) — Track A
-T2 (DONE)    — Track A
+T1 (SKIPPED)    — Track A
+T2 (DONE)       — Track A
+T3 (DONE)       — Track A
    │
-   ▼
-T3 (Shotoku 도입 + adapter 패턴 PoC) — Track A
+   ├──── T4 (DONE — KeyboardHack)  ┐
+   ├──── T5 (Auth 적용)            ├── Track B (남은 작업, 내부 병렬 가능)
+   ├──── T6 (RPCHandler 적용)      ┘
    │
-   ├──── T4 (KeyboardHack 적용)   ┐
-   ├──── T5 (Auth 적용)           ├── Track B (병렬 가능)
-   ├──── T6 (RPCHandler 적용)     ┘
-   │
-   └──── T7 (NoctilucaPluginHost.xpc)   — Track C (단일 task)
+   └──── T7 (DONE — NoctilucaPluginKitHost.xpc)   — Track C
               │
               ▼
-            T8 (PluginLoader 추상화 + InProc/XPC 구현)  — Track D
+            T8 (DONE — PluginLoader 추상화 + InProc/XPC)   — Track D
               │
               ▼
-            T9 (Registry isolation 분기)                — Track D
+            T9 (DONE — Registry isolation 분기)             — Track D
               │
               ▼
-            T10 (CJK XPC 격리 실증)                     — Track E
+            T10 (CJK XPC 격리 실증)                         — Track E
               │
               ▼
-            T11 (정리 + docs 재작성)                    — Track E
+            T11 (정리 + docs 재작성)                        — Track E
 ```
 
 #### Track A — Independent / Bootstrap (병렬 진행 가능)
@@ -402,44 +473,43 @@ T3 (Shotoku 도입 + adapter 패턴 PoC) — Track A
   `XHA76UVA95` 강제 + CJK 번들의 메타데이터를 manifest.json 으로 이동.
 - **의존성**: 없음 (T1 없어도 수동 manifest 작성 가능)
 
-##### T3. Shotoku 도입 + adapter 패턴 PoC + `.rpcHandler` case 추가 (2026-05-17 결정 반영)
-- **목표**: Shotoku 의존성 추가 + 3-layer adapter 패턴의 PoC 검증 +
-  `NoctilucaPluginExport` 의 누락 case 보강.
-- **포함**:
-  - `NoctilucaServer` 의 SPM dependency 에 Shotoku 추가 (path 또는 git
-    URL — Noctiluca 레포 외부의 별도 Swift Package).
-  - host-side `*RPC` mirror protocol + `*Adapter` class 의 디렉토리
-    컨벤션 결정 (예: `NoctilucaServer/plugins/rpc-adapter/`).
-  - **PoC**: 가장 단순한 `KeyboardHackPluginV1` 을 대상으로:
-    - `KeyboardHackPluginV1RPC: KeyboardHackPluginV1, Sendable` mirror
-      protocol (`@RPCInterface`)
-    - `KeyboardHackPluginV1Adapter: KeyboardHackPluginV1RPC` thin
-      forwarding class
-    - `RPCInProcessFabric` 을 이용한 e2e 검증 (in-process listener +
-      client 의 결과가 direct 호출과 일치하는지)
-  - `NoctilucaPluginExport.rpcHandler(RPCHandlerPluginV1)` case 추가
-    (현재 누락)
-- **출력**: PoC 검증 결과 + `*RPC` / `*Adapter` 코드 컨벤션 (네이밍 /
-  디렉토리 / 보일러플레이트 단축 여지 — 매크로로 더 줄일 수 있는지 여부).
-- **의존성**: T2 완료 전제. 그 외 없음.
+##### ~~T3. Shotoku 도입 + adapter 패턴 PoC + `.rpcHandler` case 추가~~ — **DONE (2026-05-17)**
+- **상태**: 완료. 자세한 내용은 §9-A *T3 / T7 / T8 / T9 / T4 완료* 섹션 참조.
+- **결과 요약**:
+  - Shotoku SPM dependency 추가, `NoctilucaPluginKitHostCore` framework
+    신설 (`rpc-adapter/` / `host-control/` / `manifest/` / `security/`).
+  - `KeyboardHackPluginV1RPC` (`@RPCInterface`) + `KeyboardHackPluginV1Adapter`
+    작성. host / server 양쪽이 본 framework 에 의존.
+  - `NoctilucaPluginExport.rpcHandler` case 추가.
+  - PoC 의 `RPCInProcessFabric` e2e 검증은 별도 단계 없이 그대로 본
+    구현으로 옮겨감 (실 동작 검증은 T10 에서).
+- **의존성**: T2 완료 전제.
 
-#### Track B — 3개 plugin protocol 의 RPC variant + Adapter 적용 (T3 후, 내부 병렬 가능)
+#### Track B — Auth / RPCHandler 의 RPC variant + Adapter 적용 (T4 는 DONE; T5 / T6 남음, 내부 병렬 가능)
 
 각 task 의 공통 패턴:
 1. NoctilucaPluginKit 측 protocol 시그니처 정리 (필요시 — 외부 contract
    이므로 최소 변경).
-2. host 측 `*RPC` mirror protocol + `*Adapter` class 작성.
-3. registry / dispatcher 가 Adapter 경유하도록 갱신.
-4. builtin 구현체 (있다면) conformance 검증.
+2. host 측 `*RPC` mirror protocol + `*Adapter` class 작성
+   (`NoctilucaPluginKitHostCore/rpc-adapter/`).
+3. host 측 `HostControlInterface` 에 plugin type 별 forwarding method 추가
+   (anonymous-endpoint 패턴 폐기에 따른 flat forwarding 구조 — §9-A 참조).
+4. server 측 `*Bridge` class (`XPCLoader.swift` 내) + `LoadedPluginProxy`
+   enum 에 case 추가.
+5. registry / dispatcher 가 Adapter / Bridge 경유하도록 갱신.
+6. builtin 구현체 (있다면) conformance 검증.
 
-##### T4. KeyboardHackPluginV1 — 본 적용 (T3 의 PoC 를 확정)
-- **포함**:
-  - `LinuxKeycode` / `KeyboardHackResult` 의 Codable 검증 (enum +
-    associated value 자동 derive 확인)
-  - `KeyboardHackPluginV1RPC` + `KeyboardHackPluginV1Adapter` 본 적용
-  - `HIDIOKeyboardHackRegistry` 가 Adapter 경유하도록 갱신
-  - `CJKEmulateWin32HangulToggleHack` (NoctilucaPluginKit 측) 시그니처
-    변경 없음 — 외부 contract 유지
+##### ~~T4. KeyboardHackPluginV1 — 본 적용~~ — **DONE (2026-05-17)**
+- **상태**: 완료. T3 의 결과물이 그대로 본 적용으로 이어짐 (PoC 단계
+  분리 없음).
+- **결과 요약**:
+  - `LinuxKeycode` / `KeyboardHackResult` 의 Codable 검증 OK.
+  - builtin path (`PluginBundleRegistry.registerBundle`): `case .keyboardHack(let keyboardHack)`
+    에서 `KeyboardHackPluginV1Adapter(wrapping:)` 로 wrap 후
+    `HIDIOKeyboardHackRegistry.shared.register(adapter)`.
+  - 외부 path (`PluginBundleRegistry.loadBundle` → `xpcLoader`):
+    `HostControlKeyboardHackBridge` 경유 → `HIDIOKeyboardHackRegistry.shared.register(rpc)`.
+  - `CJKEmulateWin32HangulToggleHack` 시그니처 변경 없음 (외부 contract 유지).
 - **의존성**: T3
 
 ##### T5. AuthPluginV1 — 시그니처 정리 + RPC variant + Adapter + builtin 갱신
@@ -472,86 +542,86 @@ T3 (Shotoku 도입 + adapter 패턴 PoC) — Track A
 
 #### Track C — Plugin Host process binary (단일 task)
 
-##### T7. `NoctilucaPluginHost.xpc` (XPC service bundle) + bootstrap/anonymous-endpoint 패턴
-- **목표**: 외부 plugin (`.nocbundle`, `isolate=true`) 을 호스팅하는
-  sandboxed XPC service bundle. Shotoku `RPCListener` 를 자체 process
-  안에서 띄우는 thin entry point.
-- **포함**:
-  - 신규 타겟: `NoctilucaPluginHost.xpc` (XPC service bundle, App
-    bundle 의 `Contents/XPCServices/` 에 embed)
-  - Info.plist: `XPCService` dict + `_MultipleInstances = YES`
-    (connection 마다 새 instance — launchd 가 lifecycle 관리)
-  - 자체 `.entitlements` (App Sandbox + 필요한 capability — T2 의
-    codesign 정책과 정합)
-  - **2-channel 패턴**:
-    1. **Bootstrap channel** (`HostControlInterface` — `loadBundle(path:)`
-       / `unloadBundle()` / `ping()`): server 가 mach service name 으로
-       connect → launchd 가 새 host instance spawn → server 가
-       `loadBundle(path:)` 호출
-    2. host 동작: dlopen → `Bundle.initialize()` → plugin instance →
-       plugin type 식별 → 해당 `*Adapter` 로 wrap → **anonymous
-       `xpc_endpoint_t` 로 second `RPCListener` 띄움** → endpoint 를
-       bootstrap reply 로 반환
-    3. **Plugin channel** (`*Adapter`): server 가 받은 anonymous
-       endpoint 로 second connection → `*RPC` proxy 얻음
-  - `authorize:` hook (bootstrap / plugin 양쪽) 에서 parent server 의
-    audit token 검증
-  - Orphan 방지: launchd 가 처리 (parent app 종료 시 자동 cleanup);
-    추가로 `kqueue(EVFILT_PROC, NOTE_EXIT)` 로 parent PID watch 하는
-    safety net 검토
-- **의존성**: T3 (Adapter pattern 확정 후)
-- **참고**: 기존 §9-B 의 T7 (`NoctilucaPluginHost.xpc` + 공유 host
-  dylib) + T8 (`HostControlProtocol` + dispatch + `HostCallbackProtocol`)
-  의 `.xpc` 타겟 자체는 그대로 살아남았으나, dispatch / callback 부분은
-  Shotoku 가 처리하므로 본 단일 T7 으로 통합 + 대폭 축소. Adapter
-  framework 분리 (Adapter 코드만 따로 SPM target) 가 필요해지면 본 T7
-  진행 중 재고.
+##### ~~T7. `NoctilucaPluginKitHost.xpc` (XPC service bundle) + bootstrap channel~~ — **DONE (2026-05-17 ~ 18)**
+- **상태**: 완료. 자세한 내용은 §9-A *T3 / T7 / T8 / T9 / T4 완료* 섹션 참조.
+- **설계 변경**: 당초 anonymous-endpoint 로 plugin channel 을 분리하는
+  2-channel 디자인이었으나, **XPC 의 endpoint 시리얼라이즈 제약**으로
+  폐기 (2026-05-18). 대신 `HostControlInterface` 단일 bootstrap channel
+  에 plugin type 별 flat forwarding method (예: `keyboardHack_*`) 를
+  직접 expose 하는 패턴으로 변경. (§9-A "Anonymous-endpoint plugin
+  channel 패턴 폐기" 참조)
+- **결과 요약**:
+  - 신규 타깃 `NoctilucaPluginKitHost` (XPC service bundle, App bundle
+    의 `Contents/XPCServices/` 에 embed).
+  - Info.plist: `XPCService.ServiceType=Application` +
+    `_MultipleInstances=YES` + `JoinExistingSession=YES`.
+  - mach service name: `app.noctiluca.server.NoctilucaPluginKitHost`.
+  - `HostControlInterfaceImpl` (host actor): `ping` /
+    `loadBundle(bundlePath:)` / `unloadBundle` + `keyboardHack_*`
+    forwarding (한 host instance 당 한 bundle).
+  - `NoctilucaPluginKitHostCore` 공유 framework 로 `HostControlInterface`
+    / `*RPC` mirror / `*Adapter` / manifest / security 코드 분리.
+  - Audit token authorize / sandbox profile 은 본 단계 미적용 (T11 의
+    정리 단계에서 검토). Shotoku 의 `audit_token_t` per-message
+    authorize hook 자체는 사용 가능한 상태.
+  - Orphan 방지는 launchd 의 lifecycle 관리에 위임 (parent app 종료
+    시 cleanup). `kqueue` safety net 은 도입 보류.
+  - 2026-05-18 `XPCMultiInstanceSmoke` 진단 추가 (`NOC_PLUGIN_HOST_SMOKE=1`).
+- **의존성**: T3
 
 #### Track D — Loader 추상화 + Registry 분기
 
-##### T8. `PluginLoader` 추상화 + `InProcessLoader` / `XPCLoader` 구현
-- **목표**: `PluginBundleRegistry` 가 isolation policy 에 따라 분기할 수
-  있는 loader interface 도입. 두 loader 모두 Shotoku endpoint 차이로
-  표현.
-- **포함**:
-  - `PluginLoader` protocol — `func load(bundle:) async throws ->
-    LoadedPluginExports`
-  - `InProcessLoader`: `RPCInProcessFabric` 공유 + `.inProcess(id:,
-    fabric:)` endpoint. 또는 (perf 위해) builtin path 는 Adapter 우회
-    direct 호출 — 본 T8 진행 중 결정.
-  - `XPCLoader`: `NoctilucaPluginHost.xpc` 의 mach service name 으로
-    bootstrap connect (launchd 가 새 host instance spawn) →
-    `HostControlInterface.loadBundle(path:)` 호출 → host 가 반환한
-    anonymous `xpc_endpoint_t` 로 second connection → `*RPC` proxy
-    반환
-  - Loader 반환 type `LoadedPluginExports` 는 `[NoctilucaPluginExport]`
-    형태 (외부 surface 그대로 — `any AuthPluginV1` 등)
+##### ~~T8. `PluginLoader` 추상화 + `InProcessLoader` / `XPCLoader` 구현~~ — **DONE (2026-05-17)**
+- **상태**: 완료. 자세한 내용은 §9-A *T3 / T7 / T8 / T9 / T4 완료* 섹션 참조.
+- **결과 요약**:
+  - `NoctilucaServer/plugins/bundle-system/loader/PluginLoader.swift` —
+    `LoadedPluginExports` (`bundleId` / `manifest` / `proxies`) +
+    `LoadedPluginProxy` enum (현재 `.keyboardHack(any KeyboardHackPluginV1RPC)`
+    만; auth / rpcHandler / extension 은 Track B 에서 추가).
+  - `InProcessLoader` (actor): `Bundle.load()` + `bundleClass.initialize()`
+    + `KeyboardHackPluginV1Adapter(wrapping:)`. builtin path 는 loader
+    를 거치지 않고 `PluginBundleRegistry.registerBundle` 에서 직접 등록.
+  - `XPCLoader` (actor): `RPCClient<HostControlInterface>` 로 host
+    service connect → `proxy.ping` health check → `proxy.loadBundle(bundlePath:)`
+    → 반환된 `LoadedBundleInfo.exports` 를 순회하며
+    `HostControlKeyboardHackBridge` 로 wrap.
+  - Anonymous-endpoint 기반 second connection 은 §9-A 의 폐기 결정에
+    따라 채택되지 않음.
 - **의존성**: T3, T7
 
-##### T9. `PluginBundleRegistry` 의 isolation 기반 loader 분기
-- **목표**: T2 의 isolation policy 검증을 통과한 후, 정책에 따라 적절한
-  loader 선택.
-- **포함**:
-  - `PluginBundleRegistry.loadBundle()` 에 `InProcessLoader` vs
-    `XPCLoader` 분기
-  - `isolationPolicy == .noIsolate` → `InProcessLoader`
-  - `isolationPolicy == .isolate` → `XPCLoader`
-  - builtin bundle (`NoctilucaCoreAuth`) 은 항상 `InProcessLoader`
+##### ~~T9. `PluginBundleRegistry` 의 isolation 기반 loader 분기~~ — **DONE (2026-05-17)**
+- **상태**: 완료. 자세한 내용은 §9-A *T3 / T7 / T8 / T9 / T4 완료* 섹션 참조.
+- **결과 요약**:
+  - `PluginBundleRegistry.loadBundle()` 의 `switch manifest.isolationPolicy`:
+    `.isolate` → `xpcLoader`, `.noIsolate` → `inProcessLoader`.
+  - builtin 번들 (`NoctilucaCoreAuth`) 은 `registerBundle(bundleClass:manifest:)`
+    경로로 항상 in-process 직접 등록 — loader 자체를 거치지 않음 (당초
+    "builtin 은 InProcessLoader" 설계에서 약간 벗어났으나 의도는 동일).
+  - `PluginBundleHandle.bundleClass` 는 builtin (`non-nil`) / 외부
+    (`nil`, loader 가 lifecycle 책임) 로 구분. `unloadBundle(withId:)` 도
+    builtin path / 외부 path 분기.
+  - 추가로 `allowNonisolatedThirdPartyPluginBundle` opt-in 추가 (§5 참조).
 - **의존성**: T8
 
 #### Track E — 실증 + 정리
 
 ##### T10. CJKKeyboardHacks XPC 격리 실증
 - **목표**: 실제 외부 plugin 의 XPC 격리 동작 검증 + 회귀 테스트.
-- **포함**:
-  - CJKKeyboardHacks 의 manifest `isolationPolicy` (이미 `"isolate"` 로
-    T2 에서 선언됨) 가 `XPCLoader` 경로로 로드되는지 확인
-  - host process spawn / dlopen / 키 입력 라우팅 동작 확인
-  - 한/영 키 입력 정상 동작 회귀 확인
-  - latency 측정 (Shotoku XPC round-trip + per-message authorize
-    오버헤드)
-  - host crash 시 server 정상 동작 + respawn 정책 확인
-- **의존성**: T9
+- **현재 진행 상황** (2026-05-18):
+  - [x] `XPCMultiInstanceSmoke` 진단 helper 추가 (`NOC_PLUGIN_HOST_SMOKE=1`
+    환경변수 가드). 같은 mach service name 으로 connection 두 개를
+    띄워 각각의 ping 응답 (host pid) 으로 multi-instance 동작 확인.
+    검증이 끝나면 본 helper 와 call site 를 함께 제거할 예정 (커밋
+    `57e455b`).
+  - [ ] CJKKeyboardHacks 의 manifest `isolationPolicy` (이미 `"isolate"`
+    로 T2 에서 선언됨) 가 `XPCLoader` 경로로 로드되는지 실 동작 확인.
+  - [ ] host process spawn / dlopen / 키 입력 라우팅 동작 확인.
+  - [ ] 한/영 키 입력 정상 동작 회귀 확인 (Hangul toggle 동작).
+  - [ ] latency 측정 (Shotoku XPC round-trip — per-message authorize
+    오버헤드는 본 단계 미적용).
+  - [ ] host crash 시 server 정상 동작 + respawn 정책 (현재 respawn
+    정책 미구현; 본 task 진행 중 결정).
+- **의존성**: T9 (완료)
 
 ##### T11. 정리 + docs 재작성
 - **목표**: 마이그레이션 종료 + docs 의 stale 한 부분 (§4 / §7 / §8) 의
