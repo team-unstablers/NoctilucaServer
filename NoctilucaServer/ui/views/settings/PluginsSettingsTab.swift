@@ -1,11 +1,15 @@
+import AppKit
 import SwiftUI
 
 import NoctilucaPluginKitHostCore
+import SiriusKitCore
 
 struct PluginsSettingsTab: View {
 
     @Binding
     var settings: AppSettings
+
+    private static let logger = NoctilucaLogger(category: "PluginsSettingsTab")
 
     var body: some View {
         Form {
@@ -59,7 +63,9 @@ struct PluginsSettingsTab: View {
                     }
                     Spacer()
                     VStack(alignment: .trailing) {
-                        Button(String(localized: "settings.plugins.external_location.open_in_finder", defaultValue: "Finder로 열기")) {}
+                        Button(String(localized: "settings.plugins.external_location.open_in_finder", defaultValue: "Finder로 열기")) {
+                            revealExternalPluginsDirectoryInFinder()
+                        }
                     }
                     .foregroundStyle(.secondary)
                 }
@@ -83,5 +89,29 @@ struct PluginsSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private func revealExternalPluginsDirectoryInFinder() {
+        let logger = Self.logger
+        let appSupportDirectory: URL
+        do {
+            appSupportDirectory = try AppSettings.applicationSupportDirectory()
+        } catch {
+            logger.warning("Failed to resolve application support directory: \(error.localizedDescription)")
+            return
+        }
+
+        let pluginsDirectory = appSupportDirectory.appendingPathComponent("Plugins", isDirectory: true)
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: pluginsDirectory.path) {
+            do {
+                try fileManager.createDirectory(at: pluginsDirectory, withIntermediateDirectories: true)
+            } catch {
+                logger.warning("Failed to create plugins directory at \(pluginsDirectory.path): \(error.localizedDescription)")
+                return
+            }
+        }
+
+        NSWorkspace.shared.open(pluginsDirectory)
     }
 }
