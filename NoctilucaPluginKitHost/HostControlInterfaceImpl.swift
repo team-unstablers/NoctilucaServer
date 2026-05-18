@@ -27,7 +27,10 @@ actor HostControlInterfaceImpl: HostControlInterface {
     // MARK: - Lifecycle
 
     func ping() async throws -> String {
-        "pong"
+        // pid 를 포함해서 multi-instance 검증 시 server log 에 host process
+        // identifier 가 노출되도록 한다.
+        let pid = ProcessInfo.processInfo.processIdentifier
+        return "pong (pid=\(pid))"
     }
 
     func loadBundle(bundlePath: String) async throws -> LoadedBundleInfo {

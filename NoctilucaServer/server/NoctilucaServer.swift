@@ -168,6 +168,9 @@ final class NoctilucaServer: ObservableObject {
             await pluginBundleRegistry.loadExternalBundles()
         }
 
+        // T7 검증용 multi-instance smoke (NOC_PLUGIN_HOST_SMOKE=1 일 때만 동작)
+        await XPCMultiInstanceSmoke.runIfEnabled()
+
         // 3. 인증 엔트리 설정 (외부 auth 플러그인 포함)
         await authenticator.setupAllowedEntires(settings.security.allowedEntries)
         self.previousAllowedEntries = settings.security.allowedEntries

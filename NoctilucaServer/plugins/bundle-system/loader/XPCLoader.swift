@@ -85,9 +85,12 @@ actor XPCLoader: PluginLoader {
             throw PluginBundleRegistryError.initializationFailed(error: error)
         }
 
-        // health check
+        // health check (ping 응답에는 host 의 pid 가 포함되어 있어 multi-instance
+        // 검증 시 server log 에서 host process 가 connection 별로 분리되는지
+        // 확인할 수 있다.)
         do {
-            _ = try await proxy.ping()
+            let pongMessage = try await proxy.ping()
+            logger.info("XPCLoader: host ping ok for \(manifest.id) — \(pongMessage)")
         } catch {
             logger.error("XPCLoader: ping failed for \(manifest.id): \(error)")
             await client.disconnect()

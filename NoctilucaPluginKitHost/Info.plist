@@ -6,6 +6,10 @@
 	<dict>
 		<key>ServiceType</key>
 		<string>Application</string>
+		<key>_MultipleInstances</key>
+		<true/>
+		<key>JoinExistingSession</key>
+		<true/>
 	</dict>
 </dict>
 </plist>

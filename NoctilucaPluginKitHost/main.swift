@@ -18,6 +18,8 @@ final class HostAppDelegate: NSObject, NSApplicationDelegate {
     private let logger = Logger(label: "app.noctiluca.server.plugin-host")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        self.logger.info("Plugin host process launched (pid=\(pid))")
         Task { [weak self] in
             guard let self else { return }
             do {
@@ -29,7 +31,7 @@ final class HostAppDelegate: NSObject, NSApplicationDelegate {
                 )
                 self.listener = listener
                 try await listener.start()
-                self.logger.info("Plugin host listener started")
+                self.logger.info("Plugin host listener started (pid=\(pid))")
             } catch {
                 self.logger.error("Plugin host listener failed to start: \(error)")
                 NSApp.terminate(nil)
