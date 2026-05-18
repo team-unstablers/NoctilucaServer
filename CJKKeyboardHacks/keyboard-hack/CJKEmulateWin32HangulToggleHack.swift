@@ -53,7 +53,7 @@ final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
 
             DispatchQueue.main.async {
                 self.workaroundWindow.setIsVisible(true)
-                self.workaroundWindow.makeKeyAndOrderFront(nil)
+                // self.workaroundWindow.makeKeyAndOrderFront(nil)
 
                 let ourPid = NSRunningApplication.current.processIdentifier
                 let axSelf = AXUIElementCreateApplication(ourPid)
@@ -63,9 +63,9 @@ final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
                     true as CFTypeRef
                 )
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.016) {
-                    self.workaroundWindow.orderOut(nil)
-                    self.workaroundWindow.setIsVisible(false)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.032) {
+                    // self.workaroundWindow.orderOut(nil)
+                    // self.workaroundWindow.setIsVisible(false)
 
                     if let pid = previousApp?.processIdentifier {
                         let axApp = AXUIElementCreateApplication(pid)
@@ -111,7 +111,7 @@ final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
                 }
             }
 
-            try? await Task.sleep(for: .milliseconds(250))
+            try? await Task.sleep(for: .milliseconds(128))
             return .stop
         }
 
