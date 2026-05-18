@@ -9,6 +9,9 @@ struct PluginsSettingsTab: View {
     @Binding
     var settings: AppSettings
 
+    @State
+    private var showingNonisolatedConfirm = false
+
     private static let logger = NoctilucaLogger(category: "PluginsSettingsTab")
 
     var body: some View {
@@ -72,7 +75,17 @@ struct PluginsSettingsTab: View {
             }
 
             Section {
-                Toggle(isOn: $settings.security.allowNonisolatedThirdPartyPluginBundle) {
+                Toggle(isOn: Binding(
+                    get: { settings.security.allowNonisolatedThirdPartyPluginBundle },
+                    set: { newValue in
+                        guard newValue != settings.security.allowNonisolatedThirdPartyPluginBundle else { return }
+                        if newValue {
+                            showingNonisolatedConfirm = true
+                        } else {
+                            settings.security.allowNonisolatedThirdPartyPluginBundle = false
+                        }
+                    }
+                )) {
                     Text(markdown: String(localized: "settings.plugins.allow_nonisolated_third_party_bundle.title", defaultValue: "아이솔레이션 해제를 요구하는 서드 파티 플러그인 번들 로드 허용하기 **(위험!)**"))
                     Text(markdown: String(localized: "settings.plugins.allow_nonisolated_third_party_bundle.description", defaultValue: "Noctiluca Server는 안전을 위해 격리된 프로세스 컨텍스트에서 플러그인 코드가 실행되도록 강제하고 있습니다.\n위험성에 대해 충분히 인지하고 있는 경우, 아이솔레이션 해제를 요구하는 서드 파티 플러그인 번들을 로드할 수 있습니다. (재기동이 필요합니다)"))
                         .font(.subheadline)
@@ -89,6 +102,38 @@ struct PluginsSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .alert(
+            String(
+                localized: "settings.plugins.allow_nonisolated_third_party_bundle.confirm.title",
+                defaultValue: "정말로 아이솔레이션 해제를 허용하시겠어요?"
+            ),
+            isPresented: $showingNonisolatedConfirm
+        ) {
+            Button(
+                String(
+                    localized: "settings.plugins.allow_nonisolated_third_party_bundle.confirm.cancel",
+                    defaultValue: "취소"
+                ),
+                role: .cancel
+            ) {}
+
+            Button(
+                String(
+                    localized: "settings.plugins.allow_nonisolated_third_party_bundle.confirm.enable",
+                    defaultValue: "위험을 감수하고 활성화"
+                ),
+                role: .destructive
+            ) {
+                settings.security.allowNonisolatedThirdPartyPluginBundle = true
+            }
+        } message: {
+            Text(
+                String(
+                    localized: "settings.plugins.allow_nonisolated_third_party_bundle.confirm.message",
+                    defaultValue: "이 옵션을 켜면 격리되지 않은 서드 파티 플러그인 코드가 Noctiluca Server와 동일한 프로세스 컨텍스트에서 실행됩니다.\n악의적인 플러그인에 의해 시스템이 손상될 수 있으니, 신뢰할 수 있는 플러그인만 로드해 주십시오."
+                )
+            )
+        }
     }
 
     private func revealExternalPluginsDirectoryInFinder() {
