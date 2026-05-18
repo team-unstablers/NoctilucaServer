@@ -8,7 +8,7 @@
       buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
-            buildForTesting = "NO"
+            buildForTesting = "YES"
             buildForRunning = "YES"
             buildForProfiling = "YES"
             buildForArchiving = "YES"
@@ -38,6 +38,17 @@
                BlueprintIdentifier = "F659BDF12EF3C1730010A18E"
                BuildableName = "NoctilucaServerTests.xctest"
                BlueprintName = "NoctilucaServerTests"
+               ReferencedContainer = "container:NoctilucaServer.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F678280E2FB9FB3A00DC5D5E"
+               BuildableName = "NoctilucaPluginKitHostCoreTests.xctest"
+               BlueprintName = "NoctilucaPluginKitHostCoreTests"
                ReferencedContainer = "container:NoctilucaServer.xcodeproj">
             </BuildableReference>
          </TestableReference>
