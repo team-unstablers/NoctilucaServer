@@ -131,7 +131,7 @@ final class HIDIOChannel: Channel, ChannelEventConsumer {
             if case .modify(let modified) = decision {
                 keyCode = modified
             } else if case .stop = decision {
-                break
+                return
             }
         }
 
