@@ -7,6 +7,7 @@
 
 @preconcurrency import AppKit
 
+import ApplicationServices
 import Carbon
 import NoctilucaPluginKit
 
@@ -44,6 +45,8 @@ final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
 
     /// 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
     /// TISSelectInputSource()가 비활성 앱에서 조용히 실패하는 문제를 우회하기 위한 목적.
+    /// 복귀에는 AXUIElement(kAXFrontmostAttribute)를 사용한다. NSWorkspace 경로보다
+    /// 동기적이라 알림 대기/타임아웃 폴백이 불필요하다. (Accessibility 권한 필요)
     private func activateWorkaroundWindowAndRestore() async {
         await withCheckedContinuation { cont in
             let previousApp = NSWorkspace.shared.frontmostApplication
@@ -51,48 +54,29 @@ final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
             DispatchQueue.main.async {
                 self.workaroundWindow.setIsVisible(true)
                 self.workaroundWindow.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.075) {
+                let ourPid = NSRunningApplication.current.processIdentifier
+                let axSelf = AXUIElementCreateApplication(ourPid)
+                AXUIElementSetAttributeValue(
+                    axSelf,
+                    kAXFrontmostAttribute as CFString,
+                    true as CFTypeRef
+                )
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.016) {
                     self.workaroundWindow.orderOut(nil)
                     self.workaroundWindow.setIsVisible(false)
 
-                    guard let previousApp else {
-                        cont.resume()
-                        return
+                    if let pid = previousApp?.processIdentifier {
+                        let axApp = AXUIElementCreateApplication(pid)
+                        AXUIElementSetAttributeValue(
+                            axApp,
+                            kAXFrontmostAttribute as CFString,
+                            true as CFTypeRef
+                        )
                     }
 
-                    var resumed = false
-                    var observer: NSObjectProtocol?
-
-                    observer = NSWorkspace.shared.notificationCenter.addObserver(
-                        forName: NSWorkspace.didActivateApplicationNotification,
-                        object: nil,
-                        queue: .main
-                    ) { notification in
-                        guard !resumed,
-                              let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-                              app == previousApp else {
-                            return
-                        }
-                        resumed = true
-                        if let obs = observer {
-                            NSWorkspace.shared.notificationCenter.removeObserver(obs)
-                        }
-                        cont.resume()
-                    }
-
-                    // 타임아웃 폴백 (1초 이내에 복귀하지 않으면 강제 resume)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        guard !resumed else { return }
-                        resumed = true
-                        if let obs = observer {
-                            NSWorkspace.shared.notificationCenter.removeObserver(obs)
-                        }
-                        cont.resume()
-                    }
-
-                    previousApp.activate(options: [.activateIgnoringOtherApps])
+                    cont.resume()
                 }
             }
         }
