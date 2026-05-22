@@ -29,7 +29,8 @@ final class NoctilucaFeatureProvider: FeatureProvider {
             .projection,
             .transfer,
             .clipboard,
-            .fileSystemAccess
+            .fileSystemAccess,
+            .simpleRPC,
         ]
     }
 
@@ -51,6 +52,9 @@ final class NoctilucaFeatureProvider: FeatureProvider {
         case .fileSystemAccess:
             return true
         case .fileSystemAccessMount:
+            return true
+        
+        case .simpleRPC:
             return true
 
         default:
@@ -147,6 +151,7 @@ final class NoctilucaFeatureProvider: FeatureProvider {
                 return .rejected(code: -1, reason: "fsaccess_mount channel-start args[0] must be a UUID string (mount sessionId).")
             }
             return .accepted(FSAccessMountChannel(handle: handle, sessionId: sessionId))
+        
 
         default:
             fatalError("Unsupported feature: \(feature)")
