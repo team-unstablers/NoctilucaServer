@@ -35,25 +35,25 @@ final class CJKSwitchInputMethodRPCHandler: RPCHandlerPluginV1 {
 
     required init() {}
 
-    func onRPCRequest(request: any RPCRequest) async throws -> any RPCResponse {
-        guard Self.supportedOperations.contains(request.operation) else {
-            return request.resolve(with: .notSupported)
+    func onRPCRequest(operation: String, args: [String]) async throws -> RPCResult {
+        guard Self.supportedOperations.contains(operation) else {
+            return .failure(.notSupported)
         }
 
-        guard let rawLanguageToken = request.args.first,
+        guard let rawLanguageToken = args.first,
               let language = CJKInputMethodManager.LanguageToken(token: rawLanguageToken) else {
-            return request.resolve(with: .invalidArgs)
+            return .failure(.invalidArgs)
         }
 
         let preferThirdParty: Bool
-        if request.args.count >= 2 {
-            switch request.args[1].lowercased() {
+        if args.count >= 2 {
+            switch args[1].lowercased() {
             case "prefer-third-party":
                 preferThirdParty = true
             case "prefer-first-party", "":
                 preferThirdParty = false
             default:
-                return request.resolve(with: .invalidArgs)
+                return .failure(.invalidArgs)
             }
         } else {
             preferThirdParty = false
@@ -64,9 +64,9 @@ final class CJKSwitchInputMethodRPCHandler: RPCHandlerPluginV1 {
             preferThirdParty: preferThirdParty
         )
         guard success else {
-            return request.resolve(with: .internalError)
+            return .failure(.internalError)
         }
 
-        return request.resolve(with: .success, retval: language.rawValue)
+        return .success(language.rawValue)
     }
 }
