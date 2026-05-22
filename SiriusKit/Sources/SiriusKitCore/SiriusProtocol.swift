@@ -100,4 +100,7 @@ public struct SiriusFeature: RawRepresentable, Equatable, Hashable, Sendable {
      FileSystemAccessMount: 파일 시스템 액세스 per-mount data plane 채널 (handle/I/O/디렉토리/파일 연산).
      */
     public static let fileSystemAccessMount = SiriusFeature(rawValue: UUID(uuidString: "31035A4B-AB82-4F7D-A165-F763C382C1B9")!)
+    
+    /// SimpleRPC: Generic request/response RPC bus for lightweight operations that do not warrant a dedicated channel.
+    public static let simpleRPC = SiriusFeature(rawValue: UUID(uuidString: "360DF067-39B4-423D-8048-BE5FC36A4FEA")!)
 }
