@@ -5,6 +5,7 @@
 //  Created by Gyuhwan Park on 12/18/25.
 //
 
+import Carbon
 import Foundation
 
 import Combine
@@ -62,7 +63,7 @@ final class HIDIOGCKeyboard: HIDIOVirtualDevice {
 
     private var reconcileTask: Task<Void, Never>?
 
-    private static let reconcileInterval: UInt64 = 100_000_000  // 100ms
+    private static let reconcileInterval: UInt64 = 250_000_000  // 100ms
 
     init() {
 
@@ -113,11 +114,11 @@ final class HIDIOGCKeyboard: HIDIOVirtualDevice {
             }
         }
 
-        // self.startReconcileTimer()
+        self.startReconcileTimer()
     }
 
     fileprivate func destroyKeyboardInputHandler() {
-        // self.stopReconcileTimer()
+        self.stopReconcileTimer()
         self.releaseAllPressedKeys()
         self.keyboard?.keyboardInput?.keyChangedHandler = nil
     }
@@ -153,12 +154,33 @@ final class HIDIOGCKeyboard: HIDIOVirtualDevice {
         
         var releasedKeys: [GCKeyCode] = []
         for keyCode in pressedKeys {
-            guard let cgKeyCode = LinuxKeycode.from(gameController: keyCode).toCarbonKeycode else {
-                continue
-            }
-            let pressed = CGEventSource.keyState(.combinedSessionState, key: UInt16(cgKeyCode))
-            if !pressed {
-                releasedKeys.append(keyCode)
+            
+            switch keyCode {
+            case .rightShift:
+                if !NSEvent.modifierFlags.contains(.shift) {
+                    releasedKeys.append(keyCode)
+                }
+            case .rightAlt:
+                if !NSEvent.modifierFlags.contains(.option) {
+                    releasedKeys.append(keyCode)
+                }
+            case .rightControl:
+                if !NSEvent.modifierFlags.contains(.control) {
+                    releasedKeys.append(keyCode)
+                }
+            case .rightGUI:
+                if !NSEvent.modifierFlags.contains(.command) {
+                    releasedKeys.append(keyCode)
+                }
+            default:
+                guard let cgKeyCode = LinuxKeycode.from(gameController: keyCode).toCarbonKeycode else {
+                    continue
+                }
+                
+                let pressed = CGEventSource.keyState(.combinedSessionState, key: UInt16(cgKeyCode))
+                if !pressed {
+                    releasedKeys.append(keyCode)
+                }
             }
         }
 
