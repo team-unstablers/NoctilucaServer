@@ -18,7 +18,8 @@ public macro PrivateLibrary(path: String) = #externalMacro(module: "GesuMacros",
 public macro PrivateFunction<Ret, each Arg>(
     _ name: String,
     args: (repeat (each Arg).Type),
-    ret: Ret.Type
+    ret: Ret.Type,
+    retainedCF: Bool = false
 ) = #externalMacro(module: "GesuMacros", type: "PrivateFunctionMacro")
 
 public enum PrivateLibraryError: Error {
