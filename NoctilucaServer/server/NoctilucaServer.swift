@@ -278,6 +278,11 @@ final class NoctilucaServer: ObservableObject {
         logger.info("Shutting down NoctilucaServer...")
 
         try await server.shutdown()
+
+        // SiriusServer.shutdown 이 ClientSession 들을 닫으면서 ProjectionChannel.destroy 까지
+        // 흘러간 뒤, AX/Workspace 자원을 최종 정리한다. 서버 stop → 재시작 사이에
+        // stale AppSession / workspace observer 가 남지 않도록 한다.
+        await DesktopContextManager.shared.shutdown()
     }
 }
 

@@ -69,20 +69,27 @@ private func getSkyLightWindowInfo(for windowID: CGWindowID) -> SkyLightWindowIn
     guard let connection = SkyLightPrivate.SLSMainConnectionID?() else {
         return nil
     }
-    guard let query = SkyLightPrivate.SLSWindowQueryWindows?(connection, [windowID] as CFArray, 1) else {
+    // SLSWindowQueryWindows / SLSWindowQueryResultCopyWindows 는 Create/Copy 규칙으로
+    // +1 retained CFTypeRef 를 반환한다 (Gesu retainedCF: true). takeRetainedValue 로
+    // 소유권을 Swift ARC 에 이전해 함수 스코프 종료 시 자동 release 되도록 한다.
+    guard let query = SkyLightPrivate.SLSWindowQueryWindows?(connection, [windowID] as CFArray, 1)?
+        .takeRetainedValue()
+    else {
         return nil
     }
-    guard let iterator = SkyLightPrivate.SLSWindowQueryResultCopyWindows?(query) else {
+    guard let iterator = SkyLightPrivate.SLSWindowQueryResultCopyWindows?(query)?
+        .takeRetainedValue()
+    else {
         return nil
     }
-    
+
     _ = SkyLightPrivate.SLSWindowIteratorAdvance?(iterator)
-    
+
     let rawTag = SkyLightPrivate.SLSWindowIteratorGetTags?(iterator) ?? 0
     let tag = CGSWindowTag(rawValue: rawTag)
-    
+
     let parentID = SkyLightPrivate.SLSWindowIteratorGetParentID?(iterator)
-    
+
     return SkyLightWindowInfo(parentWindowId: parentID, tag: tag)
 }
 
@@ -458,6 +465,10 @@ final class AppSession {
     private var axObserver: AXObserver?
     private var observerRefCon: UnsafeMutableRawPointer?
 
+    /// 열려 있는 popup(컨텍스트) 메뉴 root menuID → 그 subtree 전체의 UUID 집합.
+    /// popup close 시 해당 subtree 의 transient `AppMenuRegistry` entry 를 회수하기 위해 사용한다.
+    private var contextMenuSubtreeIds: [UUID: Set<UUID>] = [:]
+
     nonisolated(unsafe) private let observedNotifications: [CFString] = [
         kAXWindowCreatedNotification as CFString,
         kAXUIElementDestroyedNotification as CFString,
@@ -539,6 +550,17 @@ final class AppSession {
         isStopped = true
 
         cancellables.removeAll()
+
+        // 아직 close 알림을 받지 못한 popup 들의 subtree entry 를 일괄 회수한다.
+        // (앱이 강제 종료되어 close 알림이 못 오는 경우 등.)
+        if !contextMenuSubtreeIds.isEmpty {
+            var leftover: Set<UUID> = []
+            for ids in contextMenuSubtreeIds.values {
+                leftover.formUnion(ids)
+            }
+            AppMenuRegistry.shared.removeIDs(leftover)
+            contextMenuSubtreeIds.removeAll()
+        }
 
         guard let observer = axObserver else { return }
         for notification in observedNotifications {
@@ -844,6 +866,9 @@ final class AppSession {
         let builder = AccessibilityTreeBuilder(pid: self.pid, maxDepth: 2)
         let tree = builder.snapshot(subtreeRoot: element, parentId: nil)
 
+        // 이 popup subtree 의 모든 노드 UUID 를 기록해 close 시 일괄 회수한다.
+        contextMenuSubtreeIds[tree.id] = Self.collectDescendantIds(of: tree)
+
         let bounds = Self.readPopupBounds(element: element)
         // 현재 focus 된 윈도우를 트리거 윈도우 후보로 사용한다.
         let triggerWindowID: WindowID? = monitoredWindows
@@ -863,7 +888,24 @@ final class AppSession {
             // 사용자가 닫은 경우, 혹은 prune 후 stale 한 close).
             return
         }
+        // popup 이 닫혔으니 해당 subtree 의 transient AppMenuRegistry entry 를 일괄 회수한다.
+        // 늦게 도착하는 DispatchActionRequest 는 `Unknown targetNodeId` 로 실패하게 되는데,
+        // 이미 닫힌 popup 에 액션을 수행하는 것보다 안전한 거동이다.
+        if let ids = contextMenuSubtreeIds.removeValue(forKey: menuID) {
+            AppMenuRegistry.shared.removeIDs(ids)
+        }
         delegate?.appSession(self, didCloseContextMenu: menuID)
+    }
+
+    /// 주어진 `AccessibilityNode` 의 자신을 포함한 모든 descendant UUID 를 수집한다.
+    private static func collectDescendantIds(of node: AccessibilityNode) -> Set<UUID> {
+        var result: Set<UUID> = []
+        var stack: [AccessibilityNode] = [node]
+        while let current = stack.popLast() {
+            result.insert(current.id)
+            stack.append(contentsOf: current.children)
+        }
+        return result
     }
 
     nonisolated private static func readPopupBounds(element: AXUIElement) -> CGRect {
@@ -1146,6 +1188,15 @@ final class DesktopContextManager {
     /// 활성 컨텍스트(popup) 메뉴 이벤트 구독
     private var contextMenuEventSubscriptions: [UUID: ContextMenuEventSubscription] = [:]
 
+    /// window subscription UUID → 해당 구독이 owner 로 잡고 있는 PID 집합. unsubscribe 시
+    /// `pidOwnerCount` 를 감산해 0 이 되고 `pinnedSessions` 가 아니면 AppSession 을 stop 한다.
+    private var subscriptionOwnedPIDs: [UUID: Set<pid_t>] = [:]
+    /// PID → 해당 PID 의 AppSession 을 owner 로 잡고 있는 활성 구독 수.
+    private var pidOwnerCount: [pid_t: Int] = [:]
+    /// 외부 명시 호출(예: AppStream 시작) 로 만들어진 AppSession 의 PID 들. owner count 가
+    /// 0 으로 떨어져도 stop 하지 않는다.
+    private var pinnedSessions: Set<pid_t> = []
+
     private let workspace: NSWorkspace
     private var workspaceObservers: [Any] = []
 
@@ -1218,12 +1269,28 @@ final class DesktopContextManager {
         }
     }
 
+    /// AppSession 을 명시적으로 "pinned" 표시한다. window subscription owner count 가 0 으로
+    /// 떨어져도 `stopMonitoring` 자동 호출에서 제외된다. AppStream 진입처럼 winman 구독과
+    /// 별개로 세션이 유지되어야 하는 경로에서 사용한다.
+    func pinSession(forPID pid: pid_t) {
+        pinnedSessions.insert(pid)
+    }
+
+    /// `pinSession` 의 반대. 호출 자체는 세션을 stop 하지 않는다. owner count 가 이미 0 이면
+    /// 다음 unsubscribe 가 stop 을 트리거하며, 아직 0 이 아니면 그 구독들이 해제될 때 stop 된다.
+    func unpinSession(forPID pid: pid_t) {
+        pinnedSessions.remove(pid)
+    }
+
     /// 모든 세션을 정리하고 workspace observer를 해제한다.
     func shutdown() {
         subscriptions.removeAll()
         appEventSubscriptions.removeAll()
         menuEventSubscriptions.removeAll()
         contextMenuEventSubscriptions.removeAll()
+        subscriptionOwnedPIDs.removeAll()
+        pidOwnerCount.removeAll()
+        pinnedSessions.removeAll()
         for session in activeSessions.values {
             session.stop()
         }
@@ -1232,6 +1299,10 @@ final class DesktopContextManager {
             workspace.notificationCenter.removeObserver(observer)
         }
         workspaceObservers.removeAll()
+
+        // 정상 경로(AppStream cleanup, AppSession.stop) 가 모두 prune 했어야 하지만,
+        // 비정상 종료/경합 등으로 잔존 entry 가 있을 수 있어 마지막 안전망으로 비운다.
+        AppMenuRegistry.shared.removeAll()
     }
 
     // MARK: - Window Info Query
@@ -1474,8 +1545,14 @@ final class DesktopContextManager {
         )
         subscriptions[subscriptionID] = subscription
 
-        // 구독 대상 앱들의 AppSession 자동 생성
-        ensureSessionsForSubscription(subscription)
+        // 구독 대상 앱들의 AppSession 자동 생성 + owner-count 등록
+        let ownedPIDs = ensureSessionsForSubscription(subscription)
+        if !ownedPIDs.isEmpty {
+            subscriptionOwnedPIDs[subscriptionID] = ownedPIDs
+            for pid in ownedPIDs {
+                pidOwnerCount[pid, default: 0] += 1
+            }
+        }
 
         // sendInitialSnapshot 플래그 처리
         if flags.contains(.sendInitialSnapshot) {
@@ -1494,9 +1571,27 @@ final class DesktopContextManager {
         return subscriptionID
     }
 
-    /// 윈도우 이벤트 구독 해제
+    /// 윈도우 이벤트 구독 해제. 해당 구독이 owner 로 잡고 있던 AppSession 들의 reference
+    /// count 를 감산하고, 0 이 되며 `pinnedSessions` 가 아니면 AppSession 을 stop 한다.
+    @discardableResult
     func unsubscribeWindowEvents(id: UUID) -> Bool {
-        return subscriptions.removeValue(forKey: id) != nil
+        let existed = subscriptions.removeValue(forKey: id) != nil
+
+        if let ownedPIDs = subscriptionOwnedPIDs.removeValue(forKey: id) {
+            for pid in ownedPIDs {
+                let next = (pidOwnerCount[pid] ?? 0) - 1
+                if next <= 0 {
+                    pidOwnerCount.removeValue(forKey: pid)
+                    if !pinnedSessions.contains(pid) {
+                        stopMonitoring(pid: pid)
+                    }
+                } else {
+                    pidOwnerCount[pid] = next
+                }
+            }
+        }
+
+        return existed
     }
 
     // MARK: - App Event Subscription
@@ -1860,13 +1955,18 @@ final class DesktopContextManager {
 
     // MARK: - Subscription Helpers
 
-    /// 구독 필터에서 pid를 추출하여 해당 앱의 AppSession을 자동 생성
-    private func ensureSessionsForSubscription(_ subscription: WindowEventSubscription) {
+    /// 구독 필터에서 pid를 추출하여 해당 앱의 AppSession을 자동 생성한다.
+    /// - Returns: 본 구독이 owner 로 간주해야 할 PID 집합 (성공적으로 세션을 보유하게 된 모든
+    ///   대상 앱의 PID). unsubscribe 시 이 집합 기준으로 reference count 를 감산한다.
+    private func ensureSessionsForSubscription(_ subscription: WindowEventSubscription) -> Set<pid_t> {
+        var ownedPIDs: Set<pid_t> = []
+
         // 필터에서 pid를 추출할 수 있으면 해당 앱만
         if let filter = subscription.filter, let pids = filter.extractPIDs() {
             for pid in pids {
                 do {
-                    _ = try ensureSession(forPID: pid)
+                    let session = try ensureSession(forPID: pid)
+                    ownedPIDs.insert(session.pid)
                 } catch {
                     logger.warning("Failed to create session for PID \(pid): \(error)")
                 }
@@ -1875,12 +1975,15 @@ final class DesktopContextManager {
             // 필터가 없거나 pid를 특정할 수 없으면 모든 모니터링 대상 앱의 세션 생성
             for app in runningApplications() {
                 do {
-                    _ = try startMonitoring(app: app)
+                    let session = try startMonitoring(app: app)
+                    ownedPIDs.insert(session.pid)
                 } catch {
                     logger.warning("Failed to create session for \(app.localizedName ?? "unknown"): \(error)")
                 }
             }
         }
+
+        return ownedPIDs
     }
 
     /// 이벤트를 모든 매칭되는 구독에 전달
@@ -1915,6 +2018,27 @@ final class DesktopContextManager {
         }
         for id in contextMenuToRemove {
             contextMenuEventSubscriptions.removeValue(forKey: id)
+        }
+
+        // 정상 경로(AppStream cleanup)가 실패했거나 PID-keyed 구독 없이 menu/contextMenu 만
+        // 들어오는 경우에도 종료된 앱의 AXUIElement 매핑이 누적되지 않도록 safety net 으로
+        // 함께 prune 한다.
+        AppMenuRegistry.shared.prune(pid: pid)
+
+        // 종료된 pid 가 owner 로 잡혀 있던 흔적을 정리한다. 구독 자체는 filter 가 다른 pid
+        // 매칭을 위해 살아 있을 수 있으므로 subscriptions 자체는 건드리지 않는다.
+        pidOwnerCount.removeValue(forKey: pid)
+        pinnedSessions.remove(pid)
+        for (subscriptionID, ownedPIDs) in subscriptionOwnedPIDs {
+            if ownedPIDs.contains(pid) {
+                var updated = ownedPIDs
+                updated.remove(pid)
+                if updated.isEmpty {
+                    subscriptionOwnedPIDs.removeValue(forKey: subscriptionID)
+                } else {
+                    subscriptionOwnedPIDs[subscriptionID] = updated
+                }
+            }
         }
 
         if !menuToRemove.isEmpty || !contextMenuToRemove.isEmpty {

@@ -76,6 +76,20 @@ final class AppMenuRegistry {
         elementIndex.removeValue(forKey: pid)
     }
 
+    /// 주어진 UUID 집합에 해당하는 매핑을 제거한다.
+    /// popup(컨텍스트) 메뉴가 닫혔을 때 해당 popup subtree 의 transient entry 를 회수하는 데 사용한다.
+    /// 등록되지 않은 UUID는 조용히 무시한다.
+    func removeIDs(_ ids: Set<UUID>) {
+        for id in ids {
+            guard let entry = idToEntry.removeValue(forKey: id) else { continue }
+            let key = AXElementKey(element: entry.element)
+            elementIndex[entry.pid]?.removeValue(forKey: key)
+            if elementIndex[entry.pid]?.isEmpty == true {
+                elementIndex.removeValue(forKey: entry.pid)
+            }
+        }
+    }
+
     /// 전체 매핑을 초기화한다.
     func removeAll() {
         idToEntry.removeAll()

@@ -341,6 +341,10 @@ extension ProjectionChannel {
         let (fallbackHandle, displayOrigin) = await resolveAppStreamAnchor()
         let windowAnchor = AppStreamWindowAnchor(displayOrigin: displayOrigin)
 
+        // AppStream 세션이 유지되는 동안 대상 앱의 AppSession 이 다른 winman 구독의
+        // owner-count 변화에 의해 stop 되지 않도록 pin 한다. cleanupAppStreamSession 에서 unpin.
+        await desktopContextManager.pinSession(forPID: pid)
+
         // PID 기반 윈도우 이벤트 구독
         let windowSubscriptionId = await desktopContextManager.subscribeWindowEvents(
             eventMask: [.closed, .moved, .resized, .metadataChanged, .focused],
@@ -379,6 +383,8 @@ extension ProjectionChannel {
         )
 
         guard await state.activateAppStreamSession(sessionInfo) else {
+            // 활성화 실패 — pin 을 먼저 풀어 windowSubscription 회수 시 AppSession 도 정리되게 한다.
+            await desktopContextManager.unpinSession(forPID: pid)
             await desktopContextManager.unsubscribeWindowEvents(id: windowSubscriptionId)
             await desktopContextManager.unsubscribeAppEvents(id: appTerminationSubId)
             if let handle = fallbackHandle {
@@ -512,6 +518,9 @@ extension ProjectionChannel {
     }
 
     func cleanupAppStreamSession(_ session: ProjectionChannelState.AppStreamSessionInfo) async {
+        // pin 해제는 windowSubscription unsubscribe *전에* 해야 owner-count 가 0 으로 떨어지는
+        // 시점에 AppSession 이 자동으로 stop 된다.
+        await desktopContextManager.unpinSession(forPID: session.pid)
         await desktopContextManager.unsubscribeWindowEvents(id: session.windowSubscriptionId)
         await desktopContextManager.unsubscribeAppEvents(id: session.appTerminationSubscriptionId)
         await MainActor.run {

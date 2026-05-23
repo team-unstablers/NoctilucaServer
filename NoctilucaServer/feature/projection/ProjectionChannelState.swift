@@ -57,6 +57,10 @@ actor ProjectionChannelState {
         let appEventSubscriptionId: UUID?
         let appStreamSession: AppStreamSessionInfo?
         let accessibilitySubscriptions: [AccessibilitySubscriptionInfo]
+        /// AppStream/싱글윈도우 resize 등 채널이 직접 관리하는 구독을 제외한, 일반
+        /// winman `SubscribeWindowEventsRequest` 로 만들어진 구독 UUID 들. destroy 시
+        /// 일괄 unsubscribe 한다.
+        let windowSubscriptionIds: Set<UUID>
         let virtualDisplayHandles: [NOCVirtualDisplayHandle]
     }
 
@@ -91,6 +95,10 @@ actor ProjectionChannelState {
     private var appEventSubscriptionId: UUID?
     private var appStreamSession: AppStreamSessionInfo?
     private var accessibilitySubscriptions: [UUID: AccessibilitySubscriptionInfo] = [:]
+    /// 일반 winman `SubscribeWindowEventsRequest` 로 만들어진 구독 UUID 들. 채널이 닫힐 때
+    /// 일괄 unsubscribe 한다. AppStream / singleWindow resize 등 채널이 별도 경로로
+    /// 추적하는 구독은 여기에 포함하지 않는다.
+    private var windowSubscriptionIds: Set<UUID> = []
 
     /// 클라이언트가 보낸 wire UUID → 서버 VD handle 매핑.
     /// VirtualDisplayCreate 시 등록, VirtualDisplayDestroy 또는 채널 destroy 시 회수한다.
@@ -315,6 +323,22 @@ actor ProjectionChannelState {
         return accessibilitySubscriptions.values.filter { $0.pid == pid }
     }
 
+    // MARK: - Window Subscription Tracking
+
+    /// 일반 winman 구독 UUID 를 등록한다. lifecycle 이 active 일 때만 받아들이며 그 외에는
+    /// 호출자가 즉시 unsubscribe 해야 한다.
+    @discardableResult
+    func addWindowSubscription(id: UUID) -> Bool {
+        guard lifecycleState == .active else { return false }
+        windowSubscriptionIds.insert(id)
+        return true
+    }
+
+    @discardableResult
+    func removeWindowSubscription(id: UUID) -> Bool {
+        return windowSubscriptionIds.remove(id) != nil
+    }
+
     // MARK: - Destroy
 
     func beginDestroy() -> DestroySnapshot? {
@@ -323,6 +347,13 @@ actor ProjectionChannelState {
         }
 
         lifecycleState = .destroying
+
+        // AppStream session 이 활성이면 그 windowSubscriptionId 는 cleanupAppStreamSession 이
+        // 별도로 정리하므로 일반 winman set 에서 제외해 중복 unsubscribe 를 막는다.
+        var winmanSubscriptionIds = windowSubscriptionIds
+        if let appStream = appStreamSession {
+            winmanSubscriptionIds.remove(appStream.windowSubscriptionId)
+        }
 
         let snapshot = DestroySnapshot(
             videoSessions: Array(sessions.values),
@@ -333,6 +364,7 @@ actor ProjectionChannelState {
             appEventSubscriptionId: appEventSubscriptionId,
             appStreamSession: appStreamSession,
             accessibilitySubscriptions: Array(accessibilitySubscriptions.values),
+            windowSubscriptionIds: winmanSubscriptionIds,
             virtualDisplayHandles: Array(virtualDisplayHandles.values)
         )
 
@@ -343,6 +375,7 @@ actor ProjectionChannelState {
         sessionDisplayIDs.removeAll()
         virtualDisplayHandles.removeAll()
         accessibilitySubscriptions.removeAll()
+        windowSubscriptionIds.removeAll()
 
         cursorSubscription = nil
         displaySubscription = nil

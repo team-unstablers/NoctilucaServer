@@ -316,6 +316,10 @@ class SkyLightPrivate {
         ret: CGError.self
     )
 
+    // NOTE: out-param 으로 +1 retained CFTypeRef? 를 돌려주는 Copy 함수. 매크로의
+    // retainedCF 옵션은 직접 반환값에만 적용되므로 여기서는 사용 불가. 호출자가
+    // out-param 으로 받은 CFTypeRef 를 직접 `Unmanaged.fromOpaque(...).takeRetainedValue()`
+    // 또는 `__bridge_transfer` 등가 처리로 ARC 에 넘겨야 한다. 현재 미사용.
     #PrivateFunction(
         "SLSCopyWindowProperty",
         args: (
@@ -358,7 +362,8 @@ class SkyLightPrivate {
             CGSConnectionID.self,
             CGWindowID.self
         ),
-        ret: CFArray?.self
+        ret: CFArray?.self,
+        retainedCF: true
     )
 
     // MARK: - Window Query / Iterator
@@ -370,13 +375,15 @@ class SkyLightPrivate {
             CFArray.self,
             Int32.self
         ),
-        ret: CFTypeRef?.self
+        ret: CFTypeRef?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
         "SLSWindowQueryResultCopyWindows",
         args: (CFTypeRef.self,),
-        ret: CFTypeRef?.self
+        ret: CFTypeRef?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -414,7 +421,8 @@ class SkyLightPrivate {
     #PrivateFunction(
         "SLSCopyManagedDisplays",
         args: (CGSConnectionID.self,),
-        ret: CFArray?.self
+        ret: CFArray?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -423,7 +431,8 @@ class SkyLightPrivate {
             CGSConnectionID.self,
             CGWindowID.self
         ),
-        ret: CFString?.self
+        ret: CFString?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -432,7 +441,8 @@ class SkyLightPrivate {
             CGSConnectionID.self,
             CGRect.self
         ),
-        ret: CFString?.self
+        ret: CFString?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -441,13 +451,15 @@ class SkyLightPrivate {
             CGSConnectionID.self,
             CGPoint.self
         ),
-        ret: CFString?.self
+        ret: CFString?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
         "SLSCopyActiveMenuBarDisplayIdentifier",
         args: (CGSConnectionID.self,),
-        ret: CFString?.self
+        ret: CFString?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -471,7 +483,8 @@ class SkyLightPrivate {
     #PrivateFunction(
         "SLSCopyManagedDisplaySpaces",
         args: (CGSConnectionID.self,),
-        ret: CFArray?.self
+        ret: CFArray?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -480,7 +493,8 @@ class SkyLightPrivate {
             CGSConnectionID.self,
             UInt64.self
         ),
-        ret: CFString?.self
+        ret: CFString?.self,
+        retainedCF: true
     )
 
     // MARK: - Display Enable / Disable
@@ -519,7 +533,8 @@ class SkyLightPrivate {
             CGSConnectionID.self,
             UInt64.self
         ),
-        ret: CFString?.self
+        ret: CFString?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -529,7 +544,8 @@ class SkyLightPrivate {
             Int32.self,
             CFArray.self
         ),
-        ret: CFArray?.self
+        ret: CFArray?.self,
+        retainedCF: true
     )
 
     #PrivateFunction(
@@ -542,7 +558,8 @@ class SkyLightPrivate {
             UnsafeMutablePointer<UInt64>.self,
             UnsafeMutablePointer<UInt64>.self
         ),
-        ret: CFArray?.self
+        ret: CFArray?.self,
+        retainedCF: true
     )
 
     // MARK: - Space / Process Assignment
@@ -664,7 +681,8 @@ class SkyLightPrivate {
             CGWindowID.self,
             CFDictionary?.self
         ),
-        ret: CGContext?.self
+        ret: CGContext?.self,
+        retainedCF: true
     )
 
     // MARK: - Cursor

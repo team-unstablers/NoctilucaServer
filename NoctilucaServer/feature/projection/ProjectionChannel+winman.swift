@@ -81,6 +81,14 @@ extension ProjectionChannel {
             }
         }
 
+        // 채널이 닫힐 때 destroy 경로에서 일괄 unsubscribe 할 수 있도록 state 에 기록한다.
+        // 채널이 이미 destroying/destroyed 면 addWindowSubscription 이 false 를 반환하므로
+        // 그 자리에서 unsubscribe 하여 stale entry 가 남지 않도록 한다.
+        let accepted = await state.addWindowSubscription(id: subscriptionID)
+        if !accepted {
+            _ = await desktopContextManager.unsubscribeWindowEvents(id: subscriptionID)
+        }
+
         let response = SubscribeWindowEventsResponse(
             requestID: request.requestID,
             subscriptionID: subscriptionID
@@ -90,6 +98,7 @@ extension ProjectionChannel {
 
     func handleUnsubscribeWindowEventsRequest(_ request: UnsubscribeWindowEventsRequest) async throws {
         let success = await desktopContextManager.unsubscribeWindowEvents(id: request.subscriptionID)
+        await state.removeWindowSubscription(id: request.subscriptionID)
 
         let response = UnsubscribeWindowEventsResponse(
             requestID: request.requestID,

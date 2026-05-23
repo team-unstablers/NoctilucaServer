@@ -261,6 +261,16 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
             }
         }
 
+        // 일반 winman `SubscribeWindowEventsRequest` 로 만들어진 구독은 클라이언트가 명시
+        // unsubscribe 하지 않으면 회수되지 않는다. AppStream session 의 windowSubscriptionId 는
+        // beginDestroy 에서 제외되어 cleanupAppStreamSession 이 따로 처리한다.
+        if !snapshot.windowSubscriptionIds.isEmpty {
+            let desktopContextManager = await DesktopContextManager.shared
+            for subscriptionID in snapshot.windowSubscriptionIds {
+                _ = await desktopContextManager.unsubscribeWindowEvents(id: subscriptionID)
+            }
+        }
+
         if let appStreamSession = snapshot.appStreamSession {
             await cleanupAppStreamSession(appStreamSession)
         }
