@@ -48,6 +48,15 @@ extension NoctilucaClient {
         // _ = try await channel.createSession(for: primaryDisplayID, projectionSettings: sessionSettings?.projection)
     }
     
+    func initializeSimpleRPC() async throws {
+        guard let channel = try await session.channelManager.openChannel(for: .simpleRPC, identifier: ChannelIdentifier()) as? SimpleRPCChannel else {
+            return
+        }
+
+        self.simpleRPCChannel = channel
+        self.logger.info("initializeSimpleRPC(): created SimpleRPCChannel")
+    }
+
     func initializeClipboard() async throws {
         guard let channel = try await session.channelManager.openChannel(for: .clipboard, identifier: ChannelIdentifier()) as? ClipboardChannel else {
             // FIXME
@@ -83,6 +92,12 @@ extension NoctilucaClient {
             try await initializeClipboard()
         } catch {
             logger.warning("Failed to initialize clipboard channel: \(error)")
+        }
+
+        do {
+            try await initializeSimpleRPC()
+        } catch {
+            logger.warning("Failed to initialize SimpleRPC channel: \(error)")
         }
     }
 }

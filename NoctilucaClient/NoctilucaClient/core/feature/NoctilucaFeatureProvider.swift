@@ -53,6 +53,7 @@ final class NoctilucaFeatureProvider: FeatureProvider {
             .clipboard,
             .fileSystemAccess,
             .fileSystemAccessMount,
+            .simpleRPC,
         ]
     }
 
@@ -74,6 +75,9 @@ final class NoctilucaFeatureProvider: FeatureProvider {
         case .fileSystemAccess:
             return true
         case .fileSystemAccessMount:
+            return true
+
+        case .simpleRPC:
             return true
 
         default:
@@ -219,6 +223,13 @@ final class NoctilucaFeatureProvider: FeatureProvider {
                 return .rejected(code: -1, reason: "fsaccess_mount: sessionId in args does not match any active mount session")
             }
             return .accepted(channel)
+
+        case .simpleRPC:
+            // 클라이언트는 RPC 요청을 보내는 측만 지원. 서버가 .remote 로 열려는 시도는 거절.
+            guard handle.direction == .local else {
+                return .rejected(code: -1, reason: "SimpleRPC channel must be opened from client side")
+            }
+            return .accepted(SimpleRPCChannel(handle: handle))
 
         default:
             fatalError("Unsupported feature: \(feature)")

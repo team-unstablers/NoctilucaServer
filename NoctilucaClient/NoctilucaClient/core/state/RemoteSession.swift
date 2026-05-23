@@ -51,6 +51,10 @@ final class RemoteSession {
 
     private(set) var hidio: HIDIO? = nil
 
+#if os(macOS)
+    private(set) var inputMethodSync: InputMethodSync? = nil
+#endif
+
     private let progressTracker = FileTransferProgressTracker()
 
     @ObservationIgnored
@@ -304,21 +308,34 @@ final class RemoteSession {
             guard let hidioChannel = channel as? HIDIOChannel else {
                 return
             }
-            
+
             self.hidio = HIDIO(self, channel: hidioChannel)
+#if os(macOS)
+        case .simpleRPC:
+            guard let simpleRPCChannel = channel as? SimpleRPCChannel else {
+                return
+            }
+            self.inputMethodSync = InputMethodSync(self, channel: simpleRPCChannel)
+#endif
         default:
             break
         }
     }
-    
+
     private func handleChannelClose(_ channelID: UUID) {
         if channelID == projection?.channelID {
             self.projection = nil
         }
-        
+
         if channelID == hidio?.channelID {
             self.hidio = nil
         }
+
+#if os(macOS)
+        if channelID == inputMethodSync?.channelID {
+            self.inputMethodSync = nil
+        }
+#endif
     }
 
     private func handleAudioProjectionInitializationFailure(_ error: Error) {

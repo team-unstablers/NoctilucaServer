@@ -124,9 +124,17 @@ extension AppSettings {
         var toggleExclusiveModeKeySequence: KeySequence = KeySequence(modifier: [.KEY_LEFTALT], key: .KEY_ESC)
         var redirectionMethod: InputRedirectionMethod = .gameController
         var modifierKeyOverrides: ModifierKeyOverrides = .init()
+        
+#if os(macOS)
+        var syncIMState: Bool = true
+        var syncIMStatePreferThirdParty: Bool = false
+#endif
+        
 #if os(macOS)
         var redirectKnownShortcuts: Bool = false
 #endif
+        
+        
 #if os(iOS)
         var enableGCMouse: Bool = true
 #endif
@@ -152,6 +160,10 @@ extension AppSettings {
             case unlockKeySequence
             case redirectionMethod
             case modifierKeyOverrides
+#if os(macOS)
+            case syncIMState
+            case syncIMStatePreferThirdParty
+#endif
 #if os(macOS)
             case redirectKnownShortcuts
 #endif
@@ -196,6 +208,12 @@ extension AppSettings {
             }
             redirectionMethod = container.decodeSafe(InputRedirectionMethod.self, forKey: .redirectionMethod, default: redirectionMethod)
             modifierKeyOverrides = container.decodeSafe(ModifierKeyOverrides.self, forKey: .modifierKeyOverrides, default: modifierKeyOverrides)
+            
+#if os(macOS)
+            syncIMState = container.decodeSafe(Bool.self, forKey: .syncIMState, default: syncIMState)
+            syncIMStatePreferThirdParty = container.decodeSafe(Bool.self, forKey: .syncIMStatePreferThirdParty, default: syncIMStatePreferThirdParty)
+#endif
+            
 #if os(macOS)
             redirectKnownShortcuts = container.decodeSafe(Bool.self, forKey: .redirectKnownShortcuts, default: redirectKnownShortcuts)
 #endif
@@ -222,6 +240,11 @@ extension AppSettings {
             try container.encode(toggleExclusiveModeKeySequence, forKey: .toggleExclusiveModeKeySequence)
             try container.encode(redirectionMethod, forKey: .redirectionMethod)
             try container.encode(modifierKeyOverrides, forKey: .modifierKeyOverrides)
+#if os(macOS)
+            try container.encode(syncIMState, forKey: .syncIMState)
+            try container.encode(syncIMStatePreferThirdParty, forKey: .syncIMStatePreferThirdParty)
+#endif
+            
 #if os(macOS)
             try container.encode(redirectKnownShortcuts, forKey: .redirectKnownShortcuts)
 #endif

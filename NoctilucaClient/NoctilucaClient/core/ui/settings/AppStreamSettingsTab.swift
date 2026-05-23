@@ -46,31 +46,7 @@ struct AppStreamSettingsTab: View {
                 Text(markdown: String(localized: "settings.appstream.quirks.header.title", defaultValue: "AppStream은 기능의 특성상 호스트의 OS / 서버 소프트웨어에 따라 동작이 달라질 수 있습니다.\nNoctiluca에서는 그러함에도 최대한 동작의 정합성을 맞추기 위해 호환성 플래그 기능을 제공합니다."))
             }
             
-            Section {
-                // $settings.appstream.quirks["app.noctiluca.appstream.quirks.sync_im_state"]
-                Toggle(isOn: .constant(false)) {
-                    Text(markdown: String(
-                        localized: "settings.appstream.quirks.sync_im_state.title",
-                        defaultValue: "클라이언트의 입력 언어를 호스트와 동기화하기"
-                    ))
-                    Text(markdown: String(
-                        localized: "settings.appstream.quirks.sync_im_state.description",
-                        defaultValue: "클라이언트의 입력 언어가 변경되면, `simplerpc` 채널을 통해 호스트에게 이에 상응하는 입력 방법으로 변경을 요청합니다.\n- 이 플래그가 동작하려면 호스트의 Noctiluca Server 버전이 0.10.0 이상이어야 합니다.\n- 역방향 동기화는 지원하지 않습니다."
-                    ))
-                }
-                
-                // $settings.appstream.quirks["app.noctiluca.appstream.quirks.sync_im_state.prefer-third-party-ime"]
-                Toggle(isOn: .constant(false)) {
-                    Text(markdown: String(
-                        localized: "settings.appstream.quirks.sync_im_state.prefer-third-party-ime.title",
-                        defaultValue: "입력 언어 동기화 시 서드 파티 IM을 우선하기"
-                    ))
-                    Text(markdown: String(
-                        localized: "settings.appstream.quirks.sync_im_state.prefer-third-party-ime.description",
-                        defaultValue: "'구름 입력기' (한국어), 'Google 日本語入力' (일본어), '百度输入法' (중국어) 등의 서드 파티 IM이 호스트에 구성되어 있는 경우, 이를 우선하도록 호스트에 요청합니다."
-                    ))
-                }
-            }
+
             
             Section {
                 // $settings.appstream.quirks["app.noctiluca.appstream.quirks.winman.geometry-sync-method"]

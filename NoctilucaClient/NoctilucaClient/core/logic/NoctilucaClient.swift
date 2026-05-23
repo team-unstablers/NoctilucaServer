@@ -213,6 +213,7 @@ final class NoctilucaClient: ObservableObject, Sendable {
     var hidioChannel: HIDIOChannel!
     var projectionChannel: ProjectionChannel!
     weak var clipboardChannel: ClipboardChannel?
+    var simpleRPCChannel: SimpleRPCChannel?
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
@@ -582,6 +583,7 @@ final class NoctilucaClient: ObservableObject, Sendable {
         // 채널 참조 해제
         self.hidioChannel = nil
         self.projectionChannel = nil
+        self.simpleRPCChannel = nil
 
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()
