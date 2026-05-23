@@ -151,7 +151,9 @@ final class NoctilucaFeatureProvider: FeatureProvider {
                 return .rejected(code: -1, reason: "fsaccess_mount channel-start args[0] must be a UUID string (mount sessionId).")
             }
             return .accepted(FSAccessMountChannel(handle: handle, sessionId: sessionId))
-        
+
+        case .simpleRPC:
+            return .accepted(SimpleRPCChannel(handle: handle))
 
         default:
             fatalError("Unsupported feature: \(feature)")
