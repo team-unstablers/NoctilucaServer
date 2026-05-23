@@ -9,6 +9,7 @@
 
 import ApplicationServices
 import Carbon
+import Foundation
 
 /// CJK 입력 지원이 공통적으로 필요로 하는 두 가지 동작 — 입력 소스(IM) 전환과
 /// 비활성 앱에서의 TISSelectInputSource 워크어라운드 — 을 한 곳에 모은다.
@@ -16,94 +17,17 @@ import Carbon
 /// 키보드 핵(Win32-style 한/영 토글)과 RPC 핸들러(`app.noctiluca.rpc.switch-im`)
 /// 양쪽에서 공유한다. `@MainActor` 격리로 TIS / NSWindow / AX API 호출 경로를
 /// 단일 스레드로 직렬화한다.
+///
+/// IM ↔ 언어 매칭은 입력 소스의 `kTISPropertyInputSourceLanguages` (BCP-47 태그
+/// 배열) 만으로 판정한다. 서드 파티 / 퍼스트 파티 구분은 입력 소스 ID 가
+/// `com.apple.` 로 시작하는지로 런타임에 판단한다 — 사전적으로 후보 IM 의 ID 를
+/// 알 필요가 없다.
 @MainActor
 final class CJKInputMethodManager {
     static let shared = CJKInputMethodManager()
 
-    /// `app.noctiluca.rpc.switch-im` operation 이 받는 언어 토큰.
-    /// 클라이언트의 입력 언어(BCP-47 단순화 형태) 를 그대로 받는다.
-    enum LanguageToken: String, CaseIterable {
-        case english = "en"
-        case korean = "ko"
-        case japanese = "ja"
-        case chineseSimplified = "zh-Hans"
-        case chineseTraditional = "zh-Hant"
-
-        /// 매니페스트에 정의된 별칭 / 흔히 쓰이는 약어들을 흡수한다.
-        init?(token: String) {
-            let normalized = token.trimmingCharacters(in: .whitespacesAndNewlines)
-            switch normalized.lowercased() {
-            case "en", "en-us", "abc", "latin", "ascii":
-                self = .english
-            case "ko", "ko-kr", "kor":
-                self = .korean
-            case "ja", "ja-jp", "jpn":
-                self = .japanese
-            case "zh-hans", "zh_cn", "zh-cn", "zh", "chs":
-                self = .chineseSimplified
-            case "zh-hant", "zh_tw", "zh-tw", "cht":
-                self = .chineseTraditional
-            default:
-                return nil
-            }
-        }
-    }
-
-    /// IM 매칭에 사용할 후보 input source ID 들.
-    /// 첫 매칭되는 것을 사용하며, 없으면 sourceLanguages 기반 fallback 으로 넘어간다.
-    /// 서드 파티 IM 우선 옵션이 켜진 경우 `thirdParty` 배열을 먼저 시도한다.
-    private struct InputSourceCandidates {
-        let thirdParty: [String]
-        let firstParty: [String]
-        /// `kTISPropertyInputSourceLanguages` 기반 fallback 매칭에 사용할 BCP-47 prefix.
-        /// 예: "ko" 는 "ko", "ko-KR" 모두 매칭.
-        let languagePrefix: String
-    }
-
-    private static let candidatesByLanguage: [LanguageToken: InputSourceCandidates] = [
-        .korean: InputSourceCandidates(
-            thirdParty: [
-                "pl.gureum.GureumIM.Korean",
-                "pl.gureum.GureumIM",
-            ],
-            firstParty: [
-                "com.apple.inputmethod.Korean.2SetKorean",
-                "com.apple.inputmethod.Korean.3SetKorean",
-            ],
-            languagePrefix: "ko"
-        ),
-        .japanese: InputSourceCandidates(
-            thirdParty: [
-                "com.google.inputmethod.Japanese.base",
-                "com.google.inputmethod.Japanese.Roman",
-                "com.google.inputmethod.Japanese.Hiragana",
-            ],
-            firstParty: [
-                "com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese",
-                "com.apple.inputmethod.Kotoeri.KanaTyping.Japanese",
-            ],
-            languagePrefix: "ja"
-        ),
-        .chineseSimplified: InputSourceCandidates(
-            thirdParty: [
-                "com.baidu.inputmethod.BaiduIM.Pinyin",
-                "com.sogou.inputmethod.sogou.pinyin",
-            ],
-            firstParty: [
-                "com.apple.inputmethod.SCIM.ITABC",
-                "com.apple.inputmethod.SCIM.Shuangpin",
-            ],
-            languagePrefix: "zh-Hans"
-        ),
-        .chineseTraditional: InputSourceCandidates(
-            thirdParty: [],
-            firstParty: [
-                "com.apple.inputmethod.TCIM.Zhuyin",
-                "com.apple.inputmethod.TCIM.Cangjie",
-            ],
-            languagePrefix: "zh-Hant"
-        ),
-    ]
+    /// 퍼스트 파티(Apple 기본 제공) 입력 소스의 ID 접두.
+    private static let firstPartyIDPrefix = "com.apple."
 
     /// TISSelectInputSource() 가 비활성 앱에서 조용히 실패하는 문제를 우회하기 위한
     /// 1x1 투명 윈도우. lazy 로 생성되며 앱 생명주기 동안 재사용된다.
@@ -115,35 +39,41 @@ final class CJKInputMethodManager {
 
     /// 현재 선택된 IM 의 source ID 를 반환한다.
     var currentInputSourceID: String? {
-        guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
-              let pointer = TISGetInputSourceProperty(source, kTISPropertyInputSourceID) else {
+        guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
             return nil
         }
-        let cfString = Unmanaged<CFString>.fromOpaque(pointer).takeUnretainedValue()
-        return cfString as String
+        return Self.inputSourceID(of: source)
     }
 
-    /// 현재 IM 이 주어진 언어 카테고리에 속하는지 검사한다.
-    func currentInputMatches(_ language: LanguageToken) -> Bool {
-        guard let currentID = currentInputSourceID,
-              let candidates = Self.candidatesByLanguage[language] else {
-            return language == .english && currentIsASCIICapable()
+    /// 현재 IM 이 주어진 언어 명세에 매칭되는지 검사한다.
+    /// 요청 언어가 영어(`.english`) 인 경우 ASCIICapable 여부로 판단한다.
+    func currentInputSourceMatches(_ language: Locale.Language) -> Bool {
+        if Self.isAsciiRequest(language) {
+            return currentIsASCIICapable()
         }
-        if candidates.thirdParty.contains(currentID) || candidates.firstParty.contains(currentID) {
-            return true
+        guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+            return false
         }
-        return currentSourceLanguages().contains { $0.hasPrefix(candidates.languagePrefix) }
+        return Self.sourceLanguages(of: source).contains { tag in
+            Self.languageTag(tag, matches: language)
+        }
     }
 
-    /// 주어진 언어에 해당하는 IM 으로 전환한다.
+    /// 주어진 언어 명세에 해당하는 IM 으로 전환한다.
     /// - Parameters:
-    ///   - language: 전환 대상 언어.
-    ///   - preferThirdParty: 동일 언어에 대해 서드 파티 IM (구름 / Google / Baidu 등)
-    ///     이 설치되어 있다면 우선하여 선택할지 여부.
+    ///   - language: 전환 대상 언어 (`Locale.Language`).
+    ///   - preferThirdParty: 퍼스트 파티(`com.apple.*`)가 아닌 서드 파티 IM 이
+    ///     같은 언어로 설치되어 있다면 우선하여 선택할지 여부.
     /// - Returns: 전환에 성공했는지 여부. 매칭되는 IM 이 없거나 TIS 가 실패하면 `false`.
     @discardableResult
-    func switchInputMethod(to language: LanguageToken, preferThirdParty: Bool = false) async -> Bool {
-        guard let target = resolveInputSource(for: language, preferThirdParty: preferThirdParty) else {
+    func switchInputMethod(
+        matching language: Locale.Language,
+        preferThirdParty: Bool = false
+    ) async -> Bool {
+        guard let target = resolveInputSource(
+            for: language,
+            preferThirdParty: preferThirdParty
+        ) else {
             return false
         }
 
@@ -152,50 +82,70 @@ final class CJKInputMethodManager {
             return false
         }
 
-        // ASCII 가 아닌 IM (= IME 가 활성화되는 경우) 으로 전환했다면,
+        // ASCIICapable 이 아닌 IM (= IME 가 활성화되는 경우) 으로 전환했다면,
         // TIS 가 비활성 앱에서 조용히 무시되는 문제를 우회하기 위해
         // 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
-        if language != .english {
+        if !Self.isAsciiCapable(target) {
             await activateWorkaroundWindowAndRestore()
         }
         return true
     }
 
-    /// 한/영 토글: ASCII (= English) 와 주어진 CJK 언어를 번갈아 전환한다.
-    /// 키보드 핵에서 사용한다.
+    /// ASCII (= US/ABC) 와 지정된 CJK 언어 사이를 토글한다. 키보드 핵에서 사용한다.
     @discardableResult
-    func toggleBetweenEnglishAnd(_ cjkLanguage: LanguageToken, preferThirdParty: Bool = false) async -> Bool {
-        if currentInputMatches(cjkLanguage) {
-            return await switchInputMethod(to: .english, preferThirdParty: preferThirdParty)
+    func toggleBetweenAsciiAnd(
+        _ language: Locale.Language,
+        preferThirdParty: Bool = false
+    ) async -> Bool {
+        if currentInputSourceMatches(language) {
+            return await switchInputMethod(
+                matching: Locale.Language(languageCode: .english),
+                preferThirdParty: preferThirdParty
+            )
         }
-        return await switchInputMethod(to: cjkLanguage, preferThirdParty: preferThirdParty)
+        return await switchInputMethod(
+            matching: language,
+            preferThirdParty: preferThirdParty
+        )
     }
 
     // MARK: - Input source resolution
 
-    private func resolveInputSource(for language: LanguageToken, preferThirdParty: Bool) -> TISInputSource? {
-        if language == .english {
+    private func resolveInputSource(
+        for language: Locale.Language,
+        preferThirdParty: Bool
+    ) -> TISInputSource? {
+        if Self.isAsciiRequest(language) {
             return findASCIICapableInputSource()
         }
 
-        guard let candidates = Self.candidatesByLanguage[language] else {
+        guard let list = TISCreateInputSourceList(nil, false)?
+            .takeRetainedValue() as? [TISInputSource] else {
             return nil
         }
 
-        let ordered: [[String]] = preferThirdParty
-            ? [candidates.thirdParty, candidates.firstParty]
-            : [candidates.firstParty, candidates.thirdParty]
+        var firstParty: [TISInputSource] = []
+        var thirdParty: [TISInputSource] = []
 
-        for group in ordered {
-            for id in group {
-                if let source = findInputSource(byID: id) {
-                    return source
-                }
+        for source in list {
+            let matches = Self.sourceLanguages(of: source).contains { tag in
+                Self.languageTag(tag, matches: language)
+            }
+            guard matches else { continue }
+
+            let id = Self.inputSourceID(of: source) ?? ""
+            if id.hasPrefix(Self.firstPartyIDPrefix) {
+                firstParty.append(source)
+            } else {
+                thirdParty.append(source)
             }
         }
 
-        // 마지막 폴백 — sourceLanguages 에 prefix 가 매칭되는 첫 enabled IM 을 찾는다.
-        return findEnabledInputSource(languagePrefix: candidates.languagePrefix)
+        let ordered: [[TISInputSource]] = preferThirdParty
+            ? [thirdParty, firstParty]
+            : [firstParty, thirdParty]
+
+        return ordered.first { !$0.isEmpty }?.first
     }
 
     private func findASCIICapableInputSource() -> TISInputSource? {
@@ -205,28 +155,23 @@ final class CJKInputMethodManager {
         return list.first
     }
 
-    private func findInputSource(byID id: String) -> TISInputSource? {
-        let filter: [CFString: Any] = [
-            kTISPropertyInputSourceID: id as CFString
-        ]
-        guard let list = TISCreateInputSourceList(filter as CFDictionary, false)?
-            .takeRetainedValue() as? [TISInputSource] else {
-            return nil
+    private func currentIsASCIICapable() -> Bool {
+        guard let current = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+            return false
         }
-        return list.first
+        return Self.isAsciiCapable(current)
     }
 
-    private func findEnabledInputSource(languagePrefix: String) -> TISInputSource? {
-        guard let list = TISCreateInputSourceList(nil, false)?
-            .takeRetainedValue() as? [TISInputSource] else {
+    // MARK: - TIS property helpers
+
+    private static func inputSourceID(of source: TISInputSource) -> String? {
+        guard let pointer = TISGetInputSourceProperty(source, kTISPropertyInputSourceID) else {
             return nil
         }
-        return list.first { source in
-            sourceLanguages(of: source).contains { $0.hasPrefix(languagePrefix) }
-        }
+        return Unmanaged<CFString>.fromOpaque(pointer).takeUnretainedValue() as String
     }
 
-    private func sourceLanguages(of source: TISInputSource) -> [String] {
+    private static func sourceLanguages(of source: TISInputSource) -> [String] {
         guard let pointer = TISGetInputSourceProperty(source, kTISPropertyInputSourceLanguages) else {
             return []
         }
@@ -234,19 +179,38 @@ final class CJKInputMethodManager {
         return array ?? []
     }
 
-    private func currentSourceLanguages() -> [String] {
-        guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
-            return []
-        }
-        return sourceLanguages(of: source)
-    }
-
-    private func currentIsASCIICapable() -> Bool {
-        guard let current = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
-              let ascii = findASCIICapableInputSource() else {
+    /// 주어진 source 가 ASCIICapable 입력 소스 리스트에 포함되는지.
+    /// (= IME 가 활성화되지 않은, 직접 라틴 문자를 타이핑하는 레이아웃.)
+    private static func isAsciiCapable(_ source: TISInputSource) -> Bool {
+        guard let list = TISCreateASCIICapableInputSourceList().takeRetainedValue()
+            as? [TISInputSource] else {
             return false
         }
-        return current == ascii
+        return list.contains(source)
+    }
+
+    private static func isAsciiRequest(_ language: Locale.Language) -> Bool {
+        language.languageCode == .english
+    }
+
+    /// 입력 소스의 언어 태그 (`kTISPropertyInputSourceLanguages` 의 한 항목) 가
+    /// 요청 언어 명세와 매칭되는지.
+    ///
+    /// 규칙:
+    /// - 언어 코드는 반드시 일치해야 한다.
+    /// - 요청에 script 가 명시되어 있으면 (`zh-Hans`, `zh-Hant` 등) 입력 소스의
+    ///   script 도 같아야 한다. (단, 요청에 script 가 없으면 입력 소스의 script
+    ///   는 무엇이든 허용 — `zh` 요청은 `zh-Hans` / `zh-Hant` 모두 매칭.)
+    /// - region 은 무시한다 (`en-US` 와 `en-GB` 는 IM 선택 관점에서 동치).
+    private static func languageTag(_ tag: String, matches request: Locale.Language) -> Bool {
+        let source = Locale.Language(identifier: tag)
+        guard source.languageCode == request.languageCode else {
+            return false
+        }
+        if let requestScript = request.script {
+            return source.script == requestScript
+        }
+        return true
     }
 
     // MARK: - Workaround window

@@ -28,7 +28,9 @@ final class CJKEmulateWin32HangulToggleHack: KeyboardHackPluginV1 {
             return .passthrough
         }
 
-        await CJKInputMethodManager.shared.toggleBetweenEnglishAnd(.korean)
+        await CJKInputMethodManager.shared.toggleBetweenAsciiAnd(
+            Locale.Language(languageCode: .korean)
+        )
 
         // IM 전환 직후 키 입력이 다음 파이프라인으로 누설되지 않도록 짧게 대기.
         try? await Task.sleep(for: .milliseconds(128))
