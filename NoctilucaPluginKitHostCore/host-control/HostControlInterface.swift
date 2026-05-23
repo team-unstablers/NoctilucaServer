@@ -17,8 +17,10 @@ import Shotoku
 /// 라이브러리 한계가 아니라 XPC 프리미티브의 한계.
 ///
 /// 대신 plugin type 별 forwarding method 를 `HostControlInterface` 가 직접
-/// expose 한다 (`keyboardHack_*` 등). dual-interface (Shotoku v0.3) 도착
-/// 시 이 디자인은 재검토 예정.
+/// expose 한다 (`keyboardHack_*` / `rpcHandler_*` 등). 한 bundle 이 같은
+/// type 의 plugin 을 여러 개 export 할 수 있으므로, forwarding method 들은
+/// 첫 번째 인자로 `pluginId` 를 받아 host 가 plugin 별 adapter 로 분기할 수
+/// 있게 한다. dual-interface (Shotoku v0.3) 도착 시 이 디자인은 재검토 예정.
 public struct LoadedBundleInfo: Codable, Sendable {
     public let bundleId: String
     public let exports: [LoadedPluginInfo]
@@ -49,15 +51,19 @@ public enum HostControlError: Error, Codable, Sendable {
     case notLoaded
     /// plugin 이 아직 load 되지 않았거나 해당 type 의 plugin 이 없는 경우.
     case pluginUnavailable(type: NoctilucaPluginType)
+    /// 주어진 pluginId 의 plugin 을 해당 type adapter dict 에서 찾을 수 없는 경우.
+    case pluginNotFound(type: NoctilucaPluginType, pluginId: String)
 }
 
 /// Host process bootstrap channel.
 ///
 /// `loadBundle` 호출 전: `ping` / `loadBundle` 만 의미가 있음. `keyboardHack_*`
-/// 등의 forwarding method 는 `pluginUnavailable` 을 throw.
+/// / `rpcHandler_*` 등의 forwarding method 는 `pluginUnavailable` 을 throw.
 ///
-/// `loadBundle` 호출 후: `keyboardHack_*` 등이 host 의 wrapped plugin 으로
-/// 위임됨.
+/// `loadBundle` 호출 후: forwarding method 들이 첫 번째 인자 `pluginId` 로
+/// host 의 plugin-type 별 adapter dict 에서 lookup 하여 wrapped plugin 으로
+/// 위임됨. 해당 type 의 plugin 이 하나도 없으면 `pluginUnavailable`, 해당
+/// pluginId 매칭이 없으면 `pluginNotFound` 를 throw.
 @RPCInterface
 public protocol HostControlInterface: Sendable {
 
@@ -86,18 +92,36 @@ public protocol HostControlInterface: Sendable {
 
     // MARK: - KeyboardHack forwarding
     //
-    // `loadBundle` 후 활성화. plugin type 이 keyboardHack 이 아니면
-    // `HostControlError.pluginUnavailable(type: .keyboardHack)` throw.
+    // `loadBundle` 후 활성화. 첫 번째 인자 `pluginId` 로 host 의
+    // keyboardHack adapter dict 에서 lookup 한다. plugin type 자체가 없으면
+    // `HostControlError.pluginUnavailable(type: .keyboardHack)`, pluginId
+    // 매칭이 없으면 `HostControlError.pluginNotFound(...)` throw.
 
     @RPCProcedure
-    func keyboardHack_id() async throws -> String
+    func keyboardHack_id(pluginId: String) async throws -> String
 
     @RPCProcedure
-    func keyboardHack_desiredKeyEvents() async throws -> [LinuxKeycode]
+    func keyboardHack_desiredKeyEvents(pluginId: String) async throws -> [LinuxKeycode]
 
     @RPCProcedure
-    func keyboardHack_onKeyDown(_ keyCode: LinuxKeycode) async throws -> KeyboardHackResult
+    func keyboardHack_onKeyDown(pluginId: String, _ keyCode: LinuxKeycode) async throws -> KeyboardHackResult
 
     @RPCProcedure
-    func keyboardHack_onKeyUp(_ keyCode: LinuxKeycode) async throws -> KeyboardHackResult
+    func keyboardHack_onKeyUp(pluginId: String, _ keyCode: LinuxKeycode) async throws -> KeyboardHackResult
+
+    // MARK: - RPCHandler forwarding
+    //
+    // `loadBundle` 후 활성화. 첫 번째 인자 `pluginId` 로 host 의 rpcHandler
+    // adapter dict 에서 lookup 한다. plugin type 자체가 없으면
+    // `HostControlError.pluginUnavailable(type: .rpcHandler)`, pluginId 매칭이
+    // 없으면 `HostControlError.pluginNotFound(...)` throw.
+
+    @RPCProcedure
+    func rpcHandler_id(pluginId: String) async throws -> String
+
+    @RPCProcedure
+    func rpcHandler_supportedOperations(pluginId: String) async throws -> [String]
+
+    @RPCProcedure
+    func rpcHandler_onRPCRequest(pluginId: String, operation: String, args: [String]) async throws -> RPCResult
 }

@@ -20,7 +20,11 @@ actor HostControlInterfaceImpl: HostControlInterface {
 
     private var loadedBundleClass: NoctilucaPluginBundle.Type?
     private var loadedBundleId: String?
-    private var keyboardHackAdapter: KeyboardHackPluginV1Adapter?
+
+    /// pluginId → adapter. 한 bundle 이 같은 type 의 plugin 을 여러 개
+    /// export 할 수 있으므로 dict 으로 보관한다.
+    private var keyboardHackAdapters: [String: KeyboardHackPluginV1Adapter] = [:]
+    private var rpcHandlerAdapters: [String: RPCHandlerPluginV1Adapter] = [:]
 
     init() {}
 
@@ -66,9 +70,10 @@ actor HostControlInterfaceImpl: HostControlInterface {
         for export in exports {
             switch export {
             case .keyboardHack(let plugin):
-                self.keyboardHackAdapter = KeyboardHackPluginV1Adapter(wrapping: plugin)
+                let pluginId = type(of: plugin).id
+                self.keyboardHackAdapters[pluginId] = KeyboardHackPluginV1Adapter(wrapping: plugin)
                 pluginInfos.append(LoadedPluginInfo(
-                    pluginId: type(of: plugin).id,
+                    pluginId: pluginId,
                     type: .keyboardHack
                 ))
             case .auth(let plugin):
@@ -81,8 +86,10 @@ actor HostControlInterfaceImpl: HostControlInterface {
                     type: .extension
                 ))
             case .rpcHandler(let plugin):
+                let pluginId = type(of: plugin).id
+                self.rpcHandlerAdapters[pluginId] = RPCHandlerPluginV1Adapter(wrapping: plugin)
                 pluginInfos.append(LoadedPluginInfo(
-                    pluginId: type(of: plugin).id,
+                    pluginId: pluginId,
                     type: .rpcHandler
                 ))
             @unknown default:
@@ -110,7 +117,8 @@ actor HostControlInterfaceImpl: HostControlInterface {
 
         self.loadedBundleClass = nil
         self.loadedBundleId = nil
-        self.keyboardHackAdapter = nil
+        self.keyboardHackAdapters.removeAll()
+        self.rpcHandlerAdapters.removeAll()
     }
 
     // MARK: - Bundle action forwarding
@@ -131,31 +139,53 @@ actor HostControlInterfaceImpl: HostControlInterface {
 
     // MARK: - KeyboardHack forwarding
 
-    func keyboardHack_id() async throws -> String {
-        guard let adapter = keyboardHackAdapter else {
+    private func keyboardHackAdapter(for pluginId: String) throws -> KeyboardHackPluginV1Adapter {
+        if keyboardHackAdapters.isEmpty {
             throw HostControlError.pluginUnavailable(type: .keyboardHack)
         }
-        return try await adapter.id()
+        guard let adapter = keyboardHackAdapters[pluginId] else {
+            throw HostControlError.pluginNotFound(type: .keyboardHack, pluginId: pluginId)
+        }
+        return adapter
     }
 
-    func keyboardHack_desiredKeyEvents() async throws -> [LinuxKeycode] {
-        guard let adapter = keyboardHackAdapter else {
-            throw HostControlError.pluginUnavailable(type: .keyboardHack)
-        }
-        return try await adapter.desiredKeyEvents()
+    func keyboardHack_id(pluginId: String) async throws -> String {
+        try await keyboardHackAdapter(for: pluginId).id()
     }
 
-    func keyboardHack_onKeyDown(_ keyCode: LinuxKeycode) async throws -> KeyboardHackResult {
-        guard let adapter = keyboardHackAdapter else {
-            throw HostControlError.pluginUnavailable(type: .keyboardHack)
-        }
-        return try await adapter.onKeyDown(keyCode)
+    func keyboardHack_desiredKeyEvents(pluginId: String) async throws -> [LinuxKeycode] {
+        try await keyboardHackAdapter(for: pluginId).desiredKeyEvents()
     }
 
-    func keyboardHack_onKeyUp(_ keyCode: LinuxKeycode) async throws -> KeyboardHackResult {
-        guard let adapter = keyboardHackAdapter else {
-            throw HostControlError.pluginUnavailable(type: .keyboardHack)
+    func keyboardHack_onKeyDown(pluginId: String, _ keyCode: LinuxKeycode) async throws -> KeyboardHackResult {
+        try await keyboardHackAdapter(for: pluginId).onKeyDown(keyCode)
+    }
+
+    func keyboardHack_onKeyUp(pluginId: String, _ keyCode: LinuxKeycode) async throws -> KeyboardHackResult {
+        try await keyboardHackAdapter(for: pluginId).onKeyUp(keyCode)
+    }
+
+    // MARK: - RPCHandler forwarding
+
+    private func rpcHandlerAdapter(for pluginId: String) throws -> RPCHandlerPluginV1Adapter {
+        if rpcHandlerAdapters.isEmpty {
+            throw HostControlError.pluginUnavailable(type: .rpcHandler)
         }
-        return try await adapter.onKeyUp(keyCode)
+        guard let adapter = rpcHandlerAdapters[pluginId] else {
+            throw HostControlError.pluginNotFound(type: .rpcHandler, pluginId: pluginId)
+        }
+        return adapter
+    }
+
+    func rpcHandler_id(pluginId: String) async throws -> String {
+        try await rpcHandlerAdapter(for: pluginId).id()
+    }
+
+    func rpcHandler_supportedOperations(pluginId: String) async throws -> [String] {
+        try await rpcHandlerAdapter(for: pluginId).supportedOperations()
+    }
+
+    func rpcHandler_onRPCRequest(pluginId: String, operation: String, args: [String]) async throws -> RPCResult {
+        try await rpcHandlerAdapter(for: pluginId).onRPCRequest(operation: operation, args: args)
     }
 }
