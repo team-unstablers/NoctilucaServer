@@ -233,16 +233,32 @@ final class CJKInputMethodManager: NSObject {
 
         func activateWorkaroundWindow() async {
             await withCheckedContinuation { continuation in
-                ensureWorkaroundWindow().setIsVisible(true)
-                let axSelf = ensureAXHandle()
-
+                // 이전 호출이 어떤 이유로 정리되지 않은 continuation 을 남겼다면 먼저 풀어 준다.
+                // (현재 @MainActor 직렬화 하에선 발생하지 않는 시나리오지만, 단일 슬롯 패턴의 안전 가드.)
+                if let stale = becomeKeyWindowContinuation {
+                    becomeKeyWindowContinuation = nil
+                    stale.resume()
+                }
                 becomeKeyWindowContinuation = continuation
 
+                let window = ensureWorkaroundWindow()
+                let axSelf = ensureAXHandle()
+
+                window.setIsVisible(true)
                 AXUIElementSetAttributeValue(
                     axSelf,
                     kAXFrontmostAttribute as CFString,
                     true as CFTypeRef
                 )
+
+                // windowDidBecomeKey 알림이 누락되어도 hang 되지 않도록 200ms 폴백 타임아웃.
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .milliseconds(200))
+                    guard let self else { return }
+                    guard let pending = self.becomeKeyWindowContinuation else { return }
+                    self.becomeKeyWindowContinuation = nil
+                    pending.resume()
+                }
             }
         }
 
@@ -319,10 +335,11 @@ final class CJKInputMethodManager: NSObject {
                 return
             }
 
+            // 모달 / 메뉴 트래킹 루프 중에도 알림을 받도록 commonModes 에 등록한다.
             CFRunLoopAddSource(
                 CFRunLoopGetMain(),
                 AXObserverGetRunLoopSource(observer),
-                .defaultMode
+                .commonModes
             )
 
             AXUIElementSetAttributeValue(
@@ -347,7 +364,7 @@ final class CJKInputMethodManager: NSObject {
                 CFRunLoopRemoveSource(
                     CFRunLoopGetMain(),
                     AXObserverGetRunLoopSource(observer),
-                    .defaultMode
+                    .commonModes
                 )
                 self.observer = nil
             }
@@ -378,7 +395,7 @@ final class CJKInputMethodManager: NSObject {
         if let existing = workaroundWindow {
             return existing
         }
-        let window = NSWindow(
+        let window = WorkaroundWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
             styleMask: .borderless,
             backing: .buffered,
@@ -391,17 +408,25 @@ final class CJKInputMethodManager: NSObject {
         window.level = .floating
         window.isReleasedWhenClosed = false
         window.setFrame(NSRect(x: -100, y: -100, width: 1, height: 1), display: false)
-        
+
         window.delegate = self
-        
+
         workaroundWindow = window
         return window
     }
 }
 
+/// borderless NSWindow 는 기본적으로 `canBecomeKey` 가 false 라서 windowDidBecomeKey
+/// 알림이 발생하지 않는다. 알림 기반 대기를 성립시키기 위해 명시적으로 true 로 override 한다.
+private final class WorkaroundWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+}
+
 extension CJKInputMethodManager: NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) {
-        becomeKeyWindowContinuation?.resume()
+        guard (notification.object as AnyObject?) === workaroundWindow else { return }
+        guard let continuation = becomeKeyWindowContinuation else { return }
         becomeKeyWindowContinuation = nil
+        continuation.resume()
     }
 }
