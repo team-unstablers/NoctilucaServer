@@ -33,33 +33,60 @@ private final class XPCBundleAccessor: PluginBundleAccessor {
     }
 }
 
-/// 본 PR 범위에서 `HostControlInterface` proxy 를 `KeyboardHackPluginV1RPC`
-/// surface 로 노출하는 thin bridge.
+/// `HostControlInterface` proxy 를 `KeyboardHackPluginV1RPC` surface 로 노출하는
+/// thin bridge.
 ///
-/// host process 가 한 번에 한 plugin 만 load 하므로 (single-instance per
-/// connection), bridge 는 underlying proxy 의 `keyboardHack_*` forwarding
-/// method 를 호출.
+/// 한 host process 가 (multi-instance 라서) 한 bundle 을 load 하지만, 한 bundle
+/// 안에서 같은 type 의 plugin 이 여러 개 export 될 수 있으므로, bridge 는
+/// pluginId 를 보관하여 forwarding 호출의 첫 인자로 전달한다.
 private final class HostControlKeyboardHackBridge: KeyboardHackPluginV1RPC {
     private let proxy: any HostControlInterface
+    private let pluginId: String
 
-    init(_ proxy: any HostControlInterface) {
+    init(_ proxy: any HostControlInterface, pluginId: String) {
         self.proxy = proxy
+        self.pluginId = pluginId
     }
 
     func id() async throws -> String {
-        try await proxy.keyboardHack_id()
+        try await proxy.keyboardHack_id(pluginId: pluginId)
     }
 
     func desiredKeyEvents() async throws -> [NoctilucaPluginKit.LinuxKeycode] {
-        try await proxy.keyboardHack_desiredKeyEvents()
+        try await proxy.keyboardHack_desiredKeyEvents(pluginId: pluginId)
     }
 
     func onKeyDown(_ keyCode: NoctilucaPluginKit.LinuxKeycode) async throws -> KeyboardHackResult {
-        try await proxy.keyboardHack_onKeyDown(keyCode)
+        try await proxy.keyboardHack_onKeyDown(pluginId: pluginId, keyCode)
     }
 
     func onKeyUp(_ keyCode: NoctilucaPluginKit.LinuxKeycode) async throws -> KeyboardHackResult {
-        try await proxy.keyboardHack_onKeyUp(keyCode)
+        try await proxy.keyboardHack_onKeyUp(pluginId: pluginId, keyCode)
+    }
+}
+
+/// `HostControlInterface` proxy 를 `RPCHandlerPluginV1RPC` surface 로 노출하는
+/// thin bridge. `HostControlKeyboardHackBridge` 와 같은 패턴으로 pluginId 를
+/// 보관하여 forwarding 호출의 첫 인자로 전달한다.
+private final class HostControlRPCHandlerBridge: RPCHandlerPluginV1RPC {
+    private let proxy: any HostControlInterface
+    private let pluginId: String
+
+    init(_ proxy: any HostControlInterface, pluginId: String) {
+        self.proxy = proxy
+        self.pluginId = pluginId
+    }
+
+    func id() async throws -> String {
+        try await proxy.rpcHandler_id(pluginId: pluginId)
+    }
+
+    func supportedOperations() async throws -> [String] {
+        try await proxy.rpcHandler_supportedOperations(pluginId: pluginId)
+    }
+
+    func onRPCRequest(operation: String, args: [String]) async throws -> RPCResult {
+        try await proxy.rpcHandler_onRPCRequest(pluginId: pluginId, operation: operation, args: args)
     }
 }
 
@@ -136,9 +163,12 @@ actor XPCLoader: PluginLoader {
         for entry in loadedInfo.exports {
             switch entry.type {
             case .keyboardHack:
-                let bridge = HostControlKeyboardHackBridge(proxy)
+                let bridge = HostControlKeyboardHackBridge(proxy, pluginId: entry.pluginId)
                 proxies.append(.keyboardHack(bridge))
-            case .auth, .extension, .rpcHandler, .feature:
+            case .rpcHandler:
+                let bridge = HostControlRPCHandlerBridge(proxy, pluginId: entry.pluginId)
+                proxies.append(.rpcHandler(bridge))
+            case .auth, .extension, .feature:
                 // 본 PR 범위 밖.
                 logger.warning("XPCLoader: unsupported plugin type \(entry.type.rawValue) in bundle \(manifest.id), skipping")
             @unknown default:

@@ -57,9 +57,12 @@ actor InProcessLoader: PluginLoader {
             case .keyboardHack(let plugin):
                 let adapter = KeyboardHackPluginV1Adapter(wrapping: plugin)
                 proxies.append(.keyboardHack(adapter))
-            case .auth, .extension, .rpcHandler:
+            case .rpcHandler(let plugin):
+                let adapter = RPCHandlerPluginV1Adapter(wrapping: plugin)
+                proxies.append(.rpcHandler(adapter))
+            case .auth, .extension:
                 // 본 PR 범위 밖. plugin type 별 RPC variant 가 도입되면 추가.
-                logger.warning("InProcessLoader: unsupported export type (auth/extension/rpcHandler) in bundle \(manifest.id), skipping")
+                logger.warning("InProcessLoader: unsupported export type (auth/extension) in bundle \(manifest.id), skipping")
             @unknown default:
                 logger.warning("InProcessLoader: unknown export type in bundle \(manifest.id), skipping")
             }

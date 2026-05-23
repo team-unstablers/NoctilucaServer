@@ -310,6 +310,9 @@ actor PluginBundleRegistry {
             case .keyboardHack(let rpc):
                 await HIDIOKeyboardHackRegistry.shared.register(rpc)
                 logger.info("Registered keyboard hack proxy from bundle: \(manifest.id)")
+            case .rpcHandler(let rpc):
+                await SimpleRPCHandlerRegistry.shared.register(rpc)
+                logger.info("Registered RPC handler proxy from bundle: \(manifest.id)")
             }
         }
         
@@ -379,8 +382,9 @@ actor PluginBundleRegistry {
                 await HIDIOKeyboardHackRegistry.shared.register(adapter)
                 logger.info("Registered keyboard hack: \(type(of: keyboardHack).id) from bundle: \(manifest.id)")
             case .rpcHandler(let rpcHandler):
-                // TODO: RPCHandlerRegistry 연동 (T6 에서 RPC variant 도입 후 구현)
-                logger.info("Registered rpc handler: \(type(of: rpcHandler).id) from bundle: \(manifest.id) (no-op for now)")
+                let adapter = RPCHandlerPluginV1Adapter(wrapping: rpcHandler)
+                await SimpleRPCHandlerRegistry.shared.register(adapter)
+                logger.info("Registered rpc handler: \(type(of: rpcHandler).id) from bundle: \(manifest.id)")
             @unknown default:
                 logger.warning("Encountered unknown plugin export type from bundle: \(manifest.id), skipping registration")
             }

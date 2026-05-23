@@ -32,6 +32,7 @@ struct LoadedPluginExports: Sendable {
 /// `.extension` 은 추후 별도 마이그레이션 (docs T5 / T6) 에서 추가 예정.
 enum LoadedPluginProxy: Sendable {
     case keyboardHack(any KeyboardHackPluginV1RPC)
+    case rpcHandler(any RPCHandlerPluginV1RPC)
 }
 
 /// 플러그인 번들 로더 추상화.
