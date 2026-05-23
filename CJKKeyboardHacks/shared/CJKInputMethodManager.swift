@@ -7,6 +7,8 @@
 
 @preconcurrency import AppKit
 
+import os
+
 import ApplicationServices
 import Carbon
 import Foundation
@@ -23,7 +25,7 @@ import Foundation
 /// `com.apple.` 로 시작하는지로 런타임에 판단한다 — 사전적으로 후보 IM 의 ID 를
 /// 알 필요가 없다.
 @MainActor
-final class CJKInputMethodManager {
+final class CJKInputMethodManager: NSObject {
     static let shared = CJKInputMethodManager()
 
     /// 퍼스트 파티(Apple 기본 제공) 입력 소스의 ID 접두.
@@ -33,7 +35,9 @@ final class CJKInputMethodManager {
     /// 1x1 투명 윈도우. lazy 로 생성되며 앱 생명주기 동안 재사용된다.
     private var workaroundWindow: NSWindow?
 
-    private init() {}
+    override private init() {
+        super.init()
+    }
 
     // MARK: - Public API
 
@@ -214,33 +218,160 @@ final class CJKInputMethodManager {
     }
 
     // MARK: - Workaround window
+    var axSelf: AXUIElement?
+    
+    var becomeKeyWindowContinuation: CheckedContinuation<Void, Never>?
 
     /// 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
     /// TISSelectInputSource() 가 비활성 앱에서 조용히 실패하는 문제를 우회하기 위함.
-    /// 복귀에는 AXUIElement(kAXFrontmostAttribute) 를 사용한다. NSWorkspace 경로보다
-    /// 동기적이라 알림 대기/타임아웃 폴백이 불필요하다. (Accessibility 권한 필요)
+    /// 활성화 / 복귀 모두 AXUIElement(kAXFrontmostAttribute) 를 사용하며, 폴링 대신
+    /// windowDidBecomeKey 와 kAXApplicationActivatedNotification 알림을 기다린다.
+    /// 알림이 어떤 이유로 누락되어도 hang 되지 않도록 복귀 단계에 200ms 폴백 타임아웃을 둔다.
+    /// (Accessibility 권한 필요.)
     private func activateWorkaroundWindowAndRestore() async {
         let previousApp = NSWorkspace.shared.frontmostApplication
-        ensureWorkaroundWindow().setIsVisible(true)
 
-        let ourPid = NSRunningApplication.current.processIdentifier
-        let axSelf = AXUIElementCreateApplication(ourPid)
-        AXUIElementSetAttributeValue(
-            axSelf,
-            kAXFrontmostAttribute as CFString,
-            true as CFTypeRef
-        )
+        func activateWorkaroundWindow() async {
+            await withCheckedContinuation { continuation in
+                ensureWorkaroundWindow().setIsVisible(true)
+                let axSelf = ensureAXHandle()
 
-        try? await Task.sleep(for: .milliseconds(32))
+                becomeKeyWindowContinuation = continuation
 
-        if let pid = previousApp?.processIdentifier {
-            let axApp = AXUIElementCreateApplication(pid)
+                AXUIElementSetAttributeValue(
+                    axSelf,
+                    kAXFrontmostAttribute as CFString,
+                    true as CFTypeRef
+                )
+            }
+        }
+
+        func restoreWindowFocus() async {
+            guard let pid = previousApp?.processIdentifier else { return }
+
+            let observation = RestoreFocusObservation(pid: pid)
+
+            let timeoutTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(200))
+                observation.resumeOnce()
+            }
+
+            await observation.waitForActivation()
+            timeoutTask.cancel()
+        }
+
+        await activateWorkaroundWindow()
+        await restoreWindowFocus()
+    }
+
+    /// 외부 앱이 activate 될 때까지 한 번만 알림을 기다리고 자기 자신을 정리하는 헬퍼.
+    /// `kAXApplicationActivatedNotification` 알림과 외부 타임아웃 호출 중 먼저 도착한
+    /// 쪽이 continuation 을 resume 하고 옵저버 / RunLoop source / refCon 을 모두 해제한다.
+    @MainActor
+    private final class RestoreFocusObservation {
+        private let pid: pid_t
+        private let axApp: AXUIElement
+        private var observer: AXObserver?
+        private var continuation: CheckedContinuation<Void, Never>?
+        private var retainedRefCon: UnsafeMutableRawPointer?
+
+        init(pid: pid_t) {
+            self.pid = pid
+            self.axApp = AXUIElementCreateApplication(pid)
+        }
+
+        func waitForActivation() async {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                self.continuation = continuation
+                start()
+            }
+        }
+
+        private func start() {
+            var observer: AXObserver?
+            let createResult = AXObserverCreate(pid, { _, _, _, refCon in
+                guard let refCon else { return }
+                MainActor.assumeIsolated {
+                    let observation = Unmanaged<RestoreFocusObservation>
+                        .fromOpaque(refCon)
+                        .takeUnretainedValue()
+                    observation.resumeOnce()
+                }
+            }, &observer)
+
+            guard createResult == .success, let observer else {
+                resumeOnce()
+                return
+            }
+            self.observer = observer
+
+            let refCon = Unmanaged.passRetained(self).toOpaque()
+            retainedRefCon = refCon
+
+            let addResult = AXObserverAddNotification(
+                observer,
+                axApp,
+                kAXApplicationActivatedNotification as CFString,
+                refCon
+            )
+            guard addResult == .success || addResult == .notificationAlreadyRegistered else {
+                resumeOnce()
+                return
+            }
+
+            CFRunLoopAddSource(
+                CFRunLoopGetMain(),
+                AXObserverGetRunLoopSource(observer),
+                .defaultMode
+            )
+
             AXUIElementSetAttributeValue(
                 axApp,
                 kAXFrontmostAttribute as CFString,
                 true as CFTypeRef
             )
         }
+
+        /// 알림 경로와 타임아웃 경로 모두에서 호출된다. 먼저 도착한 쪽이 정리·resume 을 수행하고
+        /// 두 번째 호출은 no-op.
+        func resumeOnce() {
+            guard let continuation else { return }
+            self.continuation = nil
+
+            if let observer {
+                AXObserverRemoveNotification(
+                    observer,
+                    axApp,
+                    kAXApplicationActivatedNotification as CFString
+                )
+                CFRunLoopRemoveSource(
+                    CFRunLoopGetMain(),
+                    AXObserverGetRunLoopSource(observer),
+                    .defaultMode
+                )
+                self.observer = nil
+            }
+
+            if let retainedRefCon {
+                self.retainedRefCon = nil
+                Unmanaged<RestoreFocusObservation>.fromOpaque(retainedRefCon).release()
+            }
+
+            continuation.resume()
+        }
+    }
+    
+    private func ensureAXHandle() -> AXUIElement {
+        if let axSelf = axSelf {
+            return axSelf
+        }
+        
+        let ourPid = NSRunningApplication.current.processIdentifier
+        let axSelf = AXUIElementCreateApplication(ourPid)
+        
+        self.axSelf = axSelf
+        
+        return axSelf
     }
 
     private func ensureWorkaroundWindow() -> NSWindow {
@@ -260,7 +391,17 @@ final class CJKInputMethodManager {
         window.level = .floating
         window.isReleasedWhenClosed = false
         window.setFrame(NSRect(x: -100, y: -100, width: 1, height: 1), display: false)
+        
+        window.delegate = self
+        
         workaroundWindow = window
         return window
+    }
+}
+
+extension CJKInputMethodManager: NSWindowDelegate {
+    func windowDidBecomeKey(_ notification: Notification) {
+        becomeKeyWindowContinuation?.resume()
+        becomeKeyWindowContinuation = nil
     }
 }
