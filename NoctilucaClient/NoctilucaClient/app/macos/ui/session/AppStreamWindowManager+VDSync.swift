@@ -68,7 +68,7 @@ extension AppStreamWindowManager {
             createOps.append(DisplayOperation(operation: .createVirtualDisplay(VirtualDisplayCreate(
                 identifier: identifier,
                 desiredSpecs: [spec],
-                purpose: "appStream",
+                purpose: "app-stream",
                 metadata: [:]
             ))))
         }
@@ -313,7 +313,7 @@ extension AppStreamWindowManager {
             createOps.append(DisplayOperation(operation: .createVirtualDisplay(VirtualDisplayCreate(
                 identifier: identifier,
                 desiredSpecs: [spec],
-                purpose: "appStream",
+                purpose: "app-stream",
                 metadata: [:]
             ))))
         }
