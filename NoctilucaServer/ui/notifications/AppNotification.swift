@@ -14,7 +14,6 @@ import NoctilucaPluginKitHostCore
 enum AppNotificationCategory: String {
     case clientEvents  = "app.noctiluca.server.notification-events.client"
     case serverEvents  = "app.noctiluca.server.notification-events.server"
-    case licenseEvents = "app.noctiluca.server.notification-events.license"
     case updateEvents  = "app.noctiluca.server.notification-events.update"
     case securityEvents = "app.noctiluca.server.notification-events.security"
 }
@@ -35,14 +34,10 @@ enum AppNotification: Identifiable {
     case serverStopped
     // TODO: 인증서 자동 갱신 성공
     case tlsAutoconfRenewed
-    // TODO: 부정한 라이선스
-    case invalidLicense
-    case licenseExpiringSoon(remainingDays: Int)
-    case licenseExpired
     // TODO: 새 업데이트 사용 가능
     case updateAvailable(version: String)
     // TODO: 긴급 업데이트 요청
-    case criticalUpdateRequired(version: String, isInvalidLicense: Bool)
+    case criticalUpdateRequired(version: String)
     case pluginBundleRejectedBySecurityPolicy(manifest: any PluginBundleManifest, currentPolicy: PluginBundleSecurityPolicy)
     case clipboardServedToClient(endpoint: String)
     // TODO: 파일 전송 완료
@@ -67,12 +62,6 @@ enum AppNotification: Identifiable {
             return "server_stopped"
         case .tlsAutoconfRenewed:
             return "tls_autoconf_renewed"
-        case .invalidLicense:
-            return "invalid_license"
-        case .licenseExpiringSoon:
-            return "license_expiring_soon"
-        case .licenseExpired:
-            return "license_expired"
         case .updateAvailable:
             return "update_available"
         case .criticalUpdateRequired:
@@ -95,8 +84,6 @@ enum AppNotification: Identifiable {
             return .clientEvents
         case .serverStarted, .serverStartFailed, .serverStopped, .tlsAutoconfRenewed:
             return .serverEvents
-        case .invalidLicense, .licenseExpiringSoon, .licenseExpired:
-            return .licenseEvents
         case .updateAvailable, .criticalUpdateRequired:
             return .updateEvents
         case .pluginBundleRejectedBySecurityPolicy:
@@ -123,12 +110,6 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.server_stopped.title", defaultValue: "서버 종료됨")
         case .tlsAutoconfRenewed:
             return String(localized: "notification.tls_autoconf_renewed.title", defaultValue: "인증서 자동 갱신 성공")
-        case .invalidLicense:
-            return String(localized: "notification.invalid_license.title", defaultValue: "부정한 라이선스")
-        case .licenseExpiringSoon:
-            return String(localized: "notification.license_expiring_soon.title", defaultValue: "라이선스 만료 임박")
-        case .licenseExpired:
-            return String(localized: "notification.license_expired.title", defaultValue: "라이선스 만료")
         case .updateAvailable:
             return String(localized: "notification.update_available.title", defaultValue: "새 업데이트 사용 가능")
         case .criticalUpdateRequired:
@@ -181,21 +162,10 @@ enum AppNotification: Identifiable {
             return String(localized: "notification.server_stopped.message", defaultValue: "서버가 종료되었습니다.")
         case .tlsAutoconfRenewed:
             return String(localized: "notification.tls_autoconf_renewed.message", defaultValue: "TLS 인증서가 자동으로 갱신되었습니다.")
-        case .invalidLicense:
-            return String(localized: "notification.invalid_license.message", defaultValue: "부정한 라이선스가 감지되었습니다.\n정식 버전 구매를 고려해 주세요.")
-        case .licenseExpiringSoon(let remainingDays):
-            return String(format: String(localized: "notification.license_expiring_soon.message", defaultValue: "라이선스가 %d일 후 만료됩니다."), remainingDays)
-        case .licenseExpired:
-            return String(localized: "notification.license_expired.message", defaultValue: "라이선스가 만료되었습니다.\n계속 사용하시려면 새 라이선스를 등록해 주세요.")
         case .updateAvailable(let version):
             return String(format: String(localized: "notification.update_available.message", defaultValue: "새 버전 %@이(가) 사용 가능합니다."), version)
-        case .criticalUpdateRequired(let version, let isInvalidLicense):
-            var message = String(format: String(localized: "notification.critical_update_required.message", defaultValue: "현재 버전에서 심각한 보안 문제가 발견되어 버전 %@으로의 긴급히 업데이트가 필요합니다."), version)
-            if isInvalidLicense {
-                message += "\n" + String(localized: "notification.critical_update_required.piracy_notice.message", defaultValue: "이 업데이트는 불법 복제본 사용자에게도 제공됩니다. 업데이트를 긍정적으로 고려해 주세요.")
-            }
-
-            return message
+        case .criticalUpdateRequired(let version):
+            return String(format: String(localized: "notification.critical_update_required.message", defaultValue: "현재 버전에서 심각한 보안 문제가 발견되어 버전 %@으로의 긴급히 업데이트가 필요합니다."), version)
         case .pluginBundleRejectedBySecurityPolicy(let manifest, _):
             return String(
                 format: String(
@@ -271,7 +241,6 @@ enum AppNotification: Identifiable {
         case .fileTransferSent, .directoryTransferSent:
             allowed = n.onFileTransfer
         case .serverStarted, .serverStopped, .serverStartFailed, .tlsAutoconfRenewed,
-             .invalidLicense, .licenseExpiringSoon, .licenseExpired,
              .updateAvailable, .criticalUpdateRequired,
              .pluginBundleRejectedBySecurityPolicy:
             // 토글 미노출 카테고리: master switch 만 통과하면 발송
