@@ -76,6 +76,7 @@ actor ProjectionSession: Identifiable {
 
     private var screenLockCancellable: AnyCancellable?
     private var displayChangeCancellable: AnyCancellable?
+    private var windowResizeSubscriptionId: UUID?
 
     private weak var sessionDelegate: ProjectionSessionDelegate?
 
@@ -203,6 +204,31 @@ actor ProjectionSession: Identifiable {
         await reconfigureForResolutionChange(newSize: effectiveSize, preserveQualityPlanner: false)
     }
 
+    private func handleWindowSizeChange(_ event: WindowChangedEvent) async {
+        guard !isStopped, !isReconfiguring, !isReconfiguringResolution else { return }
+        guard let windowInfo = event.info else { return }
+
+        let newSize = CGSize(
+            width: windowInfo.bounds.width,
+            height: windowInfo.bounds.height
+        )
+
+        guard let currentCodec = self.codec,
+              let currentSize = currentCodec.size?.cgSize,
+              currentSize != newSize else {
+            return
+        }
+
+        // 최소화 등으로 너무 작아진 경우 무시
+        guard newSize.width >= 1 && newSize.height >= 1 else {
+            return
+        }
+
+        logger.info("Window size changed: \(currentSize) -> \(newSize) for projection session \(self.id)")
+        // 윈도우 리사이즈는 같은 윈도우이므로 quality planner 누적 상태를 그대로 유지한다.
+        await reconfigureForResolutionChange(newSize: newSize, preserveQualityPlanner: true)
+    }
+
     /// scale을 baseline 해상도에 곱한 뒤 인코더 친화적인 4의 배수로 정렬한다.
     /// 너무 작은 값으로 줄어드는 것을 방지하기 위해 최소 4픽셀 가드를 둔다.
     nonisolated static func applyResolutionScale(_ size: CGSize, scale: Float) -> CGSize {
@@ -256,6 +282,10 @@ actor ProjectionSession: Identifiable {
             case .frameSkipped:
                 recentEncodingFailure = true
             case .errorOccurred(let error):
+                if let encoderError = error as? VideoEncoderError,
+                   encoderError == .notStarted {
+                    continue
+                }
                 self.logger.error("Encoder error occurred in projection session \(self.id): \(error)")
                 throw error
             case .stopped:
@@ -357,6 +387,19 @@ actor ProjectionSession: Identifiable {
                         await self?.handleDisplayLayoutChange(layouts)
                     }
                 }
+        }
+
+        // 윈도우 크기 변경 구독 (singleWindow 소스, 최초 prepare 시에만 설정)
+        if windowResizeSubscriptionId == nil, let windowID = recorderSource.monitoredWindowID {
+            windowResizeSubscriptionId = await DesktopContextManager.shared.subscribeWindowEvents(
+                eventMask: .resized,
+                filter: WindowFilter(expression: WindowFilterExpression(.windowID(UInt64(windowID)))),
+                flags: []
+            ) { [weak self] event in
+                Task {
+                    await self?.handleWindowSizeChange(event)
+                }
+            }
         }
 
         // 기존 encoder event loop task 취소 및 encoder 정리
@@ -479,6 +522,10 @@ actor ProjectionSession: Identifiable {
         screenLockCancellable = nil
         displayChangeCancellable?.cancel()
         displayChangeCancellable = nil
+        if let subId = windowResizeSubscriptionId {
+            windowResizeSubscriptionId = nil
+            _ = await DesktopContextManager.shared.unsubscribeWindowEvents(id: subId)
+        }
 
         // 3. Frame queue 정리
         await frameQueue.clear()

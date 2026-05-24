@@ -12,17 +12,14 @@ import SiriusKitClient
 extension ProjectionChannel {
 
     /// 프로젝션 세션 생성 요청을 보냅니다.
-    private func requestSession(identifier: UUID, displayID: Int32, preferredCodecs: [Codec]) async throws -> ProjectionSessionCreatedEvent {
+    private func requestSession(identifier: UUID, source: ProjectionSourceDescriptor, preferredCodecs: [Codec]) async throws -> ProjectionSessionCreatedEvent {
 
         let response = try await self.sendSessionRequest(
             sessionID: identifier,
             opcode: .projectionRequest,
             message: ProjectionRequest(
                 identifier: identifier,
-                viewport: ProjectionSource(
-                    value: .entireDisplay(EntireDisplayProjectionSource(displayID: displayID)),
-                    flags: []
-                ),
+                viewport: source.toProjectionSource(),
                 preferredCodecs: preferredCodecs
             ),
         ) as ProjectionSessionCreatedEvent
@@ -116,7 +113,7 @@ extension ProjectionChannel {
     }
 
 
-    func createSession(for displayID: Int = -1, projectionSettings: SessionSettings.Projection?, timeout: TimeInterval = 10.0) async throws -> ProjectionSession {
+    func createSession(for source: ProjectionSourceDescriptor, projectionSettings: SessionSettings.Projection?, timeout: TimeInterval = 10.0) async throws -> ProjectionSession {
         guard let clientSession = self.clientSession else {
             throw ProjectionChannelError.channelClosed
         }
@@ -126,7 +123,7 @@ extension ProjectionChannel {
         let preferredCodecs = buildPreferredCodecs(from: projectionSettings)
         let response = try await withThrowingTaskGroup(of: ProjectionSessionCreatedEvent.self) { group in
             group.addTask {
-                try await self.requestSession(identifier: identifier, displayID: Int32(displayID), preferredCodecs: preferredCodecs)
+                try await self.requestSession(identifier: identifier, source: source, preferredCodecs: preferredCodecs)
             }
             group.addTask {
                 try await Task.sleep(nanoseconds: UInt64(max(0, timeout) * 1_000_000_000))
@@ -144,9 +141,10 @@ extension ProjectionChannel {
         let projectionAppSettings = await SettingsStore.shared.settings.projection
         let enableJitterBuffer = projectionAppSettings.enableJitterBuffer
         let jitterBufferPreset = projectionAppSettings.jitterBufferPreset
+        
         let session = await ProjectionSession(
             id: identifier,
-            displayID: Int(displayID),
+            sourceDescriptor: source,
             dataChannel: channel,
             controlChannel: self,
             enableJitterBuffer: enableJitterBuffer,
@@ -251,8 +249,8 @@ extension ProjectionChannel {
             return
         }
 
-        // ProjectionSession.displayID 는 nonisolated let 이라 actor hop 없이 접근 가능
-        let displayID = session.displayID
+        // ProjectionSession.sourceDescriptor 는 nonisolated let 이라 actor hop 없이 접근 가능
+        let source = session.sourceDescriptor
 
         do {
             try await session.stop(sendStopRequest: false)
@@ -260,7 +258,7 @@ extension ProjectionChannel {
             logger.error("Failed to stop projection session \(identifier): \(error)")
         }
 
-        continuation.yield(.sessionDestroyed(identifier, displayID: displayID, reason: event.reason, message: event.message))
+        continuation.yield(.sessionDestroyed(identifier, source: source, reason: event.reason, message: event.message))
     }
 
     func handleProjectionSessionChangedEvent(_ event: ProjectionSessionChangedEvent) async {

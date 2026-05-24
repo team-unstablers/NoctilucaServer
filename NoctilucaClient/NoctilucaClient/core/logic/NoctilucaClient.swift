@@ -213,11 +213,18 @@ final class NoctilucaClient: ObservableObject, Sendable {
     var hidioChannel: HIDIOChannel!
     var projectionChannel: ProjectionChannel!
     weak var clipboardChannel: ClipboardChannel?
+    var simpleRPCChannel: SimpleRPCChannel?
 
     var pendingInputRedirectionMethod: AppSettings.InputRedirectionMethod = .gameController
 
     var noctilucaFeatureProvider: NoctilucaFeatureProvider? = nil
     var sessionSettings: SessionSettings? = nil
+
+    /// fsaccess 채널이 RemoteSession 의 lifecycle/consent 상태에 도달하기 위한 weak 참조.
+    /// `RemoteSession` 가 `init` 직후 set 한다.
+    weak var fsAccessRemoteSession: RemoteSession?
+    /// fsaccess mount consent 다이얼로그를 띄울 broker. 일반적으로 `RemoteSession` 자신이 채택한다.
+    nonisolated(unsafe) var fsAccessConsentBroker: (any FSAccessConsentBroker)?
 
     // 기존 접속으로부터 승계된 서버 아이덴티티 검증 정보
     var succeedValidationDecision: SucceedValidationDecision? = nil
@@ -576,6 +583,7 @@ final class NoctilucaClient: ObservableObject, Sendable {
         // 채널 참조 해제
         self.hidioChannel = nil
         self.projectionChannel = nil
+        self.simpleRPCChannel = nil
 
         // self.phaseShiftAssertionTask?.cancel()
         self.eventLoopTask?.cancel()

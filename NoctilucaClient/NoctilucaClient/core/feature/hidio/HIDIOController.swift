@@ -117,13 +117,13 @@ final class HIDIOController {
 
     func connect(_ device: HIDIOVirtualDevice) {
         let identifier = device.identifierString
-
         self.disconnect(identifier)
+        
         device.connect(to: self)
 
         self.devices[identifier] = device
     }
-
+    
     func device(for identifier: String) -> HIDIOVirtualDevice? {
         return self.devices[identifier]
     }
@@ -141,7 +141,7 @@ final class HIDIOController {
         device.disconnect()
         self.devices.removeValue(forKey: identifier.rawValue.uuidString)
     }
-
+    
     func disconnect(_ identifierString: String) {
         guard let device = self.devices[identifierString] else {
             return
@@ -150,7 +150,7 @@ final class HIDIOController {
         device.disconnect()
         self.devices.removeValue(forKey: identifierString)
     }
-
+    
     func disconnectAll(kind: HIDIOVirtualDeviceKind) {
         let devicesToDisconnect = self.devices.filter { type(of: $0.value).kind == kind }
 

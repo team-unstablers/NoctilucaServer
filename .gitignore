@@ -321,5 +321,6 @@ dist_client/
 dist_client_updates/
 
 .gemini/
+.antigravitycli/
 
 nochack/

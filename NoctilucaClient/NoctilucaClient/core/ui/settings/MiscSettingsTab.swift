@@ -29,6 +29,11 @@ struct MiscSettingsTab: View {
                     Text(markdown: String(localized: "settings.misc.debug_window.title", defaultValue: "세션 디버그 윈도우 표시하기"))
                     Text(markdown: String(localized: "settings.misc.debug_window.description", defaultValue: "각 세션의 채널, 프로젝션, 입력 상태를 실시간으로 확인할 수 있는 디버그 윈도우를 표시합니다."))
                 }
+
+                Toggle(isOn: $settings.misc.showAppStreamWindowInfoOverlay) {
+                    Text(markdown: String(localized: "settings.misc.appstream_window_info_overlay.title", defaultValue: "AppStream 윈도우에 디버그 인디케이터 표시하기"))
+                    Text(markdown: String(localized: "settings.misc.appstream_window_info_overlay.description", defaultValue: "AppStream으로 띄워진 각 윈도우 우상단에 원격 윈도우의 ID, 역할, bounds 등 디버그 정보를 표시합니다."))
+                }
             } header: {
                 Text(markdown: String(localized: "settings.misc.experimental.header", defaultValue: "실험 기능"))
             }

@@ -266,37 +266,24 @@ private struct AuthMethodSelectionSheet: View {
         let picker = CBIdentityPicker()
         picker.allowsMultipleSelection = false
         picker.title = String(localized: "settings.security.auth_method.pam.picker_title", defaultValue: "인증 허용 대상 선택")
+
+        nonisolated(unsafe) let pickerRef = picker
         picker.runModal(for: window) { response in
-            guard response == .OK else { return }
-            applyPickedIdentity(picker.identities.first)
+            guard response == .OK,
+                  let identity = pickerRef.identities.first else { return }
+            let isGroup = identity is CBGroupIdentity
+            let posixName = identity.posixName
+            MainActor.assumeIsolated {
+                self.applyPickedIdentity(isGroup: isGroup, posixName: posixName)
+            }
         }
     }
-    
-    @MainActor
-    private func applyPickedIdentity(_ identity: CBIdentity?) {
-        guard let identity else { return }
-        if identity is CBGroupIdentity {
-            pamAllowMode = .group
-        } else {
-            pamAllowMode = .user
-        }
-        
-        guard !identity.posixName.isEmpty else {
-            return
-        }
-        
-        pamPrincipal = identity.posixName
 
-        /*
-        if !identity.posixName.isEmpty {
-        } else if !identity.fullName.isEmpty {
-            fatalError("FIXME")
-            pamPrincipal = identity.fullName
-        } else if !identity.uuidString.isEmpty {
-            fatalError("FIXME")
-            pamPrincipal = identity.uuidString
-        }
-         */
+    @MainActor
+    private func applyPickedIdentity(isGroup: Bool, posixName: String) {
+        pamAllowMode = isGroup ? .group : .user
+        guard !posixName.isEmpty else { return }
+        pamPrincipal = posixName
     }
     #endif
 }

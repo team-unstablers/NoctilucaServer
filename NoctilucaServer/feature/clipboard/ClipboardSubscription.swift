@@ -61,6 +61,10 @@ final class ClipboardSubscription: Identifiable, Sendable {
                 await channel.storeSnapshot(snapshot.omittedData)
                 await channel.storeFileTransferSnapshot(snapshot.fileTransferData)
                 try await channel.handle.send(opcode: .clipboardEvent, message: event)
+
+                await MainActor.run {
+                    AppNotification.clipboardServedToClient(endpoint: "").postIfEnabled()
+                }
             } catch {
                 logger.error("Failed to send ClipboardEvent: \(error)")
             }

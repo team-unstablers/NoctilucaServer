@@ -25,6 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
     private var onboardingWindowController: OnboardingWindowController?
     private var licensingWindowController: LicensingWindowController?
     private var aboutAppWindowController: AboutAppWindowController?
+    private let activationPolicyCoordinator = ActivationPolicyCoordinator()
     private var cancellables: Set<AnyCancellable> = []
     private var statusItem: NSStatusItem?
     private var trayMenu: NSMenu?
@@ -50,6 +51,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         // ignore SIGPIPE to prevent app from crashing when trying to write to a closed socket
         signal(SIGPIPE, SIG_IGN);
 
+        // SIGTERM / SIGINT 수신 시 fsaccess NFS mount 를 forced unmount 후 graceful 종료.
+        FSAccessSignalGuard.install()
+
         let delegate = AppDelegate()
         app.delegate = delegate
         _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
@@ -69,6 +73,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         InjectConfiguration.animation = .interactiveSpring()
 
         TCCUtil.shared.requestAccess(for: .notifications)
+        
+        try? ApplicationServicesPrivate.open()
+        try? SkyLightPrivate.open()
         
         UNUserNotificationCenter.current().delegate = self
         
@@ -137,7 +144,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.onboardingWindowController?.showWindow(nil)
             self.onboardingWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.onboardingWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
@@ -153,7 +165,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.licensingWindowController?.showWindow(nil)
             self.licensingWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.licensingWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
@@ -167,7 +184,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.aboutAppWindowController?.showWindow(nil)
             self.aboutAppWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.aboutAppWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
@@ -181,7 +203,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Sendable {
         DispatchQueue.main.async {
             self.settingsWindowController?.showWindow(nil)
             self.settingsWindowController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if let window = self.settingsWindowController?.window {
+                self.activationPolicyCoordinator.track(window)
+            }
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 

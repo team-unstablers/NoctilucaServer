@@ -13,6 +13,7 @@ struct AppKitSettingsWindow: View {
     enum SettingsTab: Hashable {
         case general
         case projection
+        case appStream
         case input
         case security
         case misc
@@ -31,8 +32,16 @@ struct AppKitSettingsWindow: View {
             List(selection: $selectedTab) {
                 Label(String(localized: "settings.tabs.general", defaultValue: "일반"), systemImage: "gearshape")
                     .tag(SettingsTab.general)
+                
+                Divider()
+                
                 Label(String(localized: "settings.tabs.projection", defaultValue: "프로젝션"), systemImage: "rectangle.on.rectangle")
                     .tag(SettingsTab.projection)
+                Label(String(localized: "settings.tabs.appstream", defaultValue: "AppStream"), systemImage: "rectangle.on.rectangle")
+                    .tag(SettingsTab.appStream)
+                
+                Divider()
+                
                 Label(String(localized: "settings.tabs.input", defaultValue: "입력"), systemImage: "keyboard")
                     .tag(SettingsTab.input)
                 Label(String(localized: "settings.tabs.security", defaultValue: "보안"), systemImage: "lock")
@@ -52,6 +61,8 @@ struct AppKitSettingsWindow: View {
                 GeneralSettingsTab()
             case .projection:
                 ProjectionSettingsTab()
+            case .appStream:
+                AppStreamSettingsTab(settings: $settingsStore.settings)
             case .input:
                 InputSettingsTab()
             case .security:

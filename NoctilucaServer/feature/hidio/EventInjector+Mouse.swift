@@ -53,34 +53,56 @@ extension EventInjector {
         var mouseType: CGEventType = .mouseMoved
         var mouseButton: CGMouseButton = .left
 
-        let displayID: CGDirectDisplayID
+        let targetPosition: CGPoint
+
         switch scope {
+        case .windowId(let windowId):
+            let resolved: (bounds: CGRect, helpers: [CGRect])? = MainActor.assumeIsolated {
+                guard let bounds = DesktopContextManager.queryWindowBounds(for: CGWindowID(windowId)) else {
+                    return nil
+                }
+                let helpers = DesktopContextManager.appStreamHelperWindowBounds()
+                return (bounds, helpers)
+            }
+            guard let resolved else { return }
+            let candidate = CGPoint(
+                x: resolved.bounds.minX + (resolved.bounds.width * CGFloat(position.x)),
+                y: resolved.bounds.minY + (resolved.bounds.height * CGFloat(position.y))
+            )
+            // Screen Sharing Helper 다이얼로그 영역으로 향하는 입력은 차단한다.
+            // 후속 click/drag 는 lastMousePosition (zone 밖 마지막 위치) 을 재사용하므로
+            // 같이 안전하게 zone 바깥에서 발생한다.
+            if resolved.helpers.contains(where: { $0.contains(candidate) }) {
+                return
+            }
+            targetPosition = candidate
+
         case .displayId(let id):
+            let displayID: CGDirectDisplayID
             if id == -1 {
                 displayID = CGMainDisplayID()
             } else {
                 displayID = CGDirectDisplayID(UInt32(bitPattern: id))
             }
-        default:
-            displayID = CGMainDisplayID()
+
+            let displayLayoutManager = DisplayLayoutManager.shared
+            let layouts = displayLayoutManager.displayLayouts.snapshot()
+            let mainScreen = layouts[CGMainDisplayID()]
+            let targetScreen = layouts[displayID] ?? mainScreen
+
+            guard let screen = targetScreen else {
+                return
+            }
+
+            let x11Point = CGPoint(
+                x: screen.frame.minX + (screen.frame.width * CGFloat(position.x)),
+                y: screen.frame.minY + (screen.frame.height * CGFloat(position.y))
+            )
+
+            let clampedX11 = CursorState.clampToNearestScreen(x11Point, layouts: layouts)
+            targetPosition = mainScreen.map { CursorState.toCoreGraphicsCoordinate(clampedX11, mainScreen: $0) } ?? clampedX11
         }
 
-        let displayLayoutManager = DisplayLayoutManager.shared
-        let layouts = displayLayoutManager.displayLayouts.snapshot()
-        let mainScreen = layouts[CGMainDisplayID()]
-        let targetScreen = layouts[displayID] ?? mainScreen
-
-        guard let screen = targetScreen else {
-            return
-        }
-
-        let x11Point = CGPoint(
-            x: screen.frame.minX + (screen.frame.width * CGFloat(position.x)),
-            y: screen.frame.minY + (screen.frame.height * CGFloat(position.y))
-        )
-
-        let clampedX11 = CursorState.clampToNearestScreen(x11Point, layouts: layouts)
-        let position = mainScreen.map { CursorState.toCoreGraphicsCoordinate(clampedX11, mainScreen: $0) } ?? clampedX11
 
         if (mouseDownState & EventInjector.MOUSE_DOWN_STATE_LEFT > 0) {
             mouseType = .leftMouseDragged
@@ -91,7 +113,7 @@ extension EventInjector {
         guard let cgEvent = CGEvent(
                 mouseEventSource: eventSource,
                 mouseType: mouseType,
-                mouseCursorPosition: position,
+                mouseCursorPosition: targetPosition,
                 mouseButton: mouseButton
         )
         else {
@@ -101,7 +123,7 @@ extension EventInjector {
         cgEvent.sanitizeModifierFlags(with: keyDownState)
         cgEvent.post(tap: .cgSessionEventTap)
 
-        lastMousePosition = position
+        lastMousePosition = targetPosition
     }
 
     func performMouseMoveRelative(pixel position: CursorPositionPixel) {
@@ -176,7 +198,9 @@ extension EventInjector {
         } else if let mainScreen {
             screenFrame = mainScreen.frame
         } else {
-            screenFrame = CGRect.zero // CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
+            screenFrame = MainActor.assumeIsolated {
+                CGRect(origin: .zero, size: displayLayoutManager.globalFrame.size)
+            }
         }
 
         let targetX11Position = CGPoint(

@@ -46,6 +46,16 @@ extension ScreenRecorderSource {
         }
     }
     
+    /// 현재 프로젝션 대상인 윈도우의 ID를 반환합니다.
+    var monitoredWindowID: Int64? {
+        switch self {
+        case .window(let windowID):
+            return windowID
+        default:
+            return nil
+        }
+    }
+
     /// 전체 디스플레이 영역 / 전체 뷰포트를 프로젝션 해야 하는지 여부를 반환합니다.
     var requiresEntireDisplayRegion: Bool {
         #warning("TODO: ScreenCaptureKit에서 이걸 지원하지 않아서 프로토콜에서도 지원하지 않기로 했습니다")

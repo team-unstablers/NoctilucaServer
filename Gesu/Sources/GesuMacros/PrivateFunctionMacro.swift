@@ -51,15 +51,38 @@ public struct PrivateFunctionMacro: DeclarationMacro {
             ]
         }
         
-        let retTypeStr = retArg.expression.description.replacingOccurrences(of: ".self", with: "")
+        let rawRetTypeStr = retArg.expression.description.replacingOccurrences(of: ".self", with: "")
         let argTypesStr = args.compactMap { $0.expression.description.replacingOccurrences(of: ".self", with: "") }
             .joined(separator: ", ")
+
+        // retainedCF: true 면 Copy/Create rule 에 따른 +1 retained CF 반환값을
+        // Swift ARC 가 인식하도록 typealias 의 반환 타입을 Unmanaged<T>? 로 감싼다.
+        // 호출자는 .takeRetainedValue() 로 소유권을 ARC 에 이전해야 한다.
+        let retainedCF: Bool = {
+            guard let arg = arguments.first(where: { $0.label?.text == "retainedCF" }) else {
+                return false
+            }
+            if let boolExpr = arg.expression.as(BooleanLiteralExprSyntax.self) {
+                return boolExpr.literal.text == "true"
+            }
+            return false
+        }()
+
+        let retTypeStr: String = {
+            guard retainedCF else { return rawRetTypeStr }
+            let trimmed = rawRetTypeStr.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasSuffix("?") {
+                let inner = String(trimmed.dropLast())
+                return "Unmanaged<\(inner)>?"
+            }
+            return "Unmanaged<\(trimmed)>"
+        }()
 
         // 1. 인자 파싱
         // name: "FooPrivateGetSomethingSize"
         // args: [UnsafeMutableRawPointer.self, UnsafeMutablePointer<Int>.self] -> ".self" 제거 후 문자열화
         // ret: Void.self -> "Void"
-        
+
         // 2. C Function Convention Typealias 생성
         let typealiasName = "\(funcName)_FnType"
         let typealiasDecl = """

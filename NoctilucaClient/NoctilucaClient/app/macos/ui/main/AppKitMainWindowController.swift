@@ -26,6 +26,7 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
     private weak var mainWindow: NSWindow?
     
     private var subDisplayWindowManager: SubDisplayWindowManager?
+    private var appStreamWindowManager: AppStreamWindowManager?
     private var debugWindowController: AppKitDebugWindowController?
     private var debugWindowCancellable: AnyCancellable?
     
@@ -75,6 +76,10 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
             let session = self.viewModel.remoteSession
             if let session {
                 self.subDisplayWindowManager = SubDisplayWindowManager(remoteSession: session)
+                self.appStreamWindowManager = AppStreamWindowManager(remoteSession: session)
+                self.viewModel.appStreamWindowManager = self.appStreamWindowManager
+                session.appStreamWindowManager = self.appStreamWindowManager
+
                 self.viewModel.onDetachDisplay = { [weak self] displayID in
                     try await self?.subDisplayWindowManager?.spawn(for: displayID)
                 }
@@ -82,6 +87,9 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
             } else {
                 self.subDisplayWindowManager?.destroyAll()
                 self.subDisplayWindowManager = nil
+                self.appStreamWindowManager?.destroyAll()
+                self.appStreamWindowManager = nil
+                self.viewModel.appStreamWindowManager = nil
                 self.viewModel.onDetachDisplay = nil
                 self.debugWindowController?.close()
                 self.debugWindowController = nil
@@ -122,6 +130,9 @@ final class AppKitMainWindowController: NSWindowController, NSWindowDelegate {
 
         subDisplayWindowManager?.destroyAll()
         subDisplayWindowManager = nil
+        
+        appStreamWindowManager?.destroyAll()
+        appStreamWindowManager = nil
 
         let viewModel = self.viewModel
         if viewModel.remoteSession != nil {

@@ -11,10 +11,11 @@ import SwiftUI
 import UniformTypeIdentifiers // UTType을 쓰기 위해 필요
 
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 struct PluginBundleListEntry: View {
-    let metadata: any PluginBundleMetadata
-    
+    let manifest: any PluginBundleManifest
+
     var body: some View {
         HStack(alignment: .center) {
             Image(nsImage: NSWorkspace.shared.icon(for: .applicationExtension))
@@ -23,14 +24,14 @@ struct PluginBundleListEntry: View {
                 .frame(width: 32, height: 32)
             VStack(alignment: .leading) {
                 HStack {
-                    Text(metadata.displayName)
+                    Text(manifest.name.getString())
                         .font(.headline)
-                    Text("(\(metadata.id))")
+                    Text("(\(manifest.id))")
                         .font(.subheadline.monospaced())
                         .foregroundStyle(.secondary)
                 }
                 .lineLimit(1)
-                Text(metadata.description)
+                Text(manifest.bundleDescription.getString())
                     .font(.subheadline)
                     .lineLimit(1)
             }

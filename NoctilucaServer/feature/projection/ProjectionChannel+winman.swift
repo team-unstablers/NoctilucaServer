@@ -5,7 +5,149 @@
 //  Created by Gyuhwan Park on 12/26/25.
 //
 
+import Foundation
+import SiriusKit
+
+import AppKit
+import CoreGraphics
+
 
 extension ProjectionChannel {
-    
+
+    // MARK: - Window Query Handlers
+
+    func handleWindowListRequest(_ request: WindowListRequest) async throws {
+        var windowList = await desktopContextManager.globalWindowList()
+
+        if let filter = request.filter {
+            windowList = windowList.filter { filter.matches($0) }
+        }
+        
+        // TODO: support paginated response
+        let response = WindowListResponse(
+            requestID: request.requestID,
+            windows: windowList,
+            isLastPage: true
+        )
+
+        try await self.handle.send(opcode: .windowListResponse, message: response)
+    }
+
+    func handleGetWindowInfoRequest(_ request: GetWindowInfoRequest) async throws {
+        let windowList = await desktopContextManager.globalWindowList()
+        let info = windowList.first(where: { $0.windowID == request.windowID })
+
+        let response = GetWindowInfoResponse(
+            requestID: request.requestID,
+            info: info
+        )
+        try await self.handle.send(opcode: .getWindowInfoResponse, message: response)
+    }
+
+    func handleGetWindowIconRequest(_ request: GetWindowIconRequest) async throws {
+        let app = await desktopContextManager.findRunningApplication(forWindowID: WindowID(request.windowID))
+        let iconData: Data? = app?.icon?.tiffRepresentation.flatMap {
+            NSBitmapImageRep(data: $0)?.representation(using: .png, properties: [:])
+        }
+
+        let response = GetWindowIconResponse(
+            requestID: request.requestID,
+            windowID: request.windowID,
+            icon: iconData
+        )
+        try await self.handle.send(opcode: .getWindowIconResponse, message: response)
+    }
+
+    func handleGetWindowThumbnailRequest(_ request: GetWindowThumbnailRequest) async throws {
+        // TODO: ScreenCaptureKit 기반 윈도우 썸네일 캡처 구현
+        let response = GetWindowThumbnailResponse(
+            requestID: request.requestID,
+            windowID: request.windowID,
+            thumbnail: nil
+        )
+        try await self.handle.send(opcode: .getWindowThumbnailResponse, message: response)
+    }
+
+    // MARK: - Window Event Subscription Handlers
+
+    func handleSubscribeWindowEventsRequest(_ request: SubscribeWindowEventsRequest) async throws {
+        let subscriptionID = await desktopContextManager.subscribeWindowEvents(
+            eventMask: request.eventMask,
+            filter: request.filter,
+            flags: request.flags
+        ) { [weak self] event in
+            Task { [weak self] in
+                try? await self?.handle.send(opcode: .windowChangedEvent, message: event)
+            }
+        }
+
+        // 채널이 닫힐 때 destroy 경로에서 일괄 unsubscribe 할 수 있도록 state 에 기록한다.
+        // 채널이 이미 destroying/destroyed 면 addWindowSubscription 이 false 를 반환하므로
+        // 그 자리에서 unsubscribe 하여 stale entry 가 남지 않도록 한다.
+        let accepted = await state.addWindowSubscription(id: subscriptionID)
+        if !accepted {
+            _ = await desktopContextManager.unsubscribeWindowEvents(id: subscriptionID)
+        }
+
+        let response = SubscribeWindowEventsResponse(
+            requestID: request.requestID,
+            subscriptionID: subscriptionID
+        )
+        try await self.handle.send(opcode: .subscribeWindowEventsResponse, message: response)
+    }
+
+    func handleUnsubscribeWindowEventsRequest(_ request: UnsubscribeWindowEventsRequest) async throws {
+        let success = await desktopContextManager.unsubscribeWindowEvents(id: request.subscriptionID)
+        await state.removeWindowSubscription(id: request.subscriptionID)
+
+        let response = UnsubscribeWindowEventsResponse(
+            requestID: request.requestID,
+            subscriptionID: request.subscriptionID,
+            isSuccess: success
+        )
+        try await self.handle.send(opcode: .unsubscribeWindowEventsResponse, message: response)
+    }
+
+    // MARK: - Window Manipulation Handlers
+
+    func handleWindowManipulationRequest(_ request: WindowManipulationRequest) async throws {
+        let windowID = WindowID(request.windowID)
+
+        do {
+            switch request.operation {
+            case .stateCommand(let command):
+                try await desktopContextManager.sendStateCommand(id: windowID, command: command)
+            case .focus(let focused):
+                if focused {
+                    try await desktopContextManager.focusWindow(id: windowID)
+                }
+            case .setGeometry(let rect):
+                // AppStream 대상이든 아니든, 클라이언트가 보낸 frame 을 그대로 적용한다.
+                // AppStream 의 (0,0) 강제 anchor 가 *처음 등장 시 1회* 로 축소되어 ping-pong
+                // 위험이 사라졌으며, 클라가 NSWindow 드래그/리사이즈 시 정확한 호스트 좌표를
+                // 계산해서 보내준다 (echo 방지 로직은 클라 측에서 처리).
+                try await desktopContextManager.setWindowFrame(
+                    id: windowID,
+                    frame: rect.cgRect
+                )
+            case .setFlags(_), .clearFlags(_):
+                break // macOS에서는 flags 직접 조작 미지원
+            }
+
+            let response = WindowManipulationResponse(
+                isSuccess: true,
+                code: 0,
+                message: nil
+            )
+            try await self.handle.send(opcode: .windowManipulationResponse, message: response)
+        } catch {
+            let response = WindowManipulationResponse(
+                isSuccess: false,
+                code: 1,
+                message: error.localizedDescription
+            )
+            try await self.handle.send(opcode: .windowManipulationResponse, message: response)
+        }
+    }
+
 }

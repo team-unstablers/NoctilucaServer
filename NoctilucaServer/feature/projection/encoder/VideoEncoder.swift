@@ -61,7 +61,7 @@ protocol VideoEncoder: AnyObject, Sendable {
     var delegate: VideoEncoderDelegate? { get set }
      */
     var events: AsyncStream<VideoEncoderEvent> { get }
-    
+   
     func prepare(with configuration: VideoEncoderConfiguration) throws
     func start() throws
     func encode(frameID: UInt64, sampleBuffer: CMSampleBuffer) throws
@@ -121,7 +121,7 @@ extension VideoEncoder {
 }
 
 
-enum VideoEncoderError: LocalizedError {
+enum VideoEncoderError: LocalizedError, Equatable {
     case notPrepared
     case alreadyPrepared
     case notStarted

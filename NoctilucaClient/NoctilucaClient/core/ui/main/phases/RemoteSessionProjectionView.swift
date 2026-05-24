@@ -14,20 +14,6 @@ import SiriusKitClient
 import AppKit
 #endif
 
-enum ProjectionSourceDescriptor: CustomDebugStringConvertible, Equatable, Hashable {
-    case sessionID(UUID)
-    case displayID(Int)
-    
-    var debugDescription: String {
-        switch self {
-        case .sessionID(let sessionID):
-            return "Session ID (\(sessionID))"
-        case .displayID(let displayID):
-            return "Display ID #\(displayID)"
-        }
-    }
-}
-
 struct RemoteSessionProjectionView: View {
     static let logger = NoctilucaLogger(category: "RemoteSessionProjectionView")
     
@@ -140,10 +126,11 @@ struct RemoteSessionProjectionView: View {
         self.hidio = hidio
         self._sourceDescriptor = sourceDescriptor
         self.subscription = subscription
+        
         self.mouse = mouse
     }
 #endif
-
+    
     private func syncSourceMetadata() {
         guard let source else { return }
         self.sourceSize = source.size
@@ -159,11 +146,7 @@ struct RemoteSessionProjectionView: View {
     }
 
     private func syncMouseScope() {
-        guard case .displayID(let displayID) = sourceDescriptor else {
-            return
-        }
-
-        let scope = CursorPositionScope.displayId(Int32(displayID))
+        let scope = sourceDescriptor.toCursorPositionScope()
 
 #if os(macOS)
         if let mouse = mouse ?? hidio.session.currentMouse as? HIDIOAppKitPointer {
@@ -188,8 +171,8 @@ struct RemoteSessionProjectionView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height + 10)
 #endif
                     
-                    let rect = fittedProjectionRect(in: geometry.size, aspectRatio: projectionAspectRatio)
-                    
+                    let rect = projectionRect(in: geometry.size)
+
                     if let renderer = subscription?.metalVideoRenderer {
                         // Metal 비디오 렌더러 경로 (VT/VP8 코덱)
                         MetalVideoView(renderer: renderer)
@@ -412,6 +395,15 @@ struct RemoteSessionProjectionView: View {
         } // geometryreader
     }
     
+    /// 실제 렌더링에 사용할 rect. AppStream(windowID) 소스는 컨테이너에 꽉 차도록 fill,
+    /// 디스플레이 소스는 aspect ratio 를 유지한 letterbox/pillarbox.
+    private func projectionRect(in size: CGSize) -> CGRect {
+        if case .windowID = sourceDescriptor {
+            return CGRect(origin: .zero, size: size)
+        }
+        return fittedProjectionRect(in: size, aspectRatio: projectionAspectRatio)
+    }
+
     private func fittedProjectionRect(in size: CGSize, aspectRatio: CGFloat) -> CGRect {
         guard size.width > 0, size.height > 0, aspectRatio > 0 else {
             return CGRect(origin: .zero, size: size)

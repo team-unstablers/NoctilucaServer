@@ -135,6 +135,28 @@ However, since it was originally written for use inside Noctiluca Server, correc
         guard display.displayID != 0 else {
             die("virtual display spawned but displayID is 0", code: 3)
         }
+        
+        guard let cfModes = CGDisplayCopyAllDisplayModes(
+                display.displayID,
+                [kCGDisplayShowDuplicateLowResolutionModes: true] as CFDictionary
+              ),
+              let cgModes = cfModes as? [CGDisplayMode]
+        else {
+            die("no display modes available", code: 4)
+        }
+        
+        
+        let compatibleSpecs = cgModes.filter { NOCDisplaySpec.from(cgDisplayMode: $0).compatible(with: maximumResolutionSpec) }
+        
+        guard let mostCompatibleSpec = compatibleSpecs.first else {
+            die("no compatible display modes available", code: 4)
+        }
+        
+        let error = CGDisplaySetDisplayMode(display.displayID, mostCompatibleSpec, nil)
+        
+        guard error == .success else {
+            die("failed to apply spec to display", code: 4)
+        }
 
         print(display.displayID)
         fflush(stdout)

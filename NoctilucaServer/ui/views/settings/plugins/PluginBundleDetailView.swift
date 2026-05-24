@@ -11,16 +11,24 @@ import SwiftUI
 import UniformTypeIdentifiers // UTType을 쓰기 위해 필요
 
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 
 struct PluginBundleDetailView: View {
-    let metadata: any PluginBundleMetadata
+    let handle: PluginBundleHandle
     let signingResult: CodeSigningVerificationResult?
 
     @State
     var showingInfoSheet = false
 
+    /// XPC 격리 번들의 supportedActions 는 host 너머로 async fetch 가 필요하므로
+    /// view body 에서 sync 로 즉시 광고할 수 없음. `.task` 로 한 번 fetch 해서 캐시.
+    @State
+    private var supportedActions: [NoctilucaPluginBundleAction] = []
+
     var body: some View {
+        let manifest = handle.manifest
+
         HStack(alignment: .center) {
             Image(nsImage: NSWorkspace.shared.icon(for: .applicationExtension))
                 .resizable()
@@ -29,31 +37,43 @@ struct PluginBundleDetailView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(metadata.displayName)
+                    Text(manifest.name.getString())
                         .font(.headline)
 
-                    Text("(\(metadata.id))")
+                    Text("(\(manifest.id))")
                         .font(.subheadline.monospaced())
                         .foregroundStyle(.secondary)
                 }
                 .lineLimit(1)
 
-                Text(metadata.description)
+                Text(manifest.bundleDescription.getString())
                     .font(.subheadline)
                     .lineLimit(1)
             }
             Spacer()
+            
+            if supportedActions.contains(.showSettingsUI) {
+                Button(String(localized: "settings.plugins.detail.show_settings_ui", defaultValue: "설정")) {
+                    Task {
+                        try? await handle.dispatchAction(.showSettingsUI)
+                    }
+                }
+            }
+            
             Button(String(localized: "settings.plugins.detail.show_info", defaultValue: "정보 보기…")) {
                 showingInfoSheet = true
             }
         }
+        .task {
+            supportedActions = (try? await handle.supportedActions()) ?? []
+        }
         .sheet(isPresented: $showingInfoSheet) {
-            PluginBundleDetailSheet(metadata: metadata, signingResult: signingResult)
+            PluginBundleDetailSheet(manifest: manifest, signingResult: signingResult)
         }
 
         SettingsEntry(title: String(localized: "settings.plugins.detail.developer", defaultValue: "개발자")) {
             VStack(alignment: .trailing) {
-                ForEach(metadata.authors, id: \.self) { author in
+                ForEach(manifest.authors, id: \.self) { author in
                     Text(verbatim: author)
                 }
             }
@@ -61,7 +81,7 @@ struct PluginBundleDetailView: View {
         }
 
         SettingsEntry(title: String(localized: "settings.plugins.detail.license", defaultValue: "라이선스")) {
-            SoftwareLicenseText(license: metadata.license)
+            SoftwareLicenseText(license: manifest.license)
                 .foregroundStyle(.secondary)
         }
 
@@ -70,8 +90,9 @@ struct PluginBundleDetailView: View {
                 .foregroundStyle(.secondary)
         }
 
-        SettingsEntry(title: String(localized: "settings.plugins.detail.version", defaultValue: "버전")) {
-            Text("\(metadata.displayVersion) (\(metadata.version))")
+        SettingsEntry(title: String(localized: "settings.plugins.detail.pluginkit_version", defaultValue: "PluginKit 버전")) {
+            Text(String(format: "0x%08X", manifest.pluginKitVersion.rawValue))
+                .font(.body.monospaced())
                 .foregroundStyle(.secondary)
         }
     }
@@ -95,6 +116,8 @@ struct PluginBundleDetailView: View {
             Text(markdown: String(localized: "settings.plugins.detail.signature.invalid", defaultValue: "서명 검증 실패 (OSStatus: \(error))"))
         case nil:
             Text(markdown: String(localized: "settings.plugins.detail.signature.builtin", defaultValue: "내장 플러그인"))
+        @unknown default:
+            EmptyView()
         }
     }
 }

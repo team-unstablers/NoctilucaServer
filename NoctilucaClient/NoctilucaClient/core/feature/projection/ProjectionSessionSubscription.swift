@@ -33,7 +33,7 @@ final class ProjectionSessionSubscription {
     /// Metal이 가용할 때 자동으로 생성된다.
     private(set) var metalVideoRenderer: MetalVideoRenderer?
 
-    var displayID: Int { session.displayID }
+    var sourceDescriptor: ProjectionSourceDescriptor { session.sourceDescriptor }
 
     /// 현재 세션이 Metal 비디오 렌더러를 사용하는지 여부
     var useMetalVideoRendering: Bool {

@@ -80,10 +80,16 @@ final class FileTransferCoordinator: NSObject, Sendable {
             throw FileTransferError.sessionUnavailable
         }
 
-        let argsSet = TransferChannelArgumentsSet(
-            purpose: .fileTransfer,
+        let compress: [CompressionMethod] = await SettingsStore.shared.settings.transfer.enableCompression
+            ? [.zstd, .none]
+            : []
+        let argsSet = TransferChannelArgumentsSet.fileTransfer(
             direction: .download,
-            args: [metadata.name, metadata.path, "0", String(metadata.size)]
+            name: metadata.name,
+            path: metadata.path,
+            offset: 0,
+            length: metadata.size,
+            compress: compress
         )
 
         guard let channel = try await session.channelManager.openChannel(
@@ -176,10 +182,17 @@ final class FileTransferCoordinator: NSObject, Sendable {
             throw FileTransferError.sessionUnavailable
         }
 
-        let argsSet = TransferChannelArgumentsSet(
-            purpose: .fileTransfer,
+        let compress: [CompressionMethod] = await SettingsStore.shared.settings.transfer.enableCompression
+            ? [.zstd, .none]
+            : []
+        // 디렉토리 리스팅: length=0 으로 요청 (sender 측이 listing 데이터를 길이 미리 모를 수 있음)
+        let argsSet = TransferChannelArgumentsSet.fileTransfer(
             direction: .download,
-            args: [metadata.name, metadata.path, "0", "0"]
+            name: metadata.name,
+            path: metadata.path,
+            offset: 0,
+            length: 0,
+            compress: compress
         )
 
         guard let channel = try await session.channelManager.openChannel(

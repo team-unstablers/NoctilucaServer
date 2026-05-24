@@ -10,7 +10,7 @@ import SiriusKitCore
 
 typealias ServerRoleClientTransportIdentifier = TransportLayerIdentifier
 
-protocol ServerRoleClientTransportDelegate: AnyObject {
+protocol ServerRoleClientTransportDelegate: AnyObject, Sendable {
     /// - NOTE: 리모트에서 스트림을 열었을 때에만 호출됩니다.
     func clientTransportDidOpenRemoteStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async throws
     func clientTransportDidCloseStream(_ transport: any ServerRoleClientTransport, stream: SiriusKitCore.Stream) async

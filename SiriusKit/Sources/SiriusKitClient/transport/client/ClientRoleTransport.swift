@@ -159,7 +159,7 @@ struct NegotiationResponse {
     let enableZeroRtt: Bool
 }
 
-protocol ClientRoleTransportDelegate: AnyObject {
+protocol ClientRoleTransportDelegate: AnyObject, Sendable {
     func clientTransportDidEstablishConnection(_ transport: any ClientRoleTransport) async
     func clientTransportDidOpenRemoteStream(_ transport: any ClientRoleTransport, stream: SiriusKitCore.Stream) async throws
     func clientTransportDidClose(_ transport: any ClientRoleTransport) async

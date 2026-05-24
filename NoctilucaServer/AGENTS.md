@@ -251,6 +251,39 @@ SiriusKit을 사용해 클라이언트 세션을 수락하고, 인증·입력 �
 
 ## Recent Notes
 
+- **fsaccess byte-range lock 구현 (SiriusProtocol 5894e33)** (2026-05-06):
+  - `FSAccessMountChannel`: sendLock / sendUnlock / sendTestLock helper +
+    `FSAccessMountReply` 에 lock / unlock / testLock case 추가. mount channel
+    자체에 `supportsLocks: Bool` (1회-set, 이후 read-only) 필드.
+  - `FSAccessMountSessionRecord` 에 supportsLocks 보관, control channel 에서
+    `FileSystemMountResponse.supportsLocks` 받자마자 mount channel 에 set.
+  - `NoctilucaNFSServer.lock / lockTest / unlock` 이 mount session 의
+    supportsLocks 에 따라 분기 — true 면 wire 로 dispatch, false 면 종전대로
+    fake success (QuickTime 류 까다로운 NFS client 호환). `wouldBlock` 응답은
+    `NFSError.lockDenied` (NFS4ERR_DENIED) 로 변환. share reservation (OPEN
+    deny mode) 은 이번 범위 밖.
+- **fsaccess (consuming peer) + nocfsaccessd 데몬 구현** (2026-05-05):
+  - 서버 = consuming peer 시나리오. navigator 가 노출하는 파일을 호스트 머신의
+    Finder 에 NFS 마운트로 띄움. fsaccess control / fsaccess_mount channel
+    둘 다 host 가 *발신* 측 (`handle.direction == .local`).
+  - `feature/fsaccess/` — 서버 측 channel handler 인프라 (`FSAccessChannel` /
+    `FSAccessMountChannel` + actor 기반 응답 매칭 / pathMap).
+  - `feature/fsaccess/daemon/` — `NocFSAccessDaemonHost` (NSXPCListener +
+    Process spawn), `NocFSAccessHostXPCExport` (16개 NFS callback dispatch),
+    `MountPointSupervisor` (~/NoctilucaFS startup probe), `NetFSMountController`
+    (`mount_nfs` / `umount` 호출 wrapper).
+  - `nocfsaccessd/` (별도 타깃) — NanoNFS 기반 NFSv4 서버 데몬. main.swift,
+    `NocFSAccessDaemonImpl`, `NoctilucaNFSServer`, `VirtualTree`,
+    `HandleTable`, `DaemonLogger`. 가상 트리의 root / 1단계 connection /
+    2단계 mount session / `_README.txt` 까지 데몬 자체 응답, 그 안의 실 파일은
+    XPC 로 호스트에 위임.
+  - `NocFSAccessXPC` (top-level SwiftPM) — host ↔ daemon IPC 인터페이스 정의.
+    `NocFSAccessDaemonProtocol` / `NocFSAccessHostProtocol` ObjC 프로토콜과
+    `NSSecureCoding`-conformant DTO 5종.
+  - Settings UI: `FileAccessSettingsTab` (mount point / 기본 consent policy /
+    feature toggle).
+  - 미완성: NoctilucaClientSession 자동 wiring (인증 완료 후 자동 List/Mount),
+    streaming read/write.
 - **타일링 이미지 코덱 (MJPG / ZRLE / WebP) 제거** (0.9.10):
   - `MJPGVideoEncoder` / `ZRLEVideoEncoder` / `WebPVideoEncoder` 및 `jpeg/` / `traditional/` 디렉토리 전체 제거
   - `ProjectionSession` 의 `switch fourCC` 에서 vp80 / VTVideoEncoder default 만 남김

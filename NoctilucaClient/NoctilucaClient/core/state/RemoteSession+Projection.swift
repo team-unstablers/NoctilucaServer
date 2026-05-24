@@ -156,24 +156,24 @@ extension RemoteSession {
 
         /// 진행 중인 `subscribeProjectionSession(for:)` 호출의 in-flight `createSession` Task.
         ///
-        /// 같은 displayID 에 대해 두 번째 호출이 들어왔을 때, 이미 진행 중인 createSession 이
+        /// 같은 source 에 대해 두 번째 호출이 들어왔을 때, 이미 진행 중인 createSession 이
         /// 있으면 그 결과를 await 하여 같은 `ProjectionSession` 을 공유한다. 이 dict 가 없으면
         /// `await createSession(...)` 에서 MainActor reentrancy 로 동시 두 호출이 모두 createSession
-        /// 을 부르면서 같은 displayID 에 대해 세션이 두 개 만들어지는 race 가 발생한다.
+        /// 을 부르면서 같은 source 에 대해 세션이 두 개 만들어지는 race 가 발생한다.
         @ObservationIgnored
-        private var pendingSubscribeTasks: [Int: Task<ProjectionSession, Error>] = [:]
+        private var pendingSubscribeTasks: [ProjectionSourceDescriptor: Task<ProjectionSession, Error>] = [:]
 
         private(set) var audioSessions: [UUID: AudioProjectionSession] = [:]
 
         /// 현재 활성화된 DegradationNotice. nil이면 notice를 받지 않았거나 회복된 상태.
         private(set) var degradationNotice: DegradationNotice? = nil
 
-        /// 디스플레이 단위 프로젝션 세션 오류 정보.
+        /// 프로젝션 소스 단위 세션 오류 정보.
         ///
-        /// 멀티 디스플레이 환경에서 각 디스플레이의 세션이 독립적으로 종료될 수 있으므로
-        /// `displayID` 를 키로 하는 dict 로 관리한다. View 측은 자신이 보고 있는
-        /// `displayID` 의 항목을 `onChange` 로 관찰하여 fallback / 재시도 정책을 결정한다.
-        private(set) var sessionErrors: [Int: ProjectionSessionFailureInfo] = [:]
+        /// 멀티 디스플레이 / AppStream 환경에서 각 소스의 세션이 독립적으로 종료될 수 있으므로
+        /// `ProjectionSourceDescriptor` 를 키로 하는 dict 로 관리한다. View 측은 자신이 보고 있는
+        /// 소스의 항목을 `onChange` 로 관찰하여 fallback / 재시도 정책을 결정한다.
+        private(set) var sessionErrors: [ProjectionSourceDescriptor: ProjectionSessionFailureInfo] = [:]
 
         /// 오디오 세션 오류 정보.
         private(set) var audioSessionError: AudioSessionFailureInfo? = nil
@@ -228,16 +228,16 @@ extension RemoteSession {
             case .sessionCreated(let session):
                 self.projectionSessions.updateValue(session, forKey: session.dataChannel.identifier)
                 self.subscribeSessionEvents(session)
-                // 새 세션이 만들어졌다는 것은 해당 디스플레이가 다시 정상화되었다는 의미이므로 에러 클리어
-                self.sessionErrors.removeValue(forKey: session.displayID)
-            case .sessionDestroyed(let sessionID, let displayID, let reason, let message):
+                // 새 세션이 만들어졌다는 것은 해당 소스가 다시 정상화되었다는 의미이므로 에러 클리어.
+                self.sessionErrors.removeValue(forKey: session.sourceDescriptor)
+            case .sessionDestroyed(let sessionID, let source, let reason, let message):
                 self.projectionSessions.removeValue(forKey: sessionID)
                 self.projectionSessionReferences.removeValue(forKey: sessionID)
                 self.unsubscribeSessionEvents(sessionID)
                 if projectionSessions.isEmpty {
                     self.degradationNotice = nil
                 }
-                self.notifySessionFailure(displayID: displayID, reason: reason, message: message)
+                self.notifySessionFailure(source: source, reason: reason, message: message)
 
             case .audioSessionCreated(let audioSession):
                 let dataChannelID = audioSession.dataChannel.identifier
@@ -289,6 +289,26 @@ extension RemoteSession {
                         self.cursorState.image = cursorImage
                     }
                 }
+
+            case .appStreamWindowEvent(let appStreamEvent):
+#if os(macOS)
+                guard let appStreamWindowManager = parent?.appStreamWindowManager else {
+                    return
+                }
+
+                appStreamWindowManager.handleAppStreamWindowEvent(appStreamEvent)
+#endif
+                break
+
+            case .accessibilityTreeUpdateEvent(let event):
+#if os(macOS)
+                guard let appStreamWindowManager = parent?.appStreamWindowManager else {
+                    return
+                }
+
+                appStreamWindowManager.handleAccessibilityTreeUpdateEvent(event)
+#endif
+                break
             }
         }
 
@@ -409,17 +429,17 @@ extension RemoteSession {
         // TODO: 디스플레이마다 해상도 다른데 어떻게 할려고?
         // 디스플레이가 2대 이상이면 하드웨어 인코더가 터질텐데 어떻게 할려고???
         @MainActor
-        func subscribeProjectionSession(for displayID: Int) async throws -> ProjectionSessionSubscription {
-            if let session = projectionSessions.first(where: { $0.value.displayID == displayID })?.value {
-                // 이미 해당 디스플레이에 대한 프로젝션 세션이 존재함
-                logger.info("Projection session for displayID \(displayID) already exists.")
+        func subscribeProjectionSession(for source: ProjectionSourceDescriptor) async throws -> ProjectionSessionSubscription {
+            if let session = projectionSessions.first(where: { $0.value.sourceDescriptor == source })?.value {
+                // 이미 해당 소스에 대한 프로젝션 세션이 존재함
+                logger.info("Projection session for \(source.debugDescription) already exists.")
                 return makeSubscription(for: session)
             }
 
-            // 같은 displayID 에 대해 createSession 이 이미 진행 중이면, 그 Task 의 결과를 공유한다.
+            // 같은 source 에 대해 createSession 이 이미 진행 중이면, 그 Task 의 결과를 공유한다.
             // (같은 turn 내 호출은 dict 조회가 동기적으로 이루어지므로 race 가 없다.)
-            if let inflight = pendingSubscribeTasks[displayID] {
-                logger.info("Projection session for displayID \(displayID) is in-flight; awaiting shared task.")
+            if let inflight = pendingSubscribeTasks[source] {
+                logger.info("Projection session for \(source.debugDescription) is in-flight; awaiting shared task.")
                 let session = try await inflight.value
                 return makeSubscription(for: session)
             }
@@ -428,10 +448,10 @@ extension RemoteSession {
             let task = Task<ProjectionSession, Error> { [weak self] in
                 guard let self else { throw ProjectionChannelError.channelClosed }
 
-                defer { self.pendingSubscribeTasks.removeValue(forKey: displayID) }
+                defer { self.pendingSubscribeTasks.removeValue(forKey: source) }
 
                 guard let session = try await self.parent?.client.projectionChannel.createSession(
-                    for: displayID,
+                    for: source,
                     projectionSettings: self.parent?.client.sessionSettings?.projection
                 ) else {
                     throw ProjectionChannelError.channelClosed
@@ -441,7 +461,7 @@ extension RemoteSession {
                 self.projectionSessionReferences[session.id] = ManagedAtomic<Int>(0)
                 return session
             }
-            pendingSubscribeTasks[displayID] = task
+            pendingSubscribeTasks[source] = task
 
             let session = try await task.value
             return makeSubscription(for: session)
@@ -508,21 +528,19 @@ extension RemoteSession {
             }
         }
 
-        private func notifySessionFailure(displayID: Int?, reason: VideoSessionEndReason, message: String?) {
-            guard let displayID else {
-                // displayID 가 없는 케이스 (예: SingleWindow projection source) 는 현재 미사용.
-                // AppStream 도입 시 별도 키 체계가 필요하므로 일단 로그만 남기고 폐기한다.
-                logger.warning("Projection session failure with no displayID: reason=\(reason.rawValue), message=\(message ?? "(nil)")")
+        private func notifySessionFailure(source: ProjectionSourceDescriptor?, reason: VideoSessionEndReason, message: String?) {
+            guard let source else {
+                logger.warning("Projection session failure with no source descriptor: reason=\(reason.rawValue), message=\(message ?? "(nil)")")
                 return
             }
-            self.sessionErrors[displayID] = ProjectionSessionFailureInfo(reason: reason, message: message)
-            logger.error("Projection session failure: displayID=\(displayID), reason=\(reason.rawValue), message=\(message ?? "(nil)")")
+            self.sessionErrors[source] = ProjectionSessionFailureInfo(reason: reason, message: message)
+            logger.error("Projection session failure: source=\(source.debugDescription), reason=\(reason.rawValue), message=\(message ?? "(nil)")")
         }
 
         /// 사용자 / View 측이 명시적으로 에러 상태를 클리어할 때 호출합니다.
-        /// (예: 수동 재시도 트리거, 다른 디스플레이로 전환)
-        func clearSessionError(for displayID: Int) {
-            sessionErrors.removeValue(forKey: displayID)
+        /// (예: 수동 재시도 트리거, 다른 소스로 전환)
+        func clearSessionError(for source: ProjectionSourceDescriptor) {
+            sessionErrors.removeValue(forKey: source)
         }
 
         // MARK: - Auto-retry (Video)
@@ -558,8 +576,8 @@ extension RemoteSession {
                 }
 
                 do {
-                    let subscription = try await subscribeProjectionSession(for: displayID)
-                    sessionErrors.removeValue(forKey: displayID)
+                    let subscription = try await subscribeProjectionSession(for: .displayID(displayID))
+                    sessionErrors.removeValue(forKey: .displayID(displayID))
                     logger.info("Video session retry succeeded for display \(displayID) (attempt \(i + 1))")
                     return subscription
                 } catch is CancellationError {

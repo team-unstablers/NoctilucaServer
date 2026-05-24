@@ -7,6 +7,7 @@
 
 import SiriusKit
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 final class HIDIOChannel: Channel, ChannelEventConsumer {
     private static let defaultServiceClass: ServiceClass = .userInput
@@ -112,19 +113,25 @@ final class HIDIOChannel: Channel, ChannelEventConsumer {
         let hacks = await state.evaluatedHacks(for: keyCode)
 
         for hack in hacks {
-            let decision = switch event.eventType {
-            case .keyDown:
-                await hack.onKeyDown(keyCode)
-            case .keyUp:
-                await hack.onKeyUp(keyCode)
-            default:
-                await hack.onKeyDown(keyCode)
+            let decision: KeyboardHackResult
+            do {
+                decision = switch event.eventType {
+                case .keyDown:
+                    try await hack.proxy.onKeyDown(keyCode)
+                case .keyUp:
+                    try await hack.proxy.onKeyUp(keyCode)
+                default:
+                    try await hack.proxy.onKeyDown(keyCode)
+                }
+            } catch {
+                logger.warning("keyboard hack \(hack.id) failed: \(error). passthrough.")
+                continue
             }
 
             if case .modify(let modified) = decision {
                 keyCode = modified
             } else if case .stop = decision {
-                break
+                return
             }
         }
 
@@ -152,20 +159,20 @@ final class HIDIOChannel: Channel, ChannelEventConsumer {
 /// 채널 본체가 Sendable 이어야 하므로, 가변 상태를 별도 actor 로 분리해 격리한다
 /// (문서 Rule G).
 actor HIDIOChannelState {
-    private var keyboardHacks: [KeyboardHackPluginV1] = []
+    private var keyboardHacks: [RegisteredKeyboardHack] = []
 
     func updateHacks(from event: KeyboardSetupEvent) async {
         let snapshot = await HIDIOKeyboardHackRegistry.shared.snapshot()
         self.keyboardHacks.removeAll()
 
         for hack in event.hacks {
-            if let plugin = snapshot[hack.identifier] {
-                self.keyboardHacks.append(plugin)
+            if let registered = snapshot[hack.identifier] {
+                self.keyboardHacks.append(registered)
             }
         }
     }
 
-    func evaluatedHacks(for keyCode: NoctilucaPluginKit.LinuxKeycode) -> [KeyboardHackPluginV1] {
-        keyboardHacks.filter { type(of: $0).desiredKeyEvents.contains(keyCode) }
+    func evaluatedHacks(for keyCode: NoctilucaPluginKit.LinuxKeycode) -> [RegisteredKeyboardHack] {
+        keyboardHacks.filter { $0.desiredKeyEvents.contains(keyCode) }
     }
 }

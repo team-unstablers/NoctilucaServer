@@ -10,14 +10,6 @@ import Foundation
 
 public protocol AuthPluginV1: Actor {
     static var id: String { get }
-    static var name: String { get }
-    static var description: String { get }
-    
-    static var authors: [String] { get }
-    static var license: SoftwareLicense { get }
-
-    static var version: UInt32 { get }
-    static var displayVersion: String { get }
 
     static var supportedMethods: Set<AuthMethod> { get }
     

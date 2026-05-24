@@ -17,7 +17,6 @@ import SiriusKitClient
 class SubDisplayWindow: NSWindow {
     let targetDisplayID: Int
     let mouse: HIDIOAppKitPointer
-
     weak var hidioController: HIDIOController?
 
     init(
@@ -45,7 +44,7 @@ class SubDisplayWindow: NSWindow {
 
         guard let projection = remoteSession.projection,
               let hidio = remoteSession.hidio else { return }
-
+        
         self.hidioController = hidio.controller
         hidio.controller.connect(mouse)
 
@@ -62,7 +61,7 @@ class SubDisplayWindow: NSWindow {
 
         self.contentView = NSHostingView(rootView: rootView)
     }
-
+    
     @MainActor
     deinit {
         hidioController?.disconnect(mouse.identifierString)
@@ -126,7 +125,7 @@ private struct SubDisplayWindowProjectionRoot: View {
             subscription: subscription,
             mouse: mouse
         )
-        .onChange(of: projection.sessionErrors[displayID]) { _, error in
+        .onChange(of: projection.sessionErrors[.displayID(displayID)]) { _, error in
             guard let error else { return }
             handleError(error)
         }

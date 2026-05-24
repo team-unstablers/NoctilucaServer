@@ -50,7 +50,7 @@ class MyPrivate {
 
 ## Dependencies
 
-- **swift-syntax 602.0.0+**: Swift 매크로 구현에 필요
+- **swift-syntax 601.x**: Swift 매크로 구현에 필요. Swift 6.2 toolchain과 짝이 맞는 버전. Shotoku 등 다른 매크로 패키지와 정렬되어 있어야 동일 워크스페이스에서 의존성 충돌이 발생하지 않음
 
 ## Notes
 

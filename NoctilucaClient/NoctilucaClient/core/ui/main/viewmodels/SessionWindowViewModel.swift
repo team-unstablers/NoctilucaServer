@@ -88,6 +88,35 @@ final class SessionWindowViewModel {
     private(set) var securityState: AddressBarSecurityIndicatorState? = nil
 
     private(set) var remoteSession: RemoteSession? = nil
+    
+#if os(macOS)
+    var isAppStreamAppSelectorPresented: Bool = false
+
+    var appStreamWindowManager: AppStreamWindowManager? = nil
+
+    var appStreamState: AppStreamUIState = .inactive {
+        didSet {
+            switch appStreamState {
+            case .presentAppSelector:
+                isAppStreamAppSelectorPresented = true
+            case .active(let bundleIdentifier):
+                Task {
+                    do {
+                        try await appStreamWindowManager?.start(bundleId: bundleIdentifier)
+                    } catch {
+                        print("AppStream start failed: \(error)")
+                        appStreamState = .inactive
+                    }
+                }
+            case .inactive:
+                isAppStreamAppSelectorPresented = false
+                Task {
+                    await appStreamWindowManager?.stop()
+                }
+            }
+        }
+    }
+#endif
 
     private var client: NoctilucaClient? {
         remoteSession?.client
@@ -499,6 +528,14 @@ final class SessionWindowViewModel {
             RemoteSessionManager.shared.unregister(session.id)
         }
         remoteSession?.prepareForDetach()
+
+#if os(macOS)
+        // didSet에서 windowManager.stop()을 트리거하기 위해 remoteSession을 nil로
+        // 만들기 전에 먼저 .inactive로 전환한다.
+        appStreamState = .inactive
+#endif
+        shouldPresentDisplaySwitchSheet = false
+
         remoteSession = nil
         pingRTT = nil
         fileTransferProgress = nil

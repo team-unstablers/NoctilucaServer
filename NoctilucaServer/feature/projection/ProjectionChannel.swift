@@ -16,6 +16,12 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
     private static let defaultServiceClass: ServiceClass = .userInput
 
     let state = ProjectionChannelState()
+    
+    @MainActor
+    var desktopContextManager: DesktopContextManager {
+        DesktopContextManager.shared
+    }
+    
 
     // ~Copyable CompatBridge; init 마지막 대입 후 수정 없음. (Rule I 패턴 2)
     nonisolated(unsafe) private var channelEventCompatBridge:
@@ -41,7 +47,6 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
     }
 
     // MARK: - ChannelEventConsumer
-
     func handleChannelReady() async {
         await handle.setServiceClass(Self.defaultServiceClass)
     }
@@ -122,6 +127,82 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
             let request = try DisplayTransactionRequest.fromProtobufBytes(frame.data)
             try await handleDisplayTransactionRequest(request)
 
+        // MARK: Window Management (Query)
+        case .windowListRequest:
+            let request = try WindowListRequest.fromProtobufBytes(frame.data)
+            try await handleWindowListRequest(request)
+
+        case .getWindowInfoRequest:
+            let request = try GetWindowInfoRequest.fromProtobufBytes(frame.data)
+            try await handleGetWindowInfoRequest(request)
+
+        case .getWindowIconRequest:
+            let request = try GetWindowIconRequest.fromProtobufBytes(frame.data)
+            try await handleGetWindowIconRequest(request)
+
+        case .getWindowThumbnailRequest:
+            let request = try GetWindowThumbnailRequest.fromProtobufBytes(frame.data)
+            try await handleGetWindowThumbnailRequest(request)
+
+        case .subscribeWindowEventsRequest:
+            let request = try SubscribeWindowEventsRequest.fromProtobufBytes(frame.data)
+            try await handleSubscribeWindowEventsRequest(request)
+
+        case .unsubscribeWindowEventsRequest:
+            let request = try UnsubscribeWindowEventsRequest.fromProtobufBytes(frame.data)
+            try await handleUnsubscribeWindowEventsRequest(request)
+
+        // MARK: Window Management (Manipulation)
+        case .windowManipulationRequest:
+            let request = try WindowManipulationRequest.fromProtobufBytes(frame.data)
+            try await handleWindowManipulationRequest(request)
+
+        // MARK: Application Management (AppMan)
+        case .applicationListRequest:
+            let request = try ApplicationListRequest.fromProtobufBytes(frame.data)
+            try await handleApplicationListRequest(request)
+
+        case .applicationLaunchRequest:
+            let request = try ApplicationLaunchRequest.fromProtobufBytes(frame.data)
+            try await handleApplicationLaunchRequest(request)
+
+        case .applicationTerminateRequest:
+            let request = try ApplicationTerminateRequest.fromProtobufBytes(frame.data)
+            try await handleApplicationTerminateRequest(request)
+
+        case .subscribeApplicationEventsRequest:
+            let request = try SubscribeApplicationEventsRequest.fromProtobufBytes(frame.data)
+            try await handleSubscribeApplicationEventsRequest(request)
+
+        case .unsubscribeApplicationEventsRequest:
+            let request = try UnsubscribeApplicationEventsRequest.fromProtobufBytes(frame.data)
+            try await handleUnsubscribeApplicationEventsRequest(request)
+
+        case .startAppStreamRequest:
+            let request = try StartAppStreamRequest.fromProtobufBytes(frame.data)
+            try await handleStartAppStreamRequest(request)
+
+        case .stopAppStreamRequest:
+            let request = try StopAppStreamRequest.fromProtobufBytes(frame.data)
+            try await handleStopAppStreamRequest(request)
+
+        // MARK: Accessibility
+        case .getAccessibilityTreeRequest:
+            let request = try GetAccessibilityTreeRequest.fromProtobufBytes(frame.data)
+            try await handleGetAccessibilityTreeRequest(request)
+
+        case .subscribeAccessibilityTreeUpdatesRequest:
+            let request = try SubscribeAccessibilityTreeUpdatesRequest.fromProtobufBytes(frame.data)
+            try await handleSubscribeAccessibilityTreeUpdatesRequest(request)
+
+        case .unsubscribeAccessibilityTreeUpdatesRequest:
+            let request = try UnsubscribeAccessibilityTreeUpdatesRequest.fromProtobufBytes(frame.data)
+            try await handleUnsubscribeAccessibilityTreeUpdatesRequest(request)
+
+        case .dispatchActionRequest:
+            let request = try DispatchActionRequest.fromProtobufBytes(frame.data)
+            try await handleDispatchActionRequest(request)
+
         default:
             logger.warning("Unhandled opcode in ProjectionChannel: \(frame.opcode)")
         }
@@ -166,6 +247,33 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
 
         snapshot.cursorSubscription?.destroy()
         snapshot.displaySubscription?.destroy()
+        
+        if let appEventSubId = snapshot.appEventSubscriptionId {
+            let desktopContextManager = await DesktopContextManager.shared
+            _ = await desktopContextManager.unsubscribeAppEvents(id: appEventSubId)
+        }
+
+        if !snapshot.accessibilitySubscriptions.isEmpty {
+            let desktopContextManager = await DesktopContextManager.shared
+            for subscription in snapshot.accessibilitySubscriptions {
+                await desktopContextManager.unsubscribeMenuEvents(id: subscription.menuEventHandlerId)
+                await desktopContextManager.unsubscribeContextMenuEvents(id: subscription.contextMenuEventHandlerId)
+            }
+        }
+
+        // 일반 winman `SubscribeWindowEventsRequest` 로 만들어진 구독은 클라이언트가 명시
+        // unsubscribe 하지 않으면 회수되지 않는다. AppStream session 의 windowSubscriptionId 는
+        // beginDestroy 에서 제외되어 cleanupAppStreamSession 이 따로 처리한다.
+        if !snapshot.windowSubscriptionIds.isEmpty {
+            let desktopContextManager = await DesktopContextManager.shared
+            for subscriptionID in snapshot.windowSubscriptionIds {
+                _ = await desktopContextManager.unsubscribeWindowEvents(id: subscriptionID)
+            }
+        }
+
+        if let appStreamSession = snapshot.appStreamSession {
+            await cleanupAppStreamSession(appStreamSession)
+        }
 
         let layoutManager = await DisplayLayoutManager.shared
         for handle in snapshot.virtualDisplayHandles {
@@ -655,9 +763,15 @@ fileprivate extension ProjectionSource {
         case .region(let region):
             return SRSize(width: region.region.width, height: region.region.height)
 
-        case .singleWindow:
-            // TODO: window가 속한 display를 끌어다가 scale factor를 곱해야 한다
-            fatalError("not implemented yet")
+        case .singleWindow(let window):
+            let contextManager = DesktopContextManager.shared
+            // FIXME: window가 속한 display를 끌어다가 scale factor를 곱해야 한다
+            guard let windowInfo = contextManager.globalWindowList().first(where: { $0.windowID == window.windowID! }) else {
+                return nil
+            }
+
+            let size = SRSize(width: windowInfo.bounds.width, height: windowInfo.bounds.height)
+            return size
 
         default:
             return nil

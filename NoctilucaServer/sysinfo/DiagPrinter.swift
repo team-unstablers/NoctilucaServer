@@ -10,6 +10,8 @@ import Foundation
 import Darwin
 
 import SiriusKit
+import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 enum DiagLevel {
     /// 공개용 (GitHub 이슈 등). PII 최소화.
@@ -155,13 +157,15 @@ final class DiagPrinter: Sendable {
         lines.append("Count: \(bundles.count)")
 
         for (bundleID, handle) in bundles {
+            let displayName = handle.manifest.name.getString()
             if level == .detailed {
-                lines.append("  - \(handle.metadata.displayName) v\(handle.metadata.displayVersion) (\(bundleID))")
+                let pluginKitVersion = String(format: "0x%08X", handle.manifest.pluginKitVersion.rawValue)
+                lines.append("  - \(displayName) (\(bundleID)) PluginKit=\(pluginKitVersion)")
                 if let signingResult = handle.signingResult {
                     lines.append("    Signing: \(signingResult)")
                 }
             } else {
-                lines.append("  - \(handle.metadata.displayName)")
+                lines.append("  - \(displayName)")
             }
         }
 

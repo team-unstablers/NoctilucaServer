@@ -241,11 +241,6 @@ final class ScreenCaptureKitScreenRecorder: NSObject, ScreenRecorder, @unchecked
         let codec = args.codec
         let flags = args.flags
         
-        guard case .entireDisplay(let displayID) = source else {
-            logger.error("prepare(): AVFoundationScreenRecorder only supports entire display capture.")
-            throw ScreenRecorderPrepareError.invalidSource
-        }
-        
         if !SystemCapability.HDR.screenCaptureKitSupportsHDRCapture,
               codec.isHDREnabled
         {

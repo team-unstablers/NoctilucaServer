@@ -57,7 +57,7 @@ struct InputSettingsTab: View {
                 Text(markdown: String(localized: "settings.input.header.description", defaultValue: "전반적인 입력 설정을 구성합니다."))
             }
 #endif
-            
+
             Section {
                 KeyboardModifierOverrideSection(input: $settingsStore.settings.input)
             } header: {
@@ -65,6 +65,32 @@ struct InputSettingsTab: View {
                 Text(markdown: String(localized: "settings.input.keyboard.header.description", defaultValue: "키보드 입력과 관련된 설정을 구성합니다."))
             }
 
+                        
+#if os(macOS)
+            Section {
+                Toggle(isOn: $settingsStore.settings.input.syncIMState) {
+                    Text(markdown: String(
+                        localized: "settings.input.quirks.sync_im_state.title",
+                        defaultValue: "클라이언트의 입력 언어를 호스트와 동기화하기"
+                    ))
+                    Text(markdown: String(
+                        localized: "settings.input.quirks.sync_im_state.description",
+                        defaultValue: "클라이언트의 입력 언어가 변경되면, `simplerpc` 채널을 통해 호스트에게 이에 상응하는 입력 방법으로 변경을 요청합니다.\n- 이 기능이 동작하려면 호스트의 Noctiluca Server 버전이 0.10.0 이상이어야 합니다.\n- 역방향 동기화는 지원하지 않습니다."
+                    ))
+                }
+                
+                Toggle(isOn: $settingsStore.settings.input.syncIMStatePreferThirdParty) {
+                    Text(markdown: String(
+                        localized: "settings.input.quirks.sync_im_state.prefer-third-party-ime.title",
+                        defaultValue: "입력 언어 동기화 시 서드 파티 IM을 우선하기"
+                    ))
+                    Text(markdown: String(
+                        localized: "settings.input.quirks.sync_im_state.prefer-third-party-ime.description",
+                        defaultValue: "'구름 입력기' (한국어), 'Google 日本語入力' (일본어), '百度输入法' (중국어) 등의 서드 파티 IM이 호스트에 구성되어 있는 경우, 이를 우선하도록 호스트에 요청합니다."
+                    ))
+                }
+            }
+#endif
             
             /*
             Section {

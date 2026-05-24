@@ -108,8 +108,25 @@ struct MainWindowContentView: View {
 
     var body: some View {
         content
+            .detachedSheet(isPresented: Binding(
+                get: { viewModel.remoteSession?.activeFSAccessConsentRequest != nil },
+                set: { newValue in
+                    // 사용자가 명시 액션 없이 dismiss 하면 안전한 기본값(deny)으로 해결.
+                    if !newValue, viewModel.remoteSession?.activeFSAccessConsentRequest != nil {
+                        viewModel.remoteSession?.resolveFSAccessConsent(.deny)
+                    }
+                }
+            )) {
+                if let session = viewModel.remoteSession,
+                   let request = session.activeFSAccessConsentRequest {
+                    FSAccessConsentSheet(request: request) { decision in
+                        session.resolveFSAccessConsent(decision)
+                    }
+                    .id(request.id)
+                }
+            }
     }
-    
+
     @ViewBuilder
     private var content: some View {
         switch viewModel.phase {

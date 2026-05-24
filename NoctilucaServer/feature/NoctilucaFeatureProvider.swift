@@ -28,7 +28,9 @@ final class NoctilucaFeatureProvider: FeatureProvider {
             .hidio,
             .projection,
             .transfer,
-            .clipboard
+            .clipboard,
+            .fileSystemAccess,
+            .simpleRPC,
         ]
     }
 
@@ -45,6 +47,14 @@ final class NoctilucaFeatureProvider: FeatureProvider {
             return true
 
         case .clipboard:
+            return true
+
+        case .fileSystemAccess:
+            return true
+        case .fileSystemAccessMount:
+            return true
+        
+        case .simpleRPC:
             return true
 
         default:
@@ -70,8 +80,10 @@ final class NoctilucaFeatureProvider: FeatureProvider {
         case .transfer:
             // 정책 게이트: remote가 TransferChannel을 열려고 할 때, 채널 자체를 만들기 전에
             // clipboard 설정(enabled / allowFile)을 먼저 확인하여 공격 표면을 줄인다.
+            // (fsaccess-mount 등 clipboard 외 purpose 는 게이트 적용 대상 아님)
             if handle.direction == .remote,
-               let argsSet = TransferChannelArgumentsSet.parse(from: args) {
+               let argsSet = try? TransferChannelArgumentsSet.parse(from: args),
+               argsSet.purpose == .fileTransfer || argsSet.purpose == .clipboardData {
                 let clip = await SettingsStore.shared.settings.clipboard
                 guard clip.enabled else {
                     return .rejected(code: -1, reason: "Clipboard is disabled by policy")
@@ -121,6 +133,27 @@ final class NoctilucaFeatureProvider: FeatureProvider {
             let channel = ClipboardChannel(handle: handle)
             await state.setClipboardChannel(channel)
             return .accepted(channel)
+
+        case .fileSystemAccess:
+            // host = consuming peer 이므로 host 가 직접 channel 을 *발신* 한다
+            // (handle.direction == .local). navigator 가 발신하는 경로는 받지 않는다.
+            if handle.direction == .remote {
+                return .rejected(code: -1, reason: "host = consuming peer; remote-initiated fsaccess control channel is rejected.")
+            }
+            return .accepted(FSAccessChannel(handle: handle))
+
+        case .fileSystemAccessMount:
+            // 마찬가지로 host 가 발신. args[0] 의 sessionId 를 파싱해 channel 인스턴스에 결합.
+            if handle.direction == .remote {
+                return .rejected(code: -1, reason: "host = consuming peer; remote-initiated fsaccess_mount channel is rejected.")
+            }
+            guard let sessionId = FSAccessMountChannelArgs.parse(args) else {
+                return .rejected(code: -1, reason: "fsaccess_mount channel-start args[0] must be a UUID string (mount sessionId).")
+            }
+            return .accepted(FSAccessMountChannel(handle: handle, sessionId: sessionId))
+
+        case .simpleRPC:
+            return .accepted(SimpleRPCChannel(handle: handle))
 
         default:
             fatalError("Unsupported feature: \(feature)")

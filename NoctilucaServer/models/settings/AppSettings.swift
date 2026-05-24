@@ -17,6 +17,7 @@ struct AppSettings: Codable, Sendable {
     
     // MARK: - Projection Settings
     var projection: Projection = .init()
+    var appStream: AppStream = .init()
     
     // MARK: - Security Settings
     
@@ -29,6 +30,10 @@ struct AppSettings: Codable, Sendable {
     var clipboard: Clipboard = .init()
     var transfer: Transfer = .init()
 
+    // MARK: - File System Access Settings
+
+    var fileAccess: FileAccess = .init()
+
     // MARK: - Misc Settings
 
     var logging: Logging = .init()
@@ -40,11 +45,13 @@ struct AppSettings: Codable, Sendable {
         case general
         case notifications
         case projection
+        case appStream
         case security
         case transport
         case quicTransport
         case clipboard
         case transfer
+        case fileAccess
         case logging
         case telemetry
     }
@@ -59,11 +66,13 @@ struct AppSettings: Codable, Sendable {
         general = container.decodeSafe(General.self, forKey: .general, default: general)
         notifications = container.decodeSafe(Notifications.self, forKey: .notifications, default: notifications)
         projection = container.decodeSafe(Projection.self, forKey: .projection, default: projection)
+        appStream = container.decodeSafe(AppStream.self, forKey: .appStream, default: appStream)
         security = container.decodeSafe(Security.self, forKey: .security, default: security)
         transport = container.decodeSafe(Transport.self, forKey: .transport, default: transport)
         quicTransport = container.decodeSafe(QUICTransport.self, forKey: .quicTransport, default: quicTransport)
         clipboard = container.decodeSafe(Clipboard.self, forKey: .clipboard, default: clipboard)
         transfer = container.decodeSafe(Transfer.self, forKey: .transfer, default: transfer)
+        fileAccess = container.decodeSafe(FileAccess.self, forKey: .fileAccess, default: fileAccess)
         logging = container.decodeSafe(Logging.self, forKey: .logging, default: logging)
         telemetry = container.decodeSafe(Telemetry.self, forKey: .telemetry, default: telemetry)
     }
@@ -74,11 +83,13 @@ struct AppSettings: Codable, Sendable {
         try container.encode(general, forKey: .general)
         try container.encode(notifications, forKey: .notifications)
         try container.encode(projection, forKey: .projection)
+        try container.encode(appStream, forKey: .appStream)
         try container.encode(security, forKey: .security)
         try container.encode(transport, forKey: .transport)
         try container.encode(quicTransport, forKey: .quicTransport)
         try container.encode(clipboard, forKey: .clipboard)
         try container.encode(transfer, forKey: .transfer)
+        try container.encode(fileAccess, forKey: .fileAccess)
         try container.encode(logging, forKey: .logging)
         try container.encode(telemetry, forKey: .telemetry)
     }

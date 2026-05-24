@@ -79,6 +79,47 @@ class CGPrivate {
 }
 ```
 
+### 2.5. Handling Create / Copy functions (`retainedCF`)
+
+Core Foundation follows the **Create Rule**: any function whose name contains
+`Create` or `Copy` returns a `+1` retained CF reference that the caller is
+responsible for releasing. When Apple's headers import such a function, the
+Swift compiler bridges this automatically. **Gesu cannot do this** — it binds
+via `dlsym`, so the compiler has no header information to derive the rule from.
+Returning a plain `CFTypeRef?` from a Copy/Create function therefore leaks one
+reference per call.
+
+To handle this safely, pass `retainedCF: true`. Gesu will wrap the return type
+in `Unmanaged<T>?`, leaving you to opt into ownership transfer explicitly at the
+call site via `.takeRetainedValue()`:
+
+```swift
+@PrivateLibrary(path: "/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight")
+class SkyLightPrivate {
+    // Original: CFArrayRef SLSCopyManagedDisplays(int cid);  // Copy rule
+    #PrivateFunction(
+        "SLSCopyManagedDisplays",
+        args: (CGSConnectionID.self,),
+        ret: CFArray?.self,
+        retainedCF: true              // <- generates `-> Unmanaged<CFArray>?`
+    )
+}
+
+// Call site: takeRetainedValue() transfers the +1 ownership to Swift ARC.
+guard let displays = SkyLightPrivate.SLSCopyManagedDisplays?(connection)?
+    .takeRetainedValue() else { return }
+```
+
+Use `retainedCF: true` whenever the function name contains `Copy` or `Create`
+and returns a CF type. Forgetting it leaks memory; applying it to a non-Create
+function will *over*-release and crash, so the function-name convention is the
+ground truth.
+
+This option only applies to *direct* return values. Functions that return CF
+ownership via an out-parameter (e.g. `SLSCopyWindowProperty(..., CFTypeRef
+*out)`) must be handled at the call site with
+`Unmanaged.fromOpaque(...).takeRetainedValue()` or equivalent.
+
 ### 3. Loading the library and calling functions
 
 Call `open()` to load the library before using any of its functions. Symbols are

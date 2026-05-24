@@ -10,6 +10,7 @@ import Combine
 
 import SiriusKit
 import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 enum NoctilucaServerError: LocalizedError {
     case noIdentityConfigured
@@ -157,7 +158,10 @@ final class NoctilucaServer: ObservableObject {
         NoctilucaLoggingConfigurator.apply(settings: settings.logging)
 
         // 보안 정책 주입
-        await pluginBundleRegistry.configure(policy: settings.security.pluginBundleSecurityPolicy)
+        await pluginBundleRegistry.configure(
+            policy: settings.security.pluginBundleSecurityPolicy,
+            allowNonisolatedThirdPartyPluginBundle: settings.security.allowNonisolatedThirdPartyPluginBundle
+        )
 
         // 1. 내장 번들 등록
         try await pluginBundleRegistry.registerBuiltinBundles()
@@ -167,6 +171,9 @@ final class NoctilucaServer: ObservableObject {
             await pluginBundleRegistry.loadExternalBundles()
         }
 
+        // T7 검증용 multi-instance smoke (NOC_PLUGIN_HOST_SMOKE=1 일 때만 동작)
+        await XPCMultiInstanceSmoke.runIfEnabled()
+
         // 3. 인증 엔트리 설정 (외부 auth 플러그인 포함)
         await authenticator.setupAllowedEntires(settings.security.allowedEntries)
         self.previousAllowedEntries = settings.security.allowedEntries
@@ -175,6 +182,15 @@ final class NoctilucaServer: ObservableObject {
         subscribeToAuthEntryChanges()
 
         ScreenCaptureKitWorkaroundDummyWindow.windowManager.startup()
+
+        // fsaccess feature: settings.fileAccess.enabled 일 때만 host app 안에서
+        // 직접 nanonfs NFSv4 listener 를 띄우고 ~/NoctilucaFS 를 NFS 로 마운트.
+        await NocFSAccessHost.shared.startupIfEnabled(
+            enabled: settings.fileAccess.enabled,
+            mountPointPath: settings.fileAccess.mountPointPath,
+            useFakeLocks: settings.fileAccess.useFakeLocks,
+            writeBackCacheEnabled: settings.fileAccess.writeBackCacheEnabled
+        )
     }
 
     private func subscribeToAuthEntryChanges() {
@@ -246,13 +262,16 @@ final class NoctilucaServer: ObservableObject {
             await self.handleError(identityLoadError: error)
         } catch {
             logger.error("Failed to start NoctilucaServer: \(error)")
-            AppNotification.serverStartFailed(error: error).post()
+            AppNotification.serverStartFailed(error: error).postIfEnabled()
             self.state = .idle
             throw error
         }
     }
     
     func shutdown() async throws {
+        // fsaccess feature 가 켜져 있었다면 unmount + listener stop 을 먼저.
+        await NocFSAccessHost.shared.shutdownAndUnmount()
+
         guard case .running(let server) = state else {
             return
         }
@@ -260,6 +279,11 @@ final class NoctilucaServer: ObservableObject {
         logger.info("Shutting down NoctilucaServer...")
 
         try await server.shutdown()
+
+        // SiriusServer.shutdown 이 ClientSession 들을 닫으면서 ProjectionChannel.destroy 까지
+        // 흘러간 뒤, AX/Workspace 자원을 최종 정리한다. 서버 stop → 재시작 사이에
+        // stale AppSession / workspace observer 가 남지 않도록 한다.
+        await DesktopContextManager.shared.shutdown()
     }
 }
 

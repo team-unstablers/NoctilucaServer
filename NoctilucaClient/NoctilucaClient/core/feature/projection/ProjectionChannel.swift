@@ -45,9 +45,9 @@ enum ProjectionChannelEvent: Sendable {
     case sessionCreated(ProjectionSession)
     /// 화면 프로젝션 세션이 종료되었습니다.
     ///
-    /// `displayID` 는 세션이 `EntireDisplayProjectionSource` 로 만들어진 경우에만 유효하다.
-    /// `SingleWindowProjectionSource` 등 displayID 가 의미 없는 케이스에서는 nil 이 들어온다.
-    case sessionDestroyed(UUID, displayID: Int?, reason: VideoSessionEndReason, message: String?)
+    /// `source` 는 종료된 세션의 소스 식별자입니다. 이벤트 송신측에서 sourceDescriptor 를
+    /// 확보하지 못한 경우 (예: state 정합성 깨진 케이스) nil 일 수 있다.
+    case sessionDestroyed(UUID, source: ProjectionSourceDescriptor?, reason: VideoSessionEndReason, message: String?)
 
     /// 오디오 프로젝션 세션이 생성되었습니다.
     case audioSessionCreated(AudioProjectionSession)
@@ -59,6 +59,12 @@ enum ProjectionChannelEvent: Sendable {
 
     /// 커서 위치가 변경되었습니다.
     case cursorMoved(CursorMoveEvent)
+
+    /// AppStream 윈도우 이벤트 (appeared/disappeared/updated)
+    case appStreamWindowEvent(AppStreamWindowEvent)
+
+    /// Accessibility 트리(현재는 메뉴바) 업데이트 이벤트
+    case accessibilityTreeUpdateEvent(AccessibilityTreeUpdateEvent)
 }
 
 final class ProjectionChannel: Channel, ChannelEventConsumer {
@@ -155,6 +161,82 @@ final class ProjectionChannel: Channel, ChannelEventConsumer {
         case .displayTransactionResponse:
             let response = try DisplayTransactionResponse.fromProtobufBytes(frame.data)
             await self.handleDisplayTransactionResponse(response)
+
+        // MARK: - Window Manager opcodes
+
+        case .windowListResponse:
+            let response = try WindowListResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .getWindowInfoResponse:
+            let response = try GetWindowInfoResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .getWindowIconResponse:
+            let response = try GetWindowIconResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .getWindowThumbnailResponse:
+            let response = try GetWindowThumbnailResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .subscribeWindowEventsResponse:
+            let response = try SubscribeWindowEventsResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .unsubscribeWindowEventsResponse:
+            let response = try UnsubscribeWindowEventsResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestID, message: response)
+
+        case .windowManipulationResponse:
+            let response = try WindowManipulationResponse.fromProtobufBytes(frame.data)
+            // WindowManipulationResponse에는 requestID가 없으므로 별도 처리
+            // TODO: implement dispatch mechanism
+            break
+
+        case .windowChangedEvent:
+            let event = try WindowChangedEvent.fromProtobufBytes(frame.data)
+            await self.handleWindowChangedEvent(event)
+
+        // MARK: - AppStream opcodes
+
+        case .applicationListResponse:
+            let response = try ApplicationListResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .startAppStreamResponse:
+            let response = try StartAppStreamResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .stopAppStreamResponse:
+            let response = try StopAppStreamResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .appStreamWindowEvent:
+            let event = try AppStreamWindowEvent.fromProtobufBytes(frame.data)
+            await self.handleAppStreamWindowEvent(event)
+
+        // MARK: - Accessibility opcodes
+
+        case .getAccessibilityTreeResponse:
+            let response = try GetAccessibilityTreeResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .subscribeAccessibilityTreeUpdatesResponse:
+            let response = try SubscribeAccessibilityTreeUpdatesResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .unsubscribeAccessibilityTreeUpdatesResponse:
+            let response = try UnsubscribeAccessibilityTreeUpdatesResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
+
+        case .accessibilityTreeUpdateEvent:
+            let event = try AccessibilityTreeUpdateEvent.fromProtobufBytes(frame.data)
+            continuation.yield(.accessibilityTreeUpdateEvent(event))
+
+        case .dispatchActionResponse:
+            let response = try DispatchActionResponse.fromProtobufBytes(frame.data)
+            await self.dispatchResponse(requestID: response.requestId, message: response)
 
         // MARK: - Audio projection opcodes
 

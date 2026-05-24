@@ -88,7 +88,7 @@ actor ProjectionSession: Identifiable {
     // Rule I 패턴 3: init 에서 1회 대입 후 read-only.
     nonisolated(unsafe) weak var controlChannel: ProjectionChannel?
 
-    nonisolated let displayID: Int
+    nonisolated let sourceDescriptor: ProjectionSourceDescriptor
     nonisolated let enableJitterBuffer: Bool
     nonisolated let jitterBufferPreset: AppSettings.JitterBufferPreset
 
@@ -165,14 +165,14 @@ actor ProjectionSession: Identifiable {
 
     init(
         id: UUID,
-        displayID: Int,
+        sourceDescriptor: ProjectionSourceDescriptor,
         dataChannel: ProjectionDataChannel,
         controlChannel: ProjectionChannel,
         enableJitterBuffer: Bool = false,
         jitterBufferPreset: AppSettings.JitterBufferPreset = .lowLatency
     ) {
         self.id = id
-        self.displayID = displayID
+        self.sourceDescriptor = sourceDescriptor
         self.dataChannel = dataChannel
         self.controlChannel = controlChannel
         self.enableJitterBuffer = enableJitterBuffer

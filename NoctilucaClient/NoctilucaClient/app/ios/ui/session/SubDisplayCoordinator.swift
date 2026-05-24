@@ -67,7 +67,7 @@ final class SubDisplayCoordinator {
             throw SubDisplayCoordinatorError.projectionNotAvailable
         }
 
-        let subscription = try await projection.subscribeProjectionSession(for: displayID)
+        let subscription = try await projection.subscribeProjectionSession(for: .displayID(displayID))
         pending[key] = subscription
 
         let activity = NSUserActivity(activityType: Self.activityType)

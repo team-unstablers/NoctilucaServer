@@ -39,27 +39,45 @@ struct MainWindowRemoteSessionView: View {
         return nil
     }
 
+    /// AppStream 이 활성화된 상태인지 여부. iOS 빌드에는 AppStream 이 없으므로 항상 false.
+    private var isAppStreamActive: Bool {
+#if os(macOS)
+        if case .active = viewModel.appStreamState {
+            return true
+        }
+        return false
+#else
+        return false
+#endif
+    }
+
     var body: some View {
         // @Environment로 받은 viewModel을 Binding으로 사용하기 위해 @Bindable 지역 선언.
         @Bindable var viewModel = viewModel
 
         VStack {
-            if case .displayID(let displayID) = sourceDescriptor, displayID != -1 {
-                RemoteSessionProjectionView(
-                    remoteSession: remoteSession,
-                    projection: projection,
-                    hidio: hidio,
-                    sourceDescriptor: $sourceDescriptor,
-                    subscription: subscription
-                )
+            if isAppStreamActive {
+                Text("AppStream 활성화됨")
             } else {
-                ProgressView(String(localized: "mainwindow.remote-session.loading-display-layout", defaultValue: "디스플레이 구성을 로드하고 있습니다"))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .task {
-                        // 혹시 정보가 누락되었을 경우를 대비해 재요청
-                        try? await remoteSession.client.projectionChannel.updateDisplayLayout()
-                        try? await self.decideTargetDisplayID()
-                    }
+                if case .displayID(let displayID) = sourceDescriptor, displayID != -1 {
+                    RemoteSessionProjectionView(
+                        remoteSession: remoteSession,
+                        projection: projection,
+                        hidio: hidio,
+                        sourceDescriptor: $sourceDescriptor,
+                        subscription: subscription
+                    )
+                } else {
+                    ProgressView(String(localized: "mainwindow.remote-session.loading-display-layout", defaultValue: "디스플레이 구성을 로드하고 있습니다"))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .task {
+                            // 혹시 정보가 누락되었을 경우를 대비해 재요청
+                            await Task.detached {
+                                try? await remoteSession.client.projectionChannel.updateDisplayLayout()
+                            }.value
+                            try? await self.decideTargetDisplayID()
+                        }
+                }
             }
         }
         #if os(iOS)
@@ -77,8 +95,8 @@ struct MainWindowRemoteSessionView: View {
                 if subscription == nil,
                    case .displayID(let displayID) = sourceDescriptor,
                    displayID != -1 {
-                    Task {
-                        try? await self.updateProjectionTarget(displayID)
+                    Task.detached {
+                        try? await self.updateProjectionTarget(.displayID(displayID))
                     }
                 }
             }
@@ -140,7 +158,7 @@ struct MainWindowRemoteSessionView: View {
                     action: { newSourceDisplayID in
                         Task {
                             do {
-                                try await self.updateProjectionTarget(newSourceDisplayID)
+                                try await self.updateProjectionTarget(.displayID(newSourceDisplayID))
                             } catch {
                                 Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
                             }
@@ -168,8 +186,48 @@ struct MainWindowRemoteSessionView: View {
             }
         }
          */
-        .onChange(of: currentDisplayID.flatMap { projection.sessionErrors[$0] }) { _, error in
-            // sessionErrors 는 displayID 키 dict 이므로 현재 보고 있는 디스플레이의 에러만 관찰한다.
+#if os(macOS)
+        .sessionOverlay(isPresented: $viewModel.isAppStreamAppSelectorPresented) {
+            AppStreamPickerSheet(
+                listLoader: {
+                    guard let session = viewModel.remoteSession else {
+                        return []
+                    }
+                    let response = try await session.client.projectionChannel.getApplicationList(
+                        flags: [.includeIcons]
+                    )
+                    return response.applications
+                },
+                actionHandler: { action in
+                    await self.dispatchAppStreamPickerAction(action)
+                }
+            )
+        } subcontent: {
+            EmptyView()
+        }
+#endif
+#if os(macOS)
+        .onChange(of: isAppStreamActive) { _, active in
+            if active {
+                // AppStream 활성화: 풀스크린 프로젝션 정리 (서버에 stop 요청 전송)
+                retryTask?.cancel()
+                retryTask = nil
+                subscription?.invalidate()
+                subscription = nil
+            } else {
+                // AppStream 종료: 풀스크린 프로젝션 자동 재개
+                Task {
+                    if case .displayID(let id) = sourceDescriptor, id != -1 {
+                        try? await self.updateProjectionTarget(.displayID(id))
+                    } else {
+                        try? await self.decideTargetDisplayID()
+                    }
+                }
+            }
+        }
+#endif
+        .onChange(of: projection.sessionErrors[sourceDescriptor]) { _, error in
+            // sessionErrors 는 sourceDescriptor 키 dict 이므로 현재 보고 있는 소스의 에러만 관찰한다.
             guard let error, let displayID = currentDisplayID else { return }
             handleProjectionError(error, displayID: displayID)
         }
@@ -188,7 +246,7 @@ struct MainWindowRemoteSessionView: View {
         case .switchDisplay(let displayID):
             viewModel.shouldPresentDisplaySwitchSheet = false
             do {
-                try await self.updateProjectionTarget(displayID)
+                try await self.updateProjectionTarget(.displayID(displayID))
             } catch {
                 Self.logger.error("디스플레이 전환 실패: \(error.localizedDescription)")
             }
@@ -217,25 +275,36 @@ struct MainWindowRemoteSessionView: View {
         }
     }
 
-    func decideTargetDisplayID() async throws {
-        if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
-            try await updateProjectionTarget(primaryDisplayID)
+#if os(macOS)
+    @MainActor
+    func dispatchAppStreamPickerAction(_ action: AppStreamPickerAction) async {
+        switch action {
+        case .selectApp(let bundleId):
+            viewModel.isAppStreamAppSelectorPresented = false
+            viewModel.appStreamState = .active(bundleIdentifier: bundleId)
         }
     }
-    
-    func updateProjectionTarget(_ displayID: Int) async throws {
-        // 이전 displayID 의 진행 중인 retry 와 stale 한 에러 상태를 정리한다.
+#endif
+
+    func decideTargetDisplayID() async throws {
+        if let primaryDisplayID = remoteSession.client.projectionChannel.displayLayoutManager.primaryDisplayID {
+            try await updateProjectionTarget(.displayID(primaryDisplayID))
+        }
+    }
+
+    func updateProjectionTarget(_ source: ProjectionSourceDescriptor) async throws {
+        // 이전 source 의 진행 중인 retry 와 stale 한 에러 상태를 정리한다.
         // (Q4 답변: currentProjectionTarget 변경 시 retry 즉시 cancel)
-        let previousDisplayID = await MainActor.run { () -> Int? in
+        let previousSource = await MainActor.run { () -> ProjectionSourceDescriptor in
             retryTask?.cancel()
             retryTask = nil
-            return currentDisplayID
+            return sourceDescriptor
         }
-        if let previousDisplayID, previousDisplayID != displayID {
-            projection.clearSessionError(for: previousDisplayID)
+        if previousSource != source {
+            projection.clearSessionError(for: previousSource)
         }
-        // 이행 대상 displayID 의 stale 에러도 클리어 (수동 재시도 케이스 포함)
-        projection.clearSessionError(for: displayID)
+        // 이행 대상 source 의 stale 에러도 클리어 (수동 재시도 케이스 포함)
+        projection.clearSessionError(for: source)
 
         #if os(iOS)
         // scene 이 background 라면 sourceDescriptor 만 갱신하고 프로젝션 시작은 차단한다.
@@ -244,7 +313,7 @@ struct MainWindowRemoteSessionView: View {
             let previousSubscription = await MainActor.run { () -> ProjectionSessionSubscription? in
                 let previous = self.subscription
                 self.subscription = nil
-                self.sourceDescriptor = .displayID(displayID)
+                self.sourceDescriptor = source
                 return previous
             }
             previousSubscription?.invalidate()
@@ -252,12 +321,12 @@ struct MainWindowRemoteSessionView: View {
         }
         #endif
 
-        let newSubscription = try await projection.subscribeProjectionSession(for: displayID)
+        let newSubscription = try await projection.subscribeProjectionSession(for: source)
 
         let previousSubscription = await MainActor.run { () -> ProjectionSessionSubscription? in
             let previous = self.subscription
             self.subscription = newSubscription
-            self.sourceDescriptor = .displayID(displayID)
+            self.sourceDescriptor = source
             return previous
         }
 
@@ -301,6 +370,12 @@ struct MainWindowRemoteSessionView: View {
             return
         }
         #endif
+        #if os(macOS)
+        if isAppStreamActive {
+            Self.logger.info("Skipping backoff retry for display \(displayID) because AppStream is active")
+            return
+        }
+        #endif
 
         // backoff 재시도
         retryTask?.cancel()
@@ -333,7 +408,7 @@ struct MainWindowRemoteSessionView: View {
         let layoutManager = projection.channel.displayLayoutManager
         if let primary = layoutManager.primaryDisplayID, primary != currentDisplayID {
             do {
-                try await updateProjectionTarget(primary)
+                try await updateProjectionTarget(.displayID(primary))
             } catch {
                 Self.logger.error("Failed to fall back to primary display \(primary): \(error.localizedDescription)")
                 sourceDescriptor = .displayID(-1)

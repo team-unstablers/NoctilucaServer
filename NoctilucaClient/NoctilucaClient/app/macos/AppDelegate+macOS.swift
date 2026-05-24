@@ -29,6 +29,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindowController: AppKitSettingsWindowController?
     private var aboutAppWindowController: AppKitAboutAppWindowController?
 
+    /// AppStream에서 원격 메뉴로 스왑하기 전의 원본 메뉴. AppStream이 key resign 시 이 메뉴로 복구한다.
+    private(set) var originalMainMenu: NSMenu?
+
+    /// contained mode에서 originalMainMenu 에 inject 한 NSMenuItem (submenu = 호스트 앱 메뉴 트리).
+    /// AppStream 세션이 active 이지만 AppStream window 가 key 가 아닌 동안 노출된다.
+    private var containedRemoteMenuItem: NSMenuItem?
+
     private let menuShortcutRedirector = MenuShortcutRedirector()
     private var settingsCancellable: AnyCancellable?
     private var keyWindowObservers: [NSObjectProtocol] = []
@@ -137,6 +144,47 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    /// AppStream이 활성화되었을 때 `NSApp.mainMenu`를 원격 앱 메뉴로 교체한다.
+    /// 원본 메뉴는 `originalMainMenu`에 보관하며, `restoreOriginalMainMenu()`로 복구할 수 있다.
+    func installRemoteMainMenu(_ menu: NSMenu) {
+        if originalMainMenu == nil {
+            originalMainMenu = NSApp.mainMenu
+        }
+        NSApp.mainMenu = menu
+    }
+
+    /// 원격 메뉴 스왑을 해제하고 원본으로 복귀한다.
+    func restoreOriginalMainMenu() {
+        guard let original = originalMainMenu else { return }
+        NSApp.mainMenu = original
+    }
+
+    /// contained mode 진입: originalMainMenu 의 index 1 위치에 호스트 앱 메뉴 NSMenuItem 을 inject 한다.
+    /// 이미 inject 된 항목이 있으면 먼저 제거 후 새로 inject 한다.
+    func installContainedRemoteMenu(item: NSMenuItem) {
+        if originalMainMenu == nil {
+            originalMainMenu = NSApp.mainMenu
+        }
+        guard let menu = originalMainMenu else { return }
+
+        if let existing = containedRemoteMenuItem, menu.items.contains(existing) {
+            menu.removeItem(existing)
+        }
+
+        let insertIndex = min(1, menu.numberOfItems)
+        menu.insertItem(item, at: insertIndex)
+        containedRemoteMenuItem = item
+    }
+
+    /// contained mode 해제: originalMainMenu 에서 inject 했던 NSMenuItem 을 제거한다.
+    func removeContainedRemoteMenu() {
+        guard let item = containedRemoteMenuItem else { return }
+        if let menu = originalMainMenu, menu.items.contains(item) {
+            menu.removeItem(item)
+        }
+        containedRemoteMenuItem = nil
+    }
+
     private func subscribeShortcutRedirectionTriggers() {
         settingsCancellable = settingsStore.$settings
             .map { $0?.input.redirectKnownShortcuts ?? false }

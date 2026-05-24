@@ -9,26 +9,27 @@ import Foundation
 
 import SiriusKit
 @preconcurrency import NoctilucaPluginKit
+import NoctilucaPluginKitHostCore
 
 actor PAMAuthPlugin: BuiltInAuthPluginV1 {
-    static let metadata = BuiltinPluginBundleExportMetadata(
-        id: "app.noctiluca.server.plugins.auth.pam",
-        displayName: NSLocalizedString("plugins.auth.PAMAuthPlugin.name", comment: "PAMAuthPlugin"),
-        type: .auth,
-        description: NSLocalizedString("plugins.auth.PAMAuthPlugin.description", comment: "Provides UNIX PAM-based username-password authentication.")
-    )
-    
     static let id = "app.noctiluca.server.plugins.auth.pam"
-    static let name = NSLocalizedString("plugins.auth.PAMAuthPlugin.name", comment: "PAMAuthPlugin")
-    static let description = NSLocalizedString("plugins.auth.PAMAuthPlugin.description", comment: "Provides UNIX PAM-based username-password authentication.")
-    static let authors = [
-        "Gyuhwan Park <unstabler@unstabler.pl>"
-    ]
-    static let license: SoftwareLicense = NoctilucaMeta.license
-    static let version: UInt32 = 1
-    static let displayVersion = NoctilucaMeta.version
-    
+
     static let supportedMethods: Set<NoctilucaPluginKit.AuthMethod> = [.password]
+
+    static let manifest: NocPluginManifest = .auth(
+        BuiltinAuthPluginManifest(
+            id: id,
+            name: NSLocalizedString("plugins.auth.PAMAuthPlugin.name", comment: "PAMAuthPlugin"),
+            pluginDescription: NSLocalizedString("plugins.auth.PAMAuthPlugin.description", comment: "Provides UNIX PAM-based username-password authentication."),
+            authors: [
+                "Gyuhwan Park <unstabler@unstabler.pl>"
+            ],
+            license: NoctilucaMeta.license,
+            version: 1,
+            displayVersion: NoctilucaMeta.version,
+            supportedMethods: supportedMethods.map(\.rawValue)
+        )
+    )
     
     private static let authQueue = DispatchQueue(
         label: "app.noctiluca.server.auth.pam",
