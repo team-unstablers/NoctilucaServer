@@ -1,0 +1,17 @@
+NOCTILUCA — LICENSE NOTICE
+==========================
+
+The Noctiluca project is composed of multiple components, each
+distributed under its own license. This file serves only as an
+index; the binding terms are defined in the individual license
+files listed below.
+
+  • Noctiluca Server     — see LICENSE.server
+  • Noctiluca Navigator  — see LICENSE.client
+    (formerly distributed as "NoctilucaClient")
+
+Each component is licensed independently. Any distribution,
+modification, or other use of a component must comply with the
+terms of its respective license file.
+
+© 2024-2026 team unstablers Inc.
