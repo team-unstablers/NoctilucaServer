@@ -5,9 +5,6 @@
       location = "group:MockServer/MockServer.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:llm-prompts">
-   </FileRef>
-   <FileRef
       location = "group:Gesu">
    </FileRef>
    <FileRef
