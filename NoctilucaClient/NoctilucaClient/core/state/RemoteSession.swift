@@ -9,6 +9,13 @@ import Combine
 import Observation
 import Security
 
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
+import UIKit
+#endif
+
 import SiriusKitClient
 
 @MainActor
@@ -78,13 +85,11 @@ final class RemoteSession {
     @ObservationIgnored
     var fsAccessStreamRoutes: [UUID: FSAccessStreamRoute] = [:]
 
-    /// 현재 표시 중인 mount consent 요청. UI 바인딩용.
-    var activeFSAccessConsentRequest: FSAccessConsentRequest? = nil
-
     @ObservationIgnored
     private var pendingFSAccessConsents: [(FSAccessConsentRequest, CheckedContinuation<FSAccessConsentDecision, Never>)] = []
+
     @ObservationIgnored
-    private var activeFSAccessConsentContinuation: CheckedContinuation<FSAccessConsentDecision, Never>?
+    private var isPresentingFSAccessConsent: Bool = false
 
     var errorPublisher: AnyPublisher<NoctilucaClientError, Never> {
         errorEvents.eraseToAnyPublisher()
@@ -367,12 +372,9 @@ final class RemoteSession {
         }
         // 진행 중인 stream route 도 정리.
         fsAccessStreamRoutes.removeAll()
-        // 진행 중인 consent 도 deny 로 닫는다.
-        if let cont = activeFSAccessConsentContinuation {
-            activeFSAccessConsentContinuation = nil
-            activeFSAccessConsentRequest = nil
-            cont.resume(returning: .deny)
-        }
+        // 큐에 남아있는 consent 요청은 모두 deny 로 닫는다.
+        // (현재 alert 로 표시 중인 요청은 사용자 입력으로 자연스럽게 resolve 되며, 그 결과는 닫힌 채널로
+        // 응답이 가지 못해도 무해하다.)
         for (_, cont) in pendingFSAccessConsents {
             cont.resume(returning: .deny)
         }
@@ -421,30 +423,117 @@ final class RemoteSession {
 
     // MARK: - fsaccess mount consent UI
 
-    /// UI 가 사용자 결정을 보고할 때 호출. 현재 active continuation 을 깨운다.
-    func resolveFSAccessConsent(_ decision: FSAccessConsentDecision) {
-        guard let cont = activeFSAccessConsentContinuation else {
-            logger.warning("resolveFSAccessConsent called with no active continuation")
-            return
-        }
-        activeFSAccessConsentContinuation = nil
-        activeFSAccessConsentRequest = nil
-        cont.resume(returning: decision)
-        presentNextFSAccessConsentIfNeeded()
-    }
-
-    private func presentNextFSAccessConsentIfNeeded() {
-        guard activeFSAccessConsentRequest == nil else { return }
-        guard !pendingFSAccessConsents.isEmpty else { return }
-        let (request, cont) = pendingFSAccessConsents.removeFirst()
-        activeFSAccessConsentRequest = request
-        activeFSAccessConsentContinuation = cont
-    }
-
     fileprivate func enqueueFSAccessConsent(_ request: FSAccessConsentRequest) async -> FSAccessConsentDecision {
         return await withCheckedContinuation { (cont: CheckedContinuation<FSAccessConsentDecision, Never>) in
             pendingFSAccessConsents.append((request, cont))
-            presentNextFSAccessConsentIfNeeded()
+            Task { @MainActor in
+                await drainFSAccessConsentQueueIfNeeded()
+            }
+        }
+    }
+
+    private func drainFSAccessConsentQueueIfNeeded() async {
+        guard !isPresentingFSAccessConsent else { return }
+        isPresentingFSAccessConsent = true
+        defer { isPresentingFSAccessConsent = false }
+
+        while !pendingFSAccessConsents.isEmpty {
+            let (request, cont) = pendingFSAccessConsents.removeFirst()
+            let decision = await presentFSAccessConsentAlert(for: request)
+            cont.resume(returning: decision)
+        }
+    }
+
+    private func presentFSAccessConsentAlert(for request: FSAccessConsentRequest) async -> FSAccessConsentDecision {
+        let alert = NOCAlert()
+        alert.title = String(localized: "fsaccess.consent.title", defaultValue: "파일 시스템 액세스 요청")
+        alert.message = makeFSAccessConsentMessage(for: request)
+
+#if canImport(AppKit)
+        alert.alert.alertStyle = .warning
+#endif
+
+        var decision: FSAccessConsentDecision = .deny
+
+        alert.addButton(title: allowAsRequestedLabel(for: request.requestedAccess)) {
+            decision = .allow(grantedAccess: request.requestedAccess)
+        }
+
+        alert.addButton(title: String(localized: "common.deny", defaultValue: "거부")) {
+            decision = .deny
+        }
+
+        if request.requestedAccess != .read {
+            alert.addButton(title: String(localized: "fsaccess.consent.allow_read_only", defaultValue: "읽기 전용으로 허용")) {
+                decision = .allow(grantedAccess: .read)
+            }
+        }
+
+#if canImport(AppKit)
+        // NOTE: `parent?.mainWindowController?.window` 표기는 NSWindowDelegate 의 동명 메서드와
+        // 이름이 겹쳐 컴파일러가 메서드 참조로 해석하므로, 명시적으로 NSWindowController 의 window
+        // 프로퍼티로 해석되도록 단계를 풀어 쓴다.
+        guard let windowController = parent?.mainWindowController,
+              let window: NSWindow = windowController.window else {
+            logger.warning("presentFSAccessConsentAlert: no host window available; defaulting to deny")
+            return .deny
+        }
+        await alert.present(to: window)
+#elseif canImport(UIKit)
+        guard let viewController = parent?.rootViewController else {
+            logger.warning("presentFSAccessConsentAlert: no host view controller available; defaulting to deny")
+            return .deny
+        }
+        await alert.present(to: viewController)
+#endif
+
+        return decision
+    }
+
+    private func makeFSAccessConsentMessage(for request: FSAccessConsentRequest) -> String {
+        let subtitle = String(localized: "fsaccess.consent.subtitle", defaultValue: "원격 호스트가 이 기기의 폴더에 접근하려고 합니다.")
+        let entryLabel = String(localized: "fsaccess.consent.entry", defaultValue: "폴더")
+        let accessLabel = String(localized: "fsaccess.consent.requested_access", defaultValue: "요청한 권한")
+
+        var lines: [String] = [subtitle, ""]
+        lines.append("\(entryLabel): \(request.entryName)")
+        lines.append("    \(request.entryPath)")
+        lines.append("\(accessLabel): \(requestedAccessLabel(for: request.requestedAccess))")
+
+        if let reason = request.reason, !reason.isEmpty {
+            let reasonLabel = String(localized: "fsaccess.consent.reason", defaultValue: "사유")
+            lines.append("\(reasonLabel): \(reason)")
+        }
+
+        lines.append("")
+        lines.append(String(localized: "fsaccess.consent.warning_plain", defaultValue: "신뢰할 수 없는 호스트라면 거부하세요. 허용한 권한 범위 내에서 호스트는 폴더를 읽거나 수정할 수 있습니다."))
+
+        return lines.joined(separator: "\n")
+    }
+
+    private func requestedAccessLabel(for access: AccessMode) -> String {
+        switch access {
+        case .read:
+            return String(localized: "fsaccess.consent.access.read", defaultValue: "읽기 전용")
+        case .write:
+            return String(localized: "fsaccess.consent.access.write", defaultValue: "쓰기 전용")
+        case .readWrite:
+            return String(localized: "fsaccess.consent.access.read_write", defaultValue: "읽기/쓰기")
+        default:
+            return String(localized: "fsaccess.consent.access.unknown", defaultValue: "알 수 없음")
+        }
+    }
+
+    private func allowAsRequestedLabel(for access: AccessMode) -> String {
+        switch access {
+        case .read:
+            return String(localized: "fsaccess.consent.allow_read_only", defaultValue: "읽기 전용으로 허용")
+        case .write:
+            return String(localized: "fsaccess.consent.allow_write", defaultValue: "쓰기로 허용")
+        case .readWrite:
+            return String(localized: "fsaccess.consent.allow_read_write", defaultValue: "읽기/쓰기로 허용")
+        default:
+            return String(localized: "common.allow", defaultValue: "허용")
         }
     }
 
