@@ -14,7 +14,5 @@ public struct NoctilucaServerEventTypeV1: RawRepresentable, Sendable, Hashable, 
 }
 
 public extension NoctilucaServerEventTypeV1 {
-    static let authChallenge = Self(rawValue: "app.noctiluca.server.events.auth.challenge")
-    static let authResult = Self(rawValue: "app.noctiluca.server.events.auth.result")
 }
 
