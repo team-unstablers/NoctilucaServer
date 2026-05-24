@@ -28,9 +28,8 @@ struct NoctilucaMeta: Sendable {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
     }
 
-    static let license: SoftwareLicense = .proprietary(name: "Noctiluca Client EULA",
-                                                       url: URL(string: "https://unstabler.pl")!)
-    
+    static let license: SoftwareLicense = .gplv2
+
     
 #if os(iOS)
     static func applicationIcon() -> UIImage? {
