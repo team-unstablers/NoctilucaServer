@@ -21,13 +21,6 @@ xcodebuild -workspace NoctilucaServer.xcworkspace -scheme NoctilucaClient -confi
 xcodebuild -workspace NoctilucaServer.xcworkspace -scheme NoctilucaClient -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16' build
 ```
 
-## XcodeBuildMCP 사용 (에이전트 환경)
-XcodeBuildMCP가 구성된 환경에서는 `mcp__XcodeBuildMCP__*` 도구를 우선 사용합니다.
-```bash
-# 세션 기본값 설정 후 빌드
-session-set-defaults → build_sim / build_run_sim
-```
-
 # TEST COMMANDS
 
 ```bash
