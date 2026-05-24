@@ -74,25 +74,29 @@ final class CJKInputMethodManager: NSObject {
         matching language: Locale.Language,
         preferThirdParty: Bool = false
     ) async -> Bool {
-        guard let target = resolveInputSource(
-            for: language,
-            preferThirdParty: preferThirdParty
-        ) else {
+        let targets = resolveInputSource(for: language, preferThirdParty: preferThirdParty)
+        
+        guard !targets.isEmpty else {
             return false
         }
-
-        let status = TISSelectInputSource(target)
-        guard status == noErr else {
-            return false
+        
+        for target in targets {
+            let status = TISSelectInputSource(target)
+            guard status == noErr else {
+                continue
+            }
+            
+            // ASCIICapable 이 아닌 IM (= IME 가 활성화되는 경우) 으로 전환했다면,
+            // TIS 가 비활성 앱에서 조용히 무시되는 문제를 우회하기 위해
+            // 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
+            if !Self.isAsciiCapable(target) {
+                await activateWorkaroundWindowAndRestore()
+            }
+            
+            return true
         }
-
-        // ASCIICapable 이 아닌 IM (= IME 가 활성화되는 경우) 으로 전환했다면,
-        // TIS 가 비활성 앱에서 조용히 무시되는 문제를 우회하기 위해
-        // 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
-        if !Self.isAsciiCapable(target) {
-            await activateWorkaroundWindowAndRestore()
-        }
-        return true
+        
+        return false
     }
 
     /// ASCII (= US/ABC) 와 지정된 CJK 언어 사이를 토글한다. 키보드 핵에서 사용한다.
@@ -118,14 +122,14 @@ final class CJKInputMethodManager: NSObject {
     private func resolveInputSource(
         for language: Locale.Language,
         preferThirdParty: Bool
-    ) -> TISInputSource? {
+    ) -> [TISInputSource] {
         if Self.isAsciiRequest(language) {
-            return findASCIICapableInputSource()
+            return [findASCIICapableInputSource()].compactMap { $0 }
         }
 
         guard let list = TISCreateInputSourceList(nil, false)?
             .takeRetainedValue() as? [TISInputSource] else {
-            return nil
+            return []
         }
 
         var firstParty: [TISInputSource] = []
@@ -149,7 +153,7 @@ final class CJKInputMethodManager: NSObject {
             ? [thirdParty, firstParty]
             : [firstParty, thirdParty]
 
-        return ordered.first { !$0.isEmpty }?.first
+        return ordered.first { !$0.isEmpty } ?? []
     }
 
     private func findASCIICapableInputSource() -> TISInputSource? {
