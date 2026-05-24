@@ -176,11 +176,11 @@ struct FileAccessSettingsTab: View {
                     Toggle(isOn: $settings.fileAccess.writeBackCacheEnabled) {
                         Text(markdown: String(
                             localized: "settings.file_access.policy.write_back_cache.title",
-                            defaultValue: "Write-Back 캐시 사용하기"
+                            defaultValue: "Write-back 캐시 사용하기"
                         ))
                         Text(markdown: String(
                             localized: "settings.file_access.policy.write_back_cache.description",
-                            defaultValue: "NFS WRITE 를 호스트 측 메모리에 일시 누적했다가 한 번에 전송하여, 작은 write 가 다발로 들어오는 패턴(엑셀/워드 등 오피스 앱 저장)에서 체감 저장 속도를 크게 개선합니다.\n끄면 모든 WRITE 가 즉시 클라이언트로 전달됩니다 (구버전 동작)."
+                            defaultValue: "write 작업을 곧바로 전송하지 않고, 모아두었다 한번에 전송합니다.\n특정 패턴의 쓰기 속도가 빨라질 수 있지만, 연결이 불안정한 환경에서 데이터 유실 위험이 있습니다."
                         ))
                     }
                     .onChange(of: settings.fileAccess.writeBackCacheEnabled) { _, newValue in
