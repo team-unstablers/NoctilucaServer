@@ -62,6 +62,12 @@ extension RemoteSession {
         @ObservationIgnored
         private var observerSelfPtr: UnsafeMutableRawPointer?
 
+        /// `invalidate()` 가 호출된 적이 있는지. 한번 invalidate 된 인스턴스는 더 이상 자원을
+        /// 재취득하지 않는다 (observer 재설치 / task 재스케줄 금지). deinit 이 늦게 와도
+        /// 안전하게 동작하기 위한 가드.
+        @ObservationIgnored
+        private var isInvalidated: Bool = false
+
         private static let debounceInterval: Duration = .milliseconds(100)
 
         init(_ parent: RemoteSession, channel: SimpleRPCChannel) {
@@ -74,15 +80,36 @@ extension RemoteSession {
 
         @MainActor
         deinit {
+            // 정상 흐름에서는 `RemoteSession.handleChannelClose` 가 이미 invalidate() 를
+            // 호출했지만, safety net 으로 한번 더 호출한다. idempotent.
+            performInvalidate()
+        }
+
+        // MARK: - Invalidation
+
+        /// 모든 외부 자원(observer, in-flight task, Combine 구독)을 즉시 해제한다.
+        ///
+        /// in-flight task 의 strong-self 캡처(혹은 그 외 retain) 때문에 deinit 이 지연되거나
+        /// 호출되지 않더라도 distributed notification observer 가 계속 fire 하는 leak 을
+        /// 방지하기 위한 명시적 teardown 진입점. `RemoteSession.handleChannelClose` 에서
+        /// nil 할당 전에 반드시 호출해야 한다.
+        ///
+        /// 멱등(idempotent). 두번 이상 호출돼도 안전하다.
+        func invalidate() {
+            performInvalidate()
+        }
+
+        private func performInvalidate() {
+            guard !isInvalidated else { return }
+            isInvalidated = true
+
             debounceTask?.cancel()
+            debounceTask = nil
             inFlightTask?.cancel()
+            inFlightTask = nil
             cancellables.removeAll()
-            if observerInstalled, let selfPtr = observerSelfPtr {
-                CFNotificationCenterRemoveEveryObserver(
-                    CFNotificationCenterGetDistributedCenter(),
-                    selfPtr
-                )
-            }
+            removeObserverIfInstalled()
+            lastSent = nil
         }
 
         // MARK: - Settings binding
@@ -103,6 +130,7 @@ extension RemoteSession {
         }
 
         private func applySyncEnabled(_ enabled: Bool) {
+            guard !isInvalidated else { return }
             if enabled {
                 installObserverIfNeeded()
                 scheduleSend(reason: "initial / enabled")
@@ -160,6 +188,7 @@ extension RemoteSession {
         // MARK: - Debounce + send
 
         private func scheduleSend(reason: String) {
+            guard !isInvalidated else { return }
             debounceTask?.cancel()
             debounceTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(for: Self.debounceInterval)
@@ -169,6 +198,7 @@ extension RemoteSession {
         }
 
         private func fireSend(reason: String) {
+            guard !isInvalidated else { return }
             guard let languageTag = currentInputSourceLanguageTag() else {
                 logger.warning("Failed to extract BCP-47 from current input source — skipping (\(reason))")
                 return
@@ -184,27 +214,28 @@ extension RemoteSession {
             }
 
             inFlightTask?.cancel()
-            inFlightTask = Task { @MainActor [weak self] in
-                guard let self else { return }
-
+            // `guard let self` 로 strong promote 하지 않는다 — sendRequest 가 channel close
+            // 와의 race 등으로 즉시 throw 되지 않으면 self 가 task 에 잡혀서 deinit 이 영영
+            // 호출되지 않고, observer 가 계속 fire 하는 leak 으로 이어진다.
+            // 대신 channel 만 task 로 옮겨 잡고, self 는 weak 로 유지한다.
+            inFlightTask = Task { @MainActor [weak self, channel] in
                 let args = [
                     languageTag,
                     preferThirdParty ? "prefer-third-party" : "prefer-first-party"
                 ]
 
                 do {
-                    _ = try await self.channel.sendRequest(
+                    _ = try await channel.sendRequest(
                         operation: "app.noctiluca.rpc.switch-im",
                         args: args
                     )
-                    if !Task.isCancelled {
-                        self.lastSent = (languageTag, preferThirdParty)
-                        self.logger.info("Synced IM to host: \(languageTag) (preferThirdParty=\(preferThirdParty), reason=\(reason))")
-                    }
+                    guard let self, !Task.isCancelled else { return }
+                    self.lastSent = (languageTag, preferThirdParty)
+                    self.logger.info("Synced IM to host: \(languageTag) (preferThirdParty=\(preferThirdParty), reason=\(reason))")
                 } catch is CancellationError {
                     // 다음 변경 / debounce 에 의해 취소된 경우는 정상 흐름.
                 } catch {
-                    self.logger.warning("Failed to sync IM to host: \(error) (reason=\(reason))")
+                    self?.logger.warning("Failed to sync IM to host: \(error) (reason=\(reason))")
                 }
             }
         }

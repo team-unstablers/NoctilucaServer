@@ -338,6 +338,9 @@ final class RemoteSession {
 
 #if os(macOS)
         if channelID == inputMethodSync?.channelID {
+            // in-flight task 의 retain 으로 deinit 이 지연될 수 있으므로 nil 할당 전에
+            // 명시적으로 invalidate() 해서 distributed notification observer 를 즉시 해제한다.
+            inputMethodSync?.invalidate()
             self.inputMethodSync = nil
         }
 #endif
