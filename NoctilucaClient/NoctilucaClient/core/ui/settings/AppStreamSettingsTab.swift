@@ -20,14 +20,17 @@ struct AppStreamSettingsTab: View {
                     Text(markdown: String(localized: "settings.misc.appstream_window_info_overlay.description", defaultValue: "AppStream으로 띄워진 각 윈도우 우상단에 원격 윈도우의 ID, 역할, bounds 등 디버그 정보를 표시합니다."))
                 }
                 
+                /*
                 Toggle(isOn: .constant(false)) {
                     Text(markdown: String(localized: "settings.appstream.use_vp8_on_small_window.title", defaultValue: "작은 크기의 윈도우에는 VP8 코덱을 사용하고, 프레임 레이트를 낮추기"))
                     Text(markdown: String(localized: "settings.appstream.use_vp8_on_small_window.description", defaultValue: "800x600 (480,000 픽셀) 이하의 윈도우에는 VP8 코덱을 사용합니다.\n여러 윈도우를 띄워야 하는 경우 도움이 될 수 있습니다."))
                 }
+                 */
             } header: {
                 Text(markdown: String(localized: "settings.appstream.header", defaultValue: "AppStream (실험 단계)"))
             }
             
+            /*
             Section {
                 // $settings.appstream.quirks["app.noctiluca.appstream.quirks.use_a11y_context_menu"]
                 Toggle(isOn: .constant(false)) {
@@ -86,6 +89,7 @@ struct AppStreamSettingsTab: View {
                     ))
                 }
             }
+             */
             
         }
         .formStyle(.grouped)
