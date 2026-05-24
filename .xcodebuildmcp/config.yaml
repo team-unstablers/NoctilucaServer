@@ -1,3 +1,0 @@
-schemaVersion: 1
-enabledWorkflows: ["device", "logging", "macos", "project-discovery", "utilities", "session-management", "debugging", "swift-package", "doctor", "ui-automation", "workflow-discovery"]
-incrementalBuildsEnabled: true
