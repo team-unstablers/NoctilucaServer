@@ -83,6 +83,15 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     /// NFSv4 stateid 의 lower 4 byte counter. channel 단위 monotonic.
     let stateidGenerator = StateidGenerator()
 
+    /// host-side write-back cache. NFS WRITE 가 ``AppSettings.FileAccess.
+    /// writeBackCacheEnabled`` 일 때 일단 여기 누적되었다가 COMMIT / close /
+    /// 임계값 도달 시 wire 로 flush 된다. channel 생애 동안 단일 인스턴스.
+    let writeBackCache = WriteBackCache()
+
+    /// ``writeBackCache`` 의 background idle / size-budget flusher. ``handle
+    /// ChannelReady`` 에서 시작, ``teardown`` 에서 cancel.
+    nonisolated(unsafe) private var writeBackFlusherTask: Task<Void, Never>?
+
     actor RequestIdGenerator {
         private var next: UInt64 = 1
         func issue() -> UInt64 {
@@ -342,7 +351,23 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
     func handleChannelReady() async {
         await handle.setServiceClass(Self.defaultServiceClass)
         await FSAccessRequestRouter.shared.register(self, for: self.sessionId)
+        startWriteBackFlusher()
         logger.info("FSAccessMountChannel ready: session=\(self.sessionId)")
+    }
+
+    /// ``writeBackCache`` 의 background flusher 시작. 250ms 주기로 idle /
+    /// size-budget 임계값을 평가하고 해당 hostFile 만 flush 한다.
+    private func startWriteBackFlusher() {
+        writeBackFlusherTask?.cancel()
+        let cache = writeBackCache
+        writeBackFlusherTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: WriteBackCache.pollInterval)
+                guard let self else { return }
+                if Task.isCancelled { return }
+                await cache.tickIdleFlush(channel: self)
+            }
+        }
     }
 
     func handleFrame(frame: SiriusFrame) async throws {
@@ -419,6 +444,10 @@ final class FSAccessMountChannel: Channel, ChannelEventConsumer {
 
     private func teardown() async {
         await FSAccessRequestRouter.shared.unregister(sessionId: self.sessionId)
+        // background flusher 중단. channel 이 이미 닫혔으므로 sendWrite
+        // 시도는 어차피 실패. cache 의 dirty 는 메모리만 회수.
+        writeBackFlusherTask?.cancel()
+        writeBackFlusherTask = nil
         // 남아있던 OpenSlot 메모리만 정리. 이 시점에서 channel 자체가 닫혀
         // navigator 에 sendClose 를 보내봤자 의미가 없다 (host-initiated 명시
         // unmount 흐름에서는 ``NocFSAccessHost.removeMountSession`` 이 channel

@@ -172,6 +172,20 @@ struct FileAccessSettingsTab: View {
                             defaultValue: "파일 read/write 페이로드를 zstd 로 압축하여 전송합니다. 클라이언트가 지원하지 않으면 자동으로 비압축으로 fallback 합니다.\n**다음 마운트부터 적용**됩니다."
                         ))
                     }
+
+                    Toggle(isOn: $settings.fileAccess.writeBackCacheEnabled) {
+                        Text(markdown: String(
+                            localized: "settings.file_access.policy.write_back_cache.title",
+                            defaultValue: "Write-Back 캐시 사용하기"
+                        ))
+                        Text(markdown: String(
+                            localized: "settings.file_access.policy.write_back_cache.description",
+                            defaultValue: "NFS WRITE 를 호스트 측 메모리에 일시 누적했다가 한 번에 전송하여, 작은 write 가 다발로 들어오는 패턴(엑셀/워드 등 오피스 앱 저장)에서 체감 저장 속도를 크게 개선합니다.\n끄면 모든 WRITE 가 즉시 클라이언트로 전달됩니다 (구버전 동작)."
+                        ))
+                    }
+                    .onChange(of: settings.fileAccess.writeBackCacheEnabled) { _, newValue in
+                        Task { await NocFSAccessHost.shared.setWriteBackCacheEnabled(newValue) }
+                    }
                 } header: {
                     Text(markdown: String(
                         localized: "settings.file_access.section_policy.title",
@@ -272,12 +286,14 @@ struct FileAccessSettingsTab: View {
         // host actor 자체가 동시 호출 직렬화를 하므로 여기서 await 시도하지 않고 발사.
         let mountPointPath = settings.fileAccess.mountPointPath
         let useFakeLocks = settings.fileAccess.useFakeLocks
+        let writeBackCacheEnabled = settings.fileAccess.writeBackCacheEnabled
         Task {
             if target {
                 await NocFSAccessHost.shared.startupIfEnabled(
                     enabled: true,
                     mountPointPath: mountPointPath,
-                    useFakeLocks: useFakeLocks
+                    useFakeLocks: useFakeLocks,
+                    writeBackCacheEnabled: writeBackCacheEnabled
                 )
             } else {
                 await NocFSAccessHost.shared.shutdownAndUnmount()
@@ -328,11 +344,13 @@ struct FileAccessSettingsTab: View {
 
         let mountPointPath = settings.fileAccess.mountPointPath
         let useFakeLocks = settings.fileAccess.useFakeLocks
+        let writeBackCacheEnabled = settings.fileAccess.writeBackCacheEnabled
         await NocFSAccessHost.shared.shutdownAndUnmount()
         await NocFSAccessHost.shared.startupIfEnabled(
             enabled: settings.fileAccess.enabled,
             mountPointPath: mountPointPath,
-            useFakeLocks: useFakeLocks
+            useFakeLocks: useFakeLocks,
+            writeBackCacheEnabled: writeBackCacheEnabled
         )
     }
 }

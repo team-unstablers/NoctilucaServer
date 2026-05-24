@@ -188,7 +188,8 @@ final class NoctilucaServer: ObservableObject {
         await NocFSAccessHost.shared.startupIfEnabled(
             enabled: settings.fileAccess.enabled,
             mountPointPath: settings.fileAccess.mountPointPath,
-            useFakeLocks: settings.fileAccess.useFakeLocks
+            useFakeLocks: settings.fileAccess.useFakeLocks,
+            writeBackCacheEnabled: settings.fileAccess.writeBackCacheEnabled
         )
     }
 

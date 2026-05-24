@@ -27,6 +27,14 @@ actor NoctilucaNFSServer: NFSServer {
     private let handleTable: HandleTable
     private let logger = Logger(subsystem: "pl.unstabler.noctiluca.fsaccess", category: "nfs")
 
+    /// NFSv4 write verifier (RFC 7530 §18.32). 본 NFS 서버 인스턴스 생애 동안
+    /// stable. WRITE 응답에 동일 값으로 채워 클라이언트가 보관하게 하고, COMMIT
+    /// 시 같은 값을 echo 해 클라이언트가 "지금까지의 UNSTABLE write 가 모두
+    /// 살아있다" 고 판단하게 한다. 서버 재시작 / 인스턴스 교체 시 자동으로
+    /// 새 값으로 바뀌어 클라이언트가 모든 unstable write 를 재전송하는 정상
+    /// 복구 경로가 작동한다.
+    private let writeVerifier: UInt64 = UInt64.random(in: 1...UInt64.max)
+
     private static let readmeBody: String = """
     이 폴더는 Noctiluca 의 원격 파일 공유 기능을 위해 마운트되었습니다.
 
@@ -150,7 +158,9 @@ actor NoctilucaNFSServer: NFSServer {
     }
 
     /// `FileSystemErrorCode` → `NFSError` 직접 환원.
-    private static func nfsError(from info: ErrorInfo?) -> NFSError {
+    /// `WriteBackCache` 가 flush 실패 시 sticky error 를 저장할 때도 이 함수를
+    /// 재사용하므로 `internal` 노출.
+    static func nfsError(from info: ErrorInfo?) -> NFSError {
         guard let info else { return .serverFault }
         switch info.code {
         case .notFound: return .noEntry
@@ -297,6 +307,11 @@ actor NoctilucaNFSServer: NFSServer {
                 channel: channel, slot: slot, hostFileId: hostFileId,
                 op: "setattr(size)", logger: logger
             )
+            // truncate 전에 누적된 write 를 wire 로 flush — write-then-truncate
+            // 시퀀스에서 truncate 가 누적된 write 의 결과 위에 적용되어야 한다.
+            // (truncate 가 dirty 보다 먼저 도착하면 navigator 측 파일이 잘못된
+            // 상태로 남는다.)
+            try await channel.writeBackCache.flushAll(hostFileId: hostFileId, channel: channel)
             let response = try await channel.sendFTruncate(handleId: navHandle, length: size)
             guard response.success else { throw Self.nfsError(from: response.error) }
             await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)
@@ -889,6 +904,13 @@ actor NoctilucaNFSServer: NFSServer {
             return  // virtual tree directory close 는 noop.
         }
         let channel = try await channel(for: entry.mountSessionId!)
+        // close 전에 누적된 dirty 를 wire 로 flush. navigator 측 handleClose 에
+        // implicit fsync 가 있어, 누적 write 가 close 시점에 모두 디스크로
+        // 가는 것을 보장한다. flush 실패는 throw — 클라이언트가 close 를
+        // 실패로 인식하고 재시도 / 에러 보고하는 정상 경로.
+        if let hostFileId = entry.hostFileId {
+            try await channel.writeBackCache.flushAll(hostFileId: hostFileId, channel: channel)
+        }
         // stateid → OpenSlot lookup. 동일 hostFile 의 다른 OPEN 이 살아있어도
         // 그 slot 들은 절대 건드리지 않는다 (이전 워크어라운드의 race fix).
         guard let slot = await channel.openSlotTable.unregister(stateidOther: stateid.other) else {
@@ -926,6 +948,11 @@ actor NoctilucaNFSServer: NFSServer {
             throw NFSError.isDirectory
         }
         let channel = try await channel(for: mountSessionId)
+        // read-your-writes coherency: 누적된 dirty 가 있으면 wire read 전에
+        // 먼저 flush. v1 은 단순화를 위해 cache 에서 직접 응답하지 않고
+        // navigator 측 fd 가 누적 write 를 모두 반영한 상태로 만든 뒤 sendRead
+        // 한다. flush sticky error 가 있으면 그대로 throw (=NFSERR_IO).
+        try await channel.writeBackCache.flushIfDirty(hostFileId: hostFileId, channel: channel)
         // stateid resolution: anonymous (RFC 7530 §8.1.4.2) 면 hostFile 의
         // bestSlot 으로 fallback, 그 외 stateid 는 정확한 slot lookup 요구.
         // (write 와 다르게 read 는 RFC 가 anonymous 를 허용한다.)
@@ -983,6 +1010,36 @@ actor NoctilucaNFSServer: NFSServer {
             channel: channel, slot: slot, hostFileId: hostFileId,
             op: "write", logger: logger
         )
+
+        // write-back cache 경로: 클라이언트가 FILE_SYNC 를 요구하지 않았고,
+        // host setting 에서 cache 가 enabled 이며, mount session 이 zstd 가
+        // 아닐 때만 활성화. zstd 협상 mount 는 wire 전 압축이 필요해 cache
+        // 단순화에서 제외 (현재 cache 는 비압축 raw 바이트만 다룬다).
+        let cacheEnabled = await NocFSAccessHost.shared.writeBackCacheEnabled
+        let canCache = cacheEnabled
+            && stability != .fileSync
+            && channel.selectedCompressionMethod != .zstd
+        if canCache {
+            let outcome = await channel.writeBackCache.append(
+                hostFileId: hostFileId, navHandle: navHandle, offset: offset, data: data
+            )
+            // size / mtime 변경 → 캐시된 stat invalidate (실제 wire flush 가
+            // 끝나기 전이지만, GETATTR 가 stale 한 'pre-write size' 를 돌려주는
+            // 것보다는 navigator 측 fstat 으로 확정하는 편이 자연스럽다).
+            await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)
+            if case .shouldFlushSoon = outcome {
+                // best-effort 즉시 flush — 실패는 sticky 로 남고 다음 commit 에
+                // 전파된다.
+                try? await channel.writeBackCache.flushAll(
+                    hostFileId: hostFileId, channel: channel
+                )
+            }
+            return NFSWriteResult(
+                count: data.count, committed: .unstable, writeVerifier: writeVerifier
+            )
+        }
+
+        // 직접 wire 경로 (cache disabled / FILE_SYNC / zstd 마운트).
         // mount session 이 zstd 협상 상태면 NFS client 가 준 raw 바이트를 wire 로
         // 보내기 전 zstd 압축. response.bytesWritten 은 navigator 가 *uncompressed*
         // 바이트 단위로 응답해야 spec 일관성 — 이는 navigator 측 책임.
@@ -1001,7 +1058,12 @@ actor NoctilucaNFSServer: NFSServer {
         guard response.success else { throw Self.nfsError(from: response.error) }
         // size / mtime 변경 → 캐시된 stat invalidate.
         await channel.pathMap.invalidateStat(forHostHandleId: hostFileId)
-        return NFSWriteResult(count: Int(response.bytesWritten), committed: stability, writeVerifier: 0)
+        // FILE_SYNC 요청은 navigator 의 pwrite 가 끝났을 뿐 fsync 까지 보장
+        // 받지는 않으므로 DATA_SYNC 로 응답 (보수적).
+        let committed: NFSWriteStability = (stability == .fileSync) ? .dataSync : stability
+        return NFSWriteResult(
+            count: Int(response.bytesWritten), committed: committed, writeVerifier: writeVerifier
+        )
     }
 
     func commit(handle: NFSFileHandle, offset: UInt64, count: UInt64) async throws -> UInt64 {
@@ -1009,7 +1071,7 @@ actor NoctilucaNFSServer: NFSServer {
         guard entry.kind == .hostFile,
               let mountSessionId = entry.mountSessionId,
               let hostFileId = entry.hostFileId else {
-            return 0
+            return writeVerifier
         }
         let channel = try await channel(for: mountSessionId)
         // NFSv4 COMMIT 은 stateid 가 없는 op (RFC 7530 §16.6) — hostFile 단위로
@@ -1019,11 +1081,15 @@ actor NoctilucaNFSServer: NFSServer {
             // 어떤 OPEN 도 없는 상태에서 commit 이 들어오는 건 이상하지만,
             // POSIX 의 close-then-fsync 같은 흐름과 NFSv4 의 timing 차이로
             // 가능. 무해한 noop 으로 처리.
-            return 0
+            return writeVerifier
         }
+        // write-back cache 에 누적된 dirty 가 있으면 먼저 wire 로 flush. sticky
+        // 에러가 있으면 NFSERR_IO 형태로 throw 되어 클라이언트가 unstable write
+        // 를 재전송하는 정상 복구 경로로 흐른다.
+        try await channel.writeBackCache.flushAll(hostFileId: hostFileId, channel: channel)
         let response = try await channel.sendFlush(handleId: slot.navigatorHandleId)
         guard response.success else { throw Self.nfsError(from: response.error) }
-        return 0
+        return writeVerifier
     }
 
     // MARK: - Locking
@@ -1093,6 +1159,13 @@ actor NoctilucaNFSServer: NFSServer {
         let (channel, navHandle, supportsLocks) = try await resolveLockTarget(handle, stateid: stateid)
         if !supportsLocks {
             return NFSStateID(seqid: stateid.seqid &+ 1, other: stateid.other)
+        }
+        // lock 획득 전에 dirty 를 wire 로 flush. 외부 프로세스가 동일 파일에
+        // OS-level byte-range lock 으로 들여다볼 때 host 메모리에만 남은 write
+        // 이 안 보이는 inconsistency 를 회피.
+        if let (_, entry) = try? await decodeHandle(handle),
+           entry.kind == .hostFile, let hostFileId = entry.hostFileId {
+            try? await channel.writeBackCache.flushIfDirty(hostFileId: hostFileId, channel: channel)
         }
         let response = try await channel.sendLock(
             handleId: navHandle,

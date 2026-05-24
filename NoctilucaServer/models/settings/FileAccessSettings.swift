@@ -54,6 +54,15 @@ extension AppSettings {
         /// 강제합니다. 기본값 `true` (NFS 트래픽 절감 우선).
         var enableCompression: Bool = true
 
+        /// `true` 면 NFS WRITE 를 host 측 메모리에 일시 누적했다가 COMMIT / close
+        /// / size 임계값 / idle 임계값 도달 시 한 번에 navigator wire 로 flush 한다.
+        /// 작은 write 가 다발로 들어오는 패턴 (Excel/Word 등 office 앱 저장) 에서
+        /// wire round-trip 횟수를 크게 줄여 체감 저장 속도를 개선한다.
+        /// `false` 면 모든 WRITE 가 navigator 로 즉시 전달된다 (구버전 동작).
+        /// 기본값 `true`. 토글 변경은 즉시 반영되며, 이미 누적된 dirty 데이터는
+        /// 다음 COMMIT / close 에서 자연스럽게 flush 된다.
+        var writeBackCacheEnabled: Bool = true
+
         init() {}
 
         enum CodingKeys: String, CodingKey {
@@ -62,6 +71,7 @@ extension AppSettings {
             case alwaysReadOnly
             case useFakeLocks
             case enableCompression
+            case writeBackCacheEnabled
         }
 
         init(from decoder: any Decoder) throws {
@@ -84,6 +94,9 @@ extension AppSettings {
             enableCompression = container.decodeSafe(
                 Bool.self, forKey: .enableCompression, default: enableCompression
             )
+            writeBackCacheEnabled = container.decodeSafe(
+                Bool.self, forKey: .writeBackCacheEnabled, default: writeBackCacheEnabled
+            )
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -94,6 +107,7 @@ extension AppSettings {
             try container.encode(alwaysReadOnly, forKey: .alwaysReadOnly)
             try container.encode(useFakeLocks, forKey: .useFakeLocks)
             try container.encode(enableCompression, forKey: .enableCompression)
+            try container.encode(writeBackCacheEnabled, forKey: .writeBackCacheEnabled)
         }
     }
 }

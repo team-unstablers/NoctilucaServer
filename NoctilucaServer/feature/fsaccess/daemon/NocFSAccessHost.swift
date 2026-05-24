@@ -47,6 +47,14 @@ actor NocFSAccessHost {
     /// success 로 응답한다. `NoctilucaNFSServer` 가 cross-actor read 로 참조.
     private(set) var useFakeLocks: Bool = false
 
+    /// `AppSettings.FileAccess.writeBackCacheEnabled` 의 캐시. `true` 면 NFS
+    /// WRITE 가 host 측 메모리에 누적되었다가 COMMIT / close / 임계값에서
+    /// 한 번에 wire 로 flush 된다. `false` 면 모든 WRITE 가 즉시 wire 로 전달.
+    /// `NoctilucaNFSServer.write()` 가 cross-actor read 로 매 write 마다 참조.
+    /// 토글 변경은 즉시 반영되며, 이미 누적된 dirty 데이터는 다음 COMMIT /
+    /// close 에서 자연스럽게 flush 된다.
+    private(set) var writeBackCacheEnabled: Bool = true
+
     /// 1단계 connection namespace 의 monotonic counter (docs §5.1.1).
     private var nextConnectionNumber: Int = 1
 
@@ -62,8 +70,12 @@ actor NocFSAccessHost {
 
     /// fsaccess feature 가 enabled 면 NFS listener 시작 + mount point 준비 +
     /// NetFS 마운트까지 수행. disabled 면 noop.
-    func startupIfEnabled(enabled: Bool, mountPointPath: String, useFakeLocks: Bool = false) async {
+    func startupIfEnabled(enabled: Bool,
+                          mountPointPath: String,
+                          useFakeLocks: Bool = false,
+                          writeBackCacheEnabled: Bool = true) async {
         self.useFakeLocks = useFakeLocks
+        self.writeBackCacheEnabled = writeBackCacheEnabled
         guard enabled else {
             logger.info("startupIfEnabled: fsaccess feature is disabled — skipping NFS listener.")
             return
@@ -93,6 +105,17 @@ actor NocFSAccessHost {
         if useFakeLocks != value {
             logger.info("setUseFakeLocks: \(self.useFakeLocks) → \(value)")
             useFakeLocks = value
+        }
+    }
+
+    /// 사용자가 설정 토글로 `writeBackCacheEnabled` 를 변경했을 때 즉시 반영.
+    /// 이미 활성화된 mount session 의 다음 NFS WRITE 부터 새 정책이 적용된다.
+    /// `false` 로 내릴 때 이미 누적된 dirty 데이터는 다음 COMMIT / close 에서
+    /// 자연스럽게 flush 되므로 별도 drain 호출은 필요 없다.
+    func setWriteBackCacheEnabled(_ value: Bool) {
+        if writeBackCacheEnabled != value {
+            logger.info("setWriteBackCacheEnabled: \(self.writeBackCacheEnabled) → \(value)")
+            writeBackCacheEnabled = value
         }
     }
 
@@ -155,6 +178,11 @@ actor NocFSAccessHost {
         // teardown 흐름이 메모리만 비우고, 여기 sendClose 호출은 throw 되어
         // try? 가 흡수.
         if let channel = await FSAccessRequestRouter.shared.channel(for: id) {
+            // close 보내기 전에 누적된 write-back dirty 를 wire 로 flush. 실패는
+            // swallow (sticky 에러로 남지만 mount session 자체가 곧 사라지므로
+            // 의미 없음 — 메모리 회수만 중요).
+            await channel.writeBackCache.drainAll(channel: channel)
+
             let slots = await channel.openSlotTable.drainAll()
             if !slots.isEmpty {
                 logger.info("removeMountSession: draining \(slots.count) OpenSlot(s) for session=\(id.uuidString)")
