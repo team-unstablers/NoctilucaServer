@@ -27,6 +27,8 @@ extension SoftwareLicense {
             return .mit
         case "Apache-2.0":
             return .apache2_0
+        case "GPL-2.0-or-later":
+            return .gplv2
         case "GPL-3.0-or-later":
             return .gplv3
         case "LGPL-3.0-or-later":

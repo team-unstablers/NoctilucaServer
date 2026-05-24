@@ -41,8 +41,8 @@ EXIT CODES (RETVALS):
 - 64: Argument parsing failure (ArgumentParser default)
 
 NOTE:
-This program is part of the Noctiluca Server product. Users holding a valid Noctiluca Server license may use it for personal scripting purposes, etc.
-However, since it was originally written for use inside Noctiluca Server, correct behavior is not guaranteed when used outside its intended purpose.
+This program is part of the Noctiluca Server project and is distributed under the GNU General Public License v3.0.
+Since it was originally written for use inside Noctiluca Server, correct behavior is not guaranteed when used outside its intended purpose.
 """
     )
     

@@ -30,10 +30,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc
-    func showLicensingWindow(_ sender: Any?) {
-    }
-
-    @objc
     func showSettingsWindow(_ sender: Any?) {
     }
 

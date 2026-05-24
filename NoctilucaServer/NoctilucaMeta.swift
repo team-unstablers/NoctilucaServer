@@ -26,9 +26,8 @@ struct NoctilucaMeta {
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
     }
     
-    static let license: SoftwareLicense = .proprietary(name: "Noctiluca Server EULA",
-                                                       url: URL(string: "https://unstabler.pl")!)
-    
+    static let license: SoftwareLicense = .gplv3
+
 }
 
 extension NoctilucaMeta {

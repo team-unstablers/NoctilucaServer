@@ -15,7 +15,7 @@ import Foundation
 /// type SoftwareLicense =
 ///     | { type: 'custom', name: string, url: string, isOpenSource: boolean }
 ///     | { type: 'proprietary', name: string, url: string }
-///     | 'mit' | 'apache2_0' | 'bsd3' | 'gplv3' | 'lgplv3' | 'cc0';
+///     | 'mit' | 'apache2_0' | 'bsd3' | 'gplv2' | 'gplv3' | 'lgplv3' | 'cc0';
 /// ```
 ///
 /// JSON 디코딩 후 `resolved` 로 `NoctilucaPluginKit.SoftwareLicense` 를 얻습니다.
@@ -44,6 +44,7 @@ public struct SoftwareLicenseV1Draft: Codable, Sendable {
             case "mit":       self.resolved = .mit
             case "apache2_0": self.resolved = .apache2_0
             case "bsd3":      self.resolved = .bsd3
+            case "gplv2":     self.resolved = .gplv2
             case "gplv3":     self.resolved = .gplv3
             case "lgplv3":    self.resolved = .lgplv3
             case "cc0":       self.resolved = .cc0
@@ -91,6 +92,9 @@ public struct SoftwareLicenseV1Draft: Codable, Sendable {
         case .bsd3:
             var c = encoder.singleValueContainer()
             try c.encode("bsd3")
+        case .gplv2:
+            var c = encoder.singleValueContainer()
+            try c.encode("gplv2")
         case .gplv3:
             var c = encoder.singleValueContainer()
             try c.encode("gplv3")

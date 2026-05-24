@@ -141,13 +141,7 @@ private struct OnboardingNavigationBar: View {
             UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
             NSApp.keyWindow?.close()
 
-            // 라이선스가 미등록이면 라이선싱 윈도우 표시
-            await LicenseManager.shared.loadLicense()
-            if await LicenseManager.shared.validationState == .unlicensed {
-                (NSApp.delegate as? AppDelegate)?.showLicensingWindow(nil)
-            } else {
-                try? await NoctilucaServer.shared.startup()
-            }
+            try? await NoctilucaServer.shared.startup()
         }
     }
 }
