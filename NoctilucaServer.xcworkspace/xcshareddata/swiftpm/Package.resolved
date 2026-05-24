@@ -1,5 +1,5 @@
 {
-  "originHash" : "9e4ea6c05e37dd2af68370b3259519fd3d09c22cd8f4779910fc21bf93e573b9",
+  "originHash" : "caac6b128b48532b4f38c345beb4d111efe7f7404edd9e9ffd8523316bc975e8",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -20,12 +20,30 @@
       }
     },
     {
+      "identity" : "nanonfs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/team-unstablers/nanonfs",
+      "state" : {
+        "revision" : "4432146fdca4fcd6129d295c41fefce4b2541efa",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "sentry-cocoa",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/getsentry/sentry-cocoa",
       "state" : {
         "revision" : "c63a66f1b5107eec3792249bb03e65015eeba905",
         "version" : "9.7.0"
+      }
+    },
+    {
+      "identity" : "shotoku",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/team-unstablers/Shotoku",
+      "state" : {
+        "revision" : "2819534b4e794b4351ba6de326610716a865b288",
+        "version" : "1.0.0"
       }
     },
     {
@@ -123,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "f71c8d2a5e74a2c6d11a0fbe324774b5d6084237",
-        "version" : "2.99.0"
+        "revision" : "57c0a08a331aaea9f5d7a932ad94ef43be942a95",
+        "version" : "2.100.0"
       }
     },
     {

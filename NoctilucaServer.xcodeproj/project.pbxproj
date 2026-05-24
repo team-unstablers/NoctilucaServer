@@ -10,6 +10,11 @@
 		F60021EE2F9B491800AFD3CF /* CJKKeyboardHacks.nocbundle in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = F61AB3182F41274E00BB69AF /* CJKKeyboardHacks.nocbundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F606EFE42F9CC0E700B8E05C /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = F606EFE32F9CC0E700B8E05C /* Sentry */; };
 		F61AB32E2F4146CF00BB69AF /* Gesu in Frameworks */ = {isa = PBXBuildFile; productRef = F61AB32D2F4146CF00BB69AF /* Gesu */; };
+		F62038C02FC3B47000F9C9CC /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F62038BF2FC3B47000F9C9CC /* NanoNFS */; };
+		F62038C32FC3B4D900F9C9CC /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F62038C22FC3B4D900F9C9CC /* Shotoku */; };
+		F62038C52FC3B4E500F9C9CC /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F62038C42FC3B4E500F9C9CC /* Shotoku */; };
+		F62038C72FC3B4EA00F9C9CC /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F62038C62FC3B4EA00F9C9CC /* NanoNFS */; };
+		F62038C92FC3B4F600F9C9CC /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F62038C82FC3B4F600F9C9CC /* Shotoku */; };
 		F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; };
 		F621CB052F8AC11900AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F621CB072F8AC11A00AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */; };
@@ -27,13 +32,9 @@
 		F6379D3F2EE7D554004BC795 /* libbcrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F6379D3D2EE7D554004BC795 /* libbcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F64AEF892F6670F300C0EDD8 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = F64AEF882F6670F300C0EDD8 /* Sentry */; };
 		F64AF17A2F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server in Resources */ = {isa = PBXBuildFile; fileRef = F64AF1792F6C784800C0EDD8 /* OPEN_SOURCE_LICENSE.server */; };
-		F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F64F79BA2FA818B300F3D400 /* NanoNFS */; };
 		F64FAF892FA95BA700F3D400 /* NetFS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F64FAF882FA95BA700F3D400 /* NetFS.framework */; };
-		F67827D22FB9925600DC5D5E /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F67827D12FB9925600DC5D5E /* NanoNFS */; };
 		F67827D32FB9925C00DC5D5E /* NetFS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F64FAF882FA95BA700F3D400 /* NetFS.framework */; };
 		F67827DB2FB9F7FE00DC5D5E /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F67827DA2FB9F7FE00DC5D5E /* Shotoku */; };
-		F67827DE2FB9F83000DC5D5E /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F67827DD2FB9F83000DC5D5E /* Shotoku */; };
-		F67827F62FB9F97200DC5D5E /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F67827F52FB9F97200DC5D5E /* Shotoku */; };
 		F67828102FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F67828072FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework */; };
 		F678281A2FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F67828072FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework */; };
 		F678281B2FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F67828072FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -45,7 +46,6 @@
 		F678282F2FB9FB9500DC5D5E /* NoctilucaPluginKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F624FD742EE2A8E1007A68B3 /* NoctilucaPluginKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F67828352FB9FEEE00DC5D5E /* SiriusKit in Frameworks */ = {isa = PBXBuildFile; productRef = F67828342FB9FEEE00DC5D5E /* SiriusKit */; };
 		F67828362FB9FEEE00DC5D5E /* SiriusKit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F67828342FB9FEEE00DC5D5E /* SiriusKit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		F67828382FB9FF0000DC5D5E /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F67828372FB9FF0000DC5D5E /* Shotoku */; };
 		F678285E2FBA07B900DC5D5E /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = F678285D2FBA07B900DC5D5E /* Logging */; };
 		F67828602FBA07C300DC5D5E /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = F678285F2FBA07C300DC5D5E /* Logging */; };
 		F67828712FBA10E700DC5D5E /* NoctilucaPluginKitHost.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = F67827E32FB9F90C00DC5D5E /* NoctilucaPluginKitHost.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -491,13 +491,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F64F79BB2FA818B300F3D400 /* NanoNFS in Frameworks */,
 				F686CFF42F3A34F6004383CF /* NoctilucaWebPEncoder in Frameworks */,
 				F624FD872EE2B2EA007A68B3 /* libpam.tbd in Frameworks */,
 				F69644AE2F32C4F20093CFC2 /* Xuanxue in Frameworks */,
+				F62038C32FC3B4D900F9C9CC /* Shotoku in Frameworks */,
 				F678281A2FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework in Frameworks */,
 				F6CC836C2F5B33FC00AA6DC2 /* Inject in Frameworks */,
 				F627113F2F084EC200E8A3D7 /* libz.1.tbd in Frameworks */,
+				F62038C02FC3B47000F9C9CC /* NanoNFS in Frameworks */,
 				F67827DB2FB9F7FE00DC5D5E /* Shotoku in Frameworks */,
 				F64AEF892F6670F300C0EDD8 /* Sentry in Frameworks */,
 				F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */,
@@ -518,7 +519,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F67827F62FB9F97200DC5D5E /* Shotoku in Frameworks */,
+				F62038C92FC3B4F600F9C9CC /* Shotoku in Frameworks */,
 				F67828292FB9FB9000DC5D5E /* NoctilucaPluginKit.framework in Frameworks */,
 				F67828602FBA07C300DC5D5E /* Logging in Frameworks */,
 				F678282C2FB9FB9100DC5D5E /* NoctilucaPluginKitHostCore.framework in Frameworks */,
@@ -529,7 +530,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F67828382FB9FF0000DC5D5E /* Shotoku in Frameworks */,
 				F67828352FB9FEEE00DC5D5E /* SiriusKit in Frameworks */,
 				F678282E2FB9FB9500DC5D5E /* NoctilucaPluginKit.framework in Frameworks */,
 			);
@@ -560,18 +560,18 @@
 				F6CC83862F5B522800AA6DC2 /* Inject in Frameworks */,
 				F6CC83872F5B522800AA6DC2 /* libz.1.tbd in Frameworks */,
 				F6CC83882F5B522800AA6DC2 /* SiriusKit in Frameworks */,
-				F67827DE2FB9F83000DC5D5E /* Shotoku in Frameworks */,
+				F62038C72FC3B4EA00F9C9CC /* NanoNFS in Frameworks */,
 				F6CC838A2F5B522800AA6DC2 /* Gesu in Frameworks */,
 				F6CC838B2F5B522800AA6DC2 /* libzstd in Frameworks */,
 				F67827D32FB9925C00DC5D5E /* NetFS.framework in Frameworks */,
 				F6CC838C2F5B522800AA6DC2 /* libbcrypt.framework in Frameworks */,
 				F6CC838D2F5B522800AA6DC2 /* Sparkle in Frameworks */,
-				F67827D22FB9925600DC5D5E /* NanoNFS in Frameworks */,
 				F606EFE42F9CC0E700B8E05C /* Sentry in Frameworks */,
 				F6CC838E2F5B522800AA6DC2 /* NoctilucaPluginKit.framework in Frameworks */,
 				F6CC838F2F5B522800AA6DC2 /* AsyncAlgorithms in Frameworks */,
 				F6CC83902F5B522800AA6DC2 /* Alamofire in Frameworks */,
 				F621CB072F8AC11A00AEF0FA /* NoctilucaLibVPX in Frameworks */,
+				F62038C52FC3B4E500F9C9CC /* Shotoku in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -751,9 +751,10 @@
 				F6CC836B2F5B33FC00AA6DC2 /* Inject */,
 				F64AEF882F6670F300C0EDD8 /* Sentry */,
 				F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */,
-				F64F79BA2FA818B300F3D400 /* NanoNFS */,
 				F67827DA2FB9F7FE00DC5D5E /* Shotoku */,
 				F678285D2FBA07B900DC5D5E /* Logging */,
+				F62038BF2FC3B47000F9C9CC /* NanoNFS */,
+				F62038C22FC3B4D900F9C9CC /* Shotoku */,
 			);
 			productName = NoctilucaServer;
 			productReference = F669650B2ECF26770032EF4E /* NoctilucaServer.app */;
@@ -778,8 +779,8 @@
 			);
 			name = NoctilucaPluginKitHost;
 			packageProductDependencies = (
-				F67827F52FB9F97200DC5D5E /* Shotoku */,
 				F678285F2FBA07C300DC5D5E /* Logging */,
+				F62038C82FC3B4F600F9C9CC /* Shotoku */,
 			);
 			productName = NoctilucaPluginKitHost;
 			productReference = F67827E32FB9F90C00DC5D5E /* NoctilucaPluginKitHost.xpc */;
@@ -805,7 +806,6 @@
 			name = NoctilucaPluginKitHostCore;
 			packageProductDependencies = (
 				F67828342FB9FEEE00DC5D5E /* SiriusKit */,
-				F67828372FB9FF0000DC5D5E /* Shotoku */,
 			);
 			productName = NoctilucaPluginKitHostCore;
 			productReference = F67828072FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework */;
@@ -887,8 +887,8 @@
 				F6CC837F2F5B522800AA6DC2 /* Inject */,
 				F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */,
 				F606EFE32F9CC0E700B8E05C /* Sentry */,
-				F67827D12FB9925600DC5D5E /* NanoNFS */,
-				F67827DD2FB9F83000DC5D5E /* Shotoku */,
+				F62038C42FC3B4E500F9C9CC /* Shotoku */,
+				F62038C62FC3B4EA00F9C9CC /* NanoNFS */,
 			);
 			productName = NoctilucaServer;
 			productReference = F6CC839F2F5B522800AA6DC2 /* NoctilucaServerTestsHost.app */;
@@ -955,9 +955,9 @@
 				F6CC836A2F5B33FB00AA6DC2 /* XCRemoteSwiftPackageReference "Inject" */,
 				F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
-				F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */,
-				F67827D92FB9F7FE00DC5D5E /* XCLocalSwiftPackageReference "../Shotoku" */,
 				F678285C2FBA07B900DC5D5E /* XCRemoteSwiftPackageReference "swift-log" */,
+				F62038BE2FC3B47000F9C9CC /* XCRemoteSwiftPackageReference "nanonfs" */,
+				F62038C12FC3B4D900F9C9CC /* XCRemoteSwiftPackageReference "Shotoku" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F669650C2ECF26770032EF4E /* Products */;
@@ -1416,7 +1416,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = NO;
@@ -1444,7 +1444,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.10;
+				MARKETING_VERSION = 0.10.0;
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-interposable",
@@ -1481,7 +1481,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = "";
@@ -1510,7 +1510,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.10;
+				MARKETING_VERSION = 0.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1780,7 +1780,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_APP_SANDBOX = NO;
@@ -1808,7 +1808,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.10;
+				MARKETING_VERSION = 0.10.0;
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-interposable",
@@ -1845,7 +1845,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = XHA76UVA95;
 				EMIT_FRONTEND_COMMAND_LINES = "";
 				ENABLE_APP_SANDBOX = NO;
@@ -1873,7 +1873,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.10;
+				MARKETING_VERSION = 0.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.noctiluca.server.testing.host;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1989,20 +1989,25 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../nanonfs;
+/* Begin XCRemoteSwiftPackageReference section */
+		F62038BE2FC3B47000F9C9CC /* XCRemoteSwiftPackageReference "nanonfs" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/team-unstablers/nanonfs";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
 			traits = (
 			);
 		};
-		F67827D92FB9F7FE00DC5D5E /* XCLocalSwiftPackageReference "../Shotoku" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../Shotoku;
+		F62038C12FC3B4D900F9C9CC /* XCRemoteSwiftPackageReference "Shotoku" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/team-unstablers/Shotoku";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCRemoteSwiftPackageReference section */
 		F621D20E2F91FDA500AEF0FA /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
@@ -2137,6 +2142,31 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Gesu;
 		};
+		F62038BF2FC3B47000F9C9CC /* NanoNFS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F62038BE2FC3B47000F9C9CC /* XCRemoteSwiftPackageReference "nanonfs" */;
+			productName = NanoNFS;
+		};
+		F62038C22FC3B4D900F9C9CC /* Shotoku */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F62038C12FC3B4D900F9C9CC /* XCRemoteSwiftPackageReference "Shotoku" */;
+			productName = Shotoku;
+		};
+		F62038C42FC3B4E500F9C9CC /* Shotoku */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F62038C12FC3B4D900F9C9CC /* XCRemoteSwiftPackageReference "Shotoku" */;
+			productName = Shotoku;
+		};
+		F62038C62FC3B4EA00F9C9CC /* NanoNFS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F62038BE2FC3B47000F9C9CC /* XCRemoteSwiftPackageReference "nanonfs" */;
+			productName = NanoNFS;
+		};
+		F62038C82FC3B4F600F9C9CC /* Shotoku */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F62038C12FC3B4D900F9C9CC /* XCRemoteSwiftPackageReference "Shotoku" */;
+			productName = Shotoku;
+		};
 		F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NoctilucaLibVPX;
@@ -2164,38 +2194,13 @@
 			package = F64AEF872F6670F300C0EDD8 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
 		};
-		F64F79BA2FA818B300F3D400 /* NanoNFS */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */;
-			productName = NanoNFS;
-		};
-		F67827D12FB9925600DC5D5E /* NanoNFS */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F64F79AE2FA810FD00F3D400 /* XCLocalSwiftPackageReference "../nanonfs" */;
-			productName = NanoNFS;
-		};
 		F67827DA2FB9F7FE00DC5D5E /* Shotoku */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Shotoku;
-		};
-		F67827DD2FB9F83000DC5D5E /* Shotoku */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F67827D92FB9F7FE00DC5D5E /* XCLocalSwiftPackageReference "../Shotoku" */;
-			productName = Shotoku;
-		};
-		F67827F52FB9F97200DC5D5E /* Shotoku */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F67827D92FB9F7FE00DC5D5E /* XCLocalSwiftPackageReference "../Shotoku" */;
 			productName = Shotoku;
 		};
 		F67828342FB9FEEE00DC5D5E /* SiriusKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SiriusKit;
-		};
-		F67828372FB9FF0000DC5D5E /* Shotoku */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F67827D92FB9F7FE00DC5D5E /* XCLocalSwiftPackageReference "../Shotoku" */;
-			productName = Shotoku;
 		};
 		F678285D2FBA07B900DC5D5E /* Logging */ = {
 			isa = XCSwiftPackageProductDependency;
