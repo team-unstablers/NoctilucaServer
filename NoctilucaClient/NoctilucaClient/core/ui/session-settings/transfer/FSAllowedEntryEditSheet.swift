@@ -59,14 +59,12 @@ struct FSAllowedEntryEditSheet: View {
 
             Form {
                 LabeledContent(String(localized: "session-settings.transfer.fs_access.edit.display_name", defaultValue: "표시명")) {
-                    TextField(String(localized: "session-settings.transfer.fs_access.edit.display_name.placeholder", defaultValue: "예: 내 작업물"), text: $name)
-                        .textFieldStyle(.roundedBorder)
+                    TextField(text: $name) {}
                 }
 
                 LabeledContent(String(localized: "session-settings.transfer.fs_access.edit.path", defaultValue: "경로")) {
                     HStack(spacing: 8) {
-                        TextField(String(localized: "session-settings.transfer.fs_access.edit.path.placeholder", defaultValue: "/Users/..."), text: $path)
-                            .textFieldStyle(.roundedBorder)
+                        TextField(text: $path) {}
 #if os(macOS)
                         Button(String(localized: "session-settings.transfer.fs_access.edit.browse", defaultValue: "찾아보기...")) {
                             Task { await selectDirectory() }

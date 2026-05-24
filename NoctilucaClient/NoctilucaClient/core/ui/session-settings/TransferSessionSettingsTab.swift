@@ -47,14 +47,7 @@ struct TransferSessionSettingsTab: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-
-                    SettingsPickerItem(value: SessionSettings.FSAccessPolicy.alwaysAllowReadOnly) {
-                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_allow_ro", defaultValue: "항상 읽기 전용으로 허용"))
-                        Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_allow_ro_desc", defaultValue: "모든 접근 요청을 읽기 전용으로 강제하여 허용합니다. 아래 목록의 권한이 '읽기/쓰기'여도 읽기 전용으로 다운그레이드됩니다."))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
+                    
                     SettingsPickerItem(value: SessionSettings.FSAccessPolicy.alwaysAsk) {
                         Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_ask", defaultValue: "항상 묻기 **(권장)**"))
                         Text(markdown: String(localized: "session-settings.transfer.fs_access.policy.always_ask_desc", defaultValue: "서버에서 접근 요청이 있을 때마다 사용자에게 확인을 받습니다."))

@@ -203,13 +203,9 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
 
         case .allow(var grantedAccess):
             // 정책 우선: alwaysAllowReadOnly 는 entry ACL 의 read-write 를 read 로 강제한다.
-            if policy == .alwaysAllowReadOnly {
+            // entry ACL 이 read-only 인데 read-write 요청이면 read 로 다운그레이드.
+            if entry.acl == .readOnly && grantedAccess != .read {
                 grantedAccess = .read
-            } else {
-                // entry ACL 이 read-only 인데 read-write 요청이면 read 로 다운그레이드.
-                if entry.acl == .readOnly && grantedAccess != .read {
-                    grantedAccess = .read
-                }
             }
 
             // grantedAccess 는 requestedAccess 를 초과해선 안 된다 (mdproto 명세).
@@ -313,9 +309,6 @@ final class FSAccessChannel: Channel, ChannelEventConsumer {
 
         case .alwaysAllow:
             return .allow(grantedAccess: request.requestedAccess)
-
-        case .alwaysAllowReadOnly:
-            return .allow(grantedAccess: .read)
 
         case .alwaysAsk:
             // broker 가 없으면 안전하게 deny.

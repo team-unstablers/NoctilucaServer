@@ -313,8 +313,6 @@ extension SessionSettings {
     enum FSAccessPolicy: String, Codable, Sendable, Hashable, CaseIterable {
         /// 항상 허용 (위험!)
         case alwaysAllow
-        /// 항상 읽기 전용으로 허용
-        case alwaysAllowReadOnly
         /// 항상 사용자에게 묻기
         case alwaysAsk
         /// 거부
