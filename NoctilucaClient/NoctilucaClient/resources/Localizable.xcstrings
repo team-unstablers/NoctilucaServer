@@ -15060,18 +15060,18 @@
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "`bidirectional-sync` **(권장)**"
+            "value" : "양방향 동기화"
           }
         }
       }
     },
-    "settings.appstream.quirks.winman.geometry-sync-method.centered.title" : {
+    "settings.appstream.quirks.winman.geometry-sync-method.client-to-host.title" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "`centered`"
+            "value" : "단방향 (클라이언트 → 호스트)"
           }
         }
       }
@@ -15083,17 +15083,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "윈도우 지오메트리 동기화 방법을 구성합니다."
-          }
-        }
-      }
-    },
-    "settings.appstream.quirks.winman.geometry-sync-method.no-sync.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "`no-sync`"
           }
         }
       }

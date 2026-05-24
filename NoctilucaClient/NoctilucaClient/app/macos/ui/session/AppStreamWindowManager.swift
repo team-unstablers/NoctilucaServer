@@ -365,6 +365,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
         // 단, 사용자가 마우스를 누르고 드래그 중일 가능성이 있으면 (= mouse down 상태)
         // backlog 된 stale update event 가 사용자의 현재 위치를 덮어쓰지 못하도록 skip.
         // 매핑이 없거나 어느 VD 와도 교차하지 않으면 위치는 그대로 둔다.
+        /*
         if !isUserHoldingMouse,
            let cocoaOrigin = translateServerFrameToClientOrigin(serverBounds: serverBounds),
            let window = windows[windowID]?.window {
@@ -376,6 +377,7 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
                 window.setFrameOrigin(cocoaOrigin)
             }
         }
+         */
 
         // 포커스 처리: isFocused이면 key window로 전환
         if info.flags.contains(.isFocused), !(windows[windowID]?.window.isKeyWindow ?? false) {
@@ -563,11 +565,11 @@ class AppStreamWindowManager: NSObject, NSWindowDelegate {
             }
         }
 
-        // 사용자 드래그 — debounce 후 호스트로 좌표 송신.
+        // 사용자 드래그 — 호스트로 좌표 송신.
         moveDebounceTask[windowID]?.cancel()
         moveDebounceTask[windowID] = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(150))
-            guard !Task.isCancelled else { return }
+            // try? await Task.sleep(for: .milliseconds(150))
+            // guard !Task.isCancelled else { return }
             guard let self else { return }
             guard let projectionChannel = self.remoteSession.projection?.channel else { return }
             guard let hostRect = self.translateClientFrameToServerRect(

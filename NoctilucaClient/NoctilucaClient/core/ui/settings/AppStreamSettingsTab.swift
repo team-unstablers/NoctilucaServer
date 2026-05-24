@@ -50,39 +50,27 @@ struct AppStreamSettingsTab: View {
             
             Section {
                 // $settings.appstream.quirks["app.noctiluca.appstream.quirks.winman.geometry-sync-method"]
-                SettingsPicker(selection: .constant("bidirectional-sync")) {
+                SettingsPicker(selection: .constant("client-to-host")) {
+                    SettingsPickerItem(value: "client-to-host") {
+                        Text(markdown: String(
+                            localized: "settings.appstream.quirks.winman.geometry-sync-method.client-to-host.title",
+                            defaultValue: "단방향 (클라이언트 → 호스트)"
+                        ))
+                        Text(markdown: String(
+                            localized: "settings.appstream.quirks.winman.geometry-sync-method.client-to-host.title",
+                            defaultValue: "윈도우의 지오메트리 동기화를 단방향 (클라이언트 → 호스트)로만 수행합니다."
+                        ))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
                     SettingsPickerItem(value: "bidirectional-sync") {
                         Text(markdown: String(
                             localized: "settings.appstream.quirks.winman.geometry-sync-method.bidirectional-sync.title",
-                            defaultValue: "`bidirectional-sync` **(권장)**"
+                            defaultValue: "양방향 동기화"
                         ))
                         Text(markdown: String(
                             localized: "settings.appstream.quirks.winman.geometry-sync-method.bidirectional-sync.title",
-                            defaultValue: "윈도우의 지오메트리 동기화를 양방향으로 수행합니다."
-                        ))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
-                    SettingsPickerItem(value: "centered") {
-                        Text(markdown: String(
-                            localized: "settings.appstream.quirks.winman.geometry-sync-method.centered.title",
-                            defaultValue: "`centered`"
-                        ))
-                        Text(markdown: String(
-                            localized: "settings.appstream.quirks.winman.geometry-sync-method.centered.title",
-                            defaultValue: "윈도우의 실제 지오메트리를 화면 중앙에 고정합니다.\n툴팁 등의 보조 윈도우가 잘못된 위치에 표시될 수 있습니다."
-                        ))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
-                    SettingsPickerItem(value: "no-sync") {
-                        Text(markdown: String(
-                            localized: "settings.appstream.quirks.winman.geometry-sync-method.no-sync.title",
-                            defaultValue: "`no-sync`"
-                        ))
-                        Text(markdown: String(
-                            localized: "settings.appstream.quirks.winman.geometry-sync-method.no-sync.title",
-                            defaultValue: "윈도우의 지오메트리 동기화를 일절 수행하지 않습니다.\n호스트의 디스플레이 바깥으로 창이 벗어나게 될 수 있으며, 이 경우 마우스 클릭 이벤트가 동작하지 않을 수 있습니다."
+                            defaultValue: "윈도우의 지오메트리 동기화를 양방향으로 수행합니다. 윈도우를 이동할 때 윈도우가 떨릴 수 있습니다."
                         ))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
