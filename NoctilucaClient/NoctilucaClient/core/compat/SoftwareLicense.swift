@@ -27,9 +27,12 @@ public indirect enum SoftwareLicense: Sendable {
     /// BSD 3-Clause License
     case bsd3
     
+    /// GNU General Public License v2.0
+    case gplv2
+
     /// GNU General Public License v3.0
     case gplv3
-    
+
     /// GNU Lesser General Public License v3.0
     case lgplv3
     

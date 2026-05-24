@@ -43,6 +43,8 @@ fileprivate extension SoftwareLicense {
             Text("Apache License 2.0")
         case .bsd3:
             Text("BSD 3-Clause License")
+        case .gplv2:
+            Text("GNU General Public License v2.0")
         case .gplv3:
             Text("GNU General Public License v3.0")
         case .lgplv3:
