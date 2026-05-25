@@ -15,6 +15,7 @@
 		F62038C52FC3B4E500F9C9CC /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F62038C42FC3B4E500F9C9CC /* Shotoku */; };
 		F62038C72FC3B4EA00F9C9CC /* NanoNFS in Frameworks */ = {isa = PBXBuildFile; productRef = F62038C62FC3B4EA00F9C9CC /* NanoNFS */; };
 		F62038C92FC3B4F600F9C9CC /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F62038C82FC3B4F600F9C9CC /* Shotoku */; };
+		F62038CB2FC3BE7300F9C9CC /* Shotoku in Frameworks */ = {isa = PBXBuildFile; productRef = F62038CA2FC3BE7300F9C9CC /* Shotoku */; };
 		F621CB042F8AC11900AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; };
 		F621CB052F8AC11900AEF0FA /* NoctilucaLibVPX in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F621CB032F8AC11900AEF0FA /* NoctilucaLibVPX */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F621CB072F8AC11A00AEF0FA /* NoctilucaLibVPX in Frameworks */ = {isa = PBXBuildFile; productRef = F621CB082F8AC11A00AEF0FA /* NoctilucaLibVPX */; };
@@ -530,6 +531,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F62038CB2FC3BE7300F9C9CC /* Shotoku in Frameworks */,
 				F67828352FB9FEEE00DC5D5E /* SiriusKit in Frameworks */,
 				F678282E2FB9FB9500DC5D5E /* NoctilucaPluginKit.framework in Frameworks */,
 			);
@@ -806,6 +808,7 @@
 			name = NoctilucaPluginKitHostCore;
 			packageProductDependencies = (
 				F67828342FB9FEEE00DC5D5E /* SiriusKit */,
+				F62038CA2FC3BE7300F9C9CC /* Shotoku */,
 			);
 			productName = NoctilucaPluginKitHostCore;
 			productReference = F67828072FB9FB3A00DC5D5E /* NoctilucaPluginKitHostCore.framework */;
@@ -2163,6 +2166,11 @@
 			productName = NanoNFS;
 		};
 		F62038C82FC3B4F600F9C9CC /* Shotoku */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F62038C12FC3B4D900F9C9CC /* XCRemoteSwiftPackageReference "Shotoku" */;
+			productName = Shotoku;
+		};
+		F62038CA2FC3BE7300F9C9CC /* Shotoku */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F62038C12FC3B4D900F9C9CC /* XCRemoteSwiftPackageReference "Shotoku" */;
 			productName = Shotoku;
