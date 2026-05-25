@@ -5,7 +5,7 @@
 //  Created by Gyuhwan Park on 2/9/26.
 //
 
-import AVFoundation
+@preconcurrency import AVFoundation
 import Metal
 
 import SiriusKitClient
