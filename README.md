@@ -5,7 +5,11 @@
 <p align="center">
   A New Remote Desktop for macOS<br />
   <br />
-  <img height="360" alt="image" src="https://github.com/user-attachments/assets/0f23f719-cc7a-42bb-ace0-61665820ddab" /> <img height="360" alt="image" src="https://github.com/user-attachments/assets/e491d707-acdf-4754-8dc2-28fff0bd4caa" />
+  <a href="https://noctiluca.app">Download Installer</a> | <a href="https://noctiluca.app/navigator">Download Navigator</a> | <a href="https://apps.apple.com/us/app/noctiluca-navigator/id6757123757">Download Navigator (iOS)</a><br />
+  <br />
+  <a href="https://www.producthunt.com/products/noctiluca/launches/noctiluca?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-noctiluca" target="_blank" rel="noopener noreferrer"><img alt="Noctiluca - A new remote desktop for macOS | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1108003&amp;theme=neutral&amp;t=1779740494266"></a><br/>
+  <br />
+  <img height="360" alt="image" src="https://github.com/user-attachments/assets/5e47ada4-28cc-4710-a9da-cfc284e83f51" /> <img height="360" alt="image" src="https://github.com/user-attachments/assets/e491d707-acdf-4754-8dc2-28fff0bd4caa" /><br />
 </p>
 
 Noctiluca is a macOS-first remote desktop product family built around two apps:
@@ -178,7 +182,7 @@ the transfer channel.
 ## Documentation
 
 - [noctiluca.app](https://noctiluca.app) contains product pages, downloads,
-  pricing, EULAs, and user-facing help.
+  pricing, and user-facing help.
 - `docs/spec-violation-policy.md` defines how Sirius implementations should
   react to malformed or spec-violating messages.
 - `docs/fsaccess.md` describes the host-side filesystem access design.
