@@ -5,7 +5,10 @@
 //  Created by Gyuhwan Park on 12/18/25.
 //
 
+#if os(macOS)
 import Carbon
+#endif
+
 import Foundation
 
 import Combine
@@ -114,12 +117,16 @@ final class HIDIOGCKeyboard: HIDIOVirtualDevice {
             }
         }
 
+#if os(macOS)
         self.startReconcileTimer()
+#endif
     }
 
     fileprivate func destroyKeyboardInputHandler() {
+#if os(macOS)
         self.stopReconcileTimer()
         self.releaseAllPressedKeys()
+#endif
         self.keyboard?.keyboardInput?.keyChangedHandler = nil
     }
 
@@ -128,8 +135,10 @@ final class HIDIOGCKeyboard: HIDIOVirtualDevice {
             return
         }
         
+#if os(macOS)
         // 시스템이 가로챈 단축키로 인해 keyUp 이 누락된 다른 키들을 즉시 회수한다.
         self.reconcilePressedKeys()
+#endif
 
         if pressed {
             if pressedKeys.insert(keyCode).inserted {
@@ -144,6 +153,7 @@ final class HIDIOGCKeyboard: HIDIOVirtualDevice {
         }
     }
 
+#if os(macOS)
     /// `pressedKeys` 와 GCKeyboard 의 실제 button state 를 비교해서,
     /// 우리는 눌린 것으로 추적 중이지만 실제로는 떼어진 키에 대해 keyUp 을 송신한다.
     private func reconcilePressedKeys() {
@@ -216,6 +226,7 @@ final class HIDIOGCKeyboard: HIDIOVirtualDevice {
         reconcileTask?.cancel()
         reconcileTask = nil
     }
+#endif
 
     func connect(to controller: HIDIOController) {
         self.controller = controller
