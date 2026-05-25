@@ -24,9 +24,10 @@ class ConstraintedNSWindowManager<Window: NSWindow> where Window: ConstraintedNS
     
     private(set) var windows: [CGDirectDisplayID: Window] = [:]
     
-    @MainActor
+    // @MainActor
     deinit {
-        self.shutdown()
+        // FIXME: Swift 컴파일러가 크래시함
+        // self.shutdown()
     }
     
     func startup() {
