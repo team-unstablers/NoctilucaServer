@@ -456,7 +456,7 @@ final class RemoteSession {
         alert.alert.alertStyle = .warning
 #endif
 
-        var decision: FSAccessConsentDecision = .deny
+        nonisolated(unsafe) var decision: FSAccessConsentDecision = .deny
 
         alert.addButton(title: allowAsRequestedLabel(for: request.requestedAccess)) {
             decision = .allow(grantedAccess: request.requestedAccess)
