@@ -4,7 +4,8 @@
 <h1 align="center">Noctiluca</h1>
 <p align="center">
   A New Remote Desktop for macOS<br />
-  <img height="480" alt="image" src="https://github.com/user-attachments/assets/0f23f719-cc7a-42bb-ace0-61665820ddab" />
+  <br />
+  <img height="360" alt="image" src="https://github.com/user-attachments/assets/0f23f719-cc7a-42bb-ace0-61665820ddab" /> <img height="360" alt="image" src="https://github.com/user-attachments/assets/e491d707-acdf-4754-8dc2-28fff0bd4caa" />
 </p>
 
 Noctiluca is a macOS-first remote desktop product family built around two apps:
