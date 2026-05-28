@@ -129,9 +129,7 @@ struct MainToolbarAddressBar: View {
                     case .connect(let endpointURL):
                         viewModel.contactSheetCoordinator.presentQuickConnect(endpointURL: endpointURL)
                     case .contact, .quickConnect:
-                        Task { @MainActor in
-                            try await self.viewModel.startSession(endpoint: endpoint)
-                        }
+                        self.viewModel.beginStartSession(endpoint: endpoint)
                     }
                 }
             }

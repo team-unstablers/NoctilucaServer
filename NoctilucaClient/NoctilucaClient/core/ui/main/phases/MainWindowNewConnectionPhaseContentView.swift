@@ -75,15 +75,9 @@ struct MainWindowNewConnectionPhaseContentView: View {
                             LazyHStack(spacing: 12) {
                                 ForEach(recentStore.records.prefix(5)) { record in
                                     RecentConnectionItemView(record: record) {
-                                        Task { @MainActor in
-                                            do {
-                                                try await viewModel.startSession(
-                                                    endpoint: .quickConnect(endpointURL: record.endpointURL)
-                                                )
-                                            } catch {
-                                                viewModel.presentConnectionError(error)
-                                            }
-                                        }
+                                        viewModel.beginStartSession(
+                                            endpoint: .quickConnect(endpointURL: record.endpointURL)
+                                        )
                                     }
                                 }
                             }
@@ -176,13 +170,7 @@ struct MainWindowNewConnectionPhaseContentView: View {
     private func handleContactAction(_ action: ContactItemAction, for item: ContactItem) {
         switch action {
         case .launch:
-            Task { @MainActor in
-                do {
-                    try await viewModel.startSession(endpoint: .contact(item: item))
-                } catch {
-                    viewModel.presentConnectionError(error)
-                }
-            }
+            viewModel.beginStartSession(endpoint: .contact(item: item))
         case .edit:
             contactSheetCoordinator.presentContactEditor(for: item)
         case .delete:
