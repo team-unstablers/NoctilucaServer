@@ -79,6 +79,18 @@ final class SessionWindowViewModel {
     @ObservationIgnored
     private var sessionObservationHandles: [ObservationHandle] = []
 
+    /// 현재 진행 중인 `startSession` 시도의 식별자.
+    /// 새로운 startSession 진입 시 갱신되며, catch 경로는 이 값을 비교해 stale 한 시도가
+    /// `self.remoteSession` / `phase` 같은 공유 상태를 건드리지 못하게 한다.
+    @ObservationIgnored
+    private var currentConnectAttempt: UUID?
+
+    /// `beginStartSession`이 띄운 in-flight Task 핸들. 새 시도가 진입할 때 이전 Task를
+    /// 취소하기 위해 보관한다. (transport 단의 cancellation 미지원으로 즉시 풀리지는 않지만
+    /// Task.isCancelled 플래그가 셋되어 cooperative checkpoint에서 일찍 빠져나올 수 있다.)
+    @ObservationIgnored
+    private var connectingTask: Task<Void, Never>?
+
     private(set) var degradationNotice: DegradationNotice? = nil
 
     private(set) var fileTransferProgress: Double? = nil
@@ -129,12 +141,28 @@ final class SessionWindowViewModel {
 
     private func setupContactSheetCoordinator() {
         contactSheetCoordinator.onConnect = { [weak self] endpoint, settingsOverride in
-            Task { @MainActor in
-                do {
-                    try await self?.startSession(endpoint: endpoint, settingsOverride: settingsOverride)
-                } catch {
-                    self?.presentConnectionError(error)
-                }
+            self?.beginStartSession(endpoint: endpoint, settingsOverride: settingsOverride)
+        }
+    }
+
+    /// `startSession`을 Task로 감싸고 `connectingTask`에 등록한다.
+    /// 이전 시도의 Task에는 cancel 신호를 보낸다 — race 자체는 attempt token으로 닫히지만
+    /// 잡힌 Task가 cooperative checkpoint에서 빨리 빠져나갈 수 있도록 신호는 보내둔다.
+    /// 호출자는 await하지 않으며, 실패는 `presentConnectionError`로 표시된다.
+    func beginStartSession(
+        endpoint: EndpointKind,
+        settingsOverride: SessionSettings? = nil
+    ) {
+        let previousTask = connectingTask
+        connectingTask = Task { @MainActor [weak self] in
+            previousTask?.cancel()
+            guard let self else { return }
+            do {
+                try await self.startSession(endpoint: endpoint, settingsOverride: settingsOverride)
+            } catch is CancellationError {
+                // 명시적으로 취소된 시도는 silently drop
+            } catch {
+                self.presentConnectionError(error)
             }
         }
     }
@@ -144,9 +172,14 @@ final class SessionWindowViewModel {
         settingsOverride: SessionSettings? = nil,
         succeedValidationDecision: SucceedValidationDecision? = nil
     ) async throws {
+        let myAttempt = UUID()
+
         if remoteSession != nil {
             await stopSession(force: true)
         }
+
+        // stopSession이 currentConnectAttempt를 nil로 만들었을 수 있으므로 stop 이후에 set.
+        self.currentConnectAttempt = myAttempt
 
         let endpoint = endpointKind.endpoint
 
@@ -215,13 +248,14 @@ final class SessionWindowViewModel {
 
         do {
             try await remoteSession.setup()
+            try Task.checkCancellation()
             try await remoteSession.startup()
         } catch {
             // 인증서 검증 대기 상태인 경우 세션을 정리하지 않고 검증 시트를 표시
             if client.isValidatingServerIdentity {
                 return
             }
-            
+
             /*
             if let pending = client.pendingIdentityValidation {
                 remoteSession.presentIdentityValidation(
@@ -232,6 +266,16 @@ final class SessionWindowViewModel {
             }
              */
 
+            // 이 시도가 이미 stale 라면 (다른 시도가 끼어들어 currentConnectAttempt 가 갱신됐거나
+            // stopSession 으로 nil 이 됨) self.remoteSession / phase 는 건드리지 않는다.
+            // orphan client 만 정리하고 silent return — 호출자(beginStartSession 등)에게도
+            // 에러를 전달하지 않아 stale 알림이 뜨지 않게 한다.
+            let isStale = self.currentConnectAttempt != myAttempt
+            if isStale {
+                await clientManager.killClient(id: client.id)
+                return
+            }
+
             phase = .newConnection
             detachRemoteSession()
             await clientManager.killClient(id: client.id)
@@ -240,6 +284,11 @@ final class SessionWindowViewModel {
     }
 
     func stopSession(force: Bool = false) async {
+        // in-flight 시도가 있다면 stale 로 마크. 진행 중인 Task 자체는 cancel 하지 않는다 —
+        // 이 stopSession 이 startSession 내부 (연결 교체 경로) 에서 호출될 수 있는데,
+        // 그 경우 자기 자신을 cancel 하면 안 되기 때문. attempt token 비교만으로 race 는 닫힘.
+        currentConnectAttempt = nil
+
         guard let remoteSession else {
             return
         }

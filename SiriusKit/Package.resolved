@@ -1,5 +1,5 @@
 {
-  "originHash" : "8776ab620b9c20dba54db6ed411e50f36fe9ddfbf59799ce214c9be94a74e0e2",
+  "originHash" : "ae72f797968dae41f8aa27825f2fbb46c630d6c8c02db34615345ff9eb6add73",
   "pins" : [
     {
       "identity" : "swift-asn1",
@@ -35,6 +35,15 @@
       "state" : {
         "revision" : "6f70fa9eab24c1fd982af18c281c4525d05e3095",
         "version" : "4.2.0"
+      }
+    },
+    {
+      "identity" : "swift-msquic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/team-unstablers/swift-msquic",
+      "state" : {
+        "revision" : "ed759dfcc97248ea6168d2d4e5c09869b81d6a4e",
+        "version" : "2.0.0"
       }
     },
     {
