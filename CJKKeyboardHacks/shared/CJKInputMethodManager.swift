@@ -17,7 +17,7 @@ import Foundation
 /// 비활성 앱에서의 TISSelectInputSource 워크어라운드 — 을 한 곳에 모은다.
 ///
 /// 키보드 핵(Win32-style 한/영 토글)과 RPC 핸들러(`app.noctiluca.rpc.switch-im`)
-/// 양쪽에서 공유한다. `@MainActor` 격리로 TIS / NSWindow / AX API 호출 경로를
+/// 양쪽에서 공유한다. `@MainActor` 격리로 TIS / NSPanel 호출 경로를
 /// 단일 스레드로 직렬화한다.
 ///
 /// IM ↔ 언어 매칭은 입력 소스의 `kTISPropertyInputSourceLanguages` (BCP-47 태그
@@ -33,7 +33,7 @@ final class CJKInputMethodManager: NSObject {
 
     /// TISSelectInputSource() 가 비활성 앱에서 조용히 실패하는 문제를 우회하기 위한
     /// 1x1 투명 윈도우. lazy 로 생성되며 앱 생명주기 동안 재사용된다.
-    private var workaroundWindow: NSWindow?
+    private var workaroundWindow: NSPanel?
 
     override private init() {
         super.init()
@@ -75,27 +75,27 @@ final class CJKInputMethodManager: NSObject {
         preferThirdParty: Bool = false
     ) async -> Bool {
         let targets = resolveInputSource(for: language, preferThirdParty: preferThirdParty)
-        
+
         guard !targets.isEmpty else {
             return false
         }
-        
+
         for target in targets {
             let status = TISSelectInputSource(target)
             guard status == noErr else {
                 continue
             }
-            
+
             // ASCIICapable 이 아닌 IM (= IME 가 활성화되는 경우) 으로 전환했다면,
             // TIS 가 비활성 앱에서 조용히 무시되는 문제를 우회하기 위해
             // 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
             if !Self.isAsciiCapable(target) {
                 await activateWorkaroundWindowAndRestore()
             }
-            
+
             return true
         }
-        
+
         return false
     }
 
@@ -222,186 +222,45 @@ final class CJKInputMethodManager: NSObject {
     }
 
     // MARK: - Workaround window
-    var axSelf: AXUIElement?
-    
+
     var becomeKeyWindowContinuation: CheckedContinuation<Void, Never>?
 
-    /// 워크어라운드 윈도우를 잠시 활성화한 뒤 원래 앱으로 포커스를 복귀시킨다.
-    /// TISSelectInputSource() 가 비활성 앱에서 조용히 실패하는 문제를 우회하기 위함.
-    /// 활성화 / 복귀 모두 AXUIElement(kAXFrontmostAttribute) 를 사용하며, 폴링 대신
-    /// windowDidBecomeKey 와 kAXApplicationActivatedNotification 알림을 기다린다.
-    /// 알림이 어떤 이유로 누락되어도 hang 되지 않도록 복귀 단계에 200ms 폴백 타임아웃을 둔다.
-    /// (Accessibility 권한 필요.)
+    /// 워크어라운드 윈도우를 잠시 key 로 만들어 TISSelectInputSource() 가 비활성 앱에서
+    /// 조용히 실패하는 문제를 우회한다. NSPanel(.nonactivatingPanel) 을
+    /// makeKeyAndOrderFront 로 띄우므로 앱 자체는 활성화되지 않으며(= 프레임 깜박임 없음),
+    /// windowDidBecomeKey 알림이 오면 즉시 orderOut 으로 닫는다. 알림이 어떤 이유로
+    /// 누락되어도 hang 되지 않도록 200ms 폴백 타임아웃을 둔다. (Accessibility 권한 불요.)
     private func activateWorkaroundWindowAndRestore() async {
-        let previousApp = NSWorkspace.shared.frontmostApplication
-
-        func activateWorkaroundWindow() async {
-            await withCheckedContinuation { continuation in
-                // 이전 호출이 어떤 이유로 정리되지 않은 continuation 을 남겼다면 먼저 풀어 준다.
-                // (현재 @MainActor 직렬화 하에선 발생하지 않는 시나리오지만, 단일 슬롯 패턴의 안전 가드.)
-                if let stale = becomeKeyWindowContinuation {
-                    becomeKeyWindowContinuation = nil
-                    stale.resume()
-                }
-                becomeKeyWindowContinuation = continuation
-
-                let window = ensureWorkaroundWindow()
-                let axSelf = ensureAXHandle()
-
-                window.setIsVisible(true)
-                AXUIElementSetAttributeValue(
-                    axSelf,
-                    kAXFrontmostAttribute as CFString,
-                    true as CFTypeRef
-                )
-
-                // windowDidBecomeKey 알림이 누락되어도 hang 되지 않도록 200ms 폴백 타임아웃.
-                Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .milliseconds(200))
-                    guard let self else { return }
-                    guard let pending = self.becomeKeyWindowContinuation else { return }
-                    self.becomeKeyWindowContinuation = nil
-                    pending.resume()
-                }
+        await withCheckedContinuation { continuation in
+            // 이전 호출이 어떤 이유로 정리되지 않은 continuation 을 남겼다면 먼저 풀어 준다.
+            // (현재 @MainActor 직렬화 하에선 발생하지 않는 시나리오지만, 단일 슬롯 패턴의 안전 가드.)
+            if let stale = becomeKeyWindowContinuation {
+                becomeKeyWindowContinuation = nil
+                stale.resume()
             }
-        }
+            becomeKeyWindowContinuation = continuation
 
-        func restoreWindowFocus() async {
-            guard let pid = previousApp?.processIdentifier else { return }
+            let window = ensureWorkaroundWindow()
+            window.makeKeyAndOrderFront(nil)
 
-            let observation = RestoreFocusObservation(pid: pid)
-
-            let timeoutTask = Task { @MainActor in
+            // windowDidBecomeKey 알림이 누락되어도 hang 되지 않도록 200ms 폴백 타임아웃.
+            Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .milliseconds(200))
-                observation.resumeOnce()
+                guard let self else { return }
+                guard let pending = self.becomeKeyWindowContinuation else { return }
+                self.becomeKeyWindowContinuation = nil
+                pending.resume()
             }
-
-            await observation.waitForActivation()
-            timeoutTask.cancel()
         }
-
-        await activateWorkaroundWindow()
-        await restoreWindowFocus()
     }
 
-    /// 외부 앱이 activate 될 때까지 한 번만 알림을 기다리고 자기 자신을 정리하는 헬퍼.
-    /// `kAXApplicationActivatedNotification` 알림과 외부 타임아웃 호출 중 먼저 도착한
-    /// 쪽이 continuation 을 resume 하고 옵저버 / RunLoop source / refCon 을 모두 해제한다.
-    @MainActor
-    private final class RestoreFocusObservation {
-        private let pid: pid_t
-        private let axApp: AXUIElement
-        private var observer: AXObserver?
-        private var continuation: CheckedContinuation<Void, Never>?
-        private var retainedRefCon: UnsafeMutableRawPointer?
-
-        init(pid: pid_t) {
-            self.pid = pid
-            self.axApp = AXUIElementCreateApplication(pid)
-        }
-
-        func waitForActivation() async {
-            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                self.continuation = continuation
-                start()
-            }
-        }
-
-        private func start() {
-            var observer: AXObserver?
-            let createResult = AXObserverCreate(pid, { _, _, _, refCon in
-                guard let refCon else { return }
-                MainActor.assumeIsolated {
-                    let observation = Unmanaged<RestoreFocusObservation>
-                        .fromOpaque(refCon)
-                        .takeUnretainedValue()
-                    observation.resumeOnce()
-                }
-            }, &observer)
-
-            guard createResult == .success, let observer else {
-                resumeOnce()
-                return
-            }
-            self.observer = observer
-
-            let refCon = Unmanaged.passRetained(self).toOpaque()
-            retainedRefCon = refCon
-
-            let addResult = AXObserverAddNotification(
-                observer,
-                axApp,
-                kAXApplicationActivatedNotification as CFString,
-                refCon
-            )
-            guard addResult == .success || addResult == .notificationAlreadyRegistered else {
-                resumeOnce()
-                return
-            }
-
-            // 모달 / 메뉴 트래킹 루프 중에도 알림을 받도록 commonModes 에 등록한다.
-            CFRunLoopAddSource(
-                CFRunLoopGetMain(),
-                AXObserverGetRunLoopSource(observer),
-                .commonModes
-            )
-
-            AXUIElementSetAttributeValue(
-                axApp,
-                kAXFrontmostAttribute as CFString,
-                true as CFTypeRef
-            )
-        }
-
-        /// 알림 경로와 타임아웃 경로 모두에서 호출된다. 먼저 도착한 쪽이 정리·resume 을 수행하고
-        /// 두 번째 호출은 no-op.
-        func resumeOnce() {
-            guard let continuation else { return }
-            self.continuation = nil
-
-            if let observer {
-                AXObserverRemoveNotification(
-                    observer,
-                    axApp,
-                    kAXApplicationActivatedNotification as CFString
-                )
-                CFRunLoopRemoveSource(
-                    CFRunLoopGetMain(),
-                    AXObserverGetRunLoopSource(observer),
-                    .commonModes
-                )
-                self.observer = nil
-            }
-
-            if let retainedRefCon {
-                self.retainedRefCon = nil
-                Unmanaged<RestoreFocusObservation>.fromOpaque(retainedRefCon).release()
-            }
-
-            continuation.resume()
-        }
-    }
-    
-    private func ensureAXHandle() -> AXUIElement {
-        if let axSelf = axSelf {
-            return axSelf
-        }
-        
-        let ourPid = NSRunningApplication.current.processIdentifier
-        let axSelf = AXUIElementCreateApplication(ourPid)
-        
-        self.axSelf = axSelf
-        
-        return axSelf
-    }
-
-    private func ensureWorkaroundWindow() -> NSWindow {
+    private func ensureWorkaroundWindow() -> NSPanel {
         if let existing = workaroundWindow {
             return existing
         }
         let window = WorkaroundWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
-            styleMask: .borderless,
+            styleMask: [.borderless, .utilityWindow, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -410,6 +269,7 @@ final class CJKInputMethodManager: NSObject {
         window.alphaValue = 0
         window.isOpaque = false
         window.level = .floating
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.isReleasedWhenClosed = false
         window.setFrame(NSRect(x: -100, y: -100, width: 1, height: 1), display: false)
 
@@ -420,10 +280,13 @@ final class CJKInputMethodManager: NSObject {
     }
 }
 
-/// borderless NSWindow 는 기본적으로 `canBecomeKey` 가 false 라서 windowDidBecomeKey
-/// 알림이 발생하지 않는다. 알림 기반 대기를 성립시키기 위해 명시적으로 true 로 override 한다.
-private final class WorkaroundWindow: NSWindow {
+/// borderless 패널은 기본적으로 `canBecomeKey` 가 false 라서 windowDidBecomeKey
+/// 알림이 발생하지 않는다. 알림 기반 대기를 성립시키기 위해 `canBecomeKey` 를 true 로
+/// override 한다. `canBecomeMain` 은 false 로 두어 앱이 실제로 활성화되는 것(= 프레임
+/// 깜박임)을 막는다.
+private final class WorkaroundWindow: NSPanel {
     override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
 }
 
 extension CJKInputMethodManager: NSWindowDelegate {
@@ -431,6 +294,9 @@ extension CJKInputMethodManager: NSWindowDelegate {
         guard (notification.object as AnyObject?) === workaroundWindow else { return }
         guard let continuation = becomeKeyWindowContinuation else { return }
         becomeKeyWindowContinuation = nil
+
+        self.workaroundWindow?.orderOut(nil)
+
         continuation.resume()
     }
 }
